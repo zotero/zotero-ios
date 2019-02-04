@@ -39,6 +39,10 @@
 		B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */; };
 		B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */; };
 		B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C02208921200DFE361 /* LoginResponse.swift */; };
+		B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C2220897B300DFE361 /* CollectionsViewController.swift */; };
+		B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C3220897B300DFE361 /* CollectionsViewController.xib */; };
+		B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C6220897C600DFE361 /* ItemsViewController.swift */; };
+		B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C7220897C600DFE361 /* ItemsViewController.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +104,10 @@
 		B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUserDbRequest.swift; sourceTree = "<group>"; };
 		B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreUserDbRequest.swift; sourceTree = "<group>"; };
 		B385E2C02208921200DFE361 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
+		B385E2C2220897B300DFE361 /* CollectionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsViewController.swift; sourceTree = "<group>"; };
+		B385E2C3220897B300DFE361 /* CollectionsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsViewController.xib; sourceTree = "<group>"; };
+		B385E2C6220897C600DFE361 /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
+		B385E2C7220897C600DFE361 /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
 		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Zotero.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -231,10 +239,14 @@
 		B30D59AB2206FECD00884C4A /* ViewControllers */ = {
 			isa = PBXGroup;
 			children = (
-				B36795F022077FD6003D0471 /* OnboardingViewController.swift */,
-				B36795F122077FD6003D0471 /* OnboardingViewController.xib */,
+				B385E2C2220897B300DFE361 /* CollectionsViewController.swift */,
+				B385E2C3220897B300DFE361 /* CollectionsViewController.xib */,
+				B385E2C6220897C600DFE361 /* ItemsViewController.swift */,
+				B385E2C7220897C600DFE361 /* ItemsViewController.xib */,
 				B36795F422078076003D0471 /* LoginViewController.swift */,
 				B36795F522078076003D0471 /* LoginViewController.xib */,
+				B36795F022077FD6003D0471 /* OnboardingViewController.swift */,
+				B36795F122077FD6003D0471 /* OnboardingViewController.xib */,
 				B36795F82207807F003D0471 /* RegisterViewController.swift */,
 				B36795F92207807F003D0471 /* RegisterViewController.xib */,
 			);
@@ -437,6 +449,8 @@
 			files = (
 				B36795F722078076003D0471 /* LoginViewController.xib in Resources */,
 				B36795FB2207807F003D0471 /* RegisterViewController.xib in Resources */,
+				B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */,
+				B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B30D59622206F60500884C4A /* Assets.xcassets in Resources */,
 				B36795F322077FD6003D0471 /* OnboardingViewController.xib in Resources */,
@@ -574,8 +588,10 @@
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
+				B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
+				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
