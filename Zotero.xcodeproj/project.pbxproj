@@ -1,0 +1,916 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */; };
+		2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */; };
+		9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */; };
+		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
+		B30D59622206F60500884C4A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30D59612206F60500884C4A /* Assets.xcassets */; };
+		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
+		B30D59702206F60500884C4A /* ZoteroTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D596F2206F60500884C4A /* ZoteroTests.swift */; };
+		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
+		B30D59B12206FF1F00884C4A /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B02206FF1F00884C4A /* Store.swift */; };
+		B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B32207271E00884C4A /* Threading+Extras.swift */; };
+		B30D59B622072DF300884C4A /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B522072DF300884C4A /* AppStore.swift */; };
+		B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B722073C8F00884C4A /* UIColor+Custom.swift */; };
+		B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59BA2207451B00884C4A /* ApiClient.swift */; };
+		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
+		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
+		B36795E222075710003D0471 /* Controllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795E122075710003D0471 /* Controllers.swift */; };
+		B36795E822075F9D003D0471 /* LoginStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795E722075F9D003D0471 /* LoginStore.swift */; };
+		B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795EC22077CCD003D0471 /* LoginRequest.swift */; };
+		B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795F022077FD6003D0471 /* OnboardingViewController.swift */; };
+		B36795F322077FD6003D0471 /* OnboardingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36795F122077FD6003D0471 /* OnboardingViewController.xib */; };
+		B36795F622078076003D0471 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795F422078076003D0471 /* LoginViewController.swift */; };
+		B36795F722078076003D0471 /* LoginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36795F522078076003D0471 /* LoginViewController.xib */; };
+		B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795F82207807F003D0471 /* RegisterViewController.swift */; };
+		B36795FB2207807F003D0471 /* RegisterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36795F92207807F003D0471 /* RegisterViewController.xib */; };
+		B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
+		B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FE2207965F003D0471 /* UIViewController+Alert.swift */; };
+		B385E2B52208755500DFE361 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B42208755500DFE361 /* RUser.swift */; };
+		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
+		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
+		B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */; };
+		B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */; };
+		B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C02208921200DFE361 /* LoginResponse.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B30D596C2206F60500884C4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B30D594D2206F60400884C4A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B30D59542206F60400884C4A;
+			remoteInfo = Zotero;
+		};
+		B30D59772206F60500884C4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B30D594D2206F60400884C4A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B30D59542206F60400884C4A;
+			remoteInfo = Zotero;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZoteroTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.release.xcconfig"; sourceTree = "<group>"; };
+		4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.release.xcconfig"; sourceTree = "<group>"; };
+		5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZoteroUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.release.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.release.xcconfig"; sourceTree = "<group>"; };
+		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B30D59612206F60500884C4A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B30D59662206F60500884C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B30D596B2206F60500884C4A /* ZoteroTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZoteroTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B30D596F2206F60500884C4A /* ZoteroTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroTests.swift; sourceTree = "<group>"; };
+		B30D59712206F60500884C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B30D59762206F60500884C4A /* ZoteroUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZoteroUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B30D597A2206F60500884C4A /* ZoteroUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroUITests.swift; sourceTree = "<group>"; };
+		B30D597C2206F60500884C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B30D59B02206FF1F00884C4A /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		B30D59B32207271E00884C4A /* Threading+Extras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Threading+Extras.swift"; sourceTree = "<group>"; };
+		B30D59B522072DF300884C4A /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		B30D59B722073C8F00884C4A /* UIColor+Custom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Custom.swift"; sourceTree = "<group>"; };
+		B30D59BA2207451B00884C4A /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
+		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
+		B36795E122075710003D0471 /* Controllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controllers.swift; sourceTree = "<group>"; };
+		B36795E722075F9D003D0471 /* LoginStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginStore.swift; sourceTree = "<group>"; };
+		B36795EC22077CCD003D0471 /* LoginRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginRequest.swift; sourceTree = "<group>"; };
+		B36795F022077FD6003D0471 /* OnboardingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
+		B36795F122077FD6003D0471 /* OnboardingViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingViewController.xib; sourceTree = "<group>"; };
+		B36795F422078076003D0471 /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
+		B36795F522078076003D0471 /* LoginViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
+		B36795F82207807F003D0471 /* RegisterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
+		B36795F92207807F003D0471 /* RegisterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RegisterViewController.xib; sourceTree = "<group>"; };
+		B36795FC22078F15003D0471 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
+		B36795FE2207965F003D0471 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		B385E2B42208755500DFE361 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
+		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
+		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
+		B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUserDbRequest.swift; sourceTree = "<group>"; };
+		B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreUserDbRequest.swift; sourceTree = "<group>"; };
+		B385E2C02208921200DFE361 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
+		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
+		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
+		FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Zotero.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B30D59522206F60400884C4A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30D59682206F60500884C4A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30D59732206F60500884C4A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9A5CCE075B69890E36482447 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */,
+				15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */,
+				5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B30D594C2206F60400884C4A = {
+			isa = PBXGroup;
+			children = (
+				B30D59572206F60400884C4A /* Zotero */,
+				B30D596E2206F60500884C4A /* ZoteroTests */,
+				B30D59792206F60500884C4A /* ZoteroUITests */,
+				B30D59562206F60400884C4A /* Products */,
+				CE7653692C34AB4C18E57FBB /* Pods */,
+				9A5CCE075B69890E36482447 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		B30D59562206F60400884C4A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B30D59552206F60400884C4A /* Zotero.app */,
+				B30D596B2206F60500884C4A /* ZoteroTests.xctest */,
+				B30D59762206F60500884C4A /* ZoteroUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B30D59572206F60400884C4A /* Zotero */ = {
+			isa = PBXGroup;
+			children = (
+				B30D59A82206FECD00884C4A /* Controllers */,
+				B30D59B22207270C00884C4A /* Extras */,
+				B385E2B22208754700DFE361 /* Models */,
+				B30D59AB2206FECD00884C4A /* ViewControllers */,
+				B30D59AA2206FECD00884C4A /* Views */,
+				B30D59582206F60400884C4A /* AppDelegate.swift */,
+				B30D59612206F60500884C4A /* Assets.xcassets */,
+				B30D59632206F60500884C4A /* LaunchScreen.storyboard */,
+				B30D59662206F60500884C4A /* Info.plist */,
+			);
+			path = Zotero;
+			sourceTree = "<group>";
+		};
+		B30D596E2206F60500884C4A /* ZoteroTests */ = {
+			isa = PBXGroup;
+			children = (
+				B30D596F2206F60500884C4A /* ZoteroTests.swift */,
+				B30D59712206F60500884C4A /* Info.plist */,
+			);
+			path = ZoteroTests;
+			sourceTree = "<group>";
+		};
+		B30D59792206F60500884C4A /* ZoteroUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B30D597A2206F60500884C4A /* ZoteroUITests.swift */,
+				B30D597C2206F60500884C4A /* Info.plist */,
+			);
+			path = ZoteroUITests;
+			sourceTree = "<group>";
+		};
+		B30D59A82206FECD00884C4A /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				B30D59B9220743EE00884C4A /* API */,
+				B385E2AF220854CD00DFE361 /* Database */,
+				B30D59A92206FECD00884C4A /* Stores */,
+				B36795E122075710003D0471 /* Controllers.swift */,
+				B36795FC22078F15003D0471 /* SecureStorage.swift */,
+			);
+			path = Controllers;
+			sourceTree = "<group>";
+		};
+		B30D59A92206FECD00884C4A /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				B30D59B02206FF1F00884C4A /* Store.swift */,
+				B30D59B522072DF300884C4A /* AppStore.swift */,
+				B36795E722075F9D003D0471 /* LoginStore.swift */,
+			);
+			path = Stores;
+			sourceTree = "<group>";
+		};
+		B30D59AA2206FECD00884C4A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B30D59AB2206FECD00884C4A /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
+				B36795F022077FD6003D0471 /* OnboardingViewController.swift */,
+				B36795F122077FD6003D0471 /* OnboardingViewController.xib */,
+				B36795F422078076003D0471 /* LoginViewController.swift */,
+				B36795F522078076003D0471 /* LoginViewController.xib */,
+				B36795F82207807F003D0471 /* RegisterViewController.swift */,
+				B36795F92207807F003D0471 /* RegisterViewController.xib */,
+			);
+			path = ViewControllers;
+			sourceTree = "<group>";
+		};
+		B30D59B22207270C00884C4A /* Extras */ = {
+			isa = PBXGroup;
+			children = (
+				B30D59B32207271E00884C4A /* Threading+Extras.swift */,
+				B30D59B722073C8F00884C4A /* UIColor+Custom.swift */,
+				B36795DD220749B7003D0471 /* Result.swift */,
+				B36795FE2207965F003D0471 /* UIViewController+Alert.swift */,
+			);
+			path = Extras;
+			sourceTree = "<group>";
+		};
+		B30D59B9220743EE00884C4A /* API */ = {
+			isa = PBXGroup;
+			children = (
+				B36795EB22077CCD003D0471 /* Requests */,
+				B30D59BA2207451B00884C4A /* ApiClient.swift */,
+				B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		B36795EB22077CCD003D0471 /* Requests */ = {
+			isa = PBXGroup;
+			children = (
+				B36795EC22077CCD003D0471 /* LoginRequest.swift */,
+			);
+			path = Requests;
+			sourceTree = "<group>";
+		};
+		B385E2AF220854CD00DFE361 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				B385E2BA2208866600DFE361 /* Requests */,
+				B385E2B62208791100DFE361 /* DbStorage.swift */,
+				B385E2B82208827C00DFE361 /* RealmDbStorage.swift */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
+		B385E2B22208754700DFE361 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B385E2BF2208920A00DFE361 /* API */,
+				B385E2B32208754700DFE361 /* Database */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B385E2B32208754700DFE361 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				B385E2B42208755500DFE361 /* RUser.swift */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
+		B385E2BA2208866600DFE361 /* Requests */ = {
+			isa = PBXGroup;
+			children = (
+				B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */,
+				B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */,
+			);
+			path = Requests;
+			sourceTree = "<group>";
+		};
+		B385E2BF2208920A00DFE361 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				B385E2C02208921200DFE361 /* LoginResponse.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		CE7653692C34AB4C18E57FBB /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */,
+				8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */,
+				E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */,
+				4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */,
+				16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */,
+				3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B30D59542206F60400884C4A /* Zotero */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
+			buildPhases = (
+				0FB62CEAAA715D1E3F5FC027 /* [CP] Check Pods Manifest.lock */,
+				B30D59512206F60400884C4A /* Sources */,
+				B30D59522206F60400884C4A /* Frameworks */,
+				B30D59532206F60400884C4A /* Resources */,
+				1B975E5CF8CBCF9F9B9B0C61 /* [CP] Embed Pods Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Zotero;
+			productName = Zotero;
+			productReference = B30D59552206F60400884C4A /* Zotero.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B30D596A2206F60500884C4A /* ZoteroTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B30D59822206F60500884C4A /* Build configuration list for PBXNativeTarget "ZoteroTests" */;
+			buildPhases = (
+				1607D66B943AFB3F3BF59D23 /* [CP] Check Pods Manifest.lock */,
+				B30D59672206F60500884C4A /* Sources */,
+				B30D59682206F60500884C4A /* Frameworks */,
+				B30D59692206F60500884C4A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B30D596D2206F60500884C4A /* PBXTargetDependency */,
+			);
+			name = ZoteroTests;
+			productName = ZoteroTests;
+			productReference = B30D596B2206F60500884C4A /* ZoteroTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B30D59752206F60500884C4A /* ZoteroUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B30D59852206F60500884C4A /* Build configuration list for PBXNativeTarget "ZoteroUITests" */;
+			buildPhases = (
+				B433DBB4F006A1955D51B03A /* [CP] Check Pods Manifest.lock */,
+				B30D59722206F60500884C4A /* Sources */,
+				B30D59732206F60500884C4A /* Frameworks */,
+				B30D59742206F60500884C4A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B30D59782206F60500884C4A /* PBXTargetDependency */,
+			);
+			name = ZoteroUITests;
+			productName = ZoteroUITests;
+			productReference = B30D59762206F60500884C4A /* ZoteroUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B30D594D2206F60400884C4A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1010;
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = "Corporation for Digital Scholarship";
+				TargetAttributes = {
+					B30D59542206F60400884C4A = {
+						CreatedOnToolsVersion = 10.1;
+					};
+					B30D596A2206F60500884C4A = {
+						CreatedOnToolsVersion = 10.1;
+						TestTargetID = B30D59542206F60400884C4A;
+					};
+					B30D59752206F60500884C4A = {
+						CreatedOnToolsVersion = 10.1;
+						TestTargetID = B30D59542206F60400884C4A;
+					};
+				};
+			};
+			buildConfigurationList = B30D59502206F60400884C4A /* Build configuration list for PBXProject "Zotero" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B30D594C2206F60400884C4A;
+			productRefGroup = B30D59562206F60400884C4A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B30D59542206F60400884C4A /* Zotero */,
+				B30D596A2206F60500884C4A /* ZoteroTests */,
+				B30D59752206F60500884C4A /* ZoteroUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B30D59532206F60400884C4A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B36795F722078076003D0471 /* LoginViewController.xib in Resources */,
+				B36795FB2207807F003D0471 /* RegisterViewController.xib in Resources */,
+				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
+				B30D59622206F60500884C4A /* Assets.xcassets in Resources */,
+				B36795F322077FD6003D0471 /* OnboardingViewController.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30D59692206F60500884C4A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30D59742206F60500884C4A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0FB62CEAAA715D1E3F5FC027 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Zotero-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		1607D66B943AFB3F3BF59D23 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ZoteroTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		1B975E5CF8CBCF9F9B9B0C61 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-Zotero/Pods-Zotero-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
+				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
+				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Zotero/Pods-Zotero-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B433DBB4F006A1955D51B03A /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ZoteroUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B30D59512206F60400884C4A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */,
+				B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */,
+				B36795E222075710003D0471 /* Controllers.swift in Sources */,
+				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
+				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
+				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
+				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
+				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
+				B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */,
+				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
+				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
+				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
+				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
+				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
+				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
+				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
+				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
+				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
+				B36795DE220749B7003D0471 /* Result.swift in Sources */,
+				B36795F622078076003D0471 /* LoginViewController.swift in Sources */,
+				B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */,
+				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30D59672206F60500884C4A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B30D59702206F60500884C4A /* ZoteroTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B30D59722206F60500884C4A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B30D596D2206F60500884C4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B30D59542206F60400884C4A /* Zotero */;
+			targetProxy = B30D596C2206F60500884C4A /* PBXContainerItemProxy */;
+		};
+		B30D59782206F60500884C4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B30D59542206F60400884C4A /* Zotero */;
+			targetProxy = B30D59772206F60500884C4A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		B30D59632206F60500884C4A /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B30D59642206F60500884C4A /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		B30D597D2206F60500884C4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B30D597E2206F60500884C4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B30D59802206F60500884C4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				INFOPLIST_FILE = Zotero/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.Zotero;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B30D59812206F60500884C4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				INFOPLIST_FILE = Zotero/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.Zotero;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B30D59832206F60500884C4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				INFOPLIST_FILE = ZoteroTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
+			};
+			name = Debug;
+		};
+		B30D59842206F60500884C4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				INFOPLIST_FILE = ZoteroTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
+			};
+			name = Release;
+		};
+		B30D59862206F60500884C4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				INFOPLIST_FILE = ZoteroUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Zotero;
+			};
+			name = Debug;
+		};
+		B30D59872206F60500884C4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				INFOPLIST_FILE = ZoteroUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Zotero;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B30D59502206F60400884C4A /* Build configuration list for PBXProject "Zotero" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B30D597D2206F60500884C4A /* Debug */,
+				B30D597E2206F60500884C4A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B30D59802206F60500884C4A /* Debug */,
+				B30D59812206F60500884C4A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B30D59822206F60500884C4A /* Build configuration list for PBXNativeTarget "ZoteroTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B30D59832206F60500884C4A /* Debug */,
+				B30D59842206F60500884C4A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B30D59852206F60500884C4A /* Build configuration list for PBXNativeTarget "ZoteroUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B30D59862206F60500884C4A /* Debug */,
+				B30D59872206F60500884C4A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B30D594D2206F60400884C4A /* Project object */;
+}
