@@ -8,6 +8,7 @@
 
 import Foundation
 
+import RxSwift
 
 /// Global controllers which don't need user session
 class Controllers {
@@ -29,6 +30,12 @@ class Controllers {
         url.appendPathExtension("realm")
         let dbStorage = RealmDbStorage(url: url)
 
+        do {
+            try dbStorage.createCoordinator().perform(request: InitializeMyLibraryDbRequest())
+        } catch let error {
+            fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")
+        }
+
         self.apiClient = apiClient
         self.secureStorage = secureStorage
         self.dbStorage = dbStorage
@@ -44,7 +51,7 @@ class Controllers {
         }
     }
 
-    func sessionChanged(userId: Int64?) {
+    func sessionChanged(userId: Int?) {
         self.userControllers = userId.flatMap({ UserControllers(userId: $0, controllers: self) })
     }
 }
@@ -53,7 +60,7 @@ class Controllers {
 class UserControllers {
     let syncController: SyncController
 
-    init(userId: Int64, controllers: Controllers) {
+    init(userId: Int, controllers: Controllers) {
         self.syncController = SyncController(userId: userId,
                                              apiClient: controllers.apiClient,
                                              dbStorage: controllers.dbStorage)

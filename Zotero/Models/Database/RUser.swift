@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 class RUser: Object {
-    @objc dynamic var identifier: Int64 = 0
+    @objc dynamic var identifier: Int = 0
     @objc dynamic var name: String = ""
 
     override class func primaryKey() -> String? {

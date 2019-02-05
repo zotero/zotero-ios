@@ -15,11 +15,15 @@ enum DbError: Error {
 }
 
 protocol DbRequest {
+    var needsWrite: Bool { get }
+
     func process(in database: Realm) throws
 }
 
 protocol DbResponseRequest {
     associatedtype Response
+
+    var needsWrite: Bool { get }
 
     func process(in database: Realm) throws -> Response
 }

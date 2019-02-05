@@ -11,8 +11,10 @@ import Foundation
 import RealmSwift
 
 struct StoreUserDbRequest: DbRequest {
-    let identifier: Int64
+    let identifier: Int
     let name: String
+
+    var needsWrite: Bool { return false }
 
     init(loginResponse: LoginResponse) {
         self.identifier = loginResponse.userId

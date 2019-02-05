@@ -10,13 +10,13 @@ import Foundation
 
 struct LoginResponse {
     let key: String
-    let userId: Int64
+    let userId: Int
     let name: String
 }
 
 extension LoginResponse: Decodable {
     private enum Keys: String, CodingKey {
-        case key = "key"
+        case key
         case userId = "userID"
         case name = "username"
     }
@@ -24,7 +24,7 @@ extension LoginResponse: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: Keys.self)
         let key = try container.decode(String.self, forKey: .key)
-        let userId = try container.decode(Int64.self, forKey: .userId)
+        let userId = try container.decode(Int.self, forKey: .userId)
         let name = try container.decode(String.self, forKey: .name)
         self.init(key: key, userId: userId, name: name)
     }

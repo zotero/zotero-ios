@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RxSwift
+
 enum ApiParameterEncoding {
     case json, url
 }
@@ -39,4 +41,5 @@ protocol ApiClient: class {
     func set(authToken: String?)
     func send<Request: ApiRequest>(request: Request,
                                    completion: @escaping RequestCompletion<Request.Response>)
+    func send<Request: ApiRequest>(request: Request) -> Single<Request.Response>
 }

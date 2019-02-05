@@ -57,9 +57,13 @@ class AppDelegate: UIResponder {
     }
 
     @objc private func sessionChanged(_ notification: Notification) {
-        let userId = notification.object as? Int64
+        let userId = notification.object as? Int
         self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
         self.controllers.sessionChanged(userId: userId)
+
+        if let syncController = self.controllers.userControllers?.syncController {
+            syncController.startSync()
+        }
     }
 
     // MARK: - Setups

@@ -13,6 +13,8 @@ import RealmSwift
 struct ReadUserDbRequest: DbResponseRequest {
     typealias Response = RUser
 
+    var needsWrite: Bool { return false }
+
     func process(in database: Realm) throws -> RUser {
         guard let user = database.objects(RUser.self).first else {
             throw DbError.objectNotFound

@@ -20,6 +20,13 @@
 		B30D59B622072DF300884C4A /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B522072DF300884C4A /* AppStore.swift */; };
 		B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B722073C8F00884C4A /* UIColor+Custom.swift */; };
 		B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59BA2207451B00884C4A /* ApiClient.swift */; };
+		B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */; };
+		B30DF3F72209A140000B6DE2 /* GroupRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F62209A140000B6DE2 /* GroupRequest.swift */; };
+		B30DF3F92209A282000B6DE2 /* RGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F82209A282000B6DE2 /* RGroup.swift */; };
+		B30DF3FB2209A2BE000B6DE2 /* SyncGroupVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FA2209A2BE000B6DE2 /* SyncGroupVersionsDbRequest.swift */; };
+		B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */; };
+		B30DF3FF2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */; };
+		B30DF4012209E578000B6DE2 /* ReadGroupIdsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF4002209E578000B6DE2 /* ReadGroupIdsDbRequest.swift */; };
 		B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
 		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
@@ -87,6 +94,13 @@
 		B30D59B522072DF300884C4A /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		B30D59B722073C8F00884C4A /* UIColor+Custom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Custom.swift"; sourceTree = "<group>"; };
 		B30D59BA2207451B00884C4A /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupResponse.swift; sourceTree = "<group>"; };
+		B30DF3F62209A140000B6DE2 /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
+		B30DF3F82209A282000B6DE2 /* RGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGroup.swift; sourceTree = "<group>"; };
+		B30DF3FA2209A2BE000B6DE2 /* SyncGroupVersionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncGroupVersionsDbRequest.swift; sourceTree = "<group>"; };
+		B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreGroupDbRequest.swift; sourceTree = "<group>"; };
+		B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitializeMyLibraryDbRequest.swift; sourceTree = "<group>"; };
+		B30DF4002209E578000B6DE2 /* ReadGroupIdsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadGroupIdsDbRequest.swift; sourceTree = "<group>"; };
 		B323932A2208E0CF00B161B8 /* VersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionsRequest.swift; sourceTree = "<group>"; };
 		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
@@ -284,6 +298,7 @@
 			children = (
 				B36795EC22077CCD003D0471 /* LoginRequest.swift */,
 				B323932A2208E0CF00B161B8 /* VersionsRequest.swift */,
+				B30DF3F62209A140000B6DE2 /* GroupRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -311,6 +326,7 @@
 			isa = PBXGroup;
 			children = (
 				B385E2B42208755500DFE361 /* RUser.swift */,
+				B30DF3F82209A282000B6DE2 /* RGroup.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -318,8 +334,12 @@
 		B385E2BA2208866600DFE361 /* Requests */ = {
 			isa = PBXGroup;
 			children = (
+				B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */,
+				B30DF4002209E578000B6DE2 /* ReadGroupIdsDbRequest.swift */,
 				B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */,
 				B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */,
+				B30DF3FA2209A2BE000B6DE2 /* SyncGroupVersionsDbRequest.swift */,
+				B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -328,6 +348,7 @@
 			isa = PBXGroup;
 			children = (
 				B385E2C02208921200DFE361 /* LoginResponse.swift */,
+				B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -537,6 +558,10 @@
 				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
 				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
+				"${BUILT_PRODUCTS_DIR}/RxAlamofire/RxAlamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/RxAtomic/RxAtomic.framework",
+				"${BUILT_PRODUCTS_DIR}/RxCocoa/RxCocoa.framework",
+				"${BUILT_PRODUCTS_DIR}/RxSwift/RxSwift.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
@@ -546,6 +571,10 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAlamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAtomic.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxCocoa.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxSwift.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -586,6 +615,8 @@
 				B36795E222075710003D0471 /* Controllers.swift in Sources */,
 				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
+				B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */,
+				B30DF3F92209A282000B6DE2 /* RGroup.swift in Sources */,
 				B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
@@ -593,18 +624,23 @@
 				B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
 				B3D1C63522098607006D7281 /* SyncController.swift in Sources */,
+				B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */,
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
 				B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
+				B30DF3F72209A140000B6DE2 /* GroupRequest.swift in Sources */,
 				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
+				B30DF4012209E578000B6DE2 /* ReadGroupIdsDbRequest.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
+				B30DF3FB2209A2BE000B6DE2 /* SyncGroupVersionsDbRequest.swift in Sources */,
 				B36795DE220749B7003D0471 /* Result.swift in Sources */,
 				B36795F622078076003D0471 /* LoginViewController.swift in Sources */,
+				B30DF3FF2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift in Sources */,
 				B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
 			);

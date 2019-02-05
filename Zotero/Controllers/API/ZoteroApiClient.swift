@@ -9,6 +9,8 @@
 import UIKit
 
 import Alamofire
+import RxAlamofire
+import RxSwift
 
 struct ApiConstants {
     static var baseUrlString: String = "https://api.zotero.org/"
@@ -71,6 +73,23 @@ class ZoteroApiClient: ApiClient {
 
             completion(.failure(ZoteroApiError.unknown))
         }
+    }
+
+    func send<Request>(request: Request) -> PrimitiveSequence<SingleTrait, Request.Response> where Request : ApiRequest {
+        let convertible = Convertible(request: request, baseUrl: self.url,
+                                      token: self.token, headers: self.defaultHeaders)
+        return self.manager.rx.request(urlRequest: convertible)
+                              .validate()
+                              .responseData()
+                              .flatMap { response -> Observable<Request.Response> in
+                                  do {
+                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: response.1)
+                                      return Observable.just(decodedResponse)
+                                  } catch let error {
+                                      return Observable.error(error)
+                                  }
+                              }
+                              .asSingle()
     }
 }
 
