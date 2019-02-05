@@ -37,11 +37,6 @@ class AppDelegate: UIResponder {
             let sideNavigationController = UINavigationController(rootViewController: sideController)
             controller.viewControllers = [mainNavigationController, sideNavigationController]
             self.show(viewController: controller)
-
-            if let userId = (try? self.controllers.dbStorage.createCoordinator())?.perform(request: ReadUserDbRequest())?.identifier {
-                let request = GroupVersionsRequest(userId: userId)
-                self.controllers.apiClient.send(request: request) { _ in }
-            }
         }
     }
 
@@ -62,8 +57,9 @@ class AppDelegate: UIResponder {
     }
 
     @objc private func sessionChanged(_ notification: Notification) {
-        guard let isLoggedIn = notification.object as? Bool else { return }
-        self.store.handle(action: .change(isLoggedIn ? .main : .onboarding))
+        let userId = notification.object as? Int64
+        self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
+        self.controllers.sessionChanged(userId: userId)
     }
 
     // MARK: - Setups
@@ -76,23 +72,6 @@ class AppDelegate: UIResponder {
         })
     }
 
-    private func setupControllers() {
-        let secureStorage = KeychainSecureStorage()
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
-                                        headers: ["Zotero-API-Version": ApiConstants.version.description])
-        apiClient.set(authToken: secureStorage.apiToken)
-
-        let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .allDomainsMask, true).first ?? "/"
-        var url = URL(fileURLWithPath: path)
-        url.appendPathComponent("maindb")
-        url.appendPathExtension("realm")
-        let dbStorage = RealmDbStorage(url: url)
-
-        self.controllers = Controllers(apiClient: apiClient,
-                                       secureStorage: secureStorage,
-                                       dbStorage: dbStorage)
-    }
-
     private func setupObservers() {
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.sessionChanged(_:)),
                                                name: .sessionChanged, object: nil)
@@ -102,7 +81,7 @@ class AppDelegate: UIResponder {
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        self.setupControllers()
+        self.controllers = Controllers()
         self.setupObservers()
         self.setupStore()
 
@@ -124,7 +103,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        self.controllers.userControllers?.syncController.startSync()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

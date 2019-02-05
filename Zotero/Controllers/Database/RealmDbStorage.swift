@@ -58,8 +58,8 @@ extension RealmDbCoordinator: DbCoordinator {
         }
     }
 
-    func perform<Request>(request: Request) -> Request.Response where Request : DbResponseRequest {
-        return request.process(in: self.realm)
+    func perform<Request>(request: Request) throws -> Request.Response where Request : DbResponseRequest {
+        return try request.process(in: self.realm)
     }
 }
 

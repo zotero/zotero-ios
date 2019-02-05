@@ -113,7 +113,7 @@ class LoginStore: Store {
                     self.secureStorage.apiToken = response.key
                     self.apiClient.set(authToken: response.key)
 
-                    NotificationCenter.default.post(name: .sessionChanged, object: true)
+                    NotificationCenter.default.post(name: .sessionChanged, object: response.userId)
                 } catch let error {
                     self.updater.updateState { newState in
                         newState = .error(error)

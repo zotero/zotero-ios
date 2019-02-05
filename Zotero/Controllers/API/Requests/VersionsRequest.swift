@@ -1,5 +1,5 @@
 //
-//  GroupVersionsRequest.swift
+//  VersionsRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 04/02/2019.
@@ -8,13 +8,15 @@
 
 import Foundation
 
-struct GroupVersionsRequest: ApiRequest {
+struct VersionsRequest: ApiRequest {
     typealias Response = [Int: Int]
 
-    let userId: Int64
+    let groupType: SyncGroupType
+    let objectType: SyncObjectType
+    let version: Int?
 
     var path: String {
-        return "users/\(self.userId)/groups"
+        return "\(self.groupType.apiPath)/\(self.objectType.apiPath)"
     }
 
     var httpMethod: ApiHttpMethod {
@@ -26,6 +28,10 @@ struct GroupVersionsRequest: ApiRequest {
     }
 
     var parameters: [String : Any]? {
-        return ["format": "versions"]
+        var parameters: [String: Any] = ["format": "versions"]
+        if let version = self.version {
+            parameters["since"] = version
+        }
+        return parameters
     }
 }

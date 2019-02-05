@@ -11,9 +11,12 @@ import Foundation
 import RealmSwift
 
 struct ReadUserDbRequest: DbResponseRequest {
-    typealias Response = RUser?
+    typealias Response = RUser
 
-    func process(in database: Realm) -> RUser? {
-        return database.objects(RUser.self).first
+    func process(in database: Realm) throws -> RUser {
+        guard let user = database.objects(RUser.self).first else {
+            throw DbError.objectNotFound
+        }
+        return user
     }
 }

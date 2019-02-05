@@ -10,6 +10,10 @@ import Foundation
 
 import RealmSwift
 
+enum DbError: Error {
+    case objectNotFound
+}
+
 protocol DbRequest {
     func process(in database: Realm) throws
 }
@@ -17,11 +21,11 @@ protocol DbRequest {
 protocol DbResponseRequest {
     associatedtype Response
 
-    func process(in database: Realm) -> Response
+    func process(in database: Realm) throws -> Response
 }
 
 protocol DbCoordinator {
-    func perform<Request: DbResponseRequest>(request: Request) -> Request.Response
+    func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
     func perform<Request: DbRequest>(request: Request) throws
 }
 
