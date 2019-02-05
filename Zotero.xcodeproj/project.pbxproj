@@ -20,6 +20,8 @@
 		B30D59B622072DF300884C4A /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B522072DF300884C4A /* AppStore.swift */; };
 		B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59B722073C8F00884C4A /* UIColor+Custom.swift */; };
 		B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59BA2207451B00884C4A /* ApiClient.swift */; };
+		B323932B2208E0CF00B161B8 /* CollectionVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* CollectionVersionsRequest.swift */; };
+		B323932F2208E88300B161B8 /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932E2208E88300B161B8 /* GroupVersionsRequest.swift */; };
 		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
 		B36795E222075710003D0471 /* Controllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795E122075710003D0471 /* Controllers.swift */; };
@@ -85,6 +87,8 @@
 		B30D59B522072DF300884C4A /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		B30D59B722073C8F00884C4A /* UIColor+Custom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Custom.swift"; sourceTree = "<group>"; };
 		B30D59BA2207451B00884C4A /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		B323932A2208E0CF00B161B8 /* CollectionVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionVersionsRequest.swift; sourceTree = "<group>"; };
+		B323932E2208E88300B161B8 /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
 		B36795E122075710003D0471 /* Controllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controllers.swift; sourceTree = "<group>"; };
@@ -278,6 +282,8 @@
 			isa = PBXGroup;
 			children = (
 				B36795EC22077CCD003D0471 /* LoginRequest.swift */,
+				B323932A2208E0CF00B161B8 /* CollectionVersionsRequest.swift */,
+				B323932E2208E88300B161B8 /* GroupVersionsRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -576,10 +582,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */,
+				B323932F2208E88300B161B8 /* GroupVersionsRequest.swift in Sources */,
 				B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */,
 				B36795E222075710003D0471 /* Controllers.swift in Sources */,
 				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
+				B323932B2208E0CF00B161B8 /* CollectionVersionsRequest.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,

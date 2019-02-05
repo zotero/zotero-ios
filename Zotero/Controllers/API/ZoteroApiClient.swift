@@ -22,22 +22,26 @@ enum ZoteroApiError: Error {
 
 class ZoteroApiClient: ApiClient {
     private let url: URL
+    private let defaultHeaders: [String: String]
     private let manager: SessionManager
 
     private var token: String?
 
-    init(baseUrl: String, headers: [String: Any]? = nil) {
+    init(baseUrl: String, headers: [String: String]? = nil) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
 
         self.url = url
 
-        let configuration = URLSessionConfiguration.default
+        var allHeaders = SessionManager.defaultHTTPHeaders
         if let headers = headers {
-            configuration.httpAdditionalHeaders = headers
+            headers.forEach { data in
+                allHeaders[data.key] = data.value
+            }
         }
-        self.manager = SessionManager(configuration: configuration)
+        self.defaultHeaders = allHeaders
+        self.manager = SessionManager()
     }
 
     func set(authToken: String?) {
@@ -46,7 +50,8 @@ class ZoteroApiClient: ApiClient {
 
     func send<Request>(request: Request,
                        completion: @escaping RequestCompletion<Request.Response>) where Request : ApiRequest {  
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let convertible = Convertible(request: request, baseUrl: self.url,
+                                      token: self.token, headers: self.defaultHeaders)
         self.manager.request(convertible).validate().responseData { response in
             if let error = response.error {
                 completion(.failure(error))
@@ -75,13 +80,15 @@ fileprivate struct Convertible<Request: ApiRequest> {
     private let httpMethod: ApiHttpMethod
     private let encoding: ParameterEncoding
     private let parameters: [String: Any]?
+    private let headers: [String: String]
 
-    init(request: Request, baseUrl: URL, token: String?) {
+    init(request: Request, baseUrl: URL, token: String?, headers: [String: String]) {
         self.url = baseUrl.appendingPathComponent(request.path)
         self.token = token
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
+        self.headers = headers
     }
 }
 
@@ -89,6 +96,7 @@ extension Convertible: URLRequestConvertible {
     func asURLRequest() throws -> URLRequest {
         var request = URLRequest(url: self.url)
         request.httpMethod = self.httpMethod.rawValue
+        request.allHTTPHeaderFields = self.headers
         if let token = self.token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }

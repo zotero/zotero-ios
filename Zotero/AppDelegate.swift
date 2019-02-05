@@ -37,6 +37,11 @@ class AppDelegate: UIResponder {
             let sideNavigationController = UINavigationController(rootViewController: sideController)
             controller.viewControllers = [mainNavigationController, sideNavigationController]
             self.show(viewController: controller)
+
+            if let userId = (try? self.controllers.dbStorage.createCoordinator())?.perform(request: ReadUserDbRequest())?.identifier {
+                let request = GroupVersionsRequest(userId: userId)
+                self.controllers.apiClient.send(request: request) { _ in }
+            }
         }
     }
 
@@ -74,7 +79,7 @@ class AppDelegate: UIResponder {
     private func setupControllers() {
         let secureStorage = KeychainSecureStorage()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
-                                        headers: ["Zotero-API-Version": ApiConstants.version])
+                                        headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: secureStorage.apiToken)
 
         let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .allDomainsMask, true).first ?? "/"
