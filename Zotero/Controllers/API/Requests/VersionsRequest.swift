@@ -8,8 +8,8 @@
 
 import Foundation
 
-struct VersionsRequest: ApiRequest {
-    typealias Response = [Int: Int]
+struct VersionsRequest<Key: Decodable&Hashable>: ApiRequest {
+    typealias Response = [Key: Int]
 
     let groupType: SyncGroupType
     let objectType: SyncObjectType

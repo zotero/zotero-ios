@@ -28,6 +28,10 @@
 		B30DF3FF2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */; };
 		B30DF4012209E578000B6DE2 /* ReadGroupIdsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF4002209E578000B6DE2 /* ReadGroupIdsDbRequest.swift */; };
 		B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
+		B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */; };
+		B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
+		B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
+		B33FBA64220B2AFD005906C4 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA63220B2AFD005906C4 /* SyncModels.swift */; };
 		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
 		B36795E222075710003D0471 /* Controllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795E122075710003D0471 /* Controllers.swift */; };
@@ -51,7 +55,6 @@
 		B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C3220897B300DFE361 /* CollectionsViewController.xib */; };
 		B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C6220897C600DFE361 /* ItemsViewController.swift */; };
 		B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C7220897C600DFE361 /* ItemsViewController.xib */; };
-		B3D1C63522098607006D7281 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D1C63422098607006D7281 /* SyncController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +105,10 @@
 		B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitializeMyLibraryDbRequest.swift; sourceTree = "<group>"; };
 		B30DF4002209E578000B6DE2 /* ReadGroupIdsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadGroupIdsDbRequest.swift; sourceTree = "<group>"; };
 		B323932A2208E0CF00B161B8 /* VersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionsRequest.swift; sourceTree = "<group>"; };
+		B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Utils.swift"; sourceTree = "<group>"; };
+		B33FBA5F220B2AAD005906C4 /* SyncController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
+		B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionHandler.swift; sourceTree = "<group>"; };
+		B33FBA63220B2AFD005906C4 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
 		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
 		B36795E122075710003D0471 /* Controllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controllers.swift; sourceTree = "<group>"; };
@@ -125,7 +132,6 @@
 		B385E2C3220897B300DFE361 /* CollectionsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsViewController.xib; sourceTree = "<group>"; };
 		B385E2C6220897C600DFE361 /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B385E2C7220897C600DFE361 /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
-		B3D1C63422098607006D7281 /* SyncController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
 		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Zotero.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -231,9 +237,9 @@
 				B30D59B9220743EE00884C4A /* API */,
 				B385E2AF220854CD00DFE361 /* Database */,
 				B30D59A92206FECD00884C4A /* Stores */,
+				B33FBA5E220B2AAD005906C4 /* Sync */,
 				B36795E122075710003D0471 /* Controllers.swift */,
 				B36795FC22078F15003D0471 /* SecureStorage.swift */,
-				B3D1C63422098607006D7281 /* SyncController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -279,6 +285,7 @@
 				B30D59B722073C8F00884C4A /* UIColor+Custom.swift */,
 				B36795DD220749B7003D0471 /* Result.swift */,
 				B36795FE2207965F003D0471 /* UIViewController+Alert.swift */,
+				B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -291,6 +298,15 @@
 				B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */,
 			);
 			path = API;
+			sourceTree = "<group>";
+		};
+		B33FBA5E220B2AAD005906C4 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				B33FBA5F220B2AAD005906C4 /* SyncController.swift */,
+				B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */,
+			);
+			path = Sync;
 			sourceTree = "<group>";
 		};
 		B36795EB22077CCD003D0471 /* Requests */ = {
@@ -318,6 +334,7 @@
 			children = (
 				B385E2BF2208920A00DFE361 /* API */,
 				B385E2B32208754700DFE361 /* Database */,
+				B33FBA63220B2AFD005906C4 /* SyncModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -617,13 +634,14 @@
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
 				B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */,
 				B30DF3F92209A282000B6DE2 /* RGroup.swift in Sources */,
+				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
+				B33FBA64220B2AFD005906C4 /* SyncModels.swift in Sources */,
 				B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
 				B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
-				B3D1C63522098607006D7281 /* SyncController.swift in Sources */,
 				B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */,
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
@@ -636,7 +654,9 @@
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B30DF4012209E578000B6DE2 /* ReadGroupIdsDbRequest.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
+				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
+				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,
 				B30DF3FB2209A2BE000B6DE2 /* SyncGroupVersionsDbRequest.swift in Sources */,
 				B36795DE220749B7003D0471 /* Result.swift in Sources */,
 				B36795F622078076003D0471 /* LoginViewController.swift in Sources */,
