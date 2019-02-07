@@ -20,6 +20,15 @@ enum SyncGroupType: Equatable {
             return "users/\(identifier)"
         }
     }
+
+    var fileComponent: String {
+        switch self {
+        case .group(let identifier):
+            return "group\(identifier)"
+        case .user(let identifier):
+            return "user\(identifier)"
+        }
+    }
 }
 
 enum SyncObjectType {
@@ -37,6 +46,21 @@ enum SyncObjectType {
             return "items"
         case .trash:
             return "items/trash"
+        }
+    }
+
+    var fileComponent: String {
+        switch self {
+        case .group:
+            return "groups"
+        case .collection:
+            return "collections"
+        case .search:
+            return "searches"
+        case .item:
+            return "items"
+        case .trash:
+            return "trash"
         }
     }
 }

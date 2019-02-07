@@ -12,6 +12,7 @@ import RealmSwift
 
 enum DbError: Error {
     case objectNotFound
+    case primaryKeyUnavailable
 }
 
 protocol DbRequest {

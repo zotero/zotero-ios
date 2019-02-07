@@ -15,7 +15,7 @@ enum RealmDbError: Error {
 }
 
 class RealmDbStorage {
-    private static let schemaVersion: UInt64 = 2
+    private static let schemaVersion: UInt64 = 3
     private let config: Realm.Configuration
 
     init(config: Realm.Configuration) {
@@ -23,7 +23,7 @@ class RealmDbStorage {
     }
 
     convenience init(url: URL) {
-        var config = Realm.Configuration(fileURL: url,
+        let config = Realm.Configuration(fileURL: url,
                                          schemaVersion: RealmDbStorage.schemaVersion,
                                          migrationBlock: { _, _ in
             // TODO: Implement when needed

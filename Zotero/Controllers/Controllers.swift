@@ -15,13 +15,16 @@ class Controllers {
     let apiClient: ApiClient
     let secureStorage: SecureStorage
     let dbStorage: DbStorage
+    let fileStorage: FileStorage
 
     var userControllers: UserControllers?
 
     init() {
+        let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
-                                        headers: ["Zotero-API-Version": ApiConstants.version.description])
+                                        headers: ["Zotero-API-Version": ApiConstants.version.description],
+                                        fileStorage: fileStorage)
         apiClient.set(authToken: secureStorage.apiToken)
 
         let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .allDomainsMask, true).first ?? "/"
@@ -39,6 +42,7 @@ class Controllers {
         self.apiClient = apiClient
         self.secureStorage = secureStorage
         self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
 
         // Not logged in, don't setup user controllers
         if secureStorage.apiToken == nil { return }
@@ -62,7 +66,8 @@ class UserControllers {
 
     init(userId: Int, controllers: Controllers) {
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
-                                                      dbStorage: controllers.dbStorage)
+                                                      dbStorage: controllers.dbStorage,
+                                                      fileStorage: controllers.fileStorage)
         self.syncController = SyncController(userId: userId, handler: syncHandler)
     }
 }

@@ -12,6 +12,8 @@ struct GroupResponse {
     let identifier: Int
     let version: Int
     let data: GroupDataResponse
+
+    var responseHeaders: [AnyHashable : Any]
 }
 
 struct GroupDataResponse: Decodable {
@@ -24,7 +26,7 @@ struct GroupDataResponse: Decodable {
     let fileEditing: String
 }
 
-extension GroupResponse: Decodable {
+extension GroupResponse: ApiResponse {
     enum Keys: String, CodingKey {
         case identifier = "id"
         case data
@@ -36,6 +38,6 @@ extension GroupResponse: Decodable {
         let identifier = try container.decode(Int.self, forKey: .identifier)
         let version = try container.decode(Int.self, forKey: .version)
         let data = try container.decode(GroupDataResponse.self, forKey: .data)
-        self.init(identifier: identifier, version: version, data: data)
+        self.init(identifier: identifier, version: version, data: data, responseHeaders: [:])
     }
 }

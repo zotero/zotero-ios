@@ -19,6 +19,7 @@ struct ApiConstants {
 
 enum ZoteroApiError: Error {
     case unknown
+    case expired
     case jsonDecoding(Error)
 }
 
@@ -26,10 +27,11 @@ class ZoteroApiClient: ApiClient {
     private let url: URL
     private let defaultHeaders: [String: String]
     private let manager: SessionManager
+    private let fileStorage: FileStorage
 
     private var token: String?
 
-    init(baseUrl: String, headers: [String: String]? = nil) {
+    init(baseUrl: String, headers: [String: String]? = nil, fileStorage: FileStorage) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
@@ -43,6 +45,7 @@ class ZoteroApiClient: ApiClient {
             }
         }
         self.defaultHeaders = allHeaders
+        self.fileStorage = fileStorage
         self.manager = SessionManager()
     }
 
@@ -51,7 +54,7 @@ class ZoteroApiClient: ApiClient {
     }
 
     func send<Request>(request: Request,
-                       completion: @escaping RequestCompletion<Request.Response>) where Request : ApiRequest {  
+                       completion: @escaping RequestCompletion<Request.Response>) where Request : ApiResponseRequest {  
         let convertible = Convertible(request: request, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
         self.manager.request(convertible).validate().responseData { response in
@@ -62,7 +65,8 @@ class ZoteroApiClient: ApiClient {
 
             if let data = response.data {
                 do {
-                    let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
+                    var decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
+                    decodedResponse.responseHeaders = response.response?.allHeaderFields ?? [:]
                     completion(.success(decodedResponse))
                 } catch let error {
                     completion(.failure(ZoteroApiError.jsonDecoding(error)))
@@ -75,7 +79,7 @@ class ZoteroApiClient: ApiClient {
         }
     }
 
-    func send<Request>(request: Request) -> PrimitiveSequence<SingleTrait, Request.Response> where Request : ApiRequest {
+    func send<Request: ApiResponseRequest>(request: Request) -> Single<Request.Response> {
         let convertible = Convertible(request: request, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
         return self.manager.rx.request(urlRequest: convertible)
@@ -83,7 +87,9 @@ class ZoteroApiClient: ApiClient {
                               .responseData()
                               .flatMap { response -> Observable<Request.Response> in
                                   do {
-                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: response.1)
+                                      var decodedResponse = try JSONDecoder().decode(Request.Response.self,
+                                                                                     from: response.1)
+                                      decodedResponse.responseHeaders = response.0.allHeaderFields
                                       return Observable.just(decodedResponse)
                                   } catch let error {
                                       return Observable.error(error)
@@ -91,9 +97,28 @@ class ZoteroApiClient: ApiClient {
                               }
                               .asSingle()
     }
+
+    func download(request: ApiDownloadJsonRequest) -> Completable {
+        let convertible = Convertible(request: request, baseUrl: self.url,
+                                      token: self.token, headers: self.defaultHeaders)
+        return self.manager.rx.request(urlRequest: convertible)
+                              .validate()
+                              .responseData()
+                              .flatMap { [weak self] response -> Observable<()> in
+                                  guard let `self` = self else { return Observable.error(ZoteroApiError.expired) }
+                                  do {
+                                      try self.fileStorage.write(response.1, to: request.file,
+                                                                 options: [.noFileProtection, .withoutOverwriting])
+                                      return Observable.just(())
+                                  } catch let error {
+                                      return Observable.error(error)
+                                  }
+                              }
+                              .asSingle().asCompletable()
+    }
 }
 
-fileprivate struct Convertible<Request: ApiRequest> {
+fileprivate struct Convertible {
     private let url: URL
     private let token: String?
     private let httpMethod: ApiHttpMethod
@@ -101,7 +126,7 @@ fileprivate struct Convertible<Request: ApiRequest> {
     private let parameters: [String: Any]?
     private let headers: [String: String]
 
-    init(request: Request, baseUrl: URL, token: String?, headers: [String: String]) {
+    init(request: ApiRequest, baseUrl: URL, token: String?, headers: [String: String]) {
         self.url = baseUrl.appendingPathComponent(request.path)
         self.token = token
         self.httpMethod = request.httpMethod

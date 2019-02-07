@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct LoginRequest: ApiRequest {
+struct LoginRequest: ApiResponseRequest {
     typealias Response = LoginResponse
 
     var path: String {
