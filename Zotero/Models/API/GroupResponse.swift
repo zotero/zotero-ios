@@ -9,24 +9,22 @@
 import Foundation
 
 struct GroupResponse {
+    struct Data: Decodable {
+        let name: String
+        let owner: Int
+        let type: String
+        let description: String
+        let libraryEditing: String
+        let libraryReading: String
+        let fileEditing: String
+    }
+
     let identifier: Int
     let version: Int
-    let data: GroupDataResponse
-
-    var responseHeaders: [AnyHashable : Any]
+    let data: GroupResponse.Data
 }
 
-struct GroupDataResponse: Decodable {
-    let name: String
-    let owner: Int
-    let type: String
-    let description: String
-    let libraryEditing: String
-    let libraryReading: String
-    let fileEditing: String
-}
-
-extension GroupResponse: ApiResponse {
+extension GroupResponse: Decodable {
     enum Keys: String, CodingKey {
         case identifier = "id"
         case data
@@ -37,7 +35,7 @@ extension GroupResponse: ApiResponse {
         let container = try decoder.container(keyedBy: Keys.self)
         let identifier = try container.decode(Int.self, forKey: .identifier)
         let version = try container.decode(Int.self, forKey: .version)
-        let data = try container.decode(GroupDataResponse.self, forKey: .data)
-        self.init(identifier: identifier, version: version, data: data, responseHeaders: [:])
+        let data = try container.decode(GroupResponse.Data.self, forKey: .data)
+        self.init(identifier: identifier, version: version, data: data)
     }
 }

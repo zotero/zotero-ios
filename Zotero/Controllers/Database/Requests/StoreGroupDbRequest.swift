@@ -16,7 +16,8 @@ struct StoreGroupDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let group = try database.autocreatedObject(ofType: RGroup.self, forPrimaryKey: self.response.identifier)
+        let group = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: self.response.identifier).1
+        
         group.name = self.response.data.name
         group.desc = self.response.data.description
         group.owner = self.response.data.owner
@@ -25,5 +26,12 @@ struct StoreGroupDbRequest: DbRequest {
         group.libraryEditing = self.response.data.libraryEditing
         group.fileEditing = self.response.data.fileEditing
         group.version = self.response.version
+        group.needsSync = false
+
+        if group.versions == nil {
+            let versions = RVersions()
+            database.add(versions)
+            group.versions = versions
+        }
     }
 }

@@ -22,26 +22,23 @@ class Controllers {
     init() {
         let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
+        secureStorage.apiToken = nil
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
-                                        headers: ["Zotero-API-Version": ApiConstants.version.description],
-                                        fileStorage: fileStorage)
+                                        headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: secureStorage.apiToken)
 
-        let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .allDomainsMask, true).first ?? "/"
-        var url = URL(fileURLWithPath: path)
-        url.appendPathComponent("maindb")
-        url.appendPathExtension("realm")
-        let dbStorage = RealmDbStorage(url: url)
-
         do {
+            let file = Files.dbFile
+            try fileStorage.createDictionaries(for: file)
+            let dbStorage = RealmDbStorage(url: file.createUrl())
             try dbStorage.createCoordinator().perform(request: InitializeMyLibraryDbRequest())
+            self.dbStorage = dbStorage
         } catch let error {
             fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")
         }
 
         self.apiClient = apiClient
         self.secureStorage = secureStorage
-        self.dbStorage = dbStorage
         self.fileStorage = fileStorage
 
         // Not logged in, don't setup user controllers

@@ -16,4 +16,5 @@ protocol IdentifiableObject: class {
 
 protocol VersionableObject: class {
     var version: Int { get set }
+    var needsSync: Bool { get set }
 }

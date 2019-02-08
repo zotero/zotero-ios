@@ -14,7 +14,7 @@ struct StoreUserDbRequest: DbRequest {
     let identifier: Int
     let name: String
 
-    var needsWrite: Bool { return false }
+    var needsWrite: Bool { return true }
 
     init(loginResponse: LoginResponse) {
         self.identifier = loginResponse.userId
@@ -22,7 +22,7 @@ struct StoreUserDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        let user = try database.autocreatedObject(ofType: RUser.self, forPrimaryKey: self.identifier)
+        let user = try database.autocreatedObject(ofType: RUser.self, forPrimaryKey: self.identifier).1
         user.name = self.name
     }
 }

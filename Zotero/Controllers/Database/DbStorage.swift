@@ -13,6 +13,7 @@ import RealmSwift
 enum DbError: Error {
     case objectNotFound
     case primaryKeyUnavailable
+    case primaryKeyWrongType
 }
 
 protocol DbRequest {
@@ -31,7 +32,7 @@ protocol DbResponseRequest {
 
 protocol DbCoordinator {
     func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
-    func perform<Request: DbRequest>(request: Request) throws
+    func perform(request: DbRequest) throws
 }
 
 protocol DbStorage: class {

@@ -107,13 +107,13 @@ class LoginStore: Store {
             switch result {
             case .success(let response):
                 do {
-                    let request = StoreUserDbRequest(loginResponse: response)
+                    let request = StoreUserDbRequest(loginResponse: response.0)
                     try self.dbStorage.createCoordinator().perform(request: request)
 
-                    self.secureStorage.apiToken = response.key
-                    self.apiClient.set(authToken: response.key)
+                    self.secureStorage.apiToken = response.0.key
+                    self.apiClient.set(authToken: response.0.key)
 
-                    NotificationCenter.default.post(name: .sessionChanged, object: response.userId)
+                    NotificationCenter.default.post(name: .sessionChanged, object: response.0.userId)
                 } catch let error {
                     self.updater.updateState { newState in
                         newState = .error(error)

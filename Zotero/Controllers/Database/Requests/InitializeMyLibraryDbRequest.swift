@@ -15,7 +15,7 @@ struct InitializeMyLibraryDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let myLibrary = try database.autocreatedObject(ofType: RGroup.self, forPrimaryKey: RGroup.myLibraryId)
+        let myLibrary = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: RLibrary.myLibraryId).1
         myLibrary.name = "My Library"
     }
 }

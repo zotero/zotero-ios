@@ -8,16 +8,15 @@
 
 import Foundation
 
-struct ObjectsRequest: ApiDownloadJsonRequest {
+struct ObjectsRequest: ApiRequest {
     let groupType: SyncGroupType
     let objectType: SyncObjectType
-    let version: Int?
-    let file: File
+    let keys: [Any]
 
     var path: String {
-//        if self.objectType == .group {
-//            return
-//        }
+        if self.objectType == .group, let key = self.keys.first {
+            return "groups/\(key)"
+        }
         return "\(self.groupType.apiPath)/\(self.objectType.apiPath)"
     }
 
@@ -30,9 +29,15 @@ struct ObjectsRequest: ApiDownloadJsonRequest {
     }
 
     var parameters: [String : Any]? {
-//        switch self.objectType {
-//            case .
-//        }
-        return nil
+        switch self.objectType {
+        case .group:
+            return nil
+        case .collection:
+            return ["collectionKey": self.keys]
+        case .item, .trash:
+            return ["itemKey": self.keys]
+        case .search:
+            return ["searchKey": self.keys]
+        }
     }
 }

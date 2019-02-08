@@ -22,4 +22,8 @@ struct Files {
                         relativeComponents: ["sync", group.fileComponent, object.fileComponent, version.description],
                         name: index.description, ext: "json")
     }
+
+    static var dbFile: File {
+        return FileData(rootPath: Files.documentsRootPath, relativeComponents: [], name: "maindb", ext: "realm")
+    }
 }

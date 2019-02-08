@@ -1,5 +1,5 @@
 //
-//  RGroup.swift
+//  RLibrary.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 05/02/2019.
@@ -10,7 +10,11 @@ import Foundation
 
 import RealmSwift
 
-class RGroup: Object {
+enum LibraryType {
+    case user, group
+}
+
+class RLibrary: Object {
     static let myLibraryId: Int = -1
 
     @objc dynamic var identifier: Int = 0
@@ -22,6 +26,15 @@ class RGroup: Object {
     @objc dynamic var libraryEditing: String = ""
     @objc dynamic var fileEditing: String = ""
     @objc dynamic var version: Int = 0
+    @objc dynamic var needsSync: Bool = false
+    @objc dynamic var versions: RVersions?
+
+    let collections = LinkingObjects(fromType: RCollection.self, property: "library")
+    let items = LinkingObjects(fromType: RItem.self, property: "library")
+
+    var libraryType: LibraryType {
+        return self.identifier == RLibrary.myLibraryId ? .user : .group
+    }
 
     override class func primaryKey() -> String? {
         return "identifier"

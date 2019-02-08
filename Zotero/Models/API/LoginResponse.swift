@@ -12,11 +12,9 @@ struct LoginResponse {
     let key: String
     let userId: Int
     let name: String
-
-    var responseHeaders: [AnyHashable : Any]
 }
 
-extension LoginResponse: ApiResponse {
+extension LoginResponse: Decodable {
     private enum Keys: String, CodingKey {
         case key
         case userId = "userID"
@@ -28,6 +26,6 @@ extension LoginResponse: ApiResponse {
         let key = try container.decode(String.self, forKey: .key)
         let userId = try container.decode(Int.self, forKey: .userId)
         let name = try container.decode(String.self, forKey: .name)
-        self.init(key: key, userId: userId, name: name, responseHeaders: [:])
+        self.init(key: key, userId: userId, name: name)
     }
 }

@@ -27,11 +27,10 @@ class ZoteroApiClient: ApiClient {
     private let url: URL
     private let defaultHeaders: [String: String]
     private let manager: SessionManager
-    private let fileStorage: FileStorage
 
     private var token: String?
 
-    init(baseUrl: String, headers: [String: String]? = nil, fileStorage: FileStorage) {
+    init(baseUrl: String, headers: [String: String]? = nil) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
@@ -45,7 +44,6 @@ class ZoteroApiClient: ApiClient {
             }
         }
         self.defaultHeaders = allHeaders
-        self.fileStorage = fileStorage
         self.manager = SessionManager()
     }
 
@@ -53,8 +51,8 @@ class ZoteroApiClient: ApiClient {
         self.token = authToken
     }
 
-    func send<Request>(request: Request,
-                       completion: @escaping RequestCompletion<Request.Response>) where Request : ApiResponseRequest {  
+    func send<Request: ApiResponseRequest>(request: Request,
+                                           completion: @escaping RequestCompletion<(Request.Response, ResponseHeaders)>) {
         let convertible = Convertible(request: request, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
         self.manager.request(convertible).validate().responseData { response in
@@ -65,9 +63,9 @@ class ZoteroApiClient: ApiClient {
 
             if let data = response.data {
                 do {
-                    var decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
-                    decodedResponse.responseHeaders = response.response?.allHeaderFields ?? [:]
-                    completion(.success(decodedResponse))
+                    let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
+                    let headers = response.response?.allHeaderFields ?? [:]
+                    completion(.success((decodedResponse, headers)))
                 } catch let error {
                     completion(.failure(ZoteroApiError.jsonDecoding(error)))
                 }
@@ -79,18 +77,17 @@ class ZoteroApiClient: ApiClient {
         }
     }
 
-    func send<Request: ApiResponseRequest>(request: Request) -> Single<Request.Response> {
+    func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)> {
         let convertible = Convertible(request: request, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseData()
-                              .flatMap { response -> Observable<Request.Response> in
+                              .flatMap { response -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
-                                      var decodedResponse = try JSONDecoder().decode(Request.Response.self,
+                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self,
                                                                                      from: response.1)
-                                      decodedResponse.responseHeaders = response.0.allHeaderFields
-                                      return Observable.just(decodedResponse)
+                                      return Observable.just((decodedResponse, response.0.allHeaderFields))
                                   } catch let error {
                                       return Observable.error(error)
                                   }
@@ -98,23 +95,16 @@ class ZoteroApiClient: ApiClient {
                               .asSingle()
     }
 
-    func download(request: ApiDownloadJsonRequest) -> Completable {
-        let convertible = Convertible(request: request, baseUrl: self.url,
+    func send(dataRequest: ApiRequest) -> Single<(Data, [AnyHashable : Any])> {
+        let convertible = Convertible(request: dataRequest, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
         return self.manager.rx.request(urlRequest: convertible)
-                              .validate()
-                              .responseData()
-                              .flatMap { [weak self] response -> Observable<()> in
-                                  guard let `self` = self else { return Observable.error(ZoteroApiError.expired) }
-                                  do {
-                                      try self.fileStorage.write(response.1, to: request.file,
-                                                                 options: [.noFileProtection, .withoutOverwriting])
-                                      return Observable.just(())
-                                  } catch let error {
-                                      return Observable.error(error)
-                                  }
-                              }
-                              .asSingle().asCompletable()
+                                .validate()
+                                .responseData()
+                                .flatMap { response -> Observable<(Data, [AnyHashable : Any])> in
+                                    return Observable.just((response.1, response.0.allHeaderFields))
+                                }
+                                .asSingle()
     }
 }
 

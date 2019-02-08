@@ -26,10 +26,6 @@ enum ApiHttpMethod: String {
     case connect = "CONNECT"
 }
 
-protocol ApiResponse: Decodable {
-    var responseHeaders: [AnyHashable: Any] { get set }
-}
-
 protocol ApiRequest {
     var path: String { get }
     var httpMethod: ApiHttpMethod { get }
@@ -38,18 +34,16 @@ protocol ApiRequest {
 }
 
 protocol ApiResponseRequest: ApiRequest {
-    associatedtype Response: ApiResponse
-}
-
-protocol ApiDownloadJsonRequest: ApiRequest {
-    var file: File { get }
+    associatedtype Response: Decodable
 }
 
 typealias RequestCompletion<Response> = (Result<Response>) -> Void
+typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: class {
     func set(authToken: String?)
-    func send<Request: ApiResponseRequest>(request: Request, completion: @escaping RequestCompletion<Request.Response>)
-    func send<Request: ApiResponseRequest>(request: Request) -> Single<Request.Response>
-    func download(request: ApiDownloadJsonRequest) -> Completable
+    func send<Request: ApiResponseRequest>(request: Request,
+                                           completion: @escaping RequestCompletion<(Request.Response, ResponseHeaders)>)
+    func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
+    func send(dataRequest: ApiRequest) -> Single<(Data, ResponseHeaders)>
 }

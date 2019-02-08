@@ -9,7 +9,7 @@
 import Foundation
 
 struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
-    typealias Response = VersionsResponse<Key>
+    typealias Response = [Key: Int]
 
     let groupType: SyncGroupType
     let objectType: SyncObjectType

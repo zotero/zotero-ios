@@ -12,7 +12,14 @@ import RealmSwift
 
 class RItem: Object {
     @objc dynamic var identifier: String = ""
+    @objc dynamic var title: String = ""
     @objc dynamic var version: Int = 0
+    @objc dynamic var needsSync: Bool = false
+    @objc dynamic var parent: RItem?
+    @objc dynamic var library: RLibrary?
+    let collections: List<RCollection> = List()
+
+    let children = LinkingObjects(fromType: RItem.self, property: "parent")
 
     override class func primaryKey() -> String? {
         return "identifier"
