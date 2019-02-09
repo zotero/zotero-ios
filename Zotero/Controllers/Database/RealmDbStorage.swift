@@ -15,7 +15,7 @@ enum RealmDbError: Error {
 }
 
 class RealmDbStorage {
-    private static let schemaVersion: UInt64 = 4
+    private static let schemaVersion: UInt64 = 5
     private let config: Realm.Configuration
 
     init(config: Realm.Configuration) {
@@ -48,7 +48,7 @@ class RealmDbCoordinator {
 }
 
 extension RealmDbCoordinator: DbCoordinator {
-    func perform(request: DbRequest) throws {
+    func perform<Request>(request: Request) throws where Request : DbRequest {
         if !request.needsWrite {
             try request.process(in: self.realm)
             return

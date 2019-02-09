@@ -26,7 +26,10 @@ struct StoreItemsDbRequest: DbRequest {
         let item = try database.autocreatedObject(ofType: RItem.self, forPrimaryKey: data.identifier).1
         item.title = data.data.title
         item.version = data.version
+        item.trash = data.data.isTrash
         item.needsSync = false
+        item.parent = nil
+        item.library = nil
         item.collections.removeAll()
 
         let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)

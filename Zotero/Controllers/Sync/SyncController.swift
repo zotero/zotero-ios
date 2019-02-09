@@ -101,6 +101,7 @@ final class SyncController {
     private var needsResync: Bool
     private var isResyncing: Bool
     private var lastReturnedVersion: Int?
+    private var isInitial: Bool
 
     private var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty || self.needsResync
@@ -115,11 +116,12 @@ final class SyncController {
         self.nonFatalErrors = []
         self.needsResync = false
         self.isResyncing = false
+        self.isInitial = false
     }
 
     // MARK: - Sync management
 
-    func startSync() {
+    func startSync(isInitial: Bool = false) {
         self.startSync(isResync: false)
     }
 
@@ -130,6 +132,7 @@ final class SyncController {
                 self.needsResync = false
                 self.isResyncing = true
             }
+            self.isInitial = true
             self.queue.append(.syncVersions(.user(self.userId), .group, nil))
             self.processNextAction()
         }
@@ -196,6 +199,7 @@ final class SyncController {
         self.needsResync = false
         self.isResyncing = false
         self.lastReturnedVersion = nil
+        self.isInitial = false
     }
 
     // MARK: - Error handling
@@ -238,7 +242,7 @@ final class SyncController {
         if self.reportFinish != nil {
             self.allActions.append(action)
         }
-
+        NSLog("--- \(action) ---")
         self.processingAction = action
         self.process(action: action)
     }
@@ -250,7 +254,8 @@ final class SyncController {
         case .createGroupActions:
             self.startAllGroupsSync()
         case .syncVersions(let groupType, let objectType, let version):
-            self.processSyncVersionsAction(group: groupType, object: objectType, since: version)
+            let forcedVersion = self.isInitial ? nil : version
+            self.processSyncVersionsAction(group: groupType, object: objectType, since: forcedVersion)
         case .syncObjectToFile(let action):
             self.processFileStoreAction(action)
         case .syncObjectToDb(let action):
@@ -446,6 +451,10 @@ final class SyncController {
     }
 
     private func processStoreVersionAction(group: SyncGroupType, object: SyncObjectType, version: Int) {
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            self?.lastReturnedVersion = nil
+        }
+
         self.handler.storeVersion(version, for: group, object: object)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishProcessingStoreVersionAction(result: .success(()))

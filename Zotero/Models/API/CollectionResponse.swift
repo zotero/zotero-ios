@@ -47,7 +47,14 @@ extension CollectionResponse.Data: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CollectionResponse.Data.Keys.self)
         let name = try container.decode(String.self, forKey: .name)
-        let parent = try container.decodeIfPresent(String.self, forKey: .parentCollection)
+        var parent: String?
+        // Try to decode this one silently. There is a little catch on backend. When no parent is assigned, the value
+        // on backend is "false". When parent is assigned, there is a String identifier.
+        // So when I try to decode as String it throws an error about type mismatch. So I just try to parse
+        // and if data doesn't match it's not available and stays nil.
+        do {
+            parent = try container.decodeIfPresent(String.self, forKey: .parentCollection)
+        } catch {}
         self.init(name: name, parentCollection: parent)
     }
 }

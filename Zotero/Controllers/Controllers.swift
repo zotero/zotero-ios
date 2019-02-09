@@ -22,7 +22,6 @@ class Controllers {
     init() {
         let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
-        secureStorage.apiToken = nil
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
                                         headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: secureStorage.apiToken)

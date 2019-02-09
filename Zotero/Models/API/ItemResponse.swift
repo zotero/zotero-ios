@@ -14,6 +14,7 @@ struct ItemResponse {
         let title: String
         let parentItem: String?
         let collections: [String]?
+        let isTrash: Bool
     }
 
     let identifier: String
@@ -42,7 +43,7 @@ extension ItemResponse: Decodable {
 
 extension ItemResponse.Data: Decodable {
     private enum Keys: String, CodingKey {
-        case itemType, title, parentItem, collections
+        case itemType, title, parentItem, collections, deleted
     }
 
     init(from decoder: Decoder) throws {
@@ -51,6 +52,8 @@ extension ItemResponse.Data: Decodable {
         let title = try container.decode(String.self, forKey: .title)
         let parentItem = try container.decodeIfPresent(String.self, forKey: .parentItem)
         let collections = try container.decodeIfPresent([String].self, forKey: .collections)
-        self.init(itemType: itemType, title: title, parentItem: parentItem, collections: collections)
+        let deleted = try container.decodeIfPresent(Int.self, forKey: .deleted)
+        self.init(itemType: itemType, title: title, parentItem: parentItem,
+                  collections: collections, isTrash: (deleted == 1))
     }
 }

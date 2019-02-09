@@ -18,3 +18,7 @@ protocol VersionableObject: class {
     var version: Int { get set }
     var needsSync: Bool { get set }
 }
+
+protocol LibraryChildObject: class {
+    var libraryId: Int? { get }
+}

@@ -17,5 +17,10 @@ struct InitializeMyLibraryDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let myLibrary = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: RLibrary.myLibraryId).1
         myLibrary.name = "My Library"
+        if myLibrary.versions == nil {
+            let versions = RVersions()
+            database.add(versions)
+            myLibrary.versions = versions
+        }
     }
 }

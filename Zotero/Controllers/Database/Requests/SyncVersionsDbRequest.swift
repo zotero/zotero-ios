@@ -28,13 +28,15 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     typealias Response = [Obj.IdType]
 
     let versions: [Obj.IdType: Int]
-    let isGroupSync: Bool
+    let libraryId: Int?
+    let isTrash: Bool
 
     var needsWrite: Bool { return true }
 
-    init(versions: [Obj.IdType: Int], isGroupSync: Bool = false) {
+    init(versions: [Obj.IdType: Int], parentLibraryId: Int?, isTrash: Bool) {
         self.versions = versions
-        self.isGroupSync = isGroupSync
+        self.libraryId = parentLibraryId
+        self.isTrash = isTrash
     }
 
     func process(in database: Realm) throws -> [Obj.IdType] {
@@ -42,8 +44,13 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
         let allKeys = Array(self.versions.keys)
         // Remove groups which are not in versions dictionary
         var toRemove = database.objects(Obj.self).filter("NOT \(primaryKeyName) IN %@", allKeys)
-        if self.isGroupSync {
+        if let identifier = self.libraryId {
+            toRemove = toRemove.filter("library.identifier = %d", identifier)
+        } else {
             toRemove = toRemove.filter("\(primaryKeyName) != %d", RLibrary.myLibraryId)
+        }
+        if self.isTrash {
+            toRemove = toRemove.filter("trash = true")
         }
         database.delete(toRemove)
 

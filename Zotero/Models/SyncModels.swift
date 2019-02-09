@@ -29,6 +29,15 @@ public enum SyncGroupType: Equatable {
             return "user\(identifier)"
         }
     }
+
+    var libraryId: Int {
+        switch self {
+        case .group(let identifier):
+            return identifier
+        case .user(let identifier):
+            return identifier
+        }
+    }
 }
 
 public enum SyncObjectType: Equatable {

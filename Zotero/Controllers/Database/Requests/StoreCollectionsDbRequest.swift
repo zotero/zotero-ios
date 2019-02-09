@@ -26,6 +26,8 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.name = data.data.name
         collection.version = data.version
         collection.needsSync = false
+        collection.library = nil
+        collection.parent = nil
 
         let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
         if libraryData.0 {

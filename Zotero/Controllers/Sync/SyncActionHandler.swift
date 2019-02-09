@@ -110,14 +110,20 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap { response -> Single<(Int, [Any])> in
-                                 let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
+                                  let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
 
-                                 if let current = currentVersion, newVersion != current {
-                                     return Single.error(SyncActionHandlerError.versionMismatch)
-                                 }
+                                  if let current = currentVersion, newVersion != current {
+                                      return Single.error(SyncActionHandlerError.versionMismatch)
+                                  }
 
-                                 let request = SyncVersionsDbRequest<Obj>(versions: response.0,
-                                                                          isGroupSync: (object == .group))
+                                  var libraryId: Int?
+                                  if object != .group {
+                                      libraryId = group.libraryId
+                                  }
+
+                                  let request = SyncVersionsDbRequest<Obj>(versions: response.0,
+                                                                           parentLibraryId: libraryId,
+                                                                           isTrash: (object == .trash))
                                   do {
                                       let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
                                       return Single.just((newVersion, identifiers))
@@ -226,19 +232,19 @@ extension SyncActionHandlerController: SyncActionHandler {
         guard !keys.isEmpty else { return Completable.empty() }
 
         do {
-            let request: DbRequest
             switch object {
             case .group:
-                request = try MarkForResyncDbAction<RLibrary>(keys: keys)
+                let request = try MarkForResyncDbAction<RLibrary>(keys: keys)
+                try self.dbStorage.createCoordinator().perform(request: request)
             case .collection:
-                request = try MarkForResyncDbAction<RCollection>(keys: keys)
+                let request = try MarkForResyncDbAction<RCollection>(keys: keys)
+                try self.dbStorage.createCoordinator().perform(request: request)
             case .item, .trash:
-                request = try MarkForResyncDbAction<RItem>(keys: keys)
+                let request = try MarkForResyncDbAction<RItem>(keys: keys)
+                try self.dbStorage.createCoordinator().perform(request: request)
             case .search:
                 return Completable.empty()
             }
-
-            try self.dbStorage.createCoordinator().perform(request: request)
 
             return Completable.empty()
         } catch let error {
