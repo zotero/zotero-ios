@@ -18,11 +18,23 @@ enum SyncError: Error {
     case apiError
     case dbError
     case versionMismatch
-    // Non-fatal errors
     case allGroupsFetchFailed(Error)
 }
 
-fileprivate struct ObjectAction {
+extension SyncError: Equatable {
+    static func ==(lhs: SyncError, rhs: SyncError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noInternetConnection, .noInternetConnection), (.apiError, .apiError), (.dbError, .dbError),
+             (.versionMismatch, .versionMismatch),
+             (.allGroupsFetchFailed, .allGroupsFetchFailed):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+struct ObjectAction {
     static var maxObjectCount = 50
 
     let order: Int
@@ -32,7 +44,7 @@ fileprivate struct ObjectAction {
     let version: Int
 }
 
-fileprivate enum QueueAction {
+enum QueueAction: Equatable {
     case syncVersions(SyncGroupType, SyncObjectType, Int?)      // Fetch versions from API, update DB based on response
     case syncObjectToFile(ObjectAction)                         // Fetch data for new/updated objects, store to files
     case createGroupActions                                     // Load all groups, spawn actions for each group
@@ -50,6 +62,28 @@ fileprivate enum QueueAction {
         case .storeVersion(_, let group, _):
             return group
         }
+    }
+}
+
+extension ObjectAction: Equatable {
+    public static func ==(lhs: ObjectAction, rhs: ObjectAction) -> Bool {
+        if lhs.keys.count != rhs.keys.count {
+            return false
+        }
+        for i in 0..<lhs.keys.count {
+            if let lInt = lhs.keys[i] as? Int, let rInt = rhs.keys[i] as? Int {
+                if lInt != rInt {
+                    return false
+                }
+            } else if let lStr = lhs.keys[i] as? String, let rStr = rhs.keys[i] as? String {
+                if lStr != rStr {
+                    return false
+                }
+            } else {
+                return false
+            }
+        }
+        return lhs.order == rhs.order && lhs.group == rhs.group && lhs.object == rhs.object && lhs.version == rhs.version
     }
 }
 
@@ -106,6 +140,10 @@ final class SyncController {
             guard let `self` = self else { return }
 
             let errors = self.nonFatalErrors
+
+            self.reportFinish?(.success((self.allActions, errors)))
+            self.reportFinish = nil
+
             if !errors.isEmpty {
                 inMainThread {
                     self.report(nonFatalErrors: errors)
@@ -121,6 +159,9 @@ final class SyncController {
         inMainThread {
             self.report(fatalError: error)
         }
+
+        self.reportFinish?(.failure(error))
+        self.reportFinish = nil
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
@@ -193,6 +234,11 @@ final class SyncController {
         }
 
         let action = self.queue.removeFirst()
+
+        if self.reportFinish != nil {
+            self.allActions.append(action)
+        }
+
         self.processingAction = action
         self.process(action: action)
     }
@@ -231,7 +277,7 @@ final class SyncController {
                     .subscribe(onSuccess: { [weak self] groupTypes in
                         self?.createVersionActions(from: .success(groupTypes))
                     }, onError: { [weak self] error in
-                        self?.createVersionActions(from: .failure(SyncError.allGroupsFetchFailed(error)))
+                        self?.createVersionActions(from: .failure(error))
                     })
                     .disposed(by: self.disposeBag)
     }
@@ -239,7 +285,7 @@ final class SyncController {
     private func createVersionActions(from result: Result<[(SyncGroupType, Versions)]>) {
         switch result {
         case .failure(let error):
-            self.abortSync(error: error)
+            self.abortSync(error: SyncError.allGroupsFetchFailed(error))
 
         case .success(let groupData):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -513,5 +559,17 @@ final class SyncController {
             self.processNextAction()
         }
         return true
+    }
+
+    // MARK: - Testing
+
+    private var reportFinish: ((Result<([QueueAction], [Error])>) -> Void)?
+    private var allActions: [QueueAction] = []
+
+    func start(with queue: [QueueAction], finishedAction: @escaping (Result<([QueueAction], [Error])>) -> Void) {
+        self.queue = queue
+        self.allActions = []
+        self.reportFinish = finishedAction
+        self.processNextAction()
     }
 }

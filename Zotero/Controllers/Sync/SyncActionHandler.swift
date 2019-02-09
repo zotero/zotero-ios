@@ -10,7 +10,7 @@ import Foundation
 
 import RxSwift
 
-enum SyncActionHandlerError: Error {
+enum SyncActionHandlerError: Error, Equatable {
     case expired
     case versionMismatch
 }
@@ -20,6 +20,13 @@ struct Versions {
     let items: Int
     let trash: Int
     let searches: Int
+
+    init(collections: Int, items: Int, trash: Int, searches: Int) {
+        self.collections = collections
+        self.items = items
+        self.trash = trash
+        self.searches = searches
+    }
 
     init(versions: RVersions?) {
         self.collections = versions?.collections ?? 0

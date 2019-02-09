@@ -1,6 +1,8 @@
 PODS:
   - Alamofire (4.8.0)
   - KeychainSwift (13.0.0)
+  - Nimble (7.3.1)
+  - Quick (1.3.2)
   - Realm (3.13.1):
     - Realm/Headers (= 3.13.1)
   - Realm/Headers (3.13.1)
@@ -20,8 +22,10 @@ PODS:
 DEPENDENCIES:
   - Alamofire (= 4.8.0)
   - KeychainSwift (= 13.0.0)
+  - Nimble
+  - Quick
   - RealmSwift (= 3.13.1)
-  - RxAlamofire
+  - RxAlamofire (= 4.3.0)
   - RxCocoa (= 4.4.0)
   - RxSwift (= 4.4.0)
 
@@ -29,6 +33,8 @@ SPEC REPOS:
   https://github.com/cocoapods/specs.git:
     - Alamofire
     - KeychainSwift
+    - Nimble
+    - Quick
     - Realm
     - RealmSwift
     - RxAlamofire
@@ -39,6 +45,8 @@ SPEC REPOS:
 SPEC CHECKSUMS:
   Alamofire: 3ec537f71edc9804815215393ae2b1a8ea33a844
   KeychainSwift: 23d6c16cbc33f20fafa30c3d783241b4b87d998c
+  Nimble: 04f732da099ea4d153122aec8c2a88fd0c7219ae
+  Quick: 2623cb30d7a7f41ca62f684f679586558f483d46
   Realm: 50071da38fe079e0735e47c9f2eae738c68c5996
   RealmSwift: 8a1e6a02b7a08cd17a31e3115143fb69fe5f3fb9
   RxAlamofire: 09624d0f2d48ed8b686e4eb4cf68e28cbd2df556
@@ -46,6 +54,6 @@ SPEC CHECKSUMS:
   RxCocoa: df63ebf7b9a70d6b4eeea407ed5dd4efc8979749
   RxSwift: 5976ecd04fc2fefd648827c23de5e11157faa973
 
-PODFILE CHECKSUM: e805f15173eff225c904712c9510b3dc5aafb60f
+PODFILE CHECKSUM: e3722593312f3b3d40310780ebeab188563e0cfe
 
 COCOAPODS: 1.5.3

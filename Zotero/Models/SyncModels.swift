@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum SyncGroupType: Equatable {
+public enum SyncGroupType: Equatable {
     case user(Int)
     case group(Int)
 
@@ -31,7 +31,7 @@ enum SyncGroupType: Equatable {
     }
 }
 
-enum SyncObjectType {
+public enum SyncObjectType: Equatable {
     case group, collection, search, item, trash
 
     var apiPath: String {
