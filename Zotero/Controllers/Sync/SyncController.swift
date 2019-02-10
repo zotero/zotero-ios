@@ -242,7 +242,7 @@ final class SyncController {
         if self.reportFinish != nil {
             self.allActions.append(action)
         }
-        NSLog("--- \(action) ---")
+
         self.processingAction = action
         self.process(action: action)
     }

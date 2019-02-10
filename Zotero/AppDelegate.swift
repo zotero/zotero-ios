@@ -62,7 +62,7 @@ class AppDelegate: UIResponder {
         self.controllers.sessionChanged(userId: userId)
 
         if let syncController = self.controllers.userControllers?.syncController {
-            syncController.startSync(isInitial: true)
+            syncController.startSync()
         }
     }
 
