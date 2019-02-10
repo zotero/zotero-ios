@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RxSwift
+
 class LoginViewController: UIViewController {
     // Outlets
     @IBOutlet private weak var usernameField: UITextField!
@@ -16,13 +18,14 @@ class LoginViewController: UIViewController {
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     // Constants
     private let store: LoginStore
+    private let disposeBag: DisposeBag
     // Variables
-    private var storeToken: StoreSubscriptionToken?
 
     // MARK: - Lifecycle
 
     init(store: LoginStore) {
         self.store = store
+        self.disposeBag = DisposeBag()
         super.init(nibName: "LoginViewController", bundle: nil)
         self.preferredContentSize = CGSize(width: 400, height: 200)
     }
@@ -37,9 +40,12 @@ class LoginViewController: UIViewController {
         self.setupNavigationItems()
         self.setupStyle()
 
-        self.storeToken = self.store.subscribe { [weak self] state in
-            self?.update(to: state)
-        }
+        self.store.state.asObservable()
+                        .observeOn(MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] state in
+                            self?.update(to: state)
+                        })
+                        .disposed(by: self.disposeBag)
     }
 
     // MARK: - Actions

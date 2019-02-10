@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RxSwift
+
 enum LoginError: Error {
     case invalidUsername
     case invalidPassword
@@ -55,6 +57,7 @@ class LoginStore: Store {
     private let apiClient: ApiClient
     private let secureStorage: SecureStorage
     private let dbStorage: DbStorage
+    private let disposeBag: DisposeBag
 
     var updater: StoreStateUpdater<LoginState>
 
@@ -62,6 +65,7 @@ class LoginStore: Store {
         self.apiClient = apiClient
         self.secureStorage = secureStorage
         self.dbStorage = dbStorage
+        self.disposeBag = DisposeBag()
         self.updater = StoreStateUpdater(initialState: .input)
     }
 
@@ -102,28 +106,26 @@ class LoginStore: Store {
         }
 
         let request = LoginRequest(username: username, password: password)
-        self.apiClient.send(request: request) { [weak self] result in
-            guard let `self` = self else { return }
-            switch result {
-            case .success(let response):
-                do {
-                    let request = StoreUserDbRequest(loginResponse: response.0)
-                    try self.dbStorage.createCoordinator().perform(request: request)
-
-                    self.secureStorage.apiToken = response.0.key
-                    self.apiClient.set(authToken: response.0.key)
-
-                    NotificationCenter.default.post(name: .sessionChanged, object: response.0.userId)
-                } catch let error {
-                    self.updater.updateState { newState in
-                        newState = .error(error)
-                    }
-                }
-            case .failure(let error):
-                self.updater.updateState { newState in
-                    newState = .error(error)
-                }
-            }
-        }
+        self.apiClient.send(request: request)
+                      .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                      .flatMap { response -> Single<(Int, String)> in
+                          do {
+                              let request = StoreUserDbRequest(loginResponse: response.0)
+                              try self.dbStorage.createCoordinator().perform(request: request)
+                              return Single.just((response.0.userId, response.0.key))
+                          } catch let error {
+                              return Single.error(error)
+                          }
+                      }
+                      .subscribe(onSuccess: { data in
+                          self.secureStorage.apiToken = data.1
+                          self.apiClient.set(authToken: data.1)
+                          NotificationCenter.default.post(name: .sessionChanged, object: data.0)
+                      }, onError: { error in
+                          self.updater.updateState(action: { newState in
+                              newState = .error(error)
+                          })
+                      })
+                      .disposed(by: self.disposeBag)
     }
 }

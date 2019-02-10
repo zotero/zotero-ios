@@ -42,8 +42,6 @@ typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: class {
     func set(authToken: String?)
-    func send<Request: ApiResponseRequest>(request: Request,
-                                           completion: @escaping RequestCompletion<(Request.Response, ResponseHeaders)>)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
     func send(dataRequest: ApiRequest) -> Single<(Data, ResponseHeaders)>
 }

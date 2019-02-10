@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RxSwift
+
 extension Notification.Name {
     static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
 }
@@ -15,10 +17,11 @@ extension Notification.Name {
 @UIApplicationMain
 class AppDelegate: UIResponder {
 
+    private let disposeBag: DisposeBag = DisposeBag()
+
     var window: UIWindow?
     var controllers: Controllers!
     private var store: AppStore!
-    private var storeToken: StoreSubscriptionToken?
 
     // MARK: - Actions
 
@@ -71,9 +74,13 @@ class AppDelegate: UIResponder {
     private func setupStore() {
         self.store = AppStore(apiClient: self.controllers.apiClient,
                               secureStorage: self.controllers.secureStorage)
-        self.storeToken = self.store.subscribe(action: { [weak self] newState in
-            self?.update(to: newState)
-        })
+        self.store.state.asObservable()
+                        .observeOn(MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] state in
+                            self?.update(to: state)
+                        })
+                        .disposed(by: self.disposeBag)
+
     }
 
     private func setupObservers() {

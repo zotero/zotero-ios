@@ -51,32 +51,6 @@ class ZoteroApiClient: ApiClient {
         self.token = authToken
     }
 
-    func send<Request: ApiResponseRequest>(request: Request,
-                                           completion: @escaping RequestCompletion<(Request.Response, ResponseHeaders)>) {
-        let convertible = Convertible(request: request, baseUrl: self.url,
-                                      token: self.token, headers: self.defaultHeaders)
-        self.manager.request(convertible).validate().responseData { response in
-            if let error = response.error {
-                completion(.failure(error))
-                return
-            }
-
-            if let data = response.data {
-                do {
-                    let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
-                    let headers = response.response?.allHeaderFields ?? [:]
-                    completion(.success((decodedResponse, headers)))
-                } catch let error {
-                    completion(.failure(ZoteroApiError.jsonDecoding(error)))
-                }
-
-                return
-            }
-
-            completion(.failure(ZoteroApiError.unknown))
-        }
-    }
-
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)> {
         let convertible = Convertible(request: request, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
