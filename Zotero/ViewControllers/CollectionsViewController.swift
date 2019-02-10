@@ -8,9 +8,21 @@
 
 import UIKit
 
-class CollectionsViewController: UIViewController {
+import RxSwift
 
-    init() {
+class CollectionsViewController: UIViewController {
+    // Outlets
+    @IBOutlet private weak var tableView: UITableView!
+    // Constants
+    private let disposeBag: DisposeBag
+
+    private let store: CollectionsStore
+
+    // MARK: - Lifecycle
+
+    init(store: CollectionsStore) {
+        self.store = store
+        self.disposeBag = DisposeBag()
         super.init(nibName: "CollectionsViewController", bundle: nil)
     }
 
@@ -21,6 +33,22 @@ class CollectionsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Do any additional setup after loading the view.
+        self.setupTableView()
+
+        self.store.state.asObservable()
+                        .observeOn(MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] state in
+                            self?.tableView.reloadData()
+                        })
+                        .disposed(by: self.disposeBag)
+
+        self.store.handle(action: .load)
+    }
+
+    // MARK: - Setups
+
+    private func setupTableView() {
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        self.tableView.dataSource = self.store.state.value
     }
 }

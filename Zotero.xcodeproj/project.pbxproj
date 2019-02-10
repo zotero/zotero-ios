@@ -51,6 +51,9 @@
 		B36795FB2207807F003D0471 /* RegisterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36795F92207807F003D0471 /* RegisterViewController.xib */; };
 		B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FE2207965F003D0471 /* UIViewController+Alert.swift */; };
+		B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */; };
+		B3819CB12210A96C00EE02CA /* ReadAllCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB02210A96C00EE02CA /* ReadAllCollectionsDbRequest.swift */; };
+		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
 		B385E2B52208755500DFE361 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B42208755500DFE361 /* RUser.swift */; };
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
@@ -143,6 +146,9 @@
 		B36795F92207807F003D0471 /* RegisterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RegisterViewController.xib; sourceTree = "<group>"; };
 		B36795FC22078F15003D0471 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
 		B36795FE2207965F003D0471 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllLibrariesDbRequest.swift; sourceTree = "<group>"; };
+		B3819CB02210A96C00EE02CA /* ReadAllCollectionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllCollectionsDbRequest.swift; sourceTree = "<group>"; };
+		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
 		B385E2B42208755500DFE361 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
@@ -265,6 +271,7 @@
 			isa = PBXGroup;
 			children = (
 				B30D59B9220743EE00884C4A /* API */,
+				B3819CA92210A53100EE02CA /* Collections */,
 				B385E2AF220854CD00DFE361 /* Database */,
 				B30F6686220CB266009E7A8F /* Files */,
 				B30D59A92206FECD00884C4A /* Stores */,
@@ -281,6 +288,7 @@
 				B30D59B02206FF1F00884C4A /* Store.swift */,
 				B30D59B522072DF300884C4A /* AppStore.swift */,
 				B36795E722075F9D003D0471 /* LoginStore.swift */,
+				B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -359,6 +367,13 @@
 			path = Requests;
 			sourceTree = "<group>";
 		};
+		B3819CA92210A53100EE02CA /* Collections */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Collections;
+			sourceTree = "<group>";
+		};
 		B385E2AF220854CD00DFE361 /* Database */ = {
 			isa = PBXGroup;
 			children = (
@@ -406,6 +421,8 @@
 				B3FD6B38220D881A008D9D74 /* StoreItemsDbRequest.swift */,
 				B3FD6B3C220D8CD5008D9D74 /* MarkForResyncDbAction.swift */,
 				B3FD6B40220D9122008D9D74 /* UpdateVersionsDbRequest.swift */,
+				B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */,
+				B3819CB02210A96C00EE02CA /* ReadAllCollectionsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -714,6 +731,7 @@
 				B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */,
 				B30F6692220CC033009E7A8F /* RItem.swift in Sources */,
 				B30DF3F92209A282000B6DE2 /* RLibrary.swift in Sources */,
+				B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncModels.swift in Sources */,
 				B3FD6B41220D9122008D9D74 /* UpdateVersionsDbRequest.swift in Sources */,
@@ -737,6 +755,7 @@
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
 				B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
+				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
 				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
@@ -750,6 +769,7 @@
 				B30F668C220CB6CC009E7A8F /* Files.swift in Sources */,
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,
 				B30DF3FB2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift in Sources */,
+				B3819CB12210A96C00EE02CA /* ReadAllCollectionsDbRequest.swift in Sources */,
 				B30F6690220CC02D009E7A8F /* RCollection.swift in Sources */,
 				B36795DE220749B7003D0471 /* Result.swift in Sources */,
 				B36795F622078076003D0471 /* LoginViewController.swift in Sources */,

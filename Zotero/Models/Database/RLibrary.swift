@@ -26,6 +26,7 @@ class RLibrary: Object {
     @objc dynamic var libraryEditing: String = ""
     @objc dynamic var fileEditing: String = ""
     @objc dynamic var version: Int = 0
+    @objc dynamic var orderId: Int = 0
     @objc dynamic var needsSync: Bool = false
     @objc dynamic var versions: RVersions?
 
