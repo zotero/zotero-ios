@@ -10,9 +10,9 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ItemsViewController" customModule="Zotero" customModuleProvider="target">
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="LibrariesViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
-                <outlet property="tableView" destination="hU7-yT-H8E" id="b16-3M-kQK"/>
+                <outlet property="tableView" destination="XED-5t-2U5" id="S04-2i-Stk"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
         </placeholder>
@@ -21,17 +21,17 @@
             <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="hU7-yT-H8E">
+                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="XED-5t-2U5">
                     <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                     <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                 </tableView>
             </subviews>
             <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <constraints>
-                <constraint firstItem="hU7-yT-H8E" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="4RW-tj-7tr"/>
-                <constraint firstItem="hU7-yT-H8E" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="MsI-oU-1he"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="hU7-yT-H8E" secondAttribute="trailing" id="PEU-fM-f2x"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="hU7-yT-H8E" secondAttribute="bottom" id="SbA-Bb-p7V"/>
+                <constraint firstItem="XED-5t-2U5" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="MJT-WT-MN9"/>
+                <constraint firstItem="XED-5t-2U5" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="VsT-vE-9FT"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="XED-5t-2U5" secondAttribute="bottom" id="tn1-zr-XRO"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="XED-5t-2U5" secondAttribute="trailing" id="xpL-Fp-wAp"/>
             </constraints>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
         </view>

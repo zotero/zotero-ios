@@ -33,13 +33,7 @@ class AppDelegate: UIResponder {
                                                       dbStorage: self.controllers.dbStorage)
             self.show(viewController: controller, animated: true)
         case .main:
-            let controller = UISplitViewController()
-            let collectionsStore = CollectionsStore(dbStorage: self.controllers.dbStorage)
-            let mainController = CollectionsViewController(store: collectionsStore)
-            let mainNavigationController = UINavigationController(rootViewController: mainController)
-            let sideController = ItemsViewController()
-            let sideNavigationController = UINavigationController(rootViewController: sideController)
-            controller.viewControllers = [mainNavigationController, sideNavigationController]
+            let controller = MainViewController(controllers: self.controllers)
             self.show(viewController: controller)
         }
     }
