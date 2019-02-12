@@ -9,6 +9,7 @@
 import Foundation
 
 import Alamofire
+import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
@@ -42,6 +43,10 @@ struct ObjectAction {
     let object: SyncObjectType
     let keys: [Any]
     let version: Int
+
+    var keysString: String {
+        return self.keys.map({ "\($0)" }).joined(separator: ",")
+    }
 }
 
 enum QueueAction: Equatable {
@@ -122,6 +127,7 @@ final class SyncController {
     // MARK: - Sync management
 
     func startSync(isInitial: Bool = false) {
+        DDLogInfo("--- Sync: starting ---")
         self.startSync(isResync: false)
     }
 
@@ -144,6 +150,11 @@ final class SyncController {
 
             let errors = self.nonFatalErrors
 
+            DDLogInfo("--- Sync: finished ---")
+            if !errors.isEmpty {
+                DDLogInfo("Errors: \(errors)")
+            }
+
             self.reportFinish?(.success((self.allActions, errors)))
             self.reportFinish = nil
 
@@ -162,6 +173,9 @@ final class SyncController {
         inMainThread {
             self.report(fatalError: error)
         }
+
+        DDLogInfo("--- Sync: aborted ---")
+        DDLogInfo("Error: \(error)")
 
         self.reportFinish?(.failure(error))
         self.reportFinish = nil
@@ -250,12 +264,13 @@ final class SyncController {
     // MARK: - Action processing
 
     private func process(action: QueueAction) {
+        DDLogInfo("--- Sync: action ---")
+        DDLogInfo("\(action)")
         switch action {
         case .createGroupActions:
             self.startAllGroupsSync()
         case .syncVersions(let groupType, let objectType, let version):
-            let forcedVersion = self.isInitial ? nil : version
-            self.processSyncVersionsAction(group: groupType, object: objectType, since: forcedVersion)
+            self.processSyncVersionsAction(group: groupType, object: objectType, since: version)
         case .syncObjectToFile(let action):
             self.processFileStoreAction(action)
         case .syncObjectToDb(let action):
@@ -310,7 +325,8 @@ final class SyncController {
     }
 
     private func processSyncVersionsAction(group: SyncGroupType, object: SyncObjectType, since version: Int?) {
-        self.handler.synchronizeVersions(for: group, object: object, since: version, current: self.lastReturnedVersion)
+        self.handler.synchronizeVersions(for: group, object: object, since: version,
+                                         current: self.lastReturnedVersion, syncAll: self.isInitial)
                     .subscribe(onSuccess: { [weak self] data in
                         self?.finishSyncVersionsAction(for: group, object: object, result: .success((data.1, data.0)))
                     }, onError: { [weak self] error in
@@ -377,7 +393,7 @@ final class SyncController {
     }
 
     private func processFileStoreAction(_ action: ObjectAction) {
-        self.handler.downloadObjectJson(for: action.keys, group: action.group,
+        self.handler.downloadObjectJson(for: action.keysString, group: action.group,
                                         object: action.object, version: action.version, index: action.order)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishFileStoreAction(action, result: .success(()))

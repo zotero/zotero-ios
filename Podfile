@@ -9,6 +9,8 @@ target 'Zotero' do
   pod 'RxAlamofire', '4.3.0'
   pod 'RxSwift', '4.4.0'
   pod 'RxCocoa', '4.4.0'
+  pod 'CocoaLumberjack/Core', '3.4.2'
+  pod 'CocoaLumberjack/Swift', '3.4.2'
 
   target 'ZoteroTests' do
     inherit! :search_paths

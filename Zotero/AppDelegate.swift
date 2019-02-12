@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjack
 import RxSwift
 
 extension Notification.Name {
@@ -82,11 +83,25 @@ class AppDelegate: UIResponder {
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.sessionChanged(_:)),
                                                name: .sessionChanged, object: nil)
     }
+
+    private func setupLogs() {
+        #if DEBUG
+        // Enable console logs only for debug mode
+        DDLog.add(DDTTYLogger.sharedInstance)
+
+        // Change to .info to enable server logging
+        // Change to .warning/.error to disable server logging
+        defaultDebugLevel = .info
+        #else
+        defaultDebugLevel = .error
+        #endif
+    }
 }
 
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        self.setupLogs()
         self.controllers = Controllers()
         self.setupObservers()
         self.setupStore()
@@ -109,7 +124,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        self.controllers.userControllers?.syncController.startSync()
+        self.controllers.userControllers?.syncController.startSync(isInitial: true)
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

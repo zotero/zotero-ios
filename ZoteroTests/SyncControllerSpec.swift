@@ -56,7 +56,7 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func downloadObjectJson(for keys: [Any], group: SyncGroupType,
+    func downloadObjectJson(for keys: String, group: SyncGroupType,
                             object: SyncObjectType, version: Int, index: Int) -> Completable {
         return self.result(for: .downloadObject(object)).asCompletable()
     }

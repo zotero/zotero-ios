@@ -9,6 +9,7 @@
 import UIKit
 
 import Alamofire
+import CocoaLumberjack
 import RxAlamofire
 import RxSwift
 
@@ -57,6 +58,17 @@ class ZoteroApiClient: ApiClient {
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseData()
+                              .do(onNext: { response in
+                                  #if DEBUG
+                                  self.logRequest(request, url: convertible.urlRequest?.url)
+                                  self.logResponse(data: response.1, error: nil)
+                                  #endif
+                              }, onError: { error in
+                                  #if DEBUG
+                                  self.logRequest(request, url: convertible.urlRequest?.url)
+                                  self.logResponse(data: nil, error: error)
+                                  #endif
+                              })
                               .flatMap { response -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
                                       let decodedResponse = try JSONDecoder().decode(Request.Response.self,
@@ -75,10 +87,38 @@ class ZoteroApiClient: ApiClient {
         return self.manager.rx.request(urlRequest: convertible)
                                 .validate()
                                 .responseData()
+                                .do(onNext: { response in
+                                    #if DEBUG
+                                    self.logRequest(dataRequest, url: convertible.urlRequest?.url)
+                                    self.logResponse(data: response.1, error: nil)
+                                    #endif
+                                }, onError: { error in
+                                    #if DEBUG
+                                    self.logRequest(dataRequest, url: convertible.urlRequest?.url)
+                                    self.logResponse(data: nil, error: error)
+                                    #endif
+                                })
                                 .flatMap { response -> Observable<(Data, [AnyHashable : Any])> in
                                     return Observable.just((response.1, response.0.allHeaderFields))
                                 }
                                 .asSingle()
+    }
+
+    private func logRequest(_ request: ApiRequest, url: URL?) {
+        DDLogInfo("--- API request '\(type(of: request))' ---")
+        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
+        if request.httpMethod != .get, let params = request.parameters {
+            DDLogInfo("\(params)")
+        }
+    }
+
+    private func logResponse(data: Data?, error: Error?) {
+        if let data = data {
+            let string = String(data: data, encoding: .utf8)
+            DDLogInfo("\(string ?? "")")
+        } else if let error = error {
+            DDLogInfo("\(error)")
+        }
     }
 }
 

@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RxSwift
 
 /// Global controllers which don't need user session
@@ -28,7 +29,7 @@ class Controllers {
 
         do {
             let file = Files.dbFile
-            NSLog("DB file path: \(file.createUrl().absoluteString)")
+            DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
             try fileStorage.createDictionaries(for: file)
             let dbStorage = RealmDbStorage(url: file.createUrl())
             try dbStorage.createCoordinator().perform(request: InitializeMyLibraryDbRequest())

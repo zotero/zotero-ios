@@ -11,11 +11,11 @@ import Foundation
 struct ObjectsRequest: ApiRequest {
     let groupType: SyncGroupType
     let objectType: SyncObjectType
-    let keys: [Any]
+    let keys: String
 
     var path: String {
-        if self.objectType == .group, let key = self.keys.first {
-            return "groups/\(key)"
+        if self.objectType == .group {
+            return "groups/\(self.keys)"
         }
         return "\(self.groupType.apiPath)/\(self.objectType.apiPath)"
     }

@@ -34,8 +34,8 @@ public enum SyncGroupType: Equatable {
         switch self {
         case .group(let identifier):
             return identifier
-        case .user(let identifier):
-            return identifier
+        case .user:
+            return RLibrary.myLibraryId
         }
     }
 }

@@ -30,13 +30,15 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     let versions: [Obj.IdType: Int]
     let libraryId: Int?
     let isTrash: Bool
+    let syncAll: Bool
 
     var needsWrite: Bool { return true }
 
-    init(versions: [Obj.IdType: Int], parentLibraryId: Int?, isTrash: Bool) {
+    init(versions: [Obj.IdType: Int], parentLibraryId: Int?, isTrash: Bool, syncAll: Bool) {
         self.versions = versions
         self.libraryId = parentLibraryId
         self.isTrash = isTrash
+        self.syncAll = syncAll
     }
 
     func process(in database: Realm) throws -> [Obj.IdType] {
@@ -53,6 +55,10 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
             toRemove = toRemove.filter("trash = true")
         }
         database.delete(toRemove)
+
+        if self.syncAll {
+            return allKeys
+        }
 
         // Go through remaining local groups and check which groups need an update
         var toUpdate: [Obj.IdType] = allKeys
