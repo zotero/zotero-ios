@@ -10,8 +10,48 @@ import Foundation
 
 struct ItemResponse {
     struct Data {
-        let itemType: String
-        let title: String
+        enum DataType: String {
+            case artwork
+            case attachment
+            case audioRecording
+            case book
+            case bookSection
+            case bill
+            case blogPost
+            case `case`
+            case computerProgram
+            case conferencePaper
+            case dictionaryEntry
+            case document
+            case email
+            case encyclopediaArticle
+            case film
+            case forumPost
+            case hearing
+            case instantMessage
+            case interview
+            case journalArticle
+            case letter
+            case magazineArticle
+            case map
+            case manuscript
+            case newspaperArticle
+            case patent
+            case podcast
+            case presentation
+            case radioBroadcast
+            case report
+            case statute
+            case thesis
+            case tvBroadcast
+            case videoRecording
+        }
+
+        let type: DataType
+        let title: String?
+        let caseName: String?
+        let subject: String?
+        let nameOfAct: String?
         let parentItem: String?
         let collections: [String]?
         let isTrash: Bool
@@ -43,17 +83,27 @@ extension ItemResponse: Decodable {
 
 extension ItemResponse.Data: Decodable {
     private enum Keys: String, CodingKey {
-        case itemType, title, parentItem, collections, deleted
+        case itemType, parentItem, collections, deleted, title,
+             caseName, subject, nameOfAct
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: ItemResponse.Data.Keys.self)
-        let itemType = try container.decode(String.self, forKey: .itemType)
-        let title = try container.decode(String.self, forKey: .title)
+        let rawType = try container.decode(String.self, forKey: .itemType)
+
+        guard let type = ItemResponse.Data.DataType(rawValue: rawType) else {
+            throw ZoteroApiError.unknown
+        }
+
         let parentItem = try container.decodeIfPresent(String.self, forKey: .parentItem)
         let collections = try container.decodeIfPresent([String].self, forKey: .collections)
         let deleted = try container.decodeIfPresent(Int.self, forKey: .deleted)
-        self.init(itemType: itemType, title: title, parentItem: parentItem,
-                  collections: collections, isTrash: (deleted == 1))
+        let title = try container.decodeIfPresent(String.self, forKey: .title)
+        let caseName = try container.decodeIfPresent(String.self, forKey: .caseName)
+        let subject = try container.decodeIfPresent(String.self, forKey: .subject)
+        let nameOfAct = try container.decodeIfPresent(String.self, forKey: .nameOfAct)
+
+        self.init(type: type, title: title, caseName: caseName, subject: subject, nameOfAct: nameOfAct,
+                  parentItem: parentItem, collections: collections, isTrash: (deleted == 1))
     }
 }

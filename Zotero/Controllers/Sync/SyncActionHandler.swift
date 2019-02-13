@@ -153,7 +153,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  let file = Files.json(for: group, object: object, version: version, index: index)
                                  do {
                                      try self.fileStorage.write(response.0, to: file,
-                                                                options: [.noFileProtection, .withoutOverwriting])
+                                                                options: [.noFileProtection])
                                      return Single.just(())
                                  } catch let error {
                                      return Single.error(error)

@@ -16,6 +16,7 @@ struct ReadItemsDbRequest: DbResponseRequest {
     let libraryId: Int
     let collectionId: String?
     let parentId: String?
+    let trash: Bool
 
     var needsWrite: Bool { return false }
 
@@ -31,6 +32,7 @@ struct ReadItemsDbRequest: DbResponseRequest {
         } else {
             predicates.append(NSPredicate(format: "parent = nil"))
         }
+        predicates.append(NSPredicate(format: "trash = %li", self.trash))
 
         let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         return database.objects(RItem.self)

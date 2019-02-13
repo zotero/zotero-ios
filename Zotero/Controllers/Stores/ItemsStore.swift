@@ -18,8 +18,19 @@ struct ItemCellData {
 
     init(object: RItem) {
         self.identifier = object.identifier
-        self.title = object.title
         self.hasChildren = object.children.count > 0
+
+        if !object.title.isEmpty {
+            self.title = object.title
+        } else if !object.nameOfAct.isEmpty {
+            self.title = object.nameOfAct
+        } else if !object.caseName.isEmpty {
+            self.title = object.caseName
+        } else if !object.subject.isEmpty {
+            self.title = object.subject
+        } else {
+            self.title = ""
+        }
     }
 }
 
@@ -90,7 +101,7 @@ class ItemsStore: Store {
         do {
             let request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
                                              collectionId: self.state.value.collectionId,
-                                             parentId: self.state.value.parentId)
+                                             parentId: self.state.value.parentId, trash: false)
             let collections = try self.dbStorage.createCoordinator().perform(request: request)
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }

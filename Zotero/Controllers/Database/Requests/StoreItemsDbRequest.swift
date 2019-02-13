@@ -24,7 +24,11 @@ struct StoreItemsDbRequest: DbRequest {
 
     private func store(data: ItemResponse, to database: Realm) throws {
         let item = try database.autocreatedObject(ofType: RItem.self, forPrimaryKey: data.identifier).1
-        item.title = data.data.title
+        item.rawType = data.data.type.rawValue
+        item.title = data.data.title ?? ""
+        item.caseName = data.data.caseName ?? ""
+        item.subject = data.data.subject ?? ""
+        item.nameOfAct = data.data.nameOfAct ?? ""
         item.version = data.version
         item.trash = data.data.isTrash
         item.needsSync = false

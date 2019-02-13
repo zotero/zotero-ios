@@ -65,8 +65,8 @@ extension ItemsViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
         if indexPath.row < self.store.state.value.cellData.count {
-            let collection = self.store.state.value.cellData[indexPath.row]
-            cell.textLabel?.text = collection.title
+            let item = self.store.state.value.cellData[indexPath.row]
+            cell.textLabel?.text = item.title
         }
 
         return cell
@@ -76,6 +76,6 @@ extension ItemsViewController: UITableViewDataSource {
 extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let item = self.store.state.value.cellData[indexPath.row]
-        // TODO: - Show item detail
+        NSLog("\(item.identifier) - \(item.title)")
     }
 }

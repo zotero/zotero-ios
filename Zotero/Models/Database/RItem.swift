@@ -12,7 +12,11 @@ import RealmSwift
 
 class RItem: Object {
     @objc dynamic var identifier: String = ""
+    @objc dynamic var rawType: String = ""
     @objc dynamic var title: String = ""
+    @objc dynamic var caseName: String = ""
+    @objc dynamic var subject: String = ""
+    @objc dynamic var nameOfAct: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var needsSync: Bool = false
