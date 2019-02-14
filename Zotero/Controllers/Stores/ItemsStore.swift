@@ -14,11 +14,9 @@ import RxSwift
 struct ItemCellData {
     let identifier: String
     let title: String
-    let hasChildren: Bool
 
     init(object: RItem) {
         self.identifier = object.identifier
-        self.hasChildren = object.children.count > 0
 
         if !object.title.isEmpty {
             self.title = object.title
@@ -28,6 +26,8 @@ struct ItemCellData {
             self.title = object.caseName
         } else if !object.subject.isEmpty {
             self.title = object.subject
+        } else if !object.note.isEmpty {
+            self.title = object.note
         } else {
             self.title = ""
         }
