@@ -17,6 +17,7 @@ class RItem: Object {
     @objc dynamic var caseName: String = ""
     @objc dynamic var subject: String = ""
     @objc dynamic var nameOfAct: String = ""
+    @objc dynamic var note: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var needsSync: Bool = false

@@ -35,6 +35,7 @@ struct ItemResponse {
             case magazineArticle
             case map
             case manuscript
+            case note
             case newspaperArticle
             case patent
             case podcast
@@ -45,6 +46,7 @@ struct ItemResponse {
             case thesis
             case tvBroadcast
             case videoRecording
+            case webpage
         }
 
         let type: DataType
@@ -52,6 +54,7 @@ struct ItemResponse {
         let caseName: String?
         let subject: String?
         let nameOfAct: String?
+        let note: String?
         let parentItem: String?
         let collections: [String]?
         let isTrash: Bool
@@ -84,7 +87,7 @@ extension ItemResponse: Decodable {
 extension ItemResponse.Data: Decodable {
     private enum Keys: String, CodingKey {
         case itemType, parentItem, collections, deleted, title,
-             caseName, subject, nameOfAct
+             caseName, subject, nameOfAct, note
     }
 
     init(from decoder: Decoder) throws {
@@ -92,7 +95,7 @@ extension ItemResponse.Data: Decodable {
         let rawType = try container.decode(String.self, forKey: .itemType)
 
         guard let type = ItemResponse.Data.DataType(rawValue: rawType) else {
-            throw ZoteroApiError.unknown
+            throw ZoteroApiError.unknownItemType(rawType)
         }
 
         let parentItem = try container.decodeIfPresent(String.self, forKey: .parentItem)
@@ -102,8 +105,9 @@ extension ItemResponse.Data: Decodable {
         let caseName = try container.decodeIfPresent(String.self, forKey: .caseName)
         let subject = try container.decodeIfPresent(String.self, forKey: .subject)
         let nameOfAct = try container.decodeIfPresent(String.self, forKey: .nameOfAct)
+        let note = try container.decodeIfPresent(String.self, forKey: .note)
 
-        self.init(type: type, title: title, caseName: caseName, subject: subject, nameOfAct: nameOfAct,
+        self.init(type: type, title: title, caseName: caseName, subject: subject, nameOfAct: nameOfAct, note: note,
                   parentItem: parentItem, collections: collections, isTrash: (deleted == 1))
     }
 }

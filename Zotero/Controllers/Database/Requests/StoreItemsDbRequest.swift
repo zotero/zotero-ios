@@ -29,6 +29,7 @@ struct StoreItemsDbRequest: DbRequest {
         item.caseName = data.data.caseName ?? ""
         item.subject = data.data.subject ?? ""
         item.nameOfAct = data.data.nameOfAct ?? ""
+        item.note = data.data.note ?? ""
         item.version = data.version
         item.trash = data.data.isTrash
         item.needsSync = false
