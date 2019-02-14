@@ -17,8 +17,8 @@ class CollectionsViewController: UIViewController {
     private let store: CollectionsStore
     private let disposeBag: DisposeBag
     // Variables
-    private var selectedIndexPath: IndexPath?
     private weak var navigationDelegate: ItemNavigationDelegate?
+    private var lastIndexPath: IndexPath?
 
     // MARK: - Lifecycle
 
@@ -52,27 +52,17 @@ class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if let indexPath = self.selectedIndexPath {
-            self.tableView.deselectRow(at: indexPath, animated: false)
+        if let indexPath = self.lastIndexPath {
+            self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
         }
-
-        self.navigationDelegate?.showItems(libraryId: self.store.state.value.libraryId,
-                                           collectionId: self.store.state.value.parentId)
     }
 
     // MARK: - Actions
 
-    private func showCollections(for parentId: String, name: String) {
-        let state = CollectionsState(libraryId: self.store.state.value.libraryId, parentId: parentId, title: name)
-        let store = CollectionsStore(initialState: state, dbStorage: self.store.dbStorage)
-        let controller = CollectionsViewController(store: store, delegate: self.navigationDelegate)
-        self.navigationController?.pushViewController(controller, animated: true)
-    }
-
     // MARK: - Setups
 
     private func setupTableView() {
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        self.tableView.register(UINib(nibName: "CollectionCell", bundle: nil), forCellReuseIdentifier: "Cell")
         self.tableView.dataSource = self
         self.tableView.delegate = self
     }
@@ -90,9 +80,10 @@ extension CollectionsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        if indexPath.row < self.store.state.value.cellData.count {
+        if indexPath.row < self.store.state.value.cellData.count,
+           let cell = cell as? CollectionCell {
             let collection = self.store.state.value.cellData[indexPath.row]
-            cell.textLabel?.text = collection.name
+            cell.setup(with: collection)
         }
 
         return cell
@@ -100,23 +91,27 @@ extension CollectionsViewController: UITableViewDataSource {
 }
 
 extension CollectionsViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        if indexPath.row == tableView.indexPathForSelectedRow?.row {
+            tableView.deselectRow(at: indexPath, animated: false)
+            self.lastIndexPath = nil
+            let state = self.store.state.value
+            self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title), collectionData: nil)
+            return nil
+        }
+        return indexPath
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if self.selectedIndexPath == indexPath {
+        if UIDevice.current.userInterfaceIdiom == .phone {
             tableView.deselectRow(at: indexPath, animated: true)
         }
-
-        self.selectedIndexPath = indexPath
+        self.lastIndexPath = indexPath
         let collection = self.store.state.value.cellData[indexPath.row]
-        if collection.hasChildren {
-            self.showCollections(for: collection.identifier, name: collection.name)
-        } else {
-            self.navigationDelegate?.showItems(libraryId: self.store.state.value.libraryId,
-                                               collectionId: collection.identifier)
-        }
-    }
-
-    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        self.navigationDelegate?.showItems(libraryId: self.store.state.value.libraryId,
-                                           collectionId: self.store.state.value.parentId)
+        let state = self.store.state.value
+        self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title),
+                                           collectionData: (collection.identifier, collection.name))
     }
 }
+
+extension CollectionCellData: CollectionCellModel {}

@@ -15,9 +15,18 @@ struct LibraryCellData {
     let identifier: Int
     let name: String
 
+    init(identifier: Int, name: String) {
+        self.identifier = identifier
+        self.name = name
+    }
+
     init(object: RLibrary) {
         self.identifier = object.identifier
         self.name = object.name
+    }
+
+    static var myLibrary: LibraryCellData {
+        return LibraryCellData(identifier: RLibrary.myLibraryId, name: "My Library")
     }
 }
 
@@ -30,7 +39,8 @@ enum LibrariesStoreError: Equatable {
 }
 
 struct LibrariesState {
-    fileprivate(set) var cellData: [LibraryCellData]
+    fileprivate(set) var myLibrary: LibraryCellData
+    fileprivate(set) var groupLibraries: [LibraryCellData]
     fileprivate(set) var error: LibrariesStoreError?
 
     // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
@@ -40,7 +50,8 @@ struct LibrariesState {
     fileprivate var librariesToken: NotificationToken?
 
     init() {
-        self.cellData = []
+        self.myLibrary = LibraryCellData.myLibrary
+        self.groupLibraries = []
         self.version = 0
     }
 }
@@ -71,8 +82,11 @@ class LibrariesStore: Store {
         }
     }
 
-    private func reload(libraries: Results<RLibrary>) -> [LibraryCellData] {
-        return libraries.map(LibraryCellData.init)
+    private func reload(libraries: Results<RLibrary>) -> (LibraryCellData?, [LibraryCellData]) {
+        guard libraries.count > 0 else { return (nil, []) }
+        var groupLibraries = Array(libraries.map(LibraryCellData.init))
+        let myLibrary = groupLibraries.removeFirst()
+        return (myLibrary, groupLibraries)
     }
 
     private func loadData() {
@@ -84,7 +98,10 @@ class LibrariesStore: Store {
                 case .update(let objects, _, _, _):
                     let cellData = self.reload(libraries: objects)
                     self.updater.updateState(action: { newState in
-                        newState.cellData = cellData
+                        if let library = cellData.0 {
+                            newState.myLibrary = library
+                        }
+                        newState.groupLibraries = cellData.1
                         newState.version += 1
                     })
                 case .initial: break
@@ -100,7 +117,10 @@ class LibrariesStore: Store {
             self.updater.updateState { newState in
                 newState.libraries = libraries
                 newState.version += 1
-                newState.cellData = cellData
+                if let library = cellData.0 {
+                    newState.myLibrary = library
+                }
+                newState.groupLibraries = cellData.1
                 newState.librariesToken = librariesToken
             }
         } catch let error {

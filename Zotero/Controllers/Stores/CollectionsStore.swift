@@ -14,12 +14,12 @@ import RxSwift
 struct CollectionCellData {
     let identifier: String
     let name: String
-    let hasChildren: Bool
+    let level: Int
 
-    init(object: RCollection) {
+    init(object: RCollection, level: Int) {
         self.identifier = object.identifier
         self.name = object.name
-        self.hasChildren = object.children.count > 0
+        self.level = level
     }
 }
 
@@ -33,7 +33,6 @@ enum CollectionsStoreError: Equatable {
 
 struct CollectionsState {
     let libraryId: Int
-    let parentId: String?
     let title: String
 
     fileprivate(set) var cellData: [CollectionCellData]
@@ -45,9 +44,8 @@ struct CollectionsState {
     fileprivate var collections: Results<RCollection>?
     fileprivate var collectionToken: NotificationToken?
 
-    init(libraryId: Int, parentId: String?, title: String) {
+    init(libraryId: Int, title: String) {
         self.libraryId = libraryId
-        self.parentId = parentId
         self.title = title
         self.cellData = []
         self.version = 0
@@ -81,13 +79,31 @@ class CollectionsStore: Store {
     }
 
     private func reload(collections: Results<RCollection>) -> [CollectionCellData] {
-        return collections.map(CollectionCellData.init)
+        let topCollections = collections.filter("parent == nil").sorted(by: [SortDescriptor(keyPath: "name"),
+                                                                             SortDescriptor(keyPath: "identifier")])
+        return self.cells(for:topCollections, level: 0)
+    }
+
+    private func cells(for results: Results<RCollection>, level: Int) -> [CollectionCellData] {
+        var cells: [CollectionCellData] = []
+        for rCollection in results {
+            let collection = CollectionCellData(object: rCollection, level: level)
+            cells.append(collection)
+
+            if rCollection.children.count > 0 {
+                let sortedChildren = rCollection.children.sorted(by: [SortDescriptor(keyPath: "name"),
+                                                                      SortDescriptor(keyPath: "identifier")])
+                cells.append(contentsOf: self.cells(for: sortedChildren, level: (level + 1)))
+            }
+        }
+        return cells
     }
 
     private func loadData() {
+        guard self.state.value.cellData.isEmpty else { return }
+
         do {
-            let request = ReadCollectionsDbRequest(libraryId: self.state.value.libraryId,
-                                                   parentId: self.state.value.parentId)
+            let request = ReadCollectionsDbRequest(libraryId: self.state.value.libraryId)
             let collections = try self.dbStorage.createCoordinator().perform(request: request)
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }

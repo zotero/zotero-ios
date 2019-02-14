@@ -23,10 +23,10 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="40" translatesAutoresizingMaskIntoConstraints="NO" id="oZs-mp-CUg">
-                    <rect key="frame" x="174" y="493" width="420" height="38"/>
+                    <rect key="frame" x="20" y="493" width="728" height="38"/>
                     <subviews>
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="K77-8m-4Bj">
-                            <rect key="frame" x="0.0" y="0.0" width="190" height="38"/>
+                            <rect key="frame" x="0.0" y="0.0" width="344" height="38"/>
                             <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="18"/>
                             <inset key="contentEdgeInsets" minX="30" minY="8" maxX="30" maxY="8"/>
                             <state key="normal" title="Sign in"/>
@@ -35,7 +35,7 @@
                             </connections>
                         </button>
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qzd-vI-wkD">
-                            <rect key="frame" x="230" y="0.0" width="190" height="38"/>
+                            <rect key="frame" x="384" y="0.0" width="344" height="38"/>
                             <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="18"/>
                             <inset key="contentEdgeInsets" minX="30" minY="8" maxX="30" maxY="8"/>
                             <state key="normal" title="Create account"/>
@@ -49,6 +49,8 @@
             </subviews>
             <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <constraints>
+                <constraint firstItem="oZs-mp-CUg" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="FhE-ZM-CfI"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="oZs-mp-CUg" secondAttribute="trailing" constant="20" id="JEn-Fq-eZv"/>
                 <constraint firstItem="oZs-mp-CUg" firstAttribute="centerY" secondItem="i5M-Pr-FkT" secondAttribute="centerY" id="KcV-hU-t3k"/>
                 <constraint firstItem="oZs-mp-CUg" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="nm8-dh-EI0"/>
             </constraints>

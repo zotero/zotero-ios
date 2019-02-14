@@ -30,7 +30,11 @@ class ItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.navigationItem.title = self.store.state.value.title
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.navigationItem.title = self.store.state.value.title
+        }
+        self.navigationItem.leftBarButtonItem = self.splitViewController?.displayModeButtonItem
+        self.navigationItem.leftItemsSupplementBackButton = true
         self.setupTableView()
 
         self.store.state.asObservable()
@@ -75,6 +79,9 @@ extension ItemsViewController: UITableViewDataSource {
 
 extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            tableView.deselectRow(at: indexPath, animated: true)
+        }
         let item = self.store.state.value.cellData[indexPath.row]
         NSLog("\(item.identifier) - \(item.title)")
     }

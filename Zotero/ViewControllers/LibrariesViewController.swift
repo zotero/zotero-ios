@@ -17,7 +17,6 @@ class LibrariesViewController: UIViewController {
     private let store: LibrariesStore
     private let disposeBag: DisposeBag
     // Variables
-    private var selectedIndexPath: IndexPath?
     private weak var navigationDelegate: ItemNavigationDelegate?
 
     init(store: LibrariesStore, delegate: ItemNavigationDelegate) {
@@ -52,22 +51,20 @@ class LibrariesViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if let indexPath = self.selectedIndexPath {
-            self.tableView.deselectRow(at: indexPath, animated: false)
-            self.selectedIndexPath = nil
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            self.navigationDelegate?.showItems(libraryData: (RLibrary.myLibraryId, "My Library"), collectionData: nil)
         }
+    }
 
-        self.navigationDelegate?.hideItems()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            self.navigationDelegate?.didShowLibraries()
+        }
     }
 
     // MARK: - Actions
-
-    private func showLibrary(with identifier: Int, name: String) {
-        let state = CollectionsState(libraryId: identifier, parentId: nil, title: name)
-        let store = CollectionsStore(initialState: state, dbStorage: self.store.dbStorage)
-        let controller = CollectionsViewController(store: store, delegate: self.navigationDelegate)
-        self.navigationController?.pushViewController(controller, animated: true)
-    }
 
     // MARK: - Setups
 
@@ -80,19 +77,36 @@ class LibrariesViewController: UIViewController {
 
 extension LibrariesViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
+        return 2
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.store.state.value.cellData.count
+        switch section {
+        case 0:
+            return 1
+        case 1:
+            return self.store.state.value.groupLibraries.count
+        default:
+             return 0
+        }
+    }
+
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return section == 1 ? "Group Libraries" : nil
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        if indexPath.row < self.self.store.state.value.cellData.count {
-            let library = self.self.store.state.value.cellData[indexPath.row]
-            cell.textLabel?.text = library.name
+        switch indexPath.section {
+        case 0:
+            cell.textLabel?.text = self.store.state.value.myLibrary.name
+        case 1:
+            if indexPath.row < self.self.store.state.value.groupLibraries.count {
+                let library = self.self.store.state.value.groupLibraries[indexPath.row]
+                cell.textLabel?.text = library.name
+            }
+        default: break
         }
 
         return cell
@@ -101,8 +115,13 @@ extension LibrariesViewController: UITableViewDataSource {
 
 extension LibrariesViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.selectedIndexPath = indexPath
-        let library = self.store.state.value.cellData[indexPath.row]
-        self.showLibrary(with: library.identifier, name: library.name)
+        tableView.deselectRow(at: indexPath, animated: true)
+
+        let library = indexPath.section == 0 ? self.store.state.value.myLibrary :
+                                               self.store.state.value.groupLibraries[indexPath.row]
+        self.navigationDelegate?.showCollections(for: library.identifier, libraryName: library.name)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            self.navigationDelegate?.showItems(libraryData: (library.identifier, library.name), collectionData: nil)
+        }
     }
 }
