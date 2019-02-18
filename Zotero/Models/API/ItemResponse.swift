@@ -89,11 +89,8 @@ struct ItemResponse {
         self.isTrash = deleted == 1
 
         let libraryData: [String: Any] = try ItemResponse.parse(key: "library", from: response)
-        print("--- STUFF ---")
-        print(libraryData)
         self.library = try DictionaryDecoder().decode(LibraryResponse.self, from: libraryData)
         let linksData: [String: Any] = try ItemResponse.parse(key: "links", from: response)
-        NSLog("LINKS: \(linksData)")
         self.links = try DictionaryDecoder().decode(LinksResponse.self, from: linksData)
 
         let excludedKeys = ItemResponse.notFieldKeys
