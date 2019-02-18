@@ -12,25 +12,10 @@ import RealmSwift
 import RxSwift
 
 struct ItemCellData {
-    let identifier: String
     let title: String
 
     init(object: RItem) {
-        self.identifier = object.identifier
-
-        if !object.title.isEmpty {
-            self.title = object.title
-        } else if !object.nameOfAct.isEmpty {
-            self.title = object.nameOfAct
-        } else if !object.caseName.isEmpty {
-            self.title = object.caseName
-        } else if !object.subject.isEmpty {
-            self.title = object.subject
-        } else if !object.note.isEmpty {
-            self.title = object.note
-        } else {
-            self.title = ""
-        }
+        self.title = object.title
     }
 }
 
@@ -100,8 +85,8 @@ class ItemsStore: Store {
     private func loadData() {
         do {
             let request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
-                                             collectionId: self.state.value.collectionId,
-                                             parentId: self.state.value.parentId, trash: false)
+                                             collectionKey: self.state.value.collectionId,
+                                             parentKey: self.state.value.parentId, trash: false)
             let collections = try self.dbStorage.createCoordinator().perform(request: request)
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }

@@ -503,7 +503,7 @@ final class SyncController {
     }
 
     private func markForResync(keys: [Any], group: SyncGroupType, object: SyncObjectType) {
-        self.handler.markForResync(keys: keys, object: object)
+        self.handler.markForResync(keys: keys, group: group, object: object)
                     .subscribe(onCompleted: { [weak self] in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
                             guard let `self` = self else { return }

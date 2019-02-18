@@ -14,8 +14,8 @@ struct ReadItemsDbRequest: DbResponseRequest {
     typealias Response = Results<RItem>
 
     let libraryId: Int
-    let collectionId: String?
-    let parentId: String?
+    let collectionKey: String?
+    let parentKey: String?
     let trash: Bool
 
     var needsWrite: Bool { return false }
@@ -24,11 +24,11 @@ struct ReadItemsDbRequest: DbResponseRequest {
         let libraryPredicate = NSPredicate(format: "library.identifier = %d", self.libraryId)
         let syncPredicate = NSPredicate(format: "needsSync = false")
         var predicates: [NSPredicate] = [libraryPredicate, syncPredicate]
-        if let collectionId = self.collectionId {
-            predicates.append(NSPredicate(format: "ANY collections.identifier = %@", collectionId))
+        if let collectionId = self.collectionKey {
+            predicates.append(NSPredicate(format: "ANY collections.key = %@", collectionId))
         }
-        if let parentId = self.parentId {
-            predicates.append(NSPredicate(format: "parent.identifier = %@", parentId))
+        if let key = self.parentKey {
+            predicates.append(NSPredicate(format: "parent.key = %@", key))
         } else {
             predicates.append(NSPredicate(format: "parent = nil"))
         }
@@ -38,6 +38,6 @@ struct ReadItemsDbRequest: DbResponseRequest {
         return database.objects(RItem.self)
                        .filter(finalPredicate)
                        .sorted(by: [SortDescriptor(keyPath: "title"),
-                                    SortDescriptor(keyPath: "identifier")])
+                                    SortDescriptor(keyPath: "key")])
     }
 }

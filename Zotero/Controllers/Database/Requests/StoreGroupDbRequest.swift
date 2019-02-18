@@ -17,7 +17,7 @@ struct StoreGroupDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         let group = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: self.response.identifier).1
-        
+
         group.name = self.response.data.name
         group.desc = self.response.data.description
         group.owner = self.response.data.owner

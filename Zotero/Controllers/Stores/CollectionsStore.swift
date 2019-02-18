@@ -12,12 +12,12 @@ import RealmSwift
 import RxSwift
 
 struct CollectionCellData {
-    let identifier: String
+    let key: String
     let name: String
     let level: Int
 
     init(object: RCollection, level: Int) {
-        self.identifier = object.identifier
+        self.key = object.key
         self.name = object.name
         self.level = level
     }
@@ -80,7 +80,7 @@ class CollectionsStore: Store {
 
     private func reload(collections: Results<RCollection>) -> [CollectionCellData] {
         let topCollections = collections.filter("parent == nil").sorted(by: [SortDescriptor(keyPath: "name"),
-                                                                             SortDescriptor(keyPath: "identifier")])
+                                                                             SortDescriptor(keyPath: "key")])
         return self.cells(for:topCollections, level: 0)
     }
 
@@ -92,7 +92,7 @@ class CollectionsStore: Store {
 
             if rCollection.children.count > 0 {
                 let sortedChildren = rCollection.children.sorted(by: [SortDescriptor(keyPath: "name"),
-                                                                      SortDescriptor(keyPath: "identifier")])
+                                                                      SortDescriptor(keyPath: "key")])
                 cells.append(contentsOf: self.cells(for: sortedChildren, level: (level + 1)))
             }
         }

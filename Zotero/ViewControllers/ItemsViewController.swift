@@ -83,6 +83,5 @@ extension ItemsViewController: UITableViewDelegate {
             tableView.deselectRow(at: indexPath, animated: true)
         }
         let item = self.store.state.value.cellData[indexPath.row]
-        NSLog("\(item.identifier) - \(item.title)")
     }
 }

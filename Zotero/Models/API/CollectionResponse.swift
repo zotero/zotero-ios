@@ -14,7 +14,7 @@ struct CollectionResponse {
         let parentCollection: String?
     }
 
-    let identifier: String
+    let key: String
     let library: LibraryResponse
     let links: LinksResponse
     let data: CollectionResponse.Data
@@ -29,12 +29,12 @@ extension CollectionResponse: Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CollectionResponse.Keys.self)
-        let identifier = try container.decode(String.self, forKey: .key)
+        let key = try container.decode(String.self, forKey: .key)
         let library = try container.decode(LibraryResponse.self, forKey: .library)
         let links = try container.decode(LinksResponse.self, forKey: .links)
         let data = try container.decode(CollectionResponse.Data.self, forKey: .data)
         let version = try container.decode(Int.self, forKey: .version)
-        self.init(identifier: identifier, library: library, links: links,
+        self.init(key: key, library: library, links: links,
                   data: data, version: version, responseHeaders: [:])
     }
 }

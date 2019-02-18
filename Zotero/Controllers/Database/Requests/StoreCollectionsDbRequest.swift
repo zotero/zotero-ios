@@ -22,26 +22,41 @@ struct StoreCollectionsDbRequest: DbRequest {
     }
 
     private func store(data: CollectionResponse, to database: Realm) throws {
-        let collection = try database.autocreatedObject(ofType: RCollection.self, forPrimaryKey: data.identifier).1
+        let collection: RCollection
+        if let existing = database.objects(RCollection.self)
+                                  .filter("key = %@ AND library.identifier = %d", data.key,
+                                                                                  data.library.libraryId).first {
+            collection = existing
+        } else {
+            collection = RCollection()
+            database.add(collection)
+        }
+
+        collection.key = data.key
         collection.name = data.data.name
         collection.version = data.version
         collection.needsSync = false
-        collection.library = nil
-        collection.parent = nil
 
         let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
         if libraryData.0 {
+            libraryData.1.name = data.library.name
             libraryData.1.needsSync = true
         }
         collection.library = libraryData.1
 
-        if let parentId = data.data.parentCollection {
-            let parentData = try database.autocreatedObject(ofType: RCollection.self, forPrimaryKey: parentId)
-            if parentData.0 {
-                parentData.1.needsSync = true
+        collection.parent = nil
+        if let key = data.data.parentCollection {
+            let parent: RCollection
+            if let existing = database.objects(RCollection.self)
+                                      .filter("library.identifier = %d AND key = %@", data.library.libraryId,
+                                                                                      key).first {
+                parent = existing
+            } else {
+                parent = RCollection()
+                parent.key = key
+                parent.library = collection.library
             }
-
-            collection.parent = parentData.1
+            collection.parent = parent
         }
     }
 }

@@ -23,19 +23,41 @@ struct StoreItemsDbRequest: DbRequest {
     }
 
     private func store(data: ItemResponse, to database: Realm) throws {
-        let item = try database.autocreatedObject(ofType: RItem.self, forPrimaryKey: data.identifier).1
-        item.rawType = data.data.type.rawValue
-        item.title = data.data.title ?? ""
-        item.caseName = data.data.caseName ?? ""
-        item.subject = data.data.subject ?? ""
-        item.nameOfAct = data.data.nameOfAct ?? ""
-        item.note = data.data.note ?? ""
+        let item: RItem
+        if let existing = database.objects(RItem.self)
+                                  .filter("key = %@ AND library.identifier = %d", data.key,
+                                                                                  data.library.libraryId).first {
+            item = existing
+        } else {
+            item = RItem()
+            database.add(item)
+        }
+
+        item.key = data.key
+        item.rawType = data.type.rawValue
         item.version = data.version
-        item.trash = data.data.isTrash
+        item.trash = data.isTrash
         item.needsSync = false
-        item.parent = nil
-        item.library = nil
-        item.collections.removeAll()
+
+        let titleKeys = RItem.titleKeys
+        let allFieldKeys = Array(data.fields.keys)
+        let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
+        database.delete(toRemove)
+        allFieldKeys.forEach { key in
+            let value = data.fields[key] ?? ""
+            if let existing = item.fields.filter("key = %@", key).first {
+                existing.value = value
+            } else {
+                let field = RItemField()
+                field.key = key
+                field.value = value
+                field.item = item
+                database.add(field)
+            }
+            if titleKeys.contains(key) {
+                item.title = value
+            }
+        }
 
         let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
         if libraryData.0 {
@@ -43,23 +65,38 @@ struct StoreItemsDbRequest: DbRequest {
         }
         item.library = libraryData.1
 
-        if let parentId = data.data.parentItem {
-            let parentData = try database.autocreatedObject(ofType: RItem.self, forPrimaryKey: parentId)
-            if parentData.0 {
-                parentData.1.needsSync = true
+        item.parent = nil
+        if let key = data.parentKey {
+            let parent: RItem
+            if let existing = database.objects(RItem.self)
+                                      .filter("library.identifier = %d AND key = %@", data.library.libraryId,
+                                                                                      key).first {
+                parent = existing
+            } else {
+                parent = RItem()
+                parent.key = key
+                parent.needsSync = true
+                parent.library = item.library
             }
-
-            item.parent = parentData.1
+            item.parent = parent
         }
 
-        if let collections = data.data.collections {
-            for collectionId in collections {
-                let collectionData = try database.autocreatedObject(ofType: RCollection.self,
-                                                                    forPrimaryKey: collectionId)
-                if collectionData.0 {
-                    collectionData.1.needsSync = true
-                }
-                item.collections.append(collectionData.1)
+        item.collections.removeAll()
+        if !data.collectionKeys.isEmpty {
+            var remainingCollections = data.collectionKeys
+            let existingCollections = database.objects(RCollection.self)
+                                              .filter("library.identifier = %d AND key IN %@", data.library.libraryId,
+                                                                                               data.collectionKeys)
+            for collection in existingCollections {
+                item.collections.append(collection)
+                remainingCollections.remove(collection.key)
+            }
+
+            for key in remainingCollections {
+                let collection = RCollection()
+                collection.key = key
+                collection.needsSync = true
+                collection.library = item.library
             }
         }
     }

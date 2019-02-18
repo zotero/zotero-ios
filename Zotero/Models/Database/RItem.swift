@@ -11,13 +11,9 @@ import Foundation
 import RealmSwift
 
 class RItem: Object {
-    @objc dynamic var identifier: String = ""
+    @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
     @objc dynamic var title: String = ""
-    @objc dynamic var caseName: String = ""
-    @objc dynamic var subject: String = ""
-    @objc dynamic var nameOfAct: String = ""
-    @objc dynamic var note: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var needsSync: Bool = false
@@ -25,13 +21,20 @@ class RItem: Object {
     @objc dynamic var library: RLibrary?
     let collections: List<RCollection> = List()
 
+    let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
 
-    override class func primaryKey() -> String? {
-        return "identifier"
+    override class func indexedProperties() -> [String] {
+        return ["version", "key"]
     }
 
-    override class func indexedProperties() -> [String] {
-        return ["version"]
-    }
+    static var titleKeys: [String] = {
+        return ["title", "nameOfAct", "caseName", "subject", "note"]
+    }()
+}
+
+class RItemField: Object {
+    @objc dynamic var key: String = ""
+    @objc dynamic var value: String = ""
+    @objc dynamic var item: RItem?
 }

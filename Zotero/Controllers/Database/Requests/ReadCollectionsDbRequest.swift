@@ -21,7 +21,6 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
         let libraryPredicate = NSPredicate(format: "library.identifier = %d", self.libraryId)
         let syncPredicate = NSPredicate(format: "needsSync = false")
         let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, syncPredicate])
-        return database.objects(RCollection.self)
-                       .filter(finalPredicate)
+        return database.objects(RCollection.self).filter(finalPredicate)
     }
 }

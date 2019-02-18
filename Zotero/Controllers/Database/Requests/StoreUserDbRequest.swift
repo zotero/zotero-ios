@@ -22,7 +22,9 @@ struct StoreUserDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        let user = try database.autocreatedObject(ofType: RUser.self, forPrimaryKey: self.identifier).1
+        let user = RUser()
+        user.identifier = self.identifier
         user.name = self.name
+        database.add(user, update: true)
     }
 }

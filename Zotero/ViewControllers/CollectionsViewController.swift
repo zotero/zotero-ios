@@ -110,7 +110,7 @@ extension CollectionsViewController: UITableViewDelegate {
         let collection = self.store.state.value.cellData[indexPath.row]
         let state = self.store.state.value
         self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title),
-                                           collectionData: (collection.identifier, collection.name))
+                                           collectionData: (collection.key, collection.name))
     }
 }
 

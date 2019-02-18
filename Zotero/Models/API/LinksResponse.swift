@@ -22,8 +22,8 @@ extension LinksResponse: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: LinksResponse.Keys.self)
         let main = try container.decodeIfPresent(LinkResponse.self, forKey: .main)
-        let alternate = try container.decodeIfPresent(LinkResponse.self, forKey: .alternate)
-        self.init(main: main, alternate: alternate)
+//        let alternate = try container.decodeIfPresent(LinkResponse.self, forKey: .alternate)
+        self.init(main: main, alternate: nil)
     }
 }
 

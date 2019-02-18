@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 class RCollection: Object {
-    @objc dynamic var identifier: String = ""
+    @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var version: Int = 0
     @objc dynamic var needsSync: Bool = false
@@ -21,11 +21,7 @@ class RCollection: Object {
     let items = LinkingObjects(fromType: RItem.self, property: "collections")
     let children = LinkingObjects(fromType: RCollection.self, property: "parent")
 
-    override class func primaryKey() -> String? {
-        return "identifier"
-    }
-
     override class func indexedProperties() -> [String] {
-        return ["version"]
+        return ["version", "key"]
     }
 }

@@ -43,7 +43,7 @@ protocol SyncActionHandler: class {
                              syncAll: Bool) -> Single<(Int, [Any])>
     func downloadObjectJson(for keys: String, group: SyncGroupType, object: SyncObjectType,
                             version: Int, index: Int) -> Completable
-    func markForResync(keys: [Any], object: SyncObjectType) -> Completable
+    func markForResync(keys: [Any], group: SyncGroupType, object: SyncObjectType) -> Completable
     func synchronizeDbWithFetchedFiles(group: SyncGroupType, object: SyncObjectType,
                                        version: Int, index: Int) -> Completable
     func storeVersion(_ version: Int, for group: SyncGroupType, object: SyncObjectType) -> Completable
@@ -92,8 +92,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                              syncAll: Bool) -> Single<(Int, [Any])> {
         switch object {
         case .group:
-            return self.synchronizeVersions(for: RLibrary.self, group: group, object: object,
-                                            since: sinceVersion, current: currentVersion, syncAll: syncAll)
+            return self.synchronizeGroupVersions(group: group, syncAll: syncAll)
         case .collection:
             return self.synchronizeVersions(for: RCollection.self, group: group, object: object,
                                             since: sinceVersion, current: currentVersion, syncAll: syncAll)
@@ -105,11 +104,27 @@ extension SyncActionHandlerController: SyncActionHandler {
         }
     }
 
-    private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, group: SyncGroupType, object: SyncObjectType,
-                                                          since sinceVersion: Int?, current currentVersion: Int?,
-                                                          syncAll: Bool) -> Single<(Int, [Any])> {
+    private func synchronizeGroupVersions(group: SyncGroupType, syncAll: Bool) -> Single<(Int, [Any])> {
+        let request = VersionsRequest<Int>(groupType: group, objectType: .group, version: nil)
+        return self.apiClient.send(request: request)
+                             .observeOn(self.scheduler)
+            .flatMap { response -> Single<(Int, [Any])> in
+                let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
+                let request =  SyncGroupVersionsDbRequest(versions: response.0, syncAll: syncAll)
+                do {
+                    let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
+                    return Single.just((newVersion, identifiers))
+                } catch let error {
+                    return Single.error(error)
+                }
+        }
+    }
+
+    private func synchronizeVersions<Obj: Syncable>(for: Obj.Type, group: SyncGroupType, object: SyncObjectType,
+                                                    since sinceVersion: Int?, current currentVersion: Int?,
+                                                    syncAll: Bool) -> Single<(Int, [Any])> {
         let forcedSinceVersion = syncAll ? nil : sinceVersion
-        let request = VersionsRequest<Obj.IdType>(groupType: group, objectType: object, version: forcedSinceVersion)
+        let request = VersionsRequest<String>(groupType: group, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap { response -> Single<(Int, [Any])> in
@@ -119,14 +134,18 @@ extension SyncActionHandlerController: SyncActionHandler {
                                       return Single.error(SyncActionHandlerError.versionMismatch)
                                   }
 
-                                  var libraryId: Int?
-                                  if object != .group {
-                                      libraryId = group.libraryId
+                                  var isTrash: Bool?
+                                  switch object {
+                                  case .item:
+                                      isTrash = false
+                                  case .trash:
+                                      isTrash = true
+                                  default: break
                                   }
 
                                   let request = SyncVersionsDbRequest<Obj>(versions: response.0,
-                                                                           parentLibraryId: libraryId,
-                                                                           isTrash: (object == .trash),
+                                                                           libraryId: group.libraryId,
+                                                                           isTrash: isTrash,
                                                                            syncAll: syncAll)
                                   do {
                                       let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
@@ -204,10 +223,12 @@ extension SyncActionHandlerController: SyncActionHandler {
             let decoded = try JSONDecoder().decode([CollectionResponse].self, from: data)
             try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded))
         case .item:
-            let decoded = try JSONDecoder().decode([ItemResponse].self, from: data)
+            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+            let decoded = try ItemResponse.decode(response: jsonObject)
             try coordinator.perform(request: StoreItemsDbRequest(response: decoded, trash: false))
         case .trash:
-            let decoded = try JSONDecoder().decode([ItemResponse].self, from: data)
+            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+            let decoded = try ItemResponse.decode(response: jsonObject)
             try coordinator.perform(request: StoreItemsDbRequest(response: decoded, trash: true))
         case .search:
             throw SyncActionHandlerError.expired
@@ -232,19 +253,19 @@ extension SyncActionHandlerController: SyncActionHandler {
         })
     }
 
-    func markForResync(keys: [Any], object: SyncObjectType) -> Completable {
+    func markForResync(keys: [Any], group: SyncGroupType, object: SyncObjectType) -> Completable {
         guard !keys.isEmpty else { return Completable.empty() }
 
         do {
             switch object {
             case .group:
-                let request = try MarkForResyncDbAction<RLibrary>(keys: keys)
+                let request = try MarkLibraryForResyncDbAction(identifiers: keys)
                 try self.dbStorage.createCoordinator().perform(request: request)
             case .collection:
-                let request = try MarkForResyncDbAction<RCollection>(keys: keys)
+                let request = try MarkForResyncDbAction<RCollection>(libraryId: group.libraryId, keys: keys)
                 try self.dbStorage.createCoordinator().perform(request: request)
             case .item, .trash:
-                let request = try MarkForResyncDbAction<RItem>(keys: keys)
+                let request = try MarkForResyncDbAction<RItem>(libraryId: group.libraryId, keys: keys)
                 try self.dbStorage.createCoordinator().perform(request: request)
             case .search:
                 return Completable.empty()
