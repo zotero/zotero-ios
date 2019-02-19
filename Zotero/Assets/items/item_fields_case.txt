@@ -1,0 +1,1 @@
+caseName,abstractNote,reporter,reporterVolume,court,docketNumber,firstPage,history,dateDecided,language,shortTitle,url,accessDate,rights,extra

@@ -8,16 +8,9 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RealmSwift
 import RxSwift
-
-struct ItemCellData {
-    let title: String
-
-    init(object: RItem) {
-        self.title = object.title
-    }
-}
 
 enum ItemsAction {
     case load
@@ -30,24 +23,17 @@ enum ItemsStoreError: Equatable {
 struct ItemsState {
     let libraryId: Int
     let collectionId: String?
-    let parentId: String?
     let title: String
 
-    fileprivate(set) var cellData: [ItemCellData]
+    fileprivate(set) var items: Results<RItem>?
     fileprivate(set) var error: ItemsStoreError?
-
-    // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
-    // on each change and we'll compare just versions of cellData.
     fileprivate var version: Int
-    fileprivate var collections: Results<RItem>?
-    fileprivate var collectionToken: NotificationToken?
+    fileprivate var itemsToken: NotificationToken?
 
-    init(libraryId: Int, collectionId: String?, parentId: String?, title: String) {
+    init(libraryId: Int, collectionId: String?, title: String) {
         self.libraryId = libraryId
         self.collectionId = collectionId
-        self.parentId = parentId
         self.title = title
-        self.cellData = []
         self.version = 0
     }
 }
@@ -63,11 +49,13 @@ class ItemsStore: Store {
     typealias State = ItemsState
 
     let dbStorage: DbStorage
+    let itemFieldsController: ItemFieldsController
 
     var updater: StoreStateUpdater<ItemsState>
 
-    init(initialState: ItemsState, dbStorage: DbStorage) {
+    init(initialState: ItemsState, dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
         self.dbStorage = dbStorage
+        self.itemFieldsController = itemFieldsController
         self.updater = StoreStateUpdater(initialState: initialState)
     }
 
@@ -78,43 +66,35 @@ class ItemsStore: Store {
         }
     }
 
-    private func reload(items: Results<RItem>) -> [ItemCellData] {
-        return items.map(ItemCellData.init)
-    }
-
     private func loadData() {
         do {
             let request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
                                              collectionKey: self.state.value.collectionId,
-                                             parentKey: self.state.value.parentId, trash: false)
-            let collections = try self.dbStorage.createCoordinator().perform(request: request)
-            let collectionToken = collections.observe({ [weak self] changes in
+                                             parentKey: nil, trash: false)
+            let items = try self.dbStorage.createCoordinator().perform(request: request)
+            let itemsToken = items.observe({ [weak self] changes in
                 guard let `self` = self else { return }
                 switch changes {
-                case .update(let objects, _, _, _):
-                    let cellData = self.reload(items: objects)
+                case .update(_, _, _, _):
                     self.updater.updateState(action: { newState in
-                        newState.cellData = cellData
                         newState.version += 1
                     })
                 case .initial: break
                 case .error(let error):
-                    // TODO: - Log error?
+                    DDLogError("ItemsStore: couldn't update data - \(error)")
                     self.updater.updateState { newState in
                         newState.error = .cantLoadData
                     }
                 }
             })
 
-            let cellData = self.reload(items: collections)
             self.updater.updateState { newState in
-                newState.collections = collections
                 newState.version += 1
-                newState.cellData = cellData
-                newState.collectionToken = collectionToken
+                newState.items = items
+                newState.itemsToken = itemsToken
             }
         } catch let error {
-            // TODO: - Log error?
+            DDLogError("ItemsStore: couldn't load data - \(error)")
             self.updater.updateState { newState in
                 newState.error = .cantLoadData
             }

@@ -1,0 +1,1 @@
+title,abstractNote,letterType,date,language,shortTitle,url,accessDate,archive,archiveLocation,libraryCatalog,callNumber,rights,extra

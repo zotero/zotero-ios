@@ -1,0 +1,1 @@
+artwork,audioRecording,bill,blogPost,book,bookSection,case,computerProgram,conferencePaper,dictionaryEntry,document,email,encyclopediaArticle,film,forumPost,hearing,instantMessage,interview,journalArticle,letter,magazineArticle,manuscript,map,newspaperArticle,note,patent,podcast,presentation,radioBroadcast,report,statute,tvBroadcast,thesis,videoRecording,webpage

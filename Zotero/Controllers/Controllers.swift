@@ -17,10 +17,12 @@ class Controllers {
     let secureStorage: SecureStorage
     let dbStorage: DbStorage
     let fileStorage: FileStorage
+    let itemFieldsController: ItemFieldsController
 
     var userControllers: UserControllers?
 
     init() {
+        let itemFieldsController = ItemFieldsController()
         let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
@@ -41,6 +43,7 @@ class Controllers {
         self.apiClient = apiClient
         self.secureStorage = secureStorage
         self.fileStorage = fileStorage
+        self.itemFieldsController = itemFieldsController
 
         // Not logged in, don't setup user controllers
         if secureStorage.apiToken == nil { return }
@@ -49,7 +52,8 @@ class Controllers {
             let userId = try dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
             self.userControllers = UserControllers(userId: userId, controllers: self)
         } catch let error {
-            fatalError("Controllers: User logged in, but could not load userId - \(error.localizedDescription)")
+            DDLogError("Controllers: User logged in, but could not load userId - \(error.localizedDescription)")
+            secureStorage.apiToken = nil
         }
     }
 

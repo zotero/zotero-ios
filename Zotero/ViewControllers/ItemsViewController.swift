@@ -9,6 +9,7 @@
 import UIKit
 
 import RxSwift
+import RealmSwift
 
 class ItemsViewController: UIViewController {
     // Outlets
@@ -16,6 +17,8 @@ class ItemsViewController: UIViewController {
     // Constants
     private let store: ItemsStore
     private let disposeBag: DisposeBag
+
+    // MARK: - Lifecycle
 
     init(store: ItemsStore) {
         self.store = store
@@ -47,6 +50,16 @@ class ItemsViewController: UIViewController {
         self.store.handle(action: .load)
     }
 
+    // MARK: - Actions
+
+    private func showItem(at index: Int) {
+        guard let items = self.store.state.value.items, index < items.count else { return }
+        let store = ItemDetailStore(initialState: ItemDetailState(item: items[index]), dbStorage: self.store.dbStorage,
+                                    itemFieldsController: self.store.itemFieldsController)
+        let controller = ItemDetailViewController(store: store)
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -62,14 +75,14 @@ extension ItemsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.store.state.value.cellData.count
+        return self.store.state.value.items?.count ?? 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        if indexPath.row < self.store.state.value.cellData.count {
-            let item = self.store.state.value.cellData[indexPath.row]
+        if let items = self.store.state.value.items, indexPath.row < items.count {
+            let item = items[indexPath.row]
             cell.textLabel?.text = item.title
         }
 
@@ -79,9 +92,7 @@ extension ItemsViewController: UITableViewDataSource {
 
 extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            tableView.deselectRow(at: indexPath, animated: true)
-        }
-        let item = self.store.state.value.cellData[indexPath.row]
+        tableView.deselectRow(at: indexPath, animated: true)
+        self.showItem(at: indexPath.row)
     }
 }

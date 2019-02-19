@@ -1,0 +1,1 @@
+title,abstractNote,billNumber,code,codeVolume,section,codePages,legislativeBody,session,history,date,language,url,accessDate,shortTitle,rights,extra

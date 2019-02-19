@@ -1,0 +1,1 @@
+title,abstractNote,dictionaryTitle,series,seriesNumber,volume,numberOfVolumes,edition,place,publisher,date,pages,language,ISBN,shortTitle,url,accessDate,archive,archiveLocation,libraryCatalog,callNumber,rights,extra

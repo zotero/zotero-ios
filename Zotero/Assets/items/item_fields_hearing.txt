@@ -1,0 +1,1 @@
+title,abstractNote,committee,place,publisher,numberOfVolumes,documentNumber,pages,legislativeBody,session,history,date,language,shortTitle,url,accessDate,rights,extra
