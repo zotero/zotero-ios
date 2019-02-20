@@ -50,7 +50,8 @@ class MainViewController: UISplitViewController {
         let leftNavigationController = UINavigationController(rootViewController: leftController)
 
         let itemState = ItemsState(libraryId: RLibrary.myLibraryId, collectionId: nil, title: "My Library")
-        let itemStore = ItemsStore(initialState: itemState, dbStorage: controllers.dbStorage,
+        let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
+                                   fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
                                    itemFieldsController: controllers.itemFieldsController)
         let rightNavigationController = UINavigationController(rootViewController: ItemsViewController(store: itemStore))
 
@@ -168,7 +169,8 @@ extension MainViewController: ItemNavigationDelegate {
     func showItems(libraryData: (Int, String), collectionData: (String, String)?) {
         let title = collectionData?.1 ?? libraryData.1
         let state = ItemsState(libraryId: libraryData.0, collectionId: collectionData?.0, title: title)
-        let store = ItemsStore(initialState: state, dbStorage: self.controllers.dbStorage,
+        let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
+                               fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,
                                itemFieldsController: self.controllers.itemFieldsController)
         let controller = ItemsViewController(store: store)
         self.showSecondaryController(controller)

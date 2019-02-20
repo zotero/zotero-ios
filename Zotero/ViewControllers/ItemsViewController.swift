@@ -54,7 +54,10 @@ class ItemsViewController: UIViewController {
 
     private func showItem(at index: Int) {
         guard let items = self.store.state.value.items, index < items.count else { return }
-        let store = ItemDetailStore(initialState: ItemDetailState(item: items[index]), dbStorage: self.store.dbStorage,
+        let store = ItemDetailStore(initialState: ItemDetailState(item: items[index]),
+                                    apiClient: self.store.apiClient,
+                                    fileStorage: self.store.fileStorage,
+                                    dbStorage: self.store.dbStorage,
                                     itemFieldsController: self.store.itemFieldsController)
         let controller = ItemDetailViewController(store: store)
         self.navigationController?.pushViewController(controller, animated: true)

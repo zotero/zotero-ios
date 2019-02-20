@@ -81,6 +81,8 @@
 		B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
 		B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
 		B33FBA64220B2AFD005906C4 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA63220B2AFD005906C4 /* SyncModels.swift */; };
+		B3487301221D73CA00244CCC /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487300221D73CA00244CCC /* FileRequest.swift */; };
+		B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487302221DBD1500244CCC /* String+Mimetype.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
@@ -228,6 +230,8 @@
 		B33FBA5F220B2AAD005906C4 /* SyncController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionHandler.swift; sourceTree = "<group>"; };
 		B33FBA63220B2AFD005906C4 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
+		B3487300221D73CA00244CCC /* FileRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRequest.swift; sourceTree = "<group>"; };
+		B3487302221DBD1500244CCC /* String+Mimetype.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Mimetype.swift"; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
@@ -375,7 +379,6 @@
 			isa = PBXGroup;
 			children = (
 				B30D59B9220743EE00884C4A /* API */,
-				B3819CA92210A53100EE02CA /* Collections */,
 				B385E2AF220854CD00DFE361 /* Database */,
 				B30F6686220CB266009E7A8F /* Files */,
 				B30D59A92206FECD00884C4A /* Stores */,
@@ -437,6 +440,7 @@
 				B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */,
 				B30F6689220CB413009E7A8F /* FileManager+Utils.swift */,
 				B36795DD220749B7003D0471 /* Result.swift */,
+				B3487302221DBD1500244CCC /* String+Mimetype.swift */,
 				B30D59B32207271E00884C4A /* Threading+Extras.swift */,
 				B30D59B722073C8F00884C4A /* UIColor+Custom.swift */,
 				B36795FE2207965F003D0471 /* UIViewController+Alert.swift */,
@@ -530,6 +534,7 @@
 				B36795EC22077CCD003D0471 /* LoginRequest.swift */,
 				B323932A2208E0CF00B161B8 /* VersionsRequest.swift */,
 				B30F668D220CBB37009E7A8F /* ObjectsRequest.swift */,
+				B3487300221D73CA00244CCC /* FileRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -543,13 +548,6 @@
 				B32CD35F221C70B6003F8073 /* ItemFieldCell.xib */,
 			);
 			path = Cells;
-			sourceTree = "<group>";
-		};
-		B3819CA92210A53100EE02CA /* Collections */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Collections;
 			sourceTree = "<group>";
 		};
 		B385E2AF220854CD00DFE361 /* Database */ = {
@@ -866,6 +864,8 @@
 				"${BUILT_PRODUCTS_DIR}/CocoaLumberjack/CocoaLumberjack.framework",
 				"${BUILT_PRODUCTS_DIR}/DictionaryDecoder/DictionaryDecoder.framework",
 				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
+				"${PODS_ROOT}/PSPDFKit/PSPDFKit.framework",
+				"${PODS_ROOT}/PSPDFKit/PSPDFKitUI.framework",
 				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
 				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/RxAlamofire/RxAlamofire.framework",
@@ -881,6 +881,8 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CocoaLumberjack.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/DictionaryDecoder.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PSPDFKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PSPDFKitUI.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAlamofire.framework",
@@ -993,10 +995,12 @@
 				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
+				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B30DF4012209E578000B6DE2 /* ReadGroupDataDbRequest.swift in Sources */,
 				B3FD6B39220D881A008D9D74 /* StoreItemsDbRequest.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
 				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
+				B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
 				B3C62ECA2211E6D2000FFBFF /* ReadItemsDbRequest.swift in Sources */,
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,

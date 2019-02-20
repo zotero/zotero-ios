@@ -12,6 +12,7 @@ target 'Zotero' do
   pod 'CocoaLumberjack/Core', '3.4.2'
   pod 'CocoaLumberjack/Swift', '3.4.2'
   pod 'DictionaryDecoder', '0.9.2'
+  pod 'PSPDFKit', podspec: 'https://customers.pspdfkit.com/cocoapods/TRIAL-w46OJ57xowLmzqz6rPM9wXSiSGlj4MoudWW3bLnjX57qJwfJzSvdP91d8wsAAPH9fMwzL_6osqqa2mS6VwkcXw/latest.podspec'
 
   target 'ZoteroTests' do
     inherit! :search_paths

@@ -8,6 +8,7 @@
 
 import Foundation
 
+import RxAlamofire
 import RxSwift
 
 enum ApiParameterEncoding {
@@ -37,6 +38,10 @@ protocol ApiResponseRequest: ApiRequest {
     associatedtype Response: Decodable
 }
 
+protocol ApiDownloadRequest: ApiRequest {
+    var downloadUrl: URL { get }
+}
+
 typealias RequestCompletion<Response> = (Result<Response>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
@@ -44,4 +49,5 @@ protocol ApiClient: class {
     func set(authToken: String?)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
     func send(dataRequest: ApiRequest) -> Single<(Data, ResponseHeaders)>
+    func download(request: ApiDownloadRequest) -> Observable<RxProgress>
 }

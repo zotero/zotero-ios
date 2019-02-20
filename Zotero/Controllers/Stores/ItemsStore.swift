@@ -48,12 +48,17 @@ class ItemsStore: Store {
     typealias Action = ItemsAction
     typealias State = ItemsState
 
+    let apiClient: ApiClient
+    let fileStorage: FileStorage
     let dbStorage: DbStorage
     let itemFieldsController: ItemFieldsController
 
     var updater: StoreStateUpdater<ItemsState>
 
-    init(initialState: ItemsState, dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
+    init(initialState: ItemsState, apiClient: ApiClient, fileStorage: FileStorage,
+         dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
+        self.apiClient = apiClient
+        self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.itemFieldsController = itemFieldsController
         self.updater = StoreStateUpdater(initialState: initialState)
