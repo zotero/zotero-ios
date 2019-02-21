@@ -83,6 +83,9 @@
 		B33FBA64220B2AFD005906C4 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA63220B2AFD005906C4 /* SyncModels.swift */; };
 		B3487301221D73CA00244CCC /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487300221D73CA00244CCC /* FileRequest.swift */; };
 		B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487302221DBD1500244CCC /* String+Mimetype.swift */; };
+		B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */; };
+		B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA701221EE0F60019A974 /* DeletionsResponse.swift */; };
+		B34BA704221EE2DF0019A974 /* PerformDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
@@ -232,6 +235,9 @@
 		B33FBA63220B2AFD005906C4 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
 		B3487300221D73CA00244CCC /* FileRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRequest.swift; sourceTree = "<group>"; };
 		B3487302221DBD1500244CCC /* String+Mimetype.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Mimetype.swift"; sourceTree = "<group>"; };
+		B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsRequest.swift; sourceTree = "<group>"; };
+		B34BA701221EE0F60019A974 /* DeletionsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsResponse.swift; sourceTree = "<group>"; };
+		B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
@@ -535,6 +541,7 @@
 				B323932A2208E0CF00B161B8 /* VersionsRequest.swift */,
 				B30F668D220CBB37009E7A8F /* ObjectsRequest.swift */,
 				B3487300221D73CA00244CCC /* FileRequest.swift */,
+				B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -601,6 +608,7 @@
 				B3819CB02210A96C00EE02CA /* ReadCollectionsDbRequest.swift */,
 				B3C62EC92211E6D2000FFBFF /* ReadItemsDbRequest.swift */,
 				B32CD35C221C5F7C003F8073 /* ResolveReferenceDbRequest.swift */,
+				B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -614,6 +622,7 @@
 				B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */,
 				B3FD6B34220D814F008D9D74 /* LinksResponse.swift */,
 				B385E2C02208921200DFE361 /* LoginResponse.swift */,
+				B34BA701221EE0F60019A974 /* DeletionsResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -965,6 +974,7 @@
 				B3FD6B41220D9122008D9D74 /* UpdateVersionsDbRequest.swift in Sources */,
 				B30F6685220CA148009E7A8F /* Syncable.swift in Sources */,
 				B3FD6B3D220D8CD5008D9D74 /* MarkForResyncDbAction.swift in Sources */,
+				B34BA704221EE2DF0019A974 /* PerformDeletionsDbRequest.swift in Sources */,
 				B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */,
 				B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
@@ -1000,9 +1010,11 @@
 				B3FD6B39220D881A008D9D74 /* StoreItemsDbRequest.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
 				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
+				B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */,
 				B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
 				B3C62ECA2211E6D2000FFBFF /* ReadItemsDbRequest.swift in Sources */,
+				B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */,
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,
 				B30F668C220CB6CC009E7A8F /* Files.swift in Sources */,
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,

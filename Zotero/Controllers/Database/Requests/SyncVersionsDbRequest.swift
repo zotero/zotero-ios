@@ -45,21 +45,6 @@ struct SyncVersionsDbRequest<Obj: Syncable>: DbResponseRequest {
     func process(in database: Realm) throws -> [String] {
         let allKeys = Array(self.versions.keys)
 
-        let libraryPredicate = NSPredicate(format: "library.identifier = %d", self.libraryId)
-        let keyPredicate = NSPredicate(format: "NOT key IN %@", allKeys)
-        var predicates = [libraryPredicate, keyPredicate]
-        if let trash = self.isTrash {
-            let trashPredicate = NSPredicate(format: "trash = %d", trash)
-            predicates.append(trashPredicate)
-        }
-        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-
-        let toRemove = database.objects(Obj.self).filter(predicate)
-        for object in toRemove {
-            object.removeChildren(in: database)
-        }
-        database.delete(toRemove)
-
         if self.syncAll { return allKeys }
 
         var toUpdate: [String] = allKeys

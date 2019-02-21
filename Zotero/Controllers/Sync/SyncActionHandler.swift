@@ -20,12 +20,14 @@ struct Versions {
     let items: Int
     let trash: Int
     let searches: Int
+    let deletions: Int
 
-    init(collections: Int, items: Int, trash: Int, searches: Int) {
+    init(collections: Int, items: Int, trash: Int, searches: Int, deletions: Int) {
         self.collections = collections
         self.items = items
         self.trash = trash
         self.searches = searches
+        self.deletions = deletions
     }
 
     init(versions: RVersions?) {
@@ -33,6 +35,7 @@ struct Versions {
         self.items = versions?.items ?? 0
         self.trash = versions?.trash ?? 0
         self.searches = versions?.searches ?? 0
+        self.deletions = versions?.deletions ?? 0
     }
 }
 
@@ -47,6 +50,7 @@ protocol SyncActionHandler: class {
     func synchronizeDbWithFetchedFiles(group: SyncGroupType, object: SyncObjectType,
                                        version: Int, index: Int) -> Completable
     func storeVersion(_ version: Int, for group: SyncGroupType, object: SyncObjectType) -> Completable
+    func synchronizeDeletions(for group: SyncGroupType, since sinceVersion: Int, current currentVersion: Int?) -> Completable
 }
 
 class SyncActionHandlerController {
@@ -100,7 +104,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             return self.synchronizeVersions(for: RItem.self, group: group, object: object,
                                             since: sinceVersion, current: currentVersion, syncAll: syncAll)
         case .search:
-            return Single.error(SyncActionHandlerError.expired)
+            return Single.just(((currentVersion ?? 0), []))
         }
     }
 
@@ -185,7 +189,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                                        version: Int, index: Int) -> Completable {
         return Single.just(Files.json(for: group, object: object, version: version, index: index))
                      .observeOn(self.scheduler)
-                     .flatMap({ file -> Single<(Data, File)> in
+                     .flatMap({ [weak self] file -> Single<(Data, File)> in
+                        guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+
                          do {
                              let data = try self.fileStorage.read(file)
                              return Single.just((data, file))
@@ -193,7 +199,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                              return Single.error(error)
                          }
                      })
-                     .flatMap({ data -> Single<File> in
+                     .flatMap({ [weak self] data -> Single<File> in
+                        guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+
                         do {
                             try self.syncToDb(data: data.0, group: group, object: object)
                             return Single.just(data.1)
@@ -201,7 +209,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                             return Single.error(error)
                         }
                      })
-                     .flatMap({ file -> Single<()> in
+                     .flatMap({ [weak self] file -> Single<()> in
+                        guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+
                          do {
                              try self.fileStorage.remove(file)
                              return Single.just(())
@@ -275,6 +285,31 @@ extension SyncActionHandlerController: SyncActionHandler {
         } catch let error {
             return Completable.error(error)
         }
+    }
+
+    func synchronizeDeletions(for group: SyncGroupType, since sinceVersion: Int, current currentVersion: Int?) -> Completable {
+        return self.apiClient.send(request: DeletionsRequest(groupType: group, version: sinceVersion))
+                             .observeOn(self.scheduler)
+                             .flatMap { [weak self] response -> Single<()> in
+                                 let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
+
+                                 if let version = currentVersion, version != newVersion {
+                                     return Single.error(SyncActionHandlerError.versionMismatch)
+                                 }
+
+                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+
+                                 do {
+                                     let request = PerformDeletionsDbRequest(libraryId: group.libraryId,
+                                                                             response: response.0,
+                                                                             version: newVersion)
+                                     try self.dbStorage.createCoordinator().perform(request: request)
+                                     return Single.just(())
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
+                             }
+                             .asCompletable()
     }
 
     private class func lastVersion(from headers: ResponseHeaders) -> Int {
