@@ -17,7 +17,7 @@ struct Files {
         return NSSearchPathForDirectoriesInDomains(.cachesDirectory, .allDomainsMask, true).first ?? "/"
     }()
 
-    static func json(for group: SyncGroupType, object: SyncObjectType, version: Int, index: Int) -> File {
+    static func json(for group: SyncLibraryType, object: SyncObjectType, version: Int, index: Int) -> File {
         return FileData(rootPath: Files.cachesRootPath,
                         relativeComponents: ["sync", group.fileComponent, object.fileComponent, version.description],
                         name: index.description, ext: "json")

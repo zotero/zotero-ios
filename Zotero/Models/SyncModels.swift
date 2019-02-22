@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum SyncGroupType: Equatable {
+public enum SyncLibraryType: Equatable {
     case user(Int)
     case group(Int)
 

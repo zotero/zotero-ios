@@ -1,5 +1,5 @@
 //
-//  ReadGroupDataDbRequest.swift
+//  ReadLibrariesDataDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 05/02/2019.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct ReadGroupDataDbRequest: DbResponseRequest {
+struct ReadLibrariesDataDbRequest: DbResponseRequest {
     typealias Response = [(Int, RVersions?)]
 
     var needsWrite: Bool { return false }

@@ -9,7 +9,7 @@
 import Foundation
 
 struct ObjectsRequest: ApiRequest {
-    let groupType: SyncGroupType
+    let libraryType: SyncLibraryType
     let objectType: SyncObjectType
     let keys: String
 
@@ -17,7 +17,7 @@ struct ObjectsRequest: ApiRequest {
         if self.objectType == .group {
             return "groups/\(self.keys)"
         }
-        return "\(self.groupType.apiPath)/\(self.objectType.apiPath)"
+        return "\(self.libraryType.apiPath)/\(self.objectType.apiPath)"
     }
 
     var httpMethod: ApiHttpMethod {

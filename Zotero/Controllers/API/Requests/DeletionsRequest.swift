@@ -11,11 +11,11 @@ import Foundation
 struct DeletionsRequest: ApiResponseRequest {
     typealias Response = DeletionsResponse
 
-    let groupType: SyncGroupType
+    let libraryType: SyncLibraryType
     let version: Int
 
     var path: String {
-        return "\(self.groupType.apiPath)/deleted"
+        return "\(self.libraryType.apiPath)/deleted"
     }
 
     var httpMethod: ApiHttpMethod {

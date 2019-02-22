@@ -11,12 +11,12 @@ import Foundation
 struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
     typealias Response = [Key: Int]
 
-    let groupType: SyncGroupType
+    let libraryType: SyncLibraryType
     let objectType: SyncObjectType
     let version: Int?
 
     var path: String {
-        return "\(self.groupType.apiPath)/\(self.objectType.apiPath)"
+        return "\(self.libraryType.apiPath)/\(self.objectType.apiPath)"
     }
 
     var httpMethod: ApiHttpMethod {

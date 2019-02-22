@@ -103,11 +103,22 @@ struct ItemResponse {
         self.fields = fields
     }
 
-    static func decode(response: Any) throws -> [ItemResponse] {
+    static func decode(response: Any) throws -> ([ItemResponse], [Error]) {
         guard let array = response as? [[String: Any]] else {
             throw ZoteroApiError.jsonDecoding(ItemResponseError.notArray)
         }
-        return try array.map({ try ItemResponse(response: $0) })
+
+        var items: [ItemResponse] = []
+        var errors: [Error] = []
+        array.forEach { data in
+            do {
+                let item = try ItemResponse(response: data)
+                items.append(item)
+            } catch let error {
+                errors.append(error)
+            }
+        }
+        return (items, errors)
     }
 
     private static func parse<T>(key: String, from data: [String: Any]) throws -> T {

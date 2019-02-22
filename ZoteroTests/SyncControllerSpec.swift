@@ -26,7 +26,7 @@ fileprivate enum TestAction {
     case downloadObject(SyncObjectType)
     case storeObject(SyncObjectType)
     case resync(SyncObjectType)
-    case storeVersion(SyncGroupType)
+    case storeVersion(SyncLibraryType)
     case markResync(SyncObjectType)
 }
 
@@ -37,13 +37,13 @@ fileprivate class TestHandler: SyncActionHandler {
         return self.requestResult?(action) ?? Single.just(())
     }
 
-    func loadAllGroupIdsAndVersions() -> PrimitiveSequence<SingleTrait, Array<(Int, Versions)>> {
+    func loadAllLibraryIdsAndVersions() -> PrimitiveSequence<SingleTrait, Array<(Int, Versions)>> {
         return self.result(for: .loadGroups).flatMap {
             return Single.just([(SyncControllerSpec.groupId, SyncControllerSpec.groupIdVersions)])
         }
     }
 
-    func synchronizeVersions(for group: SyncGroupType, object: SyncObjectType, since sinceVersion: Int?,
+    func synchronizeVersions(for group: SyncLibraryType, object: SyncObjectType, since sinceVersion: Int?,
                              current currentVersion: Int?) -> PrimitiveSequence<SingleTrait, (Int, Array<Any>)> {
         return self.result(for: .syncVersions(object)).flatMap {
             let data = SyncControllerSpec.syncVersionData
@@ -56,7 +56,7 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func downloadObjectJson(for keys: String, group: SyncGroupType,
+    func downloadObjectJson(for keys: String, group: SyncLibraryType,
                             object: SyncObjectType, version: Int, index: Int) -> Completable {
         return self.result(for: .downloadObject(object)).asCompletable()
     }
@@ -65,12 +65,12 @@ fileprivate class TestHandler: SyncActionHandler {
         return self.result(for: .markResync(object)).asCompletable()
     }
 
-    func synchronizeDbWithFetchedFiles(group: SyncGroupType, object: SyncObjectType,
+    func synchronizeDbWithFetchedFiles(group: SyncLibraryType, object: SyncObjectType,
                                        version: Int, index: Int) -> Completable {
         return self.result(for: .storeObject(object)).asCompletable()
     }
 
-    func storeVersion(_ version: Int, for group: SyncGroupType, object: SyncObjectType) -> Completable {
+    func storeVersion(_ version: Int, for group: SyncLibraryType, object: SyncObjectType) -> Completable {
         return self.result(for: .storeVersion(.group(SyncControllerSpec.groupId))).asCompletable()
     }
 }

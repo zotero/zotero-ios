@@ -17,10 +17,10 @@ struct UpdateVersionsDbRequest: DbRequest {
 
     var needsWrite: Bool { return true }
 
-    init(version: Int, object: SyncObjectType, group: SyncGroupType) {
+    init(version: Int, object: SyncObjectType, library: SyncLibraryType) {
         self.version = version
         self.object = object
-        switch group {
+        switch library {
         case .group(let groupId):
             self.libraryId = groupId
         case .user:

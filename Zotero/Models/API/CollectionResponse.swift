@@ -8,6 +8,31 @@
 
 import Foundation
 
+struct CollectionsResponse {
+    let collections: [CollectionResponse]
+    let errors: [Error]
+}
+
+extension CollectionsResponse: Decodable {
+    init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+
+        var collections: [CollectionResponse] = []
+        var errors: [Error] = []
+
+        while !container.isAtEnd {
+            do {
+                let collection = try container.decode(CollectionResponse.self)
+                collections.append(collection)
+            } catch let error {
+                errors.append(error)
+            }
+        }
+
+        self.init(collections: collections, errors: errors)
+    }
+}
+
 struct CollectionResponse {
     struct Data {
         let name: String

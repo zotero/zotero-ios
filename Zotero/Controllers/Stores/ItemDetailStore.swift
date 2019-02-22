@@ -179,7 +179,7 @@ class ItemDetailStore: Store {
             return
         }
 
-        let groupType: SyncGroupType
+        let groupType: SyncLibraryType
         switch library.libraryType {
         case .group:
             groupType = .group(library.identifier)
