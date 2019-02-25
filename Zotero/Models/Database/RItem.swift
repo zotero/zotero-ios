@@ -24,6 +24,7 @@ class RItem: Object {
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
     let tags = LinkingObjects(fromType: RTag.self, property: "items")
+    let creators = LinkingObjects(fromType: RCreator.self, property: "items")
 
     override class func indexedProperties() -> [String] {
         return ["version", "key"]

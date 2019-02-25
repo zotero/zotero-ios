@@ -67,6 +67,8 @@ struct ItemResponse {
     let version: Int
     let fields: [String: String]
     let tags: [TagResponse]
+    let creators: [CreatorResponse]
+
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags",
                 "collections", "relations", "dateAdded", "dateModified"]
@@ -96,6 +98,12 @@ struct ItemResponse {
         self.links = try decoder.decode(LinksResponse.self, from: linksData)
         let tagsData: [[String: Any]] = try ItemResponse.parse(key: "tags", from: data)
         self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
+        let creatorsData: [[String: Any]]? = data["creators"] as? [[String: Any]]
+        if let data = creatorsData {
+            self.creators = try data.map({ try decoder.decode(CreatorResponse.self, from: $0) })
+        } else {
+            self.creators = []
+        }
 
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]
@@ -135,4 +143,10 @@ struct ItemResponse {
 
 struct TagResponse: Decodable {
     let tag: String
+}
+
+struct CreatorResponse: Decodable {
+    let creatorType: String
+    let firstName: String
+    let lastName: String
 }

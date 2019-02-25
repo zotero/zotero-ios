@@ -44,6 +44,7 @@ struct StoreItemsDbRequest: DbRequest {
         self.syncParent(data: data, item: item, database: database)
         self.syncCollections(data: data, item: item, database: database)
         try self.syncTags(data: data, item: item, database: database)
+        self.syncCreators(data: data, item: item, database: database)
     }
 
     private func syncFields(data: ItemResponse, item: RItem, database: Realm) {
@@ -132,6 +133,44 @@ struct StoreItemsDbRequest: DbRequest {
             guard !existingIndices.contains(object.offset) else { continue }
             let tag = try database.autocreatedObject(ofType: RTag.self, forPrimaryKey: object.element.tag).1
             tag.items.append(item)
+        }
+    }
+
+    private func syncCreators(data: ItemResponse, item: RItem, database: Realm) {
+        var existingIndices: Set<Int> = []
+        item.creators.forEach { creator in
+            let responseIndex = data.creators.index(where: { response in
+                return response.creatorType == creator.rawType &&
+                       response.firstName == creator.firstName &&
+                       response.lastName == creator.lastName
+            })
+
+            if let index = responseIndex {
+                existingIndices.insert(index)
+            } else {
+                if let index = creator.items.index(of: item) {
+                    creator.items.remove(at: index)
+                }
+            }
+        }
+
+        for object in data.creators.enumerated() {
+            guard !existingIndices.contains(object.offset) else { continue }
+
+            let creator: RCreator
+            if let existing = database.objects(RCreator.self).filter("rawType = %@ AND firstName = %@" +
+                                                                     " AND lastName = %@", object.element.creatorType,
+                                                                                           object.element.firstName,
+                                                                                           object.element.lastName).first {
+                creator = existing
+            } else {
+                creator = RCreator()
+                database.add(creator)
+                creator.rawType = object.element.creatorType
+                creator.firstName = object.element.firstName
+                creator.lastName = object.element.lastName
+            }
+            creator.items.append(item)
         }
     }
 }

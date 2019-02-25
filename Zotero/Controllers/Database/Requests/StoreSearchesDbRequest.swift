@@ -56,8 +56,8 @@ struct StoreSearchesDbRequest: DbRequest {
         search.conditions.forEach { condition in
             let responseIndex = data.data.conditions.index(where: { response -> Bool in
                 return response.condition == condition.condition &&
-                    response.operator == condition.operator &&
-                    response.value == condition.value
+                       response.operator == condition.operator &&
+                       response.value == condition.value
             })
 
             if let index = responseIndex {
