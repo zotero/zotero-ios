@@ -33,7 +33,7 @@ extension CollectionsResponse: Decodable {
     }
 }
 
-struct CollectionResponse {
+struct CollectionResponse: Decodable {
     struct Data {
         let name: String
         let parentCollection: String?
@@ -44,24 +44,6 @@ struct CollectionResponse {
     let links: LinksResponse
     let data: CollectionResponse.Data
     let version: Int
-    var responseHeaders: [AnyHashable : Any]
-}
-
-extension CollectionResponse: Decodable {
-    private enum Keys: String, CodingKey {
-        case key, version, library, links, data
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CollectionResponse.Keys.self)
-        let key = try container.decode(String.self, forKey: .key)
-        let library = try container.decode(LibraryResponse.self, forKey: .library)
-        let links = try container.decode(LinksResponse.self, forKey: .links)
-        let data = try container.decode(CollectionResponse.Data.self, forKey: .data)
-        let version = try container.decode(Int.self, forKey: .version)
-        self.init(key: key, library: library, links: links,
-                  data: data, version: version, responseHeaders: [:])
-    }
 }
 
 extension CollectionResponse.Data: Decodable {

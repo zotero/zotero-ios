@@ -104,7 +104,8 @@ extension SyncActionHandlerController: SyncActionHandler {
             return self.synchronizeVersions(for: RItem.self, library: library, object: object,
                                             since: sinceVersion, current: currentVersion, syncAll: syncAll)
         case .search:
-            return Single.just(((currentVersion ?? 0), []))
+            return self.synchronizeVersions(for: RSearch.self, library: library, object: object,
+                                            since: sinceVersion, current: currentVersion, syncAll: syncAll)
         }
     }
 
@@ -240,7 +241,9 @@ extension SyncActionHandlerController: SyncActionHandler {
             try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0, trash: object == .trash))
             return (decoded.0.map({ $0.key }), decoded.1)
         case .search:
-            return ([], [])
+            let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
+            try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
+            return (decoded.searches.map({ $0.key }), decoded.errors)
         }
     }
 
@@ -277,9 +280,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                 let request = try MarkForResyncDbAction<RItem>(libraryId: library.libraryId, keys: keys)
                 try self.dbStorage.createCoordinator().perform(request: request)
             case .search:
-                return Completable.empty()
+                let request = try MarkForResyncDbAction<RSearch>(libraryId: library.libraryId, keys: keys)
+                try self.dbStorage.createCoordinator().perform(request: request)
             }
-
             return Completable.empty()
         } catch let error {
             return Completable.error(error)

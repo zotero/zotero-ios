@@ -32,6 +32,10 @@ extension RItem: SyncableObject {
     }
 }
 
+extension RSearch: SyncableObject {
+    func removeChildren(in database: Realm) {}
+}
+
 struct SyncVersionsDbRequest<Obj: Syncable>: DbResponseRequest {
     typealias Response = [String]
 

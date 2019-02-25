@@ -27,8 +27,7 @@ struct GroupResponse {
 extension GroupResponse: Decodable {
     enum Keys: String, CodingKey {
         case identifier = "id"
-        case data
-        case version
+        case data, version
     }
 
     init(from decoder: Decoder) throws {

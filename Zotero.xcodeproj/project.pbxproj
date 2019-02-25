@@ -115,6 +115,9 @@
 		B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C3220897B300DFE361 /* CollectionsViewController.xib */; };
 		B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C6220897C600DFE361 /* ItemsViewController.swift */; };
 		B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C7220897C600DFE361 /* ItemsViewController.xib */; };
+		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
+		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
+		B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */; };
 		B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EBF2211D899000FFBFF /* MainViewController.swift */; };
 		B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */; };
 		B3C62EC42211DA23000FFBFF /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */; };
@@ -267,6 +270,9 @@
 		B385E2C3220897B300DFE361 /* CollectionsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsViewController.xib; sourceTree = "<group>"; };
 		B385E2C6220897C600DFE361 /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B385E2C7220897C600DFE361 /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
+		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
+		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
+		B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3C62EBF2211D899000FFBFF /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
@@ -583,6 +589,7 @@
 			isa = PBXGroup;
 			children = (
 				B385E2B42208755500DFE361 /* RUser.swift */,
+				B3BA36F5222402AC006220E4 /* RSearch.swift */,
 				B30DF3F82209A282000B6DE2 /* RLibrary.swift */,
 				B30F668F220CC02D009E7A8F /* RCollection.swift */,
 				B30F6691220CC033009E7A8F /* RItem.swift */,
@@ -602,6 +609,7 @@
 				B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */,
 				B3FD6B36220D86E0008D9D74 /* StoreCollectionsDbRequest.swift */,
 				B3FD6B38220D881A008D9D74 /* StoreItemsDbRequest.swift */,
+				B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */,
 				B3FD6B3C220D8CD5008D9D74 /* MarkForResyncDbAction.swift */,
 				B3FD6B40220D9122008D9D74 /* UpdateVersionsDbRequest.swift */,
 				B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */,
@@ -623,6 +631,7 @@
 				B3FD6B34220D814F008D9D74 /* LinksResponse.swift */,
 				B385E2C02208921200DFE361 /* LoginResponse.swift */,
 				B34BA701221EE0F60019A974 /* DeletionsResponse.swift */,
+				B3BA36F722241601006220E4 /* SearchesResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -970,6 +979,7 @@
 				B30DF3F92209A282000B6DE2 /* RLibrary.swift in Sources */,
 				B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
+				B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncModels.swift in Sources */,
 				B3FD6B41220D9122008D9D74 /* UpdateVersionsDbRequest.swift in Sources */,
 				B30F6685220CA148009E7A8F /* Syncable.swift in Sources */,
@@ -995,6 +1005,7 @@
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
+				B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */,
 				B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
@@ -1005,6 +1016,7 @@
 				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
+				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B30DF4012209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B3FD6B39220D881A008D9D74 /* StoreItemsDbRequest.swift in Sources */,
