@@ -126,7 +126,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        self.controllers.userControllers?.syncController.startSync(isInitial: false)
+        self.controllers.userControllers?.syncController.startSync(isInitial: true)
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

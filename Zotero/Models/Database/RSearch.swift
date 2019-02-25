@@ -17,6 +17,10 @@ class RSearch: Object {
     @objc dynamic var needsSync: Bool = false
     @objc dynamic var library: RLibrary?
     let conditions = LinkingObjects(fromType: RCondition.self, property: "searches")
+
+    override class func indexedProperties() -> [String] {
+        return ["version", "key"]
+    }
 }
 
 class RCondition: Object {

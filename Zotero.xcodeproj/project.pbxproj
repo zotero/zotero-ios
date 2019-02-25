@@ -118,6 +118,7 @@
 		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
 		B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */; };
+		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
 		B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EBF2211D899000FFBFF /* MainViewController.swift */; };
 		B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */; };
 		B3C62EC42211DA23000FFBFF /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */; };
@@ -273,6 +274,7 @@
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
+		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
 		B3C62EBF2211D899000FFBFF /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
@@ -594,6 +596,7 @@
 				B30F668F220CC02D009E7A8F /* RCollection.swift */,
 				B30F6691220CC033009E7A8F /* RItem.swift */,
 				B3FD6B3E220D9084008D9D74 /* RVersions.swift */,
+				B3BA36FB22242672006220E4 /* RTag.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -1003,6 +1006,7 @@
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
+				B3BA36FC22242672006220E4 /* RTag.swift in Sources */,
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
 				B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */,

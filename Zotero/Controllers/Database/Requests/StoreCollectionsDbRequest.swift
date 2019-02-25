@@ -37,13 +37,20 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.version = data.version
         collection.needsSync = false
 
+        try self.syncLibrary(data: data, collection: collection, database: database)
+        self.syncParent(data: data, collection: collection, database: database)
+    }
+
+    private func syncLibrary(data: CollectionResponse, collection: RCollection, database: Realm) throws {
         let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
         if libraryData.0 {
             libraryData.1.name = data.library.name
             libraryData.1.needsSync = true
         }
         collection.library = libraryData.1
+    }
 
+    private func syncParent(data: CollectionResponse, collection: RCollection, database: Realm) {
         collection.parent = nil
         if let key = data.data.parentCollection {
             let parent: RCollection

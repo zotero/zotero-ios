@@ -66,6 +66,7 @@ struct ItemResponse {
     let isTrash: Bool
     let version: Int
     let fields: [String: String]
+    let tags: [TagResponse]
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags",
                 "collections", "relations", "dateAdded", "dateModified"]
@@ -88,10 +89,13 @@ struct ItemResponse {
         let deleted = data["deleted"] as? Int
         self.isTrash = deleted == 1
 
+        let decoder = DictionaryDecoder()
         let libraryData: [String: Any] = try ItemResponse.parse(key: "library", from: response)
-        self.library = try DictionaryDecoder().decode(LibraryResponse.self, from: libraryData)
+        self.library = try decoder.decode(LibraryResponse.self, from: libraryData)
         let linksData: [String: Any] = try ItemResponse.parse(key: "links", from: response)
-        self.links = try DictionaryDecoder().decode(LinksResponse.self, from: linksData)
+        self.links = try decoder.decode(LinksResponse.self, from: linksData)
+        let tagsData: [[String: Any]] = try ItemResponse.parse(key: "tags", from: data)
+        self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
 
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]
@@ -127,4 +131,8 @@ struct ItemResponse {
         }
         return parsed
     }
+}
+
+struct TagResponse: Decodable {
+    let tag: String
 }
