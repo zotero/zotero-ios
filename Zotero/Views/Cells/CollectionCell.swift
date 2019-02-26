@@ -19,10 +19,13 @@ class CollectionCell: UITableViewCell {
     @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
     // Constants
     static let baseOffset: CGFloat = 20.0
-    static let levelOffset: CGFloat = 30.0
+    static let levelOffset: CGFloat = 20.0
 
     func setup(with model: CollectionCellModel) {
         self.titleLabel.text = model.name
-        self.leftConstraint.constant = CollectionCell.baseOffset + (CGFloat(model.level) * CollectionCell.levelOffset)
+        let offset = CollectionCell.baseOffset + (CGFloat(model.level) * CollectionCell.levelOffset)
+        self.leftConstraint.constant = offset
+        self.separatorInset = UIEdgeInsets(top: 0, left: offset - 3, bottom: 0, right: 0)
+        self.layoutMargins = UIEdgeInsets(top: 0, left: offset - 3, bottom: 0, right: 0)
     }
 }

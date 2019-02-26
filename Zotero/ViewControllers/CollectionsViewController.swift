@@ -111,6 +111,14 @@ extension CollectionsViewController: UITableViewDelegate {
         return indexPath
     }
 
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        switch section {
+        case 0: return "Collections"
+        case 1: return "Searches"
+        default: return nil
+        }
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if UIDevice.current.userInterfaceIdiom == .phone {
             tableView.deselectRow(at: indexPath, animated: true)
