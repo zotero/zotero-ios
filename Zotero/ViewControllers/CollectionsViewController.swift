@@ -70,20 +70,29 @@ class CollectionsViewController: UIViewController {
 
 extension CollectionsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
+        return 2
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.store.state.value.cellData.count
+        switch section {
+        case 0:
+            return self.store.state.value.collectionCellData.count
+        case 1:
+            return self.store.state.value.searchCellData.count
+        default:
+            return 0
+        }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        if indexPath.row < self.store.state.value.cellData.count,
-           let cell = cell as? CollectionCell {
-            let collection = self.store.state.value.cellData[indexPath.row]
-            cell.setup(with: collection)
+        guard let collectionCell = cell as? CollectionCell else { return cell }
+
+        let data = indexPath.section == 0 ? self.store.state.value.collectionCellData :
+                                            self.store.state.value.searchCellData
+        if indexPath.row < data.count {
+            collectionCell.setup(with: data[indexPath.row])
         }
 
         return cell
@@ -107,10 +116,13 @@ extension CollectionsViewController: UITableViewDelegate {
             tableView.deselectRow(at: indexPath, animated: true)
         }
         self.lastIndexPath = indexPath
-        let collection = self.store.state.value.cellData[indexPath.row]
-        let state = self.store.state.value
-        self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title),
-                                           collectionData: (collection.key, collection.name))
+
+        if indexPath.section == 0 {
+            let state = self.store.state.value
+            let collection = state.collectionCellData[indexPath.row]
+            self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title),
+                                               collectionData: (collection.key, collection.name))
+        }
     }
 }
 

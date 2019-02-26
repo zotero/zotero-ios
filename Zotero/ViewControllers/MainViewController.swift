@@ -157,7 +157,7 @@ extension MainViewController: ItemNavigationDelegate {
         navigationController.pushViewController(controller, animated: true)
 
         navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in
-            let newFraction = self.calculatePrimaryColumnFraction(from: store.state.value.cellData)
+            let newFraction = self.calculatePrimaryColumnFraction(from: store.state.value.collectionCellData)
             self.currentLandscapePrimaryColumnFraction = newFraction
 
             if UIDevice.current.orientation.isLandscape {

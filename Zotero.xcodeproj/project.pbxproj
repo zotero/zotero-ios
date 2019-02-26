@@ -116,6 +116,7 @@
 		B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C3220897B300DFE361 /* CollectionsViewController.xib */; };
 		B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C6220897C600DFE361 /* ItemsViewController.swift */; };
 		B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C7220897C600DFE361 /* ItemsViewController.xib */; };
+		B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */; };
 		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
 		B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */; };
@@ -273,6 +274,7 @@
 		B385E2C3220897B300DFE361 /* CollectionsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsViewController.xib; sourceTree = "<group>"; };
 		B385E2C6220897C600DFE361 /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B385E2C7220897C600DFE361 /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
+		B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
@@ -623,6 +625,7 @@
 				B3C62EC92211E6D2000FFBFF /* ReadItemsDbRequest.swift */,
 				B32CD35C221C5F7C003F8073 /* ResolveReferenceDbRequest.swift */,
 				B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */,
+				B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1001,6 +1004,7 @@
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
 				B32CD358221C5A5D003F8073 /* ItemDetailViewController.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
+				B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */,
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B32CD355221C58FB003F8073 /* ItemFieldsController.swift in Sources */,
 				B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */,
