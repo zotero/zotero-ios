@@ -35,6 +35,8 @@ struct StoreItemsDbRequest: DbRequest {
 
         item.key = data.key
         item.rawType = data.type.rawValue
+        item.creatorSummary = data.creatorSummary ?? ""
+        item.parsedDate = data.parsedDate ?? ""
         item.version = data.version
         item.trash = data.isTrash
         item.needsSync = false
@@ -131,7 +133,17 @@ struct StoreItemsDbRequest: DbRequest {
 
         for object in data.tags.enumerated() {
             guard !existingIndices.contains(object.offset) else { continue }
-            let tag = try database.autocreatedObject(ofType: RTag.self, forPrimaryKey: object.element.tag).1
+            let tag: RTag
+            if let existing = database.objects(RTag.self).filter("library.identifier = %d" +
+                                                                 " AND name = %@", data.library.libraryId,
+                                                                                   object.element.tag).first {
+                tag = existing
+            } else {
+                tag = RTag()
+                database.add(tag)
+                tag.name = object.element.tag
+                tag.library = item.library
+            }
             tag.items.append(item)
         }
     }

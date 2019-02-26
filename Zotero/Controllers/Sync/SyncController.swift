@@ -58,6 +58,7 @@ enum QueueAction: Equatable {
     case syncBatchToDb(ObjectBatch)                               // Stores file data to db
     case storeVersion(Int, SyncLibraryType, SyncObjectType)       // Store new version for given library-object
     case syncDeletions(SyncLibraryType, Int)                      // Synchronize deletions of objects in library
+    case syncSettings(SyncLibraryType, Int)                       // Synchronize settings for library
 
     var library: SyncLibraryType? {
         switch self {
@@ -68,7 +69,8 @@ enum QueueAction: Equatable {
             return action.library
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
-             .syncDeletions(let library, _):
+             .syncDeletions(let library, _),
+             .syncSettings(let library, _):
             return library
         }
     }
@@ -288,6 +290,8 @@ final class SyncController {
             self.processStoreVersionAction(library: library, object: object, version: version)
         case .syncDeletions(let library, let version):
             self.processDeletionsSync(library: library, since: version)
+        case .syncSettings(let library, let version):
+            self.processSettingsSync(for: library, version: version)
         }
     }
 
@@ -324,7 +328,8 @@ final class SyncController {
 
                 var allActions: [QueueAction] = []
                 libraryData.forEach { data in
-                    let actions: [QueueAction] = [.syncVersions(data.0, .collection, data.1.collections),
+                    let actions: [QueueAction] = [.syncSettings(data.0, data.1.settings),
+                                                  .syncVersions(data.0, .collection, data.1.collections),
                                                   .syncVersions(data.0, .item, data.1.items),
                                                   .syncVersions(data.0, .trash, data.1.trash),
                                                   .syncVersions(data.0, .search, data.1.searches),
@@ -554,12 +559,12 @@ final class SyncController {
 
     private func processDeletionsSync(library: SyncLibraryType, since sinceVersion: Int) {
         self.handler.synchronizeDeletions(for: library, since: sinceVersion, current: self.lastReturnedVersion)
-            .subscribe(onCompleted: { [weak self] in
-                self?.finishDeletionsSync(error: nil)
-            }, onError: { [weak self] error in
-                self?.finishDeletionsSync(error: error)
-            })
-            .disposed(by: self.disposeBag)
+                    .subscribe(onCompleted: { [weak self] in
+                        self?.finishDeletionsSync(error: nil)
+                    }, onError: { [weak self] error in
+                        self?.finishDeletionsSync(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
     }
 
     private func finishDeletionsSync(error: Error?) {
@@ -579,6 +584,21 @@ final class SyncController {
             self?.nonFatalErrors.append(error)
             self?.processNextAction()
         }
+    }
+
+    private func processSettingsSync(for library: SyncLibraryType, version: Int) {
+        self.handler.synchronizeSettings(for: library, since: version)
+                    .subscribe(onCompleted: { [weak self] in
+                        self?.performOnAccessQueue(flags: .barrier) { [weak self] in
+                            self?.processNextAction()
+                        }
+                    }, onError: { [weak self] error in
+                        self?.performOnAccessQueue(flags: .barrier) { [weak self] in
+                            self?.nonFatalErrors.append(error)
+                            self?.processNextAction()
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
     }
 
     // MARK: - Helpers

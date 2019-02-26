@@ -16,4 +16,5 @@ class RVersions: Object {
     @objc dynamic var trash: Int = 0
     @objc dynamic var searches: Int = 0
     @objc dynamic var deletions: Int = 0
+    @objc dynamic var settings: Int = 0
 }

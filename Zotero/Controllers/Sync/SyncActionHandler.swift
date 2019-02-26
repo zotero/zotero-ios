@@ -21,13 +21,15 @@ struct Versions {
     let trash: Int
     let searches: Int
     let deletions: Int
+    let settings: Int
 
-    init(collections: Int, items: Int, trash: Int, searches: Int, deletions: Int) {
+    init(collections: Int, items: Int, trash: Int, searches: Int, deletions: Int, settings: Int) {
         self.collections = collections
         self.items = items
         self.trash = trash
         self.searches = searches
         self.deletions = deletions
+        self.settings = settings
     }
 
     init(versions: RVersions?) {
@@ -36,6 +38,7 @@ struct Versions {
         self.trash = versions?.trash ?? 0
         self.searches = versions?.searches ?? 0
         self.deletions = versions?.deletions ?? 0
+        self.settings = versions?.settings ?? 0
     }
 }
 
@@ -50,7 +53,9 @@ protocol SyncActionHandler: class {
     func synchronizeDbWithFetchedFiles(library: SyncLibraryType, object: SyncObjectType,
                                        version: Int, index: Int) -> Single<([String], [Error])>
     func storeVersion(_ version: Int, for library: SyncLibraryType, object: SyncObjectType) -> Completable
-    func synchronizeDeletions(for library: SyncLibraryType, since sinceVersion: Int, current currentVersion: Int?) -> Completable
+    func synchronizeDeletions(for library: SyncLibraryType, since sinceVersion: Int,
+                              current currentVersion: Int?) -> Completable
+    func synchronizeSettings(for library: SyncLibraryType, since version: Int) -> Completable
 }
 
 class SyncActionHandlerController {
@@ -311,6 +316,23 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      return Single.error(error)
                                  }
                              }
+                             .asCompletable()
+    }
+
+    func synchronizeSettings(for library: SyncLibraryType, since version: Int) -> Completable {
+        return self.apiClient.send(request: SettingsRequest(libraryType: library, version: version))
+                             .observeOn(self.scheduler)
+                             .flatMap({ [weak self] response -> Single<()> in
+                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+                                 do {
+                                     let request = StoreSettingsDbRequest(response: response.0,
+                                                                          libraryId: library.libraryId)
+                                     try self.dbStorage.createCoordinator().perform(request: request)
+                                     return Single.just(())
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
+                             })
                              .asCompletable()
     }
 

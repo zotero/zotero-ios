@@ -62,7 +62,7 @@ class CollectionsViewController: UIViewController {
     // MARK: - Setups
 
     private func setupTableView() {
-        self.tableView.register(UINib(nibName: "CollectionCell", bundle: nil), forCellReuseIdentifier: "Cell")
+        self.tableView.register(UINib(nibName: CollectionCell.nibName, bundle: nil), forCellReuseIdentifier: "Cell")
         self.tableView.dataSource = self
         self.tableView.delegate = self
     }

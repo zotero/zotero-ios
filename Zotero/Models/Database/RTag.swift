@@ -12,9 +12,15 @@ import RealmSwift
 
 class RTag: Object {
     @objc dynamic var name: String = ""
+    @objc dynamic var color: String = ""
+    @objc dynamic var library: RLibrary?
     let items: List<RItem> = List()
 
-    override class func primaryKey() -> String? {
-        return "name"
+    var uiColor: UIColor {
+        return UIColor(hex: self.color)
+    }
+
+    override class func indexedProperties() -> [String] {
+        return ["name"]
     }
 }

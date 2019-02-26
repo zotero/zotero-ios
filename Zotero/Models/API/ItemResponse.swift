@@ -63,6 +63,8 @@ struct ItemResponse {
     let parentKey: String?
     let collectionKeys: Set<String>
     let links: LinksResponse
+    let creatorSummary: String?
+    let parsedDate: String?
     let isTrash: Bool
     let version: Int
     let fields: [String: String]
@@ -87,6 +89,10 @@ struct ItemResponse {
         let collections = data["collections"] as? [String]
         self.collectionKeys = collections.flatMap(Set.init) ?? []
         self.parentKey = data["parentItem"] as? String
+
+        let meta: [String: Any] = try ItemResponse.parse(key: "meta", from: response)
+        self.creatorSummary = meta["creatorSummary"] as? String
+        self.parsedDate = meta["parsedDate"] as? String
 
         let deleted = data["deleted"] as? Int
         self.isTrash = deleted == 1

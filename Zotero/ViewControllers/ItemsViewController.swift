@@ -66,7 +66,7 @@ class ItemsViewController: UIViewController {
     // MARK: - Setups
 
     private func setupTableView() {
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        self.tableView.register(UINib(nibName: ItemCell.nibName, bundle: nil), forCellReuseIdentifier: "Cell")
         self.tableView.dataSource = self
         self.tableView.delegate = self
     }
@@ -84,10 +84,10 @@ extension ItemsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        if let items = self.store.state.value.items, indexPath.row < items.count {
-            let item = items[indexPath.row]
-            cell.textLabel?.text = item.title
-        }
+        guard let itemCell = cell as? ItemCell,
+              let items = self.store.state.value.items, indexPath.row < items.count else { return cell }
+
+        itemCell.setup(with: items[indexPath.row])
 
         return cell
     }
@@ -97,5 +97,27 @@ extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         self.showItem(at: indexPath.row)
+    }
+}
+
+extension RItem: ItemCellModel {
+    var creator: String? {
+        return self.creatorSummary.isEmpty ? nil : self.creatorSummary
+    }
+
+    var date: String? {
+        return self.parsedDate.isEmpty ? nil : self.parsedDate
+    }
+
+    var hasAttachment: Bool {
+        return self.children.filter("rawType = %@", ItemResponse.ItemType.attachment.rawValue).count > 0
+    }
+
+    var hasNote: Bool {
+        return self.children.filter("rawType = %@", ItemResponse.ItemType.note.rawValue).count > 0
+    }
+
+    var tagColors: [UIColor] {
+        return self.tags.map({ $0.uiColor })
     }
 }

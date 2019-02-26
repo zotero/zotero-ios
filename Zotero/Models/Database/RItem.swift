@@ -14,6 +14,8 @@ class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
     @objc dynamic var title: String = ""
+    @objc dynamic var creatorSummary: String = ""
+    @objc dynamic var parsedDate: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var needsSync: Bool = false

@@ -33,6 +33,14 @@ struct PerformDeletionsDbRequest: DbRequest {
         }
         database.delete(items)
 
+        let searches = database.objects(RSearch.self)
+                               .filter("library.identifier = %d AND key IN %@", self.libraryId, self.response.searches)
+        database.delete(searches)
+
+        let tags = database.objects(RTag.self)
+                           .filter("library.identifier = %d AND name IN %@", self.libraryId, self.response.tags)
+        database.delete(tags)
+
         let library = database.object(ofType: RLibrary.self, forPrimaryKey: self.libraryId)
         if library?.versions == nil {
             let versions = RVersions()
