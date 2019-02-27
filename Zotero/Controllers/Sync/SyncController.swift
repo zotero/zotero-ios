@@ -386,16 +386,15 @@ final class SyncController {
         case .group:
             batches = keys.enumerated().map { ObjectBatch(order: $0.offset, library: library, object: object,
                                                           keys: [$0.element], version: currentVersion) }
-
         default:
-            let chunkedKeys = keys.chunked(into: ObjectBatch.maxObjectCount)
-            batches = chunkedKeys.enumerated().map { ObjectBatch(order: $0.offset, library: library, object: object,
-                                                                 keys: $0.element, version: currentVersion) }
+            batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
         }
 
         var actions: [QueueAction] = []
-        actions.append(contentsOf: batches.map({ .syncBatchToFile($0) }))
-        actions.append(contentsOf: batches.map({ .syncBatchToDb($0) }))
+        batches.forEach { batch in
+            actions.append(.syncBatchToFile(batch))
+            actions.append(.syncBatchToDb(batch))
+        }
         if object == .group {
             actions.append(.createLibraryActions)
         } else {
@@ -408,6 +407,29 @@ final class SyncController {
             }
             self?.enqueue(actions: actions, at: 0)
         }
+    }
+
+    private func createBatchObjects(for keys: [Any], library: SyncLibraryType,
+                                    object: SyncObjectType, version: Int) -> [ObjectBatch] {
+        let maxBatchSize = ObjectBatch.maxObjectCount
+        var batchSize = 5
+        var processed = 0
+        var batches: [ObjectBatch] = []
+
+        while processed < keys.count {
+            let upperBound = min((keys.count - processed), batchSize) + processed
+            let batchKeys = Array(keys[processed..<upperBound])
+
+            batches.append(ObjectBatch(order: batches.count, library: library, object: object,
+                                       keys: batchKeys, version: version))
+
+            processed += batchSize
+            if batchSize < maxBatchSize {
+                batchSize = min(batchSize * 2, maxBatchSize)
+            }
+        }
+
+        return batches
     }
 
     private func processFileStoreAction(for batch: ObjectBatch) {
