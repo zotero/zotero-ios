@@ -70,8 +70,6 @@ struct StoreSearchesDbRequest: DbRequest {
         }
 
         for object in data.data.conditions.enumerated() {
-            guard !existingIndices.contains(object.offset) else { continue }
-
             let condition: RCondition
             if let existing = database.objects(RCondition.self).filter("condition = %@ AND operator = %@ AND" +
                                                                        " value = %@", object.element.condition,
@@ -86,7 +84,11 @@ struct StoreSearchesDbRequest: DbRequest {
                 database.add(condition)
             }
 
-            condition.searches.append(search)
+            if !existingIndices.contains(object.offset) {
+                condition.searches.append(search)
+            }
+
+            condition.sortId = object.offset
         }
     }
 }

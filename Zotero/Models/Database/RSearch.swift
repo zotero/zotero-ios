@@ -27,5 +27,6 @@ class RCondition: Object {
     @objc dynamic var condition: String = ""
     @objc dynamic var `operator`: String = ""
     @objc dynamic var value: String = ""
+    @objc dynamic var sortId: Int = 0
     let searches: List<RSearch> = List()
 }
