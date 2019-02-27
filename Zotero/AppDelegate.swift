@@ -62,7 +62,7 @@ class AppDelegate: UIResponder {
         self.controllers.sessionChanged(userId: userId)
 
         if let syncController = self.controllers.userControllers?.syncController {
-            syncController.startSync()
+            syncController.start()
         }
     }
 
@@ -126,7 +126,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        self.controllers.userControllers?.syncController.startSync(isInitial: true)
+        self.controllers.userControllers?.syncController.start(isInitial: true)
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

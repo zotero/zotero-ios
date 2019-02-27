@@ -14,6 +14,7 @@ import RealmSwift
 import RxSwift
 
 enum SyncError: Error {
+    case cancelled
     // Abort (fatal) errors
     case noInternetConnection
     case apiError
@@ -26,7 +27,9 @@ enum SyncError: Error {
 extension SyncError: Equatable {
     static func ==(lhs: SyncError, rhs: SyncError) -> Bool {
         switch (lhs, rhs) {
-        case (.noInternetConnection, .noInternetConnection), (.apiError, .apiError), (.dbError, .dbError),
+        case (.noInternetConnection, .noInternetConnection),
+             (.apiError, .apiError),
+             (.dbError, .dbError),
              (.versionMismatch, .versionMismatch),
              (.groupSyncFailed, .groupSyncFailed),
              (.allLibrariesFetchFailed, .allLibrariesFetchFailed):
@@ -52,13 +55,13 @@ struct ObjectBatch {
 }
 
 enum QueueAction: Equatable {
-    case syncVersions(SyncLibraryType, SyncObjectType, Int?)      // Fetch versions from API, update DB based on response
-    case syncBatchToFile(ObjectBatch)                             // Fetch data for new/updated objects, store to files
-    case createLibraryActions                                     // Load all libraries, spawn actions for each
-    case syncBatchToDb(ObjectBatch)                               // Stores file data to db
-    case storeVersion(Int, SyncLibraryType, SyncObjectType)       // Store new version for given library-object
-    case syncDeletions(SyncLibraryType, Int)                      // Synchronize deletions of objects in library
-    case syncSettings(SyncLibraryType, Int)                       // Synchronize settings for library
+    case syncVersions(SyncLibraryType, SyncObjectType, Int?)     // Fetch versions from API, update DB based on response
+    case syncBatchToFile(ObjectBatch)                            // Fetch data for new/updated objects, store to files
+    case createLibraryActions                                    // Load all libraries, spawn actions for each
+    case syncBatchToDb(ObjectBatch)                              // Stores file data to db
+    case storeVersion(Int, SyncLibraryType, SyncObjectType)      // Store new version for given library-object
+    case syncDeletions(SyncLibraryType, Int)                     // Synchronize deletions of objects in library
+    case syncSettings(SyncLibraryType, Int)                      // Synchronize settings for library
 
     var library: SyncLibraryType? {
         switch self {
@@ -94,7 +97,8 @@ extension ObjectBatch: Equatable {
                 return false
             }
         }
-        return lhs.order == rhs.order && lhs.library == rhs.library && lhs.object == rhs.object && lhs.version == rhs.version
+        return lhs.order == rhs.order && lhs.library == rhs.library &&
+               lhs.object == rhs.object && lhs.version == rhs.version
     }
 }
 
@@ -104,7 +108,6 @@ final class SyncController {
     private let userId: Int
     private let accessQueue: DispatchQueue
     private let handler: SyncActionHandler
-    private let disposeBag: DisposeBag
 
     private var queue: [QueueAction]
     private var processingAction: QueueAction?
@@ -113,6 +116,7 @@ final class SyncController {
     private var isResyncing: Bool
     private var lastReturnedVersion: Int?
     private var isInitial: Bool
+    private var disposeBag: DisposeBag
 
     private var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty || self.needsResync
@@ -132,25 +136,39 @@ final class SyncController {
 
     // MARK: - Sync management
 
-    func startSync(isInitial: Bool = false) {
+    func start(isInitial: Bool = false) {
         DDLogInfo("--- Sync: starting ---")
-        self.isInitial = isInitial
-        self.startSync(isResync: false)
+        self.start(isResync: false, isInitial: isInitial)
     }
 
-    private func startSync(isResync: Bool) {
+    func cancelSync() {
+        DDLogInfo("--- Sync: cancelled ---")
+
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            guard let `self` = self, self.isSyncing else { return }
+            self.disposeBag = DisposeBag()
+            self.cleaup()
+        }
+
+        inMainThread {
+            self.report(fatalError: SyncError.cancelled)
+        }
+    }
+
+    private func start(isResync: Bool, isInitial: Bool) {
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self, !self.isSyncing else { return }
             if isResync {
                 self.needsResync = false
                 self.isResyncing = true
             }
+            self.isInitial = isInitial
             self.queue.append(.syncVersions(.user(self.userId), .group, nil))
             self.processNextAction()
         }
     }
 
-    private func finishSync() {
+    private func finish() {
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
 
@@ -171,11 +189,11 @@ final class SyncController {
             }
 
             self.enqueueResyncIfNeeded()
-            self.cleaupAfterSync()
+            self.cleaup()
         }
     }
 
-    private func abortSync(error: Error) {
+    private func abort(error: Error) {
         inMainThread {
             self.report(fatalError: error)
         }
@@ -188,7 +206,7 @@ final class SyncController {
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
-            self.cleaupAfterSync()
+            self.cleaup()
             self.needsResync = true
             self.enqueueResync()
         }
@@ -202,7 +220,7 @@ final class SyncController {
     private func enqueueResync() {
         Single<Int>.timer(SyncController.timeoutPeriod, scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
-                       self?.startSync(isResync: true)
+                       self?.start(isResync: true, isInitial: false)
                    })
                    .disposed(by: self.disposeBag)
     }
@@ -212,7 +230,7 @@ final class SyncController {
         self.needsResync = true
     }
 
-    private func cleaupAfterSync() {
+    private func cleaup() {
         self.processingAction = nil
         self.queue = []
         self.nonFatalErrors = []
@@ -253,7 +271,7 @@ final class SyncController {
     private func processNextAction() {
         guard !self.queue.isEmpty else {
             self.processingAction = nil
-            self.finishSync()
+            self.finish()
             return
         }
 
@@ -320,7 +338,7 @@ final class SyncController {
     private func finishAllLibrariesSync(with result: Result<[(SyncLibraryType, Versions)]>) {
         switch result {
         case .failure(let error):
-            self.abortSync(error: SyncError.allLibrariesFetchFailed(error))
+            self.abort(error: SyncError.allLibrariesFetchFailed(error))
 
         case .success(let libraryData):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -360,12 +378,12 @@ final class SyncController {
 
         case .failure(let error):
             if let abortError = self.errorRequiresAbort(error, library: library, object: object) {
-                self.abortSync(error: abortError)
+                self.abort(error: abortError)
                 return
             }
 
             if object == .group {
-                self.abortSync(error: SyncError.groupSyncFailed(error))
+                self.abort(error: SyncError.groupSyncFailed(error))
                 return
             }
 
@@ -452,7 +470,7 @@ final class SyncController {
         }
 
         if let abortError = self.errorRequiresAbort(error, library: batch.library, object: batch.object) {
-            self.abortSync(error: abortError)
+            self.abort(error: abortError)
             return
         }
 
@@ -516,7 +534,7 @@ final class SyncController {
             self.markForResync(keys: Array(failedKeys), library: library, object: object)
         case .failure(let error):
             if let abortError = self.errorRequiresAbort(error) {
-                self.abortSync(error: abortError)
+                self.abort(error: abortError)
                 return
             }
 
@@ -548,7 +566,7 @@ final class SyncController {
         }
 
         if let abortError = self.errorRequiresAbort(error) {
-            self.abortSync(error: abortError)
+            self.abort(error: abortError)
             return
         }
 
@@ -598,7 +616,7 @@ final class SyncController {
         }
 
         if let abortError = self.errorRequiresAbort(error) {
-            self.abortSync(error: abortError)
+            self.abort(error: abortError)
             return
         }
 
