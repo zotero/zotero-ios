@@ -68,9 +68,11 @@ struct ItemResponse {
     let isTrash: Bool
     let version: Int
     let fields: [String: String]
+    let strippedNote: String?
     let tags: [TagResponse]
     let creators: [CreatorResponse]
 
+    private static let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags",
                 "collections", "relations", "dateAdded", "dateModified"]
@@ -113,12 +115,44 @@ struct ItemResponse {
 
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]
+        var note: String?
+
         data.forEach { data in
             if !excludedKeys.contains(data.key) {
                 fields[data.key] = data.value as? String
+                if data.key == "note" {
+                    note = data.value as? String
+                }
             }
         }
         self.fields = fields
+        self.strippedNote = note.flatMap({ ItemResponse.stripHtml(from: $0) })
+    }
+
+    private static func stripHtml(from string: String) -> String? {
+        guard !string.isEmpty else { return nil }
+        guard let data = string.data(using: .utf8) else {
+            DDLogError("ItemResponse: could not create data from string: \(string)")
+            return nil
+        }
+
+        do {
+            let attributed = try NSAttributedString(data: data,
+                                                    options: [.documentType : NSAttributedString.DocumentType.html],
+                                                    documentAttributes: nil)
+            var stripped = attributed.string.trimmingCharacters(in: CharacterSet.whitespaces)
+                                            .components(separatedBy: ItemResponse.stripCharacters).joined()
+            if stripped.count > 200 {
+                let endIndex = stripped.index(stripped.startIndex, offsetBy: 200)
+                stripped = String(stripped[stripped.startIndex..<endIndex])
+            }
+            return stripped
+        } catch let error {
+            DDLogError("ItemResponse: can't strip HTML tags: \(error)")
+            DDLogError("Original string: \(string)")
+        }
+
+        return nil
     }
 
     static func decode(response: Any) throws -> ([ItemResponse], [Error]) {

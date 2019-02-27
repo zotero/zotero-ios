@@ -39,6 +39,9 @@ struct StoreItemsDbRequest: DbRequest {
         item.parsedDate = data.parsedDate ?? ""
         item.version = data.version
         item.trash = data.isTrash
+        if let title = data.strippedNote {
+            item.title = title
+        }
         item.needsSync = false
 
         self.syncFields(data: data, item: item, database: database)
@@ -65,7 +68,7 @@ struct StoreItemsDbRequest: DbRequest {
                 field.item = item
                 database.add(field)
             }
-            if titleKeys.contains(key) {
+            if item.title.isEmpty && titleKeys.contains(key) {
                 item.title = value
             }
         }
