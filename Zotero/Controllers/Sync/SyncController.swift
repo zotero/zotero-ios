@@ -348,9 +348,9 @@ final class SyncController {
                 libraryData.forEach { data in
                     let actions: [QueueAction] = [.syncSettings(data.0, data.1.settings),
                                                   .syncVersions(data.0, .collection, data.1.collections),
+                                                  .syncVersions(data.0, .search, data.1.searches),
                                                   .syncVersions(data.0, .item, data.1.items),
                                                   .syncVersions(data.0, .trash, data.1.trash),
-                                                  .syncVersions(data.0, .search, data.1.searches),
                                                   .syncDeletions(data.0, data.1.deletions)]
                     allActions.append(contentsOf: actions)
                 }
