@@ -51,44 +51,16 @@ struct StoreSearchesDbRequest: DbRequest {
     }
 
     private func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {
-        var existingIndices: Set<Int> = []
-
-        search.conditions.forEach { condition in
-            let responseIndex = data.data.conditions.index(where: { response -> Bool in
-                return response.condition == condition.condition &&
-                       response.operator == condition.operator &&
-                       response.value == condition.value
-            })
-
-            if let index = responseIndex {
-                existingIndices.insert(index)
-            } else {
-                if let index = condition.searches.index(of: search) {
-                    condition.searches.remove(at: index)
-                }
-            }
-        }
+        database.delete(search.conditions)
 
         for object in data.data.conditions.enumerated() {
-            let condition: RCondition
-            if let existing = database.objects(RCondition.self).filter("condition = %@ AND operator = %@ AND" +
-                                                                       " value = %@", object.element.condition,
-                                                                                      object.element.operator,
-                                                                                      object.element.value).first {
-                condition = existing
-            } else {
-                condition = RCondition()
-                condition.condition = object.element.condition
-                condition.operator = object.element.operator
-                condition.value = object.element.value
-                database.add(condition)
-            }
-
-            if !existingIndices.contains(object.offset) {
-                condition.searches.append(search)
-            }
-
+            let condition = RCondition()
+            condition.condition = object.element.condition
+            condition.operator = object.element.operator
+            condition.value = object.element.value
             condition.sortId = object.offset
+            condition.search = search
+            database.add(condition)
         }
     }
 }

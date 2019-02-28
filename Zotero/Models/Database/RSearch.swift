@@ -16,7 +16,7 @@ class RSearch: Object {
     @objc dynamic var version: Int = 0
     @objc dynamic var needsSync: Bool = false
     @objc dynamic var library: RLibrary?
-    let conditions = LinkingObjects(fromType: RCondition.self, property: "searches")
+    let conditions = LinkingObjects(fromType: RCondition.self, property: "search")
 
     override class func indexedProperties() -> [String] {
         return ["version", "key"]
@@ -28,5 +28,5 @@ class RCondition: Object {
     @objc dynamic var `operator`: String = ""
     @objc dynamic var value: String = ""
     @objc dynamic var sortId: Int = 0
-    let searches: List<RSearch> = List()
+    @objc dynamic var search: RSearch?
 }
