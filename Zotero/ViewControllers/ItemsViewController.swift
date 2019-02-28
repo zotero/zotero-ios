@@ -122,6 +122,6 @@ extension RItem: ItemCellModel {
     }
 
     var tagColors: [UIColor] {
-        return self.tags.map({ $0.uiColor })
+        return self.tags.compactMap({ $0.uiColor })
     }
 }

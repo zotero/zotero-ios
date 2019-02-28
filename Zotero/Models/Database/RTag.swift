@@ -16,7 +16,8 @@ class RTag: Object {
     @objc dynamic var library: RLibrary?
     let items: List<RItem> = List()
 
-    var uiColor: UIColor {
+    var uiColor: UIColor? {
+        guard !self.color.isEmpty else { return nil }
         return UIColor(hex: self.color)
     }
 
