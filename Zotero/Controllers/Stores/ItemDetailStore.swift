@@ -60,6 +60,8 @@ struct ItemDetailState {
     fileprivate(set) var downloadState: FileDownload?
     fileprivate(set) var fields: [ItemDetailField]
     fileprivate(set) var attachments: Results<RItem>?
+    fileprivate(set) var notes: Results<RItem>?
+    fileprivate(set) var tags: Results<RTag>?
     fileprivate(set) var error: ItemDetailStoreError?
 
     fileprivate var version: Int
@@ -144,11 +146,19 @@ class ItemDetailStore: Store {
             let value = values[name] ?? ""
             return ItemDetailField(name: name, value: value)
         }
-        let attachments = self.state.value.item.children.sorted(byKeyPath: "title")
+        let attachments = self.state.value.item.children
+                                               .filter("rawType = %@", ItemResponse.ItemType.attachment.rawValue)
+                                               .sorted(byKeyPath: "title")
+        let notes = self.state.value.item.children
+                                         .filter("rawType = %@", ItemResponse.ItemType.note.rawValue)
+                                         .sorted(byKeyPath: "title")
+        let tags = self.state.value.item.tags.sorted(byKeyPath: "name")
 
         self.updater.updateState { newState in
             newState.attachments = attachments
+            newState.notes = notes
             newState.fields = fields
+            newState.tags = tags
             newState.version += 1
             newState.changes = [.data]
         }
