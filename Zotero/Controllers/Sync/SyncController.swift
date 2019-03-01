@@ -11,6 +11,7 @@ import Foundation
 import Alamofire
 import CocoaLumberjack
 import RealmSwift
+import RxCocoa
 import RxSwift
 
 enum SyncError: Error {
@@ -32,7 +33,8 @@ extension SyncError: Equatable {
              (.dbError, .dbError),
              (.versionMismatch, .versionMismatch),
              (.groupSyncFailed, .groupSyncFailed),
-             (.allLibrariesFetchFailed, .allLibrariesFetchFailed):
+             (.allLibrariesFetchFailed, .allLibrariesFetchFailed),
+             (.cancelled, .cancelled):
             return true
         default:
             return false
@@ -108,6 +110,7 @@ final class SyncController {
     private let userId: Int
     private let accessQueue: DispatchQueue
     private let handler: SyncActionHandler
+    private let progressHandler: SyncProgressHandler
 
     private var queue: [QueueAction]
     private var processingAction: QueueAction?
@@ -122,10 +125,15 @@ final class SyncController {
         return self.processingAction != nil || !self.queue.isEmpty || self.needsResync
     }
 
+    var progressObservable: BehaviorRelay<SyncProgress?> {
+        return self.progressHandler.observable
+    }
+
     init(userId: Int, handler: SyncActionHandler) {
         self.userId = userId
         self.accessQueue = DispatchQueue(label: "org.zotero.SyncAccessQueue", qos: .utility, attributes: .concurrent)
         self.handler = handler
+        self.progressHandler = SyncProgressHandler()
         self.disposeBag = DisposeBag()
         self.queue = []
         self.nonFatalErrors = []
@@ -148,9 +156,6 @@ final class SyncController {
             guard let `self` = self, self.isSyncing else { return }
             self.disposeBag = DisposeBag()
             self.cleaup()
-        }
-
-        inMainThread {
             self.report(fatalError: SyncError.cancelled)
         }
     }
@@ -162,6 +167,7 @@ final class SyncController {
                 self.needsResync = false
                 self.isResyncing = true
             }
+            self.progressHandler.reportNewSync()
             self.isInitial = isInitial
             self.queue.append(.syncVersions(.user(self.userId), .group, nil))
             self.processNextAction()
@@ -182,22 +188,13 @@ final class SyncController {
             self.reportFinish?(.success((self.allActions, errors)))
             self.reportFinish = nil
 
-            if !errors.isEmpty {
-                inMainThread {
-                    self.report(nonFatalErrors: errors)
-                }
-            }
-
+            self.reportFinish(nonFatalErrors: errors)
             self.enqueueResyncIfNeeded()
             self.cleaup()
         }
     }
 
     private func abort(error: Error) {
-        inMainThread {
-            self.report(fatalError: error)
-        }
-
         DDLogInfo("--- Sync: aborted ---")
         DDLogInfo("Error: \(error)")
 
@@ -206,6 +203,7 @@ final class SyncController {
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
+            self.report(fatalError: error)
             self.cleaup()
             self.needsResync = true
             self.enqueueResync()
@@ -243,11 +241,11 @@ final class SyncController {
     // MARK: - Error handling
 
     private func report(fatalError: Error) {
-        // TODO: - Show some error to the user mentioning the whole sync stopped and will restart in a while
+        self.progressHandler.reportAbort(with: fatalError)
     }
 
-    private func report(nonFatalErrors errors: [Error]) {
-        // TODO: - Show some error to user mentioning all errors?
+    private func reportFinish(nonFatalErrors errors: [Error]) {
+        self.progressHandler.reportFinish(with: errors)
     }
 
     // MARK: - Queue management
@@ -299,6 +297,11 @@ final class SyncController {
         case .createLibraryActions:
             self.processAllLibrariesSync()
         case .syncVersions(let library, let objectType, let version):
+            if objectType == .group {
+                self.progressHandler.reportGroupSync()
+            } else {
+                self.progressHandler.reportVersionsSync(for: library, object: objectType)
+            }
             self.processSyncVersionsAction(library: library, object: objectType, since: version)
         case .syncBatchToFile(let batch):
             self.processFileStoreAction(for: batch)
@@ -307,6 +310,7 @@ final class SyncController {
         case .storeVersion(let version, let library, let object):
             self.processStoreVersionAction(library: library, object: object, version: version)
         case .syncDeletions(let library, let version):
+            self.progressHandler.reportDeletions(for: library)
             self.processDeletionsSync(library: library, since: version)
         case .syncSettings(let library, let version):
             self.processSettingsSync(for: library, version: version)
@@ -316,19 +320,24 @@ final class SyncController {
     private func processAllLibrariesSync() {
         let userId = self.userId
         self.handler.loadAllLibraryIdsAndVersions()
-                    .flatMap { libraryData in
+                    .flatMap { libraryData -> Single<([(SyncLibraryType, Versions)], [Int: String])> in
+                        var libraryNames: [Int: String] = [:]
                         var versionedLibraries: [(SyncLibraryType, Versions)] = []
                         for data in libraryData {
+                            libraryNames[data.0] = data.1
                             if data.0 == RLibrary.myLibraryId {
-                                versionedLibraries.append((.user(userId), data.1))
+                                versionedLibraries.append((.user(userId), data.2))
                             } else {
-                                versionedLibraries.append((.group(data.0), data.1))
+                                versionedLibraries.append((.group(data.0), data.2))
                             }
                         }
-                        return Single.just(versionedLibraries)
+                        return Single.just((versionedLibraries, libraryNames))
                     }
-                    .subscribe(onSuccess: { [weak self] libraries in
-                        self?.finishAllLibrariesSync(with: .success(libraries))
+                    .subscribe(onSuccess: { [weak self] data in
+                        self?.performOnAccessQueue(flags: .barrier) { [weak self] in
+                            self?.progressHandler.reportLibraryNames(data: data.1)
+                        }
+                        self?.finishAllLibrariesSync(with: .success(data.0))
                     }, onError: { [weak self] error in
                         self?.finishAllLibrariesSync(with: .failure(error))
                     })
@@ -374,6 +383,7 @@ final class SyncController {
                                           result: Result<([Any], Int)>) {
         switch result {
         case .success(let data):
+            self.progressHandler.reportObjectCount(for: object, count: data.0.count)
             self.createBatchedActions(from: data.0, currentVersion: data.1, library: library, object: object)
 
         case .failure(let error):
@@ -477,6 +487,7 @@ final class SyncController {
         if self.handleVersionMismatchIfNeeded(for: error, library: batch.library) { return }
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            self?.progressHandler.reportBatch(for: batch.object, count: batch.keys.count)
             self?.nonFatalErrors.append(error)
         }
 
@@ -524,6 +535,10 @@ final class SyncController {
             let allStringKeys = (allKeys as? [String]) ?? []
             let failedKeys = allStringKeys.filter({ !decodingData.0.contains($0) })
 
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.progressHandler.reportBatch(for: object, count: allKeys.count)
+            }
+
             if failedKeys.isEmpty {
                 self.performOnAccessQueue(flags: .barrier) { [weak self] in
                     self?.processNextAction()
@@ -539,6 +554,7 @@ final class SyncController {
             }
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.progressHandler.reportBatch(for: object, count: allKeys.count)
                 self?.nonFatalErrors.append(error)
             }
 

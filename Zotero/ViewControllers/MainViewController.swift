@@ -48,6 +48,9 @@ class MainViewController: UISplitViewController {
         let librariesStore = LibrariesStore(dbStorage: controllers.dbStorage)
         let leftController = LibrariesViewController(store: librariesStore, delegate: self)
         let leftNavigationController = UINavigationController(rootViewController: leftController)
+        let syncController = controllers.userControllers?.syncController
+        let leftToolbarController = ProgressToolbarViewController(syncController: syncController,
+                                                                  rootViewController: leftNavigationController)
 
         let itemState = ItemsState(libraryId: RLibrary.myLibraryId, collectionId: nil, title: "My Library")
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
@@ -55,9 +58,9 @@ class MainViewController: UISplitViewController {
                                    itemFieldsController: controllers.itemFieldsController)
         let rightNavigationController = UINavigationController(rootViewController: ItemsViewController(store: itemStore))
 
+        self.viewControllers = [leftToolbarController, rightNavigationController]
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
-        self.viewControllers = [leftNavigationController, rightNavigationController]
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -149,7 +152,8 @@ extension MainViewController: ItemNavigationDelegate {
     }
 
     func showCollections(for libraryId: Int, libraryName: String) {
-        guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
+        guard let toolbarController = self.viewControllers.first as? ToolbarViewController,
+              let navigationController = toolbarController.rootViewController as? UINavigationController else { return }
 
         let state = CollectionsState(libraryId: libraryId, title: libraryName)
         let store = CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)

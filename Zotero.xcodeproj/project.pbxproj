@@ -116,6 +116,9 @@
 		B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C3220897B300DFE361 /* CollectionsViewController.xib */; };
 		B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C6220897C600DFE361 /* ItemsViewController.swift */; };
 		B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C7220897C600DFE361 /* ItemsViewController.xib */; };
+		B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
+		B393729A22295475008B2A96 /* ToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729922295475008B2A96 /* ToolbarViewController.swift */; };
+		B393729C222957D0008B2A96 /* ProgressToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */; };
 		B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */; };
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
@@ -280,6 +283,9 @@
 		B385E2C3220897B300DFE361 /* CollectionsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsViewController.xib; sourceTree = "<group>"; };
 		B385E2C6220897C600DFE361 /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B385E2C7220897C600DFE361 /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
+		B39372972229420A008B2A96 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
+		B393729922295475008B2A96 /* ToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarViewController.swift; sourceTree = "<group>"; };
+		B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressToolbarViewController.swift; sourceTree = "<group>"; };
 		B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
@@ -447,6 +453,7 @@
 			isa = PBXGroup;
 			children = (
 				B3C62EBF2211D899000FFBFF /* MainViewController.swift */,
+				B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */,
 				B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */,
 				B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */,
 				B385E2C2220897B300DFE361 /* CollectionsViewController.swift */,
@@ -461,6 +468,7 @@
 				B36795F122077FD6003D0471 /* OnboardingViewController.xib */,
 				B36795F82207807F003D0471 /* RegisterViewController.swift */,
 				B36795F92207807F003D0471 /* RegisterViewController.xib */,
+				B393729922295475008B2A96 /* ToolbarViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -555,6 +563,7 @@
 			children = (
 				B33FBA5F220B2AAD005906C4 /* SyncController.swift */,
 				B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */,
+				B39372972229420A008B2A96 /* SyncProgressHandler.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -994,6 +1003,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B393729A22295475008B2A96 /* ToolbarViewController.swift in Sources */,
 				B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */,
 				B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */,
 				B3A8CD8922259A4900E553F4 /* ItemCell.swift in Sources */,
@@ -1030,6 +1040,7 @@
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B32CD355221C58FB003F8073 /* ItemFieldsController.swift in Sources */,
 				B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */,
+				B393729C222957D0008B2A96 /* ProgressToolbarViewController.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
 				B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */,
@@ -1041,6 +1052,7 @@
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
 				B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */,
 				B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */,
+				B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B32CD360221C70B6003F8073 /* ItemFieldCell.swift in Sources */,

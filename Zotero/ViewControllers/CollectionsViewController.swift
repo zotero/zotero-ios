@@ -65,6 +65,8 @@ class CollectionsViewController: UIViewController {
         self.tableView.register(UINib(nibName: CollectionCell.nibName, bundle: nil), forCellReuseIdentifier: "Cell")
         self.tableView.dataSource = self
         self.tableView.delegate = self
+        self.tableView.contentInset = UIEdgeInsets(top: self.tableView.contentInset.top,
+                                                   left: 0, bottom: 44, right: 0)
     }
 }
 

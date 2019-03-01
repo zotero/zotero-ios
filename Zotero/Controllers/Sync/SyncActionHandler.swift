@@ -43,7 +43,7 @@ struct Versions {
 }
 
 protocol SyncActionHandler: class {
-    func loadAllLibraryIdsAndVersions() -> Single<[(Int, Versions)]>
+    func loadAllLibraryIdsAndVersions() -> Single<[(Int, String, Versions)]>
     func synchronizeVersions(for library: SyncLibraryType, object: SyncObjectType,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncAll: Bool) -> Single<(Int, [Any])>
@@ -76,7 +76,7 @@ class SyncActionHandlerController {
 }
 
 extension SyncActionHandlerController: SyncActionHandler {
-    func loadAllLibraryIdsAndVersions() -> Single<[(Int, Versions)]> {
+    func loadAllLibraryIdsAndVersions() -> Single<[(Int, String, Versions)]> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
                 subscriber(.error(SyncActionHandlerError.expired))
@@ -86,7 +86,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             do {
                 let data = try self.dbStorage.createCoordinator()
                                              .perform(request: ReadLibrariesDataDbRequest())
-                                             .map({ ($0.0, Versions(versions: $0.1)) })
+                                             .map({ ($0.0, $0.1, Versions(versions: $0.2)) })
                 subscriber(.success(data))
             } catch let error {
                 subscriber(.error(error))
