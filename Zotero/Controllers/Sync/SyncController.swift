@@ -495,7 +495,7 @@ final class SyncController {
             self?.nonFatalErrors.append(error)
         }
 
-        // We couldn't fetch batch of up to ObjectAction.maxObjectCount objects, some objects will probably be
+        // We couldn't fetch batch of up to ObjectBatch.maxObjectCount objects, some objects will probably be
         // missing parents or completely, but we continue with the sync
         // We mark these objects as missing and we'll try to fetch and update them on next sync
         self.markForResync(keys: batch.keys, library: batch.library, object: batch.object)
