@@ -10,16 +10,21 @@ import Foundation
 
 import RealmSwift
 
+enum UpdateVersionType {
+    case object(SyncObjectType)
+    case settings
+}
+
 struct UpdateVersionsDbRequest: DbRequest {
     let version: Int
-    let object: SyncObjectType
     let libraryId: Int
+    let type: UpdateVersionType
 
     var needsWrite: Bool { return true }
 
-    init(version: Int, object: SyncObjectType, library: SyncLibraryType) {
+    init(version: Int, library: SyncLibraryType, type: UpdateVersionType) {
         self.version = version
-        self.object = object
+        self.type = type
         switch library {
         case .group(let groupId):
             self.libraryId = groupId
@@ -39,17 +44,22 @@ struct UpdateVersionsDbRequest: DbRequest {
             library.versions = versions
         }
 
-        switch self.object {
-        case .group:
-            throw DbError.objectNotFound
-        case .collection:
-            versions.collections = self.version
-        case .item:
-            versions.items = self.version
-        case .trash:
-            versions.trash = self.version
-        case .search:
-            versions.searches = self.version
+        switch self.type {
+        case .settings:
+            versions.settings = self.version
+        case .object(let object):
+            switch object {
+            case .group:
+                throw DbError.objectNotFound
+            case .collection:
+                versions.collections = self.version
+            case .item:
+                versions.items = self.version
+            case .trash:
+                versions.trash = self.version
+            case .search:
+                versions.searches = self.version
+            }
         }
     }
 }

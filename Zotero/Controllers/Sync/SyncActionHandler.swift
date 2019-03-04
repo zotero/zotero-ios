@@ -52,10 +52,11 @@ protocol SyncActionHandler: class {
     func markForResync(keys: [Any], library: SyncLibraryType, object: SyncObjectType) -> Completable
     func synchronizeDbWithFetchedFiles(library: SyncLibraryType, object: SyncObjectType,
                                        version: Int, index: Int) -> Single<([String], [Error])>
-    func storeVersion(_ version: Int, for library: SyncLibraryType, object: SyncObjectType) -> Completable
+    func storeVersion(_ version: Int, for library: SyncLibraryType, type: UpdateVersionType) -> Completable
     func synchronizeDeletions(for library: SyncLibraryType, since sinceVersion: Int,
                               current currentVersion: Int?) -> Completable
-    func synchronizeSettings(for library: SyncLibraryType, since version: Int) -> Completable
+    func synchronizeSettings(for library: SyncLibraryType, current currentVersion: Int?,
+                             since version: Int?) -> Single<(Bool, Int)>
 }
 
 class SyncActionHandlerController {
@@ -252,7 +253,7 @@ extension SyncActionHandlerController: SyncActionHandler {
         }
     }
 
-    func storeVersion(_ version: Int, for library: SyncLibraryType, object: SyncObjectType) -> Completable {
+    func storeVersion(_ version: Int, for library: SyncLibraryType, type: UpdateVersionType) -> Completable {
         return Completable.create(subscribe: { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
                 subscriber(.error(SyncActionHandlerError.expired))
@@ -260,7 +261,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             }
 
             do {
-                let request = UpdateVersionsDbRequest(version: version, object: object, library: library)
+                let request = UpdateVersionsDbRequest(version: version, library: library, type: type)
                 try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.completed)
             } catch let error {
@@ -319,21 +320,28 @@ extension SyncActionHandlerController: SyncActionHandler {
                              .asCompletable()
     }
 
-    func synchronizeSettings(for library: SyncLibraryType, since version: Int) -> Completable {
+    func synchronizeSettings(for library: SyncLibraryType, current currentVersion: Int?, since version: Int?) -> Single<(Bool, Int)> {
         return self.apiClient.send(request: SettingsRequest(libraryType: library, version: version))
                              .observeOn(self.scheduler)
-                             .flatMap({ [weak self] response -> Single<()> in
+                             .flatMap({ [weak self] response in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+
+                                 let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
+
+                                 if let current = currentVersion, newVersion != current {
+                                     return Single.error(SyncActionHandlerError.versionMismatch)
+                                 }
+
                                  do {
                                      let request = StoreSettingsDbRequest(response: response.0,
                                                                           libraryId: library.libraryId)
                                      try self.dbStorage.createCoordinator().perform(request: request)
-                                     return Single.just(())
+                                     let count = response.0.tagColors?.value.count ?? 0
+                                     return Single.just(((count > 0), newVersion))
                                  } catch let error {
                                      return Single.error(error)
                                  }
                              })
-                             .asCompletable()
     }
 
     private class func lastVersion(from headers: ResponseHeaders) -> Int {

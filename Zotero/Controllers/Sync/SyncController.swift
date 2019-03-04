@@ -63,7 +63,8 @@ enum QueueAction: Equatable {
     case syncBatchToDb(ObjectBatch)                              // Stores file data to db
     case storeVersion(Int, SyncLibraryType, SyncObjectType)      // Store new version for given library-object
     case syncDeletions(SyncLibraryType, Int)                     // Synchronize deletions of objects in library
-    case syncSettings(SyncLibraryType, Int)                      // Synchronize settings for library
+    case syncSettings(SyncLibraryType, Int?)                      // Synchronize settings for library
+    case storeSettingsVersion(Int, SyncLibraryType)
 
     var library: SyncLibraryType? {
         switch self {
@@ -75,7 +76,8 @@ enum QueueAction: Equatable {
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
              .syncDeletions(let library, _),
-             .syncSettings(let library, _):
+             .syncSettings(let library, _),
+             .storeSettingsVersion(_, let library):
             return library
         }
     }
@@ -308,12 +310,14 @@ final class SyncController {
         case .syncBatchToDb(let batch):
             self.processDbStoreAction(for: batch)
         case .storeVersion(let version, let library, let object):
-            self.processStoreVersionAction(library: library, object: object, version: version)
+            self.processStoreVersionAction(library: library, type: .object(object), version: version)
         case .syncDeletions(let library, let version):
             self.progressHandler.reportDeletions(for: library)
             self.processDeletionsSync(library: library, since: version)
         case .syncSettings(let library, let version):
-            self.processSettingsSync(for: library, version: version)
+            self.processSettingsSync(for: library, since: version)
+        case .storeSettingsVersion(let version, let library):
+            self.processStoreVersionAction(library: library, type: .settings, version: version)
         }
     }
 
@@ -425,7 +429,7 @@ final class SyncController {
         }
         if object == .group {
             actions.append(.createLibraryActions)
-        } else {
+        } else if !actions.isEmpty {
             actions.append(.storeVersion(currentVersion, library, object))
         }
 
@@ -563,8 +567,8 @@ final class SyncController {
         }
     }
 
-    private func processStoreVersionAction(library: SyncLibraryType, object: SyncObjectType, version: Int) {
-        self.handler.storeVersion(version, for: library, object: object)
+    private func processStoreVersionAction(library: SyncLibraryType, type: UpdateVersionType, version: Int) {
+        self.handler.storeVersion(version, for: library, type: type)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishProcessingStoreVersionAction(error:  nil)
                     }, onError: { [weak self] error in
@@ -642,11 +646,15 @@ final class SyncController {
         }
     }
 
-    private func processSettingsSync(for library: SyncLibraryType, version: Int) {
-        self.handler.synchronizeSettings(for: library, since: version)
-                    .subscribe(onCompleted: { [weak self] in
+    private func processSettingsSync(for library: SyncLibraryType, since version: Int?) {
+        self.handler.synchronizeSettings(for: library, current: self.lastReturnedVersion, since: version)
+                    .subscribe(onSuccess: { [weak self] data in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
-                            self?.processNextAction()
+                            if data.0 {
+                                self?.enqueue(actions: [.storeSettingsVersion(data.1, library)], at: 0)
+                            } else {
+                                self?.processNextAction()
+                            }
                         }
                     }, onError: { [weak self] error in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in

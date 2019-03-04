@@ -12,7 +12,7 @@ struct SettingsRequest: ApiResponseRequest {
     typealias Response = SettingsResponse
 
     let libraryType: SyncLibraryType
-    let version: Int
+    let version: Int?
 
     var path: String {
         return "\(self.libraryType.apiPath)/settings"
@@ -27,6 +27,7 @@ struct SettingsRequest: ApiResponseRequest {
     }
 
     var parameters: [String : Any]? {
+        guard let version = self.version else { return nil }
         return ["since": self.version]
     }
 }
