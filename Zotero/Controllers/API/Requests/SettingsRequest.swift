@@ -28,6 +28,6 @@ struct SettingsRequest: ApiResponseRequest {
 
     var parameters: [String : Any]? {
         guard let version = self.version else { return nil }
-        return ["since": self.version]
+        return ["since": version]
     }
 }

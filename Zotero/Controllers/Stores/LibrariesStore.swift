@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
@@ -106,7 +107,7 @@ class LibrariesStore: Store {
                     })
                 case .initial: break
                 case .error(let error):
-                    // TODO: - Log error?
+                    DDLogError("LibrariesStore: can't update libraries from db - \(error)")
                     self.updater.updateState { newState in
                         newState.error = .cantLoadData
                     }
@@ -124,7 +125,7 @@ class LibrariesStore: Store {
                 newState.librariesToken = librariesToken
             }
         } catch let error {
-            // TODO: - Log error?
+            DDLogError("LibrariesStore: can't load libraries from db - \(error)")
             self.updater.updateState { newState in
                 newState.error = .cantLoadData
             }
