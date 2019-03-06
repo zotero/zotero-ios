@@ -12,7 +12,7 @@ struct LibraryResponse: Decodable {
     let id: Int
     let name: String
     let type: String
-    let links: LinksResponse
+    let links: LinksResponse?
 
     var libraryId: Int {
         if self.libraryType == .user {

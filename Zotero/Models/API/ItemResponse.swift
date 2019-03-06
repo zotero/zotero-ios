@@ -62,7 +62,7 @@ struct ItemResponse {
     let library: LibraryResponse
     let parentKey: String?
     let collectionKeys: Set<String>
-    let links: LinksResponse
+    let links: LinksResponse?
     let creatorSummary: String?
     let parsedDate: String?
     let isTrash: Bool
@@ -75,7 +75,7 @@ struct ItemResponse {
     private static let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags",
-                "collections", "relations", "dateAdded", "dateModified"]
+                "collections", "relations", "dateAdded", "dateModified", "parentItem"]
     }()
 
     init(response: [String: Any]) throws {
@@ -92,9 +92,9 @@ struct ItemResponse {
         self.collectionKeys = collections.flatMap(Set.init) ?? []
         self.parentKey = data["parentItem"] as? String
 
-        let meta: [String: Any] = try ItemResponse.parse(key: "meta", from: response)
-        self.creatorSummary = meta["creatorSummary"] as? String
-        self.parsedDate = meta["parsedDate"] as? String
+        let meta = response["meta"] as? [String: Any]
+        self.creatorSummary = meta?["creatorSummary"] as? String
+        self.parsedDate = meta?["parsedDate"] as? String
 
         let deleted = data["deleted"] as? Int
         self.isTrash = deleted == 1
@@ -102,9 +102,9 @@ struct ItemResponse {
         let decoder = DictionaryDecoder()
         let libraryData: [String: Any] = try ItemResponse.parse(key: "library", from: response)
         self.library = try decoder.decode(LibraryResponse.self, from: libraryData)
-        let linksData: [String: Any] = try ItemResponse.parse(key: "links", from: response)
-        self.links = try decoder.decode(LinksResponse.self, from: linksData)
-        let tagsData: [[String: Any]] = try ItemResponse.parse(key: "tags", from: data)
+        let linksData = response["links"] as? [String: Any]
+        self.links = try linksData.flatMap { try decoder.decode(LinksResponse.self, from: $0) }
+        let tagsData = (data["tags"] as? [[String: Any]]) ?? []
         self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
         let creatorsData: [[String: Any]]? = data["creators"] as? [[String: Any]]
         if let data = creatorsData {

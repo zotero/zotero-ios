@@ -126,7 +126,10 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        self.controllers.userControllers?.syncController.start(isInitial: false)
+        if ProcessInfo.processInfo.environment["IS_TEST"] != "true" {
+            // Don't run auto sync for tests
+            self.controllers.userControllers?.syncController.start(isInitial: false)
+        }
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

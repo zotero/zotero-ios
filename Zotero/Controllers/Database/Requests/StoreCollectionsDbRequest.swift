@@ -62,6 +62,7 @@ struct StoreCollectionsDbRequest: DbRequest {
                 parent = RCollection()
                 parent.key = key
                 parent.library = collection.library
+                database.add(parent)
             }
             collection.parent = parent
         }

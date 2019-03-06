@@ -41,7 +41,7 @@ struct SearchResponse: Decodable {
 
     let key: String
     let library: LibraryResponse
-    let links: LinksResponse
+    let links: LinksResponse?
     let data: SearchResponse.Data
     let version: Int
 }

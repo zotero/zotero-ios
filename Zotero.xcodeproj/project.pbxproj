@@ -130,6 +130,7 @@
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
 		B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */; };
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
+		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
 		B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EBF2211D899000FFBFF /* MainViewController.swift */; };
 		B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */; };
 		B3C62EC42211DA23000FFBFF /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */; };
@@ -297,6 +298,7 @@
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
+		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
 		B3C62EBF2211D899000FFBFF /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
@@ -398,6 +400,7 @@
 			children = (
 				B30D59712206F60500884C4A /* Info.plist */,
 				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
+				B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -982,6 +985,7 @@
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/Nimble/Nimble.framework",
+				"${BUILT_PRODUCTS_DIR}/OHHTTPStubs/OHHTTPStubs.framework",
 				"${BUILT_PRODUCTS_DIR}/Quick/Quick.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -989,6 +993,7 @@
 			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/OHHTTPStubs.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Quick.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1095,6 +1100,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */,
 				B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

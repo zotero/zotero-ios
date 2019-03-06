@@ -724,7 +724,7 @@ final class SyncController {
 
     // MARK: - Testing
 
-    private var reportFinish: ((Result<([QueueAction], [Error])>) -> Void)?
+    var reportFinish: ((Result<([QueueAction], [Error])>) -> Void)?
     private var allActions: [QueueAction] = []
 
     func start(with queue: [QueueAction], finishedAction: @escaping (Result<([QueueAction], [Error])>) -> Void) {

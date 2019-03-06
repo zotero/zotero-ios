@@ -19,6 +19,7 @@ target 'Zotero' do
     
     pod 'Quick', '1.3.2'
     pod 'Nimble', '7.3.1'
+    pod 'OHHTTPStubs/Swift', '6.1.0'
   end
 
   target 'ZoteroUITests' do

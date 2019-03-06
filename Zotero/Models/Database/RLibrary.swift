@@ -32,6 +32,8 @@ class RLibrary: Object {
 
     let collections = LinkingObjects(fromType: RCollection.self, property: "library")
     let items = LinkingObjects(fromType: RItem.self, property: "library")
+    let searches = LinkingObjects(fromType: RSearch.self, property: "library")
+    let tags = LinkingObjects(fromType: RTag.self, property: "library")
 
     var libraryType: LibraryType {
         return self.identifier == RLibrary.myLibraryId ? .user : .group

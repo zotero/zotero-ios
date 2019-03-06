@@ -134,7 +134,7 @@ class ZoteroApiClient: ApiClient {
     }
 }
 
-fileprivate struct Convertible {
+struct Convertible {
     private let url: URL
     private let token: String?
     private let httpMethod: ApiHttpMethod

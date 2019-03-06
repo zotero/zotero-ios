@@ -52,10 +52,18 @@ struct SyncVersionsDbRequest<Obj: Syncable>: DbResponseRequest {
         if self.syncAll { return allKeys }
 
         var toUpdate: [String] = allKeys
-        database.objects(Obj.self).forEach { object in
-            if !object.needsSync,
-               let version = self.versions[object.key], version == object.version {
-                if let index = toUpdate.index(of: object.key) {
+        var objects = database.objects(Obj.self)
+        if let trash = self.isTrash {
+            objects = objects.filter("trash = %d", trash)
+        }
+        objects.forEach { object in
+            if object.needsSync {
+                if !toUpdate.contains(object.key) {
+                    toUpdate.append(object.key)
+                }
+            } else {
+                if let version = self.versions[object.key], version == object.version,
+                   let index = toUpdate.index(of: object.key) {
                     toUpdate.remove(at: index)
                 }
             }
@@ -93,10 +101,15 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
         if self.syncAll { return allKeys }
 
         var toUpdate: [Int] = allKeys
-        database.objects(RLibrary.self).forEach { library in
-            if !library.needsSync && library.identifier != RLibrary.myLibraryId,
-               let version = self.versions[library.identifier], version == library.version {
-                if let index = toUpdate.index(of: library.identifier) {
+        for library in database.objects(RLibrary.self) {
+            guard library.identifier != RLibrary.myLibraryId else { continue }
+            if library.needsSync {
+                if !toUpdate.contains(library.identifier) {
+                    toUpdate.append(library.identifier)
+                }
+            } else {
+                if let version = self.versions[library.identifier], version == library.version,
+                   let index = toUpdate.index(of: library.identifier) {
                     toUpdate.remove(at: index)
                 }
             }

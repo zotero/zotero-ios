@@ -31,6 +31,12 @@ class RealmDbStorage {
 //        config.deleteRealmIfMigrationNeeded = true
         self.init(config: config)
     }
+
+    // MARK: - Testing only
+
+    var realm: Realm {
+        return try! Realm(configuration: self.config)
+    }
 }
 
 extension RealmDbStorage: DbStorage {

@@ -95,6 +95,7 @@ struct StoreItemsDbRequest: DbRequest {
                 parent.key = key
                 parent.needsSync = true
                 parent.library = item.library
+                database.add(parent)
             }
             item.parent = parent
         }
@@ -118,6 +119,8 @@ struct StoreItemsDbRequest: DbRequest {
                 collection.key = key
                 collection.needsSync = true
                 collection.library = item.library
+                database.add(collection)
+                item.collections.append(collection)
             }
         }
     }
@@ -143,9 +146,9 @@ struct StoreItemsDbRequest: DbRequest {
                 tag = existing
             } else {
                 tag = RTag()
-                database.add(tag)
                 tag.name = object.element.tag
                 tag.library = item.library
+                database.add(tag)
             }
             tag.items.append(item)
         }
@@ -180,10 +183,10 @@ struct StoreItemsDbRequest: DbRequest {
                 creator = existing
             } else {
                 creator = RCreator()
-                database.add(creator)
                 creator.rawType = object.element.creatorType
                 creator.firstName = object.element.firstName
                 creator.lastName = object.element.lastName
+                database.add(creator)
             }
             creator.items.append(item)
         }

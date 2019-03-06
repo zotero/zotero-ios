@@ -40,7 +40,7 @@ public enum SyncLibraryType: Equatable {
     }
 }
 
-public enum SyncObjectType: Equatable {
+public enum SyncObjectType: Equatable, CaseIterable {
     case group, collection, search, item, trash
 
     var apiPath: String {
