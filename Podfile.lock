@@ -4,7 +4,6 @@ PODS:
   - CocoaLumberjack/Default (3.4.2)
   - CocoaLumberjack/Swift (3.4.2):
     - CocoaLumberjack/Default
-  - DictionaryDecoder (0.9.2)
   - KeychainSwift (13.0.0)
   - Nimble (7.3.1)
   - OHHTTPStubs/Core (6.1.0)
@@ -44,7 +43,6 @@ DEPENDENCIES:
   - Alamofire (= 4.8.0)
   - CocoaLumberjack/Core (= 3.4.2)
   - CocoaLumberjack/Swift (= 3.4.2)
-  - DictionaryDecoder (= 0.9.2)
   - KeychainSwift (= 13.0.0)
   - Nimble (= 7.3.1)
   - OHHTTPStubs/Swift (= 6.1.0)
@@ -59,7 +57,6 @@ SPEC REPOS:
   https://github.com/cocoapods/specs.git:
     - Alamofire
     - CocoaLumberjack
-    - DictionaryDecoder
     - KeychainSwift
     - Nimble
     - OHHTTPStubs
@@ -78,7 +75,6 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Alamofire: 3ec537f71edc9804815215393ae2b1a8ea33a844
   CocoaLumberjack: db7cc9e464771f12054c22ff6947c5a58d43a0fd
-  DictionaryDecoder: 38f890458db58c32c33fcfd89bb22bad05090345
   KeychainSwift: 23d6c16cbc33f20fafa30c3d783241b4b87d998c
   Nimble: 04f732da099ea4d153122aec8c2a88fd0c7219ae
   OHHTTPStubs: 1e21c7d2c084b8153fc53d48400d8919d2d432d0
@@ -91,6 +87,6 @@ SPEC CHECKSUMS:
   RxCocoa: df63ebf7b9a70d6b4eeea407ed5dd4efc8979749
   RxSwift: 5976ecd04fc2fefd648827c23de5e11157faa973
 
-PODFILE CHECKSUM: 0377d83a6ab21f9aef20b113b6bbe4c3f3cc5237
+PODFILE CHECKSUM: 88e3a79e99180e8f0ddbc4eec3b0663020ab531a
 
 COCOAPODS: 1.5.3

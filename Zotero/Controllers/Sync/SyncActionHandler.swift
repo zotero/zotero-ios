@@ -47,11 +47,9 @@ protocol SyncActionHandler: class {
     func synchronizeVersions(for library: SyncLibraryType, object: SyncObjectType,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncAll: Bool) -> Single<(Int, [Any])>
-    func downloadObjectJson(for keys: String, library: SyncLibraryType, object: SyncObjectType,
-                            version: Int, index: Int) -> Completable
     func markForResync(keys: [Any], library: SyncLibraryType, object: SyncObjectType) -> Completable
-    func synchronizeDbWithFetchedFiles(library: SyncLibraryType, object: SyncObjectType,
-                                       version: Int, index: Int) -> Single<([String], [Error])>
+    func fetchAndStoreObjects(with keys: [Any], library: SyncLibraryType,
+                              object: SyncObjectType, version: Int) -> Single<([String], [Error])>
     func storeVersion(_ version: Int, for library: SyncLibraryType, type: UpdateVersionType) -> Completable
     func synchronizeDeletions(for library: SyncLibraryType, since sinceVersion: Int,
                               current currentVersion: Int?) -> Completable
@@ -167,66 +165,29 @@ extension SyncActionHandlerController: SyncActionHandler {
                              }
     }
 
-    func downloadObjectJson(for keys: String, library: SyncLibraryType, object: SyncObjectType,
-                            version: Int, index: Int) -> Completable {
-        let request = ObjectsRequest(libraryType: library, objectType: object, keys: keys)
+    func fetchAndStoreObjects(with keys: [Any], library: SyncLibraryType,
+                              object: SyncObjectType, version: Int) -> Single<([String], [Error])> {
+        let keysString = keys.map({ "\($0)" }).joined(separator: ",")
+        let request = ObjectsRequest(libraryType: library, objectType: object, keys: keysString)
         return self.apiClient.send(dataRequest: request)
-                             .flatMap { [weak self] response -> Single<()> in
+                             .flatMap({ [weak self] response -> Single<([String], [Error])> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
 
                                  let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
 
+                                 // Group version sync doesn't return last version, so we ignore them
                                  if object != .group && version != newVersion {
                                      return Single.error(SyncActionHandlerError.versionMismatch)
                                  }
 
-                                 let file = Files.json(for: library, object: object, version: version, index: index)
                                  do {
-                                     try self.fileStorage.write(response.0, to: file,
-                                                                options: [.noFileProtection])
-                                     return Single.just(())
+                                     let decodingData = try self.syncToDb(data: response.0, library: library,
+                                                                          object: object)
+                                     return Single.just((decodingData.0, decodingData.1))
                                  } catch let error {
                                      return Single.error(error)
                                  }
-                             }
-                             .asCompletable()
-    }
-
-    func synchronizeDbWithFetchedFiles(library: SyncLibraryType, object: SyncObjectType,
-                                       version: Int, index: Int) -> Single<([String], [Error])> {
-        return Single.just(Files.json(for: library, object: object, version: version, index: index))
-                     .observeOn(self.scheduler)
-                     .flatMap({ [weak self] file -> Single<(Data, File)> in
-                        guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-
-                         do {
-                             let data = try self.fileStorage.read(file)
-                             return Single.just((data, file))
-                         } catch let error {
-                             return Single.error(error)
-                         }
-                     })
-                     .flatMap({ [weak self] data -> Single<([String], [Error], File)> in
-                        guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-
-                        do {
-                            let decodingData = try self.syncToDb(data: data.0, library: library, object: object)
-                            return Single.just((decodingData.0, decodingData.1, data.1))
-                        } catch let error {
-                            return Single.error(error)
-                        }
-                     })
-                     .flatMap({ [weak self] data -> Single<([String], [Error])> in
-                        guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-
-                         do {
-                             try self.fileStorage.remove(data.2)
-                         } catch {
-                            // We don't really care if the file couldn't be deleted, no reason for sync not to continue,
-                            // file will be cleaned up later
-                        }
-                        return Single.just((data.0, data.1))
-                     })
+                             })
     }
 
     private func syncToDb(data: Data, library: SyncLibraryType, object: SyncObjectType) throws -> ([String], [Error]) {

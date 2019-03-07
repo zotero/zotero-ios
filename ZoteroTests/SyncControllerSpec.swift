@@ -67,25 +67,8 @@ class SyncControllerSpec: QuickSpec {
                     expect(all).toEventually(equal(expected))
                 }
 
-                it("processes download batch action") {
-                    let action = ObjectBatch(order: 0, library: .user(SyncControllerSpec.userId),
-                                             object: .group, keys: [1], version: 0)
-                    let initial: [QueueAction] = [.syncBatchToFile(action)]
-                    let expected: [QueueAction] = initial
-                    var all: [QueueAction]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              result: { _ in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
                 it("processes sync batch to db") {
-                    let action = ObjectBatch(order: 0, library: .user(SyncControllerSpec.userId),
+                    let action = ObjectBatch(library: .user(SyncControllerSpec.userId),
                                              object: .group, keys: [1], version: 0)
                     let initial: [QueueAction] = [.syncBatchToDb(action)]
                     let expected: [QueueAction] = initial
@@ -110,27 +93,15 @@ class SyncControllerSpec: QuickSpec {
                     let keys3 = (15..<35).map({ $0.description })
                     let initial: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2)]
                     let expected: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: library,
-                                                                                  object: .collection,
-                                                                                  keys: keys1,
-                                                                                  version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: library,
+                                                   .syncBatchToDb(ObjectBatch(library: library,
                                                                               object: .collection,
                                                                               keys: keys1,
                                                                               version: 3)),
-                                                   .syncBatchToFile(ObjectBatch(order: 1, library: library,
-                                                                                object: .collection,
-                                                                                keys: keys2,
-                                                                                version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 1, library: library,
+                                                   .syncBatchToDb(ObjectBatch(library: library,
                                                                               object: .collection,
                                                                               keys: keys2,
                                                                               version: 3)),
-                                                   .syncBatchToFile(ObjectBatch(order: 2, library: library,
-                                                                                object: .collection,
-                                                                                keys: keys3,
-                                                                                version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 2, library: library,
+                                                   .syncBatchToDb(ObjectBatch(library: library,
                                                                               object: .collection,
                                                                               keys: keys3,
                                                                               version: 3)),
@@ -158,41 +129,25 @@ class SyncControllerSpec: QuickSpec {
                                                    .syncSettings(.group(groupId), 1),
                                                    .storeSettingsVersion(3, .group(groupId)),
                                                    .syncVersions(.group(groupId), .collection, 2),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                  object: .collection,
-                                                                                  keys: ["0"],
-                                                                                  version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                                 object: .collection,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .collection),
                                                    .syncVersions(.group(groupId), .search, 1),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                object: .search,
-                                                                                keys: ["0"],
-                                                                                version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                               object: .search,
                                                                               keys: ["0"],
                                                                               version: 3)),
                                                    .storeVersion(3, .group(groupId), .search),
                                                    .syncVersions(.group(groupId), .item, 1),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                  object: .item,
-                                                                                  keys: ["0"],
-                                                                                  version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                                 object: .item,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .item),
                                                    .syncVersions(.group(groupId), .trash, 1),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                  object: .trash,
-                                                                                  keys: ["0"],
-                                                                                  version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                                 object: .trash,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
@@ -218,13 +173,7 @@ class SyncControllerSpec: QuickSpec {
                     let groupId = SyncControllerSpec.groupId
                     let initial: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
                     let expected: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil),
-                                                   .syncBatchToFile(ObjectBatch(order: 0,
-                                                                                library: .user(SyncControllerSpec.userId),
-                                                                                object: .group,
-                                                                                keys: [0],
-                                                                                version: 7)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0,
-                                                                              library: .user(SyncControllerSpec.userId),
+                                                   .syncBatchToDb(ObjectBatch(library: .user(SyncControllerSpec.userId),
                                                                               object: .group,
                                                                               keys: [0],
                                                                               version: 7)),
@@ -232,41 +181,25 @@ class SyncControllerSpec: QuickSpec {
                                                    .syncSettings(.group(groupId), 4),
                                                    .storeSettingsVersion(7, .group(groupId)),
                                                    .syncVersions(.group(groupId), .collection, 4),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                object: .collection,
-                                                                                keys: ["0"],
-                                                                                version: 7)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                               object: .collection,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .collection),
                                                    .syncVersions(.group(groupId), .search, 2),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                object: .search,
-                                                                                keys: ["0"],
-                                                                                version: 7)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                               object: .search,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .search),
                                                    .syncVersions(.group(groupId), .item, 4),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                object: .item,
-                                                                                keys: ["0"],
-                                                                                version: 7)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                               object: .item,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .item),
                                                    .syncVersions(.group(groupId), .trash, 2),
-                                                   .syncBatchToFile(ObjectBatch(order: 0, library: .group(groupId),
-                                                                                object: .trash,
-                                                                                keys: ["0"],
-                                                                                version: 7)),
-                                                   .syncBatchToDb(ObjectBatch(order: 0, library: .group(groupId),
+                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
                                                                               object: .trash,
                                                                               keys: ["0"],
                                                                               version: 7)),
@@ -305,32 +238,8 @@ class SyncControllerSpec: QuickSpec {
                     expect(error).toEventually(equal(SyncError.noInternetConnection))
                 }
 
-                it("doesn't process download batch action") {
-                    let action = ObjectBatch(order: 0, library: .user(SyncControllerSpec.userId), object: .group,
-                                             keys: [1], version: 0)
-                    let initial: [QueueAction] = [.syncBatchToFile(action)]
-                    var error: Zotero.SyncError?
-
-                    self.controller = self.performErrorTest(queue: initial,
-                                                            result: { action in
-                                                                switch action {
-                                                                case .downloadObject(let object):
-                                                                    if object == .group {
-                                                                        return Single.error(TestErrors.fatal)
-                                                                    }
-                                                                    return Single.just(())
-                                                                default:
-                                                                    return Single.just(())
-                                                                }
-                                                            }, check: { result in
-                                                                error = result as? Zotero.SyncError
-                                                            })
-
-                    expect(error).toEventually(equal(SyncError.noInternetConnection))
-                }
-
                 it("doesn't process sync batch to db") {
-                    let action = ObjectBatch(order: 0, library: .user(SyncControllerSpec.userId), object: .group,
+                    let action = ObjectBatch(library: .user(SyncControllerSpec.userId), object: .group,
                                              keys: [1], version: 0)
                     let initial: [QueueAction] = [.syncBatchToDb(action)]
                     var error: Zotero.SyncError?
@@ -947,7 +856,7 @@ class SyncControllerSpec: QuickSpec {
                                 let actions = data.0
                                 let itemAction = actions.filter({ action -> Bool in
                                     switch action {
-                                    case .syncBatchToFile(let batch):
+                                    case .syncBatchToDb(let batch):
                                         guard batch.object == .item,
                                               let strKeys = batch.keys as? [String] else { return false }
                                         return strKeys.contains(unsyncedItemKey) && strKeys.contains(responseItemKey)
@@ -1124,7 +1033,6 @@ fileprivate struct TestErrors {
 fileprivate enum TestAction {
     case loadGroups
     case syncVersions(SyncObjectType)
-    case downloadObject(SyncObjectType)
     case storeObject(SyncObjectType)
     case resync(SyncObjectType)
     case storeVersion(SyncLibraryType)
@@ -1159,17 +1067,12 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func downloadObjectJson(for keys: String, library: SyncLibraryType,
-                            object: SyncObjectType, version: Int, index: Int) -> Completable {
-        return self.result(for: .downloadObject(object)).asCompletable()
-    }
-
     func markForResync(keys: [Any], library: SyncLibraryType, object: SyncObjectType) -> Completable {
         return self.result(for: .markResync(object)).asCompletable()
     }
 
-    func synchronizeDbWithFetchedFiles(library: SyncLibraryType, object: SyncObjectType,
-                                       version: Int, index: Int) -> Single<([String], [Error])> {
+    func fetchAndStoreObjects(with keys: [Any], library: SyncLibraryType, object: SyncObjectType,
+                              version: Int) -> Single<([String], [Error])> {
         let keys = SyncControllerSpec.expectedKeys
         return self.result(for: .storeObject(object)).flatMap({ return Single.just((keys, [])) })
     }

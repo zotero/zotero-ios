@@ -9,7 +9,6 @@
 import Foundation
 
 import CocoaLumberjack
-import DictionaryDecoder
 
 enum ItemResponseError: Error {
     case notArray
@@ -99,19 +98,19 @@ struct ItemResponse {
         let deleted = data["deleted"] as? Int
         self.isTrash = deleted == 1
 
-        let decoder = DictionaryDecoder()
-        let libraryData: [String: Any] = try ItemResponse.parse(key: "library", from: response)
+        let decoder = JSONDecoder()
+        let libraryDictionary: [String: Any] = try ItemResponse.parse(key: "library", from: response)
+        let libraryData = try JSONSerialization.data(withJSONObject: libraryDictionary)
         self.library = try decoder.decode(LibraryResponse.self, from: libraryData)
-        let linksData = response["links"] as? [String: Any]
+        let linksDictionary = response["links"] as? [String: Any]
+        let linksData = try linksDictionary.flatMap { try JSONSerialization.data(withJSONObject: $0) }
         self.links = try linksData.flatMap { try decoder.decode(LinksResponse.self, from: $0) }
-        let tagsData = (data["tags"] as? [[String: Any]]) ?? []
+        let tagsDictionaries = (data["tags"] as? [[String: Any]]) ?? []
+        let tagsData = try tagsDictionaries.map({ try JSONSerialization.data(withJSONObject: $0) })
         self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
-        let creatorsData: [[String: Any]]? = data["creators"] as? [[String: Any]]
-        if let data = creatorsData {
-            self.creators = try data.map({ try decoder.decode(CreatorResponse.self, from: $0) })
-        } else {
-            self.creators = []
-        }
+        let creatorsDictionary = (data["creators"] as? [[String: Any]]) ?? []
+        let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
+        self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
 
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]

@@ -8,23 +8,9 @@
 
 import Foundation
 
-struct LinksResponse {
+struct LinksResponse: Decodable {
     let main: LinkResponse?
     let alternate: LinkResponse?
-}
-
-extension LinksResponse: Decodable {
-    private enum Keys: String, CodingKey {
-        case main
-        case alternate
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: LinksResponse.Keys.self)
-        let main = try container.decodeIfPresent(LinkResponse.self, forKey: .main)
-//        let alternate = try container.decodeIfPresent(LinkResponse.self, forKey: .alternate)
-        self.init(main: main, alternate: nil)
-    }
 }
 
 struct LinkResponse: Decodable {

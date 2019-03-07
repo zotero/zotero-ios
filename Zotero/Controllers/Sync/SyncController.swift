@@ -45,22 +45,16 @@ extension SyncError: Equatable {
 struct ObjectBatch {
     static var maxObjectCount = 50
 
-    let order: Int
     let library: SyncLibraryType
     let object: SyncObjectType
     let keys: [Any]
     let version: Int
-
-    var keysString: String {
-        return self.keys.map({ "\($0)" }).joined(separator: ",")
-    }
 }
 
 enum QueueAction: Equatable {
     case syncVersions(SyncLibraryType, SyncObjectType, Int?)     // Fetch versions from API, update DB based on response
-    case syncBatchToFile(ObjectBatch)                            // Fetch data for new/updated objects, store to files
     case createLibraryActions                                    // Load all libraries, spawn actions for each
-    case syncBatchToDb(ObjectBatch)                              // Stores file data to db
+    case syncBatchToDb(ObjectBatch)                              // Fetch data and store to db
     case storeVersion(Int, SyncLibraryType, SyncObjectType)      // Store new version for given library-object
     case syncDeletions(SyncLibraryType, Int)                     // Synchronize deletions of objects in library
     case syncSettings(SyncLibraryType, Int?)                      // Synchronize settings for library
@@ -70,8 +64,7 @@ enum QueueAction: Equatable {
         switch self {
         case .createLibraryActions:
             return nil
-        case .syncBatchToFile(let action),
-             .syncBatchToDb(let action):
+        case .syncBatchToDb(let action):
             return action.library
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
@@ -101,8 +94,7 @@ extension ObjectBatch: Equatable {
                 return false
             }
         }
-        return lhs.order == rhs.order && lhs.library == rhs.library &&
-               lhs.object == rhs.object && lhs.version == rhs.version
+        return lhs.library == rhs.library && lhs.object == rhs.object && lhs.version == rhs.version
     }
 }
 
@@ -305,10 +297,8 @@ final class SyncController {
                 self.progressHandler.reportVersionsSync(for: library, object: objectType)
             }
             self.processSyncVersionsAction(library: library, object: objectType, since: version)
-        case .syncBatchToFile(let batch):
-            self.processFileStoreAction(for: batch)
         case .syncBatchToDb(let batch):
-            self.processDbStoreAction(for: batch)
+            self.processBatchSyncAction(for: batch)
         case .storeVersion(let version, let library, let object):
             self.processStoreVersionAction(library: library, type: .object(object), version: version)
         case .syncDeletions(let library, let version):
@@ -416,17 +406,12 @@ final class SyncController {
         let batches: [ObjectBatch]
         switch object {
         case .group:
-            batches = keys.enumerated().map { ObjectBatch(order: $0.offset, library: library, object: object,
-                                                          keys: [$0.element], version: currentVersion) }
+            batches = keys.map { ObjectBatch(library: library, object: object, keys: [$0], version: currentVersion) }
         default:
             batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
         }
 
-        var actions: [QueueAction] = []
-        batches.forEach { batch in
-            actions.append(.syncBatchToFile(batch))
-            actions.append(.syncBatchToDb(batch))
-        }
+        var actions: [QueueAction] = batches.map({ .syncBatchToDb($0) })
         if object == .group {
             actions.append(.createLibraryActions)
         } else if !actions.isEmpty {
@@ -452,8 +437,7 @@ final class SyncController {
             let upperBound = min((keys.count - processed), batchSize) + processed
             let batchKeys = Array(keys[processed..<upperBound])
 
-            batches.append(ObjectBatch(order: batches.count, library: library, object: object,
-                                       keys: batchKeys, version: version))
+            batches.append(ObjectBatch(library: library, object: object, keys: batchKeys, version: version))
 
             processed += batchSize
             if batchSize < maxBatchSize {
@@ -464,57 +448,20 @@ final class SyncController {
         return batches
     }
 
-    private func processFileStoreAction(for batch: ObjectBatch) {
-        self.handler.downloadObjectJson(for: batch.keysString, library: batch.library,
-                                        object: batch.object, version: batch.version, index: batch.order)
-                    .subscribe(onCompleted: { [weak self] in
-                        self?.finishFileStoreAction(for: batch, error: nil)
-                    }, onError: { [weak self] error in
-                        self?.finishFileStoreAction(for: batch, error: error)
-                    })
-                    .disposed(by: self.disposeBag)
-    }
-
-    private func finishFileStoreAction(for batch: ObjectBatch, error: Error?) {
-        guard let error = error else {
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.processNextAction()
-            }
-            return
-        }
-
-        if let abortError = self.errorRequiresAbort(error, library: batch.library, object: batch.object) {
-            self.abort(error: abortError)
-            return
-        }
-
-        if self.handleVersionMismatchIfNeeded(for: error, library: batch.library) { return }
-
-        self.performOnAccessQueue(flags: .barrier) { [weak self] in
-            self?.progressHandler.reportBatch(for: batch.object, count: batch.keys.count)
-            self?.nonFatalErrors.append(error)
-        }
-
-        // We couldn't fetch batch of up to ObjectBatch.maxObjectCount objects, some objects will probably be
-        // missing parents or completely, but we continue with the sync
-        // We mark these objects as missing and we'll try to fetch and update them on next sync
-        self.markForResync(keys: batch.keys, library: batch.library, object: batch.object)
-    }
-
-    private func processDbStoreAction(for batch: ObjectBatch) {
-        self.handler.synchronizeDbWithFetchedFiles(library: batch.library, object: batch.object,
-                                                   version: batch.version, index: batch.order)
+    private func processBatchSyncAction(for batch: ObjectBatch) {
+        self.handler.fetchAndStoreObjects(with: batch.keys, library: batch.library,
+                                          object: batch.object, version: batch.version)
                     .subscribe(onSuccess: { [weak self] decodingData in
-                        self?.finishDbStoreAction(for: batch.library, object: batch.object,
-                                                  allKeys: batch.keys, result: .success(decodingData))
+                        self?.finishBatchSyncAction(for: batch.library, object: batch.object,
+                                                    allKeys: batch.keys, result: .success(decodingData))
                     }, onError: { [weak self] error in
-                        self?.finishDbStoreAction(for: batch.library, object: batch.object,
-                                                  allKeys: batch.keys, result: .failure(error))
+                        self?.finishBatchSyncAction(for: batch.library, object: batch.object,
+                                                    allKeys: batch.keys, result: .failure(error))
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDbStoreAction(for library: SyncLibraryType, object: SyncObjectType, allKeys: [Any],
+    private func finishBatchSyncAction(for library: SyncLibraryType, object: SyncObjectType, allKeys: [Any],
                                      result: Result<([String], [Error])>) {
         switch result {
         case .success(let decodingData):
@@ -552,6 +499,7 @@ final class SyncController {
 
             self.markForResync(keys: Array(failedKeys), library: library, object: object)
         case .failure(let error):
+            DDLogError("--- BATCH: \(error)")
             if let abortError = self.errorRequiresAbort(error) {
                 self.abort(error: abortError)
                 return
