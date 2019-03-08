@@ -128,8 +128,21 @@ final class SyncController {
             self.type = type
             self.libraryType = libraries
             self.progressHandler.reportNewSync()
-            self.queue.append(.syncVersions(.user(self.userId), .group, nil))
+            self.queue.append(contentsOf: self.createInitialActions(for: libraries))
             self.processNextAction()
+        }
+    }
+
+    private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
+        switch libraries {
+        case .all:
+            return [.syncVersions(.user(self.userId), .group, nil)]
+        case .specific(let identifiers):
+            let isMyLibraryOnly = identifiers.count == 1 && identifiers.first == RLibrary.myLibraryId
+            if isMyLibraryOnly {
+                return [.createLibraryActions]
+            }
+            return [.syncVersions(.user(self.userId), .group, nil)]
         }
     }
 
@@ -283,8 +296,8 @@ final class SyncController {
         switch self.libraryType {
         case .all:
             action = self.handler.loadAllLibraryData()
-        case .specific(let ids):
-            action = self.handler.loadLibraryData(for: ids)
+        case .specific(let identifiers):
+            action = self.handler.loadLibraryData(for: identifiers)
         }
 
         action.flatMap { libraryData -> Single<([(Library, Versions)], [Int: String])> in
@@ -379,7 +392,10 @@ final class SyncController {
         let batches: [Batch]
         switch object {
         case .group:
-            batches = keys.map { Batch(library: library, object: object, keys: [$0], version: currentVersion) }
+            let batchData = self.createBatchGroups(for: keys, library: library, object: object,
+                                                   version: currentVersion, libraryType: self.libraryType)
+            batches = batchData.0
+            // TODO: - report deleted groups?
         default:
             batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
         }
@@ -397,6 +413,31 @@ final class SyncController {
             }
             self?.enqueue(actions: actions, at: 0)
         }
+    }
+
+    private func createBatchGroups(for keys: [Any], library: Library, object: Object,
+                                   version: Int, libraryType: LibrarySyncType) -> ([Batch], [Int]) {
+        var toSync: [Any] = []
+        var missing: [Int] = []
+
+        switch libraryType {
+        case .all:
+            toSync = keys
+
+        case .specific(let identifiers):
+            guard let intKeys = keys as? [Int] else { return ([], []) }
+
+            identifiers.forEach { identifier in
+                if intKeys.contains(identifier) {
+                    toSync.append(identifier)
+                } else {
+                    missing.append(identifier)
+                }
+            }
+        }
+
+        let batches = toSync.map { Batch(library: library, object: object, keys: [$0], version: version) }
+        return (batches, missing)
     }
 
     private func createBatchObjects(for keys: [Any], library: Library,
@@ -648,8 +689,10 @@ final class SyncController {
     var reportFinish: ((Result<([Action], [Error])>) -> Void)?
     private var allActions: [Action] = []
 
-    func start(with queue: [Action], finishedAction: @escaping (Result<([Action], [Error])>) -> Void) {
+    func start(with queue: [Action], libraries: LibrarySyncType,
+               finishedAction: @escaping (Result<([Action], [Error])>) -> Void) {
         self.queue = queue
+        self.libraryType = libraries
         self.allActions = []
         self.reportFinish = finishedAction
         self.processNextAction()

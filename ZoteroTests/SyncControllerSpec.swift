@@ -53,11 +53,12 @@ class SyncControllerSpec: QuickSpec {
         describe("Queue") {
             describe("action processing") {
                 it("processes store version action") {
-                    let initial: [QueueAction] = [.storeVersion(3, .group(SyncControllerSpec.groupId), .collection)]
-                    let expected: [QueueAction] = initial
-                    var all: [QueueAction]?
+                    let initial: [SyncController.Action] = [.storeVersion(3, .group(SyncControllerSpec.groupId), .collection)]
+                    let expected: [SyncController.Action] = initial
+                    var all: [SyncController.Action]?
 
                     self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .all,
                                                               result: { _ in
                                                                   return Single.just(())
                                                               }, check: { result in
@@ -68,13 +69,14 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("processes sync batch to db") {
-                    let action = ObjectBatch(library: .user(SyncControllerSpec.userId),
+                    let action = SyncController.Batch(library: .user(SyncControllerSpec.userId),
                                              object: .group, keys: [1], version: 0)
-                    let initial: [QueueAction] = [.syncBatchToDb(action)]
-                    let expected: [QueueAction] = initial
-                    var all: [QueueAction]?
+                    let initial: [SyncController.Action] = [.syncBatchToDb(action)]
+                    let expected: [SyncController.Action] = initial
+                    var all: [SyncController.Action]?
 
                     self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .all,
                                                               result: { _ in
                                                                   return Single.just(())
                                                               }, check: { result in
@@ -87,28 +89,29 @@ class SyncControllerSpec: QuickSpec {
                 it("processes sync versions (collection) action") {
                     SyncControllerSpec.syncVersionData = (3, 35)
 
-                    let library = SyncLibraryType.user(SyncControllerSpec.userId)
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let keys1 = (0..<5).map({ $0.description })
                     let keys2 = (5..<15).map({ $0.description })
                     let keys3 = (15..<35).map({ $0.description })
-                    let initial: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2)]
-                    let expected: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2),
-                                                   .syncBatchToDb(ObjectBatch(library: library,
+                    let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2)]
+                    let expected: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2),
+                                                   .syncBatchToDb(SyncController.Batch(library: library,
                                                                               object: .collection,
                                                                               keys: keys1,
                                                                               version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(library: library,
+                                                   .syncBatchToDb(SyncController.Batch(library: library,
                                                                               object: .collection,
                                                                               keys: keys2,
                                                                               version: 3)),
-                                                   .syncBatchToDb(ObjectBatch(library: library,
+                                                   .syncBatchToDb(SyncController.Batch(library: library,
                                                                               object: .collection,
                                                                               keys: keys3,
                                                                               version: 3)),
                                                    .storeVersion(3, .user(SyncControllerSpec.userId), .collection)]
-                    var all: [QueueAction]?
+                    var all: [SyncController.Action]?
 
                     self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .all,
                                                               result: { _ in
                                                                   return Single.just(())
                                                               }, check: { result in
@@ -124,38 +127,39 @@ class SyncControllerSpec: QuickSpec {
                                                                   deletions: 1, settings: 1)
 
                     let groupId = SyncControllerSpec.groupId
-                    let initial: [QueueAction] = [.createLibraryActions]
-                    let expected: [QueueAction] = [.createLibraryActions,
+                    let initial: [SyncController.Action] = [.createLibraryActions]
+                    let expected: [SyncController.Action] = [.createLibraryActions,
                                                    .syncSettings(.group(groupId), 1),
                                                    .storeSettingsVersion(3, .group(groupId)),
                                                    .syncVersions(.group(groupId), .collection, 2),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                                 object: .collection,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .collection),
                                                    .syncVersions(.group(groupId), .search, 1),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                               object: .search,
                                                                               keys: ["0"],
                                                                               version: 3)),
                                                    .storeVersion(3, .group(groupId), .search),
                                                    .syncVersions(.group(groupId), .item, 1),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                                 object: .item,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .item),
                                                    .syncVersions(.group(groupId), .trash, 1),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                                 object: .trash,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .trash),
                                                    .syncDeletions(.group(groupId), 1)]
-                    var all: [QueueAction]?
+                    var all: [SyncController.Action]?
 
                     self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .all,
                                                               result: { _ in
                                                                   return Single.just(())
                                                               }, check: { result in
@@ -171,9 +175,9 @@ class SyncControllerSpec: QuickSpec {
                                                                   deletions: 4, settings: 4)
 
                     let groupId = SyncControllerSpec.groupId
-                    let initial: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
-                    let expected: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil),
-                                                   .syncBatchToDb(ObjectBatch(library: .user(SyncControllerSpec.userId),
+                    let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
+                    let expected: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil),
+                                                   .syncBatchToDb(SyncController.Batch(library: .user(SyncControllerSpec.userId),
                                                                               object: .group,
                                                                               keys: [0],
                                                                               version: 7)),
@@ -181,34 +185,89 @@ class SyncControllerSpec: QuickSpec {
                                                    .syncSettings(.group(groupId), 4),
                                                    .storeSettingsVersion(7, .group(groupId)),
                                                    .syncVersions(.group(groupId), .collection, 4),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                               object: .collection,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .collection),
                                                    .syncVersions(.group(groupId), .search, 2),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                               object: .search,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .search),
                                                    .syncVersions(.group(groupId), .item, 4),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                               object: .item,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .item),
                                                    .syncVersions(.group(groupId), .trash, 2),
-                                                   .syncBatchToDb(ObjectBatch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
                                                                               object: .trash,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .trash),
                                                    .syncDeletions(.group(groupId), 4)]
-                    var all: [QueueAction]?
+                    var all: [SyncController.Action]?
 
                     self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .all,
                                                               result: { _ in
+                                                                  return Single.just(())
+                                                              }, check: { result in
+                                                                  all = result
+                                                              })
+
+                    expect(all).toEventually(equal(expected))
+                }
+
+                it("processes specific library only") {
+                    SyncControllerSpec.syncVersionData = (7, 5)
+                    SyncControllerSpec.groupIdVersions = Versions(collections: 4, items: 4, trash: 2, searches: 2,
+                                                                  deletions: 4, settings: 4)
+
+                    let groupId = 2
+                    let keys = ["0", "1", "2", "3", "4"]
+                    let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
+                    let expected: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil),
+                                                             .syncBatchToDb(SyncController.Batch(library: .user(SyncControllerSpec.userId),
+                                                                                                 object: .group,
+                                                                                                 keys: [2],
+                                                                                                 version: 7)),
+                                                             .createLibraryActions,
+                                                             .syncSettings(.group(groupId), 4),
+                                                             .storeSettingsVersion(7, .group(groupId)),
+                                                             .syncVersions(.group(groupId), .collection, 4),
+                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                                                                 object: .collection,
+                                                                                                 keys: keys,
+                                                                                                 version: 7)),
+                                                             .storeVersion(7, .group(groupId), .collection),
+                                                             .syncVersions(.group(groupId), .search, 2),
+                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                                                                 object: .search,
+                                                                                                 keys: keys,
+                                                                                                 version: 7)),
+                                                             .storeVersion(7, .group(groupId), .search),
+                                                             .syncVersions(.group(groupId), .item, 4),
+                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                                                                 object: .item,
+                                                                                                 keys: keys,
+                                                                                                 version: 7)),
+                                                             .storeVersion(7, .group(groupId), .item),
+                                                             .syncVersions(.group(groupId), .trash, 2),
+                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                                                                 object: .trash,
+                                                                                                 keys: keys,
+                                                                                                 version: 7)),
+                                                             .storeVersion(7, .group(groupId), .trash),
+                                                             .syncDeletions(.group(groupId), 4)]
+                    var all: [SyncController.Action]?
+
+                    self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .specific([groupId]),
+                                                              result: { action in
                                                                   return Single.just(())
                                                               }, check: { result in
                                                                   all = result
@@ -220,10 +279,11 @@ class SyncControllerSpec: QuickSpec {
 
             describe("fatal error handling") {
                 it("doesn't process store version action") {
-                    let initial: [QueueAction] = [.storeVersion(1, .user(SyncControllerSpec.userId), .group)]
+                    let initial: [SyncController.Action] = [.storeVersion(1, .user(SyncControllerSpec.userId), .group)]
                     var error: Zotero.SyncError?
 
                     self.controller = self.performErrorTest(queue: initial,
+                                                            libraries: .all,
                                                             result: { action in
                                                                 switch action {
                                                                 case .storeVersion:
@@ -239,12 +299,13 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("doesn't process sync batch to db") {
-                    let action = ObjectBatch(library: .user(SyncControllerSpec.userId), object: .group,
+                    let action = SyncController.Batch(library: .user(SyncControllerSpec.userId), object: .group,
                                              keys: [1], version: 0)
-                    let initial: [QueueAction] = [.syncBatchToDb(action)]
+                    let initial: [SyncController.Action] = [.syncBatchToDb(action)]
                     var error: Zotero.SyncError?
 
                     self.controller = self.performErrorTest(queue: initial,
+                                                            libraries: .all,
                                                             result: { action in
                                                                 switch action {
                                                                 case .storeObject(let object):
@@ -265,10 +326,11 @@ class SyncControllerSpec: QuickSpec {
                 it("doesn't process sync versions (collection) action") {
                     SyncControllerSpec.syncVersionData = (7, 1)
 
-                    let initial: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 1)]
+                    let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 1)]
                     var error: Zotero.SyncError?
 
                     self.controller = self.performErrorTest(queue: initial,
+                                                            libraries: .all,
                                                             result: { action in
                                                                 switch action {
                                                                 case .syncVersions(let object):
@@ -289,10 +351,11 @@ class SyncControllerSpec: QuickSpec {
                 it("doesn't process create groups action") {
                     SyncControllerSpec.syncVersionData = (7, 1)
 
-                    let initial: [QueueAction] = [.createLibraryActions]
+                    let initial: [SyncController.Action] = [.createLibraryActions]
                     var error: Zotero.SyncError?
 
                     self.controller = self.performErrorTest(queue: initial,
+                                                            libraries: .all,
                                                             result: { action in
                                                                 switch action {
                                                                 case .loadGroups:
@@ -314,10 +377,11 @@ class SyncControllerSpec: QuickSpec {
                     SyncControllerSpec.groupIdVersions = Versions(collections: 4, items: 4, trash: 2, searches: 2,
                                                                   deletions: 0, settings: 0)
 
-                    let initial: [QueueAction] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
+                    let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
                     var didFinish: Bool?
 
                     self.controller = self.performActionsTest(queue: initial,
+                                                              libraries: .all,
                                                               result: { action in
                                                                   switch action {
                                                                   case .syncVersions(let object):
@@ -342,10 +406,10 @@ class SyncControllerSpec: QuickSpec {
             describe("Download") {
                 it("should download items into a new library", closure: {
                     let header = ["Last-Modified-Version" : "3"]
-                    let library = SyncLibraryType.user(SyncControllerSpec.userId)
-                    let objects = SyncObjectType.allCases
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+                    let objects = SyncController.Object.allCases
 
-                    var versionResponses: [SyncObjectType: Any] = [:]
+                    var versionResponses: [SyncController.Object: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -360,11 +424,11 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let objectKeys: [SyncObjectType: String] = [.collection: "AAAAAAAA",
+                    let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA",
                                                                 .search: "AAAAAAAA",
                                                                 .item: "AAAAAAAA",
                                                                 .trash: "BBBBBBBB"]
-                    var objectResponses: [SyncObjectType: Any] = [:]
+                    var objectResponses: [SyncController.Object: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -505,17 +569,17 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start()
+                        self.controller?.start(for: .all)
                     }
                 })
 
                 it("should download items into a new read-only group", closure: {
                     let header = ["Last-Modified-Version" : "3"]
                     let groupId = 123
-                    let library = SyncLibraryType.group(groupId)
-                    let objects = SyncObjectType.allCases
+                    let library = SyncController.Library.group(groupId)
+                    let objects = SyncController.Object.allCases
 
-                    var versionResponses: [SyncObjectType: Any] = [:]
+                    var versionResponses: [SyncController.Object: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -531,12 +595,12 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let objectKeys: [SyncObjectType: String] = [.collection: "AAAAAAAA",
+                    let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA",
                                                                 .search: "AAAAAAAA",
                                                                 .item: "AAAAAAAA",
                                                                 .trash: "BBBBBBBB",
                                                                 .group: groupId.description]
-                    var objectResponses: [SyncObjectType: Any] = [:]
+                    var objectResponses: [SyncController.Object: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -578,7 +642,7 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let myLibrary = SyncLibraryType.user(SyncControllerSpec.userId)
+                    let myLibrary = SyncController.Library.user(SyncControllerSpec.userId)
                     objects.forEach { object in
                         if object == .group {
                             self.createStub(for: VersionsRequest<String>(libraryType: myLibrary, objectType: object, version: nil),
@@ -667,15 +731,15 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start()
+                        self.controller?.start(for: .all)
                     }
                 })
 
                 it("should apply remote deletions", closure: {
                     let header = ["Last-Modified-Version" : "3"]
-                    let library = SyncLibraryType.user(SyncControllerSpec.userId)
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let itemToDelete = "CCCCCCCC"
-                    let objects = SyncObjectType.allCases
+                    let objects = SyncController.Object.allCases
 
                     let realm = SyncControllerSpec.realm
                     try! realm.write {
@@ -722,14 +786,14 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start()
+                        self.controller?.start(for: .all)
                     }
                 })
 
                 it("should handle new remote item referencing locally missing collection", closure: {
                     let header = ["Last-Modified-Version" : "3"]
-                    let library = SyncLibraryType.user(SyncControllerSpec.userId)
-                    let objects = SyncObjectType.allCases
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+                    let objects = SyncController.Object.allCases
                     let itemKey = "AAAAAAAA"
                     let collectionKey = "CCCCCCCC"
                     let itemResponse = [["key": itemKey,
@@ -784,14 +848,14 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start()
+                        self.controller?.start(for: .all)
                     }
                 })
 
                 it("should include unsynced objects in sync queue", closure: {
                     let header = ["Last-Modified-Version" : "3"]
-                    let library = SyncLibraryType.user(SyncControllerSpec.userId)
-                    let objects = SyncObjectType.allCases
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+                    let objects = SyncController.Object.allCases
                     let unsyncedItemKey = "AAAAAAAA"
                     let responseItemKey = "BBBBBBBB"
                     let itemResponse = [["key": responseItemKey,
@@ -885,14 +949,14 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start()
+                        self.controller?.start(for: .all)
                     }
                 })
 
                 it("should mark object as needsSync if not parsed correctly", closure: {
                     let header = ["Last-Modified-Version" : "3"]
-                    let library = SyncLibraryType.user(SyncControllerSpec.userId)
-                    let objects = SyncObjectType.allCases
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+                    let objects = SyncController.Object.allCases
                     let correctKey = "AAAAAAAA"
                     let incorrectKey = "BBBBBBBB"
                     let itemResponse = [["key": correctKey,
@@ -957,15 +1021,15 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start()
+                        self.controller?.start(for: .all)
                     }
                 })
             }
         }
     }
 
-    private func createNoChangeStubs(for library: SyncLibraryType, baseUrl: URL, headers: [String: Any]? = nil) {
-        let objects = SyncObjectType.allCases
+    private func createNoChangeStubs(for library: SyncController.Library, baseUrl: URL, headers: [String: Any]? = nil) {
+        let objects = SyncController.Object.allCases
         objects.forEach { object in
             self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
                             baseUrl: baseUrl, headers: headers,
@@ -986,14 +1050,15 @@ class SyncControllerSpec: QuickSpec {
         })
     }
 
-    private func performActionsTest(queue: [QueueAction], result: @escaping (TestAction) -> Single<()>,
-                                    check: @escaping ([QueueAction]) -> Void) -> SyncController {
+    private func performActionsTest(queue: [SyncController.Action], libraries: SyncController.LibrarySyncType,
+                                    result: @escaping (TestAction) -> Single<()>,
+                                    check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
         let handler = TestHandler()
         let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler)
 
         handler.requestResult = result
 
-        controller.start(with: queue, finishedAction: { result in
+        controller.start(with: queue, libraries: libraries, finishedAction: { result in
             switch result {
             case .success(let data):
                 check(data.0)
@@ -1004,14 +1069,15 @@ class SyncControllerSpec: QuickSpec {
         return controller
     }
 
-    private func performErrorTest(queue: [QueueAction], result: @escaping (TestAction) -> Single<()>,
+    private func performErrorTest(queue: [SyncController.Action], libraries: SyncController.LibrarySyncType,
+                                  result: @escaping (TestAction) -> Single<()>,
                                   check: @escaping (Error) -> Void) -> SyncController {
         let handler = TestHandler()
         let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler)
 
         handler.requestResult = result
 
-        controller.start(with: queue, finishedAction: { result in
+        controller.start(with: queue, libraries: libraries, finishedAction: { result in
             switch result {
             case .success: break
             case .failure(let error):
@@ -1032,13 +1098,14 @@ fileprivate struct TestErrors {
 
 fileprivate enum TestAction {
     case loadGroups
-    case syncVersions(SyncObjectType)
-    case storeObject(SyncObjectType)
-    case resync(SyncObjectType)
-    case storeVersion(SyncLibraryType)
-    case markResync(SyncObjectType)
-    case syncDeletions(SyncLibraryType)
-    case syncSettings(SyncLibraryType)
+    case loadSpecificGroups([Int])
+    case syncVersions(SyncController.Object)
+    case storeObject(SyncController.Object)
+    case resync(SyncController.Object)
+    case storeVersion(SyncController.Library)
+    case markResync(SyncController.Object)
+    case syncDeletions(SyncController.Library)
+    case syncSettings(SyncController.Library)
 }
 
 fileprivate class TestHandler: SyncActionHandler {
@@ -1048,13 +1115,19 @@ fileprivate class TestHandler: SyncActionHandler {
         return self.requestResult?(action) ?? Single.just(())
     }
 
-    func loadAllLibraryData() -> PrimitiveSequence<SingleTrait, Array<(Int, String, Versions)>> {
+    func loadAllLibraryData() -> Single<[(Int, String, Versions)]> {
         return self.result(for: .loadGroups).flatMap {
             return Single.just([(SyncControllerSpec.groupId, "", SyncControllerSpec.groupIdVersions)])
         }
     }
 
-    func synchronizeVersions(for library: SyncLibraryType, object: SyncObjectType, since sinceVersion: Int?,
+    func loadLibraryData(for libraryIds: [Int]) -> Single<[(Int, String, Versions)]> {
+        return self.result(for: .loadSpecificGroups(libraryIds)).flatMap { _ in
+            return Single.just(libraryIds.map({ ($0, "", SyncControllerSpec.groupIdVersions) }))
+        }
+    }
+
+    func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object, since sinceVersion: Int?,
                              current currentVersion: Int?, syncAll: Bool) -> Single<(Int, Array<Any>)> {
         return self.result(for: .syncVersions(object)).flatMap {
             let data = SyncControllerSpec.syncVersionData
@@ -1067,26 +1140,26 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func markForResync(keys: [Any], library: SyncLibraryType, object: SyncObjectType) -> Completable {
+    func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable {
         return self.result(for: .markResync(object)).asCompletable()
     }
 
-    func fetchAndStoreObjects(with keys: [Any], library: SyncLibraryType, object: SyncObjectType,
+    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
                               version: Int) -> Single<([String], [Error])> {
         let keys = SyncControllerSpec.expectedKeys
         return self.result(for: .storeObject(object)).flatMap({ return Single.just((keys, [])) })
     }
 
-    func storeVersion(_ version: Int, for library: SyncLibraryType, type: UpdateVersionType) -> Completable {
+    func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable {
         return self.result(for: .storeVersion(.group(SyncControllerSpec.groupId))).asCompletable()
     }
 
-    func synchronizeDeletions(for library: SyncLibraryType, since sinceVersion: Int,
+    func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
                               current currentVersion: Int?) -> Completable {
         return self.result(for: .syncDeletions(library)).asCompletable()
     }
 
-    func synchronizeSettings(for library: SyncLibraryType, current currentVersion: Int?,
+    func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
                              since version: Int?) -> Single<(Bool, Int)> {
         return self.result(for: .syncSettings(library)).flatMap {
             let data = SyncControllerSpec.syncVersionData
