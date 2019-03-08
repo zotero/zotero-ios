@@ -15,7 +15,7 @@ typealias SyncProgressData = (Int, Int) // completed count, total count
 
 enum SyncProgress {
     case groups
-    case library(String, SyncObjectType, SyncProgressData?) // Library name, object, data
+    case library(String, SyncController.Object, SyncProgressData?) // Library name, object, data
     case deletions(String) // Library name
     case finished([Error])
     case aborted(Error)
@@ -53,24 +53,24 @@ final class SyncProgressHandler {
         self.libraryNames = data
     }
 
-    func reportVersionsSync(for library: SyncLibraryType, object: SyncObjectType) {
+    func reportVersionsSync(for library: SyncController.Library, object: SyncController.Object) {
         guard object != .group, let name = self.libraryNames?[library.libraryId] else { return }
         self.currentLibrary = name
         self.observable.accept(.library(name, object, nil))
     }
 
-    func reportObjectCount(for object: SyncObjectType, count: Int) {
+    func reportObjectCount(for object: SyncController.Object, count: Int) {
         self.currentTotal = count
         self.currentDone = 0
         self.reportCurrentNumbers(for: object)
     }
 
-    func reportBatch(for object: SyncObjectType, count: Int) {
+    func reportBatch(for object: SyncController.Object, count: Int) {
         self.currentDone += count
         self.reportCurrentNumbers(for: object)
     }
 
-    func reportDeletions(for library: SyncLibraryType) {
+    func reportDeletions(for library: SyncController.Library) {
         guard let name = self.libraryNames?[library.libraryId] else { return }
         self.observable.accept(.deletions(name))
     }
@@ -105,7 +105,7 @@ final class SyncProgressHandler {
         self.currentTotal = 0
     }
 
-    private func reportCurrentNumbers(for object: SyncObjectType) {
+    private func reportCurrentNumbers(for object: SyncController.Object) {
         guard let name = self.currentLibrary, self.currentTotal > 0 else { return }
         self.observable.accept(.library(name, object, (self.currentDone, self.currentTotal)))
     }

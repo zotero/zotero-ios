@@ -9,7 +9,7 @@
 import Foundation
 
 struct FileRequest: ApiDownloadRequest {
-    let groupType: SyncLibraryType
+    let groupType: SyncController.Library
     let key: String
     let destination: File
 

@@ -9,8 +9,8 @@
 import Foundation
 
 struct ObjectsRequest: ApiRequest {
-    let libraryType: SyncLibraryType
-    let objectType: SyncObjectType
+    let libraryType: SyncController.Library
+    let objectType: SyncController.Object
     let keys: String
 
     var path: String {

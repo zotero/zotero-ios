@@ -25,80 +25,40 @@ enum SyncError: Error {
     case allLibrariesFetchFailed(Error)
 }
 
-extension SyncError: Equatable {
-    static func ==(lhs: SyncError, rhs: SyncError) -> Bool {
-        switch (lhs, rhs) {
-        case (.noInternetConnection, .noInternetConnection),
-             (.apiError, .apiError),
-             (.dbError, .dbError),
-             (.versionMismatch, .versionMismatch),
-             (.groupSyncFailed, .groupSyncFailed),
-             (.allLibrariesFetchFailed, .allLibrariesFetchFailed),
-             (.cancelled, .cancelled):
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-struct ObjectBatch {
-    static var maxObjectCount = 50
-
-    let library: SyncLibraryType
-    let object: SyncObjectType
-    let keys: [Any]
-    let version: Int
-}
-
-enum QueueAction: Equatable {
-    case syncVersions(SyncLibraryType, SyncObjectType, Int?)     // Fetch versions from API, update DB based on response
-    case createLibraryActions                                    // Load all libraries, spawn actions for each
-    case syncBatchToDb(ObjectBatch)                              // Fetch data and store to db
-    case storeVersion(Int, SyncLibraryType, SyncObjectType)      // Store new version for given library-object
-    case syncDeletions(SyncLibraryType, Int)                     // Synchronize deletions of objects in library
-    case syncSettings(SyncLibraryType, Int?)                      // Synchronize settings for library
-    case storeSettingsVersion(Int, SyncLibraryType)
-
-    var library: SyncLibraryType? {
-        switch self {
-        case .createLibraryActions:
-            return nil
-        case .syncBatchToDb(let action):
-            return action.library
-        case .syncVersions(let library, _, _),
-             .storeVersion(_, let library, _),
-             .syncDeletions(let library, _),
-             .syncSettings(let library, _),
-             .storeSettingsVersion(_, let library):
-            return library
-        }
-    }
-}
-
-extension ObjectBatch: Equatable {
-    public static func ==(lhs: ObjectBatch, rhs: ObjectBatch) -> Bool {
-        if lhs.keys.count != rhs.keys.count {
-            return false
-        }
-        for i in 0..<lhs.keys.count {
-            if let lInt = lhs.keys[i] as? Int, let rInt = rhs.keys[i] as? Int {
-                if lInt != rInt {
-                    return false
-                }
-            } else if let lStr = lhs.keys[i] as? String, let rStr = rhs.keys[i] as? String {
-                if lStr != rStr {
-                    return false
-                }
-            } else {
-                return false
-            }
-        }
-        return lhs.library == rhs.library && lhs.object == rhs.object && lhs.version == rhs.version
-    }
-}
-
 final class SyncController {
+    private enum SyncType {
+        case normal     // Fetches updates since last versions
+        case initial    // Ignores local versions, fetches everything since the beginning
+        case retry      // Is a retry after previous broken sync
+    }
+
+    enum Library: Equatable {
+        case user(Int)
+        case group(Int)
+    }
+
+    enum Object: Equatable, CaseIterable {
+        case group, collection, search, item, trash
+    }
+
+    struct Batch {
+        static let maxCount = 50
+        let library: Library
+        let object: Object
+        let keys: [Any]
+        let version: Int
+    }
+
+    enum Action: Equatable {
+        case syncVersions(Library, Object, Int?)     // Fetch versions from API, update DB based on response
+        case createLibraryActions                    // Load all libraries, spawn actions for each
+        case syncBatchToDb(Batch)                    // Fetch data and store to db
+        case storeVersion(Int, Library, Object)      // Store new version for given library-object
+        case syncDeletions(Library, Int)             // Synchronize deletions of objects in library
+        case syncSettings(Library, Int?)             // Synchronize settings for library
+        case storeSettingsVersion(Int, Library)      // Store new version for settings in library
+    }
+
     private static let timeoutPeriod: Double = 15.0
 
     private let userId: Int
@@ -106,13 +66,15 @@ final class SyncController {
     private let handler: SyncActionHandler
     private let progressHandler: SyncProgressHandler
 
-    private var queue: [QueueAction]
-    private var processingAction: QueueAction?
-    private var nonFatalErrors: [Error]
-    private var needsResync: Bool
-    private var isResyncing: Bool
+    private var queue: [Action]
+    private var processingAction: Action?
+    private var type: SyncType
+    /// Version returned by last object sync, used to check for version mismatches between object syncs
     private var lastReturnedVersion: Int?
-    private var isInitial: Bool
+    /// Array of non-fatal errors that happened during current sync
+    private var nonFatalErrors: [Error]
+    /// Flag that marks failure(s) during current sync, we'll retry after timeout when current sync finishes
+    private var needsResync: Bool
     private var disposeBag: DisposeBag
 
     private var isSyncing: Bool {
@@ -132,15 +94,14 @@ final class SyncController {
         self.queue = []
         self.nonFatalErrors = []
         self.needsResync = false
-        self.isResyncing = false
-        self.isInitial = false
+        self.type = .normal
     }
 
     // MARK: - Sync management
 
     func start(isInitial: Bool = false) {
         DDLogInfo("--- Sync: starting ---")
-        self.start(isResync: false, isInitial: isInitial)
+        self.start(type: (isInitial ? .initial : .normal))
     }
 
     func cancelSync() {
@@ -154,15 +115,11 @@ final class SyncController {
         }
     }
 
-    private func start(isResync: Bool, isInitial: Bool) {
+    private func start(type: SyncType) {
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self, !self.isSyncing else { return }
-            if isResync {
-                self.needsResync = false
-                self.isResyncing = true
-            }
+            self.type = type
             self.progressHandler.reportNewSync()
-            self.isInitial = isInitial
             self.queue.append(.syncVersions(.user(self.userId), .group, nil))
             self.processNextAction()
         }
@@ -212,13 +169,14 @@ final class SyncController {
     private func enqueueResync() {
         Single<Int>.timer(SyncController.timeoutPeriod, scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
-                       self?.start(isResync: true, isInitial: false)
+                       self?.start(type: .retry)
                    })
                    .disposed(by: self.disposeBag)
     }
 
     private func setNeedsResync() {
-        guard !self.isResyncing else { return }
+        // Don't retry more than once
+        guard self.type != .retry else { return }
         self.needsResync = true
     }
 
@@ -227,9 +185,8 @@ final class SyncController {
         self.queue = []
         self.nonFatalErrors = []
         self.needsResync = false
-        self.isResyncing = false
+        self.type = .normal
         self.lastReturnedVersion = nil
-        self.isInitial = false
     }
 
     // MARK: - Error handling
@@ -244,7 +201,7 @@ final class SyncController {
 
     // MARK: - Queue management
 
-    private func enqueue(actions: [QueueAction], at index: Int? = nil) {
+    private func enqueue(actions: [Action], at index: Int? = nil) {
         if let index = index {
             self.queue.insert(contentsOf: actions, at: index)
         } else {
@@ -253,7 +210,7 @@ final class SyncController {
         self.processNextAction()
     }
 
-    private func removeAllActions(for library: SyncLibraryType) {
+    private func removeAllActions(for library: Library) {
         while !self.queue.isEmpty {
             guard self.queue[0].library == library else { break }
             self.queue.removeFirst()
@@ -284,7 +241,7 @@ final class SyncController {
 
     // MARK: - Action processing
 
-    private func process(action: QueueAction) {
+    private func process(action: Action) {
         DDLogInfo("--- Sync: action ---")
         DDLogInfo("\(action)")
         switch action {
@@ -314,9 +271,9 @@ final class SyncController {
     private func processAllLibrariesSync() {
         let userId = self.userId
         self.handler.loadAllLibraryIdsAndVersions()
-                    .flatMap { libraryData -> Single<([(SyncLibraryType, Versions)], [Int: String])> in
+                    .flatMap { libraryData -> Single<([(Library, Versions)], [Int: String])> in
                         var libraryNames: [Int: String] = [:]
-                        var versionedLibraries: [(SyncLibraryType, Versions)] = []
+                        var versionedLibraries: [(Library, Versions)] = []
                         for data in libraryData {
                             libraryNames[data.0] = data.1
                             if data.0 == RLibrary.myLibraryId {
@@ -338,7 +295,7 @@ final class SyncController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishAllLibrariesSync(with result: Result<[(SyncLibraryType, Versions)]>) {
+    private func finishAllLibrariesSync(with result: Result<[(Library, Versions)]>) {
         switch result {
         case .failure(let error):
             self.abort(error: SyncError.allLibrariesFetchFailed(error))
@@ -347,14 +304,14 @@ final class SyncController {
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 guard let `self` = self else { return }
 
-                var allActions: [QueueAction] = []
+                var allActions: [Action] = []
                 libraryData.forEach { data in
-                    let actions: [QueueAction] = [.syncSettings(data.0, data.1.settings),
-                                                  .syncVersions(data.0, .collection, data.1.collections),
-                                                  .syncVersions(data.0, .search, data.1.searches),
-                                                  .syncVersions(data.0, .item, data.1.items),
-                                                  .syncVersions(data.0, .trash, data.1.trash),
-                                                  .syncDeletions(data.0, data.1.deletions)]
+                    let actions: [Action] = [.syncSettings(data.0, data.1.settings),
+                                             .syncVersions(data.0, .collection, data.1.collections),
+                                             .syncVersions(data.0, .search, data.1.searches),
+                                             .syncVersions(data.0, .item, data.1.items),
+                                             .syncVersions(data.0, .trash, data.1.trash),
+                                             .syncDeletions(data.0, data.1.deletions)]
                     allActions.append(contentsOf: actions)
                 }
                 self.enqueue(actions: allActions)
@@ -362,9 +319,9 @@ final class SyncController {
         }
     }
 
-    private func processSyncVersionsAction(library: SyncLibraryType, object: SyncObjectType, since version: Int?) {
+    private func processSyncVersionsAction(library: Library, object: Object, since version: Int?) {
         self.handler.synchronizeVersions(for: library, object: object, since: version,
-                                         current: self.lastReturnedVersion, syncAll: self.isInitial)
+                                         current: self.lastReturnedVersion, syncAll: (self.type == .initial))
                     .subscribe(onSuccess: { [weak self] data in
                         self?.finishSyncVersionsAction(for: library, object: object, result: .success((data.1, data.0)))
                     }, onError: { [weak self] error in
@@ -373,7 +330,7 @@ final class SyncController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishSyncVersionsAction(for library: SyncLibraryType, object: SyncObjectType,
+    private func finishSyncVersionsAction(for library: Library, object: Object,
                                           result: Result<([Any], Int)>) {
         switch result {
         case .success(let data):
@@ -402,16 +359,16 @@ final class SyncController {
     }
 
     private func createBatchedActions(from keys: [Any], currentVersion: Int,
-                                      library: SyncLibraryType, object: SyncObjectType) {
-        let batches: [ObjectBatch]
+                                      library: Library, object: Object) {
+        let batches: [Batch]
         switch object {
         case .group:
-            batches = keys.map { ObjectBatch(library: library, object: object, keys: [$0], version: currentVersion) }
+            batches = keys.map { Batch(library: library, object: object, keys: [$0], version: currentVersion) }
         default:
             batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
         }
 
-        var actions: [QueueAction] = batches.map({ .syncBatchToDb($0) })
+        var actions: [Action] = batches.map({ .syncBatchToDb($0) })
         if object == .group {
             actions.append(.createLibraryActions)
         } else if !actions.isEmpty {
@@ -426,18 +383,18 @@ final class SyncController {
         }
     }
 
-    private func createBatchObjects(for keys: [Any], library: SyncLibraryType,
-                                    object: SyncObjectType, version: Int) -> [ObjectBatch] {
-        let maxBatchSize = ObjectBatch.maxObjectCount
+    private func createBatchObjects(for keys: [Any], library: Library,
+                                    object: Object, version: Int) -> [Batch] {
+        let maxBatchSize = Batch.maxCount
         var batchSize = 5
         var processed = 0
-        var batches: [ObjectBatch] = []
+        var batches: [Batch] = []
 
         while processed < keys.count {
             let upperBound = min((keys.count - processed), batchSize) + processed
             let batchKeys = Array(keys[processed..<upperBound])
 
-            batches.append(ObjectBatch(library: library, object: object, keys: batchKeys, version: version))
+            batches.append(Batch(library: library, object: object, keys: batchKeys, version: version))
 
             processed += batchSize
             if batchSize < maxBatchSize {
@@ -448,7 +405,7 @@ final class SyncController {
         return batches
     }
 
-    private func processBatchSyncAction(for batch: ObjectBatch) {
+    private func processBatchSyncAction(for batch: Batch) {
         self.handler.fetchAndStoreObjects(with: batch.keys, library: batch.library,
                                           object: batch.object, version: batch.version)
                     .subscribe(onSuccess: { [weak self] decodingData in
@@ -461,7 +418,7 @@ final class SyncController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishBatchSyncAction(for library: SyncLibraryType, object: SyncObjectType, allKeys: [Any],
+    private func finishBatchSyncAction(for library: Library, object: Object, allKeys: [Any],
                                      result: Result<([String], [Error])>) {
         switch result {
         case .success(let decodingData):
@@ -515,7 +472,7 @@ final class SyncController {
         }
     }
 
-    private func processStoreVersionAction(library: SyncLibraryType, type: UpdateVersionType, version: Int) {
+    private func processStoreVersionAction(library: Library, type: UpdateVersionType, version: Int) {
         self.handler.storeVersion(version, for: library, type: type)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishProcessingStoreVersionAction(error:  nil)
@@ -546,7 +503,7 @@ final class SyncController {
         }
     }
 
-    private func markForResync(keys: [Any], library: SyncLibraryType, object: SyncObjectType) {
+    private func markForResync(keys: [Any], library: Library, object: Object) {
         self.handler.markForResync(keys: keys, library: library, object: object)
                     .subscribe(onCompleted: { [weak self] in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -565,7 +522,7 @@ final class SyncController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func processDeletionsSync(library: SyncLibraryType, since sinceVersion: Int) {
+    private func processDeletionsSync(library: Library, since sinceVersion: Int) {
         self.handler.synchronizeDeletions(for: library, since: sinceVersion, current: self.lastReturnedVersion)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishDeletionsSync(error: nil)
@@ -594,7 +551,7 @@ final class SyncController {
         }
     }
 
-    private func processSettingsSync(for library: SyncLibraryType, since version: Int?) {
+    private func processSettingsSync(for library: Library, since version: Int?) {
         self.handler.synchronizeSettings(for: library, current: self.lastReturnedVersion, since: version)
                     .subscribe(onSuccess: { [weak self] data in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -621,8 +578,8 @@ final class SyncController {
         }
     }
 
-    private func errorRequiresAbort(_ error: Error, library: SyncLibraryType? = nil,
-                                    object: SyncObjectType? = nil) -> Error? {
+    private func errorRequiresAbort(_ error: Error, library: Library? = nil,
+                                    object: Object? = nil) -> Error? {
         let nsError = error as NSError
 
         // Check connection
@@ -655,7 +612,7 @@ final class SyncController {
         return nil
     }
 
-    private func handleVersionMismatchIfNeeded(for error: Error, library: SyncLibraryType) -> Bool {
+    private func handleVersionMismatchIfNeeded(for error: Error, library: Library) -> Bool {
         guard error.isMismatchError else { return false }
 
         // If the backend received higher version in response than from previous responses,
@@ -672,10 +629,10 @@ final class SyncController {
 
     // MARK: - Testing
 
-    var reportFinish: ((Result<([QueueAction], [Error])>) -> Void)?
-    private var allActions: [QueueAction] = []
+    var reportFinish: ((Result<([Action], [Error])>) -> Void)?
+    private var allActions: [Action] = []
 
-    func start(with queue: [QueueAction], finishedAction: @escaping (Result<([QueueAction], [Error])>) -> Void) {
+    func start(with queue: [Action], finishedAction: @escaping (Result<([Action], [Error])>) -> Void) {
         self.queue = queue
         self.allActions = []
         self.reportFinish = finishedAction

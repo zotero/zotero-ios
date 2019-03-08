@@ -11,8 +11,8 @@ import Foundation
 struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
     typealias Response = [Key: Int]
 
-    let libraryType: SyncLibraryType
-    let objectType: SyncObjectType
+    let libraryType: SyncController.Library
+    let objectType: SyncController.Object
     let version: Int?
 
     var path: String {

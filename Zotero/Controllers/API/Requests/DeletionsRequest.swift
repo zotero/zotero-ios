@@ -11,7 +11,7 @@ import Foundation
 struct DeletionsRequest: ApiResponseRequest {
     typealias Response = DeletionsResponse
 
-    let libraryType: SyncLibraryType
+    let libraryType: SyncController.Library
     let version: Int
 
     var path: String {

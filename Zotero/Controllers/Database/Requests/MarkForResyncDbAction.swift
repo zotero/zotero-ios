@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct MarkForResyncDbAction<Obj: Syncable>: DbRequest {
+struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
     let libraryId: Int
     let keys: [String]
 

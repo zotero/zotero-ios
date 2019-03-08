@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 enum UpdateVersionType {
-    case object(SyncObjectType)
+    case object(SyncController.Object)
     case settings
 }
 
@@ -22,7 +22,7 @@ struct UpdateVersionsDbRequest: DbRequest {
 
     var needsWrite: Bool { return true }
 
-    init(version: Int, library: SyncLibraryType, type: UpdateVersionType) {
+    init(version: Int, library: SyncController.Library, type: UpdateVersionType) {
         self.version = version
         self.type = type
         switch library {

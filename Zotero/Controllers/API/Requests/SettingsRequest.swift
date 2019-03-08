@@ -11,7 +11,7 @@ import Foundation
 struct SettingsRequest: ApiResponseRequest {
     typealias Response = SettingsResponse
 
-    let libraryType: SyncLibraryType
+    let libraryType: SyncController.Library
     let version: Int?
 
     var path: String {

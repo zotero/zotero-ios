@@ -10,9 +10,9 @@ import Foundation
 
 import RealmSwift
 
-typealias Syncable = SyncableObject&Object
+typealias SyncableObject = Syncable&Object
 
-protocol SyncableObject: class {
+protocol Syncable: class {
     var key: String { get set }
     var library: RLibrary? { get set }
     var version: Int { get set }
