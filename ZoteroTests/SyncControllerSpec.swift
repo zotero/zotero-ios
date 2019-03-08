@@ -275,6 +275,29 @@ class SyncControllerSpec: QuickSpec {
 
                     expect(all).toEventually(equal(expected))
                 }
+
+                it("doesn't process group metadata when only my library is supposed to sync") {
+                    let handler = TestHandler()
+                    let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler)
+                    var all: [SyncController.Action]?
+
+                    handler.requestResult = { action in
+                        return Single.just(())
+                    }
+                    controller.reportFinish = { result in
+                        switch result {
+                        case .success(let data):
+                            all = data.0
+                        case .failure:
+                            fail("Sync failed")
+                        }
+                    }
+
+                    controller.start(for: .specific([RLibrary.myLibraryId]))
+                    self.controller = controller
+
+                    expect(all?.first).toEventually(equal(.createLibraryActions))
+                }
             }
 
             describe("fatal error handling") {
