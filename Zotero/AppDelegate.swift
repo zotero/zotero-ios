@@ -62,7 +62,7 @@ class AppDelegate: UIResponder {
         self.controllers.sessionChanged(userId: userId)
 
         if let syncController = self.controllers.userControllers?.syncController {
-            syncController.start()
+            syncController.start(for: .all)
         }
     }
 
@@ -128,7 +128,7 @@ extension AppDelegate: UIApplicationDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         if ProcessInfo.processInfo.environment["IS_TEST"] != "true" {
             // Don't run auto sync for tests
-            self.controllers.userControllers?.syncController.start(isInitial: false)
+            self.controllers.userControllers?.syncController.start(for: .all, isInitial: false)
         }
     }
 

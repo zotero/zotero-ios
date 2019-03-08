@@ -43,7 +43,8 @@ struct Versions {
 }
 
 protocol SyncActionHandler: class {
-    func loadAllLibraryIdsAndVersions() -> Single<[(Int, String, Versions)]>
+    func loadAllLibraryData() -> Single<[(Int, String, Versions)]>
+    func loadLibraryData(for libraryIds: [Int]) -> Single<[(Int, String, Versions)]>
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncAll: Bool) -> Single<(Int, [Any])>
@@ -75,7 +76,15 @@ class SyncActionHandlerController {
 }
 
 extension SyncActionHandlerController: SyncActionHandler {
-    func loadAllLibraryIdsAndVersions() -> Single<[(Int, String, Versions)]> {
+    func loadAllLibraryData() -> Single<[(Int, String, Versions)]> {
+        return self.loadLibraryData(identifiers: nil)
+    }
+
+    func loadLibraryData(for libraryIds: [Int]) -> Single<[(Int, String, Versions)]> {
+        return self.loadLibraryData(identifiers: libraryIds)
+    }
+
+    private func loadLibraryData(identifiers: [Int]?) -> Single<[(Int, String, Versions)]> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
                 subscriber(.error(SyncActionHandlerError.expired))
@@ -84,7 +93,7 @@ extension SyncActionHandlerController: SyncActionHandler {
 
             do {
                 let data = try self.dbStorage.createCoordinator()
-                                             .perform(request: ReadLibrariesDataDbRequest())
+                                             .perform(request: ReadLibrariesDataDbRequest(identifiers: identifiers))
                                              .map({ ($0.0, $0.1, Versions(versions: $0.2)) })
                 subscriber(.success(data))
             } catch let error {
@@ -117,21 +126,22 @@ extension SyncActionHandlerController: SyncActionHandler {
         let request = VersionsRequest<Int>(libraryType: library, objectType: .group, version: nil)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
-            .flatMap { response -> Single<(Int, [Any])> in
-                let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
-                let request =  SyncGroupVersionsDbRequest(versions: response.0, syncAll: syncAll)
-                do {
-                    let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
-                    return Single.just((newVersion, identifiers))
-                } catch let error {
-                    return Single.error(error)
-                }
-        }
+                             .flatMap { response -> Single<(Int, [Any])> in
+                                 let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
+                                 let request =  SyncGroupVersionsDbRequest(versions: response.0, syncAll: syncAll)
+                                 do {
+                                     let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
+                                     return Single.just((newVersion, identifiers))
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
+                             }
     }
 
-    private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, library: SyncController.Library, object: SyncController.Object,
-                                                    since sinceVersion: Int?, current currentVersion: Int?,
-                                                    syncAll: Bool) -> Single<(Int, [Any])> {
+    private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, library: SyncController.Library,
+                                                          object: SyncController.Object, since sinceVersion: Int?,
+                                                          current currentVersion: Int?,
+                                                          syncAll: Bool) -> Single<(Int, [Any])> {
         let forcedSinceVersion = syncAll ? nil : sinceVersion
         let request = VersionsRequest<String>(libraryType: library, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request)
@@ -190,7 +200,8 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
-    private func syncToDb(data: Data, library: SyncController.Library, object: SyncController.Object) throws -> ([String], [Error]) {
+    private func syncToDb(data: Data, library: SyncController.Library,
+                          object: SyncController.Object) throws -> ([String], [Error]) {
         let coordinator = try self.dbStorage.createCoordinator()
 
         switch object {
@@ -256,7 +267,8 @@ extension SyncActionHandlerController: SyncActionHandler {
         }
     }
 
-    func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int, current currentVersion: Int?) -> Completable {
+    func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
+                              current currentVersion: Int?) -> Completable {
         return self.apiClient.send(request: DeletionsRequest(libraryType: library, version: sinceVersion))
                              .observeOn(self.scheduler)
                              .flatMap { [weak self] response -> Single<()> in
@@ -281,7 +293,8 @@ extension SyncActionHandlerController: SyncActionHandler {
                              .asCompletable()
     }
 
-    func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?, since version: Int?) -> Single<(Bool, Int)> {
+    func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
+                             since version: Int?) -> Single<(Bool, Int)> {
         return self.apiClient.send(request: SettingsRequest(libraryType: library, version: version))
                              .observeOn(self.scheduler)
                              .flatMap({ [weak self] response in

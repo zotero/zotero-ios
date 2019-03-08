@@ -1048,7 +1048,7 @@ fileprivate class TestHandler: SyncActionHandler {
         return self.requestResult?(action) ?? Single.just(())
     }
 
-    func loadAllLibraryIdsAndVersions() -> PrimitiveSequence<SingleTrait, Array<(Int, String, Versions)>> {
+    func loadAllLibraryData() -> PrimitiveSequence<SingleTrait, Array<(Int, String, Versions)>> {
         return self.result(for: .loadGroups).flatMap {
             return Single.just([(SyncControllerSpec.groupId, "", SyncControllerSpec.groupIdVersions)])
         }

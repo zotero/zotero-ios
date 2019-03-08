@@ -59,7 +59,7 @@ class ProgressToolbarViewController: ToolbarViewController {
     // MARK: - Actions
 
     @objc private func startSync() {
-        self.syncController?.start()
+        self.syncController?.start(for: .all)
         self.setSyncButton(to: .cancel)
     }
 
