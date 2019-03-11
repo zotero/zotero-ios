@@ -14,7 +14,12 @@ class RCollection: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var version: Int = 0
+    /// Flag that marks whether object has been synced successfully during last sync
+    /// False if object was synced, true otherwise
     @objc dynamic var needsSync: Bool = false
+    /// Comma separated names of variables which were changed since last sync
+    @objc dynamic var changedFields: String = ""
+    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var library: RLibrary?
     @objc dynamic var parent: RCollection?
 

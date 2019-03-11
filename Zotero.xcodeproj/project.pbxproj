@@ -126,10 +126,19 @@
 		B3A8CD8922259A4900E553F4 /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8722259A4900E553F4 /* ItemCell.swift */; };
 		B3A8CD8A22259A4900E553F4 /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3A8CD8822259A4900E553F4 /* ItemCell.xib */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
+		B3ADB3882232BE980064E150 /* SyncUpdateDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */; };
 		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
 		B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */; };
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
+		B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
+		B3C33D8822367CE00071A763 /* UpdateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */; };
+		B3C33D8A22368BE70071A763 /* ReadChangedCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8922368BE70071A763 /* ReadChangedCollectionsDbRequest.swift */; };
+		B3C33D8C223693760071A763 /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8B223693760071A763 /* Formatter.swift */; };
+		B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
+		B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
+		B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */; };
+		B3C33D942236C3990071A763 /* MarkCollectionsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D932236C3990071A763 /* MarkCollectionsAsSyncedDbRequest.swift */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
 		B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EBF2211D899000FFBFF /* MainViewController.swift */; };
 		B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */; };
@@ -294,10 +303,19 @@
 		B3A8CD8722259A4900E553F4 /* ItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
 		B3A8CD8822259A4900E553F4 /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
+		B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUpdateDataSource.swift; sourceTree = "<group>"; };
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
+		B3C33D852236676C0071A763 /* SyncScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
+		B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B3C33D8922368BE70071A763 /* ReadChangedCollectionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChangedCollectionsDbRequest.swift; sourceTree = "<group>"; };
+		B3C33D8B223693760071A763 /* Formatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatter.swift; sourceTree = "<group>"; };
+		B3C33D8D223698C90071A763 /* UpdatesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesRequest.swift; sourceTree = "<group>"; };
+		B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrayEncoding.swift; sourceTree = "<group>"; };
+		B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesResponse.swift; sourceTree = "<group>"; };
+		B3C33D932236C3990071A763 /* MarkCollectionsAsSyncedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkCollectionsAsSyncedDbRequest.swift; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
 		B3C62EBF2211D899000FFBFF /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
@@ -487,6 +505,7 @@
 				B30D59B722073C8F00884C4A /* UIColor+Custom.swift */,
 				B36795FE2207965F003D0471 /* UIViewController+Alert.swift */,
 				B32CD362221C73A1003F8073 /* UIView+Nibname.swift */,
+				B3C33D8B223693760071A763 /* Formatter.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -496,6 +515,7 @@
 			children = (
 				B36795EB22077CCD003D0471 /* Requests */,
 				B30D59BA2207451B00884C4A /* ApiClient.swift */,
+				B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */,
 				B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */,
 			);
 			path = API;
@@ -564,10 +584,12 @@
 		B33FBA5E220B2AAD005906C4 /* Sync */ = {
 			isa = PBXGroup;
 			children = (
-				B33FBA5F220B2AAD005906C4 /* SyncController.swift */,
 				B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */,
-				B39372972229420A008B2A96 /* SyncProgressHandler.swift */,
+				B33FBA5F220B2AAD005906C4 /* SyncController.swift */,
 				B33FBA63220B2AFD005906C4 /* SyncControllerModels+Extensions.swift */,
+				B39372972229420A008B2A96 /* SyncProgressHandler.swift */,
+				B3C33D852236676C0071A763 /* SyncScheduler.swift */,
+				B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -581,6 +603,7 @@
 				B3487300221D73CA00244CCC /* FileRequest.swift */,
 				B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */,
 				B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */,
+				B3C33D8D223698C90071A763 /* UpdatesRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -655,6 +678,9 @@
 				B32CD35C221C5F7C003F8073 /* ResolveReferenceDbRequest.swift */,
 				B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */,
 				B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */,
+				B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */,
+				B3C33D8922368BE70071A763 /* ReadChangedCollectionsDbRequest.swift */,
+				B3C33D932236C3990071A763 /* MarkCollectionsAsSyncedDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -671,6 +697,7 @@
 				B34BA701221EE0F60019A974 /* DeletionsResponse.swift */,
 				B3BA36F722241601006220E4 /* SearchesResponse.swift */,
 				B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */,
+				B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1013,15 +1040,18 @@
 				B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */,
 				B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */,
 				B3A8CD862225907F00E553F4 /* StoreSettingsDbRequest.swift in Sources */,
+				B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */,
 				B30F668E220CBB37009E7A8F /* ObjectsRequest.swift in Sources */,
 				B36795E222075710003D0471 /* Controllers.swift in Sources */,
 				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
 				B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */,
+				B3C33D8C223693760071A763 /* Formatter.swift in Sources */,
 				B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */,
 				B30F6692220CC033009E7A8F /* RItem.swift in Sources */,
 				B30DF3F92209A282000B6DE2 /* RLibrary.swift in Sources */,
 				B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */,
+				B3ADB3882232BE980064E150 /* SyncUpdateDataSource.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
 				B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncControllerModels+Extensions.swift in Sources */,
@@ -1047,8 +1077,10 @@
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
 				B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */,
+				B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */,
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
+				B3C33D8A22368BE70071A763 /* ReadChangedCollectionsDbRequest.swift in Sources */,
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
 				B3BA36FC22242672006220E4 /* RTag.swift in Sources */,
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
@@ -1061,21 +1093,25 @@
 				B32CD360221C70B6003F8073 /* ItemFieldCell.swift in Sources */,
 				B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */,
 				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
+				B3C33D8822367CE00071A763 /* UpdateCollectionDbRequest.swift in Sources */,
 				B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */,
 				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
+				B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */,
 				B30DF4012209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B3FD6B39220D881A008D9D74 /* StoreItemsDbRequest.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
+				B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */,
 				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
 				B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */,
 				B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
 				B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */,
 				B3C62ECA2211E6D2000FFBFF /* ReadItemsDbRequest.swift in Sources */,
+				B3C33D942236C3990071A763 /* MarkCollectionsAsSyncedDbRequest.swift in Sources */,
 				B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */,
 				B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */,
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,

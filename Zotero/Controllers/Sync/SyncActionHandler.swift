@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import RxSwift
 
 enum SyncActionHandlerError: Error, Equatable {
@@ -56,6 +57,8 @@ protocol SyncActionHandler: class {
                               current currentVersion: Int?) -> Completable
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
                              since version: Int?) -> Single<(Bool, Int)>
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
+                      parameters: [[String: Any]]) -> Single<[String]>
 }
 
 class SyncActionHandlerController {
@@ -315,6 +318,45 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  } catch let error {
                                      return Single.error(error)
                                  }
+                             })
+    }
+
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
+                      parameters: [[String : Any]]) -> Single<[String]> {
+        let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters)
+        return self.apiClient.send(dataRequest: request)
+                             .flatMap({ response -> Single<UpdatesResponse> in
+                                 do {
+                                     let json = try JSONSerialization.jsonObject(with: response.0,
+                                                                                 options: .allowFragments)
+                                     return Single.just((try UpdatesResponse(json: json)))
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
+                             })
+                             .flatMap({ [weak self] response -> Single<[String]> in
+                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+                                 let syncedKeys = response.successful + response.unchanged
+
+                                 do {
+                                     let coordinator = try self.dbStorage.createCoordinator()
+                                     switch object {
+                                     case .collection:
+                                         let request = MarkCollectionsAsSyncedDbRequest(libraryId: library.libraryId,
+                                                                                        keys: syncedKeys)
+                                         try coordinator.perform(request: request)
+                                     default:
+                                         fatalError("Unsupported update request")
+                                     }
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
+
+                                 if response.failed.first(where: { $0.code == 412 }) != nil {
+                                     return Single.error(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412)))
+                                 }
+
+                                 return Single.just(response.failed.filter({ $0.code == 409 }).compactMap({ $0.key }))
                              })
     }
 

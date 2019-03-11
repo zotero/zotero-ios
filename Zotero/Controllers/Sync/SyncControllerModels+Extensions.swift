@@ -50,8 +50,10 @@ extension SyncController.Action {
         switch self {
         case .createLibraryActions:
             return nil
-        case .syncBatchToDb(let action):
-            return action.library
+        case .syncBatchToDb(let batch):
+            return batch.library
+        case .submitWriteBatch(let batch):
+            return batch.library
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
              .syncDeletions(let library, _),
@@ -62,8 +64,43 @@ extension SyncController.Action {
     }
 }
 
-extension SyncController.Batch: Equatable {
-    public static func ==(lhs: SyncController.Batch, rhs: SyncController.Batch) -> Bool {
+extension SyncController.WriteBatch: Equatable {
+    static func ==(lhs: SyncController.WriteBatch, rhs: SyncController.WriteBatch) -> Bool {
+        if lhs.library != rhs.library || lhs.object != rhs.object {
+            return false
+        }
+
+        if lhs.parameters.count != rhs.parameters.count {
+            return false
+        }
+
+        for i in 0..<lhs.parameters.count {
+            let lDict = lhs.parameters[i]
+            let rDict = rhs.parameters[i]
+            if !compare(lDict: lDict, rDict: rDict) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private static func compare(lDict: [String: Any], rDict: [String: Any]) -> Bool {
+        for key in lDict.keys {
+            let lVal = lDict[key]
+            let rVal = rDict[key]
+            // TODO: - compare values
+        }
+        return true
+    }
+}
+
+extension SyncController.DownloadBatch: Equatable {
+    public static func ==(lhs: SyncController.DownloadBatch, rhs: SyncController.DownloadBatch) -> Bool {
+        if lhs.library != rhs.library || lhs.object != rhs.object || lhs.version != rhs.version {
+            return false
+        }
+
         if lhs.keys.count != rhs.keys.count {
             return false
         }
@@ -80,7 +117,8 @@ extension SyncController.Batch: Equatable {
                 return false
             }
         }
-        return lhs.library == rhs.library && lhs.object == rhs.object && lhs.version == rhs.version
+
+        return true
     }
 }
 

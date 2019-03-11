@@ -26,6 +26,7 @@ class SyncControllerSpec: QuickSpec {
                                                                  apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
                                                                  dbStorage: RealmDbStorage(config: realmConfig),
                                                                  fileStorage: TestFileStorage())
+    private static let dataSource = TestDataSource()
 
     fileprivate static var syncVersionData: (Int, Int) = (0, 0) // version, object count
     fileprivate static var expectedKeys: [String] = []
@@ -69,7 +70,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("processes sync batch to db") {
-                    let action = SyncController.Batch(library: .user(SyncControllerSpec.userId),
+                    let action = SyncController.DownloadBatch(library: .user(SyncControllerSpec.userId),
                                              object: .group, keys: [1], version: 0)
                     let initial: [SyncController.Action] = [.syncBatchToDb(action)]
                     let expected: [SyncController.Action] = initial
@@ -95,15 +96,15 @@ class SyncControllerSpec: QuickSpec {
                     let keys3 = (15..<35).map({ $0.description })
                     let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2)]
                     let expected: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .collection, 2),
-                                                   .syncBatchToDb(SyncController.Batch(library: library,
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: library,
                                                                               object: .collection,
                                                                               keys: keys1,
                                                                               version: 3)),
-                                                   .syncBatchToDb(SyncController.Batch(library: library,
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: library,
                                                                               object: .collection,
                                                                               keys: keys2,
                                                                               version: 3)),
-                                                   .syncBatchToDb(SyncController.Batch(library: library,
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: library,
                                                                               object: .collection,
                                                                               keys: keys3,
                                                                               version: 3)),
@@ -127,30 +128,30 @@ class SyncControllerSpec: QuickSpec {
                                                                   deletions: 1, settings: 1)
 
                     let groupId = SyncControllerSpec.groupId
-                    let initial: [SyncController.Action] = [.createLibraryActions]
-                    let expected: [SyncController.Action] = [.createLibraryActions,
+                    let initial: [SyncController.Action] = [.createLibraryActions(.all, false)]
+                    let expected: [SyncController.Action] = [.createLibraryActions(.all, false),
                                                    .syncSettings(.group(groupId), 1),
                                                    .storeSettingsVersion(3, .group(groupId)),
                                                    .syncVersions(.group(groupId), .collection, 2),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                 object: .collection,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .collection),
                                                    .syncVersions(.group(groupId), .search, 1),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                               object: .search,
                                                                               keys: ["0"],
                                                                               version: 3)),
                                                    .storeVersion(3, .group(groupId), .search),
                                                    .syncVersions(.group(groupId), .item, 1),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                 object: .item,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
                                                    .storeVersion(3, .group(groupId), .item),
                                                    .syncVersions(.group(groupId), .trash, 1),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                 object: .trash,
                                                                                 keys: ["0"],
                                                                                 version: 3)),
@@ -177,33 +178,33 @@ class SyncControllerSpec: QuickSpec {
                     let groupId = SyncControllerSpec.groupId
                     let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
                     let expected: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil),
-                                                   .syncBatchToDb(SyncController.Batch(library: .user(SyncControllerSpec.userId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .user(SyncControllerSpec.userId),
                                                                               object: .group,
                                                                               keys: [0],
                                                                               version: 7)),
-                                                   .createLibraryActions,
+                                                   .createLibraryActions(.all, false),
                                                    .syncSettings(.group(groupId), 4),
                                                    .storeSettingsVersion(7, .group(groupId)),
                                                    .syncVersions(.group(groupId), .collection, 4),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                               object: .collection,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .collection),
                                                    .syncVersions(.group(groupId), .search, 2),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                               object: .search,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .search),
                                                    .syncVersions(.group(groupId), .item, 4),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                               object: .item,
                                                                               keys: ["0"],
                                                                               version: 7)),
                                                    .storeVersion(7, .group(groupId), .item),
                                                    .syncVersions(.group(groupId), .trash, 2),
-                                                   .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                               object: .trash,
                                                                               keys: ["0"],
                                                                               version: 7)),
@@ -231,33 +232,33 @@ class SyncControllerSpec: QuickSpec {
                     let keys = ["0", "1", "2", "3", "4"]
                     let initial: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil)]
                     let expected: [SyncController.Action] = [.syncVersions(.user(SyncControllerSpec.userId), .group, nil),
-                                                             .syncBatchToDb(SyncController.Batch(library: .user(SyncControllerSpec.userId),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .user(SyncControllerSpec.userId),
                                                                                                  object: .group,
                                                                                                  keys: [2],
                                                                                                  version: 7)),
-                                                             .createLibraryActions,
+                                                             .createLibraryActions(.specific([groupId]), false),
                                                              .syncSettings(.group(groupId), 4),
                                                              .storeSettingsVersion(7, .group(groupId)),
                                                              .syncVersions(.group(groupId), .collection, 4),
-                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                                  object: .collection,
                                                                                                  keys: keys,
                                                                                                  version: 7)),
                                                              .storeVersion(7, .group(groupId), .collection),
                                                              .syncVersions(.group(groupId), .search, 2),
-                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                                  object: .search,
                                                                                                  keys: keys,
                                                                                                  version: 7)),
                                                              .storeVersion(7, .group(groupId), .search),
                                                              .syncVersions(.group(groupId), .item, 4),
-                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                                  object: .item,
                                                                                                  keys: keys,
                                                                                                  version: 7)),
                                                              .storeVersion(7, .group(groupId), .item),
                                                              .syncVersions(.group(groupId), .trash, 2),
-                                                             .syncBatchToDb(SyncController.Batch(library: .group(groupId),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
                                                                                                  object: .trash,
                                                                                                  keys: keys,
                                                                                                  version: 7)),
@@ -278,7 +279,9 @@ class SyncControllerSpec: QuickSpec {
 
                 it("doesn't process group metadata when only my library is supposed to sync") {
                     let handler = TestHandler()
-                    let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler)
+                    let dataSource = TestDataSource()
+                    let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
+                                                    updateDataSource: dataSource)
                     var all: [SyncController.Action]?
 
                     handler.requestResult = { action in
@@ -296,7 +299,7 @@ class SyncControllerSpec: QuickSpec {
                     controller.start(for: .specific([RLibrary.myLibraryId]))
                     self.controller = controller
 
-                    expect(all?.first).toEventually(equal(.createLibraryActions))
+                    expect(all?.first).toEventually(equal(.createLibraryActions(.specific([RLibrary.myLibraryId]), false)))
                 }
             }
 
@@ -322,7 +325,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("doesn't process sync batch to db") {
-                    let action = SyncController.Batch(library: .user(SyncControllerSpec.userId), object: .group,
+                    let action = SyncController.DownloadBatch(library: .user(SyncControllerSpec.userId), object: .group,
                                              keys: [1], version: 0)
                     let initial: [SyncController.Action] = [.syncBatchToDb(action)]
                     var error: Zotero.SyncError?
@@ -374,7 +377,7 @@ class SyncControllerSpec: QuickSpec {
                 it("doesn't process create groups action") {
                     SyncControllerSpec.syncVersionData = (7, 1)
 
-                    let initial: [SyncController.Action] = [.createLibraryActions]
+                    let initial: [SyncController.Action] = [.createLibraryActions(.all, false)]
                     var error: Zotero.SyncError?
 
                     self.controller = self.performErrorTest(queue: initial,
@@ -502,7 +505,8 @@ class SyncControllerSpec: QuickSpec {
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler)
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.dataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -705,7 +709,8 @@ class SyncControllerSpec: QuickSpec {
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler)
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.dataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -793,7 +798,8 @@ class SyncControllerSpec: QuickSpec {
                                     response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler)
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.dataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -849,7 +855,8 @@ class SyncControllerSpec: QuickSpec {
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler)
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.dataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -931,7 +938,8 @@ class SyncControllerSpec: QuickSpec {
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler)
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.dataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1015,7 +1023,8 @@ class SyncControllerSpec: QuickSpec {
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler)
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.dataSource)
 
                     waitUntil(timeout: 100) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1077,7 +1086,9 @@ class SyncControllerSpec: QuickSpec {
                                     result: @escaping (TestAction) -> Single<()>,
                                     check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
         let handler = TestHandler()
-        let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler)
+        let dataSource = TestDataSource()
+        let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
+                                        updateDataSource: dataSource)
 
         handler.requestResult = result
 
@@ -1096,7 +1107,9 @@ class SyncControllerSpec: QuickSpec {
                                   result: @escaping (TestAction) -> Single<()>,
                                   check: @escaping (Error) -> Void) -> SyncController {
         let handler = TestHandler()
-        let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler)
+        let dataSource = TestDataSource()
+        let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
+                                        updateDataSource: dataSource)
 
         handler.requestResult = result
 
@@ -1190,6 +1203,15 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, parameters: [[String : Any]]) -> Completable {
+        return Completable.empty()
+    }
+}
+
+fileprivate class TestDataSource: SyncUpdateDataSource {
+    func updates(for libraryId: Int) -> [SyncController.WriteBatch] {
+        return []
+    }
 }
 
 fileprivate class TestFileStorage: FileStorage {

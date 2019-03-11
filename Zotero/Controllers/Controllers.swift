@@ -70,6 +70,7 @@ class UserControllers {
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
                                                       dbStorage: controllers.dbStorage,
                                                       fileStorage: controllers.fileStorage)
-        self.syncController = SyncController(userId: userId, handler: syncHandler)
+        let updateDataSource = UpdateDataSource(dbStorage: controllers.dbStorage)
+        self.syncController = SyncController(userId: userId, handler: syncHandler, updateDataSource: updateDataSource)
     }
 }

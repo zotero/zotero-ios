@@ -14,6 +14,7 @@ enum DbError: Error {
     case objectNotFound
     case primaryKeyUnavailable
     case primaryKeyWrongType
+    case invalidRequest(String)
 }
 
 protocol DbRequest {
