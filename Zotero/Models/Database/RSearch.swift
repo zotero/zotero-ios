@@ -21,10 +21,9 @@ struct RSearchChanges: OptionSet {
 }
 
 extension RSearchChanges {
-    static let all = RSearchChanges(rawValue: 1 << 1)
-    static let name = RSearchChanges(rawValue: 1 << 2)
-    static let conditions = RSearchChanges(rawValue: 1 << 3)
-    static let dateModified = RSearchChanges(rawValue: 1 << 4)
+    static let name = RSearchChanges(rawValue: 1 << 1)
+    static let conditions = RSearchChanges(rawValue: 1 << 2)
+    static let all: RSearchChanges = [.name, .conditions]
 }
 
 class RSearch: Object {

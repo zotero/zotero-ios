@@ -345,10 +345,10 @@ extension SyncActionHandlerController: SyncActionHandler {
                                          let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: library.libraryId,
                                                                                                  keys: syncedKeys)
                                          try coordinator.perform(request: request)
-//                                     case .item, .trash:
-//                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: library.libraryId,
-//                                                                                          keys: syncedKeys)
-//                                        try coordinator.perform(request: request)
+                                     case .item, .trash:
+                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: library.libraryId,
+                                                                                          keys: syncedKeys)
+                                        try coordinator.perform(request: request)
                                      case .search:
                                         let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: library.libraryId,
                                                                                             keys: syncedKeys)

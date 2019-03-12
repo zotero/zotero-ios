@@ -14,5 +14,6 @@ class RCreator: Object {
     @objc dynamic var rawType: String = ""
     @objc dynamic var firstName: String = ""
     @objc dynamic var lastName: String = ""
+    @objc dynamic var name: String = ""
     let items: List<RItem> = List()
 }

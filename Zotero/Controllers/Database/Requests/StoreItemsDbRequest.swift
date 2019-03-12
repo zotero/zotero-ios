@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RealmSwift
 
 struct StoreItemsDbRequest: DbRequest {
@@ -39,9 +40,8 @@ struct StoreItemsDbRequest: DbRequest {
         item.parsedDate = data.parsedDate ?? ""
         item.version = data.version
         item.trash = data.isTrash
-        if let title = data.strippedNote {
-            item.title = title
-        }
+        item.dateModified = data.dateModified
+        item.dateAdded = data.dateAdded
         item.needsSync = false
 
         self.syncFields(data: data, item: item, database: database)
@@ -50,6 +50,7 @@ struct StoreItemsDbRequest: DbRequest {
         self.syncCollections(data: data, item: item, database: database)
         try self.syncTags(data: data, item: item, database: database)
         self.syncCreators(data: data, item: item, database: database)
+        self.syncRelations(data: data, item: item, database: database)
     }
 
     private func syncFields(data: ItemResponse, item: RItem, database: Realm) {
@@ -68,8 +69,12 @@ struct StoreItemsDbRequest: DbRequest {
                 field.item = item
                 database.add(field)
             }
-            if item.title.isEmpty && titleKeys.contains(key) {
-                item.title = value
+            if titleKeys.contains(key) {
+                var title = value
+                if key == "note" {
+                    title = StoreItemsDbRequest.stripHtml(from: title) ?? title
+                }
+                item.title = title
             }
         }
     }
@@ -190,5 +195,52 @@ struct StoreItemsDbRequest: DbRequest {
             }
             creator.items.append(item)
         }
+    }
+
+    private func syncRelations(data: ItemResponse, item: RItem, database: Realm) {
+        let allKeys = Array(data.relations.keys)
+        let toRemove = item.relations.filter("NOT type IN %@", allKeys)
+        database.delete(toRemove)
+
+        allKeys.forEach { key in
+            let relation: RRelation
+            if let existing = item.relations.filter("type = %@", key).first {
+                relation = existing
+            } else {
+                relation = RRelation()
+                relation.type = key
+                relation.item = item
+                database.add(relation)
+            }
+            relation.urlString = data.relations[key] ?? ""
+        }
+    }
+
+    private static let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
+
+    private static func stripHtml(from string: String) -> String? {
+        guard !string.isEmpty else { return nil }
+        guard let data = string.data(using: .utf8) else {
+            DDLogError("StoreItemsDbRequest: could not create data from string: \(string)")
+            return nil
+        }
+
+        do {
+            let attributed = try NSAttributedString(data: data,
+                                                    options: [.documentType : NSAttributedString.DocumentType.html],
+                                                    documentAttributes: nil)
+            var stripped = attributed.string.trimmingCharacters(in: CharacterSet.whitespaces)
+                                            .components(separatedBy: StoreItemsDbRequest.stripCharacters).joined()
+            if stripped.count > 200 {
+                let endIndex = stripped.index(stripped.startIndex, offsetBy: 200)
+                stripped = String(stripped[stripped.startIndex..<endIndex])
+            }
+            return stripped
+        } catch let error {
+            DDLogError("StoreItemsDbRequest: can't strip HTML tags: \(error)")
+            DDLogError("Original string: \(string)")
+        }
+
+        return nil
     }
 }

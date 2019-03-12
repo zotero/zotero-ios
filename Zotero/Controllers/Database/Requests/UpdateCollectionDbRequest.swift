@@ -50,6 +50,5 @@ struct UpdateCollectionDbRequest: DbRequest {
         }
 
         collection.dateModified = Date()
-        collection.changedFields = collection.changedFields.union(.dateModified)
     }
 }

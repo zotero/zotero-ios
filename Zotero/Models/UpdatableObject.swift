@@ -15,6 +15,7 @@ typealias UpdatableObject = Updatable&Object
 protocol Updatable: class {
     var rawChangedFields: UInt { get set }
     var updateParameters: [String: Any]? { get }
+    var isChanged: Bool { get }
 
     func resetChanges()
 }
@@ -23,20 +24,21 @@ extension Updatable {
     func resetChanges() {
         self.rawChangedFields = 0
     }
+
+    var isChanged: Bool {
+        return self.rawChangedFields > 0
+    }
 }
 
 extension RCollection: Updatable {
     var updateParameters: [String: Any]? {
-        let changes = self.changedFields
-
-        guard !changes.isEmpty else { return nil }
-
-        if changes.contains(.all) {
-            return self.allParameters
-        }
+        guard !self.isChanged else { return nil }
 
         var parameters: [String: Any] = ["key": self.key,
-                                         "version": self.version]
+                                         "version": self.version,
+                                         "dateModified": Formatter.iso8601.string(from: self.dateModified)]
+
+        let changes = self.changedFields
         if changes.contains(.name) {
             parameters["name"] = self.name
         }
@@ -47,62 +49,105 @@ extension RCollection: Updatable {
                 parameters["parentCollection"] = false
             }
         }
-        if changes.contains(.dateModified) {
-            parameters["dateModified"] = Formatter.iso8601.string(from: self.dateModified)
-        }
-        return parameters
-    }
 
-    private var allParameters: [String: Any] {
-        return ["key": self.key,
-                "version": self.version,
-                "dateModified": Formatter.iso8601.string(from: self.dateModified),
-                "name": self.name,
-                "parentCollection": (self.parent?.key ?? false)]
+        return parameters
     }
 }
 
 extension RSearch: Updatable {
     var updateParameters: [String: Any]? {
-        let changes = self.changedFields
-
-        guard !changes.isEmpty else { return nil }
-
-        if changes.contains(.all) {
-            return self.allParameters
-        }
+        guard !self.isChanged else { return nil }
 
         var parameters: [String: Any] = ["key": self.key,
-                                         "version": self.version]
+                                         "version": self.version,
+                                         "dateModified": Formatter.iso8601.string(from: self.dateModified)]
+
+        let changes = self.changedFields
         if changes.contains(.name) {
             parameters["name"] = self.name
         }
         if changes.contains(.conditions) {
             parameters["conditions"] = self.sortedConditionParameters
         }
-        if changes.contains(.dateModified) {
-            parameters["dateModified"] = Formatter.iso8601.string(from: self.dateModified)
-        }
+
         return parameters
     }
 
-    private var allParameters: [String: Any] {
-        return ["key": self.key,
-                "version": self.version,
-                "dateModified": Formatter.iso8601.string(from: self.dateModified),
-                "name": self.name,
-                "conditions": self.sortedConditionParameters]
-    }
-
     private var sortedConditionParameters: [[String: Any]] {
-        return self.conditions.sorted(byKeyPath: "sortId").map({ $0.allParameters })
+        return self.conditions.sorted(byKeyPath: "sortId").map({ $0.updateParameters })
     }
 }
 
 extension RCondition {
-    fileprivate var allParameters: [String: Any] {
+    fileprivate var updateParameters: [String: Any] {
         return ["condition": self.condition,
                 "operator": self.operator,
                 "value": self.value]
+    }
+}
+
+extension RItem: Updatable {
+    var updateParameters: [String : Any]? {
+        guard self.isChanged else { return nil }
+
+        var parameters: [String: Any] = ["key": self.key,
+                                         "version": self.version,
+                                         "dateModified": Formatter.iso8601.string(from: self.dateModified),
+                                         "dateAdded": Formatter.iso8601.string(from: self.dateAdded)]
+
+        let changes = self.changedFields
+        if changes.contains(.type) {
+            parameters["itemType"] = self.rawType
+        }
+        if changes.contains(.trash) {
+            parameters["deleted"] = self.trash
+        }
+        if changes.contains(.tags) {
+            parameters["tags"] = self.tags.map({ ["tag": $0.name] })
+        }
+        if changes.contains(.collections) {
+            parameters["collections"] = self.collections.map({ $0.key })
+        }
+        if changes.contains(.relations) {
+            var relations: [String: String] = [:]
+            self.relations.forEach { relation in
+                relations[relation.type] = relation.urlString
+            }
+            parameters["relations"] = relations
+        }
+        if changes.contains(.parent) {
+            parameters["parentItem"] = self.parent?.key ?? false
+        }
+        if changes.contains(.creators) {
+            parameters["creators"] = self.creators.map({ $0.updateParameters })
+        }
+        if changes.contains(.fields) {
+            self.fields.filter("changed = true").forEach { field in
+                parameters[field.key] = field.value
+            }
+        }
+        
+        return parameters
+    }
+
+    func resetChanges() {
+        self.rawChangedFields = 0
+        self.fields.filter("changed = true").forEach { field in
+            field.changed = false
+        }
+    }
+}
+
+extension RCreator {
+    fileprivate var updateParameters: [String: Any] {
+        var parameters: [String: Any] = ["creatorType": self.rawType]
+        if !self.name.isEmpty {
+            parameters["name"] = self.name
+        }
+        if !self.firstName.isEmpty || !self.lastName.isEmpty {
+            parameters["firstName"] = self.firstName
+            parameters["lastName"] = self.lastName
+        }
+        return parameters
     }
 }

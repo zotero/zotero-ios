@@ -66,12 +66,13 @@ struct ItemResponse {
     let parsedDate: String?
     let isTrash: Bool
     let version: Int
+    let dateModified: Date
+    let dateAdded: Date
     let fields: [String: String]
-    let strippedNote: String?
     let tags: [TagResponse]
     let creators: [CreatorResponse]
+    let relations: [String: String]
 
-    private static let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags",
                 "collections", "relations", "dateAdded", "dateModified", "parentItem"]
@@ -90,6 +91,8 @@ struct ItemResponse {
         let collections = data["collections"] as? [String]
         self.collectionKeys = collections.flatMap(Set.init) ?? []
         self.parentKey = data["parentItem"] as? String
+        self.dateAdded = (data["dateAdded"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        self.dateModified = (data["dateModified"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
 
         let meta = response["meta"] as? [String: Any]
         self.creatorSummary = meta?["creatorSummary"] as? String
@@ -111,47 +114,16 @@ struct ItemResponse {
         let creatorsDictionary = (data["creators"] as? [[String: Any]]) ?? []
         let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
         self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
+        self.relations = (data["relations"] as? [String: String]) ?? [:]
 
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]
-        var note: String?
-
         data.forEach { data in
             if !excludedKeys.contains(data.key) {
                 fields[data.key] = data.value as? String
-                if data.key == "note" {
-                    note = data.value as? String
-                }
             }
         }
         self.fields = fields
-        self.strippedNote = note.flatMap({ ItemResponse.stripHtml(from: $0) })
-    }
-
-    private static func stripHtml(from string: String) -> String? {
-        guard !string.isEmpty else { return nil }
-        guard let data = string.data(using: .utf8) else {
-            DDLogError("ItemResponse: could not create data from string: \(string)")
-            return nil
-        }
-
-        do {
-            let attributed = try NSAttributedString(data: data,
-                                                    options: [.documentType : NSAttributedString.DocumentType.html],
-                                                    documentAttributes: nil)
-            var stripped = attributed.string.trimmingCharacters(in: CharacterSet.whitespaces)
-                                            .components(separatedBy: ItemResponse.stripCharacters).joined()
-            if stripped.count > 200 {
-                let endIndex = stripped.index(stripped.startIndex, offsetBy: 200)
-                stripped = String(stripped[stripped.startIndex..<endIndex])
-            }
-            return stripped
-        } catch let error {
-            DDLogError("ItemResponse: can't strip HTML tags: \(error)")
-            DDLogError("Original string: \(string)")
-        }
-
-        return nil
     }
 
     static func decode(response: Any) throws -> ([ItemResponse], [Error]) {
@@ -188,4 +160,8 @@ struct CreatorResponse: Decodable {
     let creatorType: String
     let firstName: String
     let lastName: String
+}
+
+struct RelationResponse: Decodable {
+
 }
