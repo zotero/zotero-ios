@@ -20,7 +20,7 @@ class ProgressToolbarViewController: ToolbarViewController {
     // Constants
     private let disposeBag: DisposeBag
     // Variables
-    private weak var syncController: SyncController?
+    private weak var syncScheduler: SynchronizationScheduler?
     private weak var titleLabel: UILabel!
     private weak var subtitleLabel: UILabel!
     private var syncButton: UIBarButtonItem = {
@@ -34,12 +34,12 @@ class ProgressToolbarViewController: ToolbarViewController {
 
     // MARK: - Lifecycle
 
-    init(syncController: SyncController?, rootViewController: UIViewController) {
+    init(syncScheduler: SynchronizationScheduler?, rootViewController: UIViewController) {
         self.disposeBag = DisposeBag()
-        self.syncController = syncController
+        self.syncScheduler = syncScheduler
         super.init(rootViewController: rootViewController)
 
-        if syncController == nil {
+        if syncScheduler == nil {
             DDLogError("ProgressToolbarViewController: sync controller is nil!")
         }
     }
@@ -51,7 +51,7 @@ class ProgressToolbarViewController: ToolbarViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupToolbarItems()
-        if let observable = self.syncController?.progressObservable {
+        if let observable = self.syncScheduler?.progressObservable {
             self.setupObserving(for: observable)
         }
     }
@@ -59,12 +59,12 @@ class ProgressToolbarViewController: ToolbarViewController {
     // MARK: - Actions
 
     @objc private func startSync() {
-        self.syncController?.start(for: .all)
+        self.syncScheduler?.requestFullSync()
         self.setSyncButton(to: .cancel)
     }
 
     @objc private func cancelSync() {
-        self.syncController?.cancelSync()
+        self.syncScheduler?.cancelSync()
         self.setSyncButton(to: .sync)
     }
 

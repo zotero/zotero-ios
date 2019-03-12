@@ -296,7 +296,7 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    controller.start(for: .specific([RLibrary.myLibraryId]))
+                    controller.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
                     self.controller = controller
 
                     expect(all?.first).toEventually(equal(.createLibraryActions(.specific([RLibrary.myLibraryId]), false)))
@@ -596,7 +596,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(for: .all)
+                        self.controller?.start(type: .normal, libraries: .all)
                     }
                 })
 
@@ -759,7 +759,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(for: .all)
+                        self.controller?.start(type: .normal, libraries: .all)
                     }
                 })
 
@@ -815,7 +815,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(for: .all)
+                        self.controller?.start(type: .normal, libraries: .all)
                     }
                 })
 
@@ -878,7 +878,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(for: .all)
+                        self.controller?.start(type: .normal, libraries: .all)
                     }
                 })
 
@@ -980,7 +980,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(for: .all)
+                        self.controller?.start(type: .normal, libraries: .all)
                     }
                 })
 
@@ -1053,7 +1053,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(for: .all)
+                        self.controller?.start(type: .normal, libraries: .all)
                     }
                 })
             }
@@ -1206,10 +1206,16 @@ fileprivate class TestHandler: SyncActionHandler {
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, parameters: [[String : Any]]) -> Completable {
         return Completable.empty()
     }
+
+
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
+                      parameters: [[String : Any]]) -> Single<Array<String>> {
+        return Single.just([])
+    }
 }
 
 fileprivate class TestDataSource: SyncUpdateDataSource {
-    func updates(for libraryId: Int) -> [SyncController.WriteBatch] {
+    func updates(for library: SyncController.Library, versions: Versions) throws -> [SyncController.WriteBatch] {
         return []
     }
 }

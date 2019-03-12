@@ -11,11 +11,11 @@ import Foundation
 import RealmSwift
 
 struct RSearchChanges: OptionSet {
-    typealias RawValue = UInt
+    typealias RawValue = Int16
 
-    let rawValue: UInt
+    let rawValue: Int16
 
-    init(rawValue: UInt) {
+    init(rawValue: Int16) {
         self.rawValue = rawValue
     }
 }
@@ -34,7 +34,7 @@ class RSearch: Object {
     /// False if object was synced, true otherwise
     @objc dynamic var needsSync: Bool = false
     /// Raw value for OptionSet of changes for this object
-    @objc dynamic var rawChangedFields: UInt = 0
+    @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var library: RLibrary?
     let conditions = LinkingObjects(fromType: RCondition.self, property: "search")

@@ -11,11 +11,11 @@ import Foundation
 import RealmSwift
 
 struct RItemChanges: OptionSet {
-    typealias RawValue = UInt
+    typealias RawValue = Int16
 
-    let rawValue: UInt
+    let rawValue: Int16
 
-    init(rawValue: UInt) {
+    init(rawValue: Int16) {
         self.rawValue = rawValue
     }
 }
@@ -44,7 +44,7 @@ class RItem: Object {
     /// False if object was synced, true otherwise
     @objc dynamic var needsSync: Bool = false
     /// Raw value for OptionSet of changes for this object
-    @objc dynamic var rawChangedFields: UInt = 0
+    @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parent: RItem?

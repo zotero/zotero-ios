@@ -13,7 +13,7 @@ import RealmSwift
 typealias UpdatableObject = Updatable&Object
 
 protocol Updatable: class {
-    var rawChangedFields: UInt { get set }
+    var rawChangedFields: Int16 { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
 

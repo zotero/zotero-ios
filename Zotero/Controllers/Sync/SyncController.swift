@@ -25,11 +25,20 @@ enum SyncError: Error {
     case allLibrariesFetchFailed(Error)
 }
 
-final class SyncController {
-    private enum SyncType {
-        case normal     // Fetches updates since last versions
-        case initial    // Ignores local versions, fetches everything since the beginning
-        case retry      // Is a retry after previous broken sync
+protocol SynchronizationController: class {
+    var isSyncing: Bool { get }
+    var observable: PublishSubject<(Bool, SyncController.SyncType, SyncController.LibrarySyncType)> { get }
+    var progressObservable: BehaviorRelay<SyncProgress?> { get }
+
+    func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
+    func cancel()
+}
+
+final class SyncController: SynchronizationController {
+    enum SyncType {
+        case normal             // Fetches updates since last versions
+        case ignoreVersions     // Ignores local versions, fetches everything since the beginning
+        case retry              // Is a retry after previous broken sync
     }
 
     enum LibrarySyncType: Equatable {
@@ -81,6 +90,7 @@ final class SyncController {
     private let handler: SyncActionHandler
     private let updateDataSource: SyncUpdateDataSource
     private let progressHandler: SyncProgressHandler
+    let observable: PublishSubject<(Bool, SyncController.SyncType, SyncController.LibrarySyncType)>
 
     private var queue: [Action]
     private var processingAction: Action?
@@ -90,12 +100,10 @@ final class SyncController {
     private var lastReturnedVersion: Int?
     /// Array of non-fatal errors that happened during current sync
     private var nonFatalErrors: [Error]
-    /// Flag that marks failure(s) during current sync, we'll retry after timeout when current sync finishes
-    private var needsResync: Bool
     private var disposeBag: DisposeBag
 
-    private var isSyncing: Bool {
-        return self.processingAction != nil || !self.queue.isEmpty || self.needsResync
+    var isSyncing: Bool {
+        return self.processingAction != nil || !self.queue.isEmpty
     }
 
     var progressObservable: BehaviorRelay<SyncProgress?> {
@@ -107,34 +115,19 @@ final class SyncController {
         self.accessQueue = DispatchQueue(label: "org.zotero.SyncAccessQueue", qos: .utility, attributes: .concurrent)
         self.handler = handler
         self.updateDataSource = updateDataSource
+        self.observable = PublishSubject()
         self.progressHandler = SyncProgressHandler()
         self.disposeBag = DisposeBag()
         self.queue = []
         self.nonFatalErrors = []
-        self.needsResync = false
         self.type = .normal
         self.libraryType = .all
     }
 
     // MARK: - Sync management
 
-    func start(for libraries: LibrarySyncType, isInitial: Bool = false) {
+    func start(type: SyncType, libraries: LibrarySyncType) {
         DDLogInfo("--- Sync: starting ---")
-        self.start(type: (isInitial ? .initial : .normal), libraries: libraries)
-    }
-
-    func cancelSync() {
-        DDLogInfo("--- Sync: cancelled ---")
-
-        self.performOnAccessQueue(flags: .barrier) { [weak self] in
-            guard let `self` = self, self.isSyncing else { return }
-            self.disposeBag = DisposeBag()
-            self.cleaup()
-            self.report(fatalError: SyncError.cancelled)
-        }
-    }
-
-    private func start(type: SyncType, libraries: LibrarySyncType) {
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self, !self.isSyncing else { return }
             self.type = type
@@ -142,6 +135,16 @@ final class SyncController {
             self.progressHandler.reportNewSync()
             self.queue.append(contentsOf: self.createInitialActions(for: libraries))
             self.processNextAction()
+        }
+    }
+
+    func cancel() {
+        DDLogInfo("--- Sync: cancelled ---")
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            guard let `self` = self, self.isSyncing else { return }
+            self.disposeBag = DisposeBag()
+            self.cleaup()
+            self.report(fatalError: SyncError.cancelled)
         }
     }
 
@@ -173,7 +176,6 @@ final class SyncController {
             self.reportFinish = nil
 
             self.reportFinish(nonFatalErrors: errors)
-            self.enqueueResyncIfNeeded()
             self.cleaup()
         }
     }
@@ -189,36 +191,13 @@ final class SyncController {
             guard let `self` = self else { return }
             self.report(fatalError: error)
             self.cleaup()
-            self.needsResync = true
-            self.enqueueResync()
         }
-    }
-
-    private func enqueueResyncIfNeeded() {
-        guard self.needsResync else { return }
-        self.enqueueResync()
-    }
-
-    private func enqueueResync() {
-        Single<Int>.timer(SyncController.timeoutPeriod, scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self] _ in
-                       guard let `self` = self else { return }
-                       self.start(type: .retry, libraries: self.libraryType)
-                   })
-                   .disposed(by: self.disposeBag)
-    }
-
-    private func setNeedsResync() {
-        // Don't retry more than once
-        guard self.type != .retry else { return }
-        self.needsResync = true
     }
 
     private func cleaup() {
         self.processingAction = nil
         self.queue = []
         self.nonFatalErrors = []
-        self.needsResync = false
         self.type = .normal
         self.lastReturnedVersion = nil
     }
@@ -227,10 +206,12 @@ final class SyncController {
 
     private func report(fatalError: Error) {
         self.progressHandler.reportAbort(with: fatalError)
+        self.observable.on(.next((true, self.type, self.libraryType)))
     }
 
     private func reportFinish(nonFatalErrors errors: [Error]) {
         self.progressHandler.reportFinish(with: errors)
+        self.observable.on(.next((!errors.isEmpty, self.type, self.libraryType)))
     }
 
     // MARK: - Queue management
@@ -393,7 +374,7 @@ final class SyncController {
 
     private func processSyncVersions(library: Library, object: Object, since version: Int?) {
         self.handler.synchronizeVersions(for: library, object: object, since: version,
-                                         current: self.lastReturnedVersion, syncAll: (self.type == .initial))
+                                         current: self.lastReturnedVersion, syncAll: (self.type == .ignoreVersions))
                     .subscribe(onSuccess: { [weak self] data in
                         self?.finishSyncVersionsAction(for: library, object: object, result: .success((data.1, data.0)))
                     }, onError: { [weak self] error in
@@ -608,7 +589,6 @@ final class SyncController {
                     .subscribe(onCompleted: { [weak self] in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
                             guard let `self` = self else { return }
-                            self.setNeedsResync()
                             self.processNextAction()
                         }
                     }, onError: { [weak self] error in

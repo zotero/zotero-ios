@@ -64,13 +64,14 @@ class Controllers {
 
 /// Global controllers for logged in user
 class UserControllers {
-    let syncController: SyncController
+    let syncScheduler: SynchronizationScheduler
 
     init(userId: Int, controllers: Controllers) {
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
                                                       dbStorage: controllers.dbStorage,
                                                       fileStorage: controllers.fileStorage)
         let updateDataSource = UpdateDataSource(dbStorage: controllers.dbStorage)
-        self.syncController = SyncController(userId: userId, handler: syncHandler, updateDataSource: updateDataSource)
+        let syncController = SyncController(userId: userId, handler: syncHandler, updateDataSource: updateDataSource)
+        self.syncScheduler = SyncScheduler(controller: syncController)
     }
 }

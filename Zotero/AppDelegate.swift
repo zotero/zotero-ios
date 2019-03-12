@@ -60,10 +60,7 @@ class AppDelegate: UIResponder {
         let userId = notification.object as? Int
         self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
         self.controllers.sessionChanged(userId: userId)
-
-        if let syncController = self.controllers.userControllers?.syncController {
-            syncController.start(for: .all)
-        }
+        self.controllers.userControllers?.syncScheduler.requestFullSync()
     }
 
     // MARK: - Setups
@@ -128,7 +125,7 @@ extension AppDelegate: UIApplicationDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         if ProcessInfo.processInfo.environment["IS_TEST"] != "true" {
             // Don't run auto sync for tests
-            self.controllers.userControllers?.syncController.start(for: .all, isInitial: false)
+            self.controllers.userControllers?.syncScheduler.requestFullSync()
         }
     }
 

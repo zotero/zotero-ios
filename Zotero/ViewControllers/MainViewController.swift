@@ -48,8 +48,8 @@ class MainViewController: UISplitViewController {
         let librariesStore = LibrariesStore(dbStorage: controllers.dbStorage)
         let leftController = LibrariesViewController(store: librariesStore, delegate: self)
         let leftNavigationController = UINavigationController(rootViewController: leftController)
-        let syncController = controllers.userControllers?.syncController
-        let leftToolbarController = ProgressToolbarViewController(syncController: syncController,
+        let syncScheduler = controllers.userControllers?.syncScheduler
+        let leftToolbarController = ProgressToolbarViewController(syncScheduler: syncScheduler,
                                                                   rootViewController: leftNavigationController)
 
         let itemState = ItemsState(libraryId: RLibrary.myLibraryId, collectionId: nil, title: "My Library")
