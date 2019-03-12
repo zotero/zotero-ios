@@ -71,6 +71,7 @@ final class SyncController {
         case syncSettings(Library, Int?)                    // Synchronize settings for library
         case storeSettingsVersion(Int, Library)             // Store new version for settings in library
         case submitWriteBatch(WriteBatch)                   // Submit local changes to backend
+        case resolveConflict(String, Object, Library)
     }
 
     private static let timeoutPeriod: Double = 15.0
@@ -300,6 +301,9 @@ final class SyncController {
             self.processStoreVersion(library: library, type: .settings, version: version)
         case .submitWriteBatch(let batch):
             self.processSubmitUpdate(for: batch)
+        case .resolveConflict(let key, let object, let library):
+            // TODO: - resolve conflict...
+            break
         }
     }
 
@@ -669,14 +673,14 @@ final class SyncController {
     private func processSubmitUpdate(for batch: WriteBatch) {
         self.handler.submitUpdate(for: batch.library, object: batch.object, parameters: batch.parameters)
                     .subscribe(onSuccess: { [weak self] conflicts in
-                        self?.finishUpdateSubmission(result: .success(conflicts), library: batch.library)
+                        self?.finishUpdateSubmission(result: .success(conflicts), library: batch.library, object: batch.object)
                     }, onError: { [weak self] error in
-                        self?.finishUpdateSubmission(result: .failure(error), library: batch.library)
+                        self?.finishUpdateSubmission(result: .failure(error), library: batch.library, object: batch.object)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishUpdateSubmission(result: Result<[String]>, library: Library) {
+    private func finishUpdateSubmission(result: Result<[String]>, library: Library, object: Object) {
         switch result {
         case .failure(let error):
             if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
@@ -694,10 +698,10 @@ final class SyncController {
             }
 
         case .success(let conflicts):
-            if !conflicts.isEmpty {
-                // TODO: - resolve conflicts
-            }
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                if !conflicts.isEmpty {
+                    self?.enqueue(actions: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
+                }
                 self?.processNextAction()
             }
         }

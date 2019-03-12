@@ -23,56 +23,20 @@ final class UpdateDataSource: SyncUpdateDataSource {
 
     func updates(for library: SyncController.Library, versions: Versions) throws -> [SyncController.WriteBatch] {
         let coordinator = try self.dbStorage.createCoordinator()
-        return (try self.collectionUpdates(for: library, coordinator: coordinator)) +
-               (try self.itemUpdates(for: library, coordinator: coordinator)) +
-               (try self.searchUpdates(for: library, coordinator: coordinator))
+        return (try self.updates(for: RCollection.self, object: .collection, library: library,
+                                 version: versions.collections, coordinator: coordinator)) +
+               (try self.updates(for: RSearch.self, object: .search, library: library,
+                                 version: versions.searches, coordinator: coordinator))
     }
 
-    private func collectionUpdates(for library: SyncController.Library,
-                                   coordinator: DbCoordinator) throws -> [SyncController.WriteBatch] {
-        let request = ReadChangedCollectionsDbRequest(libraryId: library.libraryId)
+    private func updates<Obj: UpdatableObject>(for type: Obj.Type, object: SyncController.Object,
+                                               library: SyncController.Library, version: Int,
+                                               coordinator: DbCoordinator) throws -> [SyncController.WriteBatch] {
+        let request = ReadChangedObjectsDbRequest<Obj>(libraryId: library.libraryId)
         let collections = try coordinator.perform(request: request)
-        let parameters = Array(collections.compactMap({ $0.writeParameters }))
+        let parameters = Array(collections.compactMap({ $0.updateParameters }))
         return parameters.chunked(into: SyncController.WriteBatch.maxCount)
-                         .map({ SyncController.WriteBatch(library: library, object: .collection,
-                                                          version: 0, parameters: $0) })
-    }
-
-    private func itemUpdates(for library: SyncController.Library,
-                             coordinator: DbCoordinator) throws -> [SyncController.WriteBatch] {
-        return []
-    }
-
-    private func searchUpdates(for library: SyncController.Library,
-                               coordinator: DbCoordinator) throws -> [SyncController.WriteBatch] {
-        return []
-    }
-}
-
-extension RCollection {
-    fileprivate var writeParameters: [String: Any]? {
-        guard !self.changedFields.isEmpty else { return nil }
-        var parameters: [String: Any] = [:]
-        let changes = self.changedFields.split(separator: ",")
-        changes.forEach { change in
-            switch change {
-            case "name":
-                parameters["name"] = self.name
-            case "parent":
-                if let key = self.parent?.key {
-                    parameters["parentCollection"] = key
-                } else {
-                    parameters["parentCollection"] = false
-                }
-            case "key":
-                parameters["key"] = self.key
-            case "version":
-                parameters["version"] = self.version
-            case "dateModified":
-                parameters["dateModified"] = Formatter.iso8601.string(from: self.dateModified)
-            default: break
-            }
-        }
-        return parameters
+                         .map({ SyncController.WriteBatch(library: library, object: object,
+                                                          version: version, parameters: $0) })
     }
 }

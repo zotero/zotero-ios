@@ -15,7 +15,7 @@ enum RealmDbError: Error {
 }
 
 class RealmDbStorage {
-    private static let schemaVersion: UInt64 = 12
+    private static let schemaVersion: UInt64 = 13
     private let config: Realm.Configuration
 
     init(config: Realm.Configuration) {

@@ -31,7 +31,7 @@ struct UpdateCollectionDbRequest: DbRequest {
 
         if let name = self.name {
             collection.name = name
-            collection.add(change: "name")
+            collection.changedFields = collection.changedFields.union(.name)
         }
 
         if let parentKey = self.parent {
@@ -46,22 +46,10 @@ struct UpdateCollectionDbRequest: DbRequest {
                 database.add(parentCollection)
             }
             collection.parent = parentCollection
-            collection.add(change: "parent")
+            collection.changedFields = collection.changedFields.union(.parent)
         }
 
         collection.dateModified = Date()
-        collection.add(change: "dateModified")
-    }
-}
-
-extension RCollection {
-    fileprivate func add(change: String) {
-        guard !self.changedFields.contains(change) else { return }
-
-        var changeToAdd = change
-        if !self.changedFields.isEmpty {
-            changeToAdd = "," + changeToAdd
-        }
-        self.changedFields += changeToAdd
+        collection.changedFields = collection.changedFields.union(.dateModified)
     }
 }

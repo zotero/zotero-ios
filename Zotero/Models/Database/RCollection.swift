@@ -10,6 +10,23 @@ import Foundation
 
 import RealmSwift
 
+struct RCollectionChanges: OptionSet {
+    typealias RawValue = UInt
+
+    let rawValue: UInt
+
+    init(rawValue: UInt) {
+        self.rawValue = rawValue
+    }
+}
+
+extension RCollectionChanges {
+    static let all = RCollectionChanges(rawValue: 1 << 1)
+    static let name = RCollectionChanges(rawValue: 1 << 2)
+    static let parent = RCollectionChanges(rawValue: 1 << 3)
+    static let dateModified = RCollectionChanges(rawValue: 1 << 4)
+}
+
 class RCollection: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
@@ -17,11 +34,21 @@ class RCollection: Object {
     /// Flag that marks whether object has been synced successfully during last sync
     /// False if object was synced, true otherwise
     @objc dynamic var needsSync: Bool = false
-    /// Comma separated names of variables which were changed since last sync
-    @objc dynamic var changedFields: String = ""
+    /// Raw value for OptionSet of changes for this object
+    @objc dynamic var rawChangedFields: UInt = 0
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var library: RLibrary?
     @objc dynamic var parent: RCollection?
+
+    var changedFields: RCollectionChanges {
+        get {
+            return RCollectionChanges(rawValue: self.rawChangedFields)
+        }
+
+        set {
+            self.rawChangedFields = newValue.rawValue
+        }
+    }
 
     let items = LinkingObjects(fromType: RItem.self, property: "collections")
     let children = LinkingObjects(fromType: RCollection.self, property: "parent")

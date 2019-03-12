@@ -58,7 +58,8 @@ extension SyncController.Action {
              .storeVersion(_, let library, _),
              .syncDeletions(let library, _),
              .syncSettings(let library, _),
-             .storeSettingsVersion(_, let library):
+             .storeSettingsVersion(_, let library),
+             .resolveConflict(_, _, let library):
             return library
         }
     }
