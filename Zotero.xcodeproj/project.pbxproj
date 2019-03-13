@@ -119,6 +119,8 @@
 		B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
 		B393729A22295475008B2A96 /* ToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729922295475008B2A96 /* ToolbarViewController.swift */; };
 		B393729C222957D0008B2A96 /* ProgressToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */; };
+		B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E3223942160019F467 /* ObjectChangeObserver.swift */; };
+		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */; };
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
@@ -297,6 +299,8 @@
 		B39372972229420A008B2A96 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
 		B393729922295475008B2A96 /* ToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarViewController.swift; sourceTree = "<group>"; };
 		B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressToolbarViewController.swift; sourceTree = "<group>"; };
+		B39B18E3223942160019F467 /* ObjectChangeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectChangeObserver.swift; sourceTree = "<group>"; };
+		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
@@ -411,6 +415,7 @@
 				B30D59582206F60400884C4A /* AppDelegate.swift */,
 				B30D59632206F60500884C4A /* LaunchScreen.storyboard */,
 				B30D59662206F60500884C4A /* Info.plist */,
+				B39B18E7223947050019F467 /* main.swift */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -445,6 +450,7 @@
 				B36795E122075710003D0471 /* Controllers.swift */,
 				B32CD354221C58FB003F8073 /* ItemFieldsController.swift */,
 				B36795FC22078F15003D0471 /* SecureStorage.swift */,
+				B39B18E3223942160019F467 /* ObjectChangeObserver.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -1069,6 +1075,7 @@
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
 				B3FD6B37220D86E0008D9D74 /* StoreCollectionsDbRequest.swift in Sources */,
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
+				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
 				B32CD358221C5A5D003F8073 /* ItemDetailViewController.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
@@ -1094,6 +1101,7 @@
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B32CD360221C70B6003F8073 /* ItemFieldCell.swift in Sources */,
+				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */,
 				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
 				B3C33D8822367CE00071A763 /* UpdateCollectionDbRequest.swift in Sources */,

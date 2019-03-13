@@ -16,7 +16,6 @@ extension Notification.Name {
     static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
 }
 
-@UIApplicationMain
 class AppDelegate: UIResponder {
 
     private let disposeBag: DisposeBag = DisposeBag()
@@ -60,7 +59,6 @@ class AppDelegate: UIResponder {
         let userId = notification.object as? Int
         self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
         self.controllers.sessionChanged(userId: userId)
-        self.controllers.userControllers?.syncScheduler.requestFullSync()
     }
 
     // MARK: - Setups
@@ -123,10 +121,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        if ProcessInfo.processInfo.environment["IS_TEST"] != "true" {
-            // Don't run auto sync for tests
-            self.controllers.userControllers?.syncScheduler.requestFullSync()
-        }
+        self.controllers.userControllers?.syncScheduler.requestFullSync()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

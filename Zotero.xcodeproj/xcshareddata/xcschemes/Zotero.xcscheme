@@ -58,13 +58,6 @@
             ReferencedContainer = "container:Zotero.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "IS_TEST"
-            value = "true"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>

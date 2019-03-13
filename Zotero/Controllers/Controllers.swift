@@ -65,13 +65,27 @@ class Controllers {
 /// Global controllers for logged in user
 class UserControllers {
     let syncScheduler: SynchronizationScheduler
+    let changeObserver: ObjectChangeObserver
+    private let disposeBag: DisposeBag
 
     init(userId: Int, controllers: Controllers) {
+        self.disposeBag = DisposeBag()
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
                                                       dbStorage: controllers.dbStorage,
                                                       fileStorage: controllers.fileStorage)
         let updateDataSource = UpdateDataSource(dbStorage: controllers.dbStorage)
         let syncController = SyncController(userId: userId, handler: syncHandler, updateDataSource: updateDataSource)
         self.syncScheduler = SyncScheduler(controller: syncController)
+        self.changeObserver = RealmObjectChangeObserver(dbStorage: controllers.dbStorage)
+    }
+
+    private func performInitialActions() {
+        self.syncScheduler.requestFullSync()
+        self.changeObserver.observable
+                           .observeOn(MainScheduler.instance)
+                           .subscribe(onNext: { [weak self] changedLibraries in
+                               self?.syncScheduler.requestSync(for: changedLibraries)
+                           })
+                           .disposed(by: self.disposeBag)
     }
 }
