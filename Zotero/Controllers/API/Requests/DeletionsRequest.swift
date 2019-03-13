@@ -29,4 +29,8 @@ struct DeletionsRequest: ApiResponseRequest {
     var parameters: [String : Any]? {
         return ["since": self.version]
     }
+
+    var headers: [String : String]? {
+        return nil
+    }
 }

@@ -651,7 +651,8 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitUpdate(for batch: WriteBatch) {
-        self.handler.submitUpdate(for: batch.library, object: batch.object, parameters: batch.parameters)
+        self.handler.submitUpdate(for: batch.library, object: batch.object,
+                                  since: batch.version, parameters: batch.parameters)
                     .subscribe(onSuccess: { [weak self] conflicts in
                         self?.finishUpdateSubmission(result: .success(conflicts), library: batch.library, object: batch.object)
                     }, onError: { [weak self] error in

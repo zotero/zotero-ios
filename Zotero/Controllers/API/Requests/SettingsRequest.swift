@@ -30,4 +30,8 @@ struct SettingsRequest: ApiResponseRequest {
         guard let version = self.version else { return nil }
         return ["since": version]
     }
+
+    var headers: [String : String]? {
+        return nil
+    }
 }

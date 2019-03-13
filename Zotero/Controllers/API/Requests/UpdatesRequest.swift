@@ -12,6 +12,7 @@ struct UpdatesRequest: ApiRequest {
     let libraryType: SyncController.Library
     let objectType: SyncController.Object
     let params: [[String: Any]]
+    let version: Int
 
     var path: String {
         return "\(self.libraryType.apiPath)/\(self.objectType.apiPath)"
@@ -27,5 +28,9 @@ struct UpdatesRequest: ApiRequest {
 
     var parameters: [String : Any]? {
         return self.params.asParameters()
+    }
+
+    var headers: [String : String]? {
+        return ["If-Unmodified-Since-Version": self.version.description]
     }
 }

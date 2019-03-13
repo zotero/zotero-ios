@@ -34,4 +34,8 @@ struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
         }
         return parameters
     }
+
+    var headers: [String : String]? {
+        return nil
+    }
 }

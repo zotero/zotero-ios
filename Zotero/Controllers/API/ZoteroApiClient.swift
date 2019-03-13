@@ -148,7 +148,16 @@ struct Convertible {
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
-        self.headers = headers
+        self.headers = Convertible.merge(dictionary: headers, with: request.headers)
+    }
+
+    private static func merge(dictionary lDict: [String: String], with rDict: [String: String]?) -> [String: String] {
+        guard let newDict = rDict else { return lDict }
+        var dictionary = lDict
+        newDict.forEach { data in
+            dictionary[data.key] = data.value
+        }
+        return dictionary
     }
 }
 

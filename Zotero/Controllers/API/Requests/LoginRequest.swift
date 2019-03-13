@@ -23,7 +23,13 @@ struct LoginRequest: ApiResponseRequest {
         return .json
     }
 
-    var parameters: [String : Any]?
+    var parameters: [String : Any]? {
+        return nil
+    }
+
+    var headers: [String : String]? {
+        return nil
+    }
 
     init(username: String, password: String) {
         self.parameters = ["username": username,

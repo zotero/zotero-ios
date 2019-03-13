@@ -29,6 +29,10 @@ struct FileRequest: ApiDownloadRequest {
         return nil
     }
 
+    var headers: [String : String]? {
+        return nil
+    }
+
     var downloadUrl: URL {
         return self.destination.createUrl()
     }

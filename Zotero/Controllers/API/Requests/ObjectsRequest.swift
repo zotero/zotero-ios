@@ -40,4 +40,8 @@ struct ObjectsRequest: ApiRequest {
             return ["searchKey": self.keys]
         }
     }
+
+    var headers: [String : String]? {
+        return nil
+    }
 }

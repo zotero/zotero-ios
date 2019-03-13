@@ -57,7 +57,7 @@ protocol SyncActionHandler: class {
                               current currentVersion: Int?) -> Completable
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
                              since version: Int?) -> Single<(Bool, Int)>
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
                       parameters: [[String: Any]]) -> Single<[String]>
 }
 
@@ -321,9 +321,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
                       parameters: [[String : Any]]) -> Single<[String]> {
-        let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters)
+        let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters, version: version)
         return self.apiClient.send(dataRequest: request)
                              .flatMap({ response -> Single<UpdatesResponse> in
                                  do {
