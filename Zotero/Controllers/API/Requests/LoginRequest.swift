@@ -23,9 +23,7 @@ struct LoginRequest: ApiResponseRequest {
         return .json
     }
 
-    var parameters: [String : Any]? {
-        return nil
-    }
+    private(set) var parameters: [String : Any]?
 
     var headers: [String : String]? {
         return nil

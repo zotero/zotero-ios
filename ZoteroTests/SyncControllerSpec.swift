@@ -10,6 +10,7 @@ import Foundation
 
 @testable import Zotero
 
+import Alamofire
 import CocoaLumberjack
 import Nimble
 import OHHTTPStubs
@@ -26,7 +27,7 @@ class SyncControllerSpec: QuickSpec {
                                                                  apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
                                                                  dbStorage: RealmDbStorage(config: realmConfig),
                                                                  fileStorage: TestFileStorage())
-    private static let dataSource = TestDataSource()
+    private static let emptyUpdateDataSource = TestDataSource(batches: [])
 
     fileprivate static var syncVersionData: (Int, Int) = (0, 0) // version, object count
     fileprivate static var expectedKeys: [String] = []
@@ -278,28 +279,117 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("doesn't process group metadata when only my library is supposed to sync") {
-                    let handler = TestHandler()
-                    let dataSource = TestDataSource()
-                    let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                                    updateDataSource: dataSource)
                     var all: [SyncController.Action]?
 
-                    handler.requestResult = { action in
-                        return Single.just(())
-                    }
-                    controller.reportFinish = { result in
-                        switch result {
-                        case .success(let data):
-                            all = data.0
-                        case .failure:
-                            fail("Sync failed")
-                        }
-                    }
-
-                    controller.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
-                    self.controller = controller
+                    self.controller = self.performActionsTest(libraries: .specific([RLibrary.myLibraryId]),
+                                                              updates: [],
+                                                              result: { _ -> Single<()> in
+                                                                  return Single.just(())
+                                                              }, check: { actions in
+                                                                  all = actions
+                                                              })
+                    self.controller?.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
 
                     expect(all?.first).toEventually(equal(.createLibraryActions(.specific([RLibrary.myLibraryId]), false)))
+                }
+
+                it("processes update actions") {
+                    let library: SyncController.Library = .user(SyncControllerSpec.userId)
+                    let batch1 = SyncController.WriteBatch(library: library,
+                                                           object: .collection,
+                                                           version: 1,
+                                                           parameters: [["name": "A",
+                                                                         "key": "AAAAAAAA",
+                                                                         "version": 1]])
+                    let batch2 = SyncController.WriteBatch(library: library,
+                                                           object: .item,
+                                                           version: 2,
+                                                           parameters: [["title": "B",
+                                                                         "key": "BBBBBBBB",
+                                                                         "version": 2]])
+                    var all: [SyncController.Action]?
+                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([RLibrary.myLibraryId]), false),
+                                                             .submitWriteBatch(batch1),
+                                                             .submitWriteBatch(batch2)]
+
+                    self.controller = self.performActionsTest(libraries: .specific([RLibrary.myLibraryId]),
+                                                              updates: [batch1, batch2],
+                                                              result: { _ -> Single<()> in
+                                                                  return Single.just(())
+                                                              }, check: { actions in
+                                                                  all = actions
+                                                              })
+                    self.controller?.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
+
+                    expect(all).toEventually(equal(expected))
+                }
+
+                it("updates local data from remote when update returns 412") {
+                    SyncControllerSpec.syncVersionData = (3, 1)
+                    SyncControllerSpec.groupIdVersions = Versions(collections: 2, items: 2, trash: 2, searches: 2,
+                                                                  deletions: 2, settings: 2)
+
+                    let library: SyncController.Library = .user(SyncControllerSpec.userId)
+                    let batch1 = SyncController.WriteBatch(library: library,
+                                                           object: .collection,
+                                                           version: 1,
+                                                           parameters: [["name": "A",
+                                                                         "key": "AAAAAAAA",
+                                                                         "version": 1]])
+                    var all: [SyncController.Action]?
+                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([RLibrary.myLibraryId]), false),
+                                                             .submitWriteBatch(batch1),
+                                                             .createLibraryActions(.specific([RLibrary.myLibraryId]), true),
+                                                             .syncSettings(library, 2),
+                                                             .storeSettingsVersion(3, library),
+                                                             .syncVersions(library, .collection, 2),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
+                                                                                                         object: .collection,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, library, .collection),
+                                                             .syncVersions(library, .search, 2),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
+                                                                                                         object: .search,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, library, .search),
+                                                             .syncVersions(library, .item, 2),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
+                                                                                                         object: .item,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, library, .item),
+                                                             .syncVersions(library, .trash, 2),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
+                                                                                                         object: .trash,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, library, .trash),
+                                                             .syncDeletions(library, 2),
+                                                             .submitWriteBatch(batch1)]
+                    var updateCount = 0
+
+                    let preconditionError = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412))
+
+                    self.controller = self.performActionsTest(libraries: .specific([RLibrary.myLibraryId]),
+                                                              updates: [batch1],
+                                                              result: { action -> Single<()> in
+                                                                  switch action {
+                                                                  case .submitUpdate:
+                                                                      if updateCount == 0 {
+                                                                          updateCount += 1
+                                                                          return Single.error(preconditionError)
+                                                                      }
+                                                                  default: break
+                                                                  }
+                                                                  return Single.just(())
+                                                              }, check: { actions in
+                                                                  all = actions
+                                                              })
+                    self.controller?.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
+
+                    expect(all).toEventually(equal(expected))
                 }
             }
 
@@ -506,7 +596,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.dataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -710,7 +800,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.dataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -799,7 +889,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.dataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -856,7 +946,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.dataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -939,7 +1029,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.dataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1024,7 +1114,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.dataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
                     waitUntil(timeout: 100) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1086,9 +1176,8 @@ class SyncControllerSpec: QuickSpec {
                                     result: @escaping (TestAction) -> Single<()>,
                                     check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
         let handler = TestHandler()
-        let dataSource = TestDataSource()
         let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                        updateDataSource: dataSource)
+                                        updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
         handler.requestResult = result
 
@@ -1103,13 +1192,32 @@ class SyncControllerSpec: QuickSpec {
         return controller
     }
 
+    private func performActionsTest(libraries: SyncController.LibrarySyncType, updates: [SyncController.WriteBatch],
+                                    result: @escaping (TestAction) -> Single<()>,
+                                    check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
+        let handler = TestHandler()
+        let dataSource = TestDataSource(batches: updates)
+        let controller = SyncController(userId: SyncControllerSpec.userId,
+                                        handler: handler, updateDataSource: dataSource)
+
+        handler.requestResult = result
+        controller.reportFinish = { result in
+            switch result {
+            case .success(let data):
+                check(data.0)
+            case .failure: break
+            }
+        }
+
+        return controller
+    }
+
     private func performErrorTest(queue: [SyncController.Action], libraries: SyncController.LibrarySyncType,
                                   result: @escaping (TestAction) -> Single<()>,
                                   check: @escaping (Error) -> Void) -> SyncController {
         let handler = TestHandler()
-        let dataSource = TestDataSource()
         let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                        updateDataSource: dataSource)
+                                        updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
         handler.requestResult = result
 
@@ -1142,6 +1250,7 @@ fileprivate enum TestAction {
     case markResync(SyncController.Object)
     case syncDeletions(SyncController.Library)
     case syncSettings(SyncController.Library)
+    case submitUpdate(SyncController.Library, SyncController.Object)
 }
 
 fileprivate class TestHandler: SyncActionHandler {
@@ -1203,20 +1312,29 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, parameters: [[String : Any]]) -> Completable {
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
+                      parameters: [[String : Any]]) -> Completable {
         return Completable.empty()
     }
 
 
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
-                      parameters: [[String : Any]]) -> Single<Array<String>> {
-        return Single.just([])
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
+                      parameters: [[String : Any]]) -> Single<[String]> {
+        return self.result(for: .submitUpdate(library, object)).flatMap {
+            return Single.just([])
+        }
     }
 }
 
 fileprivate class TestDataSource: SyncUpdateDataSource {
+    private let batches: [SyncController.WriteBatch]
+
+    init(batches: [SyncController.WriteBatch]) {
+        self.batches = batches
+    }
+
     func updates(for library: SyncController.Library, versions: Versions) throws -> [SyncController.WriteBatch] {
-        return []
+        return self.batches
     }
 }
 
