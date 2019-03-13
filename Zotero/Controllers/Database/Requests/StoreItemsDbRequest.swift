@@ -164,8 +164,9 @@ struct StoreItemsDbRequest: DbRequest {
         item.creators.forEach { creator in
             let responseIndex = data.creators.index(where: { response in
                 return response.creatorType == creator.rawType &&
-                       response.firstName == creator.firstName &&
-                       response.lastName == creator.lastName
+                       (response.firstName ?? "") == creator.firstName &&
+                       (response.lastName ?? "") == creator.lastName &&
+                       (response.name ?? "") == creator.name
             })
 
             if let index = responseIndex {
@@ -180,17 +181,22 @@ struct StoreItemsDbRequest: DbRequest {
         for object in data.creators.enumerated() {
             guard !existingIndices.contains(object.offset) else { continue }
 
+            let firstName = object.element.firstName ?? ""
+            let lastName = object.element.lastName ?? ""
+            let name = object.element.name ?? ""
+
             let creator: RCreator
-            if let existing = database.objects(RCreator.self).filter("rawType = %@ AND firstName = %@" +
-                                                                     " AND lastName = %@", object.element.creatorType,
-                                                                                           object.element.firstName,
-                                                                                           object.element.lastName).first {
+            if let existing = database.objects(RCreator.self)
+                                      .filter("rawType = %@ AND firstName = %@ " +
+                                              "AND lastName = %@ AND name = %@", object.element.creatorType, firstName,
+                                                                                 lastName, name).first {
                 creator = existing
             } else {
                 creator = RCreator()
                 creator.rawType = object.element.creatorType
-                creator.firstName = object.element.firstName
-                creator.lastName = object.element.lastName
+                creator.firstName = firstName
+                creator.lastName = lastName
+                creator.name = name
                 database.add(creator)
             }
             creator.items.append(item)

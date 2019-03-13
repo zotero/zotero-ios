@@ -126,6 +126,7 @@ final class SyncScheduler: SynchronizationScheduler {
 
     private func startNextAction() {
         guard let action = self.nextAction else { return }
+        self.nextAction = nil
         self.inProgress = action
         self.syncController.start(type: action.0, libraries: action.1)
     }

@@ -158,8 +158,9 @@ struct TagResponse: Decodable {
 
 struct CreatorResponse: Decodable {
     let creatorType: String
-    let firstName: String
-    let lastName: String
+    let firstName: String?
+    let lastName: String?
+    let name: String?
 }
 
 struct RelationResponse: Decodable {

@@ -77,6 +77,8 @@ class UserControllers {
         let syncController = SyncController(userId: userId, handler: syncHandler, updateDataSource: updateDataSource)
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.changeObserver = RealmObjectChangeObserver(dbStorage: controllers.dbStorage)
+
+        self.performInitialActions()
     }
 
     private func performInitialActions() {

@@ -55,8 +55,7 @@ class AppDelegate: UIResponder {
         }
     }
 
-    @objc private func sessionChanged(_ notification: Notification) {
-        let userId = notification.object as? Int
+    private func sessionChanged(to userId: Int?) {
         self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
         self.controllers.sessionChanged(userId: userId)
     }
@@ -76,8 +75,12 @@ class AppDelegate: UIResponder {
     }
 
     private func setupObservers() {
-        NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.sessionChanged(_:)),
-                                               name: .sessionChanged, object: nil)
+        NotificationCenter.default.rx.notification(.sessionChanged)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         self?.sessionChanged(to: (notification.object as? Int))
+                                     })
+                                     .disposed(by: self.disposeBag)
     }
 
     private func setupLogs() {
