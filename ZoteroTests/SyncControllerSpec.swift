@@ -27,6 +27,7 @@ class SyncControllerSpec: QuickSpec {
                                                                  apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
                                                                  dbStorage: RealmDbStorage(config: realmConfig),
                                                                  fileStorage: TestFileStorage())
+    private static let updateDataSource = UpdateDataSource(dbStorage: RealmDbStorage(config: realmConfig))
     private static let emptyUpdateDataSource = TestDataSource(batches: [])
 
     fileprivate static var syncVersionData: (Int, Int) = (0, 0) // version, object count
@@ -520,7 +521,7 @@ class SyncControllerSpec: QuickSpec {
             let baseUrl = URL(string: ApiConstants.baseUrlString)!
 
             describe("Download") {
-                it("should download items into a new library", closure: {
+                it("should download items into a new library") {
                     let header = ["Last-Modified-Version" : "3"]
                     let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let objects = SyncController.Object.allCases
@@ -688,9 +689,9 @@ class SyncControllerSpec: QuickSpec {
 
                         self.controller?.start(type: .normal, libraries: .all)
                     }
-                })
+                }
 
-                it("should download items into a new read-only group", closure: {
+                it("should download items into a new read-only group") {
                     let header = ["Last-Modified-Version" : "3"]
                     let groupId = 123
                     let library = SyncController.Library.group(groupId)
@@ -851,9 +852,9 @@ class SyncControllerSpec: QuickSpec {
 
                         self.controller?.start(type: .normal, libraries: .all)
                     }
-                })
+                }
 
-                it("should apply remote deletions", closure: {
+                it("should apply remote deletions") {
                     let header = ["Last-Modified-Version" : "3"]
                     let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let itemToDelete = "CCCCCCCC"
@@ -907,9 +908,9 @@ class SyncControllerSpec: QuickSpec {
 
                         self.controller?.start(type: .normal, libraries: .all)
                     }
-                })
+                }
 
-                it("should handle new remote item referencing locally missing collection", closure: {
+                it("should handle new remote item referencing locally missing collection") {
                     let header = ["Last-Modified-Version" : "3"]
                     let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let objects = SyncController.Object.allCases
@@ -970,9 +971,9 @@ class SyncControllerSpec: QuickSpec {
 
                         self.controller?.start(type: .normal, libraries: .all)
                     }
-                })
+                }
 
-                it("should include unsynced objects in sync queue", closure: {
+                it("should include unsynced objects in sync queue") {
                     let header = ["Last-Modified-Version" : "3"]
                     let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let objects = SyncController.Object.allCases
@@ -1072,9 +1073,9 @@ class SyncControllerSpec: QuickSpec {
 
                         self.controller?.start(type: .normal, libraries: .all)
                     }
-                })
+                }
 
-                it("should mark object as needsSync if not parsed correctly", closure: {
+                it("should mark object as needsSync if not parsed correctly") {
                     let header = ["Last-Modified-Version" : "3"]
                     let library = SyncController.Library.user(SyncControllerSpec.userId)
                     let objects = SyncController.Object.allCases
@@ -1116,7 +1117,7 @@ class SyncControllerSpec: QuickSpec {
                                                      handler: SyncControllerSpec.syncHandler,
                                                      updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
-                    waitUntil(timeout: 100) { doneAction in
+                    waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1145,24 +1146,311 @@ class SyncControllerSpec: QuickSpec {
 
                         self.controller?.start(type: .normal, libraries: .all)
                     }
-                })
+                }
+
+                it("should update collection and item") {
+                    let oldVersion = 3
+                    let newVersion = oldVersion + 1
+                    let collectionKey = "AAAAAAAA"
+                    let itemKey = "BBBBBBBB"
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RLibrary.self, forPrimaryKey: RLibrary.myLibraryId)
+
+                        let versions = RVersions()
+                        versions.collections = oldVersion
+                        versions.items = oldVersion
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        let collection = RCollection()
+                        collection.key = collectionKey
+                        collection.name = "New name"
+                        collection.version = oldVersion
+                        collection.changedFields = .name
+                        collection.library = library
+                        realm.add(collection)
+
+                        let item = RItem()
+                        item.key = itemKey
+                        item.needsSync = false
+                        item.version = oldVersion
+                        item.changedFields = .fields
+                        item.library = library
+                        realm.add(item)
+
+                        let titleField = RItemField()
+                        titleField.key = "title"
+                        titleField.value = "New item"
+                        titleField.changed = true
+                        titleField.item = item
+                        realm.add(titleField)
+
+                        let pageField = RItemField()
+                        pageField.key = "numPages"
+                        pageField.value = "1"
+                        pageField.changed = true
+                        pageField.item = item
+                        realm.add(pageField)
+
+                        let unchangedField = RItemField()
+                        unchangedField.key = "callNumber"
+                        unchangedField.value = "somenumber"
+                        unchangedField.changed = false
+                        unchangedField.item = item
+                        realm.add(unchangedField)
+                    }
+
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+
+                    let collectionUpdate = UpdatesRequest(libraryType: library, objectType: .collection,
+                                                          params: [], version: oldVersion)
+                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl)&&isMethodPOST()
+                    stub(condition: collectionConditions, response: { request -> OHHTTPStubsResponse in
+                        let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
+                        expect(params?.count).to(equal(1))
+                        let firstParams = params?.first ?? [:]
+                        expect(firstParams["key"] as? String).to(equal(collectionKey))
+                        expect(firstParams["version"] as? Int).to(equal(oldVersion))
+                        expect(firstParams["name"] as? String).to(equal("New name"))
+                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                    })
+
+                    let itemUpdate = UpdatesRequest(libraryType: library, objectType: .item,
+                                                    params: [], version: oldVersion)
+                    let itemConditions = itemUpdate.stubCondition(with: baseUrl)&&isMethodPOST()
+                    stub(condition: itemConditions, response: { request -> OHHTTPStubsResponse in
+                        let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
+                        expect(params?.count).to(equal(1))
+                        let firstParams = params?.first ?? [:]
+                        expect(firstParams["key"] as? String).to(equal(itemKey))
+                        expect(firstParams["version"] as? Int).to(equal(oldVersion))
+                        expect(firstParams["title"] as? String).to(equal("New item"))
+                        expect(firstParams["numPages"] as? String).to(equal("1"))
+                        expect(firstParams["callNumber"]).to(beNil())
+                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                    })
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            let library = realm.object(ofType: RLibrary.self, forPrimaryKey: RLibrary.myLibraryId)
+
+                            let versions = library?.versions
+                            expect(versions?.collections).to(equal(newVersion))
+                            expect(versions?.items).to(equal(newVersion))
+
+                            let collection = realm.objects(RCollection.self)
+                                                  .filter("library.identifier = %d AND key = %@", RLibrary.myLibraryId,
+                                                                                                  collectionKey).first
+                            expect(collection?.version).to(equal(newVersion))
+                            expect(collection?.rawChangedFields).to(equal(0))
+
+                            let item = realm.objects(RItem.self)
+                                            .filter("library.identifier = %d AND key = %@", RLibrary.myLibraryId,
+                                                                                            itemKey).first
+                            expect(item?.version).to(equal(newVersion))
+                            expect(item?.rawChangedFields).to(equal(0))
+                            item?.fields.forEach({ field in
+                                expect(field.changed).to(beFalse())
+                            })
+
+                            doneAction()
+                        }
+                        self.controller?.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
+                    }
+                }
+
+                it("should upload child item after parent item") {
+                    let oldVersion = 3
+                    let newVersion = oldVersion + 1
+                    let parentKey = "BBBBBBBB"
+                    let childKey = "CCCCCCCC"
+                    let otherKey = "AAAAAAAA"
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RLibrary.self, forPrimaryKey: RLibrary.myLibraryId)
+
+                        let versions = RVersions()
+                        versions.collections = oldVersion
+                        versions.items = oldVersion
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        // Items created one after another, then CCCCCCCC has been updated and added
+                        // as a child to BBBBBBBB, then AAAAAAAA has been updated and then BBBBBBBB has been updated
+                        // AAAAAAAA is without a child, BBBBBBBB has child CCCCCCCC,
+                        // BBBBBBBB has been updated after child CCCCCCCC, but BBBBBBBB should appear in parameters
+                        // before CCCCCCCC because it is a parent
+
+                        let item = RItem()
+                        item.key = otherKey
+                        item.needsSync = false
+                        item.version = oldVersion
+                        item.changedFields = .all
+                        item.dateAdded = Date(timeIntervalSinceNow: -3600)
+                        item.dateModified = Date(timeIntervalSinceNow: -1800)
+                        item.library = library
+                        realm.add(item)
+
+                        let item2 = RItem()
+                        item2.key = parentKey
+                        item2.needsSync = false
+                        item2.version = oldVersion
+                        item2.changedFields = .all
+                        item2.dateAdded = Date(timeIntervalSinceNow: -3599)
+                        item2.dateModified = Date(timeIntervalSinceNow: -60)
+                        item2.library = library
+                        realm.add(item2)
+
+                        let item3 = RItem()
+                        item3.key = childKey
+                        item3.needsSync = false
+                        item3.version = oldVersion
+                        item3.changedFields = .all
+                        item3.dateAdded = Date(timeIntervalSinceNow: -3598)
+                        item3.dateModified = Date(timeIntervalSinceNow: -3540)
+                        item3.library = library
+                        item3.parent = item2
+                        realm.add(item3)
+                    }
+
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+
+                    let update = UpdatesRequest(libraryType: library, objectType: .item,
+                                                params: [], version: oldVersion)
+                    let conditions = update.stubCondition(with: baseUrl)&&isMethodPOST()
+                    stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
+                        guard let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) }) else {
+                            fail("parameters not found")
+                            fatalError()
+                        }
+
+                        expect(params.count).to(equal(3))
+                        let parentPos = params.index(where: { ($0["key"] as? String) == parentKey }) ?? -1
+                        let childPos = params.index(where: { ($0["key"] as? String) == childKey }) ?? -1
+                        expect(parentPos).toNot(equal(-1))
+                        expect(childPos).toNot(equal(-1))
+                        expect(parentPos).to(beLessThan(childPos))
+
+                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                    })
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            doneAction()
+                        }
+                        self.controller?.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
+                    }
+                }
+
+                it("should upload child collection after parent collection") {
+                    let oldVersion = 3
+                    let newVersion = oldVersion + 1
+                    let firstKey = "AAAAAAAA"
+                    let secondKey = "BBBBBBBB"
+                    let thirdKey = "CCCCCCCC"
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RLibrary.self, forPrimaryKey: RLibrary.myLibraryId)
+
+                        let versions = RVersions()
+                        versions.collections = oldVersion
+                        versions.items = oldVersion
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        // Collections created in order: CCCCCCCC, BBBBBBBB, AAAAAAAA
+                        // modified in order: BBBBBBBB, AAAAAAAA, CCCCCCCC
+                        // but should be processed in order AAAAAAAA, BBBBBBBB, CCCCCCCC because A is a parent of B
+                        // and B is a parent of C
+
+                        let collection = RCollection()
+                        let collection2 = RCollection()
+                        let collection3 = RCollection()
+
+                        realm.add(collection3)
+                        realm.add(collection2)
+                        realm.add(collection)
+
+                        collection.key = firstKey
+                        collection.needsSync = false
+                        collection.version = oldVersion
+                        collection.changedFields = .all
+                        collection.dateModified = Date(timeIntervalSinceNow: -1800)
+                        collection.library = library
+
+                        collection2.key = secondKey
+                        collection2.needsSync = false
+                        collection2.version = oldVersion
+                        collection2.changedFields = .all
+                        collection2.dateModified = Date(timeIntervalSinceNow: -3540)
+                        collection2.library = library
+                        collection2.parent = collection
+
+                        collection3.key = thirdKey
+                        collection3.needsSync = false
+                        collection3.version = oldVersion
+                        collection3.changedFields = .all
+                        collection3.dateModified = Date(timeIntervalSinceNow: -60)
+                        collection3.library = library
+                        collection3.parent = collection2
+                    }
+
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+
+                    let update = UpdatesRequest(libraryType: library, objectType: .collection,
+                                                params: [], version: oldVersion)
+                    let conditions = update.stubCondition(with: baseUrl)&&isMethodPOST()
+                    stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
+                        guard let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) }) else {
+                            fail("parameters not found")
+                            fatalError()
+                        }
+
+                        expect(params.count).to(equal(3))
+                        expect(params[0]["key"] as? String).to(equal(firstKey))
+                        expect(params[1]["key"] as? String).to(equal(secondKey))
+                        expect(params[2]["key"] as? String).to(equal(thirdKey))
+
+                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                    })
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            doneAction()
+                        }
+                        self.controller?.start(type: .normal, libraries: .specific([RLibrary.myLibraryId]))
+                    }
+                }
             }
         }
     }
 
-    private func createNoChangeStubs(for library: SyncController.Library, baseUrl: URL, headers: [String: Any]? = nil) {
-        let objects = SyncController.Object.allCases
-        objects.forEach { object in
-            self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
-                            baseUrl: baseUrl, headers: headers,
-                            response: [:])
-        }
-        self.createStub(for: SettingsRequest(libraryType: library, version: 0),
-                        baseUrl: baseUrl, headers: headers,
-                        response: ["tagColors" : ["value": [], "version": 2]])
-        self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
-                        baseUrl: baseUrl, headers: headers,
-                        response: ["collections": [], "searches": [], "items": [], "tags": []])
+    private func jsonParameters(from stream: InputStream) -> [[String: Any]] {
+        let json = try? JSONSerialization.jsonObject(with: stream.data, options: .allowFragments)
+        return (json as? [[String: Any]]) ?? []
     }
 
     private func createStub(for request: ApiRequest, baseUrl: URL, headers: [String: Any]? = nil,
@@ -1366,4 +1654,25 @@ fileprivate class TestFileStorage: FileStorage {
     }
 
     func createDictionaries(for file: File) throws {}
+}
+
+extension InputStream {
+    fileprivate var data: Data {
+        var result = Data()
+        var buffer = [UInt8](repeating: 0, count: 4096)
+
+        open()
+
+        var amount = 0
+        repeat {
+            amount = read(&buffer, maxLength: buffer.count)
+            if amount > 0 {
+                result.append(buffer, count: amount)
+            }
+        } while amount > 0
+
+        close()
+
+        return result
+    }
 }

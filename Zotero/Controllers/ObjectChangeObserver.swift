@@ -43,7 +43,7 @@ final class RealmObjectChangeObserver: ObjectChangeObserver {
 
     private func registerObserver<Obj: UpdatableObject&Syncable>(for: Obj.Type,
                                                                  coordinator: DbCoordinator) throws -> NotificationToken {
-        let objects = try coordinator.perform(request: ReadChangedObjectsDbRequest<Obj>(libraryId: nil))
+        let objects = try coordinator.perform(request: ReadChangedObjectsDbRequest<Obj>())
         return objects.observe({ [weak self] changes in
             switch changes {
             case .update(let results, _, let insertions, let modifications):

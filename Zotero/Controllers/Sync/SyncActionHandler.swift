@@ -327,35 +327,45 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.apiClient.send(dataRequest: request)
                              .flatMap({ response -> Single<UpdatesResponse> in
                                  do {
+                                     let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
                                      let json = try JSONSerialization.jsonObject(with: response.0,
                                                                                  options: .allowFragments)
-                                     return Single.just((try UpdatesResponse(json: json)))
+                                     return Single.just((try UpdatesResponse(json: json, newVersion: newVersion)))
                                  } catch let error {
                                      return Single.error(error)
                                  }
                              })
                              .flatMap({ [weak self] response -> Single<[String]> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-                                 let syncedKeys = response.successful + response.unchanged
+                                 let syncedKeys = self.keys(from: (response.successful + response.unchanged),
+                                                            parameters: parameters)
 
                                  do {
                                      let coordinator = try self.dbStorage.createCoordinator()
                                      switch object {
                                      case .collection:
                                          let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: library.libraryId,
-                                                                                                 keys: syncedKeys)
+                                                                                                 keys: syncedKeys,
+                                                                                                 version: response.newVersion)
                                          try coordinator.perform(request: request)
                                      case .item, .trash:
                                         let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: library.libraryId,
-                                                                                          keys: syncedKeys)
+                                                                                          keys: syncedKeys,
+                                                                                          version: response.newVersion)
                                         try coordinator.perform(request: request)
                                      case .search:
                                         let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: library.libraryId,
-                                                                                            keys: syncedKeys)
+                                                                                            keys: syncedKeys,
+                                                                                            version: response.newVersion)
                                         try coordinator.perform(request: request)
                                      default:
                                          fatalError("Unsupported update request")
                                      }
+
+                                     let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,
+                                                                                 library: library,
+                                                                                 type: UpdateVersionType.object(object))
+                                    try coordinator.perform(request: updateVersion)
                                  } catch let error {
                                      return Single.error(error)
                                  }
@@ -366,6 +376,10 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                  return Single.just(response.failed.filter({ $0.code == 409 }).compactMap({ $0.key }))
                              })
+    }
+
+    private func keys(from indices: [String], parameters: [[String: Any]]) -> [String] {
+        return indices.compactMap({ Int($0) }).map({ parameters[$0] }).compactMap({ $0["key"] as? String })
     }
 
     private class func lastVersion(from headers: ResponseHeaders) -> Int {

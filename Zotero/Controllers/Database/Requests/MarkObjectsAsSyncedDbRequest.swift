@@ -10,9 +10,10 @@ import Foundation
 
 import RealmSwift
 
-struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject>: DbRequest {
+struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
     let libraryId: Int
     let keys: [String]
+    let version: Int
 
     var needsWrite: Bool { return true }
 
@@ -20,6 +21,7 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject>: DbRequest {
         let objects = database.objects(Obj.self)
                               .filter("library.identifier = %d AND key IN %@", self.libraryId, self.keys)
         objects.forEach { object in
+            object.version = self.version
             object.resetChanges()
         }
     }

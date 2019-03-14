@@ -32,7 +32,7 @@ extension Updatable {
 
 extension RCollection: Updatable {
     var updateParameters: [String: Any]? {
-        guard !self.isChanged else { return nil }
+        guard self.isChanged else { return nil }
 
         var parameters: [String: Any] = ["key": self.key,
                                          "version": self.version,
@@ -56,7 +56,7 @@ extension RCollection: Updatable {
 
 extension RSearch: Updatable {
     var updateParameters: [String: Any]? {
-        guard !self.isChanged else { return nil }
+        guard self.isChanged else { return nil }
 
         var parameters: [String: Any] = ["key": self.key,
                                          "version": self.version,
@@ -103,10 +103,10 @@ extension RItem: Updatable {
             parameters["deleted"] = self.trash
         }
         if changes.contains(.tags) {
-            parameters["tags"] = self.tags.map({ ["tag": $0.name] })
+            parameters["tags"] = Array(self.tags.map({ ["tag": $0.name] }))
         }
         if changes.contains(.collections) {
-            parameters["collections"] = self.collections.map({ $0.key })
+            parameters["collections"] = Array(self.collections.map({ $0.key }))
         }
         if changes.contains(.relations) {
             var relations: [String: String] = [:]
@@ -119,7 +119,7 @@ extension RItem: Updatable {
             parameters["parentItem"] = self.parent?.key ?? false
         }
         if changes.contains(.creators) {
-            parameters["creators"] = self.creators.map({ $0.updateParameters })
+            parameters["creators"] = Array(self.creators.map({ $0.updateParameters }))
         }
         if changes.contains(.fields) {
             self.fields.filter("changed = true").forEach { field in

@@ -121,6 +121,8 @@
 		B393729C222957D0008B2A96 /* ProgressToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */; };
 		B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E3223942160019F467 /* ObjectChangeObserver.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
+		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
+		B39EE32D223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32C223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift */; };
 		B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */; };
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
@@ -136,7 +138,7 @@
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
 		B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
 		B3C33D8822367CE00071A763 /* UpdateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */; };
-		B3C33D8A22368BE70071A763 /* ReadChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8922368BE70071A763 /* ReadChangedObjectsDbRequest.swift */; };
+		B3C33D8A22368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8922368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift */; };
 		B3C33D8C223693760071A763 /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8B223693760071A763 /* Formatter.swift */; };
 		B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
 		B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
@@ -301,6 +303,8 @@
 		B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressToolbarViewController.swift; sourceTree = "<group>"; };
 		B39B18E3223942160019F467 /* ObjectChangeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectChangeObserver.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
+		B39EE32C223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
@@ -316,7 +320,7 @@
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
 		B3C33D852236676C0071A763 /* SyncScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
 		B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionDbRequest.swift; sourceTree = "<group>"; };
-		B3C33D8922368BE70071A763 /* ReadChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
+		B3C33D8922368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectUpdateParametersDbRequest.swift; sourceTree = "<group>"; };
 		B3C33D8B223693760071A763 /* Formatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatter.swift; sourceTree = "<group>"; };
 		B3C33D8D223698C90071A763 /* UpdatesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesRequest.swift; sourceTree = "<group>"; };
 		B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrayEncoding.swift; sourceTree = "<group>"; };
@@ -413,6 +417,7 @@
 				B30D59AB2206FECD00884C4A /* ViewControllers */,
 				B30D59AA2206FECD00884C4A /* Views */,
 				B30D59582206F60400884C4A /* AppDelegate.swift */,
+				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B30D59632206F60500884C4A /* LaunchScreen.storyboard */,
 				B30D59662206F60500884C4A /* Info.plist */,
 				B39B18E7223947050019F467 /* main.swift */,
@@ -688,8 +693,9 @@
 				B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */,
 				B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */,
 				B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */,
-				B3C33D8922368BE70071A763 /* ReadChangedObjectsDbRequest.swift */,
+				B3C33D8922368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift */,
 				B3C33D932236C3990071A763 /* MarkObjectsAsSyncedDbRequest.swift */,
+				B39EE32C223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1075,6 +1081,7 @@
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
 				B3FD6B37220D86E0008D9D74 /* StoreCollectionsDbRequest.swift in Sources */,
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
+				B39EE32D223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
 				B32CD358221C5A5D003F8073 /* ItemDetailViewController.swift in Sources */,
@@ -1090,7 +1097,7 @@
 				B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */,
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
-				B3C33D8A22368BE70071A763 /* ReadChangedObjectsDbRequest.swift in Sources */,
+				B3C33D8A22368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift in Sources */,
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
 				B3BA36FC22242672006220E4 /* RTag.swift in Sources */,
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
@@ -1126,6 +1133,7 @@
 				B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */,
 				B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */,
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,
+				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
 				B30F668C220CB6CC009E7A8F /* Files.swift in Sources */,
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,
 				B30DF3FB2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift in Sources */,

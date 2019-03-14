@@ -17,8 +17,9 @@ struct UpdatesResponse {
     let successful: [String]
     let unchanged: [String]
     let failed: [FailedUpdateResponse]
+    let newVersion: Int
 
-    init(json: Any) throws {
+    init(json: Any, newVersion: Int) throws {
         guard let dictionary = json as? [String: Any] else {
             throw ZoteroApiError.jsonDecoding(UpdatesResponseError.notDictionary)
         }
@@ -29,6 +30,7 @@ struct UpdatesResponse {
         self.unchanged = Array(unchanged.keys)
         let failed = (dictionary["failed"] as? [String: [String: Any]]) ?? [:]
         self.failed = failed.values.map(FailedUpdateResponse.init)
+        self.newVersion = newVersion
      }
 }
 

@@ -26,20 +26,30 @@ final class UpdateDataSource: SyncUpdateDataSource {
         // Since we're sending items and trashed items together, let's send min of their versions in case trash
         // is not up to date with items (yet), but most of the time they should be the same anyway
         let itemVersion = min(versions.items, versions.trash)
-        return (try self.updates(for: RCollection.self, object: .collection, library: library,
+        return (try self.updates(object: .collection, library: library,
                                  version: versions.collections, coordinator: coordinator)) +
-               (try self.updates(for: RSearch.self, object: .search, library: library,
+               (try self.updates(object: .search, library: library,
                                  version: versions.searches, coordinator: coordinator)) +
-               (try self.updates(for: RItem.self, object: .item, library: library,
+               (try self.updates(object: .item, library: library,
                                  version: itemVersion, coordinator: coordinator))
     }
 
-    private func updates<Obj: UpdatableObject>(for type: Obj.Type, object: SyncController.Object,
-                                               library: SyncController.Library, version: Int,
-                                               coordinator: DbCoordinator) throws -> [SyncController.WriteBatch] {
-        let request = ReadChangedObjectsDbRequest<Obj>(libraryId: library.libraryId)
-        let collections = try coordinator.perform(request: request)
-        let parameters = Array(collections.compactMap({ $0.updateParameters }))
+    private func updates(object: SyncController.Object, library: SyncController.Library, version: Int,
+                         coordinator: DbCoordinator) throws -> [SyncController.WriteBatch] {
+        let parameters: [[String: Any]]
+        switch object {
+        case .collection:
+            let request = ReadChangedCollectionUpdateParametersDbRequest(libraryId: library.libraryId)
+            parameters = try coordinator.perform(request: request)
+        case .search:
+            let request = ReadChangedSearchUpdateParametersDbRequest(libraryId: library.libraryId)
+            parameters = try coordinator.perform(request: request)
+        case .item, .trash:
+            let request = ReadChangedItemUpdateParametersDbRequest(libraryId: library.libraryId)
+            parameters = try coordinator.perform(request: request)
+        case .group:
+            fatalError("UpdateDataSource: Updating unsupported object type")
+        }
         return parameters.chunked(into: SyncController.WriteBatch.maxCount)
                          .map({ SyncController.WriteBatch(library: library, object: object,
                                                           version: version, parameters: $0) })
