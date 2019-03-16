@@ -14,11 +14,11 @@ class CollectionsViewController: UIViewController {
     // Outlets
     @IBOutlet private weak var tableView: UITableView!
     // Constants
+    private static let defaultIndexPath: IndexPath = IndexPath(row: 0, section: 0)
     private let store: CollectionsStore
     private let disposeBag: DisposeBag
     // Variables
     private weak var navigationDelegate: ItemNavigationDelegate?
-    private var lastIndexPath: IndexPath?
 
     // MARK: - Lifecycle
 
@@ -42,7 +42,12 @@ class CollectionsViewController: UIViewController {
         self.store.state.asObservable()
                         .observeOn(MainScheduler.instance)
                         .subscribe(onNext: { [weak self] state in
-                            self?.tableView.reloadData()
+                            guard let `self` = self else { return }
+                            let selectedIndexPath = self.tableView.indexPathForSelectedRow
+                            self.tableView.reloadData()
+                            if let indexPath = selectedIndexPath {
+                                self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+                            }
                         })
                         .disposed(by: self.disposeBag)
 
@@ -52,12 +57,28 @@ class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if let indexPath = self.lastIndexPath {
-            self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+        if self.tableView.indexPathForSelectedRow == nil {
+            self.tableView.selectRow(at: CollectionsViewController.defaultIndexPath,
+                                     animated: false, scrollPosition: .none)
         }
     }
 
     // MARK: - Actions
+
+    private func data(for section: Int) -> [CollectionCellData] {
+        switch section {
+        case 0:
+            return self.store.state.value.allItemsCellData
+        case 1:
+            return self.store.state.value.collectionCellData
+        case 2:
+            return self.store.state.value.searchCellData
+        case 3:
+            return self.store.state.value.customCellData
+        default:
+            return []
+        }
+    }
 
     // MARK: - Setups
 
@@ -72,18 +93,11 @@ class CollectionsViewController: UIViewController {
 
 extension CollectionsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
+        return 4
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch section {
-        case 0:
-            return self.store.state.value.collectionCellData.count
-        case 1:
-            return self.store.state.value.searchCellData.count
-        default:
-            return 0
-        }
+        return self.data(for: section).count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -91,8 +105,7 @@ extension CollectionsViewController: UITableViewDataSource {
 
         guard let collectionCell = cell as? CollectionCell else { return cell }
 
-        let data = indexPath.section == 0 ? self.store.state.value.collectionCellData :
-                                            self.store.state.value.searchCellData
+        let data = self.data(for: indexPath.section)
         if indexPath.row < data.count {
             collectionCell.setup(with: data[indexPath.row])
         }
@@ -102,38 +115,50 @@ extension CollectionsViewController: UITableViewDataSource {
 }
 
 extension CollectionsViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
-        if indexPath.row == tableView.indexPathForSelectedRow?.row {
-            tableView.deselectRow(at: indexPath, animated: false)
-            self.lastIndexPath = nil
-            let state = self.store.state.value
-            self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title), collectionData: nil)
-            return nil
-        }
-        return indexPath
-    }
-
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        switch section {
-        case 0: return "Collections"
-        case 1: return "Searches"
-        default: return nil
-        }
-    }
-
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if UIDevice.current.userInterfaceIdiom == .phone {
             tableView.deselectRow(at: indexPath, animated: true)
         }
-        self.lastIndexPath = indexPath
 
-        if indexPath.section == 0 {
-            let state = self.store.state.value
-            let collection = state.collectionCellData[indexPath.row]
-            self.navigationDelegate?.showItems(libraryData: (state.libraryId, state.title),
-                                               collectionData: (collection.key, collection.name))
+        let state = self.store.state.value
+        let data = self.data(for: indexPath.section)[indexPath.row]
+
+        switch data.type {
+        case .collection:
+            self.navigationDelegate?.showCollectionItems(libraryId: state.libraryId,
+                                                         collectionData: (data.key, data.name))
+        case .search:
+            self.navigationDelegate?.showSearchItems(libraryId: state.libraryId, searchData: (data.key, data.name))
+        case .custom(let type):
+            switch type {
+            case .all:
+                self.navigationDelegate?.showAllItems(for: state.libraryId)
+            case .trash:
+                self.navigationDelegate?.showTrashItems(for: state.libraryId)
+            case .publications:
+                self.navigationDelegate?.showPublications(for: state.libraryId)
+            }
         }
     }
 }
 
-extension CollectionCellData: CollectionCellModel {}
+extension CollectionCellData: CollectionCellModel {
+    var icon: UIImage? {
+        let name: String
+        switch self.type {
+        case .collection(let hasChildren):
+            name = "icon_cell_collection" + (hasChildren ? "s" : "")
+        case .search:
+            name = "icon_cell_document"
+        case .custom(let type):
+            switch type {
+            case .all, .publications:
+                name = "icon_cell_document"
+            case .trash:
+                name = "icon_cell_trash"
+            }
+        }
+
+        return UIImage(named: name)?.withRenderingMode(.alwaysTemplate)
+    }
+}

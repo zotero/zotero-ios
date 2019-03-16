@@ -19,23 +19,34 @@
                 <rect key="frame" x="0.0" y="0.0" width="320" height="43.5"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
+                    <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="KNB-Hi-BUH">
+                        <rect key="frame" x="15" y="8" width="28.5" height="27.5"/>
+                        <constraints>
+                            <constraint firstAttribute="width" secondItem="KNB-Hi-BUH" secondAttribute="height" multiplier="1:1" constant="1" id="3o7-ag-zV9"/>
+                        </constraints>
+                    </imageView>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CIT-I8-Rc7">
-                        <rect key="frame" x="20" y="13" width="284" height="18"/>
+                        <rect key="frame" x="51.5" y="12" width="253.5" height="19.5"/>
                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
                 <constraints>
-                    <constraint firstAttribute="trailingMargin" secondItem="CIT-I8-Rc7" secondAttribute="trailing" id="Ag3-su-G0g"/>
-                    <constraint firstItem="CIT-I8-Rc7" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="2" id="EgI-lg-omf"/>
-                    <constraint firstAttribute="bottomMargin" secondItem="CIT-I8-Rc7" secondAttribute="bottom" constant="2" id="Va0-TL-YXA"/>
-                    <constraint firstItem="CIT-I8-Rc7" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="20" id="hJ5-7P-ebO"/>
+                    <constraint firstAttribute="trailing" secondItem="CIT-I8-Rc7" secondAttribute="trailing" constant="15" id="Ag3-su-G0g"/>
+                    <constraint firstItem="CIT-I8-Rc7" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="12" id="EgI-lg-omf"/>
+                    <constraint firstItem="KNB-Hi-BUH" firstAttribute="width" secondItem="KNB-Hi-BUH" secondAttribute="height" multiplier="1:1" constant="1" id="ONP-xV-9D0"/>
+                    <constraint firstAttribute="bottom" secondItem="CIT-I8-Rc7" secondAttribute="bottom" constant="12" id="Va0-TL-YXA"/>
+                    <constraint firstItem="CIT-I8-Rc7" firstAttribute="leading" secondItem="KNB-Hi-BUH" secondAttribute="trailing" constant="8" id="WRS-Ao-ncb"/>
+                    <constraint firstAttribute="bottom" secondItem="KNB-Hi-BUH" secondAttribute="bottom" constant="8" id="eve-Kf-0iG"/>
+                    <constraint firstItem="KNB-Hi-BUH" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="mq0-pn-wKH"/>
+                    <constraint firstItem="KNB-Hi-BUH" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="15" id="otk-Jc-A6e"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
-                <outlet property="leftConstraint" destination="hJ5-7P-ebO" id="LTH-Dg-aKT"/>
+                <outlet property="iconView" destination="KNB-Hi-BUH" id="OaX-lr-Gzz"/>
+                <outlet property="leftConstraint" destination="otk-Jc-A6e" id="yjk-aV-MG0"/>
                 <outlet property="titleLabel" destination="CIT-I8-Rc7" id="Qag-ty-W80"/>
             </connections>
         </tableViewCell>

@@ -52,7 +52,7 @@ class LibrariesViewController: UIViewController {
         super.viewWillAppear(animated)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.navigationDelegate?.showItems(libraryData: (RLibrary.myLibraryId, "My Library"), collectionData: nil)
+            self.navigationDelegate?.showAllItems(for: RLibrary.myLibraryId)
         }
     }
 
@@ -69,7 +69,8 @@ class LibrariesViewController: UIViewController {
     // MARK: - Setups
 
     private func setupTableView() {
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        self.tableView.register(UINib(nibName: LibraryCell.nibName, bundle: nil),
+                                forCellReuseIdentifier: "Cell")
         self.tableView.dataSource = self
         self.tableView.delegate = self
         self.tableView.contentInset = UIEdgeInsets(top: self.tableView.contentInset.top,
@@ -100,15 +101,21 @@ extension LibrariesViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
+        var title: String?
         switch indexPath.section {
         case 0:
-            cell.textLabel?.text = self.store.state.value.myLibrary.name
+            title = self.store.state.value.myLibrary.name
         case 1:
             if indexPath.row < self.self.store.state.value.groupLibraries.count {
                 let library = self.self.store.state.value.groupLibraries[indexPath.row]
-                cell.textLabel?.text = library.name
+                title = library.name
             }
         default: break
+        }
+
+        if let cell = cell as? LibraryCell,
+           let title = title {
+            cell.setup(with: title)
         }
 
         return cell
@@ -123,7 +130,7 @@ extension LibrariesViewController: UITableViewDelegate {
                                                self.store.state.value.groupLibraries[indexPath.row]
         self.navigationDelegate?.showCollections(for: library.identifier, libraryName: library.name)
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.navigationDelegate?.showItems(libraryData: (library.identifier, library.name), collectionData: nil)
+            self.navigationDelegate?.showAllItems(for: library.identifier)
         }
     }
 }

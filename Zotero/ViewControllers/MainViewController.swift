@@ -13,7 +13,11 @@ import RxSwift
 protocol ItemNavigationDelegate: class {
     func didShowLibraries()
     func showCollections(for libraryId: Int, libraryName: String)
-    func showItems(libraryData: (Int, String), collectionData: (String, String)?)
+    func showAllItems(for libraryId: Int)
+    func showTrashItems(for libraryId: Int)
+    func showPublications(for libraryId: Int)
+    func showCollectionItems(libraryId: Int, collectionData: (String, String))
+    func showSearchItems(libraryId: Int, searchData: (String, String))
 }
 
 fileprivate enum PrimaryColumnState {
@@ -52,7 +56,7 @@ class MainViewController: UISplitViewController {
         let leftToolbarController = ProgressToolbarViewController(syncScheduler: syncScheduler,
                                                                   rootViewController: leftNavigationController)
 
-        let itemState = ItemsState(libraryId: RLibrary.myLibraryId, collectionId: nil, title: "My Library")
+        let itemState = ItemsState(libraryId: RLibrary.myLibraryId, type: .all)
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
                                    fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
                                    itemFieldsController: controllers.itemFieldsController)
@@ -145,7 +149,6 @@ class MainViewController: UISplitViewController {
 }
 
 extension MainViewController: ItemNavigationDelegate {
-
     func didShowLibraries() {
         guard UIDevice.current.orientation.isLandscape else { return }
         self.setPrimaryColumn(state: .minimum, animated: true)
@@ -170,9 +173,32 @@ extension MainViewController: ItemNavigationDelegate {
         })
     }
 
-    func showItems(libraryData: (Int, String), collectionData: (String, String)?) {
-        let title = collectionData?.1 ?? libraryData.1
-        let state = ItemsState(libraryId: libraryData.0, collectionId: collectionData?.0, title: title)
+    func showAllItems(for libraryId: Int) {
+        let state = ItemsState(libraryId: libraryId, type: .all)
+        self.showItems(for: state)
+    }
+
+    func showTrashItems(for libraryId: Int) {
+        let state = ItemsState(libraryId: libraryId, type: .trash)
+        self.showItems(for: state)
+    }
+
+    func showPublications(for libraryId: Int) {
+        let state = ItemsState(libraryId: libraryId, type: .publications)
+        self.showItems(for: state)
+    }
+
+    func showSearchItems(libraryId: Int, searchData: (String, String)) {
+        let state = ItemsState(libraryId: libraryId, type: .search(searchData.0, searchData.1))
+        self.showItems(for: state)
+    }
+
+    func showCollectionItems(libraryId: Int, collectionData: (String, String)) {
+        let state = ItemsState(libraryId: libraryId, type: .collection(collectionData.0, collectionData.1))
+        self.showItems(for: state)
+    }
+
+    private func showItems(for state: ItemsState) {
         let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
                                fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,
                                itemFieldsController: self.controllers.itemFieldsController)

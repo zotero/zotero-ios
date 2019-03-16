@@ -14,7 +14,13 @@ import RxSwift
 
 struct CollectionCellData {
     enum DataType {
-        case collection, search
+        case collection(Bool) // hasChildren
+        case search
+        case custom(CustomType)
+    }
+
+    enum CustomType {
+        case all, trash, publications
     }
 
     let type: CollectionCellData.DataType
@@ -23,7 +29,7 @@ struct CollectionCellData {
     let level: Int
 
     init(object: RCollection, level: Int) {
-        self.type = .collection
+        self.type = .collection(!object.children.isEmpty)
         self.key = object.key
         self.name = object.name
         self.level = level
@@ -34,6 +40,20 @@ struct CollectionCellData {
         self.key = object.key
         self.name = object.name
         self.level = 0
+    }
+
+    init(custom type: CustomType) {
+        self.type = .custom(type)
+        self.key = ""
+        self.level = 0
+        switch type {
+        case .all:
+            self.name = "All Items"
+        case .publications:
+            self.name = "My Publications"
+        case .trash:
+            self.name = "Trash"
+        }
     }
 }
 
@@ -49,8 +69,10 @@ struct CollectionsState {
     let libraryId: Int
     let title: String
 
+    let allItemsCellData: [CollectionCellData]
     fileprivate(set) var collectionCellData: [CollectionCellData]
     fileprivate(set) var searchCellData: [CollectionCellData]
+    fileprivate(set) var customCellData: [CollectionCellData]
     fileprivate(set) var error: CollectionsStoreError?
 
     // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
@@ -65,6 +87,9 @@ struct CollectionsState {
         self.collectionCellData = []
         self.searchCellData = []
         self.version = 0
+        self.allItemsCellData = [CollectionCellData(custom: .all)]
+        self.customCellData = [CollectionCellData(custom: .publications),
+                               CollectionCellData(custom: .trash)]
     }
 }
 

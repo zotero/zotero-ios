@@ -11,10 +11,12 @@ import UIKit
 protocol CollectionCellModel {
     var name: String { get }
     var level: Int { get }
+    var icon: UIImage? { get }
 }
 
 class CollectionCell: UITableViewCell {
     // Outlets
+    @IBOutlet private weak var iconView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
     // Constants
@@ -22,10 +24,13 @@ class CollectionCell: UITableViewCell {
     static let levelOffset: CGFloat = 20.0
 
     func setup(with model: CollectionCellModel) {
+        self.iconView.image = model.icon
         self.titleLabel.text = model.name
         let offset = CollectionCell.baseOffset + (CGFloat(model.level) * CollectionCell.levelOffset)
         self.leftConstraint.constant = offset
-        self.separatorInset = UIEdgeInsets(top: 0, left: offset - 3, bottom: 0, right: 0)
-        self.layoutMargins = UIEdgeInsets(top: 0, left: offset - 3, bottom: 0, right: 0)
+
+        let separatorInset = offset + self.iconView.frame.width + 8
+        self.separatorInset = UIEdgeInsets(top: 0, left: separatorInset, bottom: 0, right: 0)
+        self.layoutMargins = UIEdgeInsets(top: 0, left: separatorInset, bottom: 0, right: 0)
     }
 }

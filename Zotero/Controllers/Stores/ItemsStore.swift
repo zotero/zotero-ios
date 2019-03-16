@@ -21,8 +21,14 @@ enum ItemsStoreError: Equatable {
 }
 
 struct ItemsState {
+    enum ItemType {
+        case all, trash, publications
+        case collection(String, String) // Key, Title
+        case search(String, String) // Key, Title
+    }
+
     let libraryId: Int
-    let collectionId: String?
+    let type: ItemType
     let title: String
 
     fileprivate(set) var items: Results<RItem>?
@@ -30,10 +36,19 @@ struct ItemsState {
     fileprivate var version: Int
     fileprivate var itemsToken: NotificationToken?
 
-    init(libraryId: Int, collectionId: String?, title: String) {
+    init(libraryId: Int, type: ItemType) {
         self.libraryId = libraryId
-        self.collectionId = collectionId
-        self.title = title
+        self.type = type
+        switch type {
+        case .collection(_, let title), .search(_, let title):
+            self.title = title
+        case .all:
+            self.title = "All Items"
+        case .trash:
+            self.title = "Trash"
+        case .publications:
+            self.title = "My Publications"
+        }
         self.version = 0
     }
 }
@@ -73,9 +88,22 @@ class ItemsStore: Store {
 
     private func loadData() {
         do {
-            let request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
-                                             collectionKey: self.state.value.collectionId,
-                                             parentKey: nil, trash: false)
+            let request: ReadItemsDbRequest
+            switch self.state.value.type {
+            case .all:
+                request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
+                                             collectionKey: nil, parentKey: nil, trash: false)
+            case .trash:
+                request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
+                                             collectionKey: nil, parentKey: nil, trash: true)
+            case .publications, .search:
+                // TODO: - implement publications and search fetching
+                request = ReadItemsDbRequest(libraryId: -2,
+                                             collectionKey: nil, parentKey: nil, trash: true)
+            case .collection(let key, _):
+                request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
+                                             collectionKey: key, parentKey: nil, trash: false)
+            }
             let items = try self.dbStorage.createCoordinator().perform(request: request)
             let itemsToken = items.observe({ [weak self] changes in
                 guard let `self` = self else { return }

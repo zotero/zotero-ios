@@ -101,6 +101,8 @@
 		B36795FB2207807F003D0471 /* RegisterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36795F92207807F003D0471 /* RegisterViewController.xib */; };
 		B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FE2207965F003D0471 /* UIViewController+Alert.swift */; };
+		B36D3E35223D6F1000DB497B /* LibraryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36D3E33223D6F1000DB497B /* LibraryCell.swift */; };
+		B36D3E36223D6F1000DB497B /* LibraryCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36D3E34223D6F1000DB497B /* LibraryCell.xib */; };
 		B37D57952215839D00B6CF5F /* CollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D57932215839D00B6CF5F /* CollectionCell.swift */; };
 		B37D57962215839D00B6CF5F /* CollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D57942215839D00B6CF5F /* CollectionCell.xib */; };
 		B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */; };
@@ -283,6 +285,8 @@
 		B36795F92207807F003D0471 /* RegisterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RegisterViewController.xib; sourceTree = "<group>"; };
 		B36795FC22078F15003D0471 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
 		B36795FE2207965F003D0471 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		B36D3E33223D6F1000DB497B /* LibraryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryCell.swift; sourceTree = "<group>"; };
+		B36D3E34223D6F1000DB497B /* LibraryCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibraryCell.xib; sourceTree = "<group>"; };
 		B37D57932215839D00B6CF5F /* CollectionCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionCell.swift; sourceTree = "<group>"; };
 		B37D57942215839D00B6CF5F /* CollectionCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCell.xib; sourceTree = "<group>"; };
 		B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllLibrariesDbRequest.swift; sourceTree = "<group>"; };
@@ -630,6 +634,8 @@
 				B3A8CD8822259A4900E553F4 /* ItemCell.xib */,
 				B32CD35E221C70B6003F8073 /* ItemFieldCell.swift */,
 				B32CD35F221C70B6003F8073 /* ItemFieldCell.xib */,
+				B36D3E33223D6F1000DB497B /* LibraryCell.swift */,
+				B36D3E34223D6F1000DB497B /* LibraryCell.xib */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -850,6 +856,7 @@
 				B32CD336221C58DF003F8073 /* item_fields_bookSection.txt in Resources */,
 				B37D57962215839D00B6CF5F /* CollectionCell.xib in Resources */,
 				B32CD33B221C58DF003F8073 /* item_types.txt in Resources */,
+				B36D3E36223D6F1000DB497B /* LibraryCell.xib in Resources */,
 				B32CD34B221C58DF003F8073 /* item_fields_note.txt in Resources */,
 				B32CD335221C58DF003F8073 /* item_fields_webpage.txt in Resources */,
 				B32CD32F221C58DF003F8073 /* Assets.xcassets in Resources */,
@@ -1073,6 +1080,7 @@
 				B31BD20E2224352D00FA8249 /* RCreator.swift in Sources */,
 				B3FD6B41220D9122008D9D74 /* UpdateVersionsDbRequest.swift in Sources */,
 				B30F6685220CA148009E7A8F /* SyncableObject.swift in Sources */,
+				B36D3E35223D6F1000DB497B /* LibraryCell.swift in Sources */,
 				B3FD6B3D220D8CD5008D9D74 /* MarkForResyncDbAction.swift in Sources */,
 				B34BA704221EE2DF0019A974 /* PerformDeletionsDbRequest.swift in Sources */,
 				B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */,
