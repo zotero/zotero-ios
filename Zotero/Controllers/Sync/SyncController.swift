@@ -52,7 +52,7 @@ final class SyncController: SynchronizationController {
     }
 
     enum Object: Equatable, CaseIterable {
-        case group, collection, search, item, trash
+        case group, collection, search, item, trash, tag
     }
 
     struct DownloadBatch {
@@ -604,30 +604,41 @@ final class SyncController: SynchronizationController {
 
     private func processDeletionsSync(library: Library, since sinceVersion: Int) {
         self.handler.synchronizeDeletions(for: library, since: sinceVersion, current: self.lastReturnedVersion)
-                    .subscribe(onCompleted: { [weak self] in
-                        self?.finishDeletionsSync(error: nil)
+                    .subscribe(onSuccess: { [weak self] conflicts in
+                        self?.finishDeletionsSync(result: .success((conflicts, library)))
                     }, onError: { [weak self] error in
-                        self?.finishDeletionsSync(error: error)
+                        self?.finishDeletionsSync(result: .failure(error))
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(error: Error?) {
-        guard let error = error else {
+    private func finishDeletionsSync(result: Result<([Object : [String]], Library)>) {
+        switch result {
+        case .success(let data):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                if !data.0.isEmpty {
+                    var conflicts: [Action] = (data.0[.item] ?? []).map({ .resolveConflict($0, .item, data.1) })
+                    self?.enqueue(actions: conflicts, at: 0)
+                    conflicts = (data.0[.search] ?? []).map({ .resolveConflict($0, .search, data.1) })
+                    self?.enqueue(actions: conflicts, at: 0)
+                    conflicts = (data.0[.collection] ?? []).map({ .resolveConflict($0, .collection, data.1) })
+                    self?.enqueue(actions: conflicts, at: 0)
+                    conflicts = (data.0[.tag] ?? []).map({ .resolveConflict($0, .tag, data.1) })
+                    self?.enqueue(actions: conflicts, at: 0)
+                }
                 self?.processNextAction()
             }
-            return
-        }
 
-        if let abortError = self.errorRequiresAbort(error) {
-            self.abort(error: abortError)
-            return
-        }
+        case .failure(let error):
+            if let abortError = self.errorRequiresAbort(error) {
+                self.abort(error: abortError)
+                return
+            }
 
-        self.performOnAccessQueue(flags: .barrier) { [weak self] in
-            self?.nonFatalErrors.append(error)
-            self?.processNextAction()
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.nonFatalErrors.append(error)
+                self?.processNextAction()
+            }
         }
     }
 

@@ -9,6 +9,7 @@
 import Foundation
 
 import Alamofire
+import CocoaLumberjack
 import RxSwift
 
 enum SyncActionHandlerError: Error, Equatable {
@@ -54,7 +55,7 @@ protocol SyncActionHandler: class {
                               object: SyncController.Object, version: Int) -> Single<([String], [Error])>
     func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Completable
+                              current currentVersion: Int?) -> Single<[SyncController.Object: [String]]>
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
                              since version: Int?) -> Single<(Bool, Int)>
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
@@ -122,6 +123,9 @@ extension SyncActionHandlerController: SyncActionHandler {
         case .search:
             return self.synchronizeVersions(for: RSearch.self, library: library, object: object,
                                             since: sinceVersion, current: currentVersion, syncAll: syncAll)
+        case .tag: // Tags are not synchronized, this should not be called
+            DDLogError("SyncActionHandler: synchronizeVersions tried to sync tags")
+            return Single.just((0, []))
         }
     }
 
@@ -225,6 +229,9 @@ extension SyncActionHandlerController: SyncActionHandler {
             let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
             try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
             return (decoded.searches.map({ $0.key }), decoded.errors)
+        case .tag: // Tags are not synchronized, this should not be called
+            DDLogError("SyncActionHandler: syncToDb tried to sync tags")
+            return ([], [])
         }
     }
 
@@ -263,6 +270,9 @@ extension SyncActionHandlerController: SyncActionHandler {
             case .search:
                 let request = try MarkForResyncDbAction<RSearch>(libraryId: library.libraryId, keys: keys)
                 try self.dbStorage.createCoordinator().perform(request: request)
+            case .tag: // Tags are not synchronized, this should not be called
+                DDLogError("SyncActionHandler: markForResync tried to sync tags")
+                break
             }
             return Completable.empty()
         } catch let error {
@@ -271,10 +281,10 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Completable {
+                              current currentVersion: Int?) -> Single<[SyncController.Object : [String]]> {
         return self.apiClient.send(request: DeletionsRequest(libraryType: library, version: sinceVersion))
                              .observeOn(self.scheduler)
-                             .flatMap { [weak self] response -> Single<()> in
+                             .flatMap { [weak self] response in
                                  let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
 
                                  if let version = currentVersion, version != newVersion {
@@ -287,13 +297,12 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      let request = PerformDeletionsDbRequest(libraryId: library.libraryId,
                                                                              response: response.0,
                                                                              version: newVersion)
-                                     try self.dbStorage.createCoordinator().perform(request: request)
-                                     return Single.just(())
+                                     let conflicts = try self.dbStorage.createCoordinator().perform(request: request)
+                                     return Single.just(conflicts)
                                  } catch let error {
                                      return Single.error(error)
                                  }
                              }
-                             .asCompletable()
     }
 
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,

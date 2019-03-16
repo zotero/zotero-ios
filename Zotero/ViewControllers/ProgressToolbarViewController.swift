@@ -107,6 +107,8 @@ class ProgressToolbarViewController: ToolbarViewController {
                 objectName = "Trash"
             case .search:
                 objectName = "Searches"
+            case .tag:
+                objectName = "Tags"
             }
             var subtitle = "\(objectName)"
             if let progress = progress {

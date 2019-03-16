@@ -47,7 +47,7 @@ final class UpdateDataSource: SyncUpdateDataSource {
         case .item, .trash:
             let request = ReadChangedItemUpdateParametersDbRequest(libraryId: library.libraryId)
             parameters = try coordinator.perform(request: request)
-        case .group:
+        case .group, .tag:
             fatalError("UpdateDataSource: Updating unsupported object type")
         }
         return parameters.chunked(into: SyncController.WriteBatch.maxCount)

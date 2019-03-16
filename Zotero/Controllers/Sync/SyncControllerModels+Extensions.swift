@@ -41,6 +41,8 @@ extension SyncController.Object {
             return "items"
         case .trash:
             return "items/trash"
+        case .tag:
+            return "tags"
         }
     }
 }

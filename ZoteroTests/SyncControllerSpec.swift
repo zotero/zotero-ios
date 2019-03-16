@@ -537,7 +537,7 @@ class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["AAAAAAAA": 3]
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
-                        case .group: break
+                        case .group, .tag: break
                         }
                     }
 
@@ -574,7 +574,7 @@ class SyncControllerSpec: QuickSpec {
                                                                 "parentItem": "AAAAAAAA",
                                                                 "itemType": "note",
                                                                 "deleted": 1]]]
-                        case .group: break
+                        case .group, .tag: break
                         }
                     }
 
@@ -710,6 +710,7 @@ class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["BBBBBBBB": 3]
                         case .group:
                             versionResponses[object] = [groupId.description: 2]
+                        case .tag: break
                         }
                     }
 
@@ -757,6 +758,7 @@ class SyncControllerSpec: QuickSpec {
                                                                 "libraryEditing": "members",
                                                                 "libraryReading": "members",
                                                                 "fileEditing": "members"]]
+                        case .tag: break
                         }
                     }
 
@@ -902,6 +904,70 @@ class SyncControllerSpec: QuickSpec {
                                                                                                    RLibrary.myLibraryId)
                                                    .first
                             expect(deletedItem).to(beNil())
+
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
+                }
+
+                it("should ignore remote deletions if local object changed") {
+                    let header = ["Last-Modified-Version" : "3"]
+                    let library = SyncController.Library.user(SyncControllerSpec.userId)
+                    let itemToDelete = "DDDDDDDD"
+                    let objects = SyncController.Object.allCases
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let myLibrary = SyncControllerSpec.realm.objects(RLibrary.self).first
+                        let item = RItem()
+                        item.key = itemToDelete
+                        item.title = "Delete me"
+                        item.changedFields = .fields
+                        item.library = myLibrary
+                        realm.add(item)
+                    }
+
+                    let toBeDeletedItem = realm.objects(RItem.self)
+                                               .filter("key = %@ AND library.identifier = %d", itemToDelete,
+                                                       RLibrary.myLibraryId)
+                                               .first
+                    expect(toBeDeletedItem).toNot(beNil())
+
+                    objects.forEach { object in
+                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: [:])
+                    }
+                    self.createStub(for: SettingsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["tagColors" : ["value": [], "version": 2]])
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { result in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            switch result {
+                            case .success(let data):
+                                expect(data.0).to(contain(.resolveConflict(itemToDelete, .item, library)))
+                            case .failure:
+                                fail("Sync aborted")
+                            }
+
+                            let deletedItem = realm.objects(RItem.self)
+                                                   .filter("key = %@ AND library.identifier = %d", itemToDelete,
+                                                           RLibrary.myLibraryId)
+                                                   .first
+                            expect(deletedItem).toNot(beNil())
 
                             doneAction()
                         }
@@ -1588,8 +1654,8 @@ fileprivate class TestHandler: SyncActionHandler {
     }
 
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Completable {
-        return self.result(for: .syncDeletions(library)).asCompletable()
+                              current currentVersion: Int?) -> Single<[SyncController.Object: [String]]> {
+        return self.result(for: .syncDeletions(library)).flatMap({ return Single.just([:]) })
     }
 
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
