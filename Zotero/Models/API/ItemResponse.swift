@@ -17,45 +17,6 @@ enum ItemResponseError: Error {
 }
 
 struct ItemResponse {
-    enum ItemType: String {
-        case artwork
-        case attachment
-        case audioRecording
-        case book
-        case bookSection
-        case bill
-        case blogPost
-        case `case`
-        case computerProgram
-        case conferencePaper
-        case dictionaryEntry
-        case document
-        case email
-        case encyclopediaArticle
-        case film
-        case forumPost
-        case hearing
-        case instantMessage
-        case interview
-        case journalArticle
-        case letter
-        case magazineArticle
-        case map
-        case manuscript
-        case note
-        case newspaperArticle
-        case patent
-        case podcast
-        case presentation
-        case radioBroadcast
-        case report
-        case statute
-        case thesis
-        case tvBroadcast
-        case videoRecording
-        case webpage
-    }
-
     let type: ItemType
     let key: String
     let library: LibraryResponse
@@ -81,11 +42,7 @@ struct ItemResponse {
     init(response: [String: Any]) throws {
         let data: [String: Any] = try ItemResponse.parse(key: "data", from: response)
         let rawType: String = try ItemResponse.parse(key: "itemType", from: data)
-        guard let type = ItemType(rawValue: rawType) else {
-            throw ZoteroApiError.jsonDecoding(ItemResponseError.unknownType(rawType))
-        }
-
-        self.type = type
+        self.type = ItemType(rawValue: rawType) ?? .unknown
         self.key = try ItemResponse.parse(key: "key", from: response)
         self.version = try ItemResponse.parse(key: "version", from: response)
         let collections = data["collections"] as? [String]

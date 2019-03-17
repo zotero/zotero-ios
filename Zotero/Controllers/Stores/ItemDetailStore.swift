@@ -139,18 +139,17 @@ class ItemDetailStore: Store {
         }
 
         var values: [String: String] = [:]
-        self.state.value.item.fields.forEach { field in
+        self.state.value.item.fields.filter("value != %@", "").forEach { field in
             values[field.key] = field.value
         }
-        let fields = sortedFieldNames.map { name -> ItemDetailField in
-            let value = values[name] ?? ""
-            return ItemDetailField(name: name, value: value)
+        let fields: [ItemDetailField] = sortedFieldNames.compactMap { name in
+            return values[name].flatMap({ ItemDetailField(name: name, value: $0) })
         }
         let attachments = self.state.value.item.children
-                                               .filter("rawType = %@", ItemResponse.ItemType.attachment.rawValue)
+                                               .filter("rawType = %@", ItemType.attachment.rawValue)
                                                .sorted(byKeyPath: "title")
         let notes = self.state.value.item.children
-                                         .filter("rawType = %@", ItemResponse.ItemType.note.rawValue)
+                                         .filter("rawType = %@", ItemType.note.rawValue)
                                          .sorted(byKeyPath: "title")
         let tags = self.state.value.item.tags.sorted(byKeyPath: "name")
 

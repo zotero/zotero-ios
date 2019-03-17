@@ -38,6 +38,7 @@ class CollectionsViewController: UIViewController {
 
         self.navigationItem.title = self.store.state.value.title
         self.setupTableView()
+        self.setupNavbar()
 
         self.store.state.asObservable()
                         .observeOn(MainScheduler.instance)
@@ -80,6 +81,23 @@ class CollectionsViewController: UIViewController {
         }
     }
 
+    private func addCollection() {
+
+    }
+
+    @objc private func showOptions() {
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.barButtonItem = self.navigationItem.rightBarButtonItem
+
+        controller.addAction(UIAlertAction(title: "New Collection", style: .default, handler: { [weak self] _ in
+            self?.addCollection()
+        }))
+        controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+
+        self.present(controller, animated: true, completion: nil)
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -88,6 +106,12 @@ class CollectionsViewController: UIViewController {
         self.tableView.delegate = self
         self.tableView.contentInset = UIEdgeInsets(top: self.tableView.contentInset.top,
                                                    left: 0, bottom: 44, right: 0)
+    }
+
+    private func setupNavbar() {
+        let options = UIBarButtonItem(image: UIImage(named: "navbar_options"), style: .plain, target: self,
+                                      action: #selector(CollectionsViewController.showOptions))
+        self.navigationItem.rightBarButtonItem = options
     }
 }
 

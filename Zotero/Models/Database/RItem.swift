@@ -57,6 +57,10 @@ class RItem: Object {
     let creators = LinkingObjects(fromType: RCreator.self, property: "items")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
 
+    var type: ItemType {
+        return ItemType(rawValue: self.rawType) ?? .unknown
+    }
+
     var changedFields: RItemChanges {
         get {
             return RItemChanges(rawValue: self.rawChangedFields)

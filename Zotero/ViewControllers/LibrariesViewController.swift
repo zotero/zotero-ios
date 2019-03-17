@@ -36,6 +36,7 @@ class LibrariesViewController: UIViewController {
         super.viewDidLoad()
 
         self.navigationItem.title = "Libraries"
+        self.navigationItem.backBarButtonItem = UIBarButtonItem(title: nil, style: .plain, target: nil, action: nil)
         self.setupTableView()
 
         self.store.state.asObservable()

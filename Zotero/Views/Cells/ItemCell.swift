@@ -15,9 +15,11 @@ protocol ItemCellModel {
     var hasAttachment: Bool { get }
     var hasNote: Bool { get }
     var tagColors: [UIColor] { get }
+    var icon: UIImage? { get }
 }
 
 class ItemCell: UITableViewCell {
+    @IBOutlet private weak var iconView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var bottomStackView: UIStackView!
     @IBOutlet private weak var creatorLabel: UILabel!
@@ -35,6 +37,7 @@ class ItemCell: UITableViewCell {
     // MARK: - Setups
 
     func setup(with model: ItemCellModel) {
+        self.iconView.image = model.icon
         self.titleLabel.text = model.title
 
         let colors = model.tagColors

@@ -114,14 +114,18 @@ extension RItem: ItemCellModel {
     }
 
     var hasAttachment: Bool {
-        return self.children.filter("rawType = %@", ItemResponse.ItemType.attachment.rawValue).count > 0
+        return self.children.filter("rawType = %@", ItemType.attachment.rawValue).count > 0
     }
 
     var hasNote: Bool {
-        return self.children.filter("rawType = %@", ItemResponse.ItemType.note.rawValue).count > 0
+        return self.children.filter("rawType = %@", ItemType.note.rawValue).count > 0
     }
 
     var tagColors: [UIColor] {
         return self.tags.compactMap({ $0.uiColor })
+    }
+
+    var icon: UIImage? {
+        return self.type.icon
     }
 }
