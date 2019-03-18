@@ -206,7 +206,8 @@ final class SyncController: SynchronizationController {
 
     private func report(fatalError: Error) {
         self.progressHandler.reportAbort(with: fatalError)
-        self.observable.on(.next((true, self.type, self.libraryType)))
+        let isCancelled = (fatalError as? SyncError) == .cancelled
+        self.observable.on(.next((!isCancelled, self.type, self.libraryType)))
     }
 
     private func reportFinish(nonFatalErrors errors: [Error]) {

@@ -21,8 +21,8 @@ struct RCollectionChanges: OptionSet {
 }
 
 extension RCollectionChanges {
-    static let name = RCollectionChanges(rawValue: 1 << 1)
-    static let parent = RCollectionChanges(rawValue: 1 << 2)
+    static let name = RCollectionChanges(rawValue: 1 << 0)
+    static let parent = RCollectionChanges(rawValue: 1 << 1)
     static let all: RCollectionChanges = [.name, .parent]
 }
 

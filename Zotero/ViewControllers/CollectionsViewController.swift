@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class CollectionsViewController: UIViewController {
+class CollectionsViewController: UIViewController, ProgressToolbarController {
     // Outlets
     @IBOutlet private weak var tableView: UITableView!
     // Constants
@@ -18,6 +18,8 @@ class CollectionsViewController: UIViewController {
     private let store: CollectionsStore
     private let disposeBag: DisposeBag
     // Variables
+    weak var toolbarTitleLabel: UILabel?
+    weak var toolbarSubtitleLabel: UILabel?
     private weak var navigationDelegate: ItemNavigationDelegate?
 
     // MARK: - Lifecycle
@@ -43,12 +45,7 @@ class CollectionsViewController: UIViewController {
         self.store.state.asObservable()
                         .observeOn(MainScheduler.instance)
                         .subscribe(onNext: { [weak self] state in
-                            guard let `self` = self else { return }
-                            let selectedIndexPath = self.tableView.indexPathForSelectedRow
-                            self.tableView.reloadData()
-                            if let indexPath = selectedIndexPath {
-                                self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
-                            }
+                            self?.process(state: state)
                         })
                         .disposed(by: self.disposeBag)
 
@@ -66,23 +63,62 @@ class CollectionsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func data(for section: Int) -> [CollectionCellData] {
-        switch section {
-        case 0:
-            return self.store.state.value.allItemsCellData
-        case 1:
-            return self.store.state.value.collectionCellData
-        case 2:
-            return self.store.state.value.searchCellData
-        case 3:
-            return self.store.state.value.customCellData
-        default:
-            return []
+    private func process(state: CollectionsState) {
+        if state.changes.contains(.data) {
+            let selectedIndexPath = self.tableView.indexPathForSelectedRow
+            self.tableView.reloadData()
+            if let indexPath = selectedIndexPath {
+                self.tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+            }
+        }
+
+        if state.changes.contains(.editing) {
+            if let collection = state.collectionToEdit {
+                let state = CollectionEditState(collection: collection)
+                let store = CollectionEditStore(initialState: state, dbStorage: self.store.dbStorage)
+                let controller = CollectionEditorViewController(store: store)
+                self.present(controller: controller)
+            }
+
+            // TODO: - Add search editing
+        }
+
+        if let error = state.error {
+            // TODO: - show some error
         }
     }
 
     private func addCollection() {
+        // TODO: - Present collection creation
+    }
 
+    private func edit(at indexPath: IndexPath) {
+        let section = self.store.state.value.sections[indexPath.section]
+        switch section {
+        case .collections:
+            self.store.handle(action: .editCollection(indexPath.row))
+        case .searches:
+            self.store.handle(action: .editSearch(indexPath.row))
+        default:
+            return
+        }
+    }
+
+    private func delete(at indexPath: IndexPath) {
+        let section = self.store.state.value.sections[indexPath.section]
+        switch section {
+        case .collections:
+            self.store.handle(action: .deleteCollection(indexPath.row))
+        case .searches:
+            self.store.handle(action: .deleteSearch(indexPath.row))
+        default: break
+        }
+    }
+
+    private func present(controller: UIViewController) {
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .overCurrentContext
+        self.present(navigationController, animated: true, completion: nil)
     }
 
     @objc private func showOptions() {
@@ -96,6 +132,20 @@ class CollectionsViewController: UIViewController {
         controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
 
         self.present(controller, animated: true, completion: nil)
+    }
+
+    private func data(for section: Int) -> [CollectionCellData] {
+        guard section < self.store.state.value.sections.count else { return [] }
+        switch self.store.state.value.sections[section] {
+        case .allItems:
+            return self.store.state.value.allItemsCellData
+        case .collections:
+            return self.store.state.value.collectionCellData
+        case .searches:
+            return self.store.state.value.searchCellData
+        case .custom:
+            return self.store.state.value.customCellData
+        }
     }
 
     // MARK: - Setups
@@ -117,7 +167,7 @@ class CollectionsViewController: UIViewController {
 
 extension CollectionsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 4
+        return self.store.state.value.sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -135,6 +185,20 @@ extension CollectionsViewController: UITableViewDataSource {
         }
 
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        let section = self.store.state.value.sections[indexPath.section]
+        guard section == .collections || section == .searches else { return nil }
+
+        let editAction = UITableViewRowAction(style: .normal, title: "Edit") { [weak self] _, indexPath in
+            self?.edit(at: indexPath)
+        }
+        let deleteAction = UITableViewRowAction(style: .destructive, title: "Delete") { [weak self] _, indexPath in
+            self?.delete(at: indexPath)
+        }
+
+        return [editAction, deleteAction]
     }
 }
 

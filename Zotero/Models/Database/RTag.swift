@@ -20,8 +20,8 @@ struct RTagChanges: OptionSet {
     }
 }
 extension RTagChanges {
-    static let name = RTagChanges(rawValue: 1 << 1)
-    static let color = RTagChanges(rawValue: 1 << 2)
+    static let name = RTagChanges(rawValue: 1 << 0)
+    static let color = RTagChanges(rawValue: 1 << 1)
     static let all: RTagChanges = [.name, .color]
 }
 

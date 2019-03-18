@@ -51,10 +51,8 @@ class MainViewController: UISplitViewController {
 
         let librariesStore = LibrariesStore(dbStorage: controllers.dbStorage)
         let leftController = LibrariesViewController(store: librariesStore, delegate: self)
-        let leftNavigationController = UINavigationController(rootViewController: leftController)
-        let syncScheduler = controllers.userControllers?.syncScheduler
-        let leftToolbarController = ProgressToolbarViewController(syncScheduler: syncScheduler,
-                                                                  rootViewController: leftNavigationController)
+        let leftNavigationController = ProgressNavigationViewController(rootViewController: leftController)
+        leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
 
         let itemState = ItemsState(libraryId: RLibrary.myLibraryId, type: .all)
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
@@ -62,7 +60,7 @@ class MainViewController: UISplitViewController {
                                    itemFieldsController: controllers.itemFieldsController)
         let rightNavigationController = UINavigationController(rootViewController: ItemsViewController(store: itemStore))
 
-        self.viewControllers = [leftToolbarController, rightNavigationController]
+        self.viewControllers = [leftNavigationController, rightNavigationController]
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
     }
@@ -155,8 +153,7 @@ extension MainViewController: ItemNavigationDelegate {
     }
 
     func showCollections(for libraryId: Int, libraryName: String) {
-        guard let toolbarController = self.viewControllers.first as? ToolbarViewController,
-              let navigationController = toolbarController.rootViewController as? UINavigationController else { return }
+        guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
 
         let state = CollectionsState(libraryId: libraryId, title: libraryName)
         let store = CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)

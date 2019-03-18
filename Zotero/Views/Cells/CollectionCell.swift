@@ -31,6 +31,5 @@ class CollectionCell: UITableViewCell {
 
         let separatorInset = offset + self.iconView.frame.width + 8
         self.separatorInset = UIEdgeInsets(top: 0, left: separatorInset, bottom: 0, right: 0)
-        self.layoutMargins = UIEdgeInsets(top: 0, left: separatorInset, bottom: 0, right: 0)
     }
 }

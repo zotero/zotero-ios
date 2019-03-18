@@ -21,14 +21,14 @@ struct RItemChanges: OptionSet {
 }
 
 extension RItemChanges {
-    static let type = RItemChanges(rawValue: 1 << 1)
-    static let trash = RItemChanges(rawValue: 1 << 2)
-    static let parent = RItemChanges(rawValue: 1 << 3)
-    static let collections = RItemChanges(rawValue: 1 << 4)
-    static let fields = RItemChanges(rawValue: 1 << 5)
-    static let tags = RItemChanges(rawValue: 1 << 6)
-    static let creators = RItemChanges(rawValue: 1 << 7)
-    static let relations = RItemChanges(rawValue: 1 << 8)
+    static let type = RItemChanges(rawValue: 1 << 0)
+    static let trash = RItemChanges(rawValue: 1 << 1)
+    static let parent = RItemChanges(rawValue: 1 << 2)
+    static let collections = RItemChanges(rawValue: 1 << 3)
+    static let fields = RItemChanges(rawValue: 1 << 4)
+    static let tags = RItemChanges(rawValue: 1 << 5)
+    static let creators = RItemChanges(rawValue: 1 << 6)
+    static let relations = RItemChanges(rawValue: 1 << 7)
     static let all: RItemChanges = [.type, .trash, .parent, .collections, .fields, .tags, .creators, .relations]
 }
 

@@ -20,10 +20,6 @@
 		B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59BA2207451B00884C4A /* ApiClient.swift */; };
 		B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */; };
 		B30DF3F92209A282000B6DE2 /* RLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F82209A282000B6DE2 /* RLibrary.swift */; };
-		B30DF3FB2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FA2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift */; };
-		B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */; };
-		B30DF3FF2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */; };
-		B30DF4012209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF4002209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift */; };
 		B30F6685220CA148009E7A8F /* SyncableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6684220CA148009E7A8F /* SyncableObject.swift */; };
 		B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6687220CB274009E7A8F /* FileStorage.swift */; };
 		B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6689220CB413009E7A8F /* FileManager+Utils.swift */; };
@@ -75,7 +71,6 @@
 		B32CD358221C5A5D003F8073 /* ItemDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD356221C5A5D003F8073 /* ItemDetailViewController.swift */; };
 		B32CD359221C5A5D003F8073 /* ItemDetailViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32CD357221C5A5D003F8073 /* ItemDetailViewController.xib */; };
 		B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */; };
-		B32CD35D221C5F7C003F8073 /* ResolveReferenceDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD35C221C5F7C003F8073 /* ResolveReferenceDbRequest.swift */; };
 		B32CD360221C70B6003F8073 /* ItemFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD35E221C70B6003F8073 /* ItemFieldCell.swift */; };
 		B32CD361221C70B6003F8073 /* ItemFieldCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B32CD35F221C70B6003F8073 /* ItemFieldCell.xib */; };
 		B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD362221C73A1003F8073 /* UIView+Nibname.swift */; };
@@ -87,7 +82,6 @@
 		B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487302221DBD1500244CCC /* String+Mimetype.swift */; };
 		B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */; };
 		B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA701221EE0F60019A974 /* DeletionsResponse.swift */; };
-		B34BA704221EE2DF0019A974 /* PerformDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B36795DE220749B7003D0471 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DD220749B7003D0471 /* Result.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
@@ -106,30 +100,51 @@
 		B36D3E36223D6F1000DB497B /* LibraryCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36D3E34223D6F1000DB497B /* LibraryCell.xib */; };
 		B37D57952215839D00B6CF5F /* CollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37D57932215839D00B6CF5F /* CollectionCell.swift */; };
 		B37D57962215839D00B6CF5F /* CollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B37D57942215839D00B6CF5F /* CollectionCell.xib */; };
-		B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */; };
-		B3819CB12210A96C00EE02CA /* ReadCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB02210A96C00EE02CA /* ReadCollectionsDbRequest.swift */; };
 		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
 		B385E2B52208755500DFE361 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B42208755500DFE361 /* RUser.swift */; };
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
-		B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */; };
-		B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */; };
 		B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C02208921200DFE361 /* LoginResponse.swift */; };
 		B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C2220897B300DFE361 /* CollectionsViewController.swift */; };
 		B385E2C5220897B300DFE361 /* CollectionsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C3220897B300DFE361 /* CollectionsViewController.xib */; };
 		B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C6220897C600DFE361 /* ItemsViewController.swift */; };
 		B385E2C9220897C600DFE361 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B385E2C7220897C600DFE361 /* ItemsViewController.xib */; };
+		B38C9650223FD43000343F8F /* CollectionEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C964E223FD43000343F8F /* CollectionEditorViewController.swift */; };
+		B38C9651223FD43000343F8F /* CollectionEditorViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B38C964F223FD43000343F8F /* CollectionEditorViewController.xib */; };
+		B38C9673223FDC0000343F8F /* CollectionEditStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9672223FDC0000343F8F /* CollectionEditStore.swift */; };
+		B38C9678223FE99900343F8F /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9676223FE99900343F8F /* TextFieldCell.swift */; };
+		B38C9679223FE99900343F8F /* TextFieldCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B38C9677223FE99900343F8F /* TextFieldCell.xib */; };
+		B38C9691223FFB2900343F8F /* ReadCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967A223FFB2700343F8F /* ReadCollectionDbRequest.swift */; };
+		B38C9692223FFB2900343F8F /* StoreCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */; };
+		B38C9693223FFB2900343F8F /* ReadAllLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967C223FFB2700343F8F /* ReadAllLibrariesDbRequest.swift */; };
+		B38C9694223FFB2900343F8F /* ReadCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967D223FFB2800343F8F /* ReadCollectionsDbRequest.swift */; };
+		B38C9695223FFB2900343F8F /* StoreUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967E223FFB2800343F8F /* StoreUserDbRequest.swift */; };
+		B38C9696223FFB2900343F8F /* ReadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967F223FFB2800343F8F /* ReadItemsDbRequest.swift */; };
+		B38C9697223FFB2900343F8F /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9680223FFB2800343F8F /* ReadSearchesDbRequest.swift */; };
+		B38C9698223FFB2900343F8F /* ReadChangedObjectUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9681223FFB2800343F8F /* ReadChangedObjectUpdateParametersDbRequest.swift */; };
+		B38C9699223FFB2900343F8F /* ReadChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9682223FFB2800343F8F /* ReadChangedObjectsDbRequest.swift */; };
+		B38C969A223FFB2900343F8F /* MarkForResyncDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */; };
+		B38C969B223FFB2900343F8F /* ResolveReferenceDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9684223FFB2800343F8F /* ResolveReferenceDbRequest.swift */; };
+		B38C969C223FFB2900343F8F /* ReadLibrariesDataDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9685223FFB2800343F8F /* ReadLibrariesDataDbRequest.swift */; };
+		B38C969D223FFB2900343F8F /* StoreGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9686223FFB2800343F8F /* StoreGroupDbRequest.swift */; };
+		B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9687223FFB2800343F8F /* StoreSearchesDbRequest.swift */; };
+		B38C969F223FFB2900343F8F /* MarkObjectsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9688223FFB2800343F8F /* MarkObjectsAsSyncedDbRequest.swift */; };
+		B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9689223FFB2800343F8F /* StoreSettingsDbRequest.swift */; };
+		B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968A223FFB2800343F8F /* SyncVersionsDbRequest.swift */; };
+		B38C96A2223FFB2900343F8F /* UpdateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968B223FFB2800343F8F /* UpdateCollectionDbRequest.swift */; };
+		B38C96A3223FFB2900343F8F /* UpdateVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968C223FFB2800343F8F /* UpdateVersionsDbRequest.swift */; };
+		B38C96A4223FFB2900343F8F /* PerformDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968D223FFB2800343F8F /* PerformDeletionsDbRequest.swift */; };
+		B38C96A5223FFB2900343F8F /* InitializeMyLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968E223FFB2800343F8F /* InitializeMyLibraryDbRequest.swift */; };
+		B38C96A6223FFB2900343F8F /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */; };
+		B38C96A7223FFB2900343F8F /* ReadUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */; };
+		B38C96A9223FFB5600343F8F /* StoreCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */; };
 		B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
-		B393729A22295475008B2A96 /* ToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729922295475008B2A96 /* ToolbarViewController.swift */; };
-		B393729C222957D0008B2A96 /* ProgressToolbarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */; };
+		B393729C222957D0008B2A96 /* ProgressNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B393729B222957D0008B2A96 /* ProgressNavigationViewController.swift */; };
 		B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E3223942160019F467 /* ObjectChangeObserver.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
-		B39EE32D223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32C223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift */; };
-		B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */; };
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
-		B3A8CD862225907F00E553F4 /* StoreSettingsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD852225907F00E553F4 /* StoreSettingsDbRequest.swift */; };
 		B3A8CD8922259A4900E553F4 /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8722259A4900E553F4 /* ItemCell.swift */; };
 		B3A8CD8A22259A4900E553F4 /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3A8CD8822259A4900E553F4 /* ItemCell.xib */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
@@ -137,32 +152,23 @@
 		B3ADB3882232BE980064E150 /* SyncUpdateDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */; };
 		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
-		B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */; };
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
 		B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
-		B3C33D8822367CE00071A763 /* UpdateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */; };
-		B3C33D8A22368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8922368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift */; };
 		B3C33D8C223693760071A763 /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8B223693760071A763 /* Formatter.swift */; };
 		B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
 		B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
 		B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */; };
-		B3C33D942236C3990071A763 /* MarkObjectsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D932236C3990071A763 /* MarkObjectsAsSyncedDbRequest.swift */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
 		B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EBF2211D899000FFBFF /* MainViewController.swift */; };
 		B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */; };
 		B3C62EC42211DA23000FFBFF /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */; };
 		B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC52211DA41000FFBFF /* LibrariesStore.swift */; };
 		B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */; };
-		B3C62ECA2211E6D2000FFBFF /* ReadItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC92211E6D2000FFBFF /* ReadItemsDbRequest.swift */; };
 		B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B30220D80EB008D9D74 /* CollectionResponse.swift */; };
 		B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */; };
 		B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B34220D814F008D9D74 /* LinksResponse.swift */; };
-		B3FD6B37220D86E0008D9D74 /* StoreCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B36220D86E0008D9D74 /* StoreCollectionsDbRequest.swift */; };
-		B3FD6B39220D881A008D9D74 /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B38220D881A008D9D74 /* StoreItemsDbRequest.swift */; };
 		B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3A220D8879008D9D74 /* ItemResponse.swift */; };
-		B3FD6B3D220D8CD5008D9D74 /* MarkForResyncDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3C220D8CD5008D9D74 /* MarkForResyncDbAction.swift */; };
 		B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3E220D9084008D9D74 /* RVersions.swift */; };
-		B3FD6B41220D9122008D9D74 /* UpdateVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B40220D9122008D9D74 /* UpdateVersionsDbRequest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -205,10 +211,6 @@
 		B30D59BA2207451B00884C4A /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 		B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupResponse.swift; sourceTree = "<group>"; };
 		B30DF3F82209A282000B6DE2 /* RLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RLibrary.swift; sourceTree = "<group>"; };
-		B30DF3FA2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncVersionsDbRequest.swift; sourceTree = "<group>"; };
-		B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreGroupDbRequest.swift; sourceTree = "<group>"; };
-		B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitializeMyLibraryDbRequest.swift; sourceTree = "<group>"; };
-		B30DF4002209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadLibrariesDataDbRequest.swift; sourceTree = "<group>"; };
 		B30F6684220CA148009E7A8F /* SyncableObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncableObject.swift; sourceTree = "<group>"; };
 		B30F6687220CB274009E7A8F /* FileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStorage.swift; sourceTree = "<group>"; };
 		B30F6689220CB413009E7A8F /* FileManager+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+Utils.swift"; sourceTree = "<group>"; };
@@ -260,7 +262,6 @@
 		B32CD356221C5A5D003F8073 /* ItemDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailViewController.swift; sourceTree = "<group>"; };
 		B32CD357221C5A5D003F8073 /* ItemDetailViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailViewController.xib; sourceTree = "<group>"; };
 		B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailStore.swift; sourceTree = "<group>"; };
-		B32CD35C221C5F7C003F8073 /* ResolveReferenceDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveReferenceDbRequest.swift; sourceTree = "<group>"; };
 		B32CD35E221C70B6003F8073 /* ItemFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFieldCell.swift; sourceTree = "<group>"; };
 		B32CD35F221C70B6003F8073 /* ItemFieldCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemFieldCell.xib; sourceTree = "<group>"; };
 		B32CD362221C73A1003F8073 /* UIView+Nibname.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Nibname.swift"; sourceTree = "<group>"; };
@@ -272,7 +273,6 @@
 		B3487302221DBD1500244CCC /* String+Mimetype.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Mimetype.swift"; sourceTree = "<group>"; };
 		B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsRequest.swift; sourceTree = "<group>"; };
 		B34BA701221EE0F60019A974 /* DeletionsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsResponse.swift; sourceTree = "<group>"; };
-		B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B36795DD220749B7003D0471 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
@@ -291,30 +291,51 @@
 		B36D3E34223D6F1000DB497B /* LibraryCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibraryCell.xib; sourceTree = "<group>"; };
 		B37D57932215839D00B6CF5F /* CollectionCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionCell.swift; sourceTree = "<group>"; };
 		B37D57942215839D00B6CF5F /* CollectionCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCell.xib; sourceTree = "<group>"; };
-		B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllLibrariesDbRequest.swift; sourceTree = "<group>"; };
-		B3819CB02210A96C00EE02CA /* ReadCollectionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadCollectionsDbRequest.swift; sourceTree = "<group>"; };
 		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
 		B385E2B42208755500DFE361 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
-		B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUserDbRequest.swift; sourceTree = "<group>"; };
-		B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreUserDbRequest.swift; sourceTree = "<group>"; };
 		B385E2C02208921200DFE361 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
 		B385E2C2220897B300DFE361 /* CollectionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsViewController.swift; sourceTree = "<group>"; };
 		B385E2C3220897B300DFE361 /* CollectionsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsViewController.xib; sourceTree = "<group>"; };
 		B385E2C6220897C600DFE361 /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B385E2C7220897C600DFE361 /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
+		B38C964E223FD43000343F8F /* CollectionEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditorViewController.swift; sourceTree = "<group>"; };
+		B38C964F223FD43000343F8F /* CollectionEditorViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionEditorViewController.xib; sourceTree = "<group>"; };
+		B38C9672223FDC0000343F8F /* CollectionEditStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditStore.swift; sourceTree = "<group>"; };
+		B38C9676223FE99900343F8F /* TextFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
+		B38C9677223FE99900343F8F /* TextFieldCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TextFieldCell.xib; sourceTree = "<group>"; };
+		B38C967A223FFB2700343F8F /* ReadCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreCollectionsDbRequest.swift; sourceTree = "<group>"; };
+		B38C967C223FFB2700343F8F /* ReadAllLibrariesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadAllLibrariesDbRequest.swift; sourceTree = "<group>"; };
+		B38C967D223FFB2800343F8F /* ReadCollectionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadCollectionsDbRequest.swift; sourceTree = "<group>"; };
+		B38C967E223FFB2800343F8F /* StoreUserDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreUserDbRequest.swift; sourceTree = "<group>"; };
+		B38C967F223FFB2800343F8F /* ReadItemsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadItemsDbRequest.swift; sourceTree = "<group>"; };
+		B38C9680223FFB2800343F8F /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
+		B38C9681223FFB2800343F8F /* ReadChangedObjectUpdateParametersDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectUpdateParametersDbRequest.swift; sourceTree = "<group>"; };
+		B38C9682223FFB2800343F8F /* ReadChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
+		B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkForResyncDbAction.swift; sourceTree = "<group>"; };
+		B38C9684223FFB2800343F8F /* ResolveReferenceDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResolveReferenceDbRequest.swift; sourceTree = "<group>"; };
+		B38C9685223FFB2800343F8F /* ReadLibrariesDataDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadLibrariesDataDbRequest.swift; sourceTree = "<group>"; };
+		B38C9686223FFB2800343F8F /* StoreGroupDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreGroupDbRequest.swift; sourceTree = "<group>"; };
+		B38C9687223FFB2800343F8F /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
+		B38C9688223FFB2800343F8F /* MarkObjectsAsSyncedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsSyncedDbRequest.swift; sourceTree = "<group>"; };
+		B38C9689223FFB2800343F8F /* StoreSettingsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreSettingsDbRequest.swift; sourceTree = "<group>"; };
+		B38C968A223FFB2800343F8F /* SyncVersionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncVersionsDbRequest.swift; sourceTree = "<group>"; };
+		B38C968B223FFB2800343F8F /* UpdateCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B38C968C223FFB2800343F8F /* UpdateVersionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateVersionsDbRequest.swift; sourceTree = "<group>"; };
+		B38C968D223FFB2800343F8F /* PerformDeletionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PerformDeletionsDbRequest.swift; sourceTree = "<group>"; };
+		B38C968E223FFB2800343F8F /* InitializeMyLibraryDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InitializeMyLibraryDbRequest.swift; sourceTree = "<group>"; };
+		B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemsDbRequest.swift; sourceTree = "<group>"; };
+		B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadUserDbRequest.swift; sourceTree = "<group>"; };
+		B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreCollectionDbRequest.swift; sourceTree = "<group>"; };
 		B39372972229420A008B2A96 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
-		B393729922295475008B2A96 /* ToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarViewController.swift; sourceTree = "<group>"; };
-		B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressToolbarViewController.swift; sourceTree = "<group>"; };
+		B393729B222957D0008B2A96 /* ProgressNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressNavigationViewController.swift; sourceTree = "<group>"; };
 		B39B18E3223942160019F467 /* ObjectChangeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectChangeObserver.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
-		B39EE32C223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
-		B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
-		B3A8CD852225907F00E553F4 /* StoreSettingsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSettingsDbRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8722259A4900E553F4 /* ItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
 		B3A8CD8822259A4900E553F4 /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
@@ -322,32 +343,23 @@
 		B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUpdateDataSource.swift; sourceTree = "<group>"; };
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
-		B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
 		B3C33D852236676C0071A763 /* SyncScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
-		B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionDbRequest.swift; sourceTree = "<group>"; };
-		B3C33D8922368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadChangedObjectUpdateParametersDbRequest.swift; sourceTree = "<group>"; };
 		B3C33D8B223693760071A763 /* Formatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatter.swift; sourceTree = "<group>"; };
 		B3C33D8D223698C90071A763 /* UpdatesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesRequest.swift; sourceTree = "<group>"; };
 		B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrayEncoding.swift; sourceTree = "<group>"; };
 		B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesResponse.swift; sourceTree = "<group>"; };
-		B3C33D932236C3990071A763 /* MarkObjectsAsSyncedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsSyncedDbRequest.swift; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
 		B3C62EBF2211D899000FFBFF /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
 		B3C62EC52211DA41000FFBFF /* LibrariesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesStore.swift; sourceTree = "<group>"; };
 		B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsStore.swift; sourceTree = "<group>"; };
-		B3C62EC92211E6D2000FFBFF /* ReadItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemsDbRequest.swift; sourceTree = "<group>"; };
 		B3FD6B30220D80EB008D9D74 /* CollectionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionResponse.swift; sourceTree = "<group>"; };
 		B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryResponse.swift; sourceTree = "<group>"; };
 		B3FD6B34220D814F008D9D74 /* LinksResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinksResponse.swift; sourceTree = "<group>"; };
-		B3FD6B36220D86E0008D9D74 /* StoreCollectionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreCollectionsDbRequest.swift; sourceTree = "<group>"; };
-		B3FD6B38220D881A008D9D74 /* StoreItemsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreItemsDbRequest.swift; sourceTree = "<group>"; };
 		B3FD6B3A220D8879008D9D74 /* ItemResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemResponse.swift; sourceTree = "<group>"; };
-		B3FD6B3C220D8CD5008D9D74 /* MarkForResyncDbAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkForResyncDbAction.swift; sourceTree = "<group>"; };
 		B3FD6B3E220D9084008D9D74 /* RVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RVersions.swift; sourceTree = "<group>"; };
-		B3FD6B40220D9122008D9D74 /* UpdateVersionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateVersionsDbRequest.swift; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
 		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Zotero.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -472,6 +484,7 @@
 				B30D59B02206FF1F00884C4A /* Store.swift */,
 				B30D59B522072DF300884C4A /* AppStore.swift */,
 				B36795E722075F9D003D0471 /* LoginStore.swift */,
+				B38C9672223FDC0000343F8F /* CollectionEditStore.swift */,
 				B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */,
 				B3C62EC52211DA41000FFBFF /* LibrariesStore.swift */,
 				B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */,
@@ -493,9 +506,11 @@
 			isa = PBXGroup;
 			children = (
 				B3C62EBF2211D899000FFBFF /* MainViewController.swift */,
-				B393729B222957D0008B2A96 /* ProgressToolbarViewController.swift */,
+				B393729B222957D0008B2A96 /* ProgressNavigationViewController.swift */,
 				B3C62EC12211DA23000FFBFF /* LibrariesViewController.swift */,
 				B3C62EC22211DA23000FFBFF /* LibrariesViewController.xib */,
+				B38C964E223FD43000343F8F /* CollectionEditorViewController.swift */,
+				B38C964F223FD43000343F8F /* CollectionEditorViewController.xib */,
 				B385E2C2220897B300DFE361 /* CollectionsViewController.swift */,
 				B385E2C3220897B300DFE361 /* CollectionsViewController.xib */,
 				B32CD356221C5A5D003F8073 /* ItemDetailViewController.swift */,
@@ -508,7 +523,6 @@
 				B36795F122077FD6003D0471 /* OnboardingViewController.xib */,
 				B36795F82207807F003D0471 /* RegisterViewController.swift */,
 				B36795F92207807F003D0471 /* RegisterViewController.xib */,
-				B393729922295475008B2A96 /* ToolbarViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -638,6 +652,8 @@
 				B32CD35F221C70B6003F8073 /* ItemFieldCell.xib */,
 				B36D3E33223D6F1000DB497B /* LibraryCell.swift */,
 				B36D3E34223D6F1000DB497B /* LibraryCell.xib */,
+				B38C9676223FE99900343F8F /* TextFieldCell.swift */,
+				B38C9677223FE99900343F8F /* TextFieldCell.xib */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -683,28 +699,30 @@
 		B385E2BA2208866600DFE361 /* Requests */ = {
 			isa = PBXGroup;
 			children = (
-				B30DF3FE2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift */,
-				B30DF4002209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift */,
-				B385E2BB2208867A00DFE361 /* ReadUserDbRequest.swift */,
-				B385E2BD220886E500DFE361 /* StoreUserDbRequest.swift */,
-				B30DF3FA2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift */,
-				B30DF3FC2209BBA3000B6DE2 /* StoreGroupDbRequest.swift */,
-				B3FD6B36220D86E0008D9D74 /* StoreCollectionsDbRequest.swift */,
-				B3FD6B38220D881A008D9D74 /* StoreItemsDbRequest.swift */,
-				B3BA36F922241CB0006220E4 /* StoreSearchesDbRequest.swift */,
-				B3A8CD852225907F00E553F4 /* StoreSettingsDbRequest.swift */,
-				B3FD6B3C220D8CD5008D9D74 /* MarkForResyncDbAction.swift */,
-				B3FD6B40220D9122008D9D74 /* UpdateVersionsDbRequest.swift */,
-				B3819CAE2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift */,
-				B3819CB02210A96C00EE02CA /* ReadCollectionsDbRequest.swift */,
-				B3C62EC92211E6D2000FFBFF /* ReadItemsDbRequest.swift */,
-				B32CD35C221C5F7C003F8073 /* ResolveReferenceDbRequest.swift */,
-				B34BA703221EE2DF0019A974 /* PerformDeletionsDbRequest.swift */,
-				B3A8CD7F2225605D00E553F4 /* ReadSearchesDbRequest.swift */,
-				B3C33D8722367CE00071A763 /* UpdateCollectionDbRequest.swift */,
-				B3C33D8922368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift */,
-				B3C33D932236C3990071A763 /* MarkObjectsAsSyncedDbRequest.swift */,
-				B39EE32C223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift */,
+				B38C968E223FFB2800343F8F /* InitializeMyLibraryDbRequest.swift */,
+				B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */,
+				B38C9688223FFB2800343F8F /* MarkObjectsAsSyncedDbRequest.swift */,
+				B38C968D223FFB2800343F8F /* PerformDeletionsDbRequest.swift */,
+				B38C967C223FFB2700343F8F /* ReadAllLibrariesDbRequest.swift */,
+				B38C9682223FFB2800343F8F /* ReadChangedObjectsDbRequest.swift */,
+				B38C9681223FFB2800343F8F /* ReadChangedObjectUpdateParametersDbRequest.swift */,
+				B38C967A223FFB2700343F8F /* ReadCollectionDbRequest.swift */,
+				B38C967D223FFB2800343F8F /* ReadCollectionsDbRequest.swift */,
+				B38C967F223FFB2800343F8F /* ReadItemsDbRequest.swift */,
+				B38C9685223FFB2800343F8F /* ReadLibrariesDataDbRequest.swift */,
+				B38C9680223FFB2800343F8F /* ReadSearchesDbRequest.swift */,
+				B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */,
+				B38C9684223FFB2800343F8F /* ResolveReferenceDbRequest.swift */,
+				B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */,
+				B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */,
+				B38C9686223FFB2800343F8F /* StoreGroupDbRequest.swift */,
+				B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */,
+				B38C9687223FFB2800343F8F /* StoreSearchesDbRequest.swift */,
+				B38C9689223FFB2800343F8F /* StoreSettingsDbRequest.swift */,
+				B38C967E223FFB2800343F8F /* StoreUserDbRequest.swift */,
+				B38C968A223FFB2800343F8F /* SyncVersionsDbRequest.swift */,
+				B38C968B223FFB2800343F8F /* UpdateCollectionDbRequest.swift */,
+				B38C968C223FFB2800343F8F /* UpdateVersionsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -889,11 +907,13 @@
 				B32CD347221C58DF003F8073 /* item_fields_instantMessage.txt in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B32CD341221C58DF003F8073 /* item_fields_videoRecording.txt in Resources */,
+				B38C9651223FD43000343F8F /* CollectionEditorViewController.xib in Resources */,
 				B32CD351221C58DF003F8073 /* item_fields_computerProgram.txt in Resources */,
 				B32CD331221C58DF003F8073 /* item_fields_tvBroadcast.txt in Resources */,
 				B32CD349221C58DF003F8073 /* item_fields_letter.txt in Resources */,
 				B32CD344221C58DF003F8073 /* item_fields_thesis.txt in Resources */,
 				B3A8CD8A22259A4900E553F4 /* ItemCell.xib in Resources */,
+				B38C9679223FE99900343F8F /* TextFieldCell.xib in Resources */,
 				B32CD343221C58DF003F8073 /* item_fields_radioBroadcast.txt in Resources */,
 				B36795F322077FD6003D0471 /* OnboardingViewController.xib in Resources */,
 				B32CD34D221C58DF003F8073 /* item_fields_audioRecording.txt in Resources */,
@@ -1058,63 +1078,66 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B393729A22295475008B2A96 /* ToolbarViewController.swift in Sources */,
 				B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */,
-				B385E2BC2208867A00DFE361 /* ReadUserDbRequest.swift in Sources */,
+				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
 				B3A8CD8922259A4900E553F4 /* ItemCell.swift in Sources */,
+				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
+				B38C96A7223FFB2900343F8F /* ReadUserDbRequest.swift in Sources */,
 				B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */,
 				B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */,
-				B3A8CD862225907F00E553F4 /* StoreSettingsDbRequest.swift in Sources */,
+				B38C96A6223FFB2900343F8F /* StoreItemsDbRequest.swift in Sources */,
 				B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */,
+				B38C9678223FE99900343F8F /* TextFieldCell.swift in Sources */,
+				B38C969F223FFB2900343F8F /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B30F668E220CBB37009E7A8F /* ObjectsRequest.swift in Sources */,
+				B38C9697223FFB2900343F8F /* ReadSearchesDbRequest.swift in Sources */,
+				B38C96A3223FFB2900343F8F /* UpdateVersionsDbRequest.swift in Sources */,
 				B36795E222075710003D0471 /* Controllers.swift in Sources */,
 				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
-				B30DF3FD2209BBA3000B6DE2 /* StoreGroupDbRequest.swift in Sources */,
+				B38C9692223FFB2900343F8F /* StoreCollectionsDbRequest.swift in Sources */,
 				B3C33D8C223693760071A763 /* Formatter.swift in Sources */,
+				B38C969D223FFB2900343F8F /* StoreGroupDbRequest.swift in Sources */,
+				B38C96A4223FFB2900343F8F /* PerformDeletionsDbRequest.swift in Sources */,
 				B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */,
 				B30F6692220CC033009E7A8F /* RItem.swift in Sources */,
 				B30DF3F92209A282000B6DE2 /* RLibrary.swift in Sources */,
-				B3819CAF2210A96200EE02CA /* ReadAllLibrariesDbRequest.swift in Sources */,
 				B3ADB3882232BE980064E150 /* SyncUpdateDataSource.swift in Sources */,
+				B38C9696223FFB2900343F8F /* ReadItemsDbRequest.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
 				B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncControllerModels+Extensions.swift in Sources */,
 				B31BD20E2224352D00FA8249 /* RCreator.swift in Sources */,
-				B3FD6B41220D9122008D9D74 /* UpdateVersionsDbRequest.swift in Sources */,
 				B30F6685220CA148009E7A8F /* SyncableObject.swift in Sources */,
 				B36D3E35223D6F1000DB497B /* LibraryCell.swift in Sources */,
-				B3FD6B3D220D8CD5008D9D74 /* MarkForResyncDbAction.swift in Sources */,
 				B31B04DA223ECEDB003C1B23 /* ItemType.swift in Sources */,
-				B34BA704221EE2DF0019A974 /* PerformDeletionsDbRequest.swift in Sources */,
 				B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */,
 				B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
+				B38C9673223FDC0000343F8F /* CollectionEditStore.swift in Sources */,
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
-				B3FD6B37220D86E0008D9D74 /* StoreCollectionsDbRequest.swift in Sources */,
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
-				B39EE32D223AB0F900302E29 /* ReadChangedObjectsDbRequest.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
+				B38C9694223FFB2900343F8F /* ReadCollectionsDbRequest.swift in Sources */,
+				B38C969A223FFB2900343F8F /* MarkForResyncDbAction.swift in Sources */,
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
 				B32CD358221C5A5D003F8073 /* ItemDetailViewController.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
-				B3A8CD802225605D00E553F4 /* ReadSearchesDbRequest.swift in Sources */,
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B32CD355221C58FB003F8073 /* ItemFieldsController.swift in Sources */,
-				B385E2BE220886E500DFE361 /* StoreUserDbRequest.swift in Sources */,
-				B393729C222957D0008B2A96 /* ProgressToolbarViewController.swift in Sources */,
+				B393729C222957D0008B2A96 /* ProgressNavigationViewController.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
+				B38C9698223FFB2900343F8F /* ReadChangedObjectUpdateParametersDbRequest.swift in Sources */,
 				B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */,
 				B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */,
 				B385E2B72208791100DFE361 /* DbStorage.swift in Sources */,
 				B36795E822075F9D003D0471 /* LoginStore.swift in Sources */,
-				B3C33D8A22368BE70071A763 /* ReadChangedObjectUpdateParametersDbRequest.swift in Sources */,
 				B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */,
+				B38C969B223FFB2900343F8F /* ResolveReferenceDbRequest.swift in Sources */,
 				B3BA36FC22242672006220E4 /* RTag.swift in Sources */,
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
-				B3BA36FA22241CB0006220E4 /* StoreSearchesDbRequest.swift in Sources */,
 				B385E2C8220897C600DFE361 /* ItemsViewController.swift in Sources */,
 				B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
@@ -1122,8 +1145,8 @@
 				B32CD360221C70B6003F8073 /* ItemFieldCell.swift in Sources */,
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B3C62EC02211D899000FFBFF /* MainViewController.swift in Sources */,
+				B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */,
 				B36795F222077FD6003D0471 /* OnboardingViewController.swift in Sources */,
-				B3C33D8822367CE00071A763 /* UpdateCollectionDbRequest.swift in Sources */,
 				B3C62EC32211DA23000FFBFF /* LibrariesViewController.swift in Sources */,
 				B385E2C4220897B300DFE361 /* CollectionsViewController.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
@@ -1131,34 +1154,35 @@
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */,
-				B30DF4012209E578000B6DE2 /* ReadLibrariesDataDbRequest.swift in Sources */,
-				B3FD6B39220D881A008D9D74 /* StoreItemsDbRequest.swift in Sources */,
 				B36795FA2207807F003D0471 /* RegisterViewController.swift in Sources */,
 				B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */,
 				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
 				B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */,
+				B38C969C223FFB2900343F8F /* ReadLibrariesDataDbRequest.swift in Sources */,
+				B38C9699223FFB2900343F8F /* ReadChangedObjectsDbRequest.swift in Sources */,
+				B38C96A2223FFB2900343F8F /* UpdateCollectionDbRequest.swift in Sources */,
 				B3487303221DBD1500244CCC /* String+Mimetype.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
 				B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */,
-				B3C62ECA2211E6D2000FFBFF /* ReadItemsDbRequest.swift in Sources */,
-				B3C33D942236C3990071A763 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */,
 				B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */,
+				B38C9650223FD43000343F8F /* CollectionEditorViewController.swift in Sources */,
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
 				B30F668C220CB6CC009E7A8F /* Files.swift in Sources */,
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,
-				B30DF3FB2209A2BE000B6DE2 /* SyncVersionsDbRequest.swift in Sources */,
-				B3819CB12210A96C00EE02CA /* ReadCollectionsDbRequest.swift in Sources */,
 				B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */,
-				B32CD35D221C5F7C003F8073 /* ResolveReferenceDbRequest.swift in Sources */,
 				B30F6690220CC02D009E7A8F /* RCollection.swift in Sources */,
+				B38C9695223FFB2900343F8F /* StoreUserDbRequest.swift in Sources */,
+				B38C96A9223FFB5600343F8F /* StoreCollectionDbRequest.swift in Sources */,
 				B36795DE220749B7003D0471 /* Result.swift in Sources */,
+				B38C96A5223FFB2900343F8F /* InitializeMyLibraryDbRequest.swift in Sources */,
 				B36795F622078076003D0471 /* LoginViewController.swift in Sources */,
-				B30DF3FF2209DB83000B6DE2 /* InitializeMyLibraryDbRequest.swift in Sources */,
 				B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */,
+				B38C9691223FFB2900343F8F /* ReadCollectionDbRequest.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
 				B37D57952215839D00B6CF5F /* CollectionCell.swift in Sources */,
+				B38C9693223FFB2900343F8F /* ReadAllLibrariesDbRequest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

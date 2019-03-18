@@ -10,13 +10,15 @@ import UIKit
 
 import RxSwift
 
-class LibrariesViewController: UIViewController {
+class LibrariesViewController: UIViewController, ProgressToolbarController {
     // Outlets
     @IBOutlet private weak var tableView: UITableView!
     // Constants
     private let store: LibrariesStore
     private let disposeBag: DisposeBag
     // Variables
+    weak var toolbarTitleLabel: UILabel?
+    weak var toolbarSubtitleLabel: UILabel?
     private weak var navigationDelegate: ItemNavigationDelegate?
 
     init(store: LibrariesStore, delegate: ItemNavigationDelegate) {
