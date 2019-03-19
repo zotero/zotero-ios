@@ -12,51 +12,6 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-struct CollectionCellData {
-    enum DataType {
-        case collection(Bool) // hasChildren
-        case search
-        case custom(CustomType)
-    }
-
-    enum CustomType {
-        case all, trash, publications
-    }
-
-    let type: CollectionCellData.DataType
-    let key: String
-    let name: String
-    let level: Int
-
-    init(object: RCollection, level: Int) {
-        self.type = .collection(!object.children.isEmpty)
-        self.key = object.key
-        self.name = object.name
-        self.level = level
-    }
-
-    init(object: RSearch) {
-        self.type = .search
-        self.key = object.key
-        self.name = object.name
-        self.level = 0
-    }
-
-    init(custom type: CustomType) {
-        self.type = .custom(type)
-        self.key = ""
-        self.level = 0
-        switch type {
-        case .all:
-            self.name = "All Items"
-        case .publications:
-            self.name = "My Publications"
-        case .trash:
-            self.name = "Trash"
-        }
-    }
-}
-
 enum CollectionsAction {
     case load
     case deleteCollection(Int)
@@ -173,31 +128,6 @@ class CollectionsStore: Store {
         }
     }
 
-    private func reload(searches: Results<RSearch>) -> [CollectionCellData] {
-        return searches.map(CollectionCellData.init)
-    }
-
-    private func reload(collections: Results<RCollection>) -> [CollectionCellData] {
-        let topCollections = collections.filter("parent == nil").sorted(by: [SortDescriptor(keyPath: "name"),
-                                                                             SortDescriptor(keyPath: "key")])
-        return self.cells(for:topCollections, level: 0)
-    }
-
-    private func cells(for results: Results<RCollection>, level: Int) -> [CollectionCellData] {
-        var cells: [CollectionCellData] = []
-        for rCollection in results {
-            let collection = CollectionCellData(object: rCollection, level: level)
-            cells.append(collection)
-
-            if rCollection.children.count > 0 {
-                let sortedChildren = rCollection.children.sorted(by: [SortDescriptor(keyPath: "name"),
-                                                                      SortDescriptor(keyPath: "key")])
-                cells.append(contentsOf: self.cells(for: sortedChildren, level: (level + 1)))
-            }
-        }
-        return cells
-    }
-
     private func loadData() {
         guard self.state.value.collectionToken == nil && self.state.value.searchToken == nil else { return }
 
@@ -211,7 +141,7 @@ class CollectionsStore: Store {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let cellData = self.reload(collections: objects)
+                    let cellData = CollectionCellData.createCells(from: objects)
                     self.updater.updateState(action: { newState in
                         newState.collectionCellData = cellData
                         newState.version += 1
@@ -230,7 +160,7 @@ class CollectionsStore: Store {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let cellData = self.reload(searches: objects)
+                    let cellData = CollectionCellData.createCells(from: objects)
                     self.updater.updateState(action: { newState in
                         newState.searchCellData = cellData
                         newState.version += 1
@@ -245,8 +175,8 @@ class CollectionsStore: Store {
                 }
             })
 
-            let collectionData = self.reload(collections: collections)
-            let searchData = self.reload(searches: searches)
+            let collectionData = CollectionCellData.createCells(from: collections)
+            let searchData = CollectionCellData.createCells(from: searches)
             self.updater.updateState { newState in
                 newState.version += 1
                 newState.collectionCellData = collectionData

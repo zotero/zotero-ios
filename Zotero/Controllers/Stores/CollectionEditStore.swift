@@ -13,7 +13,7 @@ import RealmSwift
 
 enum CollectionEditAction {
     case changeName(String)
-    case changeParent(RCollection)
+    case changeParent(CollectionCellData)
     case delete
     case save
 }
@@ -50,12 +50,17 @@ struct CollectionEditState {
             self.key = collection.key
             self.name = collection.name
         }
+
+        init(collection: CollectionCellData) {
+            self.key = collection.key
+            self.name = collection.name
+        }
     }
 
     let sections: [Section]
-    fileprivate let libraryId: Int
+    let libraryId: Int
     let libraryName: String
-    fileprivate let key: String
+    let key: String
 
     fileprivate(set) var parent: ParentCollection?
     fileprivate(set) var name: String
@@ -85,7 +90,7 @@ class CollectionEditStore: Store {
     typealias Action = CollectionEditAction
     typealias State = CollectionEditState
 
-    private let dbStorage: DbStorage
+    let dbStorage: DbStorage
     let updater: StoreStateUpdater<CollectionEditState>
 
     init(initialState: CollectionEditState, dbStorage: DbStorage) {

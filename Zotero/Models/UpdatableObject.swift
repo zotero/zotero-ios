@@ -35,8 +35,7 @@ extension RCollection: Updatable {
         guard self.isChanged else { return nil }
 
         var parameters: [String: Any] = ["key": self.key,
-                                         "version": self.version,
-                                         "dateModified": Formatter.iso8601.string(from: self.dateModified)]
+                                         "version": self.version]
 
         let changes = self.changedFields
         if changes.contains(.name) {

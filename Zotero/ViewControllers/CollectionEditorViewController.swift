@@ -90,11 +90,31 @@ class CollectionEditorViewController: UIViewController {
     }
 
     private func showParentPicker() {
+        guard let section = self.store.state.value.sections.index(of: .parent) else { return }
+        let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: section))
+        let state = CollectionPickerStore.StoreState(libraryId: self.store.state.value.libraryId,
+                                                     excludedKey: self.store.state.value.key)
+        let store = CollectionPickerStore(initialState: state, dbStorage: self.store.dbStorage)
 
+        let controller = CollectionPickerViewController(store: store)
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = cell
+        controller.popoverPresentationController?.sourceRect = cell?.bounds ?? CGRect()
+        self.present(controller, animated: true, completion: nil)
+
+        store.state.observeOn(MainScheduler.instance)
+                   .subscribe(onNext: { [weak self] state in
+                       if state.changes.contains(.pickedCollection),
+                          let data = state.pickedData {
+                           self?.store.handle(action: .changeParent(data))
+                           self?.dismiss(animated: true, completion: nil)
+                       }
+                   })
+                   .disposed(by: self.disposeBag)
     }
 
     private func delete() {
-        guard let section = self.store.state.value.sections.index(of: .parent) else { return }
+        guard let section = self.store.state.value.sections.index(of: .actions) else { return }
         let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: section))
 
         let controller = UIAlertController(title: "Are you sure?", message: nil, preferredStyle: .actionSheet)
@@ -105,6 +125,7 @@ class CollectionEditorViewController: UIViewController {
 
         controller.modalPresentationStyle = .popover
         controller.popoverPresentationController?.sourceView = cell
+        controller.popoverPresentationController?.sourceRect = cell?.bounds ?? CGRect()
         self.present(controller, animated: true, completion: nil)
     }
 

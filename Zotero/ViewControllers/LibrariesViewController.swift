@@ -76,8 +76,6 @@ class LibrariesViewController: UIViewController, ProgressToolbarController {
                                 forCellReuseIdentifier: "Cell")
         self.tableView.dataSource = self
         self.tableView.delegate = self
-        self.tableView.contentInset = UIEdgeInsets(top: self.tableView.contentInset.top,
-                                                   left: 0, bottom: 44, right: 0)
     }
 }
 
