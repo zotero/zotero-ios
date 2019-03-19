@@ -54,7 +54,7 @@ class CollectionEditorViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func process(state: CollectionEditState) {
+    private func process(state: CollectionEditStore.StoreState) {
         if state.didSave {
             self.presentingViewController?.dismiss(animated: true, completion: nil)
             return
@@ -145,7 +145,7 @@ class CollectionEditorViewController: UIViewController {
         }
     }
 
-    private func cellId(for section: CollectionEditState.Section) -> String {
+    private func cellId(for section: CollectionEditStore.StoreState.Section) -> String {
         switch section {
         case .actions:
             return "ActionCell"
@@ -233,7 +233,7 @@ extension CollectionEditorViewController: UITableViewDelegate {
     }
 }
 
-extension CollectionEditState.ParentCollection: CollectionCellModel {
+extension CollectionEditStore.StoreState.Parent: CollectionCellModel {
     var level: Int {
         return 0
     }

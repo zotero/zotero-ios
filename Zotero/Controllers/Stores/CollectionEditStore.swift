@@ -11,89 +11,79 @@ import Foundation
 import CocoaLumberjack
 import RealmSwift
 
-enum CollectionEditAction {
-    case changeName(String)
-    case changeParent(CollectionCellData)
-    case delete
-    case save
-}
+class CollectionEditStore: Store {
+    typealias Action = StoreAction
+    typealias State = StoreState
 
-enum CollectionEditStoreError: Equatable {
-    case invalidName
-    case saveFailed
-}
-
-struct CollectionEditStateChange: OptionSet {
-    typealias RawValue = UInt8
-
-    var rawValue: UInt8
-
-    init(rawValue: UInt8) {
-        self.rawValue = rawValue
-    }
-}
-
-extension CollectionEditStateChange {
-    static let parent = CollectionEditStateChange(rawValue: 1 << 0)
-}
-
-struct CollectionEditState {
-    enum Section {
-        case name, parent, actions
+    enum StoreAction {
+        case changeName(String)
+        case changeParent(CollectionCellData)
+        case delete
+        case save
     }
 
-    struct ParentCollection: Equatable {
+    enum StoreError: Equatable {
+        case invalidName
+        case saveFailed
+    }
+
+    struct Changes: OptionSet {
+        typealias RawValue = UInt8
+
+        var rawValue: UInt8
+
+        init(rawValue: UInt8) {
+            self.rawValue = rawValue
+        }
+    }
+
+    struct StoreState {
+        enum Section {
+            case name, parent, actions
+        }
+
+        struct Parent: Equatable {
+            let key: String
+            let name: String
+
+            init(collection: RCollection) {
+                self.key = collection.key
+                self.name = collection.name
+            }
+
+            init(collection: CollectionCellData) {
+                self.key = collection.key
+                self.name = collection.name
+            }
+        }
+
+        let sections: [Section]
+        let libraryId: Int
+        let libraryName: String
         let key: String
-        let name: String
+
+        fileprivate(set) var parent: Parent?
+        fileprivate(set) var name: String
+        fileprivate(set) var changes: Changes
+        fileprivate(set) var error: StoreError?
+        fileprivate(set) var didSave: Bool
 
         init(collection: RCollection) {
+            self.sections = [.name, .parent, .actions]
+            self.libraryId = collection.library?.identifier ?? RLibrary.myLibraryId
+            self.libraryName = collection.library?.name ?? ""
             self.key = collection.key
             self.name = collection.name
-        }
-
-        init(collection: CollectionCellData) {
-            self.key = collection.key
-            self.name = collection.name
+            self.parent = collection.parent.flatMap(StoreState.Parent.init)
+            self.changes = []
+            self.didSave = false
         }
     }
-
-    let sections: [Section]
-    let libraryId: Int
-    let libraryName: String
-    let key: String
-
-    fileprivate(set) var parent: ParentCollection?
-    fileprivate(set) var name: String
-    fileprivate(set) var changes: CollectionEditStateChange
-    fileprivate(set) var error: CollectionEditStoreError?
-    fileprivate(set) var didSave: Bool
-
-    init(collection: RCollection) {
-        self.sections = [.name, .parent, .actions]
-        self.libraryId = collection.library?.identifier ?? RLibrary.myLibraryId
-        self.libraryName = collection.library?.name ?? ""
-        self.key = collection.key
-        self.name = collection.name
-        self.parent = collection.parent.flatMap(CollectionEditState.ParentCollection.init)
-        self.changes = []
-        self.didSave = false
-    }
-}
-
-extension CollectionEditState: Equatable {
-    static func == (lhs: CollectionEditState, rhs: CollectionEditState) -> Bool {
-        return lhs.parent == rhs.parent && lhs.name == rhs.name && lhs.error == rhs.error && lhs.didSave == rhs.didSave
-    }
-}
-
-class CollectionEditStore: Store {
-    typealias Action = CollectionEditAction
-    typealias State = CollectionEditState
 
     let dbStorage: DbStorage
-    let updater: StoreStateUpdater<CollectionEditState>
+    let updater: StoreStateUpdater<CollectionEditStore.StoreState>
 
-    init(initialState: CollectionEditState, dbStorage: DbStorage) {
+    init(initialState: CollectionEditStore.StoreState, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
         self.updater = StoreStateUpdater(initialState: initialState)
         self.updater.stateCleanupAction = { state in
@@ -103,12 +93,12 @@ class CollectionEditStore: Store {
         }
     }
 
-    func handle(action: CollectionEditAction) {
+    func handle(action: StoreAction) {
         switch action {
         case .save:
             guard !self.state.value.name.isEmpty else {
                 self.updater.updateState { state in
-                    state.error = CollectionEditStoreError.invalidName
+                    state.error = StoreError.invalidName
                 }
                 return
             }
@@ -143,9 +133,19 @@ class CollectionEditStore: Store {
 
         case .changeParent(let parent):
             self.updater.updateState { state in
-                state.parent = CollectionEditState.ParentCollection(collection: parent)
+                state.parent = StoreState.Parent(collection: parent)
                 state.changes.insert(.parent)
             }
         }
+    }
+}
+
+extension CollectionEditStore.Changes {
+    static let parent = CollectionEditStore.Changes(rawValue: 1 << 0)
+}
+
+extension CollectionEditStore.StoreState: Equatable {
+    static func == (lhs: CollectionEditStore.StoreState, rhs: CollectionEditStore.StoreState) -> Bool {
+        return lhs.parent == rhs.parent && lhs.name == rhs.name && lhs.error == rhs.error && lhs.didSave == rhs.didSave
     }
 }

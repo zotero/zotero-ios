@@ -12,87 +12,74 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-enum CollectionsAction {
-    case load
-    case deleteCollection(Int)
-    case deleteSearch(Int)
-    case editCollection(Int)
-    case editSearch(Int)
-}
-
-enum CollectionsStoreError: Equatable {
-    case cantLoadData
-    case collectionNotFound
-}
-
-struct CollectionsStateChange: OptionSet {
-    typealias RawValue = UInt8
-
-    var rawValue: UInt8
-
-    init(rawValue: UInt8) {
-        self.rawValue = rawValue
-    }
-}
-
-extension CollectionsStateChange {
-    static let data = CollectionsStateChange(rawValue: 1 << 0)
-    static let editing = CollectionsStateChange(rawValue: 1 << 1)
-}
-
-struct CollectionsState {
-    enum Section {
-        case allItems, collections, searches, custom
-    }
-
-    let libraryId: Int
-    let title: String
-
-    let allItemsCellData: [CollectionCellData]
-    let sections: [Section]
-    fileprivate(set) var collectionCellData: [CollectionCellData]
-    fileprivate(set) var searchCellData: [CollectionCellData]
-    fileprivate(set) var customCellData: [CollectionCellData]
-    fileprivate(set) var error: CollectionsStoreError?
-    fileprivate(set) var collectionToEdit: RCollection?
-    fileprivate(set) var changes: CollectionsStateChange
-
-    // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
-    // on each change and we'll compare just versions of cellData.
-    fileprivate var version: Int
-    fileprivate var collectionToken: NotificationToken?
-    fileprivate var searchToken: NotificationToken?
-
-    init(libraryId: Int, title: String) {
-        self.libraryId = libraryId
-        self.title = title
-        self.collectionCellData = []
-        self.searchCellData = []
-        self.changes = []
-        self.version = 0
-        self.allItemsCellData = [CollectionCellData(custom: .all)]
-        self.customCellData = [CollectionCellData(custom: .publications),
-                               CollectionCellData(custom: .trash)]
-        self.sections = [.allItems, .collections, .searches, .custom]
-    }
-}
-
-extension CollectionsState: Equatable {
-    static func == (lhs: CollectionsState, rhs: CollectionsState) -> Bool {
-        return lhs.error == rhs.error && lhs.version == rhs.version &&
-               lhs.collectionToEdit?.key == rhs.collectionToEdit?.key
-    }
-}
-
 class CollectionsStore: Store {
-    typealias Action = CollectionsAction
-    typealias State = CollectionsState
+    typealias Action = CollectionsStore.StoreAction
+    typealias State = CollectionsStore.StoreState
+
+    enum StoreAction {
+        case load
+        case deleteCollection(Int)
+        case deleteSearch(Int)
+        case editCollection(Int)
+        case editSearch(Int)
+    }
+
+    enum StoreError: Equatable {
+        case cantLoadData
+        case collectionNotFound
+    }
+
+    struct Changes: OptionSet {
+        typealias RawValue = UInt8
+
+        var rawValue: UInt8
+
+        init(rawValue: UInt8) {
+            self.rawValue = rawValue
+        }
+    }
+
+    struct StoreState {
+        enum Section {
+            case allItems, collections, searches, custom
+        }
+
+        let libraryId: Int
+        let title: String
+        let allItemsCellData: [CollectionCellData]
+        let sections: [Section]
+
+        fileprivate(set) var collectionCellData: [CollectionCellData]
+        fileprivate(set) var searchCellData: [CollectionCellData]
+        fileprivate(set) var customCellData: [CollectionCellData]
+        fileprivate(set) var error: StoreError?
+        fileprivate(set) var collectionToEdit: RCollection?
+        fileprivate(set) var changes: Changes
+        // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
+        // on each change and we'll compare just versions of cellData.
+        fileprivate var version: Int
+        fileprivate var collectionToken: NotificationToken?
+        fileprivate var searchToken: NotificationToken?
+
+        init(libraryId: Int, title: String) {
+            self.libraryId = libraryId
+            self.title = title
+            self.collectionCellData = []
+            self.searchCellData = []
+            self.changes = []
+            self.version = 0
+            self.allItemsCellData = [CollectionCellData(custom: .all)]
+            self.customCellData = [CollectionCellData(custom: .publications),
+                                   CollectionCellData(custom: .trash)]
+            self.sections = [.allItems, .collections, .searches, .custom]
+        }
+    }
 
     let dbStorage: DbStorage
 
-    var updater: StoreStateUpdater<CollectionsState>
+    var updater: StoreStateUpdater<StoreState>
 
-    init(initialState: CollectionsState, dbStorage: DbStorage) {
+    init(initialState: StoreState, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
         self.updater = StoreStateUpdater(initialState: initialState)
         self.updater.stateCleanupAction = { state in
@@ -102,7 +89,7 @@ class CollectionsStore: Store {
         }
     }
 
-    func handle(action: CollectionsAction) {
+    func handle(action: StoreAction) {
         switch action {
         case .load:
             self.loadData()
@@ -191,5 +178,17 @@ class CollectionsStore: Store {
                 newState.error = .cantLoadData
             }
         }
+    }
+}
+
+extension CollectionsStore.Changes {
+    static let data = CollectionsStore.Changes(rawValue: 1 << 0)
+    static let editing = CollectionsStore.Changes(rawValue: 1 << 1)
+}
+
+extension CollectionsStore.StoreState: Equatable {
+    static func == (lhs: CollectionsStore.StoreState, rhs: CollectionsStore.StoreState) -> Bool {
+        return lhs.error == rhs.error && lhs.version == rhs.version &&
+               lhs.collectionToEdit?.key == rhs.collectionToEdit?.key
     }
 }

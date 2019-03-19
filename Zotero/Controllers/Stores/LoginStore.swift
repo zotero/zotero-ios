@@ -8,58 +8,47 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RxSwift
 
-enum LoginError: Error {
-    case invalidUsername
-    case invalidPassword
-
-    var localizedDescription: String {
-        switch self {
-        case .invalidPassword:
-            return "Invalid password"
-        case .invalidUsername:
-            return "Invalid username"
-        }
-    }
-}
-
-enum LoginAction {
-    case login(username: String, password: String)
-    case hideError
-}
-
-enum LoginState {
-    case error(Error)
-    case loading
-    case input
-}
-
-extension LoginState: Equatable {
-    static func == (lhs: LoginState, rhs: LoginState) -> Bool {
-        switch (lhs, rhs) {
-        case (.loading, .loading):
-            return true
-        case (.input, .input):
-            return true
-        case (.error(let lError), .error(let rError)):
-            return (lError as NSError) == (rError as NSError)
-        default:
-            return false
-        }
-    }
-}
-
 class LoginStore: Store {
-    typealias Action = LoginAction
-    typealias State = LoginState
+    typealias Action = StoreAction
+    typealias State = StoreState
+
+    enum StoreError: Error, Equatable {
+        case invalidUsername
+        case invalidPassword
+        case loginFailed
+
+        var localizedDescription: String {
+            switch self {
+            case .invalidPassword:
+                return "Invalid password"
+            case .invalidUsername:
+                return "Invalid username"
+            case .loginFailed:
+                return "Could not log in"
+            }
+        }
+    }
+
+    enum StoreAction {
+        case login(username: String, password: String)
+        case hideError
+    }
+
+    enum StoreState {
+        case error(StoreError)
+        case loading
+        case input
+    }
 
     private let apiClient: ApiClient
     private let secureStorage: SecureStorage
     private let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
-    var updater: StoreStateUpdater<LoginState>
+    var updater: StoreStateUpdater<StoreState>
 
     init(apiClient: ApiClient, secureStorage: SecureStorage, dbStorage: DbStorage) {
         self.apiClient = apiClient
@@ -69,12 +58,13 @@ class LoginStore: Store {
         self.updater = StoreStateUpdater(initialState: .input)
     }
 
-    func handle(action: LoginAction) {
+    func handle(action: StoreAction) {
         switch action {
         case .hideError:
             self.updater.updateState { newState in
                 newState = .input
             }
+
         case .login(let username, let password):
             self.handleLogin(username: username, password: password)
         }
@@ -83,14 +73,14 @@ class LoginStore: Store {
     private func isValid(username: String, password: String) -> Bool {
         if username.isEmpty {
             self.updater.updateState { newState in
-                newState = .error(LoginError.invalidUsername)
+                newState = .error(StoreError.invalidUsername)
             }
             return false
         }
 
         if password.isEmpty {
             self.updater.updateState { newState in
-                newState = .error(LoginError.invalidPassword)
+                newState = .error(StoreError.invalidPassword)
             }
             return false
         }
@@ -122,10 +112,26 @@ class LoginStore: Store {
                           self.apiClient.set(authToken: data.1)
                           NotificationCenter.default.post(name: .sessionChanged, object: data.0)
                       }, onError: { error in
+                          DDLogError("LoginStore: could not log in - \(error)")
                           self.updater.updateState(action: { newState in
-                              newState = .error(error)
+                              newState = .error(.loginFailed)
                           })
                       })
                       .disposed(by: self.disposeBag)
+    }
+}
+
+extension LoginStore.StoreState: Equatable {
+    static func == (lhs: LoginStore.StoreState, rhs: LoginStore.StoreState) -> Bool {
+        switch (lhs, rhs) {
+        case (.loading, .loading):
+            return true
+        case (.input, .input):
+            return true
+        case (.error(let lError), .error(let rError)):
+            return lError == rError
+        default:
+            return false
+        }
     }
 }

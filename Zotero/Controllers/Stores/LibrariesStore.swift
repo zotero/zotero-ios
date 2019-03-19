@@ -31,52 +31,45 @@ struct LibraryCellData {
     }
 }
 
-enum LibrariesAction {
-    case load
-}
-
-enum LibrariesStoreError: Equatable {
-    case cantLoadData
-}
-
-struct LibrariesState {
-    fileprivate(set) var myLibrary: LibraryCellData
-    fileprivate(set) var groupLibraries: [LibraryCellData]
-    fileprivate(set) var error: LibrariesStoreError?
-
-    // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
-    // on each change and we'll compare just versions of cellData.
-    fileprivate var version: Int
-    fileprivate var libraries: Results<RLibrary>?
-    fileprivate var librariesToken: NotificationToken?
-
-    init() {
-        self.myLibrary = LibraryCellData.myLibrary
-        self.groupLibraries = []
-        self.version = 0
-    }
-}
-
-extension LibrariesState: Equatable {
-    static func == (lhs: LibrariesState, rhs: LibrariesState) -> Bool {
-        return lhs.error == rhs.error && lhs.version == rhs.version
-    }
-}
-
 class LibrariesStore: Store {
-    typealias Action = LibrariesAction
-    typealias State = LibrariesState
+    typealias Action = StoreAction
+    typealias State = StoreState
+
+    enum StoreAction {
+        case load
+    }
+
+    enum StoreError: Equatable {
+        case cantLoadData
+    }
+
+    struct StoreState {
+        fileprivate(set) var myLibrary: LibraryCellData
+        fileprivate(set) var groupLibraries: [LibraryCellData]
+        fileprivate(set) var error: StoreError?
+        // To avoid comparing the whole cellData arrays in == function, we just have a version which we increment
+        // on each change and we'll compare just versions of cellData.
+        fileprivate var version: Int
+        fileprivate var libraries: Results<RLibrary>?
+        fileprivate var librariesToken: NotificationToken?
+
+        init() {
+            self.myLibrary = LibraryCellData.myLibrary
+            self.groupLibraries = []
+            self.version = 0
+        }
+    }
 
     let dbStorage: DbStorage
 
-    var updater: StoreStateUpdater<LibrariesState>
+    var updater: StoreStateUpdater<StoreState>
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.updater = StoreStateUpdater(initialState: LibrariesState())
+        self.updater = StoreStateUpdater(initialState: StoreState())
     }
 
-    func handle(action: LibrariesAction) {
+    func handle(action: StoreAction) {
         switch action {
         case .load:
             self.loadData()
@@ -130,5 +123,11 @@ class LibrariesStore: Store {
                 newState.error = .cantLoadData
             }
         }
+    }
+}
+
+extension LibrariesStore.StoreState: Equatable {
+    static func == (lhs: LibrariesStore.StoreState, rhs: LibrariesStore.StoreState) -> Bool {
+        return lhs.error == rhs.error && lhs.version == rhs.version
     }
 }

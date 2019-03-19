@@ -63,7 +63,7 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
 
     // MARK: - Actions
 
-    private func process(state: CollectionsState) {
+    private func process(state: CollectionsStore.StoreState) {
         if state.changes.contains(.data) {
             let selectedIndexPath = self.tableView.indexPathForSelectedRow
             self.tableView.reloadData()
@@ -74,7 +74,7 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
 
         if state.changes.contains(.editing) {
             if let collection = state.collectionToEdit {
-                let state = CollectionEditState(collection: collection)
+                let state = CollectionEditStore.StoreState(collection: collection)
                 let store = CollectionEditStore(initialState: state, dbStorage: self.store.dbStorage)
                 let controller = CollectionEditorViewController(store: store)
                 self.present(controller: controller)

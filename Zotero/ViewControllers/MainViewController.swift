@@ -54,7 +54,7 @@ class MainViewController: UISplitViewController {
         let leftNavigationController = ProgressNavigationViewController(rootViewController: leftController)
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
 
-        let itemState = ItemsState(libraryId: RLibrary.myLibraryId, type: .all)
+        let itemState = ItemsStore.StoreState(libraryId: RLibrary.myLibraryId, type: .all)
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
                                    fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
                                    itemFieldsController: controllers.itemFieldsController)
@@ -155,7 +155,7 @@ extension MainViewController: ItemNavigationDelegate {
     func showCollections(for libraryId: Int, libraryName: String) {
         guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
 
-        let state = CollectionsState(libraryId: libraryId, title: libraryName)
+        let state = CollectionsStore.StoreState(libraryId: libraryId, title: libraryName)
         let store = CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)
         let controller = CollectionsViewController(store: store, delegate: self)
         navigationController.pushViewController(controller, animated: true)
@@ -171,31 +171,27 @@ extension MainViewController: ItemNavigationDelegate {
     }
 
     func showAllItems(for libraryId: Int) {
-        let state = ItemsState(libraryId: libraryId, type: .all)
-        self.showItems(for: state)
+        self.showItems(for: .all, libraryId: libraryId)
     }
 
     func showTrashItems(for libraryId: Int) {
-        let state = ItemsState(libraryId: libraryId, type: .trash)
-        self.showItems(for: state)
+        self.showItems(for: .trash, libraryId: libraryId)
     }
 
     func showPublications(for libraryId: Int) {
-        let state = ItemsState(libraryId: libraryId, type: .publications)
-        self.showItems(for: state)
+        self.showItems(for: .publications, libraryId: libraryId)
     }
 
     func showSearchItems(libraryId: Int, searchData: (String, String)) {
-        let state = ItemsState(libraryId: libraryId, type: .search(searchData.0, searchData.1))
-        self.showItems(for: state)
+        self.showItems(for: .search(searchData.0, searchData.1), libraryId: libraryId)
     }
 
     func showCollectionItems(libraryId: Int, collectionData: (String, String)) {
-        let state = ItemsState(libraryId: libraryId, type: .collection(collectionData.0, collectionData.1))
-        self.showItems(for: state)
+        self.showItems(for: .collection(collectionData.0, collectionData.1), libraryId: libraryId)
     }
 
-    private func showItems(for state: ItemsState) {
+    private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: Int) {
+        let state = ItemsStore.StoreState(libraryId: libraryId, type: type)
         let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
                                fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,
                                itemFieldsController: self.controllers.itemFieldsController)

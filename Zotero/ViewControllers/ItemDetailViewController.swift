@@ -61,11 +61,11 @@ class ItemDetailViewController: UIViewController {
                                 self?.sections = sections
                                 self?.tableView.reloadData()
                             }
-                            if state.changes.contains(.error) {
-                                // TODO: Show error
-                            }
                             if state.changes.contains(.download) {
                                 self?.updateDownloadState(state.downloadState)
+                            }
+                            if let error = state.error {
+                                // TODO: Show error
                             }
                         })
                         .disposed(by: self.disposeBag)
@@ -80,7 +80,7 @@ class ItemDetailViewController: UIViewController {
         self.store.handle(action: .showAttachment(attachments[index]))
     }
 
-    private func updateDownloadState(_ state: ItemDetailState.FileDownload?) {
+    private func updateDownloadState(_ state: ItemDetailStore.StoreState.FileDownload?) {
         guard let state = state else {
             // TODO: - hide UI
             return
@@ -200,7 +200,7 @@ extension ItemDetailViewController: UITableViewDelegate {
     }
 }
 
-extension ItemDetailField: ItemFieldCellModel {
+extension ItemDetailStore.StoreState.Field: ItemFieldCellModel {
     var title: String {
         return self.name
     }

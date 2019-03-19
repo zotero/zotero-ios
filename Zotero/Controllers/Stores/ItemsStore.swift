@@ -12,65 +12,59 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-enum ItemsAction {
-    case load
-}
-
-enum ItemsStoreError: Equatable {
-    case cantLoadData
-}
-
-struct ItemsState {
-    enum ItemType {
-        case all, trash, publications
-        case collection(String, String) // Key, Title
-        case search(String, String) // Key, Title
-    }
-
-    let libraryId: Int
-    let type: ItemType
-    let title: String
-
-    fileprivate(set) var items: Results<RItem>?
-    fileprivate(set) var error: ItemsStoreError?
-    fileprivate var version: Int
-    fileprivate var itemsToken: NotificationToken?
-
-    init(libraryId: Int, type: ItemType) {
-        self.libraryId = libraryId
-        self.type = type
-        switch type {
-        case .collection(_, let title), .search(_, let title):
-            self.title = title
-        case .all:
-            self.title = "All Items"
-        case .trash:
-            self.title = "Trash"
-        case .publications:
-            self.title = "My Publications"
-        }
-        self.version = 0
-    }
-}
-
-extension ItemsState: Equatable {
-    static func == (lhs: ItemsState, rhs: ItemsState) -> Bool {
-        return lhs.error == rhs.error && lhs.version == rhs.version
-    }
-}
-
 class ItemsStore: Store {
-    typealias Action = ItemsAction
-    typealias State = ItemsState
+    typealias Action = StoreAction
+    typealias State = StoreState
+
+    enum StoreAction {
+        case load
+    }
+
+    enum StoreError: Equatable {
+        case cantLoadData
+    }
+
+    struct StoreState {
+        enum ItemType {
+            case all, trash, publications
+            case collection(String, String) // Key, Title
+            case search(String, String) // Key, Title
+        }
+
+        let libraryId: Int
+        let type: ItemType
+        let title: String
+
+        fileprivate(set) var items: Results<RItem>?
+        fileprivate(set) var error: StoreError?
+        fileprivate var version: Int
+        fileprivate var itemsToken: NotificationToken?
+
+        init(libraryId: Int, type: ItemType) {
+            self.libraryId = libraryId
+            self.type = type
+            switch type {
+            case .collection(_, let title), .search(_, let title):
+                self.title = title
+            case .all:
+                self.title = "All Items"
+            case .trash:
+                self.title = "Trash"
+            case .publications:
+                self.title = "My Publications"
+            }
+            self.version = 0
+        }
+    }
 
     let apiClient: ApiClient
     let fileStorage: FileStorage
     let dbStorage: DbStorage
     let itemFieldsController: ItemFieldsController
 
-    var updater: StoreStateUpdater<ItemsState>
+    var updater: StoreStateUpdater<StoreState>
 
-    init(initialState: ItemsState, apiClient: ApiClient, fileStorage: FileStorage,
+    init(initialState: StoreState, apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
@@ -79,7 +73,7 @@ class ItemsStore: Store {
         self.updater = StoreStateUpdater(initialState: initialState)
     }
 
-    func handle(action: ItemsAction) {
+    func handle(action: StoreAction) {
         switch action {
         case .load:
             self.loadData()
@@ -132,5 +126,11 @@ class ItemsStore: Store {
                 newState.error = .cantLoadData
             }
         }
+    }
+}
+
+extension ItemsStore.StoreState: Equatable {
+    static func == (lhs: ItemsStore.StoreState, rhs: ItemsStore.StoreState) -> Bool {
+        return lhs.error == rhs.error && lhs.version == rhs.version
     }
 }

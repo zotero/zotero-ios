@@ -12,91 +12,62 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-enum ItemDetailAction {
-    case load
-    case attachmentOpened
-    case showAttachment(RItem)
-}
-
-enum ItemDetailStoreError {
-    case typeNotSupported, libraryNotAssigned, contentTypeMissing, contentTypeUnknown, userMissing
-    case downloadError(Error)
-}
-
-extension ItemDetailStoreError: Equatable {
-    static func == (lhs: ItemDetailStoreError, rhs: ItemDetailStoreError) -> Bool {
-        switch (lhs, rhs) {
-            case (.typeNotSupported, .typeNotSupported),
-                 (.libraryNotAssigned, .libraryNotAssigned),
-                 (.contentTypeMissing, .contentTypeMissing),
-                 (.contentTypeUnknown, .contentTypeUnknown),
-                 (.userMissing, .userMissing),
-                 (.downloadError, .downloadError):
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-struct ItemDetailField {
-    let name: String
-    let value: String
-}
-
-enum ItemDetailChange {
-    case data, download, error
-}
-
-struct ItemDetailState {
-    enum FileDownload {
-        case progress(Double)
-        case downloaded(File)
-    }
-
-    let item: RItem
-
-    fileprivate(set) var changes: Set<ItemDetailChange>
-    fileprivate(set) var downloadState: FileDownload?
-    fileprivate(set) var fields: [ItemDetailField]
-    fileprivate(set) var attachments: Results<RItem>?
-    fileprivate(set) var notes: Results<RItem>?
-    fileprivate(set) var tags: Results<RTag>?
-    fileprivate(set) var error: ItemDetailStoreError?
-
-    fileprivate var version: Int
-
-    init(item: RItem) {
-        self.item = item
-        self.fields = []
-        self.changes = []
-        self.attachments = nil
-        self.version = 0
-    }
-}
-
-extension ItemDetailState: Equatable {
-    static func == (lhs: ItemDetailState, rhs: ItemDetailState) -> Bool {
-        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.downloadState == rhs.downloadState
-    }
-}
-
-extension ItemDetailState.FileDownload: Equatable {
-    static func == (lhs: ItemDetailState.FileDownload, rhs: ItemDetailState.FileDownload) -> Bool {
-        switch (lhs, rhs) {
-        case (.progress(let lProgress), .progress(let rProgress)):
-            return lProgress == rProgress
-        case (.downloaded(let lFile), .downloaded(let rFile)):
-            return lFile.createUrl() == rFile.createUrl()
-        default:
-            return false
-        }
-    }
-}
-
 class ItemDetailStore: Store {
-    typealias Action = ItemDetailAction
-    typealias State = ItemDetailState
+    typealias Action = StoreAction
+    typealias State = StoreState
+
+    enum StoreAction {
+        case load
+        case attachmentOpened
+        case showAttachment(RItem)
+    }
+
+    enum StoreError {
+        case typeNotSupported, libraryNotAssigned, contentTypeMissing, contentTypeUnknown, userMissing
+        case downloadError(Error)
+    }
+
+    struct Changes: OptionSet {
+        typealias RawValue = UInt8
+
+        var rawValue: UInt8
+
+        init(rawValue: UInt8) {
+            self.rawValue = rawValue
+        }
+    }
+
+    struct StoreState {
+        struct Field {
+            let name: String
+            let value: String
+        }
+
+        enum FileDownload {
+            case progress(Double)
+            case downloaded(File)
+        }
+
+        let item: RItem
+
+        fileprivate(set) var changes: Changes
+        fileprivate(set) var downloadState: FileDownload?
+        fileprivate(set) var fields: [Field]
+        fileprivate(set) var attachments: Results<RItem>?
+        fileprivate(set) var notes: Results<RItem>?
+        fileprivate(set) var tags: Results<RTag>?
+        fileprivate(set) var error: StoreError?
+
+        fileprivate var version: Int
+
+        init(item: RItem) {
+            self.item = item
+            self.fields = []
+            self.changes = []
+            self.attachments = nil
+            self.version = 0
+        }
+    }
 
     let apiClient: ApiClient
     let fileStorage: FileStorage
@@ -104,9 +75,9 @@ class ItemDetailStore: Store {
     let itemFieldsController: ItemFieldsController
     let disposeBag: DisposeBag
 
-    var updater: StoreStateUpdater<ItemDetailState>
+    var updater: StoreStateUpdater<StoreState>
 
-    init(initialState: ItemDetailState, apiClient: ApiClient, fileStorage: FileStorage,
+    init(initialState: StoreState, apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
@@ -115,11 +86,12 @@ class ItemDetailStore: Store {
         self.disposeBag = DisposeBag()
         self.updater = StoreStateUpdater(initialState: initialState)
         self.updater.stateCleanupAction = { state in
+            state.error = nil
             state.changes = []
         }
     }
 
-    func handle(action: ItemDetailAction) {
+    func handle(action: StoreAction) {
         switch action {
         case .load:
             self.loadData()
@@ -142,8 +114,8 @@ class ItemDetailStore: Store {
         self.state.value.item.fields.filter("value != %@", "").forEach { field in
             values[field.key] = field.value
         }
-        let fields: [ItemDetailField] = sortedFieldNames.compactMap { name in
-            return values[name].flatMap({ ItemDetailField(name: name, value: $0) })
+        let fields: [StoreState.Field] = sortedFieldNames.compactMap { name in
+            return values[name].flatMap({ StoreState.Field(name: name, value: $0) })
         }
         let attachments = self.state.value.item.children
                                                .filter("rawType = %@", ItemType.attachment.rawValue)
@@ -159,7 +131,7 @@ class ItemDetailStore: Store {
             newState.fields = fields
             newState.tags = tags
             newState.version += 1
-            newState.changes = [.data]
+            newState.changes = .data
         }
     }
 
@@ -183,7 +155,7 @@ class ItemDetailStore: Store {
         if self.fileStorage.has(file) {
             self.updater.updateState { newState in
                 newState.downloadState = .downloaded(file)
-                newState.changes = [.download]
+                newState.changes = .download
             }
             return
         }
@@ -209,28 +181,67 @@ class ItemDetailStore: Store {
             .subscribe(onNext: { [weak self] progress in
                 self?.updater.updateState { newState in
                     newState.downloadState = .progress(Double(progress.bytesWritten) / Double(progress.totalBytes))
-                    newState.changes = [.download]
+                    newState.changes = .download
                 }
             }, onError: { [weak self] error in
                 DDLogError("ItemDetailStore: can't download file - \(error)")
                 self?.updater.updateState { newState in
                     newState.downloadState = nil
                     newState.error = .downloadError(error)
-                    newState.changes = [.download, .error]
+                    newState.changes = .download
                 }
             }, onCompleted: { [weak self] in
                 self?.updater.updateState { newState in
                     newState.downloadState = .downloaded(file)
-                    newState.changes = [.download]
+                    newState.changes = .download
                 }
             })
             .disposed(by: self.disposeBag)
     }
 
-    private func reportError(_ error: ItemDetailStoreError) {
+    private func reportError(_ error: StoreError) {
         self.updater.updateState { newState in
             newState.error = error
-            newState.changes = [.error]
         }
     }
+}
+
+extension ItemDetailStore.StoreError: Equatable {
+    static func == (lhs: ItemDetailStore.StoreError, rhs: ItemDetailStore.StoreError) -> Bool {
+        switch (lhs, rhs) {
+        case (.typeNotSupported, .typeNotSupported),
+             (.libraryNotAssigned, .libraryNotAssigned),
+             (.contentTypeMissing, .contentTypeMissing),
+             (.contentTypeUnknown, .contentTypeUnknown),
+             (.userMissing, .userMissing),
+             (.downloadError, .downloadError):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+extension ItemDetailStore.StoreState: Equatable {
+    static func == (lhs: ItemDetailStore.StoreState, rhs: ItemDetailStore.StoreState) -> Bool {
+        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.downloadState == rhs.downloadState
+    }
+}
+
+extension ItemDetailStore.StoreState.FileDownload: Equatable {
+    static func == (lhs: ItemDetailStore.StoreState.FileDownload, rhs: ItemDetailStore.StoreState.FileDownload) -> Bool {
+        switch (lhs, rhs) {
+        case (.progress(let lProgress), .progress(let rProgress)):
+            return lProgress == rProgress
+        case (.downloaded(let lFile), .downloaded(let rFile)):
+            return lFile.createUrl() == rFile.createUrl()
+        default:
+            return false
+        }
+    }
+}
+
+extension ItemDetailStore.Changes {
+    static let data = ItemDetailStore.Changes(rawValue: 1 << 0)
+    static let download = ItemDetailStore.Changes(rawValue: 1 << 1)
 }

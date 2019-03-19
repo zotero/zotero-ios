@@ -50,7 +50,7 @@ class LoginViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func update(to state: LoginState) {
+    private func update(to state: LoginStore.StoreState) {
         switch state {
         case .input:
             self.activityIndicator.stopAnimating()
@@ -64,13 +64,12 @@ class LoginViewController: UIViewController {
             self.showAlert(for: error) { [weak self] in
                 self?.store.handle(action: .hideError)
 
-                if let error = error as? LoginError {
-                    switch error {
-                    case .invalidPassword:
-                        self?.passwordField.becomeFirstResponder()
-                    case .invalidUsername:
-                        self?.usernameField.becomeFirstResponder()
-                    }
+                switch error {
+                case .invalidPassword:
+                    self?.passwordField.becomeFirstResponder()
+                case .invalidUsername:
+                    self?.usernameField.becomeFirstResponder()
+                case .loginFailed: break
                 }
             }
         }
