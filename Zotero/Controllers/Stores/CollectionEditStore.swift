@@ -22,7 +22,7 @@ class CollectionEditStore: Store {
         case save
     }
 
-    enum StoreError: Equatable {
+    enum StoreError: Error, Equatable {
         case invalidName
         case saveFailed
     }

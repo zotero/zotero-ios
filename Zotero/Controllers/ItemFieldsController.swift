@@ -15,6 +15,7 @@ enum ItemFieldsControllerError: Error {
 }
 
 class ItemFieldsController {
+    let abstractKey = "abstractNote"
     private(set) var types: [String]
     private(set) var fields: [String: [String]]
 

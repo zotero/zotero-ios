@@ -50,6 +50,11 @@ class ItemsViewController: UIViewController {
         self.store.handle(action: .load)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.splitViewController?.presentsWithGesture = true
+    }
+
     // MARK: - Actions
 
     private func showItem(at index: Int) {

@@ -22,9 +22,8 @@ class ItemDetailStore: Store {
         case showAttachment(RItem)
     }
 
-    enum StoreError {
-        case typeNotSupported, libraryNotAssigned, contentTypeMissing, contentTypeUnknown, userMissing
-        case downloadError(Error)
+    enum StoreError: Error, Equatable {
+        case typeNotSupported, libraryNotAssigned, contentTypeMissing, contentTypeUnknown, userMissing, downloadError
     }
 
     struct Changes: OptionSet {
@@ -38,6 +37,10 @@ class ItemDetailStore: Store {
     }
 
     struct StoreState {
+        enum Section: CaseIterable {
+            case title, fields, abstract, notes, tags, attachments, related
+        }
+
         struct Field {
             let name: String
             let value: String
@@ -53,17 +56,19 @@ class ItemDetailStore: Store {
         fileprivate(set) var changes: Changes
         fileprivate(set) var downloadState: FileDownload?
         fileprivate(set) var fields: [Field]
+        fileprivate(set) var abstract: String?
         fileprivate(set) var attachments: Results<RItem>?
         fileprivate(set) var notes: Results<RItem>?
         fileprivate(set) var tags: Results<RTag>?
+        fileprivate(set) var sections: [Section]
         fileprivate(set) var error: StoreError?
-
         fileprivate var version: Int
 
         init(item: RItem) {
             self.item = item
             self.fields = []
             self.changes = []
+            self.sections = []
             self.attachments = nil
             self.version = 0
         }
@@ -105,14 +110,25 @@ class ItemDetailStore: Store {
     }
 
     private func loadData() {
-        guard let sortedFieldNames = self.itemFieldsController.fields[self.state.value.item.rawType] else {
+        guard var sortedFieldNames = self.itemFieldsController.fields[self.state.value.item.rawType] else {
             self.reportError(.typeNotSupported)
             return
         }
 
+        // We're showing title and abstract separately, outside of fields, let's just exclude them here
+        let excludedKeys = RItem.titleKeys + [self.itemFieldsController.abstractKey]
+        sortedFieldNames.removeAll { field -> Bool in
+            return excludedKeys.contains(field)
+        }
+
+        var abstract: String?
         var values: [String: String] = [:]
         self.state.value.item.fields.filter("value != %@", "").forEach { field in
-            values[field.key] = field.value
+            if field.key ==  self.itemFieldsController.abstractKey {
+                abstract = field.value
+            } else {
+                values[field.key] = field.value
+            }
         }
         let fields: [StoreState.Field] = sortedFieldNames.compactMap { name in
             return values[name].flatMap({ StoreState.Field(name: name, value: $0) })
@@ -125,11 +141,31 @@ class ItemDetailStore: Store {
                                          .sorted(byKeyPath: "title")
         let tags = self.state.value.item.tags.sorted(byKeyPath: "name")
 
+        var sections: [StoreState.Section] = [.title]
+        if !fields.isEmpty {
+            sections.append(.fields)
+        }
+        if abstract != nil {
+            sections.append(.abstract)
+        }
+        if !notes.isEmpty {
+            sections.append(.notes)
+        }
+        if !tags.isEmpty {
+            sections.append(.tags)
+        }
+        if !attachments.isEmpty {
+            sections.append(.attachments)
+        }
+        // TODO: - Add related
+
         self.updater.updateState { newState in
             newState.attachments = attachments
             newState.notes = notes
             newState.fields = fields
             newState.tags = tags
+            newState.abstract = abstract
+            newState.sections = sections
             newState.version += 1
             newState.changes = .data
         }
@@ -187,7 +223,7 @@ class ItemDetailStore: Store {
                 DDLogError("ItemDetailStore: can't download file - \(error)")
                 self?.updater.updateState { newState in
                     newState.downloadState = nil
-                    newState.error = .downloadError(error)
+                    newState.error = .downloadError
                     newState.changes = .download
                 }
             }, onCompleted: { [weak self] in
@@ -202,22 +238,6 @@ class ItemDetailStore: Store {
     private func reportError(_ error: StoreError) {
         self.updater.updateState { newState in
             newState.error = error
-        }
-    }
-}
-
-extension ItemDetailStore.StoreError: Equatable {
-    static func == (lhs: ItemDetailStore.StoreError, rhs: ItemDetailStore.StoreError) -> Bool {
-        switch (lhs, rhs) {
-        case (.typeNotSupported, .typeNotSupported),
-             (.libraryNotAssigned, .libraryNotAssigned),
-             (.contentTypeMissing, .contentTypeMissing),
-             (.contentTypeUnknown, .contentTypeUnknown),
-             (.userMissing, .userMissing),
-             (.downloadError, .downloadError):
-            return true
-        default:
-            return false
         }
     }
 }

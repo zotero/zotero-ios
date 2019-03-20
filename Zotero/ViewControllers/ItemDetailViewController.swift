@@ -14,17 +14,11 @@ import PSPDFKitUI
 import RxSwift
 
 class ItemDetailViewController: UIViewController {
-    fileprivate enum Section {
-        case info, attachments, notes, tags
-    }
-
     // Outlets
     @IBOutlet private weak var tableView: UITableView!
     // Constants
     private let store: ItemDetailStore
     private let disposeBag: DisposeBag
-    // Variables
-    private var sections: [Section] = []
 
     // MARK: - Lifecycle
 
@@ -47,33 +41,31 @@ class ItemDetailViewController: UIViewController {
         self.store.state.asObservable()
                         .observeOn(MainScheduler.instance)
                         .subscribe(onNext: { [weak self] state in
-                            if state.changes.contains(.data) {
-                                var sections: [Section] = [.info]
-                                if state.attachments?.isEmpty == false {
-                                    sections.append(.attachments)
-                                }
-                                if state.notes?.isEmpty == false {
-                                    sections.append(.notes)
-                                }
-                                if state.tags?.isEmpty == false {
-                                    sections.append(.tags)
-                                }
-                                self?.sections = sections
-                                self?.tableView.reloadData()
-                            }
-                            if state.changes.contains(.download) {
-                                self?.updateDownloadState(state.downloadState)
-                            }
-                            if let error = state.error {
-                                // TODO: Show error
-                            }
+                            self?.process(state: state)
                         })
                         .disposed(by: self.disposeBag)
 
         self.store.handle(action: .load)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.splitViewController?.presentsWithGesture = false
+    }
+
     // MARK: - Actions
+
+    private func process(state: ItemDetailStore.StoreState) {
+        if state.changes.contains(.data) {
+            self.tableView.reloadData()
+        }
+        if state.changes.contains(.download) {
+            self.updateDownloadState(state.downloadState)
+        }
+        if let error = state.error {
+            // TODO: Show error
+        }
+    }
 
     private func showAttachment(at index: Int) {
         guard let attachments = self.store.state.value.attachments, index < attachments.count else { return }
@@ -110,77 +102,130 @@ class ItemDetailViewController: UIViewController {
         self.present(navigationController, animated: true, completion: nil)
     }
 
+    private func cellId(for row: Int, section: ItemDetailStore.StoreState.Section) -> String {
+        switch section {
+        case .title, .fields, .abstract:
+            return self.cellId(for: section)
+        case .tags, .related, .notes, .attachments:
+            if row == 0 {
+                return ItemSpecialTitleCell.nibName
+            }
+            return self.cellId(for: section)
+        }
+    }
+
+    private func cellId(for section: ItemDetailStore.StoreState.Section) -> String {
+        switch section {
+        case .title:
+            return ItemTitleCell.nibName
+        case .fields:
+            return ItemFieldCell.nibName
+        case .abstract:
+            return ItemAbstractCell.nibName
+        case .tags, .related, .notes, .attachments:
+            return ItemSpecialCell.nibName
+        }
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
         self.tableView.dataSource = self
         self.tableView.delegate = self
-        self.tableView.register(UINib(nibName: ItemFieldCell.nibName, bundle: nil),
-                                forCellReuseIdentifier: ItemFieldCell.nibName)
-        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "AttachmentCell")
+        ItemDetailStore.StoreState.Section.allCases.forEach { section in
+            let identifier = self.cellId(for: section)
+            self.tableView.register(UINib(nibName: identifier, bundle: nil),
+                                    forCellReuseIdentifier: identifier)
+        }
+        self.tableView.register(UINib(nibName: ItemSpecialTitleCell.nibName, bundle: nil),
+                                forCellReuseIdentifier: ItemSpecialTitleCell.nibName)
+        self.tableView.tableFooterView = UIView()
     }
 }
 
 extension ItemDetailViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return self.sections.count
+        return self.store.state.value.sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch self.sections[section] {
-        case .info:
-            return self.store.state.value.fields.count
+        let state = self.store.state.value
+        switch self.store.state.value.sections[section] {
+        case .title, .abstract:
+            return 1
+        case .fields:
+            return state.fields.count
         case .attachments:
-            return self.store.state.value.attachments?.count ?? 0
+            return state.attachments.flatMap({ $0.count + 1 }) ?? 0
         case .notes:
-            return self.store.state.value.notes?.count ?? 0
+            return state.notes.flatMap({ $0.count + 1 }) ?? 0
         case .tags:
-            return self.store.state.value.tags?.count ?? 0
+            return state.tags.flatMap({ $0.count + 1 }) ?? 0
+        case .related:
+            return 0 // TODO - change when related are added
         }
     }
 
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        switch self.sections[section] {
-        case .info:
-            return "Info"
-        case .attachments:
-            return "Attachments"
-        case .notes:
-            return "Notes"
-        case .tags:
-            return "Tags"
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        switch self.store.state.value.sections[section] {
+        case .title, .fields, .abstract:
+            return 0
+        case .attachments, .notes, .tags, .related:
+            return 10
+        }
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        guard section < (self.store.state.value.sections.count - 1) else { return 0 }
+
+        switch self.store.state.value.sections[section] {
+        case .title, .fields:
+            return 0
+        case .attachments, .notes, .tags, .abstract, .related:
+            return 10
         }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let section = self.sections[indexPath.section]
-        let identifier = section == .info ? ItemFieldCell.nibName : "AttachmentCell"
-        let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath)
+        let section = self.store.state.value.sections[indexPath.section]
+        let cellId = self.cellId(for: indexPath.row, section: section)
+        let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
-        switch section {
-        case .info:
-            if let cell = cell as? ItemFieldCell {
-                if indexPath.row < self.store.state.value.fields.count {
-                    let field = self.store.state.value.fields[indexPath.row]
-                    cell.setup(with: field)
-                }
+        if let cell = cell as? ItemTitleCell {
+            cell.setup(with: self.store.state.value.item.title)
+        } else if let cell = cell as? ItemAbstractCell {
+            cell.setup(with: (self.store.state.value.abstract ?? ""))
+        } else if let cell = cell as? ItemFieldCell {
+            cell.setup(with: self.store.state.value.fields[indexPath.row])
+        } else if let cell = cell as? ItemSpecialTitleCell {
+            switch section {
+            case .attachments:
+                cell.setup(with: "Attachments")
+            case .notes:
+                cell.setup(with: "Notes")
+            case .tags:
+                cell.setup(with: "Tags")
+            case .related: break
+            default: break
             }
-        case .attachments:
-            if let attachments = self.store.state.value.attachments, indexPath.row < attachments.count {
-                cell.textLabel?.text = attachments[indexPath.row].title
-                cell.textLabel?.numberOfLines = 1
-                cell.textLabel?.textColor = .black
+        } else if let cell = cell as? ItemSpecialCell {
+            let index = indexPath.row - 1
+            let model: ItemSpecialCellModel?
+            switch section {
+            case .attachments:
+                model = self.store.state.value.attachments?[index]
+            case .notes:
+                model = self.store.state.value.notes?[index]
+            case .tags:
+                model = self.store.state.value.tags?[index]
+            case .related:
+                model = nil
+            default:
+                model = nil
             }
-        case .notes:
-            if let notes = self.store.state.value.notes, indexPath.row < notes.count {
-                cell.textLabel?.text = notes[indexPath.row].title
-                cell.textLabel?.numberOfLines = 0
-                cell.textLabel?.textColor = .black
-            }
-        case .tags:
-            if let tags = self.store.state.value.tags, indexPath.row < tags.count {
-                cell.textLabel?.text = tags[indexPath.row].name
-                cell.textLabel?.textColor = tags[indexPath.row].uiColor ?? .black
+
+            if let model = model {
+                cell.setup(with: model)
             }
         }
 
@@ -192,9 +237,11 @@ extension ItemDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        switch self.sections[indexPath.section] {
+        switch self.store.state.value.sections[indexPath.section] {
         case .attachments:
-            self.showAttachment(at: indexPath.row)
+            if indexPath.row > 0 {
+                self.showAttachment(at: (indexPath.row - 1))
+            }
         default: break
         }
     }
@@ -203,5 +250,28 @@ extension ItemDetailViewController: UITableViewDelegate {
 extension ItemDetailStore.StoreState.Field: ItemFieldCellModel {
     var title: String {
         return self.name
+    }
+}
+
+extension RTag: ItemSpecialCellModel {
+    var title: String {
+        return self.name
+    }
+
+    var specialIcon: UIImage? {
+        return UIImage(named: "icon_cell_tag")?.withRenderingMode(.alwaysTemplate)
+    }
+}
+
+extension RItem: ItemSpecialCellModel {
+    var specialIcon: UIImage? {
+        switch self.type {
+        case .attachment:
+            return UIImage(named: "icon_cell_attachment")?.withRenderingMode(.alwaysTemplate)
+        case .note:
+            return UIImage(named: "icon_cell_note")?.withRenderingMode(.alwaysTemplate)
+        default:
+            return nil
+        }
     }
 }

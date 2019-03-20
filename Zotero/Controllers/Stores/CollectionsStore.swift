@@ -24,7 +24,7 @@ class CollectionsStore: Store {
         case editSearch(Int)
     }
 
-    enum StoreError: Equatable {
+    enum StoreError: Error, Equatable {
         case cantLoadData
         case collectionNotFound
     }

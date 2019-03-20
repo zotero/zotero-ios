@@ -39,7 +39,7 @@ class LibrariesStore: Store {
         case load
     }
 
-    enum StoreError: Equatable {
+    enum StoreError: Error, Equatable {
         case cantLoadData
     }
 

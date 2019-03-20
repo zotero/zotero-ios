@@ -20,7 +20,7 @@ class ItemsStore: Store {
         case load
     }
 
-    enum StoreError: Equatable {
+    enum StoreError: Error, Equatable {
         case cantLoadData
     }
 

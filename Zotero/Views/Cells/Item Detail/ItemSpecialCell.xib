@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14460.20"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" id="KGk-i7-Jjw" customClass="ItemSpecialCell" customModule="Zotero" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="43.5"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="icon_cell_attachment" translatesAutoresizingMaskIntoConstraints="NO" id="Z6O-Qk-R52">
+                        <rect key="frame" x="15" y="12" width="20" height="20"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="20" id="L8g-NW-Ahw"/>
+                            <constraint firstAttribute="width" constant="20" id="seq-b3-OTC"/>
+                        </constraints>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="W9p-9e-Ypt">
+                        <rect key="frame" x="47" y="12" width="257" height="19.5"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="Z6O-Qk-R52" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="15" id="5ft-Wq-4fC"/>
+                    <constraint firstItem="W9p-9e-Ypt" firstAttribute="leading" secondItem="Z6O-Qk-R52" secondAttribute="trailing" constant="12" id="WXm-O1-ZcH"/>
+                    <constraint firstAttribute="bottom" secondItem="W9p-9e-Ypt" secondAttribute="bottom" constant="12" id="ZDR-8s-x3I"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="W9p-9e-Ypt" secondAttribute="trailing" id="gn1-Q3-Brs"/>
+                    <constraint firstItem="Z6O-Qk-R52" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="mA5-sw-ZFL"/>
+                    <constraint firstItem="W9p-9e-Ypt" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="12" id="rmM-Pn-eX4"/>
+                </constraints>
+            </tableViewCellContentView>
+            <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
+            <inset key="separatorInset" minX="47" minY="0.0" maxX="0.0" maxY="0.0"/>
+            <connections>
+                <outlet property="iconView" destination="Z6O-Qk-R52" id="8FD-qf-qF3"/>
+                <outlet property="titleLabel" destination="W9p-9e-Ypt" id="Edq-qx-Bft"/>
+            </connections>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <image name="icon_cell_attachment" width="20" height="20"/>
+    </resources>
+</document>

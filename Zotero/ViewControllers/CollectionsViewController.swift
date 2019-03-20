@@ -117,7 +117,7 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
 
     private func present(controller: UIViewController) {
         let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .overCurrentContext
+        navigationController.modalPresentationStyle = .currentContext
         self.present(navigationController, animated: true, completion: nil)
     }
 
