@@ -8,17 +8,12 @@
 
 import UIKit
 
-protocol ItemFieldCellModel {
-    var title: String { get }
-    var value: String { get }
-}
-
 class ItemFieldCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var valueLabel: UILabel!
 
-    func setup(with model: ItemFieldCellModel) {
-        self.titleLabel.text = model.title
-        self.valueLabel.text = model.value
+    func setup(with title: String, value: String) {
+        self.titleLabel.text = title
+        self.valueLabel.text = value
     }
 }

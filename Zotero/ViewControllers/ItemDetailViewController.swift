@@ -36,6 +36,7 @@ class ItemDetailViewController: UIViewController {
         super.viewDidLoad()
 
         self.navigationItem.title = self.store.state.value.item.title
+        self.setupNavigationBar(forEditing: false)
         self.setupTableView()
 
         self.store.state.asObservable()
@@ -62,8 +63,55 @@ class ItemDetailViewController: UIViewController {
         if state.changes.contains(.download) {
             self.updateDownloadState(state.downloadState)
         }
+        if state.changes.contains(.editing), let diff = state.editingDiff {
+            self.setEditing(state.isEditing, diff: diff)
+        }
         if let error = state.error {
             // TODO: Show error
+        }
+    }
+
+    private func setEditing(_ editing: Bool, diff: [EditingSectionDiff]) {
+        self.setupNavigationBar(forEditing: editing)
+
+        if #available(iOS 11.0, *) {
+            self.tableView.performBatchUpdates({
+                self.performEditingSectionDiffActions(diff: diff)
+                self.tableView.isEditing = editing
+            }, completion: nil)
+        } else {
+            self.tableView.beginUpdates()
+            self.performEditingSectionDiffActions(diff: diff)
+            self.tableView.isEditing = editing
+            self.tableView.endUpdates()
+        }
+    }
+
+    private func performEditingSectionDiffActions(diff: [EditingSectionDiff]) {
+        diff.enumerated().forEach { data in
+            switch data.element {
+            case .delete:
+                self.tableView.deleteSections(IndexSet(integer: data.offset), with: .fade)
+            case .insert:
+                self.tableView.insertSections(IndexSet(integer: data.offset), with: .fade)
+            case .update(let rowDiff):
+                self.performEditingRowDiffActions(diff: rowDiff, section: data.offset)
+            }
+        }
+    }
+
+    private func performEditingRowDiffActions(diff: EditingRowDiff, section: Int) {
+        if !diff.deleted.isEmpty {
+            let removedIndexPaths = diff.deleted.map({ IndexPath(row: $0, section: section) })
+            self.tableView.deleteRows(at: removedIndexPaths, with: .fade)
+        }
+        if !diff.inserted.isEmpty {
+            let addedIndexPaths = diff.inserted.map({ IndexPath(row: $0, section: section) })
+            self.tableView.insertRows(at: addedIndexPaths, with: .fade)
+        }
+        if !diff.updated.isEmpty {
+            let updatedIndexPaths = diff.updated.map({ IndexPath(row: $0, section: section) })
+            self.tableView.reloadRows(at: updatedIndexPaths, with: .fade)
         }
     }
 
@@ -141,11 +189,24 @@ class ItemDetailViewController: UIViewController {
                                 forCellReuseIdentifier: ItemSpecialTitleCell.nibName)
         self.tableView.tableFooterView = UIView()
     }
+
+    private func setupNavigationBar(forEditing editing: Bool) {
+        let button = UIBarButtonItem(title: (editing ? "Cancel" : "Edit"), style: .plain, target: nil, action: nil)
+        button.rx.tap.subscribe(onNext: { [weak self] _ in
+                         self?.store.handle(action: .setEditing(!editing))
+                     })
+                     .disposed(by: self.disposeBag)
+        self.navigationItem.rightBarButtonItem = button
+    }
 }
 
 extension ItemDetailViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return self.store.state.value.sections.count
+        if tableView.isEditing {
+            return self.store.state.value.allSections.count
+        } else {
+            return self.store.state.value.sections.count
+        }
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -154,7 +215,11 @@ extension ItemDetailViewController: UITableViewDataSource {
         case .title, .abstract:
             return 1
         case .fields:
-            return state.fields.count
+            if tableView.isEditing {
+                return state.allFieldNames.count
+            } else {
+                return state.fields.count
+            }
         case .attachments:
             return state.attachments.flatMap({ $0.count + 1 }) ?? 0
         case .notes:
@@ -196,15 +261,21 @@ extension ItemDetailViewController: UITableViewDataSource {
         } else if let cell = cell as? ItemAbstractCell {
             cell.setup(with: (self.store.state.value.abstract ?? ""))
         } else if let cell = cell as? ItemFieldCell {
-            cell.setup(with: self.store.state.value.fields[indexPath.row])
+            if tableView.isEditing {
+                let fieldName = self.store.state.value.allFieldNames[indexPath.row]
+                cell.setup(with: fieldName, value: "")
+            } else {
+                let field = self.store.state.value.fields[indexPath.row]
+                cell.setup(with: field.name, value: field.value)
+            }
         } else if let cell = cell as? ItemSpecialTitleCell {
             switch section {
             case .attachments:
-                cell.setup(with: "Attachments")
+                cell.setup(with: "Attachments", showAddButton: tableView.isEditing)
             case .notes:
-                cell.setup(with: "Notes")
+                cell.setup(with: "Notes", showAddButton: tableView.isEditing)
             case .tags:
-                cell.setup(with: "Tags")
+                cell.setup(with: "Tags", showAddButton: tableView.isEditing)
             case .related: break
             default: break
             }
@@ -231,6 +302,19 @@ extension ItemDetailViewController: UITableViewDataSource {
 
         return cell
     }
+
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+        if !tableView.isEditing {
+            return .none
+        }
+
+        switch self.store.state.value.allSections[indexPath.section] {
+        case .title, .fields, .abstract:
+            return .none
+        case .attachments, .tags, .related, .notes:
+            return indexPath.row == 0 ? .none : .delete
+        }
+    }
 }
 
 extension ItemDetailViewController: UITableViewDelegate {
@@ -244,12 +328,6 @@ extension ItemDetailViewController: UITableViewDelegate {
             }
         default: break
         }
-    }
-}
-
-extension ItemDetailStore.StoreState.Field: ItemFieldCellModel {
-    var title: String {
-        return self.name
     }
 }
 

@@ -11,7 +11,7 @@ import UIKit
 class ItemSpecialTitleCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
 
-    func setup(with title: String) {
+    func setup(with title: String, showAddButton: Bool) {
         self.titleLabel.text = title
     }
 }

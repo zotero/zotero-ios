@@ -12,6 +12,12 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
+enum EditingSectionDiff {
+    case insert, delete
+    case update(EditingRowDiff)
+}
+typealias EditingRowDiff = (inserted: [Int], deleted: [Int], updated: [Int])
+
 class ItemDetailStore: Store {
     typealias Action = StoreAction
     typealias State = StoreState
@@ -20,6 +26,7 @@ class ItemDetailStore: Store {
         case load
         case attachmentOpened
         case showAttachment(RItem)
+        case setEditing(Bool)
     }
 
     enum StoreError: Error, Equatable {
@@ -61,6 +68,11 @@ class ItemDetailStore: Store {
         fileprivate(set) var notes: Results<RItem>?
         fileprivate(set) var tags: Results<RTag>?
         fileprivate(set) var sections: [Section]
+        fileprivate(set) var allSections: [Section]
+        fileprivate(set) var allFieldNames: [String]
+        fileprivate var shouldIncludeAbstract: Bool
+        fileprivate(set) var isEditing: Bool
+        fileprivate(set) var editingDiff: [EditingSectionDiff]?
         fileprivate(set) var error: StoreError?
         fileprivate var version: Int
 
@@ -68,7 +80,11 @@ class ItemDetailStore: Store {
             self.item = item
             self.fields = []
             self.changes = []
+            self.allSections = [.title, .fields, .abstract, .notes, .tags, .attachments] // TODO - add related
             self.sections = []
+            self.allFieldNames = []
+            self.shouldIncludeAbstract = false
+            self.isEditing = false
             self.attachments = nil
             self.version = 0
         }
@@ -93,28 +109,77 @@ class ItemDetailStore: Store {
         self.updater.stateCleanupAction = { state in
             state.error = nil
             state.changes = []
+            state.editingDiff = nil
         }
     }
 
     func handle(action: StoreAction) {
         switch action {
         case .load:
-            self.loadData()
+            self.loadInitialData()
         case .showAttachment(let item):
             self.showAttachment(for: item)
         case .attachmentOpened:
             self.updater.updateState { newState in
                 newState.downloadState = nil
             }
+        case .setEditing(let editing):
+            self.setEditing(editing)
         }
     }
 
-    private func loadData() {
+    private func setEditing(_ editing: Bool) {
+        let state = self.state.value
+
+        let sectionDiff = self.differences(between: state.allSections, and: state.sections)
+        var diff: [EditingSectionDiff] = []
+        for sectionData in state.allSections.enumerated() {
+            if sectionDiff.contains(sectionData.offset) {
+                diff.append((editing ? .insert : .delete))
+            } else {
+                switch sectionData.element {
+                case .fields:
+                    let fieldDiff = self.differences(between: state.allFieldNames, and: state.fields.map({ $0.name }))
+                    let rowDiff: EditingRowDiff = editing ? (fieldDiff, [], []) : ([], fieldDiff, [])
+                    diff.append(.update(rowDiff))
+                default:
+                    // Other sections always just update the first cell in case the section already exists
+                    diff.append(.update(([], [], [0])))
+                }
+            }
+        }
+
+        self.updater.updateState { newState in
+            newState.isEditing = editing
+            newState.editingDiff = diff
+            newState.changes.insert(.editing)
+        }
+    }
+
+    /// Creates an array of incides that need to be added/removed in order for visibleObjects to be
+    /// the same as allObjects or vice-versa. It is expected that both fields have the same sorting applied.
+    private func differences<Object: Equatable>(between allObjects: [Object], and visibleObjects: [Object]) -> [Int] {
+        var differences: [Int] = []
+        var index = 0
+        allObjects.enumerated().forEach { data in
+            if index < visibleObjects.count && data.element == visibleObjects[index] {
+                index += 1
+            } else {
+                differences.append(data.offset)
+            }
+        }
+        return differences
+    }
+
+    private func loadInitialData() {
         guard var sortedFieldNames = self.itemFieldsController.fields[self.state.value.item.rawType] else {
             self.reportError(.typeNotSupported)
             return
         }
 
+        // Check whether original array contains abstract, we're excluding it later, but we need to know whether
+        // we should show it for editing
+        let hasAbstract = sortedFieldNames.contains(self.itemFieldsController.abstractKey)
         // We're showing title and abstract separately, outside of fields, let's just exclude them here
         let excludedKeys = RItem.titleKeys + [self.itemFieldsController.abstractKey]
         sortedFieldNames.removeAll { field -> Bool in
@@ -130,6 +195,7 @@ class ItemDetailStore: Store {
                 values[field.key] = field.value
             }
         }
+
         let fields: [StoreState.Field] = sortedFieldNames.compactMap { name in
             return values[name].flatMap({ StoreState.Field(name: name, value: $0) })
         }
@@ -160,11 +226,13 @@ class ItemDetailStore: Store {
         // TODO: - Add related
 
         self.updater.updateState { newState in
+            newState.allFieldNames = sortedFieldNames
+            newState.fields = fields
+            newState.abstract = abstract
+            newState.shouldIncludeAbstract = hasAbstract
             newState.attachments = attachments
             newState.notes = notes
-            newState.fields = fields
             newState.tags = tags
-            newState.abstract = abstract
             newState.sections = sections
             newState.version += 1
             newState.changes = .data
@@ -244,7 +312,8 @@ class ItemDetailStore: Store {
 
 extension ItemDetailStore.StoreState: Equatable {
     static func == (lhs: ItemDetailStore.StoreState, rhs: ItemDetailStore.StoreState) -> Bool {
-        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.downloadState == rhs.downloadState
+        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.downloadState == rhs.downloadState &&
+               lhs.isEditing == rhs.isEditing
     }
 }
 
@@ -264,4 +333,5 @@ extension ItemDetailStore.StoreState.FileDownload: Equatable {
 extension ItemDetailStore.Changes {
     static let data = ItemDetailStore.Changes(rawValue: 1 << 0)
     static let download = ItemDetailStore.Changes(rawValue: 1 << 1)
+    static let editing = ItemDetailStore.Changes(rawValue: 1 << 2)
 }
