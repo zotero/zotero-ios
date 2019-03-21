@@ -201,17 +201,17 @@ class ItemDetailViewController: UIViewController {
 }
 
 extension ItemDetailViewController: UITableViewDataSource {
+    private func sections(for tableView: UITableView) -> [ItemDetailStore.StoreState.Section] {
+        return tableView.isEditing ? self.store.state.value.allSections : self.store.state.value.sections
+    }
+
     func numberOfSections(in tableView: UITableView) -> Int {
-        if tableView.isEditing {
-            return self.store.state.value.allSections.count
-        } else {
-            return self.store.state.value.sections.count
-        }
+        return self.sections(for: tableView).count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         let state = self.store.state.value
-        switch self.store.state.value.sections[section] {
+        switch self.sections(for: tableView)[section] {
         case .title, .abstract:
             return 1
         case .fields:
@@ -232,7 +232,7 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        switch self.store.state.value.sections[section] {
+        switch self.sections(for: tableView)[section] {
         case .title, .fields, .abstract:
             return 0
         case .attachments, .notes, .tags, .related:
@@ -241,9 +241,10 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        guard section < (self.store.state.value.sections.count - 1) else { return 0 }
+        let sections = self.sections(for: tableView)
+        guard section < (sections.count - 1) else { return 0 }
 
-        switch self.store.state.value.sections[section] {
+        switch sections[section] {
         case .title, .fields:
             return 0
         case .attachments, .notes, .tags, .abstract, .related:
@@ -252,7 +253,7 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let section = self.store.state.value.sections[indexPath.section]
+        let section = self.sections(for: tableView)[indexPath.section]
         let cellId = self.cellId(for: indexPath.row, section: section)
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
@@ -321,7 +322,7 @@ extension ItemDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        switch self.store.state.value.sections[indexPath.section] {
+        switch self.sections(for: tableView)[indexPath.section] {
         case .attachments:
             if indexPath.row > 0 {
                 self.showAttachment(at: (indexPath.row - 1))
