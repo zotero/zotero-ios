@@ -28,27 +28,50 @@
                         <color key="textColor" red="0.46666666666666667" green="0.46666666666666667" blue="0.46666666666666667" alpha="1" colorSpace="calibratedRGB"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Zzg-lv-w10">
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="fmf-dM-dgV">
                         <rect key="frame" x="152" y="8" width="148" height="27.5"/>
-                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                        <nil key="textColor"/>
-                        <nil key="highlightedColor"/>
-                    </label>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Zzg-lv-w10">
+                                <rect key="frame" x="0.0" y="0.0" width="148" height="27.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Fas-6H-zSH">
+                                <rect key="frame" x="0.0" y="0.0" width="148" height="27.5"/>
+                                <nil key="textColor"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="trailing" secondItem="Fas-6H-zSH" secondAttribute="trailing" id="109-TL-PG0"/>
+                            <constraint firstAttribute="bottom" secondItem="Fas-6H-zSH" secondAttribute="bottom" id="3Om-rn-Tbb"/>
+                            <constraint firstAttribute="trailing" secondItem="Zzg-lv-w10" secondAttribute="trailing" id="CQA-nz-8qG"/>
+                            <constraint firstAttribute="bottom" secondItem="Zzg-lv-w10" secondAttribute="bottom" id="FgD-FX-MDK"/>
+                            <constraint firstItem="Fas-6H-zSH" firstAttribute="top" secondItem="fmf-dM-dgV" secondAttribute="top" id="IX4-eC-0EK"/>
+                            <constraint firstItem="Fas-6H-zSH" firstAttribute="leading" secondItem="fmf-dM-dgV" secondAttribute="leading" id="MoF-kt-Fj8"/>
+                            <constraint firstItem="Zzg-lv-w10" firstAttribute="top" secondItem="fmf-dM-dgV" secondAttribute="top" id="qT5-pZ-uux"/>
+                            <constraint firstItem="Zzg-lv-w10" firstAttribute="leading" secondItem="fmf-dM-dgV" secondAttribute="leading" id="w6H-8v-UDy"/>
+                        </constraints>
+                    </view>
                 </subviews>
                 <constraints>
-                    <constraint firstAttribute="trailing" secondItem="Zzg-lv-w10" secondAttribute="trailing" constant="20" id="9Cn-G9-ODi"/>
+                    <constraint firstItem="fmf-dM-dgV" firstAttribute="leading" secondItem="k22-IV-IBT" secondAttribute="trailing" constant="12" id="9cm-KE-Qh9"/>
                     <constraint firstItem="k22-IV-IBT" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="CL7-Wd-I44"/>
-                    <constraint firstAttribute="bottom" secondItem="Zzg-lv-w10" secondAttribute="bottom" constant="8" id="Cwk-G3-QkN"/>
-                    <constraint firstItem="Zzg-lv-w10" firstAttribute="leading" secondItem="k22-IV-IBT" secondAttribute="trailing" constant="12" id="U4n-eR-SH9"/>
-                    <constraint firstItem="Zzg-lv-w10" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="idW-Z3-olD"/>
+                    <constraint firstAttribute="trailing" secondItem="fmf-dM-dgV" secondAttribute="trailing" constant="20" id="DXf-TB-QDD"/>
+                    <constraint firstAttribute="bottom" secondItem="fmf-dM-dgV" secondAttribute="bottom" constant="8" id="GgY-C4-fBg"/>
                     <constraint firstItem="k22-IV-IBT" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="20" id="nTG-9S-RFg"/>
                     <constraint firstAttribute="bottom" secondItem="k22-IV-IBT" secondAttribute="bottom" constant="8" id="qOD-i7-Wff"/>
+                    <constraint firstItem="fmf-dM-dgV" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="zS3-39-4GA"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <inset key="separatorInset" minX="152" minY="0.0" maxX="0.0" maxY="0.0"/>
             <connections>
                 <outlet property="titleLabel" destination="k22-IV-IBT" id="fhn-Si-rpD"/>
+                <outlet property="valueField" destination="Fas-6H-zSH" id="dZM-h9-w9H"/>
                 <outlet property="valueLabel" destination="Zzg-lv-w10" id="NTg-Fm-RGt"/>
             </connections>
         </tableViewCell>

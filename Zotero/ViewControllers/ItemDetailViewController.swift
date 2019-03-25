@@ -58,13 +58,14 @@ class ItemDetailViewController: UIViewController {
 
     private func process(state: ItemDetailStore.StoreState) {
         if state.changes.contains(.data) {
-            self.tableView.reloadData()
+            if let diff = state.editingDiff {
+                self.setEditing(state.isEditing, diff: diff)
+            } else {
+                self.tableView.reloadData()
+            }
         }
         if state.changes.contains(.download) {
             self.updateDownloadState(state.downloadState)
-        }
-        if state.changes.contains(.editing), let diff = state.editingDiff {
-            self.setEditing(state.isEditing, diff: diff)
         }
         if let error = state.error {
             // TODO: Show error
@@ -88,36 +89,33 @@ class ItemDetailViewController: UIViewController {
     }
 
     private func performEditingSectionDiffActions(diff: [EditingSectionDiff]) {
-        diff.enumerated().forEach { data in
-            switch data.element {
+        diff.forEach { section in
+            switch section.type {
             case .delete:
-                self.tableView.deleteSections(IndexSet(integer: data.offset), with: .fade)
+                self.tableView.deleteSections(IndexSet(integer: section.index), with: .fade)
             case .insert:
-                self.tableView.insertSections(IndexSet(integer: data.offset), with: .fade)
-            case .update(let rowDiff):
-                self.performEditingRowDiffActions(diff: rowDiff, section: data.offset)
+                self.tableView.insertSections(IndexSet(integer: section.index), with: .fade)
+            case .update:
+                self.tableView.reloadSections(IndexSet(integer: section.index), with: .fade)
             }
         }
     }
 
-    private func performEditingRowDiffActions(diff: EditingRowDiff, section: Int) {
-        if !diff.deleted.isEmpty {
-            let removedIndexPaths = diff.deleted.map({ IndexPath(row: $0, section: section) })
-            self.tableView.deleteRows(at: removedIndexPaths, with: .fade)
-        }
-        if !diff.inserted.isEmpty {
-            let addedIndexPaths = diff.inserted.map({ IndexPath(row: $0, section: section) })
-            self.tableView.insertRows(at: addedIndexPaths, with: .fade)
-        }
-        if !diff.updated.isEmpty {
-            let updatedIndexPaths = diff.updated.map({ IndexPath(row: $0, section: section) })
-            self.tableView.reloadRows(at: updatedIndexPaths, with: .fade)
-        }
+    private func addAttachment() {
+
+    }
+
+    private func addNote() {
+
+    }
+
+    private func addTag() {
+
     }
 
     private func showAttachment(at index: Int) {
-        guard let attachments = self.store.state.value.attachments, index < attachments.count else { return }
-        self.store.handle(action: .showAttachment(attachments[index]))
+        guard let attachment = self.store.state.value.dataSource?.attachment(at: index) else { return }
+        self.store.handle(action: .showAttachment(attachment))
     }
 
     private func updateDownloadState(_ state: ItemDetailStore.StoreState.FileDownload?) {
@@ -191,48 +189,41 @@ class ItemDetailViewController: UIViewController {
     }
 
     private func setupNavigationBar(forEditing editing: Bool) {
-        let button = UIBarButtonItem(title: (editing ? "Cancel" : "Edit"), style: .plain, target: nil, action: nil)
-        button.rx.tap.subscribe(onNext: { [weak self] _ in
-                         self?.store.handle(action: .setEditing(!editing))
-                     })
+        let toggleButton = UIBarButtonItem(title: (editing ? "Cancel" : "Edit"), style: .plain,
+                                           target: nil, action: nil)
+        toggleButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                         self?.store.handle(action: (editing ? .stopEditing(false) : .startEditing))
+                      })
                      .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = button
+
+        var buttons: [UIBarButtonItem] = [toggleButton]
+        if editing {
+            let saveButton = UIBarButtonItem(title: "Save", style: .done, target: nil, action: nil)
+
+            saveButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                          self?.store.handle(action: .stopEditing(true))
+                      })
+                      .disposed(by: self.disposeBag)
+
+            buttons.insert(saveButton, at: 0)
+        }
+        self.navigationItem.rightBarButtonItems = buttons
     }
 }
 
 extension ItemDetailViewController: UITableViewDataSource {
-    private func sections(for tableView: UITableView) -> [ItemDetailStore.StoreState.Section] {
-        return tableView.isEditing ? self.store.state.value.allSections : self.store.state.value.sections
-    }
-
     func numberOfSections(in tableView: UITableView) -> Int {
-        return self.sections(for: tableView).count
+        return self.store.state.value.dataSource?.sections.count ?? 0
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let state = self.store.state.value
-        switch self.sections(for: tableView)[section] {
-        case .title, .abstract:
-            return 1
-        case .fields:
-            if tableView.isEditing {
-                return state.allFieldNames.count
-            } else {
-                return state.fields.count
-            }
-        case .attachments:
-            return state.attachments.flatMap({ $0.count + 1 }) ?? 0
-        case .notes:
-            return state.notes.flatMap({ $0.count + 1 }) ?? 0
-        case .tags:
-            return state.tags.flatMap({ $0.count + 1 }) ?? 0
-        case .related:
-            return 0 // TODO - change when related are added
-        }
+        guard let dataSource = self.store.state.value.dataSource else { return 0 }
+        return dataSource.rowCount(for: dataSource.sections[section])
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        switch self.sections(for: tableView)[section] {
+        guard let section = self.store.state.value.dataSource?.sections[section] else { return 0 }
+        switch section {
         case .title, .fields, .abstract:
             return 0
         case .attachments, .notes, .tags, .related:
@@ -241,10 +232,8 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        let sections = self.sections(for: tableView)
-        guard section < (sections.count - 1) else { return 0 }
-
-        switch sections[section] {
+        guard let section = self.store.state.value.dataSource?.sections[section] else { return 0 }
+        switch section {
         case .title, .fields:
             return 0
         case .attachments, .notes, .tags, .abstract, .related:
@@ -253,30 +242,59 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let section = self.sections(for: tableView)[indexPath.section]
+        guard let dataSource = self.store.state.value.dataSource else { return UITableViewCell() }
+
+        let section = dataSource.sections[indexPath.section]
         let cellId = self.cellId(for: indexPath.row, section: section)
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
         if let cell = cell as? ItemTitleCell {
-            cell.setup(with: self.store.state.value.item.title)
+            cell.setup(with: dataSource.title, editing: tableView.isEditing)
+            cell.textObservable.subscribe { [weak self] event in
+                                   switch event {
+                                   case .next(let string):
+                                       self?.store.handle(action: .updateTitle(string))
+                                   default: break
+                                   }
+                               }
+                               .disposed(by: self.disposeBag)
         } else if let cell = cell as? ItemAbstractCell {
-            cell.setup(with: (self.store.state.value.abstract ?? ""))
+            cell.setup(with: (dataSource.abstract ?? ""), editing: tableView.isEditing)
+            cell.textObservable.subscribe { [weak self] event in
+                                   switch event {
+                                   case .next(let string):
+                                       self?.store.handle(action: .updateAbstract(string))
+                                   default: break
+                                   }
+                               }
+                                .disposed(by: self.disposeBag)
         } else if let cell = cell as? ItemFieldCell {
-            if tableView.isEditing {
-                let fieldName = self.store.state.value.allFieldNames[indexPath.row]
-                cell.setup(with: fieldName, value: "")
-            } else {
-                let field = self.store.state.value.fields[indexPath.row]
-                cell.setup(with: field.name, value: field.value)
+            if let field = dataSource.field(at: indexPath.row) {
+                cell.setup(with: field.name, value: field.value, editing: tableView.isEditing)
+                cell.textObservable.throttle(0.8, scheduler: MainScheduler.instance)
+                                   .subscribe { [weak self] event in
+                                       switch event {
+                                       case .next(let string):
+                                           self?.store.handle(action: .updateField(field.name, string))
+                                       default: break
+                                       }
+                                   }
+                                   .disposed(by: self.disposeBag)
             }
         } else if let cell = cell as? ItemSpecialTitleCell {
             switch section {
             case .attachments:
-                cell.setup(with: "Attachments", showAddButton: tableView.isEditing)
+                cell.setup(with: "Attachments", showAddButton: tableView.isEditing, addAction: { [weak self] in
+                    self?.addAttachment()
+                })
             case .notes:
-                cell.setup(with: "Notes", showAddButton: tableView.isEditing)
+                cell.setup(with: "Notes", showAddButton: tableView.isEditing, addAction: { [weak self] in
+                    self?.addNote()
+                })
             case .tags:
-                cell.setup(with: "Tags", showAddButton: tableView.isEditing)
+                cell.setup(with: "Tags", showAddButton: tableView.isEditing, addAction: { [weak self] in
+                    self?.addTag()
+                })
             case .related: break
             default: break
             }
@@ -285,11 +303,11 @@ extension ItemDetailViewController: UITableViewDataSource {
             let model: ItemSpecialCellModel?
             switch section {
             case .attachments:
-                model = self.store.state.value.attachments?[index]
+                model = dataSource.attachment(at: index)
             case .notes:
-                model = self.store.state.value.notes?[index]
+                model = dataSource.note(at: index)
             case .tags:
-                model = self.store.state.value.tags?[index]
+                model = dataSource.tag(at: index)
             case .related:
                 model = nil
             default:
@@ -309,7 +327,9 @@ extension ItemDetailViewController: UITableViewDataSource {
             return .none
         }
 
-        switch self.store.state.value.allSections[indexPath.section] {
+        guard let dataSource = self.store.state.value.dataSource else { return .none }
+
+        switch dataSource.sections[indexPath.section] {
         case .title, .fields, .abstract:
             return .none
         case .attachments, .tags, .related, .notes:
@@ -322,7 +342,9 @@ extension ItemDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        switch self.sections(for: tableView)[indexPath.section] {
+        guard let dataSource = self.store.state.value.dataSource else { return }
+
+        switch dataSource.sections[indexPath.section] {
         case .attachments:
             if indexPath.row > 0 {
                 self.showAttachment(at: (indexPath.row - 1))

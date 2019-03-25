@@ -8,12 +8,27 @@
 
 import UIKit
 
+import RxSwift
+import RxCocoa
+
 class ItemFieldCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var valueLabel: UILabel!
+    @IBOutlet private weak var valueField: UITextField!
 
-    func setup(with title: String, value: String) {
+    var textObservable: ControlProperty<String> {
+        return self.valueField.rx.text.orEmpty
+    }
+
+    func setup(with title: String, value: String, editing: Bool) {
+        self.valueLabel.isHidden = editing
+        self.valueField.isHidden = !editing
+
         self.titleLabel.text = title
-        self.valueLabel.text = value
+        if editing {
+            self.valueField.text = value
+        } else {
+            self.valueLabel.text = value
+        }
     }
 }

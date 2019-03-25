@@ -8,16 +8,26 @@
 
 import UIKit
 
+import RxSwift
+import RxCocoa
+
 class ItemAbstractCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentLabel: UILabel!
+    @IBOutlet private weak var contentTextView: UITextView!
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        // Initialization code
+    var textObservable: ControlProperty<String> {
+        return self.contentTextView.rx.text.orEmpty
     }
 
-    func setup(with abstract: String) {
-        self.contentLabel.text = abstract
+    func setup(with abstract: String, editing: Bool) {
+        if editing {
+            self.contentTextView.text = abstract
+        } else {
+            self.contentLabel.text = abstract
+        }
+
+        self.contentLabel.isHidden = editing
+        self.contentTextView.isHidden = !editing
     }
 }
