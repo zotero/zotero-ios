@@ -25,7 +25,8 @@ class AppStore: Store {
 
     init(apiClient: ApiClient, secureStorage: SecureStorage) {
         self.apiClient = apiClient
-        let state: AppState = secureStorage.apiToken == nil ? .onboarding : .main
+        let authToken = ApiConstants.authToken ?? secureStorage.apiToken
+        let state: AppState = authToken == nil ? .onboarding : .main
         self.updater = StoreStateUpdater(initialState: state)
     }
 
