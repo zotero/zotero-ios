@@ -22,10 +22,10 @@ struct StoreSearchesDbRequest: DbRequest {
     }
 
     private func store(data: SearchResponse, to database: Realm) throws {
+        guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
         let search: RSearch
-        if let existing = database.objects(RSearch.self)
-                                  .filter("key = %@ AND library.identifier = %d", data.key,
-                                                                                  data.library.libraryId).first {
+        let predicate = Predicates.keyInLibrary(key: data.key, libraryId: libraryId)
+        if let existing = database.objects(RSearch.self).filter(predicate).first {
             search = existing
         } else {
             search = RSearch()
@@ -37,17 +37,23 @@ struct StoreSearchesDbRequest: DbRequest {
         search.version = data.version
         search.needsSync = false
 
-        try self.syncLibrary(data: data, search: search, database: database)
+        try self.syncLibrary(libraryId: libraryId, libraryName: data.library.name, search: search, database: database)
         self.syncConditions(data: data, search: search, database: database)
     }
 
-    private func syncLibrary(data: SearchResponse, search: RSearch, database: Realm) throws {
-        let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
+    private func syncLibrary(libraryId: LibraryIdentifier, libraryName: String,
+                             search: RSearch, database: Realm) throws {
+        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: libraryId)
         if libraryData.0 {
-            libraryData.1.name = data.library.name
-            libraryData.1.needsSync = true
+            switch libraryData.1 {
+            case .group(let object):
+                object.name = libraryName
+                object.needsSync = true
+
+            case .custom: break // Custom library doesnt need sync or name update
+            }
         }
-        search.library = libraryData.1
+        search.libraryObject = libraryData.1
     }
 
     private func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {

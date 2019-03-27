@@ -13,14 +13,12 @@ import RealmSwift
 struct ReadSearchesDbRequest: DbResponseRequest {
     typealias Response = Results<RSearch>
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RSearch> {
-        let libraryPredicate = NSPredicate(format: "library.identifier = %d", self.libraryId)
-        let syncPredicate = NSPredicate(format: "needsSync = false")
-        let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, syncPredicate])
-        return database.objects(RSearch.self).filter(finalPredicate).sorted(byKeyPath: "name")
+        let predicate = Predicates.needsSync(false, in: self.libraryId)
+        return database.objects(RSearch.self).filter(predicate).sorted(byKeyPath: "name")
     }
 }

@@ -35,7 +35,7 @@ class CollectionPickerStore: Store {
             }
         }
 
-        fileprivate let libraryId: Int
+        fileprivate let libraryId: LibraryIdentifier
         fileprivate let excludedKey: String
 
         fileprivate(set) var cellData: [CollectionCellData]
@@ -44,7 +44,7 @@ class CollectionPickerStore: Store {
         fileprivate var version: Int
         fileprivate(set) var error: StoreError?
 
-        init(libraryId: Int, excludedKey: String) {
+        init(libraryId: LibraryIdentifier, excludedKey: String) {
             self.libraryId = libraryId
             self.excludedKey = excludedKey
             self.cellData = []

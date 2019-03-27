@@ -74,10 +74,16 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
 
         if state.changes.contains(.editing) {
             if let collection = state.collectionToEdit {
-                let state = CollectionEditStore.StoreState(collection: collection)
-                let store = CollectionEditStore(initialState: state, dbStorage: self.store.dbStorage)
-                let controller = CollectionEditorViewController(store: store)
-                self.present(controller: controller)
+                do {
+                    let state = try CollectionEditStore.StoreState(collection: collection)
+                    let store = CollectionEditStore(initialState: state, dbStorage: self.store.dbStorage)
+                    let controller = CollectionEditorViewController(store: store)
+                    self.present(controller: controller)
+                } catch let error as CollectionEditStore.StoreError where error == .collectionNotStoredInLibrary {
+                    // TODO: - Show collection not in library error
+                } catch let error {
+                    // TODO: - Show general error
+                }
             }
 
             // TODO: - Add search editing

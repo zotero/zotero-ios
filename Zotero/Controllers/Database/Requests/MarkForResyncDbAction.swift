@@ -11,12 +11,12 @@ import Foundation
 import RealmSwift
 
 struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
     let keys: [String]
 
     var needsWrite: Bool { return true }
 
-    init(libraryId: Int, keys: [Any]) throws {
+    init(libraryId: LibraryIdentifier, keys: [Any]) throws {
         guard let typedKeys = keys as? [String] else { throw DbError.primaryKeyWrongType }
         self.libraryId = libraryId
         self.keys = typedKeys
@@ -24,8 +24,8 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
 
     func process(in database: Realm) throws {
         var toCreate: [String] = self.keys
-        let objects = database.objects(Obj.self)
-                              .filter("library.identifier = %d AND key IN %@", self.libraryId, self.keys)
+        let objects = database.objects(Obj.self).filter(Predicates.keysInLibrary(keys: self.keys,
+                                                                                 libraryId: self.libraryId))
         objects.forEach { object in
             object.needsSync = true
             if let index = toCreate.index(of: object.key) {
@@ -33,23 +33,26 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
             }
         }
 
-        let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: self.libraryId)
-        let library = libraryData.1
+        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: self.libraryId)
         if libraryData.0 {
-            library.needsSync = true
+            switch libraryData.1 {
+            case .group(let group):
+                group.needsSync = true
+            case .custom: break
+            }
         }
 
         toCreate.forEach { key in
             let object = Obj()
             object.key = key
             object.needsSync = true
-            object.library = library
+            object.libraryObject = libraryData.1
             database.add(object)
         }
     }
 }
 
-struct MarkLibraryForResyncDbAction: DbRequest {
+struct MarkGroupForResyncDbAction: DbRequest {
     let identifiers: [Int]
 
     var needsWrite: Bool { return true }
@@ -61,7 +64,7 @@ struct MarkLibraryForResyncDbAction: DbRequest {
 
     func process(in database: Realm) throws {
         var toCreate: [Int] = self.identifiers
-        let libraries = database.objects(RLibrary.self).filter("identifier IN %@", self.identifiers)
+        let libraries = database.objects(RGroup.self).filter("identifier IN %@", self.identifiers)
         libraries.forEach { library in
             if let index = toCreate.index(of: library.identifier) {
                 toCreate.remove(at: index)
@@ -70,7 +73,7 @@ struct MarkLibraryForResyncDbAction: DbRequest {
         }
 
         toCreate.forEach { identifier in
-            let library = RLibrary()
+            let library = RGroup()
             library.identifier = identifier
             library.needsSync = true
             database.add(library)

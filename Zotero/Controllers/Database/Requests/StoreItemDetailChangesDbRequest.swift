@@ -18,16 +18,15 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
     let abstractKey: String
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
     let itemKey: String
     let title: String
     let abstract: String?
     let fields: [ItemDetailStore.StoreState.Field]
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self)
-                                 .filter("key == %@ AND library.identifier = %d", self.itemKey,
-                                                                                  self.libraryId).first else { return }
+        let predicate = Predicates.keyInLibrary(key: self.itemKey, libraryId: self.libraryId)
+        guard let item = database.objects(RItem.self).filter(predicate).first else { return }
 
         var fieldsDidChange = false
         item.fields.forEach { field in

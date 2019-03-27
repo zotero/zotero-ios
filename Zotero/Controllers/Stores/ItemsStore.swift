@@ -31,7 +31,7 @@ class ItemsStore: Store {
             case search(String, String) // Key, Title
         }
 
-        let libraryId: Int
+        let libraryId: LibraryIdentifier
         let type: ItemType
         let title: String
 
@@ -40,7 +40,7 @@ class ItemsStore: Store {
         fileprivate var version: Int
         fileprivate var itemsToken: NotificationToken?
 
-        init(libraryId: Int, type: ItemType) {
+        init(libraryId: LibraryIdentifier, type: ItemType) {
             self.libraryId = libraryId
             self.type = type
             switch type {
@@ -92,7 +92,7 @@ class ItemsStore: Store {
                                              collectionKey: nil, parentKey: nil, trash: true)
             case .publications, .search:
                 // TODO: - implement publications and search fetching
-                request = ReadItemsDbRequest(libraryId: -2,
+                request = ReadItemsDbRequest(libraryId: .group(-1),
                                              collectionKey: nil, parentKey: nil, trash: true)
             case .collection(let key, _):
                 request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,

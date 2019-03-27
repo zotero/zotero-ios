@@ -13,29 +13,30 @@ import RealmSwift
 struct ReadChangedSearchUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {
         return false
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        return database.objects(RSearch.self).filter("library.identifier = %d AND rawChangedFields > 0", self.libraryId)
-                                             .compactMap({ $0.updateParameters })
+        let predicate = Predicates.changesInLibrary(libraryId: self.libraryId)
+        return database.objects(RSearch.self).filter(predicate).compactMap({ $0.updateParameters })
     }
 }
 
 struct ReadChangedItemUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {
         return false
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        return database.objects(RItem.self).filter("library.identifier = %d AND rawChangedFields > 0", self.libraryId)
+        let predicate = Predicates.changesInLibrary(libraryId: self.libraryId)
+        return database.objects(RItem.self).filter(predicate)
                                            .sorted(byKeyPath: "parent.rawChangedFields", ascending: false) // parents first, children later
                                            .compactMap({ $0.updateParameters })
     }
@@ -44,15 +45,15 @@ struct ReadChangedItemUpdateParametersDbRequest: DbResponseRequest {
 struct ReadChangedCollectionUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {
         return false
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        let objects = database.objects(RCollection.self)
-                              .filter("library.identifier = %d AND rawChangedFields > 0", self.libraryId)
+        let predicate = Predicates.changesInLibrary(libraryId: self.libraryId)
+        let objects = database.objects(RCollection.self).filter(predicate)
 
         if objects.count == 1 {
             return objects[0].updateParameters.flatMap({ [$0] }) ?? []

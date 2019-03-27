@@ -26,7 +26,7 @@ final class SyncProgressHandler {
     private let finishVisibilityTime: Double = 2
     private let errorVisibilityTime: Double = 3.5
 
-    private var libraryNames: [Int: String]?
+    private var libraryNames: [LibraryIdentifier: String]?
     private var currentLibrary: String?
     private var currentDone: Int
     private var currentTotal: Int
@@ -49,7 +49,7 @@ final class SyncProgressHandler {
         self.observable.accept(.groups)
     }
 
-    func reportLibraryNames(data: [Int: String]) {
+    func reportLibraryNames(data: [LibraryIdentifier: String]) {
         self.libraryNames = data
     }
 

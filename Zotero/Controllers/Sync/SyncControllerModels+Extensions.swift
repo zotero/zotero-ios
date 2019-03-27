@@ -13,17 +13,17 @@ extension SyncController.Library {
         switch self {
         case .group(let identifier):
             return "groups/\(identifier)"
-        case .user(let identifier):
+        case .user(let identifier, _):
             return "users/\(identifier)"
         }
     }
 
-    var libraryId: Int {
+    var libraryId: LibraryIdentifier {
         switch self {
         case .group(let identifier):
-            return identifier
-        case .user:
-            return RLibrary.myLibraryId
+            return .group(identifier)
+        case .user(_, let type):
+            return .custom(type)
         }
     }
 }

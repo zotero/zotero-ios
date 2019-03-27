@@ -17,6 +17,31 @@ enum SyncActionHandlerError: Error, Equatable {
     case versionMismatch
 }
 
+struct LibraryData {
+    let identifier: LibraryIdentifier
+    let name: String
+    let versions: Versions
+
+    init(identifier: LibraryIdentifier, name: String, versions: Versions) {
+        self.identifier = identifier
+        self.name = name
+        self.versions = versions
+    }
+
+    init(object: RCustomLibrary) {
+        let type = object.type
+        self.identifier = .custom(type)
+        self.name = type.libraryName
+        self.versions = Versions(versions: object.versions)
+    }
+
+    init(object: RGroup) {
+        self.identifier = .group(object.identifier)
+        self.name = object.name
+        self.versions = Versions(versions: object.versions)
+    }
+}
+
 struct Versions {
     let collections: Int
     let items: Int
@@ -45,8 +70,8 @@ struct Versions {
 }
 
 protocol SyncActionHandler: class {
-    func loadAllLibraryData() -> Single<[(Int, String, Versions)]>
-    func loadLibraryData(for libraryIds: [Int]) -> Single<[(Int, String, Versions)]>
+    func loadAllLibraryData() -> Single<[LibraryData]>
+    func loadLibraryData(for identifiers: [LibraryIdentifier]) -> Single<[LibraryData]>
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncAll: Bool) -> Single<(Int, [Any])>
@@ -80,15 +105,17 @@ class SyncActionHandlerController {
 }
 
 extension SyncActionHandlerController: SyncActionHandler {
-    func loadAllLibraryData() -> Single<[(Int, String, Versions)]> {
+    func loadAllLibraryData() -> Single<[LibraryData]> {
         return self.loadLibraryData(identifiers: nil)
     }
 
-    func loadLibraryData(for libraryIds: [Int]) -> Single<[(Int, String, Versions)]> {
-        return self.loadLibraryData(identifiers: libraryIds)
+    func loadLibraryData(for identifiers: [LibraryIdentifier]) -> Single<[LibraryData]> {
+        return self.loadLibraryData(identifiers: identifiers)
     }
 
-    private func loadLibraryData(identifiers: [Int]?) -> Single<[(Int, String, Versions)]> {
+    private func loadLibraryData(identifiers: [LibraryIdentifier]?) -> Single<[LibraryData]> {
+        if identifiers?.count == 0 { return Single.just([]) }
+
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
                 subscriber(.error(SyncActionHandlerError.expired))
@@ -96,9 +123,8 @@ extension SyncActionHandlerController: SyncActionHandler {
             }
 
             do {
-                let data = try self.dbStorage.createCoordinator()
-                                             .perform(request: ReadLibrariesDataDbRequest(identifiers: identifiers))
-                                             .map({ ($0.0, $0.1, Versions(versions: $0.2)) })
+                let request = ReadLibrariesDataDbRequest(identifiers: identifiers)
+                let data = try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(data))
             } catch let error {
                 subscriber(.error(error))
@@ -259,7 +285,7 @@ extension SyncActionHandlerController: SyncActionHandler {
         do {
             switch object {
             case .group:
-                let request = try MarkLibraryForResyncDbAction(identifiers: keys)
+                let request = try MarkGroupForResyncDbAction(identifiers: keys)
                 try self.dbStorage.createCoordinator().perform(request: request)
             case .collection:
                 let request = try MarkForResyncDbAction<RCollection>(libraryId: library.libraryId, keys: keys)

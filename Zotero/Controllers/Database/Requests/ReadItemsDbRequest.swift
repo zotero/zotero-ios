@@ -13,7 +13,7 @@ import RealmSwift
 struct ReadItemsDbRequest: DbResponseRequest {
     typealias Response = Results<RItem>
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
     let collectionKey: String?
     let parentKey: String?
     let trash: Bool
@@ -21,7 +21,7 @@ struct ReadItemsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RItem> {
-        let libraryPredicate = NSPredicate(format: "library.identifier = %d", self.libraryId)
+        let libraryPredicate = Predicates.library(from: self.libraryId)
         let syncPredicate = NSPredicate(format: "needsSync = false")
         var predicates: [NSPredicate] = [libraryPredicate, syncPredicate]
         if let collectionId = self.collectionKey {

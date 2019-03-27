@@ -12,7 +12,7 @@ import RealmSwift
 
 struct StoreSettingsDbRequest: DbRequest {
     let response: SettingsResponse
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {
         return true
@@ -20,19 +20,21 @@ struct StoreSettingsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let colors = self.response.tagColors else { return }
-        let library = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: self.libraryId).1
+
+        let libraryObject = try database.autocreatedLibraryObject(forPrimaryKey: self.libraryId).1
+
         let allTags = database.objects(RTag.self)
         
         colors.value.forEach { tagColor in
             let tag: RTag
-            if let existing = allTags.filter("library.identifier = %d AND name = %@", self.libraryId,
-                                                                                      tagColor.name).first {
+            let predicate = Predicates.nameInLibrary(name: tagColor.name, libraryId: self.libraryId)
+            if let existing = allTags.filter(predicate).first {
                 tag = existing
             } else {
                 tag = RTag()
                 database.add(tag)
                 tag.name = tagColor.name
-                tag.library = library
+                tag.libraryObject = libraryObject
             }
             tag.color = tagColor.color
         }

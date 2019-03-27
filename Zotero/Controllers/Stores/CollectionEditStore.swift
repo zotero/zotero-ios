@@ -23,6 +23,7 @@ class CollectionEditStore: Store {
     }
 
     enum StoreError: Error, Equatable {
+        case collectionNotStoredInLibrary
         case invalidName
         case saveFailed
     }
@@ -58,7 +59,7 @@ class CollectionEditStore: Store {
         }
 
         let sections: [Section]
-        let libraryId: Int
+        let libraryId: LibraryIdentifier
         let libraryName: String
         let key: String
 
@@ -68,10 +69,17 @@ class CollectionEditStore: Store {
         fileprivate(set) var error: StoreError?
         fileprivate(set) var didSave: Bool
 
-        init(collection: RCollection) {
+        init(collection: RCollection) throws {
+            guard let libraryObject = collection.libraryObject else { throw StoreError.collectionNotStoredInLibrary }
+
             self.sections = [.name, .parent, .actions]
-            self.libraryId = collection.library?.identifier ?? RLibrary.myLibraryId
-            self.libraryName = collection.library?.name ?? ""
+            self.libraryId = libraryObject.identifier
+            switch libraryObject {
+            case .custom(let object):
+                self.libraryName = object.type.libraryName
+            case .group(let object):
+                self.libraryName = object.name
+            }
             self.key = collection.key
             self.name = collection.name
             self.parent = collection.parent.flatMap(StoreState.Parent.init)

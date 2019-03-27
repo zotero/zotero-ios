@@ -13,11 +13,11 @@ import RxSwift
 import RealmSwift
 
 protocol ObjectChangeObserver: class {
-    var observable: PublishSubject<[Int]> { get }
+    var observable: PublishSubject<[LibraryIdentifier]> { get }
 }
 
 final class RealmObjectChangeObserver: ObjectChangeObserver {
-    let observable: PublishSubject<[Int]>
+    let observable: PublishSubject<[LibraryIdentifier]>
     private let dbStorage: DbStorage
 
     private var collectionsToken: NotificationToken?
@@ -57,7 +57,7 @@ final class RealmObjectChangeObserver: ObjectChangeObserver {
     }
 
     private func reportChangedLibraries(for objects: [Syncable]) {
-        let libraryIds = Array(Set(objects.compactMap({ $0.library?.identifier })))
+        let libraryIds = Array(Set(objects.compactMap({ $0.libraryObject?.identifier })))
         self.observable.on(.next(libraryIds))
     }
 }

@@ -35,7 +35,7 @@ class Controllers {
             DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
             try fileStorage.createDictionaries(for: file)
             let dbStorage = RealmDbStorage(url: file.createUrl())
-            try dbStorage.createCoordinator().perform(request: InitializeMyLibraryDbRequest())
+            try dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
             self.dbStorage = dbStorage
         } catch let error {
             fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")

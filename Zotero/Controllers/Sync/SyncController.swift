@@ -42,12 +42,12 @@ final class SyncController: SynchronizationController {
     }
 
     enum LibrarySyncType: Equatable {
-        case all                // Syncs all libraries
-        case specific([Int])    // Syncs only specific libraries
+        case all                              // Syncs all libraries
+        case specific([LibraryIdentifier])    // Syncs only specific libraries
     }
 
     enum Library: Equatable {
-        case user(Int)
+        case user(Int, RCustomLibraryType)
         case group(Int)
     }
 
@@ -151,13 +151,19 @@ final class SyncController: SynchronizationController {
     private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
         switch libraries {
         case .all:
-            return [.syncVersions(.user(self.userId), .group, nil)]
+            return [.syncVersions(.user(self.userId, .myLibrary), .group, nil)]
         case .specific(let identifiers):
-            let isMyLibraryOnly = identifiers.count == 1 && identifiers.first == RLibrary.myLibraryId
-            if isMyLibraryOnly {
+            var customLibrariesOnly = true
+            for identifier in identifiers {
+                if case .group = identifier {
+                    customLibrariesOnly = false
+                    break
+                }
+            }
+            if customLibrariesOnly {
                 return [.createLibraryActions(libraries, false)]
             }
-            return [.syncVersions(.user(self.userId), .group, nil)]
+            return [.syncVersions(.user(self.userId, .myLibrary), .group, nil)]
         }
     }
 
@@ -291,7 +297,7 @@ final class SyncController: SynchronizationController {
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, forceDownloads: Bool) {
         let userId = self.userId
-        let action: Single<[(Int, String, Versions)]>
+        let action: Single<[LibraryData]>
         switch libraries {
         case .all:
             action = self.handler.loadAllLibraryData()
@@ -299,17 +305,20 @@ final class SyncController: SynchronizationController {
             action = self.handler.loadLibraryData(for: identifiers)
         }
 
-        action.flatMap { libraryData -> Single<([(Library, Versions)], [Int: String])> in
-                  var libraryNames: [Int: String] = [:]
+        action.flatMap { libraryData -> Single<([(Library, Versions)], [LibraryIdentifier: String])> in
+                  var libraryNames: [LibraryIdentifier: String] = [:]
                   var versionedLibraries: [(Library, Versions)] = []
+
                   for data in libraryData {
-                      libraryNames[data.0] = data.1
-                      if data.0 == RLibrary.myLibraryId {
-                          versionedLibraries.append((.user(userId), data.2))
-                      } else {
-                          versionedLibraries.append((.group(data.0), data.2))
+                      libraryNames[data.identifier] = data.name
+                      switch data.identifier {
+                      case .custom(let type):
+                          versionedLibraries.append((.user(userId, type), data.versions))
+                      case .group(let identifier):
+                          versionedLibraries.append((.group(identifier), data.versions))
                       }
                   }
+
                   return Single.just((versionedLibraries, libraryNames))
               }
               .subscribe(onSuccess: { [weak self] data in
@@ -417,8 +426,7 @@ final class SyncController: SynchronizationController {
         let batches: [DownloadBatch]
         switch object {
         case .group:
-            let batchData = self.createBatchGroups(for: keys, library: library, object: object,
-                                                   version: currentVersion, libraryType: self.libraryType)
+            let batchData = self.createBatchGroups(for: keys, version: currentVersion, syncType: self.libraryType)
             batches = batchData.0
             // TODO: - report deleted groups?
         default:
@@ -440,12 +448,11 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createBatchGroups(for keys: [Any], library: Library, object: Object,
-                                   version: Int, libraryType: LibrarySyncType) -> ([DownloadBatch], [Int]) {
+    private func createBatchGroups(for keys: [Any], version: Int, syncType: LibrarySyncType) -> ([DownloadBatch], [Int]) {
         var toSync: [Any] = []
         var missing: [Int] = []
 
-        switch libraryType {
+        switch syncType {
         case .all:
             toSync = keys
 
@@ -453,15 +460,20 @@ final class SyncController: SynchronizationController {
             guard let intKeys = keys as? [Int] else { return ([], []) }
 
             identifiers.forEach { identifier in
-                if intKeys.contains(identifier) {
-                    toSync.append(identifier)
-                } else {
-                    missing.append(identifier)
+                switch identifier {
+                case .group(let groupId):
+                    if intKeys.contains(groupId) {
+                        toSync.append(groupId)
+                    } else {
+                        missing.append(groupId)
+                    }
+                case .custom: break
                 }
             }
         }
 
-        let batches = toSync.map { DownloadBatch(library: library, object: object, keys: [$0], version: version) }
+        let batches = toSync.map { DownloadBatch(library: .user(self.userId, .myLibrary), object: .group,
+                                                 keys: [$0], version: version) }
         return (batches, missing)
     }
 

@@ -48,7 +48,8 @@ class RItem: Object {
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parent: RItem?
-    @objc dynamic var library: RLibrary?
+    @objc dynamic var customLibrary: RCustomLibrary?
+    @objc dynamic var group: RGroup?
     let collections: List<RCollection> = List()
 
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
@@ -59,6 +60,16 @@ class RItem: Object {
 
     var type: ItemType {
         return ItemType(rawValue: self.rawType) ?? .unknown
+    }
+
+    var libraryId: LibraryIdentifier? {
+        if let custom = self.customLibrary {
+            return .custom(custom.type)
+        }
+        if let group = self.group {
+            return .group(group.identifier)
+        }
+        return nil
     }
 
     var changedFields: RItemChanges {

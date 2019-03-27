@@ -24,10 +24,11 @@ struct StoreItemsDbRequest: DbRequest {
     }
 
     private func store(data: ItemResponse, to database: Realm) throws {
+        guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
+
         let item: RItem
-        if let existing = database.objects(RItem.self)
-                                  .filter("key = %@ AND library.identifier = %d", data.key,
-                                                                                  data.library.libraryId).first {
+        let predicate = Predicates.keyInLibrary(key: data.key, libraryId: libraryId)
+        if let existing = database.objects(RItem.self).filter(predicate).first {
             item = existing
         } else {
             item = RItem()
@@ -45,10 +46,10 @@ struct StoreItemsDbRequest: DbRequest {
         item.needsSync = false
 
         self.syncFields(data: data, item: item, database: database)
-        try self.syncLibrary(data: data, item: item, database: database)
-        self.syncParent(data: data, item: item, database: database)
-        self.syncCollections(data: data, item: item, database: database)
-        try self.syncTags(data: data, item: item, database: database)
+        try self.syncLibrary(identifier: libraryId, item: item, database: database)
+        self.syncParent(key: data.parentKey, libraryId: libraryId, item: item, database: database)
+        self.syncCollections(keys: data.collectionKeys, libraryId: libraryId, item: item, database: database)
+        try self.syncTags(data.tags, libraryId: libraryId, item: item, database: database)
         self.syncCreators(data: data, item: item, database: database)
         self.syncRelations(data: data, item: item, database: database)
     }
@@ -79,61 +80,67 @@ struct StoreItemsDbRequest: DbRequest {
         }
     }
 
-    private func syncLibrary(data: ItemResponse, item: RItem, database: Realm) throws {
-        let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
+    private func syncLibrary(identifier: LibraryIdentifier, item: RItem, database: Realm) throws {
+        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
         if libraryData.0 {
-            libraryData.1.needsSync = true
+            switch libraryData.1 {
+            case .group(let object):
+                object.needsSync = true
+            case .custom: break
+            }
         }
-        item.library = libraryData.1
+        item.libraryObject = libraryData.1
     }
 
-    private func syncParent(data: ItemResponse, item: RItem, database: Realm) {
+    private func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         item.parent = nil
-        if let key = data.parentKey {
-            let parent: RItem
-            if let existing = database.objects(RItem.self)
-                                      .filter("library.identifier = %d AND key = %@", data.library.libraryId,
-                                                                                      key).first {
-                parent = existing
-            } else {
-                parent = RItem()
-                parent.key = key
-                parent.needsSync = true
-                parent.library = item.library
-                database.add(parent)
-            }
-            item.parent = parent
+
+        guard let key = key else { return }
+
+        let parent: RItem
+        let predicate = Predicates.keyInLibrary(key: key, libraryId: libraryId)
+
+        if let existing = database.objects(RItem.self).filter(predicate).first {
+            parent = existing
+        } else {
+            parent = RItem()
+            parent.key = key
+            parent.needsSync = true
+            parent.libraryObject = item.libraryObject
+            database.add(parent)
         }
+
+        item.parent = parent
     }
 
-    private func syncCollections(data: ItemResponse, item: RItem, database: Realm) {
+    private func syncCollections(keys: Set<String>, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         item.collections.removeAll()
-        if !data.collectionKeys.isEmpty {
-            var remainingCollections = data.collectionKeys
-            let existingCollections = database.objects(RCollection.self)
-                                              .filter("library.identifier = %d AND key IN %@", data.library.libraryId,
-                                                                                               data.collectionKeys)
 
-            for collection in existingCollections {
-                item.collections.append(collection)
-                remainingCollections.remove(collection.key)
-            }
+        guard !keys.isEmpty else { return }
 
-            for key in remainingCollections {
-                let collection = RCollection()
-                collection.key = key
-                collection.needsSync = true
-                collection.library = item.library
-                database.add(collection)
-                item.collections.append(collection)
-            }
+        var remainingCollections = keys
+        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: libraryId)
+        let existingCollections = database.objects(RCollection.self).filter(predicate)
+
+        for collection in existingCollections {
+            item.collections.append(collection)
+            remainingCollections.remove(collection.key)
+        }
+
+        for key in remainingCollections {
+            let collection = RCollection()
+            collection.key = key
+            collection.needsSync = true
+            collection.libraryObject = item.libraryObject
+            database.add(collection)
+            item.collections.append(collection)
         }
     }
 
-    private func syncTags(data: ItemResponse, item: RItem, database: Realm) throws {
+    private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) throws {
         var existingIndices: Set<Int> = []
         item.tags.forEach { tag in
-            if let index = data.tags.index(where: { $0.tag == tag.name }) {
+            if let index = tags.index(where: { $0.tag == tag.name }) {
                 existingIndices.insert(index)
             } else {
                 if let index = tag.items.index(of: item) {
@@ -142,17 +149,16 @@ struct StoreItemsDbRequest: DbRequest {
             }
         }
 
-        for object in data.tags.enumerated() {
+        for object in tags.enumerated() {
             guard !existingIndices.contains(object.offset) else { continue }
             let tag: RTag
-            if let existing = database.objects(RTag.self).filter("library.identifier = %d" +
-                                                                 " AND name = %@", data.library.libraryId,
-                                                                                   object.element.tag).first {
+            let predicate = Predicates.nameInLibrary(name: object.element.tag, libraryId: libraryId)
+            if let existing = database.objects(RTag.self).filter(predicate).first {
                 tag = existing
             } else {
                 tag = RTag()
                 tag.name = object.element.tag
-                tag.library = item.library
+                tag.libraryObject = item.libraryObject
                 database.add(tag)
             }
             tag.items.append(item)

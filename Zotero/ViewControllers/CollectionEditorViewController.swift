@@ -73,7 +73,7 @@ class CollectionEditorViewController: UIViewController {
             switch error {
             case .invalidName:
                 self.focusName(scrollToVisibility: true)
-            case .saveFailed: break
+            case .saveFailed, .collectionNotStoredInLibrary: break
             }
             // TODO: - Show error
         }

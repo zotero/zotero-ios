@@ -16,8 +16,8 @@ protocol SynchronizationScheduler: class {
 
     func requestFullSync()
     func requestFullSync(ignoringLocalVersions: Bool)
-    func requestSync(for libraries: [Int])
-    func requestSync(for libraries: [Int], ignoringLocalVersions: Bool)
+    func requestSync(for libraries: [LibraryIdentifier])
+    func requestSync(for libraries: [LibraryIdentifier], ignoringLocalVersions: Bool)
     func cancelSync()
 }
 
@@ -70,11 +70,11 @@ final class SyncScheduler: SynchronizationScheduler {
         self.enqueueAndStartTimer(action: ((ignoringLocalVersions ? .ignoreVersions : .normal), .all))
     }
 
-    func requestSync(for libraries: [Int]) {
+    func requestSync(for libraries: [LibraryIdentifier]) {
         self.enqueueAndStartTimer(action: (.normal, .specific(libraries)))
     }
 
-    func requestSync(for libraries: [Int], ignoringLocalVersions: Bool) {
+    func requestSync(for libraries: [LibraryIdentifier], ignoringLocalVersions: Bool) {
         self.enqueueAndStartTimer(action: ((ignoringLocalVersions ? .ignoreVersions : .normal), .specific(libraries)))
     }
 

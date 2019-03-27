@@ -14,11 +14,11 @@ import RxAlamofire
 import RxSwift
 
 struct ApiConstants {
-    static var baseUrlString: String = "https://api.zotero.org/"
-    static var version: Int = 3
+    static let baseUrlString: String = "https://api.zotero.org/"
+    static let version: Int = 3
 
-    static var userId: Int? = 5487222
-    static var authToken: String? = "oYzbLDmZtYsWBoX49VuPYkzd"
+    static let userId: Int? = nil
+    static let authToken: String? = nil
 }
 
 enum ZoteroApiError: Error {

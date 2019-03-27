@@ -16,7 +16,7 @@ struct StoreGroupDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let group = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: self.response.identifier).1
+        let group = try database.autocreatedObject(ofType: RGroup.self, forPrimaryKey: self.response.identifier).1
 
         group.name = self.response.data.name
         group.desc = self.response.data.description

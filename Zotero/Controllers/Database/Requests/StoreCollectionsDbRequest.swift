@@ -22,10 +22,11 @@ struct StoreCollectionsDbRequest: DbRequest {
     }
 
     private func store(data: CollectionResponse, to database: Realm) throws {
+        guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
+
+        let predicate = Predicates.keyInLibrary(key: data.key, libraryId: libraryId)
         let collection: RCollection
-        if let existing = database.objects(RCollection.self)
-                                  .filter("key = %@ AND library.identifier = %d", data.key,
-                                                                                  data.library.libraryId).first {
+        if let existing = database.objects(RCollection.self).filter(predicate).first {
             collection = existing
         } else {
             collection = RCollection()
@@ -37,34 +38,40 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.version = data.version
         collection.needsSync = false
 
-        try self.syncLibrary(data: data, collection: collection, database: database)
-        self.syncParent(data: data, collection: collection, database: database)
+        try self.syncLibrary(identifier: libraryId, name: data.library.name, collection: collection, database: database)
+        self.syncParent(libraryId: libraryId, data: data.data, collection: collection, database: database)
     }
 
-    private func syncLibrary(data: CollectionResponse, collection: RCollection, database: Realm) throws {
-        let libraryData = try database.autocreatedObject(ofType: RLibrary.self, forPrimaryKey: data.library.libraryId)
+    private func syncLibrary(identifier: LibraryIdentifier, name: String,
+                             collection: RCollection, database: Realm) throws {
+        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
         if libraryData.0 {
-            libraryData.1.name = data.library.name
-            libraryData.1.needsSync = true
+            switch libraryData.1 {
+            case .group(let group):
+                group.name = name
+                group.needsSync = true
+            case .custom: break
+            }
         }
-        collection.library = libraryData.1
+        collection.libraryObject = libraryData.1
     }
 
-    private func syncParent(data: CollectionResponse, collection: RCollection, database: Realm) {
+    private func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data,
+                            collection: RCollection, database: Realm) {
         collection.parent = nil
-        if let key = data.data.parentCollection {
-            let parent: RCollection
-            if let existing = database.objects(RCollection.self)
-                                      .filter("library.identifier = %d AND key = %@", data.library.libraryId,
-                                                                                      key).first {
-                parent = existing
-            } else {
-                parent = RCollection()
-                parent.key = key
-                parent.library = collection.library
-                database.add(parent)
-            }
-            collection.parent = parent
+
+        guard let key = data.parentCollection else { return }
+
+        let predicate = Predicates.keyInLibrary(key: key, libraryId: libraryId)
+        let parent: RCollection
+        if let existing = database.objects(RCollection.self).filter(predicate).first {
+            parent = existing
+        } else {
+            parent = RCollection()
+            parent.key = key
+            parent.libraryObject = collection.libraryObject
+            database.add(parent)
         }
+        collection.parent = parent
     }
 }

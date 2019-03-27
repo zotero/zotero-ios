@@ -12,12 +12,12 @@ import RxSwift
 
 protocol ItemNavigationDelegate: class {
     func didShowLibraries()
-    func showCollections(for libraryId: Int, libraryName: String)
-    func showAllItems(for libraryId: Int)
-    func showTrashItems(for libraryId: Int)
-    func showPublications(for libraryId: Int)
-    func showCollectionItems(libraryId: Int, collectionData: (String, String))
-    func showSearchItems(libraryId: Int, searchData: (String, String))
+    func showCollections(for libraryId: LibraryIdentifier, libraryName: String)
+    func showAllItems(for libraryId: LibraryIdentifier)
+    func showTrashItems(for libraryId: LibraryIdentifier)
+    func showPublications(for libraryId: LibraryIdentifier)
+    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (String, String))
+    func showSearchItems(libraryId: LibraryIdentifier, searchData: (String, String))
 }
 
 fileprivate enum PrimaryColumnState {
@@ -54,7 +54,7 @@ class MainViewController: UISplitViewController {
         let leftNavigationController = ProgressNavigationViewController(rootViewController: leftController)
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
 
-        let itemState = ItemsStore.StoreState(libraryId: RLibrary.myLibraryId, type: .all)
+        let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all)
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
                                    fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
                                    itemFieldsController: controllers.itemFieldsController)
@@ -152,7 +152,7 @@ extension MainViewController: ItemNavigationDelegate {
         self.setPrimaryColumn(state: .minimum, animated: true)
     }
 
-    func showCollections(for libraryId: Int, libraryName: String) {
+    func showCollections(for libraryId: LibraryIdentifier, libraryName: String) {
         guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
 
         let state = CollectionsStore.StoreState(libraryId: libraryId, title: libraryName)
@@ -170,27 +170,27 @@ extension MainViewController: ItemNavigationDelegate {
         })
     }
 
-    func showAllItems(for libraryId: Int) {
+    func showAllItems(for libraryId: LibraryIdentifier) {
         self.showItems(for: .all, libraryId: libraryId)
     }
 
-    func showTrashItems(for libraryId: Int) {
+    func showTrashItems(for libraryId: LibraryIdentifier) {
         self.showItems(for: .trash, libraryId: libraryId)
     }
 
-    func showPublications(for libraryId: Int) {
+    func showPublications(for libraryId: LibraryIdentifier) {
         self.showItems(for: .publications, libraryId: libraryId)
     }
 
-    func showSearchItems(libraryId: Int, searchData: (String, String)) {
+    func showSearchItems(libraryId: LibraryIdentifier, searchData: (String, String)) {
         self.showItems(for: .search(searchData.0, searchData.1), libraryId: libraryId)
     }
 
-    func showCollectionItems(libraryId: Int, collectionData: (String, String)) {
+    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (String, String)) {
         self.showItems(for: .collection(collectionData.0, collectionData.1), libraryId: libraryId)
     }
 
-    private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: Int) {
+    private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: LibraryIdentifier) {
         let state = ItemsStore.StoreState(libraryId: libraryId, type: type)
         let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
                                fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,

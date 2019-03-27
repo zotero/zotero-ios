@@ -14,19 +14,12 @@ struct LibraryResponse: Decodable {
     let type: String
     let links: LinksResponse?
 
-    var libraryId: Int {
-        if self.libraryType == .user {
-            return RLibrary.myLibraryId
-        }
-        return self.id
-    }
-
-    var libraryType: LibraryType? {
+    var libraryId: LibraryIdentifier? {
         switch self.type {
         case "user":
-            return .user
+            return .custom(.myLibrary)
         case "group":
-            return .group
+            return .group(self.id)
         default:
             return nil
         }

@@ -17,7 +17,7 @@ enum UpdateVersionType {
 
 struct UpdateVersionsDbRequest: DbRequest {
     let version: Int
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
     let type: UpdateVersionType
 
     var needsWrite: Bool { return true }
@@ -25,40 +25,55 @@ struct UpdateVersionsDbRequest: DbRequest {
     init(version: Int, library: SyncController.Library, type: UpdateVersionType) {
         self.version = version
         self.type = type
-        switch library {
-        case .group(let groupId):
-            self.libraryId = groupId
-        case .user:
-            self.libraryId = RLibrary.myLibraryId
-        }
+        self.libraryId = library.libraryId
     }
 
     func process(in database: Realm) throws {
-        guard let library = database.object(ofType: RLibrary.self, forPrimaryKey: self.libraryId) else {
-            throw DbError.objectNotFound
-        }
+        switch self.libraryId {
+        case .custom(let type):
+            guard let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue) else {
+                throw DbError.objectNotFound
+            }
 
-        let versions: RVersions = library.versions ?? RVersions()
-        if library.versions == nil {
-            database.add(versions)
-            library.versions = versions
-        }
+            let versions: RVersions = library.versions ?? RVersions()
+            if library.versions == nil {
+                database.add(versions)
+                library.versions = versions
+            }
 
-        switch self.type {
+            try self.update(versions: versions, type: self.type, version: self.version)
+
+        case .group(let identifier):
+            guard let library = database.object(ofType: RGroup.self, forPrimaryKey: identifier) else {
+                throw DbError.objectNotFound
+            }
+
+            let versions: RVersions = library.versions ?? RVersions()
+            if library.versions == nil {
+                database.add(versions)
+                library.versions = versions
+            }
+
+            try self.update(versions: versions, type: self.type, version: self.version)
+        }
+    }
+
+    private func update(versions: RVersions, type: UpdateVersionType, version: Int) throws {
+        switch type {
         case .settings:
-            versions.settings = self.version
+            versions.settings = version
         case .object(let object):
             switch object {
             case .group:
                 throw DbError.objectNotFound
             case .collection:
-                versions.collections = self.version
+                versions.collections = version
             case .item:
-                versions.items = self.version
+                versions.items = version
             case .trash:
-                versions.trash = self.version
+                versions.trash = version
             case .search:
-                versions.searches = self.version
+                versions.searches = version
             case .tag: break
             }
         }

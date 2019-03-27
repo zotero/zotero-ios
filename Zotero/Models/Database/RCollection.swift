@@ -36,7 +36,8 @@ class RCollection: Object {
     /// Raw value for OptionSet of changes for this object
     @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var library: RLibrary?
+    @objc dynamic var customLibrary: RCustomLibrary?
+    @objc dynamic var group: RGroup?
     @objc dynamic var parent: RCollection?
 
     var changedFields: RCollectionChanges {

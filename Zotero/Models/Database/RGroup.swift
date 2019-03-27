@@ -1,8 +1,8 @@
 //
-//  RLibrary.swift
+//  RGroup.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 05/02/2019.
+//  Created by Michal Rentka on 26/03/2019.
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
@@ -10,13 +10,7 @@ import Foundation
 
 import RealmSwift
 
-enum LibraryType {
-    case user, group
-}
-
-class RLibrary: Object {
-    static let myLibraryId: Int = -1
-
+class RGroup: Object {
     @objc dynamic var identifier: Int = 0
     @objc dynamic var owner: Int = 0
     @objc dynamic var name: String = ""
@@ -30,14 +24,10 @@ class RLibrary: Object {
     @objc dynamic var needsSync: Bool = false
     @objc dynamic var versions: RVersions?
 
-    let collections = LinkingObjects(fromType: RCollection.self, property: "library")
-    let items = LinkingObjects(fromType: RItem.self, property: "library")
-    let searches = LinkingObjects(fromType: RSearch.self, property: "library")
-    let tags = LinkingObjects(fromType: RTag.self, property: "library")
-
-    var libraryType: LibraryType {
-        return self.identifier == RLibrary.myLibraryId ? .user : .group
-    }
+    let collections = LinkingObjects(fromType: RCollection.self, property: "group")
+    let items = LinkingObjects(fromType: RItem.self, property: "group")
+    let searches = LinkingObjects(fromType: RSearch.self, property: "group")
+    let tags = LinkingObjects(fromType: RTag.self, property: "group")
 
     override class func primaryKey() -> String? {
         return "identifier"

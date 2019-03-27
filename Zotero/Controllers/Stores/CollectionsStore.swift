@@ -44,7 +44,7 @@ class CollectionsStore: Store {
             case allItems, collections, searches, custom
         }
 
-        let libraryId: Int
+        let libraryId: LibraryIdentifier
         let title: String
         let allItemsCellData: [CollectionCellData]
         let sections: [Section]
@@ -61,7 +61,7 @@ class CollectionsStore: Store {
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
 
-        init(libraryId: Int, title: String) {
+        init(libraryId: LibraryIdentifier, title: String) {
             self.libraryId = libraryId
             self.title = title
             self.collectionCellData = []

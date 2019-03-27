@@ -44,7 +44,7 @@ DEPENDENCIES:
   - CocoaLumberjack/Core (= 3.4.2)
   - CocoaLumberjack/Swift (= 3.4.2)
   - KeychainSwift (= 13.0.0)
-  - Nimble (= 7.3.1)
+  - Nimble
   - OHHTTPStubs/Swift (= 6.1.0)
   - PSPDFKit (from `https://customers.pspdfkit.com/cocoapods/TRIAL-w46OJ57xowLmzqz6rPM9wXSiSGlj4MoudWW3bLnjX57qJwfJzSvdP91d8wsAAPH9fMwzL_6osqqa2mS6VwkcXw/latest.podspec`)
   - Quick (= 1.3.2)
@@ -87,6 +87,6 @@ SPEC CHECKSUMS:
   RxCocoa: df63ebf7b9a70d6b4eeea407ed5dd4efc8979749
   RxSwift: 5976ecd04fc2fefd648827c23de5e11157faa973
 
-PODFILE CHECKSUM: 88e3a79e99180e8f0ddbc4eec3b0663020ab531a
+PODFILE CHECKSUM: ba70a0d830042dc3f7b1f359481d64cac01590db
 
 COCOAPODS: 1.5.3

@@ -15,7 +15,7 @@ enum RealmDbError: Error {
 }
 
 class RealmDbStorage {
-    private static let schemaVersion: UInt64 = 15
+    private static let schemaVersion: UInt64 = 1
     private let config: Realm.Configuration
 
     init(config: Realm.Configuration) {
@@ -80,6 +80,18 @@ extension RealmDbCoordinator: DbCoordinator {
 }
 
 extension Realm {
+    func autocreatedLibraryObject(forPrimaryKey key: LibraryIdentifier) throws -> (Bool, LibraryObject) {
+        switch key {
+        case .custom(let type):
+            let data = try self.autocreatedObject(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
+            return (data.0, .custom(data.1))
+
+        case .group(let identifier):
+            let data = try self.autocreatedObject(ofType: RGroup.self, forPrimaryKey: identifier)
+            return (data.0, .group(data.1))
+        }
+    }
+
     func autocreatedObject<Element: Object, KeyType>(ofType type: Element.Type,
                                                      forPrimaryKey key: KeyType) throws -> (Bool, Element) {
         if let existing = self.object(ofType: type, forPrimaryKey: key) {

@@ -13,15 +13,14 @@ import RealmSwift
 struct ReadCollectionDbRequest: DbResponseRequest {
     typealias Response = RCollection
 
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
     let key: String
 
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> RCollection {
-        guard let collection = database.objects(RCollection.self)
-                                       .filter("library.identifier = %d AND key = %@", self.libraryId,
-                                                                                       self.key).first else {
+        let predicate = Predicates.keyInLibrary(key: self.key, libraryId: self.libraryId)
+        guard let collection = database.objects(RCollection.self).filter(predicate).first else {
             throw DbError.objectNotFound
         }
         return collection

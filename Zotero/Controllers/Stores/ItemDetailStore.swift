@@ -164,7 +164,7 @@ class ItemDetailStore: Store {
         }
 
         guard let editingDataSource = self.state.value.editingDataSource,
-              let libraryId = self.state.value.item.library?.identifier else { return }
+              let libraryId = self.state.value.item.libraryId else { return }
         let key = self.state.value.item.key
         previewDataSource.merge(with: editingDataSource)
 
@@ -182,7 +182,7 @@ class ItemDetailStore: Store {
         }
     }
 
-    private func storeChanges(from dataSource: ItemDetailEditingDataSource, itemKey: String, libraryId: Int) throws {
+    private func storeChanges(from dataSource: ItemDetailEditingDataSource, itemKey: String, libraryId: LibraryIdentifier) throws {
         let request = StoreItemDetailChangesDbRequest(abstractKey: self.itemFieldsController.abstractKey,
                                                       libraryId: libraryId, itemKey: itemKey, title: dataSource.title,
                                                       abstract: dataSource.abstract,
@@ -270,7 +270,7 @@ class ItemDetailStore: Store {
     }
 
     private func showAttachment(for item: RItem) {
-        guard let library = item.library else {
+        guard let libraryId = item.libraryObject?.identifier else {
             self.reportError(.libraryNotAssigned)
             return
         }
@@ -284,7 +284,7 @@ class ItemDetailStore: Store {
         }
 
 
-        let file = Files.itemFile(libraryId: library.identifier, key: item.key, ext: ext)
+        let file = Files.itemFile(libraryId: libraryId, key: item.key, ext: ext)
 
         if self.fileStorage.has(file) {
             self.updater.updateState { newState in
@@ -295,13 +295,13 @@ class ItemDetailStore: Store {
         }
 
         let groupType: SyncController.Library
-        switch library.libraryType {
-        case .group:
-            groupType = .group(library.identifier)
-        case .user:
+        switch libraryId {
+        case .group(let identifier):
+            groupType = .group(identifier)
+        case .custom(let type):
             do {
                 let user = try self.dbStorage.createCoordinator().perform(request: ReadUserDbRequest())
-                groupType = .user(user.identifier)
+                groupType = .user(user.identifier, type)
             } catch let error {
                 DDLogError("ItemDetailStore: can't load self user - \(error)")
                 self.reportError(.userMissing)

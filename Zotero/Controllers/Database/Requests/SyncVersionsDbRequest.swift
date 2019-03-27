@@ -40,7 +40,7 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     typealias Response = [String]
 
     let versions: [String: Int]
-    let libraryId: Int
+    let libraryId: LibraryIdentifier
     let isTrash: Bool?
     let syncAll: Bool
 
@@ -84,8 +84,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> [Int] {
         let allKeys = Array(self.versions.keys)
 
-        let toRemove = database.objects(RLibrary.self)
-                               .filter("identifier != %d AND (NOT identifier IN %@)", RLibrary.myLibraryId, allKeys)
+        let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
         toRemove.forEach { library in
             library.collections.forEach { collection in
                 collection.removeChildren(in: database)
@@ -101,8 +100,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
         if self.syncAll { return allKeys }
 
         var toUpdate: [Int] = allKeys
-        for library in database.objects(RLibrary.self) {
-            guard library.identifier != RLibrary.myLibraryId else { continue }
+        for library in database.objects(RGroup.self) {
             if library.needsSync {
                 if !toUpdate.contains(library.identifier) {
                     toUpdate.append(library.identifier)

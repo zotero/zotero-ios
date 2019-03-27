@@ -55,7 +55,7 @@ class LibrariesViewController: UIViewController, ProgressToolbarController {
         super.viewWillAppear(animated)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.navigationDelegate?.showAllItems(for: RLibrary.myLibraryId)
+            self.navigationDelegate?.showAllItems(for: .custom(.myLibrary))
         }
     }
 
@@ -81,37 +81,36 @@ class LibrariesViewController: UIViewController, ProgressToolbarController {
 
 extension LibrariesViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
+        return self.store.state.value.sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch section {
-        case 0:
-            return 1
-        case 1:
+        switch self.store.state.value.sections[section] {
+        case .custom:
+            return self.store.state.value.customLibraries.count
+        case .groups:
             return self.store.state.value.groupLibraries.count
-        default:
-             return 0
         }
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return section == 1 ? "Group Libraries" : nil
+        return self.store.state.value.sections[section] == .groups ? "Group Libraries" : nil
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let state = self.store.state.value
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
         var title: String?
-        switch indexPath.section {
-        case 0:
-            title = self.store.state.value.myLibrary.name
-        case 1:
-            if indexPath.row < self.self.store.state.value.groupLibraries.count {
-                let library = self.self.store.state.value.groupLibraries[indexPath.row]
-                title = library.name
+        switch state.sections[indexPath.section] {
+        case .custom:
+            if indexPath.row < state.customLibraries.count {
+                title = state.customLibraries[indexPath.row].name
             }
-        default: break
+        case .groups:
+            if indexPath.row < state.groupLibraries.count {
+                title = state.groupLibraries[indexPath.row].name
+            }
         }
 
         if let cell = cell as? LibraryCell,
@@ -127,11 +126,17 @@ extension LibrariesViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        let library = indexPath.section == 0 ? self.store.state.value.myLibrary :
-                                               self.store.state.value.groupLibraries[indexPath.row]
-        self.navigationDelegate?.showCollections(for: library.identifier, libraryName: library.name)
+        let data: LibraryCellData
+        switch self.store.state.value.sections[indexPath.section] {
+        case .custom:
+            data = self.store.state.value.customLibraries[indexPath.row]
+        case .groups:
+            data = self.store.state.value.groupLibraries[indexPath.row]
+        }
+
+        self.navigationDelegate?.showCollections(for: data.identifier, libraryName: data.name)
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.navigationDelegate?.showAllItems(for: library.identifier)
+            self.navigationDelegate?.showAllItems(for: data.identifier)
         }
     }
 }
