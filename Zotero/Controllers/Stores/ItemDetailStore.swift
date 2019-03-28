@@ -472,11 +472,11 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         case .fields:
             return self.fields.count
         case .attachments:
-            return self.attachments.count
+            return 1 + self.attachments.count
         case .notes:
-            return self.notes.count
+            return 1 + self.notes.count
         case .tags:
-            return self.tags.count
+            return 1 + self.tags.count
         case .related:
             return 0
         }
