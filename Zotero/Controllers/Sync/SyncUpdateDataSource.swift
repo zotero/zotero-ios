@@ -23,15 +23,12 @@ final class UpdateDataSource: SyncUpdateDataSource {
 
     func updates(for library: SyncController.Library, versions: Versions) throws -> [SyncController.WriteBatch] {
         let coordinator = try self.dbStorage.createCoordinator()
-        // Since we're sending items and trashed items together, let's send min of their versions in case trash
-        // is not up to date with items (yet), but most of the time they should be the same anyway
-        let itemVersion = min(versions.items, versions.trash)
         return (try self.updates(object: .collection, library: library,
                                  version: versions.collections, coordinator: coordinator)) +
                (try self.updates(object: .search, library: library,
                                  version: versions.searches, coordinator: coordinator)) +
                (try self.updates(object: .item, library: library,
-                                 version: itemVersion, coordinator: coordinator))
+                                 version: versions.items, coordinator: coordinator))
     }
 
     private func updates(object: SyncController.Object, library: SyncController.Library, version: Int,

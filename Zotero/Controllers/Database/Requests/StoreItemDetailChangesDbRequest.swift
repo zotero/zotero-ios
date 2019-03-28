@@ -39,6 +39,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             } else if RItem.titleKeys.contains(field.key) {
                 if field.value != self.title {
                     field.value = self.title
+                    item.title = self.title
                     field.changed = true
                     fieldsDidChange = true
                 }

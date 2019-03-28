@@ -17,8 +17,8 @@ struct ApiConstants {
     static let baseUrlString: String = "https://api.zotero.org/"
     static let version: Int = 3
 
-    static let userId: Int? = nil
-    static let authToken: String? = nil
+    static let userId: Int? = 5487222
+    static let authToken: String? = "oYzbLDmZtYsWBoX49VuPYkzd"
 }
 
 enum ZoteroApiError: Error {
