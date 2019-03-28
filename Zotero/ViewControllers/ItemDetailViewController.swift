@@ -150,7 +150,7 @@ class ItemDetailViewController: UIViewController {
 
     private func cellId(for row: Int, section: ItemDetailStore.StoreState.Section) -> String {
         switch section {
-        case .title, .fields, .abstract:
+        case .title, .fields, .abstract, .creators:
             return self.cellId(for: section)
         case .tags, .related, .notes, .attachments:
             if row == 0 {
@@ -164,7 +164,7 @@ class ItemDetailViewController: UIViewController {
         switch section {
         case .title:
             return ItemTitleCell.nibName
-        case .fields:
+        case .fields, .creators:
             return ItemFieldCell.nibName
         case .abstract:
             return ItemAbstractCell.nibName
@@ -224,7 +224,7 @@ extension ItemDetailViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         guard let section = self.store.state.value.dataSource?.sections[section] else { return 0 }
         switch section {
-        case .title, .fields, .abstract:
+        case .title, .fields, .abstract, .creators:
             return 0
         case .attachments, .notes, .tags, .related:
             return 10
@@ -234,7 +234,7 @@ extension ItemDetailViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         guard let section = self.store.state.value.dataSource?.sections[section] else { return 0 }
         switch section {
-        case .title, .fields:
+        case .title, .fields, .creators:
             return 0
         case .attachments, .notes, .tags, .abstract, .related:
             return 10
@@ -269,17 +269,33 @@ extension ItemDetailViewController: UITableViewDataSource {
                                }
                                 .disposed(by: self.disposeBag)
         } else if let cell = cell as? ItemFieldCell {
-            if let field = dataSource.field(at: indexPath.row) {
-                cell.setup(with: field.name, value: field.value, editing: tableView.isEditing)
-                cell.textObservable.throttle(0.8, scheduler: MainScheduler.instance)
-                                   .subscribe { [weak self] event in
-                                       switch event {
-                                       case .next(let string):
-                                           self?.store.handle(action: .updateField(field.name, string))
-                                       default: break
-                                       }
-                                   }
-                                   .disposed(by: self.disposeBag)
+            switch section {
+            case .fields:
+                if let field = dataSource.field(at: indexPath.row) {
+                    cell.setup(with: field.name, value: field.value, editing: tableView.isEditing)
+                    cell.textObservable.throttle(0.8, scheduler: MainScheduler.instance)
+                        .subscribe { [weak self] event in
+                            switch event {
+                            case .next(let string):
+                                self?.store.handle(action: .updateField(field.name, string))
+                            default: break
+                            }
+                        }
+                        .disposed(by: self.disposeBag)
+                }
+
+            case .creators:
+                if let creator = dataSource.creator(at: indexPath.row) {
+                    var value = ""
+                    if !creator.name.isEmpty {
+                        value = creator.name
+                    } else if !creator.firstName.isEmpty || !creator.lastName.isEmpty {
+                        value = creator.firstName + " " + creator.lastName
+                    }
+                    cell.setup(with: creator.rawType, value: value, editing: tableView.isEditing)
+                }
+
+            default: break
             }
         } else if let cell = cell as? ItemSpecialTitleCell {
             switch section {
@@ -330,7 +346,7 @@ extension ItemDetailViewController: UITableViewDataSource {
         guard let dataSource = self.store.state.value.dataSource else { return .none }
 
         switch dataSource.sections[indexPath.section] {
-        case .title, .fields, .abstract:
+        case .title, .fields, .abstract, .creators:
             return .none
         case .attachments, .tags, .related, .notes:
             return indexPath.row == 0 ? .none : .delete

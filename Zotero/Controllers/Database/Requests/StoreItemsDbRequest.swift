@@ -166,27 +166,9 @@ struct StoreItemsDbRequest: DbRequest {
     }
 
     private func syncCreators(data: ItemResponse, item: RItem, database: Realm) {
-        var existingIndices: Set<Int> = []
-        item.creators.forEach { creator in
-            let responseIndex = data.creators.index(where: { response in
-                return response.creatorType == creator.rawType &&
-                       (response.firstName ?? "") == creator.firstName &&
-                       (response.lastName ?? "") == creator.lastName &&
-                       (response.name ?? "") == creator.name
-            })
-
-            if let index = responseIndex {
-                existingIndices.insert(index)
-            } else {
-                if let index = creator.items.index(of: item) {
-                    creator.items.remove(at: index)
-                }
-            }
-        }
+        database.delete(item.creators)
 
         for object in data.creators.enumerated() {
-            guard !existingIndices.contains(object.offset) else { continue }
-
             let firstName = object.element.firstName ?? ""
             let lastName = object.element.lastName ?? ""
             let name = object.element.name ?? ""
@@ -205,6 +187,7 @@ struct StoreItemsDbRequest: DbRequest {
                 creator.name = name
                 database.add(creator)
             }
+            creator.orderId = object.offset
             creator.items.append(item)
         }
     }

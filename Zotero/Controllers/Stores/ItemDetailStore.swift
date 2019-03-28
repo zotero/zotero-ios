@@ -27,6 +27,7 @@ protocol ItemDetailDataSource {
     var sections: [ItemDetailStore.StoreState.Section] { get }
 
     func rowCount(for section: ItemDetailStore.StoreState.Section) -> Int
+    func creator(at index: Int) -> RCreator?
     func field(at index: Int) -> ItemDetailStore.StoreState.Field?
     func note(at index: Int) -> RItem?
     func attachment(at index: Int) -> RItem?
@@ -66,7 +67,7 @@ class ItemDetailStore: Store {
 
     struct StoreState {
         enum Section: CaseIterable {
-            case title, fields, abstract, notes, tags, attachments, related
+            case title, fields, abstract, notes, tags, attachments, related, creators
         }
 
         struct Field {
@@ -79,7 +80,7 @@ class ItemDetailStore: Store {
             case downloaded(File)
         }
 
-        fileprivate static let allSections: [StoreState.Section] = [.title, .fields, .abstract,
+        fileprivate static let allSections: [StoreState.Section] = [.title, .creators, .fields, .abstract,
                                                                     .notes, .tags, .attachments]
         let item: RItem
 
@@ -341,6 +342,7 @@ class ItemDetailStore: Store {
 }
 
 fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
+    fileprivate let creators: [RCreator]
     fileprivate let attachments: [RItem]
     fileprivate let notes: [RItem]
     fileprivate let tags: [RTag]
@@ -371,6 +373,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         self.title = previewDataSource.title
         self.abstract = previewDataSource.abstract
         self.fields = fields
+        self.creators = previewDataSource.creators.map(RCreator.init)
         self.attachments = previewDataSource.attachments.map(RItem.init)
         self.notes = previewDataSource.notes.map(RItem.init)
         self.tags = previewDataSource.tags.map(RTag.init)
@@ -380,6 +383,8 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         switch section {
         case .title, .abstract:
             return 1
+        case .creators:
+            return self.creators.count
         case .fields:
             return self.fields.count
         case .attachments:
@@ -391,6 +396,11 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         case .related:
             return 0
         }
+    }
+
+    func creator(at index: Int) -> RCreator? {
+        guard index < self.creators.count else { return nil }
+        return self.creators[index]
     }
 
     func field(at index: Int) -> ItemDetailStore.StoreState.Field? {
@@ -416,6 +426,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
 
 fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
     fileprivate let fieldNames: [String]
+    fileprivate let creators: Results<RCreator>
     fileprivate let attachments: Results<RItem>
     fileprivate let notes: Results<RItem>
     fileprivate let tags: Results<RTag>
@@ -447,21 +458,19 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         let fields: [ItemDetailStore.StoreState.Field] = sortedFieldNames.compactMap { name in
             return values[name].flatMap({ ItemDetailStore.StoreState.Field(name: name, value: $0) })
         }
-        let attachments = item.children
-                              .filter("rawType = %@", ItemType.attachment.rawValue)
-                              .sorted(byKeyPath: "title")
-        let notes = item.children
-                        .filter("rawType = %@", ItemType.note.rawValue)
-                        .sorted(byKeyPath: "title")
-        let tags = item.tags.sorted(byKeyPath: "name")
 
         self.fieldNames = sortedFieldNames
         self.title = item.title
         self.abstract = abstract
         self.fields = fields
-        self.attachments = attachments
-        self.notes = notes
-        self.tags = tags
+        self.creators = item.creators.sorted(byKeyPath: "orderId")
+        self.attachments = item.children
+                               .filter("rawType = %@", ItemType.attachment.rawValue)
+                               .sorted(byKeyPath: "title")
+        self.notes = item.children
+                         .filter("rawType = %@", ItemType.note.rawValue)
+                         .sorted(byKeyPath: "title")
+        self.tags = item.tags.sorted(byKeyPath: "name")
         self.sections = self.createSections()
     }
 
@@ -469,6 +478,8 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         switch section {
         case .title, .abstract:
             return 1
+        case .creators:
+            return self.creators.count
         case .fields:
             return self.fields.count
         case .attachments:
@@ -480,6 +491,11 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         case .related:
             return 0
         }
+    }
+
+    func creator(at index: Int) -> RCreator? {
+        guard index < self.creators.count else { return nil }
+        return self.creators[index]
     }
 
     func field(at index: Int) -> ItemDetailStore.StoreState.Field? {
@@ -510,6 +526,8 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
                                       return section
                                   case .abstract:
                                       return self.abstract == nil ? nil : section
+                                  case .creators:
+                                    return self.creators.isEmpty ? nil : section
                                   case .fields:
                                       return self.fields.isEmpty ? nil : section
                                   case .attachments:
