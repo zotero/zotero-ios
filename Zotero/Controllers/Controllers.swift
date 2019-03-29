@@ -36,6 +36,11 @@ class Controllers {
             try fileStorage.createDictionaries(for: file)
             let dbStorage = RealmDbStorage(url: file.createUrl())
             try dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
+
+            if let userId = ApiConstants.userId {
+                try dbStorage.createCoordinator().perform(request: StoreUserDbRequest(identifier: userId, name: "Tester"))
+            }
+            
             self.dbStorage = dbStorage
         } catch let error {
             fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")

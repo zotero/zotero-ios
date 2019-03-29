@@ -16,6 +16,11 @@ struct StoreUserDbRequest: DbRequest {
 
     var needsWrite: Bool { return true }
 
+    init(identifier: Int, name: String) {
+        self.identifier = identifier
+        self.name = name
+    }
+
     init(loginResponse: LoginResponse) {
         self.identifier = loginResponse.userId
         self.name = loginResponse.name
