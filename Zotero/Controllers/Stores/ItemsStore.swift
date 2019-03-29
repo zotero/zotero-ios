@@ -154,7 +154,7 @@ class ItemResultsDataSource {
     init(results: Results<RItem>) {
         self.results = results
         self.sectionResults = [:]
-        self.sectionIndexTitles = Set(results.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "" })).sorted()
+        self.sectionIndexTitles = Set(results.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "-" })).sorted()
     }
 }
 
@@ -170,11 +170,13 @@ extension ItemResultsDataSource: ItemsDataSource {
             return results
         }
 
+        let results: Results<RItem>
         let title = self.sectionIndexTitles[section]
-        if title == "" {
-            
+        if title == "-" {
+            results = self.results.filter("title == ''")
+        } else {
+            results = self.results.filter("title BEGINSWITH[c] %@", self.sectionIndexTitles[section])
         }
-        let results = self.results.filter("title BEGINSWITH[c] %@", self.sectionIndexTitles[section])
         self.sectionResults[section] = results
         return results
     }
