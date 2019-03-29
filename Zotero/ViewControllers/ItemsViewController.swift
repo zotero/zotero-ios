@@ -57,9 +57,11 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func showItem(at index: Int) {
-        guard let items = self.store.state.value.items, index < items.count else { return }
-        let store = ItemDetailStore(initialState: ItemDetailStore.StoreState(item: items[index]),
+    private func showItem(at indexPath: IndexPath) {
+        guard let items = self.store.state.value.dataSource?.items(for: indexPath.section),
+              indexPath.row < items.count else { return }
+
+        let store = ItemDetailStore(initialState: ItemDetailStore.StoreState(item: items[indexPath.row]),
                                     apiClient: self.store.apiClient,
                                     fileStorage: self.store.fileStorage,
                                     dbStorage: self.store.dbStorage,
@@ -79,11 +81,15 @@ class ItemsViewController: UIViewController {
 
 extension ItemsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
+        return self.store.state.value.dataSource?.sectionCount ?? 0
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.store.state.value.items?.count ?? 0
+        return self.store.state.value.dataSource?.items(for: section)?.count ?? 0
+    }
+
+    func sectionIndexTitles(for tableView: UITableView) -> [String]? {
+        return self.store.state.value.dataSource?.sectionIndexTitles
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -94,7 +100,7 @@ extension ItemsViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
         guard let itemCell = cell as? ItemCell,
-              let items = self.store.state.value.items, indexPath.row < items.count else { return cell }
+              let items = self.store.state.value.dataSource?.items(for: indexPath.section) else { return cell }
 
         itemCell.setup(with: items[indexPath.row])
 
@@ -105,7 +111,7 @@ extension ItemsViewController: UITableViewDataSource {
 extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        self.showItem(at: indexPath.row)
+        self.showItem(at: indexPath)
     }
 }
 

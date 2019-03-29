@@ -12,6 +12,12 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
+protocol ItemsDataSource {
+    var sectionCount: Int { get }
+    var sectionIndexTitles: [String] { get }
+    func items(for section: Int) -> Results<RItem>?
+}
+
 class ItemsStore: Store {
     typealias Action = StoreAction
     typealias State = StoreState
@@ -35,7 +41,7 @@ class ItemsStore: Store {
         let type: ItemType
         let title: String
 
-        fileprivate(set) var items: Results<RItem>?
+        fileprivate(set) var dataSource: ItemsDataSource?
         fileprivate(set) var error: StoreError?
         fileprivate var version: Int
         fileprivate var itemsToken: NotificationToken?
@@ -98,12 +104,17 @@ class ItemsStore: Store {
                 request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
                                              collectionKey: key, parentKey: nil, trash: false)
             }
+
             let items = try self.dbStorage.createCoordinator().perform(request: request)
+            let dataSource = ItemResultsDataSource(results: items)
+
             let itemsToken = items.observe({ [weak self] changes in
                 guard let `self` = self else { return }
                 switch changes {
-                case .update(_, _, _, _):
+                case .update(let results, _, _, _):
+                    let dataSource = ItemResultsDataSource(results: results)
                     self.updater.updateState(action: { newState in
+                        newState.dataSource = dataSource
                         newState.version += 1
                     })
                 case .initial: break
@@ -116,8 +127,8 @@ class ItemsStore: Store {
             })
 
             self.updater.updateState { newState in
+                newState.dataSource = dataSource
                 newState.version += 1
-                newState.items = items
                 newState.itemsToken = itemsToken
             }
         } catch let error {
@@ -132,5 +143,39 @@ class ItemsStore: Store {
 extension ItemsStore.StoreState: Equatable {
     static func == (lhs: ItemsStore.StoreState, rhs: ItemsStore.StoreState) -> Bool {
         return lhs.error == rhs.error && lhs.version == rhs.version
+    }
+}
+
+class ItemResultsDataSource {
+    let sectionIndexTitles: [String]
+    private let results: Results<RItem>
+    private var sectionResults: [Int: Results<RItem>]
+
+    init(results: Results<RItem>) {
+        self.results = results
+        self.sectionResults = [:]
+        self.sectionIndexTitles = Set(results.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "" })).sorted()
+    }
+}
+
+extension ItemResultsDataSource: ItemsDataSource {
+    var sectionCount: Int {
+        return self.sectionIndexTitles.count
+    }
+
+    func items(for section: Int) -> Results<RItem>? {
+        guard section < self.sectionCount else { return nil }
+
+        if let results = self.sectionResults[section] {
+            return results
+        }
+
+        let title = self.sectionIndexTitles[section]
+        if title == "" {
+            
+        }
+        let results = self.results.filter("title BEGINSWITH[c] %@", self.sectionIndexTitles[section])
+        self.sectionResults[section] = results
+        return results
     }
 }
