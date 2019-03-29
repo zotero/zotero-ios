@@ -371,6 +371,10 @@ extension ItemDetailViewController: UITableViewDelegate {
 }
 
 extension RTag: ItemSpecialCellModel {
+    var tintColor: UIColor? {
+        return self.uiColor
+    }
+
     var title: String {
         return self.name
     }
@@ -390,5 +394,9 @@ extension RItem: ItemSpecialCellModel {
         default:
             return nil
         }
+    }
+
+    var tintColor: UIColor? {
+        return nil
     }
 }

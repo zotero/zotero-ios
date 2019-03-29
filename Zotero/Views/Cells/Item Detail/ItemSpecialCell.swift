@@ -11,6 +11,7 @@ import UIKit
 protocol ItemSpecialCellModel {
     var title: String { get }
     var specialIcon: UIImage? { get }
+    var tintColor: UIColor? { get }
 }
 
 class ItemSpecialCell: UITableViewCell {
@@ -25,5 +26,13 @@ class ItemSpecialCell: UITableViewCell {
     func setup(with model: ItemSpecialCellModel) {
         self.iconView.image = model.specialIcon
         self.titleLabel.text = model.title
+
+        if let color = model.tintColor {
+            self.iconView.tintColor = color
+            self.titleLabel.textColor = color
+        } else {
+            self.iconView.tintColor = self.contentView.tintColor
+            self.titleLabel.textColor = .black
+        }
     }
 }
