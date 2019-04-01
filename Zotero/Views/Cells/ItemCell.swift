@@ -27,7 +27,7 @@ class ItemCell: UITableViewCell {
     @IBOutlet private weak var attachmentIndicator: UILabel!
     @IBOutlet private weak var colorsView: TagColorsView!
 
-    static let height: CGFloat = 59
+    static let height: CGFloat = 60
 
     override func awakeFromNib() {
         super.awakeFromNib()
