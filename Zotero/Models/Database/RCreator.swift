@@ -16,5 +16,5 @@ class RCreator: Object {
     @objc dynamic var lastName: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var orderId: Int = 0
-    let items: List<RItem> = List()
+    @objc dynamic var item: RItem?
 }

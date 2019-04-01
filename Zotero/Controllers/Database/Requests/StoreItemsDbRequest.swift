@@ -173,22 +173,14 @@ struct StoreItemsDbRequest: DbRequest {
             let lastName = object.element.lastName ?? ""
             let name = object.element.name ?? ""
 
-            let creator: RCreator
-            if let existing = database.objects(RCreator.self)
-                                      .filter("rawType = %@ AND firstName = %@ " +
-                                              "AND lastName = %@ AND name = %@", object.element.creatorType, firstName,
-                                                                                 lastName, name).first {
-                creator = existing
-            } else {
-                creator = RCreator()
-                creator.rawType = object.element.creatorType
-                creator.firstName = firstName
-                creator.lastName = lastName
-                creator.name = name
-                database.add(creator)
-            }
+            let creator = RCreator()
+            creator.rawType = object.element.creatorType
+            creator.firstName = firstName
+            creator.lastName = lastName
+            creator.name = name
+            database.add(creator)
             creator.orderId = object.offset
-            creator.items.append(item)
+            creator.item = item
         }
     }
 
