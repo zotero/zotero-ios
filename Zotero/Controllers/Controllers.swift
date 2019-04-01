@@ -93,7 +93,6 @@ class UserControllers {
     }
 
     private func performInitialActions() {
-        self.syncScheduler.requestFullSync()
         self.changeObserver.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] changedLibraries in
