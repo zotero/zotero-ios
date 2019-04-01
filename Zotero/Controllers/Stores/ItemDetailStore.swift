@@ -469,10 +469,10 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         self.fields = fields
         self.creators = item.creators.sorted(byKeyPath: "orderId")
         self.attachments = item.children
-                               .filter("rawType = %@", ItemType.attachment.rawValue)
+                               .filter("needsSync = false AND rawType = %@", ItemType.attachment.rawValue)
                                .sorted(byKeyPath: "title")
         self.notes = item.children
-                         .filter("rawType = %@", ItemType.note.rawValue)
+                         .filter("needsSync = false AND rawType = %@", ItemType.note.rawValue)
                          .sorted(byKeyPath: "title")
         self.tags = item.tags.sorted(byKeyPath: "name")
         self.sections = self.createSections()
