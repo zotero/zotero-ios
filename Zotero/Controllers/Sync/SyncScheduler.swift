@@ -92,7 +92,13 @@ final class SyncScheduler: SynchronizationScheduler {
         self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
             self.enqueue(action: action)
-            self.startTimer()
+
+            switch action.1 {
+            case .all:
+                self.startNextAction()
+            case .specific:
+                self.startTimer()
+            }
         }
     }
 
@@ -125,7 +131,7 @@ final class SyncScheduler: SynchronizationScheduler {
     }
 
     private func startNextAction() {
-        guard let action = self.nextAction else { return }
+        guard self.inProgress == nil, let action = self.nextAction else { return }
         self.nextAction = nil
         self.inProgress = action
         self.syncController.start(type: action.0, libraries: action.1)
