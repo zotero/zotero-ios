@@ -50,9 +50,16 @@ class MainViewController: UISplitViewController {
         super.init(nibName: nil, bundle: nil)
 
         let librariesStore = LibrariesStore(dbStorage: controllers.dbStorage)
-        let leftController = LibrariesViewController(store: librariesStore, delegate: self)
-        let leftNavigationController = ProgressNavigationViewController(rootViewController: leftController)
+        let librariesController = LibrariesViewController(store: librariesStore, delegate: self)
+
+        let leftNavigationController = ProgressNavigationViewController(rootViewController: librariesController)
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
+
+        let collectionsState = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
+                                                           title: RCustomLibraryType.myLibrary.libraryName)
+        let collectionsStore = CollectionsStore(initialState: collectionsState, dbStorage: controllers.dbStorage)
+        let collectionsController = CollectionsViewController(store: collectionsStore, delegate: self)
+        leftNavigationController.pushViewController(collectionsController, animated: false)
 
         let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all)
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
@@ -63,6 +70,12 @@ class MainViewController: UISplitViewController {
         self.viewControllers = [leftNavigationController, rightNavigationController]
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
+
+        let newFraction = self.calculatePrimaryColumnFraction(from: collectionsStore.state.value.collectionCellData)
+        self.currentLandscapePrimaryColumnFraction = newFraction
+        if UIDevice.current.orientation.isLandscape {
+            self.setPrimaryColumn(state: .dynamic(newFraction), animated: false)
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
