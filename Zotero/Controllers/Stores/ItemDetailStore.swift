@@ -23,6 +23,7 @@ struct EditingSectionDiff {
 
 protocol ItemDetailDataSource {
     var title: String { get }
+    var type: String { get }
     var abstract: String? { get }
     var sections: [ItemDetailStore.StoreState.Section] { get }
 
@@ -352,8 +353,9 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
     fileprivate let tags: [RTag]
     fileprivate var fields: [ItemDetailStore.StoreState.Field]
     let sections: [ItemDetailStore.StoreState.Section]
-    var abstract: String?
-    var title: String
+    fileprivate(set) var abstract: String?
+    fileprivate(set) var title: String
+    fileprivate(set) var type: String
 
     init(item: RItem, previewDataSource: ItemDetailPreviewDataSource, itemFieldsController: ItemFieldsController) {
         let hasAbstract = itemFieldsController.fields[item.rawType]?.contains(itemFieldsController.abstractKey) ?? false
@@ -375,6 +377,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
 
         self.sections = sections
         self.title = previewDataSource.title
+        self.type = previewDataSource.type
         self.abstract = previewDataSource.abstract
         self.fields = fields
         self.creators = previewDataSource.creators.map(RCreator.init)
@@ -435,9 +438,10 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
     fileprivate let notes: Results<RItem>
     fileprivate let tags: Results<RTag>
     fileprivate var fields: [ItemDetailStore.StoreState.Field]
-    var sections: [ItemDetailStore.StoreState.Section] = []
-    var abstract: String?
-    var title: String
+    private(set) var sections: [ItemDetailStore.StoreState.Section] = []
+    fileprivate(set) var abstract: String?
+    fileprivate(set) var title: String
+    fileprivate(set) var type: String
 
     init(item: RItem, itemFieldsController: ItemFieldsController) throws {
         guard var sortedFieldNames = itemFieldsController.fields[item.rawType] else {
@@ -465,6 +469,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
 
         self.fieldNames = sortedFieldNames
         self.title = item.title
+        self.type = item.rawType
         self.abstract = abstract
         self.fields = fields
         self.creators = item.creators.sorted(byKeyPath: "orderId")

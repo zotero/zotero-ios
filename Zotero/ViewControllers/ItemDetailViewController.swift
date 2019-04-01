@@ -250,7 +250,7 @@ extension ItemDetailViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
         if let cell = cell as? ItemTitleCell {
-            cell.setup(with: dataSource.title, editing: tableView.isEditing)
+            cell.setup(with: dataSource.title, type: dataSource.type, editing: tableView.isEditing)
             cell.textObservable.subscribe { [weak self] event in
                                    switch event {
                                    case .next(let string):
