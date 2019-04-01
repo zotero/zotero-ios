@@ -264,6 +264,7 @@ class ItemDetailStore: Store {
                 state.error = error
             }
         } catch let error {
+            DDLogError("ItemDetailStore: can't load initial data - \(error)")
             self.updater.updateState { state in
                 state.error = .unknown
             }
@@ -272,18 +273,21 @@ class ItemDetailStore: Store {
 
     private func showAttachment(for item: RItem) {
         guard let libraryId = item.libraryObject?.identifier else {
+            DDLogError("ItemDetailStore: show attachment - library not assigned to item (\(item.key))")
             self.reportError(.libraryNotAssigned)
             return
         }
         guard let contentType = item.fields.filter("key = %@", "contentType").first?.value else {
+            DDLogError("ItemDetailStore: show attachment - contentType field missing for item (\(item.key))")
             self.reportError(.contentTypeMissing)
             return
         }
         guard let ext = contentType.mimeTypeExtension else {
+            DDLogError("ItemDetailStore: show attachment - mimeType/extension " +
+                       "unknown (\(contentType)) for item (\(item.key))")
             self.reportError(.contentTypeUnknown)
             return
         }
-
 
         let file = Files.itemFile(libraryId: libraryId, key: item.key, ext: ext)
 
@@ -304,7 +308,7 @@ class ItemDetailStore: Store {
                 let user = try self.dbStorage.createCoordinator().perform(request: ReadUserDbRequest())
                 groupType = .user(user.identifier, type)
             } catch let error {
-                DDLogError("ItemDetailStore: can't load self user - \(error)")
+                DDLogError("ItemDetailStore: show attachment - can't load self user - \(error)")
                 self.reportError(.userMissing)
                 return
             }
@@ -319,7 +323,7 @@ class ItemDetailStore: Store {
                     newState.changes = .download
                 }
             }, onError: { [weak self] error in
-                DDLogError("ItemDetailStore: can't download file - \(error)")
+                DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
                 self?.updater.updateState { newState in
                     newState.downloadState = nil
                     newState.error = .downloadError
