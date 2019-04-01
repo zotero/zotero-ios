@@ -106,6 +106,7 @@
 		B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795EC22077CCD003D0471 /* LoginRequest.swift */; };
 		B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FE2207965F003D0471 /* UIViewController+Alert.swift */; };
+		B38160EA2252319300A2B7A5 /* DeleteAllDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */; };
 		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
 		B385E2B52208755500DFE361 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B42208755500DFE361 /* RUser.swift */; };
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
@@ -314,6 +315,7 @@
 		B36795EC22077CCD003D0471 /* LoginRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginRequest.swift; sourceTree = "<group>"; };
 		B36795FC22078F15003D0471 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
 		B36795FE2207965F003D0471 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAllDbRequest.swift; sourceTree = "<group>"; };
 		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
 		B385E2B42208755500DFE361 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
@@ -782,6 +784,7 @@
 				B38C968A223FFB2800343F8F /* SyncVersionsDbRequest.swift */,
 				B38C968B223FFB2800343F8F /* UpdateCollectionDbRequest.swift */,
 				B38C968C223FFB2800343F8F /* UpdateVersionsDbRequest.swift */,
+				B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1148,6 +1151,7 @@
 				B363034A224B7D7F009F839F /* Library.swift in Sources */,
 				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
 				B312AD2822428F3A00EDD5A4 /* ItemAbstractCell.swift in Sources */,
+				B38160EA2252319300A2B7A5 /* DeleteAllDbRequest.swift in Sources */,
 				B38C96A7223FFB2900343F8F /* ReadUserDbRequest.swift in Sources */,
 				B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */,
 				B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */,

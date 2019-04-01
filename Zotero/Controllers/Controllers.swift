@@ -35,12 +35,10 @@ class Controllers {
             DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
             try fileStorage.createDictionaries(for: file)
             let dbStorage = RealmDbStorage(url: file.createUrl())
-            try dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
-
             if let userId = ApiConstants.userId {
-                try dbStorage.createCoordinator().perform(request: StoreUserDbRequest(identifier: userId, name: "Tester"))
+                try Controllers.setupDebugDb(in: dbStorage, userId: userId)
             }
-            
+            try dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
             self.dbStorage = dbStorage
         } catch let error {
             fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")
@@ -70,6 +68,33 @@ class Controllers {
 
     func sessionChanged(userId: Int?) {
         self.userControllers = userId.flatMap({ UserControllers(userId: $0, controllers: self) })
+    }
+
+    private class func setupDebugDb(in storage: DbStorage, userId: Int) throws {
+        let coordinator = try storage.createCoordinator()
+        var needsUser = false
+        var needsWipe = false
+
+        do {
+            let user = try coordinator.perform(request: ReadUserDbRequest())
+
+            if user.identifier == userId { return }
+
+            // User found, but different
+            needsUser = true
+            needsWipe = true
+        } catch {
+            // User not found
+            needsUser = true
+        }
+
+        if needsWipe {
+            try coordinator.perform(request: DeleteAllDbRequest())
+        }
+
+        if needsUser {
+            try coordinator.perform(request: StoreUserDbRequest(identifier: userId, name: "Tester"))
+        }
     }
 }
 
