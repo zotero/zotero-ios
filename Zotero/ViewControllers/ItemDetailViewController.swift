@@ -130,6 +130,7 @@ class ItemDetailViewController: UIViewController {
             DDLogInfo("ItemDetailViewController: file download progress \(progress)")
             break
         case .downloaded(let file):
+            DDLogInfo("ItemDetailViewController: file downloaded to \(file.createUrl().absoluteString)")
             switch file.ext {
             case "pdf":
                 self.showPdf(from: file)
