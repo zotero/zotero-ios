@@ -213,6 +213,7 @@ extension SyncActionHandlerController: SyncActionHandler {
         let keysString = keys.map({ "\($0)" }).joined(separator: ",")
         let request = ObjectsRequest(libraryType: library, objectType: object, keys: keysString)
         return self.apiClient.send(dataRequest: request)
+                             .observeOn(self.scheduler)
                              .flatMap({ [weak self] response -> Single<([String], [Error])> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
 
@@ -276,7 +277,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                 subscriber(.error(error))
             }
             return Disposables.create()
-        })
+        }).observeOn(self.scheduler)
     }
 
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable {
@@ -360,6 +361,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                       parameters: [[String : Any]]) -> Single<[String]> {
         let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters, version: version)
         return self.apiClient.send(dataRequest: request)
+                             .observeOn(self.scheduler)
                              .flatMap({ response -> Single<UpdatesResponse> in
                                  do {
                                      let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
