@@ -734,7 +734,7 @@ final class SyncController: SynchronizationController {
             case .responseValidationFailed(let reason):
                 switch reason {
                 case .unacceptableStatusCode(let code):
-                    return (code >= 400 && code < 500) ? SyncError.apiError : nil
+                    return (code >= 400 && code < 500 && code != 403) ? SyncError.apiError : nil
                 case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType:
                     return SyncError.apiError
                 }
