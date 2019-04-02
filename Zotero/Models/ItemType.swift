@@ -77,7 +77,7 @@ extension ItemType {
         case .document:
             name = "icon_item_type_document"
         case .email:
-            name = "icon_item_type_email"
+            name = "icon_item_type_e-mail"
         case .encyclopediaArticle:
             name = "icon_item_type_encyclopedia-article"
         case .film:
@@ -123,7 +123,7 @@ extension ItemType {
         case .videoRecording:
             name = "icon_item_type_video-recording"
         case .webpage:
-            name = "icon_item_type_webpage"
+            name = "icon_item_type_web-page"
         case .unknown:
             name = "icon_item_type_unknown"
         }
