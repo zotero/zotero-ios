@@ -69,8 +69,12 @@ class CollectionsStore: Store {
             self.changes = []
             self.version = 0
             self.allItemsCellData = [CollectionCellData(custom: .all)]
-            self.customCellData = [CollectionCellData(custom: .publications),
-                                   CollectionCellData(custom: .trash)]
+            var customCellData: [CollectionCellData] = []
+            if case .custom = libraryId {
+                customCellData.append(CollectionCellData(custom: .publications))
+            }
+            customCellData.append(CollectionCellData(custom: .trash))
+            self.customCellData = customCellData
             self.sections = [.allItems, .collections, .searches, .custom]
         }
     }
