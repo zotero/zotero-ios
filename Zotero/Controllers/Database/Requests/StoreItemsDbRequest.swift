@@ -70,7 +70,7 @@ struct StoreItemsDbRequest: DbRequest {
                 field.item = item
                 database.add(field)
             }
-            if titleKeys.contains(key) {
+            if titleKeys.contains(key) && (key != "note" || item.type == .note) {
                 var title = value
                 if key == "note" {
                     title = StoreItemsDbRequest.stripHtml(from: title) ?? title
