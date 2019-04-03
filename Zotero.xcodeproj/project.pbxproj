@@ -142,6 +142,7 @@
 		B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E3223942160019F467 /* ObjectChangeObserver.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
+		B3A6CCCE22550AE700F07ACD /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3A6CCCD22550AE700F07ACD /* licenses.plist */; };
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
@@ -351,6 +352,7 @@
 		B39B18E3223942160019F467 /* ObjectChangeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectChangeObserver.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
+		B3A6CCCD22550AE700F07ACD /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "license-test/licenses.plist"; sourceTree = SOURCE_ROOT; };
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
@@ -464,6 +466,7 @@
 		B30D59572206F60400884C4A /* Zotero */ = {
 			isa = PBXGroup;
 			children = (
+				B3A6CCCD22550AE700F07ACD /* licenses.plist */,
 				B32CD308221C58DE003F8073 /* Assets */,
 				B30D59A82206FECD00884C4A /* Controllers */,
 				B30D59B22207270C00884C4A /* Extras */,
@@ -980,6 +983,7 @@
 				B312AD2522428F2900EDD5A4 /* ItemTitleCell.xib in Resources */,
 				B3E4715E224127AC006E3B20 /* RegisterViewController.xib in Resources */,
 				B312AD352242A0BE00EDD5A4 /* ItemSpecialTitleCell.xib in Resources */,
+				B3A6CCCE22550AE700F07ACD /* licenses.plist in Resources */,
 				B3E47168224127AC006E3B20 /* LoginViewController.xib in Resources */,
 				B32CD343221C58DF003F8073 /* item_fields_radioBroadcast.txt in Resources */,
 				B32CD34D221C58DF003F8073 /* item_fields_audioRecording.txt in Resources */,
@@ -1060,8 +1064,6 @@
 				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
 				"${BUILT_PRODUCTS_DIR}/CocoaLumberjack/CocoaLumberjack.framework",
 				"${BUILT_PRODUCTS_DIR}/KeychainSwift/KeychainSwift.framework",
-				"${PODS_ROOT}/PSPDFKit/PSPDFKit.framework",
-				"${PODS_ROOT}/PSPDFKit/PSPDFKitUI.framework",
 				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
 				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/RxAlamofire/RxAlamofire.framework",
@@ -1076,8 +1078,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CocoaLumberjack.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KeychainSwift.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PSPDFKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PSPDFKitUI.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAlamofire.framework",
