@@ -43,7 +43,7 @@ protocol ApiDownloadRequest: ApiRequest {
     var downloadUrl: URL { get }
 }
 
-typealias RequestCompletion<Response> = (Result<Response>) -> Void
+typealias RequestCompletion<Response> = (Result<Response, Error>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: class {

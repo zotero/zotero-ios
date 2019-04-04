@@ -93,9 +93,9 @@ class AppDelegate: UIResponder {
 
         // Change to .info to enable server logging
         // Change to .warning/.error to disable server logging
-        defaultDebugLevel = .info
+        dynamicLogLevel = .info
         #else
-        defaultDebugLevel = .error
+        dynamicLogLevel = .error
         #endif
     }
 }

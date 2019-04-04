@@ -63,7 +63,7 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
                 }
             } else {
                 if let version = self.versions[object.key], version == object.version,
-                   let index = toUpdate.index(of: object.key) {
+                   let index = toUpdate.firstIndex(of: object.key) {
                     toUpdate.remove(at: index)
                 }
             }
@@ -107,7 +107,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
                 }
             } else {
                 if let version = self.versions[library.identifier], version == library.version,
-                   let index = toUpdate.index(of: library.identifier) {
+                   let index = toUpdate.firstIndex(of: library.identifier) {
                     toUpdate.remove(at: index)
                 }
             }

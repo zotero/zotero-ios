@@ -13,6 +13,6 @@ import CocoaLumberjack
 class TestAppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidFinishLaunching(_ application: UIApplication) {
         DDLog.add(DDTTYLogger.sharedInstance)
-        defaultDebugLevel = .info
+        dynamicLogLevel = .info
     }
 }

@@ -28,7 +28,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
                                                                                  libraryId: self.libraryId))
         objects.forEach { object in
             object.needsSync = true
-            if let index = toCreate.index(of: object.key) {
+            if let index = toCreate.firstIndex(of: object.key) {
                 toCreate.remove(at: index)
             }
         }
@@ -66,7 +66,7 @@ struct MarkGroupForResyncDbAction: DbRequest {
         var toCreate: [Int] = self.identifiers
         let libraries = database.objects(RGroup.self).filter("identifier IN %@", self.identifiers)
         libraries.forEach { library in
-            if let index = toCreate.index(of: library.identifier) {
+            if let index = toCreate.firstIndex(of: library.identifier) {
                 toCreate.remove(at: index)
             }
             library.needsSync = true

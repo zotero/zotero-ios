@@ -140,7 +140,7 @@ struct StoreItemsDbRequest: DbRequest {
     private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) throws {
         var existingIndices: Set<Int> = []
         item.tags.forEach { tag in
-            if let index = tags.index(where: { $0.tag == tag.name }) {
+            if let index = tags.firstIndex(where: { $0.tag == tag.name }) {
                 existingIndices.insert(index)
             } else {
                 if let index = tag.items.index(of: item) {

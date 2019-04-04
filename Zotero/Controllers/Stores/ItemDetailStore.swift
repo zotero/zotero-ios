@@ -142,7 +142,7 @@ class ItemDetailStore: Store {
         case .stopEditing(let save):
             self.stopEditing(shouldSaveChanges: save)
         case .updateField(let name, let value):
-            if let index = self.state.value.editingDataSource?.fields.index(where: { $0.name == name }) {
+            if let index = self.state.value.editingDataSource?.fields.firstIndex(where: { $0.name == name }) {
                 self.state.value.editingDataSource?.fields[index] = StoreState.Field(name: name, value: value)
             }
         case .updateTitle(let title):
@@ -361,7 +361,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         let hasAbstract = itemFieldsController.fields[item.rawType]?.contains(itemFieldsController.abstractKey) ?? false
         var sections = ItemDetailStore.StoreState.allSections
         if !hasAbstract {
-            if let index = sections.index(where: { $0 == .abstract }) {
+            if let index = sections.firstIndex(where: { $0 == .abstract }) {
                 sections.remove(at: index)
             }
         }

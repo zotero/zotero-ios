@@ -90,7 +90,7 @@ class CollectionEditorViewController: UIViewController {
     }
 
     private func showParentPicker() {
-        guard let section = self.store.state.value.sections.index(of: .parent) else { return }
+        guard let section = self.store.state.value.sections.firstIndex(of: .parent) else { return }
         let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: section))
         let state = CollectionPickerStore.StoreState(libraryId: self.store.state.value.libraryId,
                                                      excludedKey: self.store.state.value.key)
@@ -114,7 +114,7 @@ class CollectionEditorViewController: UIViewController {
     }
 
     private func delete() {
-        guard let section = self.store.state.value.sections.index(of: .actions) else { return }
+        guard let section = self.store.state.value.sections.firstIndex(of: .actions) else { return }
         let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: section))
 
         let controller = UIAlertController(title: "Are you sure?", message: nil, preferredStyle: .actionSheet)
@@ -130,12 +130,12 @@ class CollectionEditorViewController: UIViewController {
     }
 
     private func reloadParent() {
-        guard let section = self.store.state.value.sections.index(of: .parent) else { return }
+        guard let section = self.store.state.value.sections.firstIndex(of: .parent) else { return }
         self.tableView.reloadRows(at: [IndexPath(row: 0, section: section)], with: .none)
     }
 
     private func focusName(scrollToVisibility: Bool = false) {
-        guard let section = self.store.state.value.sections.index(of: .name) else { return }
+        guard let section = self.store.state.value.sections.firstIndex(of: .name) else { return }
         let indexPath = IndexPath(row: 0, section: section)
         guard let cell = self.tableView.cellForRow(at: indexPath) as? TextFieldCell else { return }
 
