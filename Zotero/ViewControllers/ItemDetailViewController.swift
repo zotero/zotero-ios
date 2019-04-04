@@ -9,9 +9,12 @@
 import UIKit
 
 import CocoaLumberjack
+import RxSwift
+
+#if PDFENABLED
 import PSPDFKit
 import PSPDFKitUI
-import RxSwift
+#endif
 
 class ItemDetailViewController: UIViewController {
     // Outlets
@@ -143,10 +146,12 @@ class ItemDetailViewController: UIViewController {
     }
 
     private func showPdf(from file: File) {
+        #if PDFENABLED
         let document = PSPDFDocument(url: file.createUrl())
         let pdfController = PSPDFViewController(document: document)
         let navigationController = UINavigationController(rootViewController: pdfController)
         self.present(navigationController, animated: true, completion: nil)
+        #endif
     }
 
     private func cellId(for row: Int, section: ItemDetailStore.StoreState.Section) -> String {

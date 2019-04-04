@@ -1,6 +1,6 @@
 SCRIPT_PATH=`grealpath $0`
 SCRIPT_DIR=`dirname $SCRIPT_PATH`
-LICENSE_FILE="$SCRIPT_DIR/../license-test/pspdfkit_pod.txt"
+LICENSE_FILE="$SCRIPT_DIR/../pdf-keys/pspdfkit_pod.txt"
 
 if [ ! -f $LICENSE_FILE ]; then
 	echo "License pod file missing"

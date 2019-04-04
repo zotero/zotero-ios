@@ -9,8 +9,11 @@
 import UIKit
 
 import CocoaLumberjack
-import PSPDFKit
 import RxSwift
+
+#if PDFENABLED
+import PSPDFKit
+#endif
 
 extension Notification.Name {
     static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
@@ -100,7 +103,11 @@ class AppDelegate: UIResponder {
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        PSPDFKit.setLicenseKey("WX2G0qNABNwhaL9hUMLRD4KgxL+VmVBszWG4PcoAWUZNTfDBMnje3gFxRoysA6wDlt5pDxAuEnsbPxZpmmGBDM3WFopE/mn0TWtHoeQm2ufzPmbcCraNaTfvhfhE6lDNFsoAahnWZRxt1XgadFEa7eNCc3T/PXEmSDATNMb+3IjBvcC7fkusDJASpZGkRr/VE8C1NNmd91p3mw7zGrwc0y5k81baQYJUXQbxA2azURPGdYbstShhofR8s9m3JciuwvNdyoqHCwZyV9m/RQGhGE2myZfV36JKmWH/hyc2Y2YqxYJSfgpyzEmm0pCU7KaX8skBZOvTYQHeh6DV55oDc78m3fxxk3pstNO1QKBuTJgd7gm3E3lBp0UC+J4EfAQPDNFwRSloRSX71gfEEM5+xBvcc6gajImPzZj+xJUNTG0oM5tfDibm8CJQ17IyyL3Y")
+        #if PDFENABLED
+        if let key = Licenses.shared.pspdfkitKey {
+            PSPDFKit.setLicenseKey(key)
+        }
+        #endif
         self.setupLogs()
         self.controllers = Controllers()
         self.setupObservers()
