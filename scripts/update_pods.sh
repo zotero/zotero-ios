@@ -20,13 +20,20 @@ if [ ! -f $POD_FILE ] || [ ! -w $POD_FILE ]; then
 	exit 1
 fi
 
-echo "Updating Podfile"
 PLACEHOLDER="#pspdfkit"
 POD=`cat $LICENSE_FILE`
+
+cleanup() {
+    sed -i "" "s%$POD%$PLACEHOLDER%g" "$POD_FILE"
+}
+
+trap cleanup EXIT
+
+echo "Updating Podfile"
 sed -i "" "s%$PLACEHOLDER%$POD%g" "$POD_FILE"
 
 echo "Updating pods"
 pod install
 
 echo "Restoring original Podfile"
-sed -i "" "s%$POD%$PLACEHOLDER%g" "$POD_FILE"
+cleanup
