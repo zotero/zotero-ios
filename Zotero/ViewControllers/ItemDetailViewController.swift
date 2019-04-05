@@ -10,6 +10,7 @@ import UIKit
 
 import CocoaLumberjack
 import RxSwift
+import SafariServices
 
 #if PDFENABLED
 import PSPDFKit
@@ -22,6 +23,8 @@ class ItemDetailViewController: UIViewController {
     // Constants
     private let store: ItemDetailStore
     private let disposeBag: DisposeBag
+    // Variables
+    private weak var lastSelectedAttachmentCell: UITableViewCell?
 
     // MARK: - Lifecycle
 
@@ -68,7 +71,7 @@ class ItemDetailViewController: UIViewController {
             }
         }
         if state.changes.contains(.download) {
-            self.updateDownloadState(state.downloadState)
+            self.updateDownloadState(state.attachmentState)
         }
         if let error = state.error {
             // TODO: Show error
@@ -121,7 +124,7 @@ class ItemDetailViewController: UIViewController {
         self.store.handle(action: .showAttachment(attachment))
     }
 
-    private func updateDownloadState(_ state: ItemDetailStore.StoreState.FileDownload?) {
+    private func updateDownloadState(_ state: ItemDetailStore.StoreState.AttachmentState?) {
         guard let state = state else {
             // TODO: - hide UI
             return
@@ -131,18 +134,30 @@ class ItemDetailViewController: UIViewController {
         case .progress(let progress):
             // TODO: - show progress ui
             DDLogInfo("ItemDetailViewController: file download progress \(progress)")
-            break
-        case .downloaded(let file):
-            DDLogInfo("ItemDetailViewController: file downloaded to \(file.createUrl().absoluteString)")
-            switch file.ext {
-            case "pdf":
-                self.showPdf(from: file)
-            default: break
+
+        case .result(let type):
+            switch type {
+            case .file(let file):
+                DDLogInfo("ItemDetailViewController: file downloaded to \(file.createUrl().absoluteString)")
+                switch file.ext {
+                case "pdf":
+                    self.showPdf(from: file)
+                default:
+                    self.showUnknown(from: file)
+                }
+            case .url(let url):
+                self.showUrl(url)
             }
+
             DispatchQueue.main.async {
                 self.store.handle(action: .attachmentOpened)
             }
         }
+    }
+
+    private func showUrl(_ url: URL) {
+        let controller = SFSafariViewController(url: url)
+        self.present(controller, animated: true, completion: nil)
     }
 
     private func showPdf(from file: File) {
@@ -152,6 +167,15 @@ class ItemDetailViewController: UIViewController {
         let navigationController = UINavigationController(rootViewController: pdfController)
         self.present(navigationController, animated: true, completion: nil)
         #endif
+    }
+
+    private func showUnknown(from file: File) {
+        let controller = UIActivityViewController(activityItems: [file.createUrl()], applicationActivities: nil)
+        controller.popoverPresentationController?.sourceView = self.lastSelectedAttachmentCell ?? self.view
+        if let frame = self.lastSelectedAttachmentCell?.bounds {
+            controller.popoverPresentationController?.sourceRect = frame
+        }
+        self.present(controller, animated: true)
     }
 
     private func cellId(for row: Int, section: ItemDetailStore.StoreState.Section) -> String {
@@ -369,6 +393,7 @@ extension ItemDetailViewController: UITableViewDelegate {
         switch dataSource.sections[indexPath.section] {
         case .attachments:
             if indexPath.row > 0 {
+                self.lastSelectedAttachmentCell = tableView.cellForRow(at: indexPath)
                 self.showAttachment(at: (indexPath.row - 1))
             }
         default: break

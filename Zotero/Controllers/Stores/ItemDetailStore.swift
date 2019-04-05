@@ -51,7 +51,7 @@ class ItemDetailStore: Store {
     }
 
     enum StoreError: Error, Equatable {
-        case typeNotSupported, libraryNotAssigned, contentTypeMissing,
+        case typeNotSupported, libraryNotAssigned,
              contentTypeUnknown, userMissing, downloadError, unknown,
              cantStoreChanges
     }
@@ -76,9 +76,25 @@ class ItemDetailStore: Store {
             let value: String
         }
 
-        enum FileDownload {
+        enum AttachmentType: Equatable {
+            case file(File)
+            case url(URL)
+
+            static func == (lhs: AttachmentType, rhs: AttachmentType) -> Bool {
+                switch (lhs, rhs) {
+                case (.url(let lUrl), .url(let rUrl)):
+                    return lUrl == rUrl
+                case (.file(let lFile), .file(let rFile)):
+                    return lFile.createUrl() == rFile.createUrl()
+                default:
+                    return false
+                }
+            }
+        }
+
+        enum AttachmentState: Equatable {
             case progress(Double)
-            case downloaded(File)
+            case result(AttachmentType)
         }
 
         fileprivate static let allSections: [StoreState.Section] = [.title, .creators, .fields, .abstract,
@@ -86,7 +102,7 @@ class ItemDetailStore: Store {
         let item: RItem
 
         fileprivate(set) var changes: Changes
-        fileprivate(set) var downloadState: FileDownload?
+        fileprivate(set) var attachmentState: AttachmentState?
         fileprivate(set) var isEditing: Bool
         fileprivate(set) var dataSource: ItemDetailDataSource?
         fileprivate(set) var editingDiff: [EditingSectionDiff]?
@@ -135,7 +151,7 @@ class ItemDetailStore: Store {
             self.showAttachment(for: item)
         case .attachmentOpened:
             self.updater.updateState { newState in
-                newState.downloadState = nil
+                newState.attachmentState = nil
             }
         case .startEditing:
             self.startEditing()
@@ -278,23 +294,38 @@ class ItemDetailStore: Store {
             self.reportError(.libraryNotAssigned)
             return
         }
-        guard let contentType = item.fields.filter("key = %@", "contentType").first?.value else {
-            DDLogError("ItemDetailStore: show attachment - contentType field missing for item (\(item.key))")
-            self.reportError(.contentTypeMissing)
+
+        let contentType = item.fields.filter("key = %@", "contentType").first?.value ?? ""
+
+        if !contentType.isEmpty {
+            self.showFileAttachment(for: item.key, contentType: contentType, libraryId: libraryId)
             return
         }
+
+        if let urlString = item.fields.filter("key = %@", "url").first?.value,
+           let url = URL(string: urlString) {
+            self.updater.updateState { newState in
+                newState.attachmentState = .result(.url(url))
+                newState.changes = .download
+            }
+        }
+
+        self.reportError(.contentTypeUnknown)
+    }
+
+    private func showFileAttachment(for key: String, contentType: String, libraryId: LibraryIdentifier) {
         guard let ext = contentType.mimeTypeExtension else {
             DDLogError("ItemDetailStore: show attachment - mimeType/extension " +
-                       "unknown (\(contentType)) for item (\(item.key))")
+                "unknown (\(contentType)) for item (\(key))")
             self.reportError(.contentTypeUnknown)
             return
         }
 
-        let file = Files.itemFile(libraryId: libraryId, key: item.key, ext: ext)
+        let file = Files.itemFile(libraryId: libraryId, key: key, ext: ext)
 
         if self.fileStorage.has(file) {
             self.updater.updateState { newState in
-                newState.downloadState = .downloaded(file)
+                newState.attachmentState = .result(.file(file))
                 newState.changes = .download
             }
             return
@@ -315,28 +346,28 @@ class ItemDetailStore: Store {
             }
         }
 
-        let request = FileRequest(groupType: groupType, key: item.key, destination: file)
+        let request = FileRequest(groupType: groupType, key: key, destination: file)
         self.apiClient.download(request: request)
-            .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] progress in
-                self?.updater.updateState { newState in
-                    newState.downloadState = .progress(Double(progress.bytesWritten) / Double(progress.totalBytes))
-                    newState.changes = .download
-                }
-            }, onError: { [weak self] error in
-                DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
-                self?.updater.updateState { newState in
-                    newState.downloadState = nil
-                    newState.error = .downloadError
-                    newState.changes = .download
-                }
-            }, onCompleted: { [weak self] in
-                self?.updater.updateState { newState in
-                    newState.downloadState = .downloaded(file)
-                    newState.changes = .download
-                }
-            })
-            .disposed(by: self.disposeBag)
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] progress in
+                          self?.updater.updateState { newState in
+                              newState.attachmentState = .progress(Double(progress.bytesWritten) / Double(progress.totalBytes))
+                              newState.changes = .download
+                          }
+                          }, onError: { [weak self] error in
+                              DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
+                              self?.updater.updateState { newState in
+                                  newState.attachmentState = nil
+                                  newState.error = .downloadError
+                                  newState.changes = .download
+                              }
+                          }, onCompleted: { [weak self] in
+                              self?.updater.updateState { newState in
+                                  newState.attachmentState = .result(.file(file))
+                                  newState.changes = .download
+                              }
+                      })
+                      .disposed(by: self.disposeBag)
     }
 
     private func reportError(_ error: StoreError) {
@@ -474,7 +505,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         self.fields = fields
         self.creators = item.creators.sorted(byKeyPath: "orderId")
         self.attachments = item.children
-                               .filter(Predicates.items(type: .attachment, notSyncState: .dirty))
+                               .filter(Predicates.items(type: .attachment, notSyncState: .dirty, trash: false))
                                .sorted(byKeyPath: "title")
         self.notes = item.children
                          .filter(Predicates.items(type: .note, notSyncState: .dirty))
@@ -561,21 +592,8 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
 
 extension ItemDetailStore.StoreState: Equatable {
     static func == (lhs: ItemDetailStore.StoreState, rhs: ItemDetailStore.StoreState) -> Bool {
-        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.downloadState == rhs.downloadState &&
+        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.attachmentState == rhs.attachmentState &&
                lhs.isEditing == rhs.isEditing
-    }
-}
-
-extension ItemDetailStore.StoreState.FileDownload: Equatable {
-    static func == (lhs: ItemDetailStore.StoreState.FileDownload, rhs: ItemDetailStore.StoreState.FileDownload) -> Bool {
-        switch (lhs, rhs) {
-        case (.progress(let lProgress), .progress(let rProgress)):
-            return lProgress == rProgress
-        case (.downloaded(let lFile), .downloaded(let rFile)):
-            return lFile.createUrl() == rFile.createUrl()
-        default:
-            return false
-        }
     }
 }
 

@@ -57,9 +57,14 @@ struct Predicates {
                                                                    Predicates.library(from: libraryId)])
     }
 
-    static func items(type: ItemType, notSyncState syncState: ObjectSyncState) -> NSPredicate {
+    static func items(type: ItemType, notSyncState syncState: ObjectSyncState, trash: Bool? = nil) -> NSPredicate {
         let typePredicate = NSPredicate(format: "rawType = %@", type.rawValue)
         let syncPredicate = Predicates.notSyncState(syncState)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [typePredicate, syncPredicate])
+        var predicates: [NSPredicate] = [typePredicate, syncPredicate]
+        if let trash = trash {
+            let trashPredicate = NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
+            predicates.append(trashPredicate)
+        }
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 }
