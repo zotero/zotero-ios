@@ -27,7 +27,9 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
         let objects = database.objects(Obj.self).filter(Predicates.keysInLibrary(keys: self.keys,
                                                                                  libraryId: self.libraryId))
         objects.forEach { object in
-            object.needsSync = true
+            if object.syncState == .synced {
+                object.syncState = .outdated
+            }
             if let index = toCreate.firstIndex(of: object.key) {
                 toCreate.remove(at: index)
             }
@@ -37,7 +39,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
         if libraryData.0 {
             switch libraryData.1 {
             case .group(let group):
-                group.needsSync = true
+                group.syncState = .dirty
             case .custom: break
             }
         }
@@ -45,7 +47,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
         toCreate.forEach { key in
             let object = Obj()
             object.key = key
-            object.needsSync = true
+            object.syncState = .dirty
             object.libraryObject = libraryData.1
             database.add(object)
         }
@@ -69,13 +71,15 @@ struct MarkGroupForResyncDbAction: DbRequest {
             if let index = toCreate.firstIndex(of: library.identifier) {
                 toCreate.remove(at: index)
             }
-            library.needsSync = true
+            if library.syncState == .synced {
+                library.syncState = .outdated
+            }
         }
 
         toCreate.forEach { identifier in
             let library = RGroup()
             library.identifier = identifier
-            library.needsSync = true
+            library.syncState = .dirty
             database.add(library)
         }
     }

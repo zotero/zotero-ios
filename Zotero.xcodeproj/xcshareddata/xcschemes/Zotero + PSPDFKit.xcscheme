@@ -28,6 +28,26 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B30D596A2206F60500884C4A"
+               BuildableName = "ZoteroTests.xctest"
+               BlueprintName = "ZoteroTests"
+               ReferencedContainer = "container:Zotero.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B30D59752206F60500884C4A"
+               BuildableName = "ZoteroUITests.xctest"
+               BlueprintName = "ZoteroUITests"
+               ReferencedContainer = "container:Zotero.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference

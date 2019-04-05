@@ -57,7 +57,7 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
             objects = objects.filter("trash = %d", trash)
         }
         objects.forEach { object in
-            if object.needsSync {
+            if object.syncState != .synced {
                 if !toUpdate.contains(object.key) {
                     toUpdate.append(object.key)
                 }
@@ -101,7 +101,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
 
         var toUpdate: [Int] = allKeys
         for library in database.objects(RGroup.self) {
-            if library.needsSync {
+            if library.syncState != .synced {
                 if !toUpdate.contains(library.identifier) {
                     toUpdate.append(library.identifier)
                 }

@@ -36,7 +36,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.key = data.key
         collection.name = data.data.name
         collection.version = data.version
-        collection.needsSync = false
+        collection.syncState = .synced
 
         try self.syncLibrary(identifier: libraryId, name: data.library.name, collection: collection, database: database)
         self.syncParent(libraryId: libraryId, data: data.data, collection: collection, database: database)
@@ -49,7 +49,7 @@ struct StoreCollectionsDbRequest: DbRequest {
             switch libraryData.1 {
             case .group(let group):
                 group.name = name
-                group.needsSync = true
+                group.syncState = .outdated
             case .custom: break
             }
         }

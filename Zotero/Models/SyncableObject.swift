@@ -12,12 +12,16 @@ import RealmSwift
 
 typealias SyncableObject = Syncable&Object
 
+enum ObjectSyncState: Int {
+    case synced, dirty, outdated
+}
+
 protocol Syncable: class {
     var key: String { get set }
     var customLibrary: RCustomLibrary? { get set }
     var group: RGroup? { get set }
     var version: Int { get set }
-    var needsSync: Bool { get set }
+    var syncState: ObjectSyncState { get set }
 
     func removeChildren(in database: Realm)
 }

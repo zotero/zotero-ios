@@ -42,7 +42,7 @@ struct UpdateCollectionDbRequest: DbRequest {
             } else {
                 parentCollection = RCollection()
                 parentCollection.key = parentKey
-                parentCollection.needsSync = true
+                parentCollection.syncState = .dirty
                 database.add(parentCollection)
             }
             collection.parent = parentCollection

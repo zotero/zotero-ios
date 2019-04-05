@@ -43,10 +43,10 @@ struct StoreItemsDbRequest: DbRequest {
         item.trash = data.isTrash
         item.dateModified = data.dateModified
         item.dateAdded = data.dateAdded
-        item.needsSync = false
+        item.syncState = .synced
 
         self.syncFields(data: data, item: item, database: database)
-        try self.syncLibrary(identifier: libraryId, item: item, database: database)
+        try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, item: item, database: database)
         self.syncParent(key: data.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: data.collectionKeys, libraryId: libraryId, item: item, database: database)
         try self.syncTags(data.tags, libraryId: libraryId, item: item, database: database)
@@ -80,12 +80,13 @@ struct StoreItemsDbRequest: DbRequest {
         }
     }
 
-    private func syncLibrary(identifier: LibraryIdentifier, item: RItem, database: Realm) throws {
+    private func syncLibrary(identifier: LibraryIdentifier, libraryName: String, item: RItem, database: Realm) throws {
         let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
         if libraryData.0 {
             switch libraryData.1 {
             case .group(let object):
-                object.needsSync = true
+                object.name = libraryName
+                object.syncState = .outdated
             case .custom: break
             }
         }
@@ -105,7 +106,7 @@ struct StoreItemsDbRequest: DbRequest {
         } else {
             parent = RItem()
             parent.key = key
-            parent.needsSync = true
+            parent.syncState = .dirty
             parent.libraryObject = item.libraryObject
             database.add(parent)
         }
@@ -130,7 +131,7 @@ struct StoreItemsDbRequest: DbRequest {
         for key in remainingCollections {
             let collection = RCollection()
             collection.key = key
-            collection.needsSync = true
+            collection.syncState = .dirty
             collection.libraryObject = item.libraryObject
             database.add(collection)
             item.collections.append(collection)

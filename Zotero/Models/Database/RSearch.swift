@@ -30,9 +30,7 @@ class RSearch: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var version: Int = 0
-    /// Flag that marks whether object has been synced successfully during last sync
-    /// False if object was synced, true otherwise
-    @objc dynamic var needsSync: Bool = false
+    @objc dynamic var rawSyncState: Int = 0
     /// Raw value for OptionSet of changes for this object
     @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
@@ -47,6 +45,16 @@ class RSearch: Object {
 
         set {
             self.rawChangedFields = newValue.rawValue
+        }
+    }
+
+    var syncState: ObjectSyncState {
+        get {
+            return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced
+        }
+
+        set {
+            self.rawSyncState = newValue.rawValue
         }
     }
 

@@ -635,7 +635,7 @@ class SyncControllerSpec: QuickSpec {
                             let collection = realm.objects(RCollection.self).first
                             expect(collection?.key).to(equal("AAAAAAAA"))
                             expect(collection?.name).to(equal("A"))
-                            expect(collection?.needsSync).to(beFalse())
+                            expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
                             expect(collection?.customLibrary?.type).to(equal(.myLibrary))
                             expect(collection?.parent).to(beNil())
@@ -646,7 +646,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(item?.title).to(equal("A"))
                             expect(item?.version).to(equal(3))
                             expect(item?.trash).to(beFalse())
-                            expect(item?.needsSync).to(beFalse())
+                            expect(item?.syncState).to(equal(.synced))
                             expect(item?.customLibrary?.type).to(equal(.myLibrary))
                             expect(item?.collections.count).to(equal(0))
                             expect(item?.fields.count).to(equal(1))
@@ -661,7 +661,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(item2?.title).to(equal("This is a note"))
                             expect(item2?.version).to(equal(4))
                             expect(item2?.trash).to(beTrue())
-                            expect(item2?.needsSync).to(beFalse())
+                            expect(item2?.syncState).to(equal(.synced))
                             expect(item2?.customLibrary?.type).to(equal(.myLibrary))
                             expect(item2?.collections.count).to(equal(0))
                             expect(item?.fields.count).to(equal(1))
@@ -676,7 +676,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(search?.key).to(equal("AAAAAAAA"))
                             expect(search?.version).to(equal(2))
                             expect(search?.name).to(equal("A"))
-                            expect(search?.needsSync).to(beFalse())
+                            expect(search?.syncState).to(equal(.synced))
                             expect(search?.customLibrary?.type).to(equal(.myLibrary))
                             expect(search?.conditions.count).to(equal(1))
                             let condition = search?.conditions.first
@@ -1021,13 +1021,13 @@ class SyncControllerSpec: QuickSpec {
                             let predicate = Predicates.keyInLibrary(key: itemKey, libraryId: .custom(.myLibrary))
                             let item = realm.objects(RItem.self).filter(predicate).first
                             expect(item).toNot(beNil())
-                            expect(item?.needsSync).to(beFalse())
+                            expect(item?.syncState).to(equal(.synced))
                             expect(item?.collections.count).to(equal(1))
 
                             let collection = item?.collections.first
                             expect(collection).toNot(beNil())
                             expect(collection?.key).to(equal(collectionKey))
-                            expect(collection?.needsSync).to(beTrue())
+                            expect(collection?.syncState).to(equal(.dirty))
 
                             doneAction()
                         }
@@ -1057,7 +1057,7 @@ class SyncControllerSpec: QuickSpec {
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
                         let item = RItem()
                         item.key = unsyncedItemKey
-                        item.needsSync = true
+                        item.syncState = .dirty
                         item.customLibrary = library
                         realm.add(item)
                     }
@@ -1065,7 +1065,7 @@ class SyncControllerSpec: QuickSpec {
                     let predicate = Predicates.keyInLibrary(key: unsyncedItemKey, libraryId: .custom(.myLibrary))
                     let unsynced = realm.objects(RItem.self).filter(predicate).first
                     expect(unsynced).toNot(beNil())
-                    expect(unsynced?.needsSync).to(beTrue())
+                    expect(unsynced?.syncState).to(equal(.dirty))
 
                     objects.forEach { object in
                         if object == .item {
@@ -1127,7 +1127,7 @@ class SyncControllerSpec: QuickSpec {
                             let oldItem = realm.objects(RItem.self).filter(oldPred).first
                             expect(oldItem).toNot(beNil())
                             expect(oldItem?.title).to(equal("B"))
-                            expect(oldItem?.needsSync).to(beFalse())
+                            expect(oldItem?.syncState).to(equal(.synced))
 
                             doneAction()
                         }
@@ -1193,12 +1193,12 @@ class SyncControllerSpec: QuickSpec {
                             let correctPred = Predicates.keyInLibrary(key: correctKey, libraryId: .custom(.myLibrary))
                             let correctItem = realm.objects(RItem.self).filter(correctPred).first
                             expect(correctItem).toNot(beNil())
-                            expect(correctItem?.needsSync).to(beFalse())
+                            expect(correctItem?.syncState).to(equal(.synced))
 
                             let incorrectPred = Predicates.keyInLibrary(key: incorrectKey, libraryId: .custom(.myLibrary))
                             let incorrectItem = realm.objects(RItem.self).filter(incorrectPred).first
                             expect(incorrectItem).toNot(beNil())
-                            expect(incorrectItem?.needsSync).to(beTrue())
+                            expect(incorrectItem?.syncState).to(equal(.dirty))
 
                             doneAction()
                         }
@@ -1234,7 +1234,7 @@ class SyncControllerSpec: QuickSpec {
 
                         let item = RItem()
                         item.key = itemKey
-                        item.needsSync = false
+                        item.syncState = .synced
                         item.version = oldVersion
                         item.changedFields = .fields
                         item.customLibrary = library
@@ -1355,7 +1355,7 @@ class SyncControllerSpec: QuickSpec {
 
                         let item = RItem()
                         item.key = otherKey
-                        item.needsSync = false
+                        item.syncState = .synced
                         item.version = oldVersion
                         item.changedFields = .all
                         item.dateAdded = Date(timeIntervalSinceNow: -3600)
@@ -1365,7 +1365,7 @@ class SyncControllerSpec: QuickSpec {
 
                         let item2 = RItem()
                         item2.key = parentKey
-                        item2.needsSync = false
+                        item2.syncState = .synced
                         item2.version = oldVersion
                         item2.changedFields = .all
                         item2.dateAdded = Date(timeIntervalSinceNow: -3599)
@@ -1375,7 +1375,7 @@ class SyncControllerSpec: QuickSpec {
 
                         let item3 = RItem()
                         item3.key = childKey
-                        item3.needsSync = false
+                        item3.syncState = .synced
                         item3.version = oldVersion
                         item3.changedFields = .all
                         item3.dateAdded = Date(timeIntervalSinceNow: -3598)
@@ -1451,14 +1451,14 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(collection)
 
                         collection.key = firstKey
-                        collection.needsSync = false
+                        collection.syncState = .synced
                         collection.version = oldVersion
                         collection.changedFields = .all
                         collection.dateModified = Date(timeIntervalSinceNow: -1800)
                         collection.customLibrary = library
 
                         collection2.key = secondKey
-                        collection2.needsSync = false
+                        collection2.syncState = .synced
                         collection2.version = oldVersion
                         collection2.changedFields = .all
                         collection2.dateModified = Date(timeIntervalSinceNow: -3540)
@@ -1466,7 +1466,7 @@ class SyncControllerSpec: QuickSpec {
                         collection2.parent = collection
 
                         collection3.key = thirdKey
-                        collection3.needsSync = false
+                        collection3.syncState = .synced
                         collection3.version = oldVersion
                         collection3.changedFields = .all
                         collection3.dateModified = Date(timeIntervalSinceNow: -60)

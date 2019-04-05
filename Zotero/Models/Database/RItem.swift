@@ -40,9 +40,7 @@ class RItem: Object {
     @objc dynamic var parsedDate: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
-    /// Flag that marks whether object has been synced successfully during last sync
-    /// False if object was synced, true otherwise
-    @objc dynamic var needsSync: Bool = false
+    @objc dynamic var rawSyncState: Int = 0
     /// Raw value for OptionSet of changes for this object
     @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
@@ -60,6 +58,16 @@ class RItem: Object {
 
     var type: ItemType {
         return ItemType(rawValue: self.rawType) ?? .unknown
+    }
+
+    var syncState: ObjectSyncState {
+        get {
+            return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced
+        }
+
+        set {
+            self.rawSyncState = newValue.rawValue
+        }
     }
 
     var libraryId: LibraryIdentifier? {

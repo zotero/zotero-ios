@@ -35,20 +35,20 @@ struct StoreSearchesDbRequest: DbRequest {
         search.key = data.key
         search.name = data.data.name
         search.version = data.version
-        search.needsSync = false
+        search.syncState = .synced
 
-        try self.syncLibrary(libraryId: libraryId, libraryName: data.library.name, search: search, database: database)
+        try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, search: search, database: database)
         self.syncConditions(data: data, search: search, database: database)
     }
 
-    private func syncLibrary(libraryId: LibraryIdentifier, libraryName: String,
+    private func syncLibrary(identifier: LibraryIdentifier, libraryName: String,
                              search: RSearch, database: Realm) throws {
-        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: libraryId)
+        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
         if libraryData.0 {
             switch libraryData.1 {
             case .group(let object):
                 object.name = libraryName
-                object.needsSync = true
+                object.syncState = .outdated
 
             case .custom: break // Custom library doesnt need sync or name update
             }

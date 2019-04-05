@@ -26,7 +26,7 @@ struct StoreGroupDbRequest: DbRequest {
         group.libraryEditing = self.response.data.libraryEditing
         group.fileEditing = self.response.data.fileEditing
         group.version = self.response.version
-        group.needsSync = false
+        group.syncState = .synced
 
         if group.versions == nil {
             let versions = RVersions()

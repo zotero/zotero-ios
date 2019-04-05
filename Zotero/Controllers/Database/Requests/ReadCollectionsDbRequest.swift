@@ -18,7 +18,6 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RCollection> {
-        let predicate = Predicates.needsSync(false, in: self.libraryId)
-        return database.objects(RCollection.self).filter(predicate)
+        return database.objects(RCollection.self).filter(Predicates.notSyncState(.dirty, in: self.libraryId))
     }
 }

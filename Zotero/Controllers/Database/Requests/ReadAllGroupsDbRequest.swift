@@ -16,7 +16,7 @@ struct ReadAllGroupsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RGroup> {
-        return database.objects(RGroup.self).filter("needsSync = false")
+        return database.objects(RGroup.self).filter(Predicates.notSyncState(.dirty))
                                             .sorted(by: [SortDescriptor(keyPath: "orderId", ascending: false),
                                                          SortDescriptor(keyPath: "name")])
     }

@@ -125,11 +125,11 @@ extension RItem: ItemCellModel {
     }
 
     var hasAttachment: Bool {
-        return self.children.filter("needsSync = false AND rawType = %@", ItemType.attachment.rawValue).count > 0
+        return self.children.filter(Predicates.items(type: .attachment, notSyncState: .dirty)).count > 0
     }
 
     var hasNote: Bool {
-        return self.children.filter("needsSync = false AND rawType = %@", ItemType.note.rawValue).count > 0
+        return self.children.filter(Predicates.items(type: .note, notSyncState: .dirty)).count > 0
     }
 
     var tagColors: [UIColor] {

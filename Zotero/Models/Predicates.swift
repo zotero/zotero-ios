@@ -48,9 +48,18 @@ struct Predicates {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate])
     }
 
-    static func needsSync(_ needsSync: Bool, in libraryId: LibraryIdentifier) -> NSPredicate {
-        let libraryPredicate = Predicates.library(from: libraryId)
-        let syncPredicate = NSPredicate(format: "needsSync = %@", NSNumber(booleanLiteral: needsSync))
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [syncPredicate, libraryPredicate])
+    static func notSyncState(_ syncState: ObjectSyncState) -> NSPredicate {
+        return NSPredicate(format: "rawSyncState != %d", syncState.rawValue)
+    }
+
+    static func notSyncState(_ syncState: ObjectSyncState, in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notSyncState(syncState),
+                                                                   Predicates.library(from: libraryId)])
+    }
+
+    static func items(type: ItemType, notSyncState syncState: ObjectSyncState) -> NSPredicate {
+        let typePredicate = NSPredicate(format: "rawType = %@", type.rawValue)
+        let syncPredicate = Predicates.notSyncState(syncState)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [typePredicate, syncPredicate])
     }
 }
