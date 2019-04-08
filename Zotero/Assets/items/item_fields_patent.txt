@@ -1,1 +1,0 @@
-title,abstractNote,place,country,assignee,issuingAuthority,patentNumber,filingDate,pages,applicationNumber,priorityNumbers,issueDate,references,legalStatus,language,shortTitle,url,accessDate,rights,extra

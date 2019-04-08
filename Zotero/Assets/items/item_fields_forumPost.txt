@@ -1,1 +1,0 @@
-title,abstractNote,forumTitle,postType,date,language,shortTitle,url,accessDate,rights,extra

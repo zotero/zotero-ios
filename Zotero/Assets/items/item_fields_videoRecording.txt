@@ -1,1 +1,0 @@
-title,abstractNote,videoRecordingFormat,seriesTitle,volume,numberOfVolumes,place,studio,date,runningTime,language,ISBN,shortTitle,url,accessDate,archive,archiveLocation,libraryCatalog,callNumber,rights,extra

@@ -1,1 +1,0 @@
-title,abstractNote,date,interviewMedium,language,shortTitle,url,accessDate,archive,archiveLocation,libraryCatalog,callNumber,rights,extra

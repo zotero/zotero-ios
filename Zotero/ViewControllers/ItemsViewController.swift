@@ -65,7 +65,7 @@ class ItemsViewController: UIViewController {
                                     apiClient: self.store.apiClient,
                                     fileStorage: self.store.fileStorage,
                                     dbStorage: self.store.dbStorage,
-                                    itemFieldsController: self.store.itemFieldsController)
+                                    schemaController: self.store.schemaController)
         let controller = ItemDetailViewController(store: store)
         self.navigationController?.pushViewController(controller, animated: true)
     }

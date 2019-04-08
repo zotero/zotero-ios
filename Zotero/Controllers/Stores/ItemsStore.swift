@@ -66,16 +66,16 @@ class ItemsStore: Store {
     let apiClient: ApiClient
     let fileStorage: FileStorage
     let dbStorage: DbStorage
-    let itemFieldsController: ItemFieldsController
+    let schemaController: SchemaController
 
     var updater: StoreStateUpdater<StoreState>
 
     init(initialState: StoreState, apiClient: ApiClient, fileStorage: FileStorage,
-         dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
+         dbStorage: DbStorage, schemaController: SchemaController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
-        self.itemFieldsController = itemFieldsController
+        self.schemaController = schemaController
         self.updater = StoreStateUpdater(initialState: initialState)
     }
 

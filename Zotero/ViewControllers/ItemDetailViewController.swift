@@ -43,6 +43,7 @@ class ItemDetailViewController: UIViewController {
 
         self.navigationItem.title = self.store.state.value.item.title
         self.setupNavigationBar(forEditing: false)
+        self.registerNotifications()
         self.setupTableView()
 
         self.store.state.asObservable()
@@ -203,6 +204,15 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
+    private func registerNotifications() {
+        NotificationCenter.default.rx.notification(NSLocale.currentLocaleDidChangeNotification)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] _ in
+                                         self?.store.handle(action: .reloadLocale)
+                                     })
+                                     .disposed(by: self.disposeBag)
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -279,7 +289,8 @@ extension ItemDetailViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
         if let cell = cell as? ItemTitleCell {
-            cell.setup(with: dataSource.title, type: dataSource.type, editing: tableView.isEditing)
+            let localizedType = self.store.schemaController.localized(itemType: dataSource.type) ?? ""
+            cell.setup(with: dataSource.title, type: localizedType, editing: tableView.isEditing)
             cell.textObservable.subscribe { [weak self] event in
                                    switch event {
                                    case .next(let string):
@@ -307,7 +318,7 @@ extension ItemDetailViewController: UITableViewDataSource {
                         .subscribe { [weak self] event in
                             switch event {
                             case .next(let string):
-                                self?.store.handle(action: .updateField(field.name, string))
+                                self?.store.handle(action: .updateField(field.type, string))
                             default: break
                             }
                         }
@@ -322,7 +333,8 @@ extension ItemDetailViewController: UITableViewDataSource {
                     } else if !creator.firstName.isEmpty || !creator.lastName.isEmpty {
                         value = creator.firstName + " " + creator.lastName
                     }
-                    cell.setup(with: creator.rawType, value: value, editing: tableView.isEditing)
+                    let localizedType = self.store.schemaController.localized(creator: creator.rawType) ?? ""
+                    cell.setup(with: localizedType, value: value, editing: tableView.isEditing)
                 }
 
             default: break

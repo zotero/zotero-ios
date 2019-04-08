@@ -1,1 +1,0 @@
-title,abstractNote,date,language,shortTitle,url,accessDate,rights,extra

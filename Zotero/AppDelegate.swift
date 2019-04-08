@@ -131,6 +131,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        self.controllers.schemaController.reloadSchemaIfNeeded()
         self.controllers.userControllers?.syncScheduler.requestFullSync()
     }
 

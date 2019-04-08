@@ -17,18 +17,18 @@ class Controllers {
     let secureStorage: SecureStorage
     let dbStorage: DbStorage
     let fileStorage: FileStorage
-    let itemFieldsController: ItemFieldsController
+    let schemaController: SchemaController
 
     var userControllers: UserControllers?
 
     init() {
-        let itemFieldsController = ItemFieldsController()
         let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
         let authToken = ApiConstants.authToken ?? secureStorage.apiToken
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
                                         headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: authToken)
+        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
 
         do {
             let file = Files.dbFile
@@ -47,7 +47,7 @@ class Controllers {
         self.apiClient = apiClient
         self.secureStorage = secureStorage
         self.fileStorage = fileStorage
-        self.itemFieldsController = itemFieldsController
+        self.schemaController = schemaController
 
         // Not logged in, don't setup user controllers
         if authToken == nil { return }

@@ -1,1 +1,0 @@
-title,abstractNote,mapType,scale,seriesTitle,edition,place,publisher,date,language,ISBN,shortTitle,url,accessDate,archive,archiveLocation,libraryCatalog,callNumber,rights,extra

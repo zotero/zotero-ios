@@ -48,6 +48,7 @@ class ItemDetailStore: Store {
         case updateField(String, String) // Name, Value
         case updateTitle(String)
         case updateAbstract(String)
+        case reloadLocale
     }
 
     enum StoreError: Error, Equatable {
@@ -72,6 +73,7 @@ class ItemDetailStore: Store {
         }
 
         struct Field {
+            let type: String
             let name: String
             let value: String
         }
@@ -123,17 +125,17 @@ class ItemDetailStore: Store {
     let apiClient: ApiClient
     let fileStorage: FileStorage
     let dbStorage: DbStorage
-    let itemFieldsController: ItemFieldsController
+    let schemaController: SchemaController
     let disposeBag: DisposeBag
 
     var updater: StoreStateUpdater<StoreState>
 
     init(initialState: StoreState, apiClient: ApiClient, fileStorage: FileStorage,
-         dbStorage: DbStorage, itemFieldsController: ItemFieldsController) {
+         dbStorage: DbStorage, schemaController: SchemaController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
-        self.itemFieldsController = itemFieldsController
+        self.schemaController = schemaController
         self.disposeBag = DisposeBag()
         self.updater = StoreStateUpdater(initialState: initialState)
         self.updater.stateCleanupAction = { state in
@@ -157,14 +159,17 @@ class ItemDetailStore: Store {
             self.startEditing()
         case .stopEditing(let save):
             self.stopEditing(shouldSaveChanges: save)
-        case .updateField(let name, let value):
-            if let index = self.state.value.editingDataSource?.fields.firstIndex(where: { $0.name == name }) {
-                self.state.value.editingDataSource?.fields[index] = StoreState.Field(name: name, value: value)
+        case .updateField(let type, let value):
+            if let index = self.state.value.editingDataSource?.fields.firstIndex(where: { $0.type == type }),
+               let field = self.state.value.editingDataSource?.field(at: index) {
+                self.state.value.editingDataSource?.fields[index] = StoreState.Field(type: type, name: field.name, value: value)
             }
         case .updateTitle(let title):
             self.state.value.editingDataSource?.title = title
         case .updateAbstract(let abstract):
             self.state.value.editingDataSource?.abstract = abstract
+        case .reloadLocale:
+            self.reloadLocale()
         }
     }
 
@@ -201,7 +206,7 @@ class ItemDetailStore: Store {
     }
 
     private func storeChanges(from dataSource: ItemDetailEditingDataSource, itemKey: String, libraryId: LibraryIdentifier) throws {
-        let request = StoreItemDetailChangesDbRequest(abstractKey: self.itemFieldsController.abstractKey,
+        let request = StoreItemDetailChangesDbRequest(abstractKey: SchemaController.abstractKey,
                                                       libraryId: libraryId, itemKey: itemKey, title: dataSource.title,
                                                       abstract: dataSource.abstract,
                                                       fields: dataSource.fields)
@@ -212,8 +217,8 @@ class ItemDetailStore: Store {
                             state: ItemDetailStore.StoreState) {
         var editingDataSource: ItemDetailEditingDataSource?
         if editing {
-            editingDataSource = ItemDetailEditingDataSource(item: state.item ,previewDataSource: previewDataSource,
-                                                            itemFieldsController: self.itemFieldsController)
+            editingDataSource = ItemDetailEditingDataSource(item: state.item, previewDataSource: previewDataSource,
+                                                            schemaController: self.schemaController)
         }
         let diff = (editingDataSource ?? state.editingDataSource).flatMap({ self.diff(between: previewDataSource,
                                                                                       and: $0, isEditing: editing) })
@@ -269,7 +274,7 @@ class ItemDetailStore: Store {
     private func loadInitialData() {
         do {
             let dataSource = try ItemDetailPreviewDataSource(item: self.state.value.item,
-                                                             itemFieldsController: self.itemFieldsController)
+                                                             schemaController: self.schemaController)
             self.updater.updateState { state in
                 state.previewDataSource = dataSource
                 state.dataSource = dataSource
@@ -375,6 +380,36 @@ class ItemDetailStore: Store {
             newState.error = error
         }
     }
+
+    private func reloadLocale() {
+        do {
+            let previewDataSource = try ItemDetailPreviewDataSource(item: self.state.value.item,
+                                                                    schemaController: self.schemaController)
+            var editingDataSource: ItemDetailEditingDataSource?
+            if self.state.value.isEditing {
+                editingDataSource = ItemDetailEditingDataSource(item: self.state.value.item,
+                                                                previewDataSource: previewDataSource,
+                                                                schemaController: self.schemaController)
+            }
+
+            self.updater.updateState { state in
+                state.previewDataSource = previewDataSource
+                state.editingDataSource = editingDataSource
+                state.dataSource = state.isEditing ? editingDataSource : previewDataSource
+                state.version += 1
+                state.changes = .data
+            }
+        } catch let error as StoreError {
+            self.updater.updateState { state in
+                state.error = error
+            }
+        } catch let error {
+            DDLogError("ItemDetailStore: can't load initial data - \(error)")
+            self.updater.updateState { state in
+                state.error = .unknown
+            }
+        }
+    }
 }
 
 fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
@@ -388,8 +423,9 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
     fileprivate(set) var title: String
     fileprivate(set) var type: String
 
-    init(item: RItem, previewDataSource: ItemDetailPreviewDataSource, itemFieldsController: ItemFieldsController) {
-        let hasAbstract = itemFieldsController.fields[item.rawType]?.contains(itemFieldsController.abstractKey) ?? false
+    init(item: RItem, previewDataSource: ItemDetailPreviewDataSource, schemaController: SchemaDataSource) {
+        let hasAbstract = schemaController.fields(for: item.rawType)?
+                                          .contains(where: { $0.field == SchemaController.abstractKey }) ?? false
         var sections = ItemDetailStore.StoreState.allSections
         if !hasAbstract {
             if let index = sections.firstIndex(where: { $0 == .abstract }) {
@@ -398,11 +434,12 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         }
 
         var fields: [ItemDetailStore.StoreState.Field] = []
-        previewDataSource.fieldNames.forEach { name in
-            if let field = previewDataSource.fields.first(where: { $0.name == name }) {
+        previewDataSource.fieldTypes.forEach { type in
+            if let field = previewDataSource.fields.first(where: { $0.type == type }) {
                 fields.append(field)
             } else {
-                fields.append(ItemDetailStore.StoreState.Field(name: name, value: ""))
+                let localized = schemaController.localized(field: type) ?? ""
+                fields.append(ItemDetailStore.StoreState.Field(type: type, name: localized, value: ""))
             }
         }
 
@@ -463,7 +500,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
 }
 
 fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
-    fileprivate let fieldNames: [String]
+    fileprivate let fieldTypes: [String]
     fileprivate let creators: Results<RCreator>
     fileprivate let attachments: Results<RItem>
     fileprivate let notes: Results<RItem>
@@ -474,31 +511,32 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
     fileprivate(set) var title: String
     fileprivate(set) var type: String
 
-    init(item: RItem, itemFieldsController: ItemFieldsController) throws {
-        guard var sortedFieldNames = itemFieldsController.fields[item.rawType] else {
+    init(item: RItem, schemaController: SchemaDataSource) throws {
+        guard var sortedFields = schemaController.fields(for: item.rawType)?.map({ $0.field }) else {
             throw ItemDetailStore.StoreError.typeNotSupported
         }
 
         // We're showing title and abstract separately, outside of fields, let's just exclude them here
-        let excludedKeys = RItem.titleKeys + [itemFieldsController.abstractKey]
-        sortedFieldNames.removeAll { field -> Bool in
-            return excludedKeys.contains(field)
+        let excludedKeys = RItem.titleKeys + [SchemaController.abstractKey]
+        sortedFields.removeAll { key -> Bool in
+            return excludedKeys.contains(key)
         }
         var abstract: String?
         var values: [String: String] = [:]
         item.fields.filter("value != %@", "").forEach { field in
-            if field.key ==  itemFieldsController.abstractKey {
+            if field.key ==  SchemaController.abstractKey {
                 abstract = field.value
             } else {
                 values[field.key] = field.value
             }
         }
 
-        let fields: [ItemDetailStore.StoreState.Field] = sortedFieldNames.compactMap { name in
-            return values[name].flatMap({ ItemDetailStore.StoreState.Field(name: name, value: $0) })
+        let fields: [ItemDetailStore.StoreState.Field] = sortedFields.compactMap { type in
+            let localized = schemaController.localized(field: type) ?? ""
+            return values[type].flatMap({ ItemDetailStore.StoreState.Field(type: type, name: localized, value: $0) })
         }
 
-        self.fieldNames = sortedFieldNames
+        self.fieldTypes = sortedFields
         self.title = item.title
         self.type = item.rawType
         self.abstract = abstract

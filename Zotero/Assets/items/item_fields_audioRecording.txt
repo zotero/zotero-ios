@@ -1,1 +1,0 @@
-title,abstractNote,audioRecordingFormat,seriesTitle,volume,numberOfVolumes,place,label,date,runningTime,language,ISBN,shortTitle,archive,archiveLocation,libraryCatalog,callNumber,url,accessDate,rights,extra

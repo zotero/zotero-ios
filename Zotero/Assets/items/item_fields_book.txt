@@ -1,1 +1,0 @@
-title,abstractNote,series,seriesNumber,volume,numberOfVolumes,edition,place,publisher,date,numPages,language,ISBN,shortTitle,url,accessDate,archive,archiveLocation,libraryCatalog,callNumber,rights,extra
