@@ -23,8 +23,8 @@ class ItemCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var bottomStackView: UIStackView!
     @IBOutlet private weak var creatorLabel: UILabel!
-    @IBOutlet private weak var noteIndicator: UILabel!
-    @IBOutlet private weak var attachmentIndicator: UILabel!
+    @IBOutlet private weak var noteIndicator: UIImageView!
+    @IBOutlet private weak var attachmentIndicator: UIImageView!
     @IBOutlet private weak var colorsView: TagColorsView!
 
     static let height: CGFloat = 60
