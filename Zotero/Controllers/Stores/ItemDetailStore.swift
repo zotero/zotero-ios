@@ -31,7 +31,7 @@ protocol ItemDetailDataSource {
     func creator(at index: Int) -> RCreator?
     func field(at index: Int) -> ItemDetailStore.StoreState.Field?
     func note(at index: Int) -> RItem?
-    func attachment(at index: Int) -> RItem?
+    func attachment(at index: Int) -> (RItem, ItemDetailStore.StoreState.AttachmentType?)?
     func tag(at index: Int) -> RTag?
 }
 
@@ -41,7 +41,7 @@ class ItemDetailStore: Store {
 
     enum StoreAction {
         case load
-        case attachmentOpened
+        case clearAttachment(String)
         case showAttachment(RItem)
         case startEditing
         case stopEditing(Bool) // SaveChanges
@@ -79,14 +79,23 @@ class ItemDetailStore: Store {
         }
 
         enum AttachmentType: Equatable {
-            case file(File)
+            case file(file: File, isLocal: Bool)
             case url(URL)
+
+            var isLocal: Bool? {
+                switch self {
+                case .file(_, let isLocal):
+                    return isLocal
+                case .url:
+                    return nil
+                }
+            }
 
             static func == (lhs: AttachmentType, rhs: AttachmentType) -> Bool {
                 switch (lhs, rhs) {
                 case (.url(let lUrl), .url(let rUrl)):
                     return lUrl == rUrl
-                case (.file(let lFile), .file(let rFile)):
+                case (.file(let lFile, _), .file(let rFile, _)):
                     return lFile.createUrl() == rFile.createUrl()
                 default:
                     return false
@@ -96,7 +105,8 @@ class ItemDetailStore: Store {
 
         enum AttachmentState: Equatable {
             case progress(Double)
-            case result(AttachmentType)
+            case result(AttachmentType, Bool) // Type of attachment, Bool indicating whether attachment was downloaded
+            case failure
         }
 
         fileprivate static let allSections: [StoreState.Section] = [.title, .creators, .fields, .abstract,
@@ -104,7 +114,7 @@ class ItemDetailStore: Store {
         let item: RItem
 
         fileprivate(set) var changes: Changes
-        fileprivate(set) var attachmentState: AttachmentState?
+        fileprivate(set) var attachmentStates: [String: AttachmentState]
         fileprivate(set) var isEditing: Bool
         fileprivate(set) var dataSource: ItemDetailDataSource?
         fileprivate(set) var editingDiff: [EditingSectionDiff]?
@@ -116,6 +126,7 @@ class ItemDetailStore: Store {
 
         init(item: RItem) {
             self.item = item
+            self.attachmentStates = [:]
             self.changes = []
             self.isEditing = false
             self.version = 0
@@ -151,9 +162,9 @@ class ItemDetailStore: Store {
             self.loadInitialData()
         case .showAttachment(let item):
             self.showAttachment(for: item)
-        case .attachmentOpened:
-            self.updater.updateState { newState in
-                newState.attachmentState = nil
+        case .clearAttachment(let key):
+            self.updater.updateState { state in
+                state.attachmentStates[key] = nil
             }
         case .startEditing:
             self.startEditing()
@@ -274,7 +285,8 @@ class ItemDetailStore: Store {
     private func loadInitialData() {
         do {
             let dataSource = try ItemDetailPreviewDataSource(item: self.state.value.item,
-                                                             schemaController: self.schemaController)
+                                                             schemaController: self.schemaController,
+                                                             fileStorage: self.fileStorage)
             self.updater.updateState { state in
                 state.previewDataSource = dataSource
                 state.dataSource = dataSource
@@ -299,43 +311,103 @@ class ItemDetailStore: Store {
             self.reportError(.libraryNotAssigned)
             return
         }
+        guard let groupType = self.groupType(from: libraryId) else { return }
+
+        if let metadata = self.state.value.previewDataSource?.attachmentMetadata[item.key] {
+            switch metadata {
+            case .url(let url):
+                self.showUrlAttachment(url, for: item.key)
+            case .file(let file, let isLocal):
+                if isLocal {
+                    self.showLocalFileAttachment(file, for: item.key, isDownloaded: false)
+                } else {
+                    self.fetchAndShowFileAttachment(for: item.key, groupType: groupType, file: file)
+                }
+            }
+            return
+        }
 
         let contentType = item.fields.filter("key = %@", "contentType").first?.value ?? ""
-
         if !contentType.isEmpty {
-            self.showFileAttachment(for: item.key, contentType: contentType, libraryId: libraryId)
+            guard let ext = contentType.mimeTypeExtension else {
+                DDLogError("ItemDetailStore: show attachment - mimeType/extension " +
+                           "unknown (\(contentType)) for item (\(item.key))")
+                self.reportError(.contentTypeUnknown)
+                return
+            }
+            self.showFileAttachment(for: item.key, libraryId: libraryId, groupType: groupType, ext: ext)
             return
         }
 
         if let urlString = item.fields.filter("key = %@", "url").first?.value,
            let url = URL(string: urlString) {
-            self.updater.updateState { newState in
-                newState.attachmentState = .result(.url(url))
-                newState.changes = .download
-            }
+            let metadata = StoreState.AttachmentType.url(url)
+            self.state.value.previewDataSource?.attachmentMetadata[item.key] = metadata
+            self.showUrlAttachment(url, for: item.key)
+            return
         }
 
         self.reportError(.contentTypeUnknown)
     }
 
-    private func showFileAttachment(for key: String, contentType: String, libraryId: LibraryIdentifier) {
-        guard let ext = contentType.mimeTypeExtension else {
-            DDLogError("ItemDetailStore: show attachment - mimeType/extension " +
-                "unknown (\(contentType)) for item (\(key))")
-            self.reportError(.contentTypeUnknown)
-            return
-        }
-
+    private func showFileAttachment(for key: String, libraryId: LibraryIdentifier,
+                                    groupType: SyncController.Library, ext: String) {
         let file = Files.itemFile(libraryId: libraryId, key: key, ext: ext)
 
         if self.fileStorage.has(file) {
-            self.updater.updateState { newState in
-                newState.attachmentState = .result(.file(file))
-                newState.changes = .download
-            }
+            let metadata = StoreState.AttachmentType.file(file: file, isLocal: true)
+            self.state.value.previewDataSource?.attachmentMetadata[key] = metadata
+            self.showLocalFileAttachment(file, for: key, isDownloaded: false)
             return
         }
 
+        self.fetchAndShowFileAttachment(for: key, groupType: groupType, file: file)
+    }
+
+    private func fetchAndShowFileAttachment(for key: String, groupType: SyncController.Library, file: File) {
+        self.showProgress(0, for: key)
+        let request = FileRequest(groupType: groupType, key: key, destination: file)
+        self.apiClient.download(request: request)
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] progress in
+                          let progress = progress.totalBytes == 0 ? 0 : Double(progress.bytesWritten) / Double(progress.totalBytes)
+                          self?.showProgress(progress, for: key)
+                      }, onError: { [weak self] error in
+                          DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
+                          self?.updater.updateState { newState in
+                              newState.attachmentStates[key] = .failure
+                              newState.changes = .download
+                          }
+                      }, onCompleted: { [weak self] in
+                          let metadata = StoreState.AttachmentType.file(file: file, isLocal: true)
+                          self?.state.value.previewDataSource?.attachmentMetadata[key] = metadata
+                          self?.showLocalFileAttachment(file, for: key, isDownloaded: true)
+                      })
+                      .disposed(by: self.disposeBag)
+    }
+
+    private func showUrlAttachment(_ url: URL, for key: String) {
+        self.updater.updateState { state in
+            state.attachmentStates[key] = .result(.url(url), false)
+            state.changes = .download
+        }
+    }
+
+    private func showLocalFileAttachment(_ file: File, for key: String, isDownloaded: Bool) {
+        self.updater.updateState { state in
+            state.attachmentStates[key] = .result(.file(file: file, isLocal: true), isDownloaded)
+            state.changes = .download
+        }
+    }
+
+    private func showProgress(_ progress: Double, for key: String) {
+        self.updater.updateState { newState in
+            newState.attachmentStates[key] = .progress(progress)
+            newState.changes = .download
+        }
+    }
+
+    private func groupType(from libraryId: LibraryIdentifier) -> SyncController.Library? {
         let groupType: SyncController.Library
         switch libraryId {
         case .group(let identifier):
@@ -347,32 +419,10 @@ class ItemDetailStore: Store {
             } catch let error {
                 DDLogError("ItemDetailStore: show attachment - can't load self user - \(error)")
                 self.reportError(.userMissing)
-                return
+                return nil
             }
         }
-
-        let request = FileRequest(groupType: groupType, key: key, destination: file)
-        self.apiClient.download(request: request)
-                      .observeOn(MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] progress in
-                          self?.updater.updateState { newState in
-                              newState.attachmentState = .progress(Double(progress.bytesWritten) / Double(progress.totalBytes))
-                              newState.changes = .download
-                          }
-                          }, onError: { [weak self] error in
-                              DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
-                              self?.updater.updateState { newState in
-                                  newState.attachmentState = nil
-                                  newState.error = .downloadError
-                                  newState.changes = .download
-                              }
-                          }, onCompleted: { [weak self] in
-                              self?.updater.updateState { newState in
-                                  newState.attachmentState = .result(.file(file))
-                                  newState.changes = .download
-                              }
-                      })
-                      .disposed(by: self.disposeBag)
+        return groupType
     }
 
     private func reportError(_ error: StoreError) {
@@ -384,7 +434,8 @@ class ItemDetailStore: Store {
     private func reloadLocale() {
         do {
             let previewDataSource = try ItemDetailPreviewDataSource(item: self.state.value.item,
-                                                                    schemaController: self.schemaController)
+                                                                    schemaController: self.schemaController,
+                                                                    fileStorage: self.fileStorage)
             var editingDataSource: ItemDetailEditingDataSource?
             if self.state.value.isEditing {
                 editingDataSource = ItemDetailEditingDataSource(item: self.state.value.item,
@@ -488,9 +539,9 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         return self.notes[index]
     }
 
-    func attachment(at index: Int) -> RItem? {
+    func attachment(at index: Int) -> (RItem, ItemDetailStore.StoreState.AttachmentType?)? {
         guard index < self.attachments.count else { return nil }
-        return self.attachments[index]
+        return (self.attachments[index], nil)
     }
 
     func tag(at index: Int) -> RTag? {
@@ -500,6 +551,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
 }
 
 fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
+    private let fileStorage: FileStorage
     fileprivate let fieldTypes: [String]
     fileprivate let creators: Results<RCreator>
     fileprivate let attachments: Results<RItem>
@@ -507,11 +559,12 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
     fileprivate let tags: Results<RTag>
     fileprivate var fields: [ItemDetailStore.StoreState.Field]
     private(set) var sections: [ItemDetailStore.StoreState.Section] = []
+    fileprivate var attachmentMetadata: [String: ItemDetailStore.StoreState.AttachmentType]
     fileprivate(set) var abstract: String?
     fileprivate(set) var title: String
     fileprivate(set) var type: String
 
-    init(item: RItem, schemaController: SchemaDataSource) throws {
+    init(item: RItem, schemaController: SchemaDataSource, fileStorage: FileStorage) throws {
         guard var sortedFields = schemaController.fields(for: item.rawType)?.map({ $0.field }) else {
             throw ItemDetailStore.StoreError.typeNotSupported
         }
@@ -536,6 +589,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
             return values[type].flatMap({ ItemDetailStore.StoreState.Field(type: type, name: localized, value: $0) })
         }
 
+        self.fileStorage = fileStorage
         self.fieldTypes = sortedFields
         self.title = item.title
         self.type = item.rawType
@@ -549,6 +603,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
                          .filter(Predicates.items(type: .note, notSyncState: .dirty))
                          .sorted(byKeyPath: "title")
         self.tags = item.tags.sorted(byKeyPath: "name")
+        self.attachmentMetadata = [:]
         self.sections = self.createSections()
     }
 
@@ -586,9 +641,38 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         return self.notes[index]
     }
 
-    func attachment(at index: Int) -> RItem? {
+    func attachment(at index: Int) -> (RItem, ItemDetailStore.StoreState.AttachmentType?)? {
         guard index < self.attachments.count else { return nil }
-        return self.attachments[index]
+
+        let attachment = self.attachments[index]
+
+        if let metadata = self.attachmentMetadata[attachment.key] {
+            return (attachment, metadata)
+        }
+
+        var metadata: ItemDetailStore.StoreState.AttachmentType?
+
+        let contentType = attachment.fields.filter("key = %@", "contentType").first?.value ?? ""
+        if contentType.isEmpty { // Some other attachment (url, etc.)
+            if let urlString = attachment.fields.filter("key = %@", "url").first?.value,
+               let url = URL(string: urlString) {
+                metadata = ItemDetailStore.StoreState.AttachmentType.url(url)
+            }
+        } else { // File attachment
+            guard let ext = contentType.mimeTypeExtension,
+                  let libraryId = attachment.libraryObject?.identifier else {
+                DDLogError("ItemDetailStore: attachment metadata - mimeType/extension " +
+                           "unknown (\(contentType)) for item (\(attachment.key))")
+                return (attachment, nil)
+            }
+
+            let file = Files.itemFile(libraryId: libraryId, key: attachment.key, ext: ext)
+            let isLocal = self.fileStorage.has(file)
+            metadata = ItemDetailStore.StoreState.AttachmentType.file(file: file, isLocal: isLocal)
+        }
+
+        self.attachmentMetadata[attachment.key] = metadata
+        return (attachment, metadata)
     }
 
     func tag(at index: Int) -> RTag? {
@@ -630,7 +714,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
 
 extension ItemDetailStore.StoreState: Equatable {
     static func == (lhs: ItemDetailStore.StoreState, rhs: ItemDetailStore.StoreState) -> Bool {
-        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.attachmentState == rhs.attachmentState &&
+        return lhs.version == rhs.version && lhs.error == rhs.error && lhs.attachmentStates == rhs.attachmentStates &&
                lhs.isEditing == rhs.isEditing
     }
 }

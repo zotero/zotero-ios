@@ -17,15 +17,40 @@ protocol ItemSpecialCellModel {
 class ItemSpecialCell: UITableViewCell {
     @IBOutlet private weak var iconView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var progressView: UIProgressView!
+    @IBOutlet private weak var downloadIndicator: UIImageView!
 
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
     }
 
+    func setProgress(_ progress: Float) {
+        self.progressView.progress = progress
+        self.progressView.isHidden = progress == 0
+        if progress > 0 {
+            self.downloadIndicator.isHidden = true
+        }
+    }
+
+    func setAttachmentType(_ type: ItemDetailStore.StoreState.AttachmentType) {
+        switch type {
+        case .file(_, let isLocal):
+            self.downloadIndicator.isHidden = isLocal
+            self.accessoryType = isLocal ? .disclosureIndicator : .none
+
+        case .url:
+            self.downloadIndicator.isHidden = true
+            self.accessoryType = .disclosureIndicator
+        }
+    }
+
     func setup(with model: ItemSpecialCellModel) {
         self.iconView.image = model.specialIcon
         self.titleLabel.text = model.title
+
+        self.downloadIndicator.isHidden = true
+        self.accessoryType = .none
 
         if let color = model.tintColor {
             self.iconView.tintColor = color

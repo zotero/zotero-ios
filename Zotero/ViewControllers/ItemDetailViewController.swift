@@ -72,7 +72,8 @@ class ItemDetailViewController: UIViewController {
             }
         }
         if state.changes.contains(.download) {
-            self.updateDownloadState(state.attachmentState)
+            self.updateDownloadStates(state.attachmentStates)
+            self.showAttachmentIfNeeded(in: state.attachmentStates)
         }
         if let error = state.error {
             // TODO: Show error
@@ -120,40 +121,65 @@ class ItemDetailViewController: UIViewController {
 
     }
 
-    private func showAttachment(at index: Int) {
-        guard let attachment = self.store.state.value.dataSource?.attachment(at: index) else { return }
-        self.store.handle(action: .showAttachment(attachment))
+    private func showAttachmentIfNeeded(in states: [String: ItemDetailStore.StoreState.AttachmentState]) {
+        for data in states {
+            switch data.value {
+            case .result(let type, let wasDownloaded):
+                if !wasDownloaded {
+                    self.showAttachment(type)
+                    self.store.handle(action: .clearAttachment(data.key))
+                }
+
+            default: break
+            }
+        }
     }
 
-    private func updateDownloadState(_ state: ItemDetailStore.StoreState.AttachmentState?) {
-        guard let state = state else {
-            // TODO: - hide UI
-            return
-        }
+    private func showAttachment(_ attachment: ItemDetailStore.StoreState.AttachmentType) {
+        switch attachment {
+        case .url(let url):
+            self.showUrl(url)
 
+        case .file(let file, _):
+            switch file.ext {
+            case "pdf":
+                self.showPdf(from: file)
+            default:
+                self.showUnknown(from: file)
+            }
+        }
+    }
+
+    private func updateDownloadStates(_ states: [String: ItemDetailStore.StoreState.AttachmentState]) {
+        let sections = self.store.state.value.dataSource?.sections ?? []
+        guard let attachmentSection = sections.firstIndex(of: .attachments),
+              let visibleIndexPaths = self.tableView.indexPathsForVisibleRows else { return }
+
+        var needsReload = false
+        for indexPath in visibleIndexPaths {
+            guard indexPath.section == attachmentSection && indexPath.row > 0,
+                  let attachment = self.store.state.value.dataSource?.attachment(at: (indexPath.row - 1)),
+                  let state = states[attachment.0.key] else { continue }
+            if self.updateDownloadState(state, at: indexPath) {
+                needsReload = true
+            }
+        }
+        self.tableView.reloadData()
+    }
+
+    private func updateDownloadState(_ state: ItemDetailStore.StoreState.AttachmentState,
+                                     at indexPath: IndexPath) -> Bool {
         switch state {
         case .progress(let progress):
-            // TODO: - show progress ui
-            DDLogInfo("ItemDetailViewController: file download progress \(progress)")
-
-        case .result(let type):
-            switch type {
-            case .file(let file):
-                DDLogInfo("ItemDetailViewController: file downloaded to \(file.createUrl().absoluteString)")
-                switch file.ext {
-                case "pdf":
-                    self.showPdf(from: file)
-                default:
-                    self.showUnknown(from: file)
-                }
-            case .url(let url):
-                self.showUrl(url)
+            if let cell = self.tableView.cellForRow(at: indexPath) as? ItemSpecialCell {
+                cell.setProgress(Float(progress))
             }
-
-            DispatchQueue.main.async {
-                self.store.handle(action: .attachmentOpened)
-            }
+        case .result(_, let wasDownloaded):
+            return wasDownloaded
+        case .failure:
+            return true
         }
+        return false
     }
 
     private func showUrl(_ url: URL) {
@@ -359,9 +385,25 @@ extension ItemDetailViewController: UITableViewDataSource {
         } else if let cell = cell as? ItemSpecialCell {
             let index = indexPath.row - 1
             let model: ItemSpecialCellModel?
+            var metadata: ItemDetailStore.StoreState.AttachmentType?
+            var progress: Float = 0
+
             switch section {
             case .attachments:
-                model = dataSource.attachment(at: index)
+                let data = dataSource.attachment(at: index)
+                model = data?.0
+                metadata = data?.1
+                if let key = data?.0.key,
+                   let attachmentState = self.store.state.value.attachmentStates[key] {
+                    switch attachmentState {
+                    case .progress(let fileProgress):
+                        progress = Float(fileProgress)
+                    case .failure:
+                        // TODO: - Show failure in cell
+                        break
+                    case .result: break
+                    }
+                }
             case .notes:
                 model = dataSource.note(at: index)
             case .tags:
@@ -375,6 +417,10 @@ extension ItemDetailViewController: UITableViewDataSource {
             if let model = model {
                 cell.setup(with: model)
             }
+            if let metadata = metadata {
+                cell.setAttachmentType(metadata)
+            }
+            cell.setProgress(progress)
         }
 
         return cell
@@ -404,9 +450,10 @@ extension ItemDetailViewController: UITableViewDelegate {
 
         switch dataSource.sections[indexPath.section] {
         case .attachments:
-            if indexPath.row > 0 {
+            if indexPath.row > 0,
+               let attachment = self.store.state.value.dataSource?.attachment(at: (indexPath.row - 1))?.0 {
                 self.lastSelectedAttachmentCell = tableView.cellForRow(at: indexPath)
-                self.showAttachment(at: (indexPath.row - 1))
+                self.store.handle(action: .showAttachment(attachment))
             }
         default: break
         }
