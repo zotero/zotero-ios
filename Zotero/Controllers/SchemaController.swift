@@ -101,7 +101,7 @@ class SchemaController {
         guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
         guard let schemaData = try? Data(contentsOf: url),
-              let schemaChunks = self.chunks(from: schemaData, separator: "\n\n") else { return }
+              let schemaChunks = self.chunks(from: schemaData, separator: "\r\n\r\n") else { return }
         self.storeEtag(from: schemaChunks.0)
         self.reloadSchema(from: schemaChunks.1)
     }
@@ -123,7 +123,7 @@ class SchemaController {
     private func etag(from data: Data) -> String? {
         guard let headers = String(data: data, encoding: .utf8) else { return nil }
 
-        for line in headers.split(separator: "\n") {
+        for line in headers.split(separator: "\r\n") {
             guard line.contains("ETag") else { continue }
             let separator = ":"
             let separatorChar = separator[separator.startIndex]
