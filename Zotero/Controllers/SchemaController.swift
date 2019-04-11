@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RxSwift
 
 protocol SchemaDataSource: class {
@@ -28,11 +29,9 @@ class SchemaController {
     private let defaultsDateKey: String
     private let disposeBag: DisposeBag
     private let minReloadInterval: Double
-    private let retryInterval: Double
 
     private(set) var itemSchemas: [String: ItemSchema] = [:]
     private(set) var locales: [String: SchemaLocale] = [:]
-    private var isRetry = false
 
     init(apiClient: ApiClient, userDefaults: UserDefaults) {
         self.apiClient = apiClient
@@ -40,7 +39,6 @@ class SchemaController {
         self.defaultsDateKey = "SchemaControllerLastFetchKey"
         self.disposeBag = DisposeBag()
         self.minReloadInterval = 86400 // 1 day
-        self.retryInterval = 30 // seconds
     }
 
     func reloadSchemaIfNeeded() {
@@ -71,17 +69,10 @@ class SchemaController {
                           guard let `self` = self else { return }
                           self.reloadSchema(from: response.0)
                           self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
-                      }, onError: { [weak self] error in
-                          guard let `self` = self else { return }
-                          guard !self.isRetry else {
-                              self.isRetry = false
-                              return
-                          }
-
-                          self.isRetry = true
-                          DispatchQueue.main.asyncAfter(deadline: (.now() + self.retryInterval)) { [weak self] in
-                              self?.fetchSchemaIfNeeded()
-                          }
+                      }, onError: { error in
+                          // Don't need to do anything, we've got bundled schema, we've got auto retries
+                          // on backend errors, if everything fails we'll try again on app becoming active
+                          DDLogError("SchemaController: could not fetch schema - \(error)")
                       })
                       .disposed(by: self.disposeBag)
     }

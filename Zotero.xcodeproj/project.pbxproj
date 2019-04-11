@@ -20,6 +20,7 @@
 		B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59BA2207451B00884C4A /* ApiClient.swift */; };
 		B30DF3F52209A07D000B6DE2 /* GroupResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */; };
 		B30DF3F92209A282000B6DE2 /* RCustomLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F82209A282000B6DE2 /* RCustomLibrary.swift */; };
+		B30E6CB9225DE84B0001B93A /* ObservableRequestExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E6CB8225DE84B0001B93A /* ObservableRequestExtensions.swift */; };
 		B30F6685220CA148009E7A8F /* SyncableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6684220CA148009E7A8F /* SyncableObject.swift */; };
 		B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6687220CB274009E7A8F /* FileStorage.swift */; };
 		B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6689220CB413009E7A8F /* FileManager+Utils.swift */; };
@@ -199,6 +200,7 @@
 		B30D59BA2207451B00884C4A /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 		B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupResponse.swift; sourceTree = "<group>"; };
 		B30DF3F82209A282000B6DE2 /* RCustomLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCustomLibrary.swift; sourceTree = "<group>"; };
+		B30E6CB8225DE84B0001B93A /* ObservableRequestExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableRequestExtensions.swift; sourceTree = "<group>"; };
 		B30F6684220CA148009E7A8F /* SyncableObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncableObject.swift; sourceTree = "<group>"; };
 		B30F6687220CB274009E7A8F /* FileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStorage.swift; sourceTree = "<group>"; };
 		B30F6689220CB413009E7A8F /* FileManager+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+Utils.swift"; sourceTree = "<group>"; };
@@ -529,6 +531,7 @@
 				B30D59BA2207451B00884C4A /* ApiClient.swift */,
 				B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */,
 				B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */,
+				B30E6CB8225DE84B0001B93A /* ObservableRequestExtensions.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1124,6 +1127,7 @@
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
+				B30E6CB9225DE84B0001B93A /* ObservableRequestExtensions.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3E47160224127AC006E3B20 /* RegisterViewController.swift in Sources */,

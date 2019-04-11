@@ -729,20 +729,11 @@ final class SyncController: SynchronizationController {
         }
 
         // Check other networking errors
+        if let responseError = error as? AFResponseError {
+            return self.alamoErrorRequiresAbort(responseError.error)
+        }
         if let alamoError = error as? AFError {
-            switch alamoError {
-            case .responseValidationFailed(let reason):
-                switch reason {
-                case .unacceptableStatusCode(let code):
-                    return (code >= 400 && code < 500 && code != 403) ? SyncError.apiError : nil
-                case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType:
-                    return SyncError.apiError
-                }
-            case .multipartEncodingFailed, .parameterEncodingFailed, .invalidURL:
-                return SyncError.apiError
-            case .responseSerializationFailed:
-                return nil
-            }
+            return self.alamoErrorRequiresAbort(alamoError)
         }
 
         // Check realm errors, every "core" error is bad. Can't create new Realm instance, can't continue with sync
@@ -751,6 +742,22 @@ final class SyncController: SynchronizationController {
         }
 
         return nil
+    }
+
+    private func alamoErrorRequiresAbort(_ error: AFError) -> SyncError? {
+        switch error {
+        case .responseValidationFailed(let reason):
+            switch reason {
+            case .unacceptableStatusCode(let code):
+                return (code >= 400 && code <= 499 && code != 403) ? SyncError.apiError : nil
+            case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType:
+                return SyncError.apiError
+            }
+        case .multipartEncodingFailed, .parameterEncodingFailed, .invalidURL:
+            return SyncError.apiError
+        case .responseSerializationFailed:
+            return nil
+        }
     }
 
     private func handleVersionMismatchIfNeeded(for error: Error, library: Library) -> Bool {
@@ -807,8 +814,17 @@ extension Error {
     }
 
     var isPreconditionFailure: Bool {
-        guard let alamoError = (self as? AFError) else { return false }
-        switch alamoError {
+        if let responseError = self as? AFResponseError {
+            return self.isPreconditionFailure(error: responseError.error)
+        }
+        if let alamoError = self as? AFError {
+            return self.isPreconditionFailure(error: alamoError)
+        }
+        return false
+    }
+
+    private func isPreconditionFailure(error: AFError) -> Bool {
+        switch error {
         case .responseValidationFailed(let reason):
             switch reason {
             case .unacceptableStatusCode(let code):
