@@ -8,4 +8,4 @@ SCRIPT_PATH=`realpath $0`
 SCRIPT_DIR=`dirname $SCRIPT_PATH`
 SCHEMA_FILE="$SCRIPT_DIR/../Zotero/Assets/schema.json"
 
-curl https://api.zotero.org/schema --output $SCHEMA_FILE
+curl -i https://api.zotero.org/schema --output $SCHEMA_FILE

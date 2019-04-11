@@ -1,3 +1,14 @@
+HTTP/1.1 200 OK
+Date: Thu, 11 Apr 2019 14:07:27 GMT
+Server: Apache/2.4.33 (Amazon)
+Last-Modified: Sun, 07 Apr 2019 15:57:24 GMT
+ETag: "4ab7e-585f2c6984100"
+Accept-Ranges: bytes
+Content-Length: 306046
+Vary: Accept-Encoding
+Content-Type: application/json
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
 {
 	"itemTypes": [
 		{

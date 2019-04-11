@@ -11,6 +11,8 @@ import Foundation
 struct SchemaRequest: ApiRequest {
     typealias Response = SettingsResponse
 
+    let etag: String?
+
     var path: String {
         return "schema"
     }
@@ -28,6 +30,9 @@ struct SchemaRequest: ApiRequest {
     }
 
     var headers: [String : String]? {
+        if let etag = self.etag {
+            return ["If-None-Match": etag]
+        }
         return nil
     }
 }
