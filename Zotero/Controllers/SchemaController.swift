@@ -81,7 +81,7 @@ class SchemaController {
                               case .responseValidationFailed(let reason):
                                   switch reason {
                                   case .unacceptableStatusCode(let code):
-                                      if code == 302 || code == 304 {
+                                      if code == 304 {
                                           return
                                       }
                                   default: break
@@ -101,7 +101,7 @@ class SchemaController {
         guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
         guard let schemaData = try? Data(contentsOf: url),
-              let schemaChunks = self.chunks(from: schemaData, separator: "\r\n\r\n") else { return }
+              let schemaChunks = self.chunks(from: schemaData, separator: "\n\n") else { return }
         self.storeEtag(from: schemaChunks.0)
         self.reloadSchema(from: schemaChunks.1)
     }
@@ -123,12 +123,12 @@ class SchemaController {
     private func etag(from data: Data) -> String? {
         guard let headers = String(data: data, encoding: .utf8) else { return nil }
 
-        for line in headers.split(separator: "\r\n") {
+        for line in headers.split(separator: "\n") {
             guard line.contains("ETag") else { continue }
             let separator = ":"
             let separatorChar = separator[separator.startIndex]
             guard let etag = line.split(separator: separatorChar).last.flatMap(String.init) else { continue }
-            return etag.trimmingCharacters(in: CharacterSet(charactersIn: "\" "))
+            return etag.trimmingCharacters(in: CharacterSet(charactersIn: " "))
         }
 
         return nil
