@@ -22,8 +22,6 @@ protocol SchemaDataSource: class {
 }
 
 class SchemaController {
-    static let abstractKey = "abstractNote"
-
     private let apiClient: ApiClient
     private let userDefaults: UserDefaults
     private let defaultsDateKey: String

@@ -9,6 +9,19 @@
 import Foundation
 
 struct Predicates {
+
+    static func key(_ key: String) -> NSPredicate {
+        return NSPredicate(format: "key = %@", key)
+    }
+
+    static func key(in keys: [String]) -> NSPredicate {
+        return NSPredicate(format: "key IN %@", keys)
+    }
+
+    static func key(in keys: Set<String>) -> NSPredicate {
+        return NSPredicate(format: "key IN %@", keys)
+    }
+
     static func library(from identifier: LibraryIdentifier) -> NSPredicate {
         switch identifier {
         case .custom(let type):
@@ -19,19 +32,19 @@ struct Predicates {
     }
 
     static func keyInLibrary(key: String, libraryId: LibraryIdentifier) -> NSPredicate {
-        let keyPredicate = NSPredicate(format: "key == %@", key)
+        let keyPredicate = Predicates.key(key)
         let libraryPredicate = Predicates.library(from: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
     }
 
     static func keysInLibrary(keys: [String], libraryId: LibraryIdentifier) -> NSPredicate {
-        let keyPredicate = NSPredicate(format: "key IN %@", keys)
+        let keyPredicate = Predicates.key(in: keys)
         let libraryPredicate = Predicates.library(from: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
     }
 
     static func keysInLibrary(keys: Set<String>, libraryId: LibraryIdentifier) -> NSPredicate {
-        let keyPredicate = NSPredicate(format: "key IN %@", keys)
+        let keyPredicate = Predicates.key(in: keys)
         let libraryPredicate = Predicates.library(from: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
     }

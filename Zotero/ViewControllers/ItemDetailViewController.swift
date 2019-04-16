@@ -121,6 +121,15 @@ class ItemDetailViewController: UIViewController {
 
     }
 
+    private func editNote(_ note: ItemDetailStore.StoreState.Note) {
+        let controller = NoteViewController(text: note.text) { [weak self] newText in
+            self?.store.handle(action: .updateNote(key: note.key, text: newText))
+        }
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .formSheet
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
     private func showAttachmentIfNeeded(in states: [String: ItemDetailStore.StoreState.AttachmentState]) {
         for data in states {
             switch data.value {
@@ -164,7 +173,9 @@ class ItemDetailViewController: UIViewController {
                 needsReload = true
             }
         }
-        self.tableView.reloadData()
+        if needsReload {
+            self.tableView.reloadData()
+        }
     }
 
     private func updateDownloadState(_ state: ItemDetailStore.StoreState.AttachmentState,
@@ -252,6 +263,7 @@ class ItemDetailViewController: UIViewController {
         self.tableView.register(UINib(nibName: ItemSpecialTitleCell.nibName, bundle: nil),
                                 forCellReuseIdentifier: ItemSpecialTitleCell.nibName)
         self.tableView.tableFooterView = UIView()
+        self.tableView.allowsSelectionDuringEditing = true
     }
 
     private func setupNavigationBar(forEditing editing: Bool) {
@@ -447,13 +459,21 @@ extension ItemDetailViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         guard let dataSource = self.store.state.value.dataSource else { return }
+        let isEditing = self.store.state.value.isEditing
 
         switch dataSource.sections[indexPath.section] {
         case .attachments:
             if indexPath.row > 0,
-               let attachment = self.store.state.value.dataSource?.attachment(at: (indexPath.row - 1))?.0 {
-                self.lastSelectedAttachmentCell = tableView.cellForRow(at: indexPath)
-                self.store.handle(action: .showAttachment(attachment))
+               let attachment = dataSource.attachment(at: (indexPath.row - 1))?.0 {
+                if !isEditing {
+                    self.lastSelectedAttachmentCell = tableView.cellForRow(at: indexPath)
+                    self.store.handle(action: .showAttachment(attachment))
+                }
+            }
+        case .notes:
+            if isEditing && indexPath.row > 0,
+               let note = dataSource.note(at: (indexPath.row - 1)) {
+                self.editNote(note)
             }
         default: break
         }
@@ -484,6 +504,16 @@ extension RItem: ItemSpecialCellModel {
         default:
             return nil
         }
+    }
+
+    var tintColor: UIColor? {
+        return nil
+    }
+}
+
+extension ItemDetailStore.StoreState.Note: ItemSpecialCellModel {
+    var specialIcon: UIImage? {
+        return UIImage(named: "icon_cell_note")?.withRenderingMode(.alwaysTemplate)
     }
 
     var tintColor: UIColor? {

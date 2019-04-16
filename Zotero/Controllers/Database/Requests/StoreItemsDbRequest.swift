@@ -55,7 +55,7 @@ struct StoreItemsDbRequest: DbRequest {
     }
 
     private func syncFields(data: ItemResponse, item: RItem, database: Realm) {
-        let titleKeys = RItem.titleKeys
+        let titleKeys = FieldKeys.titles
         let allFieldKeys = Array(data.fields.keys)
         let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
         database.delete(toRemove)
@@ -73,7 +73,7 @@ struct StoreItemsDbRequest: DbRequest {
             if titleKeys.contains(key) && (key != "note" || item.type == .note) {
                 var title = value
                 if key == "note" {
-                    title = StoreItemsDbRequest.stripHtml(from: title) ?? title
+                    title = title.strippedHtml ?? title
                 }
                 item.title = title
             }
@@ -202,33 +202,5 @@ struct StoreItemsDbRequest: DbRequest {
             }
             relation.urlString = data.relations[key] ?? ""
         }
-    }
-
-    private static let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
-
-    private static func stripHtml(from string: String) -> String? {
-        guard !string.isEmpty else { return nil }
-        guard let data = string.data(using: .utf8) else {
-            DDLogError("StoreItemsDbRequest: could not create data from string: \(string)")
-            return nil
-        }
-
-        do {
-            let attributed = try NSAttributedString(data: data,
-                                                    options: [.documentType : NSAttributedString.DocumentType.html],
-                                                    documentAttributes: nil)
-            var stripped = attributed.string.trimmingCharacters(in: CharacterSet.whitespaces)
-                                            .components(separatedBy: StoreItemsDbRequest.stripCharacters).joined()
-            if stripped.count > 200 {
-                let endIndex = stripped.index(stripped.startIndex, offsetBy: 200)
-                stripped = String(stripped[stripped.startIndex..<endIndex])
-            }
-            return stripped
-        } catch let error {
-            DDLogError("StoreItemsDbRequest: can't strip HTML tags: \(error)")
-            DDLogError("Original string: \(string)")
-        }
-
-        return nil
     }
 }

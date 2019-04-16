@@ -30,7 +30,7 @@ protocol ItemDetailDataSource {
     func rowCount(for section: ItemDetailStore.StoreState.Section) -> Int
     func creator(at index: Int) -> RCreator?
     func field(at index: Int) -> ItemDetailStore.StoreState.Field?
-    func note(at index: Int) -> RItem?
+    func note(at index: Int) -> ItemDetailStore.StoreState.Note?
     func attachment(at index: Int) -> (RItem, ItemDetailStore.StoreState.AttachmentType?)?
     func tag(at index: Int) -> RTag?
 }
@@ -48,6 +48,7 @@ class ItemDetailStore: Store {
         case updateField(String, String) // Name, Value
         case updateTitle(String)
         case updateAbstract(String)
+        case updateNote(key: String, text: String)
         case reloadLocale
     }
 
@@ -76,6 +77,42 @@ class ItemDetailStore: Store {
             let type: String
             let name: String
             let value: String
+            let changed: Bool
+
+            func changed(value: String) -> Field {
+                return Field(type: self.type, name: self.name, value: self.value, changed: true)
+            }
+        }
+
+        struct Note {
+            let key: String
+            let title: String
+            let text: String
+            let changed: Bool
+
+            init(key: String, title: String, text: String, changed: Bool) {
+                self.key = key
+                self.title = title
+                self.text = text
+                self.changed = changed
+            }
+
+            init?(item: RItem) {
+                guard item.type == .note else {
+                    DDLogError("Trying to create Note from RItem which is not a note!")
+                    return nil
+                }
+
+                self.key = item.key
+                self.title = item.title
+                self.text = item.fields.filter(Predicates.key(FieldKeys.note)).first?.value ?? ""
+                self.changed = false
+            }
+
+            func changed(text: String) -> Note {
+                let title = text.strippedHtml ?? text
+                return Note(key: self.key, title: title, text: text, changed: true)
+            }
         }
 
         enum AttachmentType: Equatable {
@@ -172,13 +209,19 @@ class ItemDetailStore: Store {
             self.stopEditing(shouldSaveChanges: save)
         case .updateField(let type, let value):
             if let index = self.state.value.editingDataSource?.fields.firstIndex(where: { $0.type == type }),
-               let field = self.state.value.editingDataSource?.field(at: index) {
-                self.state.value.editingDataSource?.fields[index] = StoreState.Field(type: type, name: field.name, value: value)
+               let field = self.state.value.editingDataSource?.fields[index] {
+                self.state.value.editingDataSource?.fields[index] = field.changed(value: value)
             }
         case .updateTitle(let title):
             self.state.value.editingDataSource?.title = title
         case .updateAbstract(let abstract):
             self.state.value.editingDataSource?.abstract = abstract
+        case .updateNote(let key, let text):
+            self.state.value.editingDataSource?.updateNote(with: key, to: text)
+            self.updater.updateState { state in
+                state.changes.insert(.data)
+                state.version += 1
+            }
         case .reloadLocale:
             self.reloadLocale()
         }
@@ -205,7 +248,8 @@ class ItemDetailStore: Store {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let `self` = self else { return }
             do {
-                try self.storeChanges(from: editingDataSource, itemKey: key, libraryId: libraryId)
+                try self.storeChanges(from: editingDataSource, originalSource: previewDataSource,
+                                      itemKey: key, libraryId: libraryId)
                 self.setEditing(false, previewDataSource: previewDataSource, state: self.state.value)
             } catch let error {
                 DDLogError("ItemDetailStore: can't store changes: \(error)")
@@ -216,11 +260,16 @@ class ItemDetailStore: Store {
         }
     }
 
-    private func storeChanges(from dataSource: ItemDetailEditingDataSource, itemKey: String, libraryId: LibraryIdentifier) throws {
-        let request = StoreItemDetailChangesDbRequest(abstractKey: SchemaController.abstractKey,
-                                                      libraryId: libraryId, itemKey: itemKey, title: dataSource.title,
-                                                      abstract: dataSource.abstract,
-                                                      fields: dataSource.fields)
+    private func storeChanges(from dataSource: ItemDetailEditingDataSource, originalSource: ItemDetailPreviewDataSource,
+                              itemKey: String, libraryId: LibraryIdentifier) throws {
+        let title: String? = dataSource.title == originalSource.title ? nil : dataSource.title
+        let abstract: String? = dataSource.abstract == originalSource.abstract ? nil : dataSource.abstract
+        let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
+                                                      itemKey: itemKey,
+                                                      title: title,
+                                                      abstract: abstract,
+                                                      fields: dataSource.fields,
+                                                      notes: dataSource.notes)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -463,10 +512,10 @@ class ItemDetailStore: Store {
     }
 }
 
-fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
+class ItemDetailEditingDataSource: ItemDetailDataSource {
     fileprivate let creators: [RCreator]
     fileprivate let attachments: [RItem]
-    fileprivate let notes: [RItem]
+    fileprivate var notes: [ItemDetailStore.StoreState.Note]
     fileprivate let tags: [RTag]
     fileprivate var fields: [ItemDetailStore.StoreState.Field]
     let sections: [ItemDetailStore.StoreState.Section]
@@ -476,7 +525,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
 
     init(item: RItem, previewDataSource: ItemDetailPreviewDataSource, schemaController: SchemaDataSource) {
         let hasAbstract = schemaController.fields(for: item.rawType)?
-                                          .contains(where: { $0.field == SchemaController.abstractKey }) ?? false
+                                          .contains(where: { $0.field == FieldKeys.abstract }) ?? false
         var sections = ItemDetailStore.StoreState.allSections
         if !hasAbstract {
             if let index = sections.firstIndex(where: { $0 == .abstract }) {
@@ -490,7 +539,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
                 fields.append(field)
             } else {
                 let localized = schemaController.localized(field: type) ?? ""
-                fields.append(ItemDetailStore.StoreState.Field(type: type, name: localized, value: ""))
+                fields.append(ItemDetailStore.StoreState.Field(type: type, name: localized, value: "", changed: false))
             }
         }
 
@@ -501,8 +550,16 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         self.fields = fields
         self.creators = previewDataSource.creators.map(RCreator.init)
         self.attachments = previewDataSource.attachments.map(RItem.init)
-        self.notes = previewDataSource.notes.map(RItem.init)
+        self.notes = previewDataSource.notes
         self.tags = previewDataSource.tags.map(RTag.init)
+    }
+
+    func updateNote(with key: String, to text: String) {
+        // TODO: - optimise sorting - remove original note, edit, place note into correct position
+        guard let index = self.notes.firstIndex(where: { $0.key == key }) else { return }
+        let newNote = self.notes[index].changed(text: text)
+        self.notes[index] = newNote
+        self.notes.sort(by: { $0.title > $1.title })
     }
 
     func rowCount(for section: ItemDetailStore.StoreState.Section) -> Int {
@@ -534,7 +591,7 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
         return self.fields[index]
     }
 
-    func note(at index: Int) -> RItem? {
+    func note(at index: Int) -> ItemDetailStore.StoreState.Note? {
         guard index < self.notes.count else { return nil }
         return self.notes[index]
     }
@@ -550,12 +607,12 @@ fileprivate class ItemDetailEditingDataSource: ItemDetailDataSource {
     }
 }
 
-fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
+class ItemDetailPreviewDataSource: ItemDetailDataSource {
     private let fileStorage: FileStorage
     fileprivate let fieldTypes: [String]
     fileprivate let creators: Results<RCreator>
     fileprivate let attachments: Results<RItem>
-    fileprivate let notes: Results<RItem>
+    fileprivate var notes: [ItemDetailStore.StoreState.Note]
     fileprivate let tags: Results<RTag>
     fileprivate var fields: [ItemDetailStore.StoreState.Field]
     private(set) var sections: [ItemDetailStore.StoreState.Section] = []
@@ -570,14 +627,14 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         }
 
         // We're showing title and abstract separately, outside of fields, let's just exclude them here
-        let excludedKeys = RItem.titleKeys + [SchemaController.abstractKey]
+        let excludedKeys = FieldKeys.titles + [FieldKeys.abstract]
         sortedFields.removeAll { key -> Bool in
             return excludedKeys.contains(key)
         }
         var abstract: String?
         var values: [String: String] = [:]
         item.fields.filter("value != %@", "").forEach { field in
-            if field.key ==  SchemaController.abstractKey {
+            if field.key ==  FieldKeys.abstract {
                 abstract = field.value
             } else {
                 values[field.key] = field.value
@@ -586,7 +643,8 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
 
         let fields: [ItemDetailStore.StoreState.Field] = sortedFields.compactMap { type in
             let localized = schemaController.localized(field: type) ?? ""
-            return values[type].flatMap({ ItemDetailStore.StoreState.Field(type: type, name: localized, value: $0) })
+            return values[type].flatMap({ ItemDetailStore.StoreState.Field(type: type, name: localized,
+                                                                           value: $0, changed: false) })
         }
 
         self.fileStorage = fileStorage
@@ -602,6 +660,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         self.notes = item.children
                          .filter(Predicates.items(type: .note, notSyncState: .dirty))
                          .sorted(byKeyPath: "title")
+                         .compactMap(ItemDetailStore.StoreState.Note.init)
         self.tags = item.tags.sorted(byKeyPath: "name")
         self.attachmentMetadata = [:]
         self.sections = self.createSections()
@@ -636,7 +695,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         return self.fields[index]
     }
 
-    func note(at index: Int) -> RItem? {
+    func note(at index: Int) -> ItemDetailStore.StoreState.Note? {
         guard index < self.notes.count else { return nil }
         return self.notes[index]
     }
@@ -708,6 +767,7 @@ fileprivate class ItemDetailPreviewDataSource: ItemDetailDataSource {
         self.title = dataSource.title
         self.abstract = dataSource.abstract
         self.fields = dataSource.fields.compactMap({ $0.value.isEmpty ? nil : $0 })
+        self.notes = dataSource.notes
         self.sections = self.createSections()
     }
 }

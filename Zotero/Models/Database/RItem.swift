@@ -93,10 +93,6 @@ class RItem: Object {
     override class func indexedProperties() -> [String] {
         return ["version", "key"]
     }
-
-    static var titleKeys: [String] = {
-        return ["title", "nameOfAct", "caseName", "subject", "note"]
-    }()
 }
 
 class RItemField: Object {
