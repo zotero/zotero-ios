@@ -62,6 +62,7 @@
 		B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */; };
 		B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA701221EE0F60019A974 /* DeletionsResponse.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
+		B356247F2267302B006D039F /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356247E2267302B006D039F /* KeyGenerator.swift */; };
 		B363034A224B7D7F009F839F /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3630349224B7D7F009F839F /* Library.swift */; };
 		B363034C224B8285009F839F /* Predicates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B363034B224B8285009F839F /* Predicates.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
@@ -245,6 +246,7 @@
 		B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsRequest.swift; sourceTree = "<group>"; };
 		B34BA701221EE0F60019A974 /* DeletionsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsResponse.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
+		B356247E2267302B006D039F /* KeyGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyGenerator.swift; sourceTree = "<group>"; };
 		B3630349224B7D7F009F839F /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		B363034B224B8285009F839F /* Predicates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Predicates.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
@@ -528,6 +530,7 @@
 				B32CD362221C73A1003F8073 /* UIView+Nibname.swift */,
 				B3C33D8B223693760071A763 /* Formatter.swift */,
 				B3DD9CDC2256281F00DE6BAA /* Licenses.swift */,
+				B356247E2267302B006D039F /* KeyGenerator.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -1074,6 +1077,7 @@
 				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
 				B38C9692223FFB2900343F8F /* StoreCollectionsDbRequest.swift in Sources */,
+				B356247F2267302B006D039F /* KeyGenerator.swift in Sources */,
 				B3C6F653224A90CC001722B4 /* RGroup.swift in Sources */,
 				B3C33D8C223693760071A763 /* Formatter.swift in Sources */,
 				B3E47167224127AC006E3B20 /* CollectionEditorViewController.swift in Sources */,

@@ -57,7 +57,13 @@ class RItem: Object {
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
 
     var type: ItemType {
-        return ItemType(rawValue: self.rawType) ?? .unknown
+        get {
+            return ItemType(rawValue: self.rawType) ?? .unknown
+        }
+
+        set {
+            self.rawType = newValue.rawValue
+        }
     }
 
     var syncState: ObjectSyncState {

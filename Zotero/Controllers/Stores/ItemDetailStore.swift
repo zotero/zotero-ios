@@ -49,6 +49,7 @@ class ItemDetailStore: Store {
         case updateTitle(String)
         case updateAbstract(String)
         case updateNote(key: String, text: String)
+        case createNote(String)
         case reloadLocale
     }
 
@@ -95,6 +96,13 @@ class ItemDetailStore: Store {
                 self.title = title
                 self.text = text
                 self.changed = changed
+            }
+
+            init(text: String) {
+                self.key = KeyGenerator.newKey
+                self.title = text.strippedHtml ?? text
+                self.text = text
+                self.changed = true
             }
 
             init?(item: RItem) {
@@ -209,7 +217,8 @@ class ItemDetailStore: Store {
             self.stopEditing(shouldSaveChanges: save)
         case .updateField(let type, let value):
             if let index = self.state.value.editingDataSource?.fields.firstIndex(where: { $0.type == type }),
-               let field = self.state.value.editingDataSource?.fields[index] {
+               let field = self.state.value.editingDataSource?.fields[index],
+               field.value != value {
                 self.state.value.editingDataSource?.fields[index] = field.changed(value: value)
             }
         case .updateTitle(let title):
@@ -218,6 +227,12 @@ class ItemDetailStore: Store {
             self.state.value.editingDataSource?.abstract = abstract
         case .updateNote(let key, let text):
             self.state.value.editingDataSource?.updateNote(with: key, to: text)
+            self.updater.updateState { state in
+                state.changes.insert(.data)
+                state.version += 1
+            }
+        case .createNote(let text):
+            self.state.value.editingDataSource?.addNote(with: text)
             self.updater.updateState { state in
                 state.changes.insert(.data)
                 state.version += 1
@@ -552,6 +567,13 @@ class ItemDetailEditingDataSource: ItemDetailDataSource {
         self.attachments = previewDataSource.attachments.map(RItem.init)
         self.notes = previewDataSource.notes
         self.tags = previewDataSource.tags.map(RTag.init)
+    }
+
+    func addNote(with text: String) {
+        // TODO: - optimise insertion
+        let note = ItemDetailStore.StoreState.Note(text: text)
+        self.notes.append(note)
+        self.notes.sort(by: { $0.title > $1.title })
     }
 
     func updateNote(with key: String, to text: String) {

@@ -114,7 +114,12 @@ class ItemDetailViewController: UIViewController {
     }
 
     private func addNote() {
-
+        let controller = NoteViewController(text: "") { [weak self] newText in
+            self?.store.handle(action: .createNote(newText))
+        }
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .formSheet
+        self.present(navigationController, animated: true, completion: nil)
     }
 
     private func addTag() {

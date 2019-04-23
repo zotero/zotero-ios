@@ -19,6 +19,10 @@ class ItemSpecialTitleCell: UITableViewCell {
         self.addButton.setImage(UIImage(named: "icon_itemdetail_add")?.withRenderingMode(.alwaysTemplate), for: .normal)
     }
 
+    @IBAction private func addTapped() {
+        self.addAction?()
+    }
+
     func setup(with title: String, showAddButton: Bool, addAction: (() -> Void)?) {
         self.titleLabel.text = title
         self.addButton.isHidden = !showAddButton

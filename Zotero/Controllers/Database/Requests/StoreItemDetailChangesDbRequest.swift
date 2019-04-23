@@ -58,13 +58,34 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         }
 
         for note in self.notes {
-            guard note.changed,
-                  let childNote = item.children.filter(Predicates.key(note.key)).first,
-                  let noteField = childNote.fields.filter(Predicates.key(FieldKeys.note)).first else { continue }
-            childNote.changedFields.insert(.fields)
-            childNote.title = note.title
-            noteField.value = note.text
-            noteField.changed = true
+            guard note.changed else { continue }
+
+            if let childItem = item.children.filter(Predicates.key(note.key)).first,
+               let noteField = childItem.fields.filter(Predicates.key(FieldKeys.note)).first {
+                childItem.changedFields.insert(.fields)
+                childItem.title = note.title
+                noteField.value = note.text
+                noteField.changed = true
+            } else {
+                let childItem = RItem()
+                childItem.key = KeyGenerator.newKey
+                childItem.type = .note
+                childItem.syncState = .synced
+                childItem.title = note.title
+                childItem.changedFields = .all
+                childItem.libraryObject = item.libraryObject
+                childItem.parent = item
+                childItem.dateAdded = Date()
+                childItem.dateModified = Date()
+                database.add(childItem)
+
+                let noteField = RItemField()
+                noteField.key = FieldKeys.note
+                noteField.value = note.text
+                noteField.changed = true
+                noteField.item = childItem
+                database.add(noteField)
+            }
         }
     }
 }
