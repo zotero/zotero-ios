@@ -69,6 +69,10 @@ final class SyncController: SynchronizationController {
         let object: Object
         let version: Int
         let parameters: [[String: Any]]
+
+        func copy(withVersion version: Int) -> WriteBatch {
+            return WriteBatch(library: self.library, object: self.object, version: version, parameters: self.parameters)
+        }
     }
 
     enum Action: Equatable {
@@ -677,15 +681,24 @@ final class SyncController: SynchronizationController {
     private func processSubmitUpdate(for batch: WriteBatch) {
         self.handler.submitUpdate(for: batch.library, object: batch.object,
                                   since: batch.version, parameters: batch.parameters)
-                    .subscribe(onSuccess: { [weak self] conflicts in
-                        self?.finishUpdateSubmission(result: .success(conflicts), library: batch.library, object: batch.object)
+                    .subscribe(onSuccess: { [weak self] data in
+                        self?.finishUpdateSubmission(result: .success(data.0), newVersion: data.1,
+                                                     library: batch.library, object: batch.object)
                     }, onError: { [weak self] error in
-                        self?.finishUpdateSubmission(result: .failure(error), library: batch.library, object: batch.object)
+                        self?.finishUpdateSubmission(result: .failure(error), newVersion: batch.version,
+                                                     library: batch.library, object: batch.object)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishUpdateSubmission(result: Result<[String]>, library: Library, object: Object) {
+    private func updateVersionInNextWriteBatch(to version: Int) {
+        guard let firstAction = self.queue.first,
+              case .submitWriteBatch(let batch) = firstAction else { return }
+        let updatedBatch = batch.copy(withVersion: version)
+        self.queue[0] = .submitWriteBatch(updatedBatch)
+    }
+
+    private func finishUpdateSubmission(result: Result<[String]>, newVersion: Int, library: Library, object: Object) {
         switch result {
         case .failure(let error):
             if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
@@ -699,11 +712,13 @@ final class SyncController: SynchronizationController {
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.nonFatalErrors.append(error)
+                self?.updateVersionInNextWriteBatch(to: newVersion)
                 self?.processNextAction()
             }
 
         case .success(let conflicts):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.updateVersionInNextWriteBatch(to: newVersion)
                 if !conflicts.isEmpty {
                     self?.enqueue(actions: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
                 }

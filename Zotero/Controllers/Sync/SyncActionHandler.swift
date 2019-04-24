@@ -50,6 +50,14 @@ struct Versions {
     let deletions: Int
     let settings: Int
 
+    var max: Int {
+        return Swift.max(self.collections,
+               Swift.max(self.items,
+               Swift.max(self.trash,
+               Swift.max(self.searches,
+               Swift.max(self.deletions, self.settings)))))
+    }
+
     init(collections: Int, items: Int, trash: Int, searches: Int, deletions: Int, settings: Int) {
         self.collections = collections
         self.items = items
@@ -84,7 +92,7 @@ protocol SyncActionHandler: class {
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
                              since version: Int?) -> Single<(Bool, Int)>
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String: Any]]) -> Single<[String]>
+                      parameters: [[String: Any]]) -> Single<([String], Int)>
 }
 
 class SyncActionHandlerController {
@@ -358,7 +366,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String : Any]]) -> Single<[String]> {
+                      parameters: [[String : Any]]) -> Single<([String], Int)> {
         let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters, version: version)
         return self.apiClient.send(dataRequest: request)
                              .observeOn(self.scheduler)
@@ -372,7 +380,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      return Single.error(error)
                                  }
                              })
-                             .flatMap({ [weak self] response -> Single<[String]> in
+                             .flatMap({ [weak self] response -> Single<([String], Int)> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
                                  let syncedKeys = self.keys(from: (response.successful + response.unchanged),
                                                             parameters: parameters)
@@ -401,7 +409,7 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                      let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,
                                                                                  library: library,
-                                                                                 type: UpdateVersionType.object(object))
+                                                                                 type: .object(object))
                                     try coordinator.perform(request: updateVersion)
                                  } catch let error {
                                      return Single.error(error)
@@ -411,7 +419,8 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      return Single.error(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412)))
                                  }
 
-                                 return Single.just(response.failed.filter({ $0.code == 409 }).compactMap({ $0.key }))
+                                 let conflicts = response.failed.filter({ $0.code == 409 }).compactMap({ $0.key })
+                                 return Single.just((conflicts, response.newVersion))
                              })
     }
 

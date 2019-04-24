@@ -16,6 +16,7 @@ import RxSwift
 struct AFResponseError: Error {
     let error: AFError
     let headers: [AnyHashable : Any]?
+    let response: String
 }
 
 fileprivate enum RetryDelay {
@@ -131,13 +132,16 @@ extension Reactive where Base: DataRequest {
                             observer.on(.completed)
                         } else {
                             let error = AFResponseError(error: AFError.responseSerializationFailed(reason: .inputDataNil),
-                                                        headers: response.response?.allHeaderFields)
+                                                        headers: response.response?.allHeaderFields,
+                                                        response: "")
                             observer.on(.error(error))
                         }
                     case .failure(let error):
                         if let alamoError = error as? AFError {
+                            let responseString = response.data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
                             let responseError = AFResponseError(error: alamoError,
-                                                                headers: response.response?.allHeaderFields)
+                                                                headers: response.response?.allHeaderFields,
+                                                                response: responseString)
                             observer.on(.error(responseError))
                         } else {
                             observer.on(.error(error))

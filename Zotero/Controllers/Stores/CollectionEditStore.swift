@@ -58,6 +58,7 @@ class CollectionEditStore: Store {
             }
         }
 
+        fileprivate let isEditing: Bool
         let sections: [Section]
         let libraryId: LibraryIdentifier
         let libraryName: String
@@ -69,10 +70,23 @@ class CollectionEditStore: Store {
         fileprivate(set) var error: StoreError?
         fileprivate(set) var didSave: Bool
 
+        init(libraryId: LibraryIdentifier, libraryName: String) {
+            self.isEditing = false
+            self.sections = [.name, .parent]
+            self.key = KeyGenerator.newKey
+            self.name = ""
+            self.parent = nil
+            self.changes = []
+            self.didSave = false
+            self.libraryId = libraryId
+            self.libraryName = libraryName
+        }
+
         init(collection: RCollection) throws {
             guard let libraryObject = collection.libraryObject else { throw StoreError.collectionNotStoredInLibrary }
 
             self.sections = [.name, .parent, .actions]
+            self.isEditing = true
             self.libraryId = libraryObject.identifier
             switch libraryObject {
             case .custom(let object):
@@ -112,22 +126,12 @@ class CollectionEditStore: Store {
             }
 
             let state = self.state.value
-            let request = StoreCollectionDbRequest(libraryId: state.libraryId, key: state.key,
-                                                   name: state.name, parentKey: state.parent?.key)
-
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                guard let `self` = self else { return }
-                do {
-                    try self.dbStorage.createCoordinator().perform(request: request)
-                    self.updater.updateState { state in
-                        state.didSave = true
-                    }
-                } catch let error {
-                    DDLogError("CollectionEditStore: couldn't save changes - \(error)")
-                    self.updater.updateState { state in
-                        state.error = .saveFailed
-                    }
-                }
+            if state.isEditing {
+                self.perform(storeRequest: StoreCollectionDbRequest(libraryId: state.libraryId, key: state.key,
+                                                                    name: state.name, parentKey: state.parent?.key))
+            } else {
+                self.perform(storeRequest: CreateCollectionDbRequest(libraryId: state.libraryId, key: state.key,
+                                                                     name: state.name, parentKey: state.parent?.key))
             }
 
         case .delete: break // TODO: - Add deletion
@@ -143,6 +147,23 @@ class CollectionEditStore: Store {
             self.updater.updateState { state in
                 state.parent = StoreState.Parent(collection: parent)
                 state.changes.insert(.parent)
+            }
+        }
+    }
+
+    private func perform<Request: DbRequest>(storeRequest request: Request) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let `self` = self else { return }
+            do {
+                try self.dbStorage.createCoordinator().perform(request: request)
+                self.updater.updateState { state in
+                    state.didSave = true
+                }
+            } catch let error {
+                DDLogError("CollectionEditStore: couldn't save changes - \(error)")
+                self.updater.updateState { state in
+                    state.error = .saveFailed
+                }
             }
         }
     }

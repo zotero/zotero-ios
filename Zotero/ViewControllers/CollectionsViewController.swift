@@ -95,7 +95,11 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
     }
 
     private func addCollection() {
-        // TODO: - Present collection creation
+        let libraryId = self.store.state.value.libraryId
+        let state = CollectionEditStore.StoreState(libraryId: libraryId, libraryName: self.store.state.value.title)
+        let store = CollectionEditStore(initialState: state, dbStorage: self.store.dbStorage)
+        let controller = CollectionEditorViewController(store: store)
+        self.present(controller: controller)
     }
 
     private func edit(at indexPath: IndexPath) {

@@ -23,12 +23,13 @@ final class UpdateDataSource: SyncUpdateDataSource {
 
     func updates(for library: SyncController.Library, versions: Versions) throws -> [SyncController.WriteBatch] {
         let coordinator = try self.dbStorage.createCoordinator()
+        let maxVersion = versions.max
         return (try self.updates(object: .collection, library: library,
-                                 version: versions.collections, coordinator: coordinator)) +
+                                 version: maxVersion, coordinator: coordinator)) +
                (try self.updates(object: .search, library: library,
-                                 version: versions.searches, coordinator: coordinator)) +
+                                 version: maxVersion, coordinator: coordinator)) +
                (try self.updates(object: .item, library: library,
-                                 version: versions.items, coordinator: coordinator))
+                                 version: maxVersion, coordinator: coordinator))
     }
 
     private func updates(object: SyncController.Object, library: SyncController.Library, version: Int,
