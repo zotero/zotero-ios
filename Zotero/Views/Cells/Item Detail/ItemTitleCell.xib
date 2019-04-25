@@ -50,12 +50,13 @@
                                     <constraint firstAttribute="trailing" secondItem="aJg-zJ-MZz" secondAttribute="trailing" id="nzu-On-jaq"/>
                                 </constraints>
                             </view>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="Thesis" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5kT-Gq-wXU">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="WT3-b6-P6L">
                                 <rect key="frame" x="0.0" y="32.5" width="280" height="23"/>
                                 <fontDescription key="fontDescription" type="system" weight="light" pointSize="18"/>
-                                <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                                <state key="normal" title="Thesis">
+                                    <color key="titleColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                            </button>
                         </subviews>
                     </stackView>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="CcT-Sw-59a">
@@ -81,7 +82,7 @@
             <connections>
                 <outlet property="titleField" destination="g5X-ds-RMc" id="dI5-Mr-Skx"/>
                 <outlet property="titleLabel" destination="aJg-zJ-MZz" id="vNr-Gi-xFi"/>
-                <outlet property="typeLabel" destination="5kT-Gq-wXU" id="cy9-CK-WLX"/>
+                <outlet property="typeButton" destination="WT3-b6-P6L" id="blo-zB-oCl"/>
             </connections>
             <point key="canvasLocation" x="137.59999999999999" y="168.6656671664168"/>
         </tableViewCell>

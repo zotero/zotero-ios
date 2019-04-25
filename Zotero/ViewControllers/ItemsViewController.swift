@@ -8,6 +8,7 @@
 
 import UIKit
 
+import CocoaLumberjack
 import RxSwift
 import RealmSwift
 
@@ -61,13 +62,18 @@ class ItemsViewController: UIViewController {
         guard let items = self.store.state.value.dataSource?.items(for: indexPath.section),
               indexPath.row < items.count else { return }
 
-        let store = ItemDetailStore(initialState: ItemDetailStore.StoreState(item: items[indexPath.row]),
-                                    apiClient: self.store.apiClient,
-                                    fileStorage: self.store.fileStorage,
-                                    dbStorage: self.store.dbStorage,
-                                    schemaController: self.store.schemaController)
-        let controller = ItemDetailViewController(store: store)
-        self.navigationController?.pushViewController(controller, animated: true)
+        do {
+            let store = try ItemDetailStore(initialState: ItemDetailStore.StoreState(item: items[indexPath.row]),
+                                            apiClient: self.store.apiClient,
+                                            fileStorage: self.store.fileStorage,
+                                            dbStorage: self.store.dbStorage,
+                                            schemaController: self.store.schemaController)
+            let controller = ItemDetailViewController(store: store)
+            self.navigationController?.pushViewController(controller, animated: true)
+        } catch let error {
+            DDLogError("ItemsViewController: could not create ItemDewtailStore: \(error)")
+            // TODO: - Show error message
+        }
     }
 
     // MARK: - Setups

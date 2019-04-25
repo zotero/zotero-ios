@@ -18,6 +18,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
     let libraryId: LibraryIdentifier
     let itemKey: String
+    let type: String?
     let title: String?
     let abstract: String?
     let fields: [ItemDetailStore.StoreState.Field]
@@ -26,6 +27,11 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let predicate = Predicates.keyInLibrary(key: self.itemKey, libraryId: self.libraryId)
         guard let item = database.objects(RItem.self).filter(predicate).first else { return }
+
+        if let type = self.type {
+            item.rawType = type
+            item.changedFields.insert(.type)
+        }
 
         var fieldsDidChange = false
 

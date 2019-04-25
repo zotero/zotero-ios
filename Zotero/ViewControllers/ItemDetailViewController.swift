@@ -80,6 +80,28 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
+    private func showTypePicker(for cell: UITableViewCell) {
+        let schemaController = self.store.schemaController
+        let sortedData = schemaController.itemTypes
+                                         .compactMap({ type -> (String, String)? in
+                                            guard let localized = schemaController.localized(itemType: type) else { return nil }
+                                            return (type, localized)
+                                         })
+                                         .sorted(by: { $0.1 <    $1.1 })
+        let titles = sortedData.map({ $0.1 })
+
+        let pickerController = PickerViewController(values: titles) { [weak self] row in
+            let type = sortedData[row].0
+            self?.store.handle(action: .changeType(type))
+        }
+
+        let navigationController = UINavigationController(rootViewController: pickerController)
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceView = cell
+        navigationController.popoverPresentationController?.sourceRect = cell.bounds
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
     private func setEditing(_ editing: Bool, diff: [EditingSectionDiff]) {
         self.setupNavigationBar(forEditing: editing)
 
@@ -173,7 +195,7 @@ class ItemDetailViewController: UIViewController {
         for indexPath in visibleIndexPaths {
             guard indexPath.section == attachmentSection && indexPath.row > 0,
                   let attachment = self.store.state.value.dataSource?.attachment(at: (indexPath.row - 1)),
-                  let state = states[attachment.0.key] else { continue }
+                  let state = states[attachment.key] else { continue }
             if self.updateDownloadState(state, at: indexPath) {
                 needsReload = true
             }
@@ -334,6 +356,11 @@ extension ItemDetailViewController: UITableViewDataSource {
         if let cell = cell as? ItemTitleCell {
             let localizedType = self.store.schemaController.localized(itemType: dataSource.type) ?? ""
             cell.setup(with: dataSource.title, type: localizedType, editing: tableView.isEditing)
+            cell.typeObservable.subscribe(onNext: { [weak self, weak cell] _ in
+                                   guard let cell = cell, let `self` = self else { return }
+                                   self.showTypePicker(for: cell)
+                               })
+                               .disposed(by: self.disposeBag)
             cell.textObservable.subscribe { [weak self] event in
                                    switch event {
                                    case .next(let string):
@@ -402,15 +429,16 @@ extension ItemDetailViewController: UITableViewDataSource {
         } else if let cell = cell as? ItemSpecialCell {
             let index = indexPath.row - 1
             let model: ItemSpecialCellModel?
-            var metadata: ItemDetailStore.StoreState.AttachmentType?
+            var attachmentType: ItemDetailStore.StoreState.AttachmentType?
             var progress: Float = 0
 
             switch section {
             case .attachments:
                 let data = dataSource.attachment(at: index)
-                model = data?.0
-                metadata = data?.1
-                if let key = data?.0.key,
+                model = data
+                attachmentType = data?.type
+
+                if let key = data?.key,
                    let attachmentState = self.store.state.value.attachmentStates[key] {
                     switch attachmentState {
                     case .progress(let fileProgress):
@@ -434,7 +462,7 @@ extension ItemDetailViewController: UITableViewDataSource {
             if let model = model {
                 cell.setup(with: model)
             }
-            if let metadata = metadata {
+            if let metadata = attachmentType {
                 cell.setAttachmentType(metadata)
             }
             cell.setProgress(progress)
@@ -469,7 +497,7 @@ extension ItemDetailViewController: UITableViewDelegate {
         switch dataSource.sections[indexPath.section] {
         case .attachments:
             if indexPath.row > 0,
-               let attachment = dataSource.attachment(at: (indexPath.row - 1))?.0 {
+               let attachment = dataSource.attachment(at: (indexPath.row - 1)) {
                 if !isEditing {
                     self.lastSelectedAttachmentCell = tableView.cellForRow(at: indexPath)
                     self.store.handle(action: .showAttachment(attachment))
@@ -485,7 +513,7 @@ extension ItemDetailViewController: UITableViewDelegate {
     }
 }
 
-extension RTag: ItemSpecialCellModel {
+extension ItemDetailStore.StoreState.Tag: ItemSpecialCellModel {
     var tintColor: UIColor? {
         return self.uiColor
     }
@@ -499,16 +527,9 @@ extension RTag: ItemSpecialCellModel {
     }
 }
 
-extension RItem: ItemSpecialCellModel {
+extension ItemDetailStore.StoreState.Attachment: ItemSpecialCellModel {
     var specialIcon: UIImage? {
-        switch self.type {
-        case .attachment:
-            return UIImage(named: "icon_cell_attachment")?.withRenderingMode(.alwaysTemplate)
-        case .note:
-            return UIImage(named: "icon_cell_note")?.withRenderingMode(.alwaysTemplate)
-        default:
-            return nil
-        }
+        return UIImage(named: "icon_cell_attachment")?.withRenderingMode(.alwaysTemplate)
     }
 
     var tintColor: UIColor? {

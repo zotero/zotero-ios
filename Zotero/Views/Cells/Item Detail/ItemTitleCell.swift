@@ -14,14 +14,19 @@ import RxCocoa
 class ItemTitleCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleField: UITextField!
-    @IBOutlet private weak var typeLabel: UILabel!
+    @IBOutlet private weak var typeButton: UIButton!
 
     var textObservable: ControlProperty<String> {
         return self.titleField.rx.text.orEmpty
     }
 
+    var typeObservable: ControlEvent<Void> {
+        return self.typeButton.rx.tap
+    }
+
     func setup(with title: String, type: String, editing: Bool) {
-        self.typeLabel.text = type
+        self.typeButton.setTitle(type, for: .normal)
+        self.typeButton.isEnabled = editing
         if editing {
             self.titleField.text = title
         } else {
