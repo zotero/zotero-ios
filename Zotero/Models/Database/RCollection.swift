@@ -30,8 +30,9 @@ class RCollection: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var version: Int = 0
+    /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
     @objc dynamic var rawSyncState: Int = 0
-    /// Raw value for OptionSet of changes for this object
+    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var customLibrary: RCustomLibrary?

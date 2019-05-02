@@ -21,6 +21,7 @@ class RGroup: Object {
     @objc dynamic var fileEditing: String = ""
     @objc dynamic var version: Int = 0
     @objc dynamic var orderId: Int = 0
+    /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
     @objc dynamic var rawSyncState: Int = 0
     @objc dynamic var versions: RVersions?
 

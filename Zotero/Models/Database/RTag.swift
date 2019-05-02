@@ -30,7 +30,7 @@ class RTag: Object {
     @objc dynamic var color: String = ""
     @objc dynamic var customLibrary: RCustomLibrary?
     @objc dynamic var group: RGroup?
-    /// Raw value for OptionSet of changes for this object
+    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
     let items: List<RItem> = List()
 

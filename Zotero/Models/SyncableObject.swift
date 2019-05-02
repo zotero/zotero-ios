@@ -12,6 +12,10 @@ import RealmSwift
 
 typealias SyncableObject = Syncable&Object
 
+/// State which indicates whether local object is synced with backend data.
+/// .synced - object is up to date
+/// .dirty - object has not yet been synced, it is just a placeholder that shouldn't be visible to the user
+/// .outdated - object has been synced before, but most recent sync failed and it needs to resync
 enum ObjectSyncState: Int {
     case synced, dirty, outdated
 }

@@ -40,8 +40,9 @@ class RItem: Object {
     @objc dynamic var parsedDate: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
+    /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
     @objc dynamic var rawSyncState: Int = 0
-    /// Raw value for OptionSet of changes for this object
+    /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
