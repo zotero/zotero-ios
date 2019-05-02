@@ -24,12 +24,14 @@ struct CreateCollectionDbRequest: DbRequest {
         let collection = RCollection()
         collection.key = key
         collection.name = name
-        collection.changedFields = .all
         collection.syncState = .synced
+
+        var changes: RCollectionChanges = .name
 
         if let key = self.parentKey {
             let predicate = Predicates.keyInLibrary(key: key, libraryId: self.libraryId)
             collection.parent = database.objects(RCollection.self).filter(predicate).first
+            changes.insert(.parent)
         }
 
         switch self.libraryId {
@@ -41,6 +43,7 @@ struct CreateCollectionDbRequest: DbRequest {
             collection.group = group
         }
 
+        collection.changedFields = changes
         database.add(collection)
     }
 }

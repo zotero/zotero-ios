@@ -108,7 +108,8 @@ class UserControllers {
         self.disposeBag = DisposeBag()
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
                                                       dbStorage: controllers.dbStorage,
-                                                      fileStorage: controllers.fileStorage)
+                                                      fileStorage: controllers.fileStorage,
+                                                      schemaController: controllers.schemaController)
         let updateDataSource = UpdateDataSource(dbStorage: controllers.dbStorage)
         let syncController = SyncController(userId: userId, handler: syncHandler, updateDataSource: updateDataSource)
         self.syncScheduler = SyncScheduler(controller: syncController)

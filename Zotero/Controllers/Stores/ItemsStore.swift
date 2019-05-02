@@ -35,6 +35,15 @@ class ItemsStore: Store {
             case all, trash, publications
             case collection(String, String) // Key, Title
             case search(String, String) // Key, Title
+
+            var collectionKey: String? {
+                switch self {
+                case .collection(let key, _):
+                    return key
+                default:
+                    return nil
+                }
+            }
         }
 
         let libraryId: LibraryIdentifier

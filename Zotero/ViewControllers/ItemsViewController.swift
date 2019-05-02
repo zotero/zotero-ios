@@ -40,6 +40,7 @@ class ItemsViewController: UIViewController {
         self.navigationItem.leftBarButtonItem = self.splitViewController?.displayModeButtonItem
         self.navigationItem.leftItemsSupplementBackButton = true
         self.setupTableView()
+        self.setupNavbar()
 
         self.store.state.asObservable()
                         .observeOn(MainScheduler.instance)
@@ -58,12 +59,35 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
+    private func addItem() {
+        let libraryId = self.store.state.value.libraryId
+        let collectionKey = self.store.state.value.type.collectionKey
+        self.showItemDetail(with: .creation(libraryId: libraryId, collectionKey: collectionKey))
+    }
+
+    @objc private func showOptions() {
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.barButtonItem = self.navigationItem.rightBarButtonItem
+
+        controller.addAction(UIAlertAction(title: "New Item", style: .default, handler: { [weak self] _ in
+            self?.addItem()
+        }))
+        controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+
+        self.present(controller, animated: true, completion: nil)
+    }
+
     private func showItem(at indexPath: IndexPath) {
         guard let items = self.store.state.value.dataSource?.items(for: indexPath.section),
               indexPath.row < items.count else { return }
+        let item = items[indexPath.row]
+        self.showItemDetail(with: .preview(item))
+    }
 
+    private func showItemDetail(with type: ItemDetailStore.StoreState.DetailType) {
         do {
-            let store = try ItemDetailStore(initialState: ItemDetailStore.StoreState(item: items[indexPath.row]),
+            let store = try ItemDetailStore(initialState: ItemDetailStore.StoreState(type: type),
                                             apiClient: self.store.apiClient,
                                             fileStorage: self.store.fileStorage,
                                             dbStorage: self.store.dbStorage,
@@ -77,6 +101,12 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Setups
+
+    private func setupNavbar() {
+        let options = UIBarButtonItem(image: UIImage(named: "navbar_options"), style: .plain, target: self,
+                                      action: #selector(ItemsViewController.showOptions))
+        self.navigationItem.rightBarButtonItem = options
+    }
 
     private func setupTableView() {
         self.tableView.register(UINib(nibName: ItemCell.nibName, bundle: nil), forCellReuseIdentifier: "Cell")

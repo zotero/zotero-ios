@@ -9,7 +9,7 @@
 import Foundation
 
 struct FieldKeys {
+    static let title = "title"
     static let abstract = "abstractNote"
     static let note = "note"
-    static let titles = ["title", "nameOfAct", "caseName", "subject", "note"]
 }

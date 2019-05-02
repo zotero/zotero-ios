@@ -35,6 +35,10 @@ protocol ItemDetailDataSource {
     func tag(at index: Int) -> ItemDetailStore.StoreState.Tag?
 }
 
+fileprivate protocol FieldLocalizable {
+    var fields: [ItemDetailStore.StoreState.Field] { get set }
+}
+
 class ItemDetailStore: Store {
     typealias Action = StoreAction
     typealias State = StoreState
@@ -71,6 +75,20 @@ class ItemDetailStore: Store {
     }
 
     struct StoreState {
+        enum DetailType {
+            case creation(libraryId: LibraryIdentifier, collectionKey: String?)
+            case preview(RItem)
+
+            var item: RItem? {
+                switch self {
+                case .preview(let item):
+                    return item
+                case .creation:
+                    return nil
+                }
+            }
+        }
+
         enum Section: CaseIterable {
             case title, fields, abstract, notes, tags, attachments, related, creators
         }
@@ -82,7 +100,11 @@ class ItemDetailStore: Store {
             let changed: Bool
 
             func changed(value: String) -> Field {
-                return Field(type: self.type, name: self.name, value: self.value, changed: true)
+                return Field(type: self.type, name: self.name, value: value, changed: true)
+            }
+
+            func changed(name: String) -> Field {
+                return Field(type: self.type, name: name, value: self.value, changed: self.changed)
             }
         }
 
@@ -243,7 +265,7 @@ class ItemDetailStore: Store {
 
         fileprivate static let allSections: [StoreState.Section] = [.title, .creators, .fields, .abstract,
                                                                     .notes, .tags, .attachments]
-        let item: RItem
+        fileprivate(set) var type: DetailType
 
         fileprivate(set) var changes: Changes
         fileprivate(set) var attachmentStates: [String: AttachmentState]
@@ -256,12 +278,17 @@ class ItemDetailStore: Store {
         fileprivate var previewDataSource: ItemDetailPreviewDataSource?
         fileprivate var editingDataSource: ItemDetailEditingDataSource?
 
-        init(item: RItem) {
-            self.item = item
+        init(type: DetailType) {
+            self.type = type
             self.attachmentStates = [:]
             self.changes = []
-            self.isEditing = false
             self.version = 0
+            switch type {
+            case .preview:
+                self.isEditing = false
+            case .creation:
+                self.isEditing = true
+            }
         }
     }
 
@@ -303,7 +330,12 @@ class ItemDetailStore: Store {
         case .startEditing:
             self.startEditing()
         case .stopEditing(let save):
-            self.stopEditing(shouldSaveChanges: save)
+            switch self.state.value.type {
+            case .preview:
+                self.stopEditing(shouldSaveChanges: save)
+            case .creation(let libraryId, let collectionKey):
+                self.createItem(with: libraryId, collectionKey: collectionKey)
+            }
         case .updateField(let type, let value):
             if let index = self.state.value.editingDataSource?.fields.firstIndex(where: { $0.type == type }),
                let field = self.state.value.editingDataSource?.fields[index],
@@ -353,6 +385,60 @@ class ItemDetailStore: Store {
         }
     }
 
+    private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?) {
+        guard let dataSource = self.state.value.editingDataSource else { return }
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let `self` = self else { return }
+            do {
+                let newItem = try self.createItem(from: dataSource, libraryId: libraryId, collectionKey: collectionKey)
+                let newDataSource = try ItemDetailPreviewDataSource(item: newItem,
+                                                                    schemaController: self.schemaController,
+                                                                    fileStorage: self.fileStorage)
+                let diff = self.diff(between: newDataSource, and: dataSource, isEditing: false)
+                let itemRef = ThreadSafeReference(to: newItem)
+
+                DispatchQueue.main.async { [weak self] in
+                    let request = ResolveItemDbRequest(itemRef: itemRef)
+                    guard let coordinator = try? self?.dbStorage.createCoordinator(),
+                          let item = try? coordinator.perform(request: request) else { return }
+
+                    self?.updater.updateState { state in
+                        state.editingDiff = diff
+                        state.editingDataSource = nil
+                        state.previewDataSource = newDataSource
+                        state.dataSource = newDataSource
+                        state.isEditing = false
+                        state.type = .preview(item)
+                        state.changes.insert(.data)
+                    }
+                }
+            } catch let error {
+                DDLogError("ItemDetailStore: can't store changes: \(error)")
+                self.updater.updateState { state in
+                    state.error = .cantStoreChanges
+                }
+            }
+        }
+    }
+
+    private func createItem(from dataSource: ItemDetailEditingDataSource,
+                            libraryId: LibraryIdentifier, collectionKey: String?) throws -> RItem {
+        guard let allFields = self.schemaController.fields(for: dataSource.type) else {
+            throw ItemDetailStore.StoreError.typeNotSupported
+        }
+
+        let request = CreateItemDbRequest(libraryId: libraryId,
+                                          collectionKey: collectionKey,
+                                          type: dataSource.type,
+                                          title: dataSource.title,
+                                          abstract: dataSource.abstract,
+                                          fields: dataSource.fields,
+                                          notes: dataSource.notes,
+                                          allFields: allFields)
+        return try self.dbStorage.createCoordinator().perform(request: request)
+    }
+
     private func startEditing() {
         guard let dataSource = self.state.value.previewDataSource else { return }
         self.setEditing(true, previewDataSource: dataSource, state: self.state.value)
@@ -367,14 +453,15 @@ class ItemDetailStore: Store {
         }
 
         guard let editingDataSource = self.state.value.editingDataSource,
-              let libraryId = self.state.value.item.libraryId else { return }
-        let key = self.state.value.item.key
+              let item = self.state.value.type.item,
+              let libraryId = item.libraryId else { return }
+        let itemKey = item.key
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let `self` = self else { return }
             do {
-                try self.storeChanges(from: editingDataSource, originalSource: previewDataSource,
-                                      itemKey: key, libraryId: libraryId)
+                try self.updateItem(with: itemKey, libraryId: libraryId,
+                                    from: editingDataSource, originalSource: previewDataSource)
                 previewDataSource.merge(with: editingDataSource)
                 self.setEditing(false, previewDataSource: previewDataSource, state: self.state.value)
             } catch let error {
@@ -386,18 +473,21 @@ class ItemDetailStore: Store {
         }
     }
 
-    private func storeChanges(from dataSource: ItemDetailEditingDataSource, originalSource: ItemDetailPreviewDataSource,
-                              itemKey: String, libraryId: LibraryIdentifier) throws {
+    private func updateItem(with key: String, libraryId: LibraryIdentifier,
+                            from dataSource: ItemDetailEditingDataSource,
+                            originalSource: ItemDetailPreviewDataSource) throws {
         let type: String? = dataSource.type == originalSource.type ? nil : dataSource.type
         let title: String? = dataSource.title == originalSource.title ? nil : dataSource.title
         let abstract: String? = dataSource.abstract == originalSource.abstract ? nil : dataSource.abstract
+        let titleField = self.schemaController.titleField(for: dataSource.type)
         let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
-                                                      itemKey: itemKey,
+                                                      itemKey: key,
                                                       type: type,
                                                       title: title,
                                                       abstract: abstract,
                                                       fields: dataSource.fields,
-                                                      notes: dataSource.notes)
+                                                      notes: dataSource.notes,
+                                                      titleField: titleField)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -405,7 +495,7 @@ class ItemDetailStore: Store {
                             state: ItemDetailStore.StoreState) {
         var editingDataSource: ItemDetailEditingDataSource?
         if editing {
-            editingDataSource = try? ItemDetailEditingDataSource(item: state.item, previewDataSource: previewDataSource,
+            editingDataSource = try? ItemDetailEditingDataSource(previewDataSource: previewDataSource,
                                                                  schemaController: self.schemaController)
         }
         let diff = (editingDataSource ?? state.editingDataSource).flatMap({ self.diff(between: previewDataSource,
@@ -461,14 +551,29 @@ class ItemDetailStore: Store {
 
     private func loadInitialData() {
         do {
-            let dataSource = try ItemDetailPreviewDataSource(item: self.state.value.item,
-                                                             schemaController: self.schemaController,
-                                                             fileStorage: self.fileStorage)
-            self.updater.updateState { state in
-                state.previewDataSource = dataSource
-                state.dataSource = dataSource
-                state.version += 1
-                state.changes = .data
+            switch self.state.value.type {
+            case .creation:
+                guard let itemType = self.schemaController.itemTypes.sorted().first else { return }
+                let dataSource = try ItemDetailEditingDataSource(itemType: itemType,
+                                                                 schemaController: self.schemaController)
+                self.updater.updateState { state in
+                    state.editingDataSource = dataSource
+                    state.dataSource = dataSource
+                    state.isEditing = true
+                    state.version += 1
+                    state.changes = .data
+                }
+
+            case .preview(let item):
+                let dataSource = try ItemDetailPreviewDataSource(item: item,
+                                                                 schemaController: self.schemaController,
+                                                                 fileStorage: self.fileStorage)
+                self.updater.updateState { state in
+                    state.previewDataSource = dataSource
+                    state.dataSource = dataSource
+                    state.version += 1
+                    state.changes = .data
+                }
             }
         } catch let error as StoreError {
             self.updater.updateState { state in
@@ -558,41 +663,19 @@ class ItemDetailStore: Store {
     }
 
     private func reloadLocale() {
-        do {
-            let previewDataSource = try ItemDetailPreviewDataSource(item: self.state.value.item,
-                                                                    schemaController: self.schemaController,
-                                                                    fileStorage: self.fileStorage)
-            var editingDataSource: ItemDetailEditingDataSource?
-            if self.state.value.isEditing {
-                editingDataSource = try ItemDetailEditingDataSource(item: self.state.value.item,
-                                                                    previewDataSource: previewDataSource,
-                                                                    schemaController: self.schemaController)
-            }
-
-            self.updater.updateState { state in
-                state.previewDataSource = previewDataSource
-                state.editingDataSource = editingDataSource
-                state.dataSource = state.isEditing ? editingDataSource : previewDataSource
-                state.version += 1
-                state.changes = .data
-            }
-        } catch let error as StoreError {
-            self.updater.updateState { state in
-                state.error = error
-            }
-        } catch let error {
-            DDLogError("ItemDetailStore: can't load initial data - \(error)")
-            self.updater.updateState { state in
-                state.error = .unknown
-            }
+        self.state.value.previewDataSource?.reloadFieldLocales(schemaController: self.schemaController)
+        self.state.value.editingDataSource?.reloadFieldLocales(schemaController: self.schemaController)
+        self.updater.updateState { state in
+            state.version += 1
+            state.changes = .data
         }
     }
 }
 
-class ItemDetailEditingDataSource: ItemDetailDataSource {
+class ItemDetailEditingDataSource: ItemDetailDataSource, FieldLocalizable {
     fileprivate let creators: [ItemDetailStore.StoreState.Creator]
-    fileprivate var attachments: [ItemDetailStore.StoreState.Attachment]
-    fileprivate var notes: [ItemDetailStore.StoreState.Note]
+    private(set) fileprivate var attachments: [ItemDetailStore.StoreState.Attachment]
+    private(set) fileprivate var notes: [ItemDetailStore.StoreState.Note]
     fileprivate let tags: [ItemDetailStore.StoreState.Tag]
     fileprivate var fields: [ItemDetailStore.StoreState.Field]
     let sections: [ItemDetailStore.StoreState.Section]
@@ -600,11 +683,10 @@ class ItemDetailEditingDataSource: ItemDetailDataSource {
     fileprivate(set) var title: String
     fileprivate(set) var type: String
 
-    init(item: RItem, previewDataSource: ItemDetailPreviewDataSource, schemaController: SchemaDataSource) throws {
-        guard let sortedFields = schemaController.fields(for: item.rawType)?.map({ $0.field }) else {
+    init(itemType: String, schemaController: SchemaDataSource) throws {
+        guard let sortedFields = schemaController.fields(for: itemType)?.map({ $0.field }) else {
             throw ItemDetailStore.StoreError.typeNotSupported
         }
-
         let hasAbstract = sortedFields.contains(where: { $0 == FieldKeys.abstract })
 
         var sections = ItemDetailStore.StoreState.allSections
@@ -615,8 +697,41 @@ class ItemDetailEditingDataSource: ItemDetailDataSource {
         }
 
         var fields: [ItemDetailStore.StoreState.Field] = []
+        let titleField = schemaController.titleField(for: itemType)
         for field in sortedFields {
-            if field == FieldKeys.abstract || FieldKeys.titles.contains(field) { continue }
+            if field == FieldKeys.abstract || field == titleField { continue }
+            let localized = schemaController.localized(field: field) ?? ""
+            fields.append(ItemDetailStore.StoreState.Field(type: field, name: localized, value: "", changed: false))
+        }
+
+        self.sections = sections
+        self.title = ""
+        self.type = itemType
+        self.abstract = nil
+        self.fields = fields
+        self.creators = []
+        self.attachments = []
+        self.notes = []
+        self.tags = []
+    }
+
+    init(previewDataSource: ItemDetailPreviewDataSource, schemaController: SchemaDataSource) throws {
+        guard let sortedFields = schemaController.fields(for: previewDataSource.type)?.map({ $0.field }) else {
+            throw ItemDetailStore.StoreError.typeNotSupported
+        }
+        let hasAbstract = sortedFields.contains(where: { $0 == FieldKeys.abstract })
+
+        var sections = ItemDetailStore.StoreState.allSections
+        if !hasAbstract {
+            if let index = sections.firstIndex(where: { $0 == .abstract }) {
+                sections.remove(at: index)
+            }
+        }
+
+        let titleField = schemaController.titleField(for: previewDataSource.type)
+        var fields: [ItemDetailStore.StoreState.Field] = []
+        for field in sortedFields {
+            if field == FieldKeys.abstract || field == titleField { continue }
 
             if let field = previewDataSource.fields.first(where: { $0.type == field }) {
                 fields.append(field)
@@ -655,8 +770,9 @@ class ItemDetailEditingDataSource: ItemDetailDataSource {
     func changeType(to type: String, schemaController: SchemaController) {
         guard let fields = schemaController.fields(for: type)?.map({ $0.field }) else { return }
 
+        let titleField = schemaController.titleField(for: type)
         let newFields = fields.compactMap { field -> ItemDetailStore.StoreState.Field? in
-            if field == FieldKeys.abstract || FieldKeys.titles.contains(field) { return nil }
+            if field == FieldKeys.abstract || field == titleField { return nil }
             let localized = schemaController.localized(field: field) ?? ""
             let oldField = self.fields.first(where: { $0.type == field })
             return ItemDetailStore.StoreState.Field(type: field, name: localized,
@@ -713,13 +829,13 @@ class ItemDetailEditingDataSource: ItemDetailDataSource {
     }
 }
 
-class ItemDetailPreviewDataSource: ItemDetailDataSource {
+class ItemDetailPreviewDataSource: ItemDetailDataSource, FieldLocalizable {
     private let fileStorage: FileStorage
     fileprivate let creators: [ItemDetailStore.StoreState.Creator]
     private(set) fileprivate var attachments: [ItemDetailStore.StoreState.Attachment]
     private(set) fileprivate var notes: [ItemDetailStore.StoreState.Note]
     fileprivate let tags: [ItemDetailStore.StoreState.Tag]
-    private(set) fileprivate var fields: [ItemDetailStore.StoreState.Field]
+    fileprivate var fields: [ItemDetailStore.StoreState.Field]
     private(set) var sections: [ItemDetailStore.StoreState.Section] = []
     fileprivate(set) var abstract: String?
     fileprivate(set) var title: String
@@ -740,8 +856,9 @@ class ItemDetailPreviewDataSource: ItemDetailDataSource {
             }
         }
 
+        let titleField = schemaController.titleField(for: item.rawType)
         let fields: [ItemDetailStore.StoreState.Field] = sortedFields.compactMap { field in
-            if field == FieldKeys.abstract || FieldKeys.titles.contains(field) { return nil }
+            if field == FieldKeys.abstract || field == titleField { return nil }
             let localized = schemaController.localized(field: field) ?? ""
             return values[field].flatMap({ ItemDetailStore.StoreState.Field(type: field, name: localized,
                                                                            value: $0, changed: false) })
@@ -859,4 +976,14 @@ extension ItemDetailStore.StoreState: Equatable {
 extension ItemDetailStore.Changes {
     static let data = ItemDetailStore.Changes(rawValue: 1 << 0)
     static let download = ItemDetailStore.Changes(rawValue: 1 << 1)
+}
+
+extension FieldLocalizable {
+    func reloadFieldLocales(schemaController: SchemaController) {
+        var fields = self.fields
+        self.fields.enumerated().forEach { data in
+            let localized = schemaController.localized(field: data.element.type) ?? ""
+            fields[data.offset] = data.element.changed(name: localized)
+        }
+    }
 }

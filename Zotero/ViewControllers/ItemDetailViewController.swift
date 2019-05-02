@@ -41,8 +41,13 @@ class ItemDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.navigationItem.title = self.store.state.value.item.title
-        self.setupNavigationBar(forEditing: false)
+        switch self.store.state.value.type {
+        case .preview(let item):
+            self.navigationItem.title = item.title
+        case .creation:
+            self.navigationItem.title = "Create item"
+        }
+        self.setupNavigationBar(forEditing: self.store.state.value.isEditing)
         self.registerNotifications()
         self.setupTableView()
 
@@ -291,17 +296,25 @@ class ItemDetailViewController: UIViewController {
                                 forCellReuseIdentifier: ItemSpecialTitleCell.nibName)
         self.tableView.tableFooterView = UIView()
         self.tableView.allowsSelectionDuringEditing = true
+        self.tableView.isEditing = self.store.state.value.isEditing
     }
 
     private func setupNavigationBar(forEditing editing: Bool) {
-        let toggleButton = UIBarButtonItem(title: (editing ? "Cancel" : "Edit"), style: .plain,
-                                           target: nil, action: nil)
-        toggleButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                         self?.store.handle(action: (editing ? .stopEditing(false) : .startEditing))
-                      })
-                     .disposed(by: self.disposeBag)
+        var buttons: [UIBarButtonItem] = []
 
-        var buttons: [UIBarButtonItem] = [toggleButton]
+        switch self.store.state.value.type {
+        case .preview:
+            let toggleButton = UIBarButtonItem(title: (editing ? "Cancel" : "Edit"), style: .plain,
+                                               target: nil, action: nil)
+            toggleButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                                              self?.store.handle(action: (editing ? .stopEditing(false) : .startEditing))
+                                          })
+                                          .disposed(by: self.disposeBag)
+            buttons.append(toggleButton)
+
+        case .creation: break
+        }
+
         if editing {
             let saveButton = UIBarButtonItem(title: "Save", style: .done, target: nil, action: nil)
 

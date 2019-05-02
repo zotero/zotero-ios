@@ -23,6 +23,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     let abstract: String?
     let fields: [ItemDetailStore.StoreState.Field]
     let notes: [ItemDetailStore.StoreState.Note]
+    let titleField: String?
 
     func process(in database: Realm) throws {
         let predicate = Predicates.keyInLibrary(key: self.itemKey, libraryId: self.libraryId)
@@ -45,9 +46,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
         if let title = self.title {
             item.title = title
-            if let titleField = item.fields.filter(Predicates.key(in: FieldKeys.titles)).first {
-                titleField.value = title
-                titleField.changed = true
+            if let titleField = self.titleField,
+               let field = item.fields.filter(Predicates.key(titleField)).first {
+                field.value = title
+                field.changed = true
             }
             fieldsDidChange = true
         }
@@ -78,7 +80,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 childItem.type = .note
                 childItem.syncState = .synced
                 childItem.title = note.title
-                childItem.changedFields = .all
+                childItem.changedFields = [.fields, .type, .parent]
                 childItem.libraryObject = item.libraryObject
                 childItem.parent = item
                 childItem.dateAdded = Date()

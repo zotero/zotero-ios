@@ -64,10 +64,12 @@
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B356247F2267302B006D039F /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356247E2267302B006D039F /* KeyGenerator.swift */; };
 		B3562481226758EE006D039F /* CreateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */; };
+		B35E39D122772DA300A368C7 /* ResolveItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */; };
 		B36171CD2270B81200246E45 /* PickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36171CB2270B81200246E45 /* PickerViewController.swift */; };
 		B36171CE2270B81200246E45 /* PickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36171CC2270B81200246E45 /* PickerViewController.xib */; };
 		B363034A224B7D7F009F839F /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3630349224B7D7F009F839F /* Library.swift */; };
 		B363034C224B8285009F839F /* Predicates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B363034B224B8285009F839F /* Predicates.swift */; };
+		B3670AE02273527200B566B1 /* CreateItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3670ADF2273527200B566B1 /* CreateItemDbRequest.swift */; };
 		B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
 		B36795E222075710003D0471 /* Controllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795E122075710003D0471 /* Controllers.swift */; };
 		B36795E822075F9D003D0471 /* LoginStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795E722075F9D003D0471 /* LoginStore.swift */; };
@@ -251,10 +253,12 @@
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B356247E2267302B006D039F /* KeyGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyGenerator.swift; sourceTree = "<group>"; };
 		B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveItemDbRequest.swift; sourceTree = "<group>"; };
 		B36171CB2270B81200246E45 /* PickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickerViewController.swift; sourceTree = "<group>"; };
 		B36171CC2270B81200246E45 /* PickerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PickerViewController.xib; sourceTree = "<group>"; };
 		B3630349224B7D7F009F839F /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		B363034B224B8285009F839F /* Predicates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Predicates.swift; sourceTree = "<group>"; };
+		B3670ADF2273527200B566B1 /* CreateItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemDbRequest.swift; sourceTree = "<group>"; };
 		B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroApiClient.swift; sourceTree = "<group>"; };
 		B36795E122075710003D0471 /* Controllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controllers.swift; sourceTree = "<group>"; };
 		B36795E722075F9D003D0471 /* LoginStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginStore.swift; sourceTree = "<group>"; };
@@ -680,6 +684,7 @@
 			isa = PBXGroup;
 			children = (
 				B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */,
+				B3670ADF2273527200B566B1 /* CreateItemDbRequest.swift */,
 				B38C968E223FFB2800343F8F /* InitializeCustomLibrariesDbRequest.swift */,
 				B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */,
 				B38C9688223FFB2800343F8F /* MarkObjectsAsSyncedDbRequest.swift */,
@@ -694,6 +699,7 @@
 				B38C9685223FFB2800343F8F /* ReadLibrariesDataDbRequest.swift */,
 				B38C9680223FFB2800343F8F /* ReadSearchesDbRequest.swift */,
 				B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */,
+				B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */,
 				B38C9684223FFB2800343F8F /* ResolveReferenceDbRequest.swift */,
 				B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */,
 				B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */,
@@ -1153,6 +1159,7 @@
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */,
+				B3670AE02273527200B566B1 /* CreateItemDbRequest.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
 				B30E6CB9225DE84B0001B93A /* ObservableRequestExtensions.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
@@ -1176,6 +1183,7 @@
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
 				B30F668C220CB6CC009E7A8F /* Files.swift in Sources */,
+				B35E39D122772DA300A368C7 /* ResolveItemDbRequest.swift in Sources */,
 				B3310C562264D06C00E45CD1 /* FieldKeys.swift in Sources */,
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,
 				B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */,

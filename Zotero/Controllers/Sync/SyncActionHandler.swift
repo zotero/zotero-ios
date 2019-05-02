@@ -101,13 +101,16 @@ class SyncActionHandlerController {
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let disposeBag: DisposeBag
+    private let schemaController: SchemaController
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
+    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage,
+         fileStorage: FileStorage, schemaController: SchemaController) {
         let queue = DispatchQueue(label: "org.zotero.SyncHandlerActionQueue", qos: .utility, attributes: .concurrent)
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
+        self.schemaController = schemaController
         self.disposeBag = DisposeBag()
     }
 }
@@ -258,7 +261,9 @@ extension SyncActionHandlerController: SyncActionHandler {
         case .item, .trash:
             let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
             let decoded = try ItemResponse.decode(response: jsonObject)
-            try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0, trash: object == .trash))
+            try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0,
+                                                                 trash: object == .trash,
+                                                                 schemaController: self.schemaController))
             return (decoded.0.map({ $0.key }), decoded.1)
         case .search:
             let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)

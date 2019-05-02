@@ -14,16 +14,17 @@ import RealmSwift
 struct StoreItemsDbRequest: DbRequest {
     let response: [ItemResponse]
     let trash: Bool
+    let schemaController: SchemaController
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
         for data in self.response {
-            try self.store(data: data, to: database)
+            try self.store(data: data, to: database, schemaController: self.schemaController)
         }
     }
 
-    private func store(data: ItemResponse, to database: Realm) throws {
+    private func store(data: ItemResponse, to database: Realm, schemaController: SchemaController) throws {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
@@ -45,7 +46,7 @@ struct StoreItemsDbRequest: DbRequest {
         item.dateAdded = data.dateAdded
         item.syncState = .synced
 
-        self.syncFields(data: data, item: item, database: database)
+        self.syncFields(data: data, item: item, database: database, schemaController: schemaController)
         try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, item: item, database: database)
         self.syncParent(key: data.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: data.collectionKeys, libraryId: libraryId, item: item, database: database)
@@ -54,8 +55,8 @@ struct StoreItemsDbRequest: DbRequest {
         self.syncRelations(data: data, item: item, database: database)
     }
 
-    private func syncFields(data: ItemResponse, item: RItem, database: Realm) {
-        let titleKeys = FieldKeys.titles
+    private func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController) {
+        let titleField = schemaController.titleField(for: item.rawType)
         let allFieldKeys = Array(data.fields.keys)
         let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
         database.delete(toRemove)
@@ -70,7 +71,7 @@ struct StoreItemsDbRequest: DbRequest {
                 field.item = item
                 database.add(field)
             }
-            if titleKeys.contains(key) && (key != FieldKeys.note || item.type == .note) {
+            if key == titleField || (item.type == .note && key == FieldKeys.note) {
                 var title = value
                 if key == FieldKeys.note {
                     title = title.strippedHtml ?? title
