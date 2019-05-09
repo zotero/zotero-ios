@@ -58,6 +58,7 @@ final class RealmObjectChangeObserver: ObjectChangeObserver {
 
     private func reportChangedLibraries(for objects: [Syncable]) {
         let libraryIds = Array(Set(objects.compactMap({ $0.libraryObject?.identifier })))
+        guard !libraryIds.isEmpty else { return }
         self.observable.on(.next(libraryIds))
     }
 }

@@ -93,6 +93,8 @@ protocol SyncActionHandler: class {
                              since version: Int?) -> Single<(Bool, Int)>
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
                       parameters: [[String: Any]]) -> Single<([String], Int)>
+    func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
+                        since version: Int, keys: [String]) -> Single<Int>
 }
 
 class SyncActionHandlerController {
@@ -296,28 +298,37 @@ extension SyncActionHandlerController: SyncActionHandler {
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable {
         guard !keys.isEmpty else { return Completable.empty() }
 
-        do {
-            switch object {
-            case .group:
-                let request = try MarkGroupForResyncDbAction(identifiers: keys)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            case .collection:
-                let request = try MarkForResyncDbAction<RCollection>(libraryId: library.libraryId, keys: keys)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            case .item, .trash:
-                let request = try MarkForResyncDbAction<RItem>(libraryId: library.libraryId, keys: keys)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            case .search:
-                let request = try MarkForResyncDbAction<RSearch>(libraryId: library.libraryId, keys: keys)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            case .tag: // Tags are not synchronized, this should not be called
-                DDLogError("SyncActionHandler: markForResync tried to sync tags")
-                break
+        return Completable.create(subscribe: { [weak self] subscriber -> Disposable in
+            guard let `self` = self else {
+                subscriber(.error(SyncActionHandlerError.expired))
+                return Disposables.create()
             }
-            return Completable.empty()
-        } catch let error {
-            return Completable.error(error)
-        }
+
+            do {
+                switch object {
+                case .group:
+                    let request = try MarkGroupForResyncDbAction(identifiers: keys)
+                    try self.dbStorage.createCoordinator().perform(request: request)
+                case .collection:
+                    let request = try MarkForResyncDbAction<RCollection>(libraryId: library.libraryId, keys: keys)
+                    try self.dbStorage.createCoordinator().perform(request: request)
+                case .item, .trash:
+                    let request = try MarkForResyncDbAction<RItem>(libraryId: library.libraryId, keys: keys)
+                    try self.dbStorage.createCoordinator().perform(request: request)
+                case .search:
+                    let request = try MarkForResyncDbAction<RSearch>(libraryId: library.libraryId, keys: keys)
+                    try self.dbStorage.createCoordinator().perform(request: request)
+                case .tag: // Tags are not synchronized, this should not be called
+                    DDLogError("SyncActionHandler: markForResync tried to sync tags")
+                    break
+                }
+                subscriber(.completed)
+            } catch let error {
+                subscriber(.error(error))
+            }
+
+            return Disposables.create()
+        }).observeOn(self.scheduler)
     }
 
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
@@ -408,14 +419,14 @@ extension SyncActionHandlerController: SyncActionHandler {
                                                                                             keys: syncedKeys,
                                                                                             version: response.newVersion)
                                         try coordinator.perform(request: request)
-                                     default:
-                                         fatalError("Unsupported update request")
+                                     case .group, .tag:
+                                         fatalError("SyncActionHandler: unsupported update request")
                                      }
 
                                      let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,
                                                                                  library: library,
                                                                                  type: .object(object))
-                                    try coordinator.perform(request: updateVersion)
+                                     try coordinator.perform(request: updateVersion)
                                  } catch let error {
                                      return Single.error(error)
                                  }
@@ -426,6 +437,45 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                  let conflicts = response.failed.filter({ $0.code == 409 }).compactMap({ $0.key })
                                  return Single.just((conflicts, response.newVersion))
+                             })
+    }
+
+    func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
+                        since version: Int, keys: [String]) -> Single<Int> {
+        let request = SubmitDeletionsRequest(libraryType: library, objectType: object, keys: keys, version: version)
+        return self.apiClient.send(dataRequest: request)
+                             .flatMap({ response -> Single<Int> in
+                                let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
+
+                                do {
+                                    let coordinator = try self.dbStorage.createCoordinator()
+
+                                    switch object {
+                                    case .collection:
+                                        let request = DeleteObjectsDbRequest<RCollection>(keys: keys,
+                                                                                          libraryId: library.libraryId)
+                                        try coordinator.perform(request: request)
+                                    case .item, .trash:
+                                        let request = DeleteObjectsDbRequest<RItem>(keys: keys,
+                                                                                    libraryId: library.libraryId)
+                                        try coordinator.perform(request: request)
+                                    case .search:
+                                        let request = DeleteObjectsDbRequest<RSearch>(keys: keys,
+                                                                                      libraryId: library.libraryId)
+                                        try coordinator.perform(request: request)
+                                    case .group, .tag:
+                                        fatalError("SyncActionHandler: deleteObjects unsupported object")
+                                    }
+
+                                    let updateVersion = UpdateVersionsDbRequest(version: newVersion,
+                                                                                library: library,
+                                                                                type: .object(object))
+                                    try coordinator.perform(request: updateVersion)
+                                } catch let error {
+                                    return Single.error(error)
+                                }
+
+                                return Single.just(newVersion)
                              })
     }
 

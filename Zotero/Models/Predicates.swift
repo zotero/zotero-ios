@@ -58,7 +58,8 @@ struct Predicates {
     static func changesInLibrary(libraryId: LibraryIdentifier) -> NSPredicate {
         let changePredicate = NSPredicate(format: "rawChangedFields > 0")
         let libraryPredicate = Predicates.library(from: libraryId)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate])
+        let deletedPredicate = Predicates.deleted(false)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
     }
 
     static func notSyncState(_ syncState: ObjectSyncState) -> NSPredicate {
@@ -68,6 +69,16 @@ struct Predicates {
     static func notSyncState(_ syncState: ObjectSyncState, in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notSyncState(syncState),
                                                                    Predicates.library(from: libraryId)])
+    }
+
+    static func deleted(_ deleted: Bool) -> NSPredicate {
+        return NSPredicate(format: "deleted = %@", NSNumber(value: deleted))
+    }
+
+    static func deleted(_ deleted: Bool, in libraryId: LibraryIdentifier) -> NSPredicate {
+        let deletedPredicate = Predicates.deleted(deleted)
+        let libraryPredicate = Predicates.library(from: libraryId)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, deletedPredicate])
     }
 
     static func items(type: ItemType, notSyncState syncState: ObjectSyncState, trash: Bool? = nil) -> NSPredicate {

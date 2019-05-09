@@ -114,15 +114,27 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
         }
     }
 
-    private func delete(at indexPath: IndexPath) {
-        let section = self.store.state.value.sections[indexPath.section]
-        switch section {
-        case .collections:
-            self.store.handle(action: .deleteCollection(indexPath.row))
-        case .searches:
-            self.store.handle(action: .deleteSearch(indexPath.row))
-        default: break
-        }
+    private func delete(at indexPath: IndexPath, cell: UITableViewCell) {
+        let controller = UIAlertController(title: "Are you sure?", message: nil, preferredStyle: .actionSheet)
+
+        controller.addAction(UIAlertAction(title: "Yes", style: .destructive, handler: { [weak self] _ in
+            guard let `self` = self else { return }
+            let section = self.store.state.value.sections[indexPath.section]
+            switch section {
+            case .collections:
+                self.store.handle(action: .deleteCollection(indexPath.row))
+            case .searches:
+                self.store.handle(action: .deleteSearch(indexPath.row))
+            default: break
+            }
+        }))
+
+        controller.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = cell
+        controller.popoverPresentationController?.sourceRect = cell.bounds
+        self.present(controller, animated: true, completion: nil)
     }
 
     private func present(controller: UIViewController) {
@@ -202,8 +214,11 @@ extension CollectionsViewController: UITableViewDataSource {
         let editAction = UITableViewRowAction(style: .normal, title: "Edit") { [weak self] _, indexPath in
             self?.edit(at: indexPath)
         }
-        let deleteAction = UITableViewRowAction(style: .destructive, title: "Delete") { [weak self] _, indexPath in
-            self?.delete(at: indexPath)
+        let deleteAction = UITableViewRowAction(style: .destructive,
+                                                title: "Delete") { [weak self, weak tableView] _, indexPath in
+            if let cell = tableView?.cellForRow(at: indexPath) {
+                self?.delete(at: indexPath, cell: cell)
+            }
         }
 
         return [editAction, deleteAction]

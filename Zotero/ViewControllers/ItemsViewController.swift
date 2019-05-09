@@ -100,6 +100,21 @@ class ItemsViewController: UIViewController {
         }
     }
 
+    private func deleteItem(at indexPath: IndexPath, cell: UITableViewCell) {
+        let controller = UIAlertController(title: "Are you sure?", message: nil, preferredStyle: .actionSheet)
+
+        controller.addAction(UIAlertAction(title: "Yes", style: .destructive, handler: { [weak self] _ in
+            self?.store.handle(action: .delete(indexPath))
+        }))
+
+        controller.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = cell
+        controller.popoverPresentationController?.sourceRect = cell.bounds
+        self.present(controller, animated: true, completion: nil)
+    }
+
     // MARK: - Setups
 
     private func setupNavbar() {
@@ -141,6 +156,16 @@ extension ItemsViewController: UITableViewDataSource {
         itemCell.setup(with: items[indexPath.row])
 
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        let deleteAction = UITableViewRowAction(style: .destructive,
+                                                title: "Delete") { [weak self, weak tableView] _, indexPath in
+            if let cell = tableView?.cellForRow(at: indexPath) {
+                self?.deleteItem(at: indexPath, cell: cell)
+            }
+        }
+        return [deleteAction]
     }
 }
 

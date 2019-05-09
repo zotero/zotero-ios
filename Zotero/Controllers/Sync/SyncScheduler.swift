@@ -89,7 +89,7 @@ final class SyncScheduler: SynchronizationScheduler {
     }
 
     private func enqueueAndStartTimer(action: SchedulerAction) {
-        self.queue.async(flags: .barrier) { [weak self] in
+            self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
             self.enqueue(action: action)
 

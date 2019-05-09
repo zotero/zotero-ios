@@ -75,6 +75,18 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    struct DeleteBatch {
+        static let maxCount = 50
+        let library: Library
+        let object: Object
+        let version: Int
+        let keys: [String]
+
+        func copy(withVersion version: Int) -> DeleteBatch {
+            return DeleteBatch(library: self.library, object: self.object, version: version, keys: self.keys)
+        }
+    }
+
     enum Action: Equatable {
         case syncVersions(Library, Object, Int?)            // Fetch versions from API, update DB based on response
         case createLibraryActions(LibrarySyncType, Bool)    // Loads required libraries, spawn actions for each
@@ -84,6 +96,7 @@ final class SyncController: SynchronizationController {
         case syncSettings(Library, Int?)                    // Synchronize settings for library
         case storeSettingsVersion(Int, Library)             // Store new version for settings in library
         case submitWriteBatch(WriteBatch)                   // Submit local changes to backend
+        case submitDeleteBatch(DeleteBatch)                 // Submit local deletions to backend
         case resolveConflict(String, Object, Library)
     }
 
@@ -293,6 +306,8 @@ final class SyncController: SynchronizationController {
             self.processStoreVersion(library: library, type: .settings, version: version)
         case .submitWriteBatch(let batch):
             self.processSubmitUpdate(for: batch)
+        case .submitDeleteBatch(let batch):
+            self.processSubmitDeletion(for: batch)
         case .resolveConflict(let key, let object, let library):
             // TODO: - resolve conflict...
             break
@@ -364,8 +379,10 @@ final class SyncController: SynchronizationController {
                                                                          versions: libraryData.1))
             } else {
                 let updates = try self.updateDataSource.updates(for: libraryData.0, versions: libraryData.1)
-                if !updates.isEmpty {
+                let deletions = try self.updateDataSource.deletions(for: libraryData.0, versions: libraryData.1)
+                if !updates.isEmpty || !deletions.isEmpty {
                     allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
+                    allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
                 } else {
                     allActions.append(contentsOf: self.createDownloadActions(for: libraryData.0,
                                                                              versions: libraryData.1))
@@ -553,6 +570,7 @@ final class SyncController: SynchronizationController {
             }
 
             self.markForResync(keys: Array(failedKeys), library: library, object: object)
+
         case .failure(let error):
             DDLogError("--- BATCH: \(error)")
             if let abortError = self.errorRequiresAbort(error) {
@@ -691,15 +709,17 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func updateVersionInNextWriteBatch(to version: Int) {
-        guard let firstAction = self.queue.first,
-              case .submitWriteBatch(let batch) = firstAction else { return }
-        let updatedBatch = batch.copy(withVersion: version)
-        self.queue[0] = .submitWriteBatch(updatedBatch)
-    }
-
     private func finishUpdateSubmission(result: Result<[String]>, newVersion: Int, library: Library, object: Object) {
         switch result {
+        case .success(let conflicts):
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.updateVersionInNextWriteBatch(to: newVersion)
+                if !conflicts.isEmpty {
+                    self?.enqueue(actions: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
+                }
+                self?.processNextAction()
+            }
+
         case .failure(let error):
             if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
                 return
@@ -715,19 +735,62 @@ final class SyncController: SynchronizationController {
                 self?.updateVersionInNextWriteBatch(to: newVersion)
                 self?.processNextAction()
             }
+        }
+    }
 
-        case .success(let conflicts):
+    private func processSubmitDeletion(for batch: DeleteBatch) {
+        self.handler.submitDeletion(for: batch.library, object: batch.object, since: batch.version, keys: batch.keys)
+                    .subscribe(onSuccess: { [weak self] version in
+                        self?.finishDeletionSubmission(result: .success(()), newVersion: version,
+                                                       library: batch.library, object: batch.object)
+                    }, onError: { [weak self] error in
+                        self?.finishDeletionSubmission(result: .failure(error), newVersion: batch.version,
+                                                       library: batch.library, object: batch.object)
+                    })
+                    .disposed(by: self.disposeBag)
+    }
+
+    private func finishDeletionSubmission(result: Result<Void>, newVersion: Int, library: Library, object: Object) {
+        switch result {
+        case .success:
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.updateVersionInNextWriteBatch(to: newVersion)
-                if !conflicts.isEmpty {
-                    self?.enqueue(actions: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
-                }
+                self?.processNextAction()
+            }
+
+        case .failure(let error):
+            if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
+                return
+            }
+
+            if let error = self.errorRequiresAbort(error) {
+                self.abort(error: error)
+                return
+            }
+
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.nonFatalErrors.append(error)
+                self?.updateVersionInNextWriteBatch(to: newVersion)
                 self?.processNextAction()
             }
         }
     }
 
     // MARK: - Helpers
+
+    private func updateVersionInNextWriteBatch(to version: Int) {
+        guard let action = self.queue.first else { return }
+
+        switch action {
+        case .submitWriteBatch(let batch):
+            let updatedBatch = batch.copy(withVersion: version)
+            self.queue[0] = .submitWriteBatch(updatedBatch)
+        case .submitDeleteBatch(let batch):
+            let updatedBatch = batch.copy(withVersion: version)
+            self.queue[0] = .submitDeleteBatch(updatedBatch)
+        default: break
+        }
+    }
 
     private func performOnAccessQueue(flags: DispatchWorkItemFlags = [], action: @escaping () -> Void) {
         self.accessQueue.async(flags: flags) {

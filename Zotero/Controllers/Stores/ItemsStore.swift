@@ -24,10 +24,11 @@ class ItemsStore: Store {
 
     enum StoreAction {
         case load
+        case delete(IndexPath)
     }
 
     enum StoreError: Error, Equatable {
-        case cantLoadData
+        case dataLoading, deletion
     }
 
     struct StoreState {
@@ -92,6 +93,8 @@ class ItemsStore: Store {
         switch action {
         case .load:
             self.loadData()
+        case .delete(let indexPath):
+            self.delete(at: indexPath)
         }
     }
 
@@ -130,7 +133,7 @@ class ItemsStore: Store {
                 case .error(let error):
                     DDLogError("ItemsStore: couldn't update data - \(error)")
                     self.updater.updateState { newState in
-                        newState.error = .cantLoadData
+                        newState.error = .dataLoading
                     }
                 }
             })
@@ -143,7 +146,26 @@ class ItemsStore: Store {
         } catch let error {
             DDLogError("ItemsStore: couldn't load data - \(error)")
             self.updater.updateState { newState in
-                newState.error = .cantLoadData
+                newState.error = .dataLoading
+            }
+        }
+    }
+
+    private func delete(at indexPath: IndexPath) {
+        guard let item = self.state.value.dataSource?.items(for: indexPath.section)?[indexPath.row] else {
+            DDLogError("ItemsStore: can't find item")
+            self.updater.updateState { newState in
+                newState.error = .deletion
+            }
+            return
+        }
+
+        do {
+            try self.dbStorage.createCoordinator().perform(request: MarkObjectAsDeletedDbRequest(object: item))
+        } catch let error {
+            DDLogError("ItemsStore: can't delete object - \(error)")
+            self.updater.updateState { newState in
+                newState.error = .deletion
             }
         }
     }

@@ -1,8 +1,8 @@
 //
-//  ReadChangedObjectsDbRequest.swift
+//  ReadDeletedObjectsDbRequest.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 14/03/2019.
+//  Created by Michal Rentka on 06/05/2019.
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
@@ -10,14 +10,16 @@ import Foundation
 
 import RealmSwift
 
-struct ReadChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest {
+struct ReadDeletedObjectsDbRequest<Obj: DeletableObject>: DbResponseRequest {
     typealias Response = Results<Obj>
+
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {
         return false
     }
 
     func process(in database: Realm) throws -> Results<Obj> {
-        return database.objects(Obj.self).filter("rawChangedFields > 0 OR deleted = true")
+        return database.objects(Obj.self).filter(Predicates.deleted(true, in: self.libraryId))
     }
 }

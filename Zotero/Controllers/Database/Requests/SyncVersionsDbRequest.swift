@@ -10,32 +10,6 @@ import Foundation
 
 import RealmSwift
 
-extension RCollection: Syncable {
-    func removeChildren(in database: Realm) {
-        self.items.forEach { item in
-            item.removeChildren(in: database)
-        }
-        database.delete(self.items)
-        self.children.forEach { child in
-            child.removeChildren(in: database)
-        }
-        database.delete(self.children)
-    }
-}
-
-extension RItem: Syncable {
-    func removeChildren(in database: Realm) {
-        self.children.forEach { child in
-            child.removeChildren(in: database)
-        }
-        database.delete(self.children)
-    }
-}
-
-extension RSearch: Syncable {
-    func removeChildren(in database: Realm) {}
-}
-
 struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     typealias Response = [String]
 

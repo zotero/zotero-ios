@@ -59,7 +59,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         return conflicts
     }
 
-    private func delete<Obj: UpdatableObject&Syncable>(objectType: Obj.Type, type: SyncController.Object,
+    private func delete<Obj: UpdatableObject&Syncable&Deletable>(objectType: Obj.Type, type: SyncController.Object,
                                                        with keys: [String], database: Realm,
                                                        conflicts: inout [SyncController.Object: [String]]) {
         let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)

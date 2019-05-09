@@ -25,8 +25,9 @@ class CollectionsStore: Store {
     }
 
     enum StoreError: Error, Equatable {
-        case cantLoadData
+        case dataLoading
         case collectionNotFound
+        case deletion
     }
 
     struct Changes: OptionSet {
@@ -98,24 +99,58 @@ class CollectionsStore: Store {
         case .load:
             self.loadData()
         case .editCollection(let index):
-            let data = self.state.value.collectionCellData[index]
-            do {
-                let request = ReadCollectionDbRequest(libraryId: self.state.value.libraryId, key: data.key)
-                let collection = try self.dbStorage.createCoordinator().perform(request: request)
-                self.updater.updateState { state in
-                    state.collectionToEdit = collection
-                    state.changes.insert(.editing)
-                }
-            } catch let error {
-                DDLogError("CollectionsStore: can't load collection - \(error)")
-                self.updater.updateState { state in
-                    state.error = .collectionNotFound
-                }
-            }
-            
+            self.editCollection(at: index)
         case .editSearch(let index): break // TODO: - Implement search editing!
-        case .deleteCollection(let index): break // TODO: - Implement deletions!
-        case .deleteSearch(let index): break
+        case .deleteCollection(let index):
+            self.deleteCollection(at: index)
+        case .deleteSearch(let index):
+            self.deleteSearch(at: index)
+        }
+    }
+
+    private func editCollection(at index: Int) {
+        let data = self.state.value.collectionCellData[index]
+        do {
+            let request = ReadCollectionDbRequest(libraryId: self.state.value.libraryId, key: data.key)
+            let collection = try self.dbStorage.createCoordinator().perform(request: request)
+            self.updater.updateState { state in
+                state.collectionToEdit = collection
+                state.changes.insert(.editing)
+            }
+        } catch let error {
+            DDLogError("CollectionsStore: can't load collection - \(error)")
+            self.updater.updateState { state in
+                state.error = .collectionNotFound
+            }
+        }
+    }
+
+    private func deleteCollection(at index: Int) {
+        let data = self.state.value.collectionCellData[index]
+        self.deleteObject { coordinator -> DeletableObject in
+            let request = ReadCollectionDbRequest(libraryId: self.state.value.libraryId, key: data.key)
+            return try coordinator.perform(request: request)
+        }
+    }
+
+    private func deleteSearch(at index: Int) {
+        let data = self.state.value.searchCellData[index]
+        self.deleteObject { coordinator -> DeletableObject in
+            let request = ReadSearchDbRequest(libraryId: self.state.value.libraryId, key: data.key)
+            return try coordinator.perform(request: request)
+        }
+    }
+
+    private func deleteObject(readAction: (DbCoordinator) throws -> DeletableObject) {
+        do {
+            let coordinator = try self.dbStorage.createCoordinator()
+            let object = try readAction(coordinator)
+            try coordinator.perform(request: MarkObjectAsDeletedDbRequest(object: object))
+        } catch let error {
+            DDLogError("CollectionsStore: can't delete object - \(error)")
+            self.updater.updateState { newState in
+                newState.error = .deletion
+            }
         }
     }
 
@@ -142,7 +177,7 @@ class CollectionsStore: Store {
                 case .error(let error):
                     DDLogError("CollectionsStore: can't load collection update: \(error)")
                     self.updater.updateState { newState in
-                        newState.error = .cantLoadData
+                        newState.error = .dataLoading
                     }
                 }
             })
@@ -161,7 +196,7 @@ class CollectionsStore: Store {
                 case .error(let error):
                     DDLogError("CollectionsStore: can't load collection update: \(error)")
                     self.updater.updateState { newState in
-                        newState.error = .cantLoadData
+                        newState.error = .dataLoading
                     }
                 }
             })
@@ -179,7 +214,7 @@ class CollectionsStore: Store {
         } catch let error {
             DDLogError("CollectionsStore: can't load collections: \(error)")
             self.updater.updateState { newState in
-                newState.error = .cantLoadData
+                newState.error = .dataLoading
             }
         }
     }

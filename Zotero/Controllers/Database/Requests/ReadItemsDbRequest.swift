@@ -23,7 +23,8 @@ struct ReadItemsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> Results<RItem> {
         let libraryPredicate = Predicates.library(from: self.libraryId)
         let syncPredicate = Predicates.notSyncState(.dirty)
-        var predicates: [NSPredicate] = [libraryPredicate, syncPredicate]
+        let deletedPredicate = Predicates.deleted(false)
+        var predicates: [NSPredicate] = [libraryPredicate, syncPredicate, deletedPredicate]
         if let collectionId = self.collectionKey {
             predicates.append(NSPredicate(format: "ANY collections.key = %@", collectionId))
         }

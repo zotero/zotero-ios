@@ -26,8 +26,6 @@ protocol Syncable: class {
     var group: RGroup? { get set }
     var version: Int { get set }
     var syncState: ObjectSyncState { get set }
-
-    func removeChildren(in database: Realm)
 }
 
 extension Syncable {
@@ -58,3 +56,7 @@ extension Syncable {
         }
     }
 }
+
+extension RCollection: Syncable {}
+extension RItem: Syncable {}
+extension RSearch: Syncable {}

@@ -56,6 +56,8 @@ extension SyncController.Action {
             return batch.library
         case .submitWriteBatch(let batch):
             return batch.library
+        case .submitDeleteBatch(let batch):
+            return batch.library
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
              .syncDeletions(let library, _),
@@ -69,7 +71,7 @@ extension SyncController.Action {
 
 extension SyncController.WriteBatch: Equatable {
     static func ==(lhs: SyncController.WriteBatch, rhs: SyncController.WriteBatch) -> Bool {
-        if lhs.library != rhs.library || lhs.object != rhs.object {
+        if lhs.library != rhs.library || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }
 
@@ -95,6 +97,15 @@ extension SyncController.WriteBatch: Equatable {
             // TODO: - compare values
         }
         return true
+    }
+}
+
+extension SyncController.DeleteBatch: Equatable {
+    public static func ==(lhs: SyncController.DeleteBatch, rhs: SyncController.DeleteBatch) -> Bool {
+        if lhs.library != rhs.library || lhs.object != rhs.object || lhs.version != rhs.version {
+            return false
+        }
+        return lhs.keys == rhs.keys
     }
 }
 

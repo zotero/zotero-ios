@@ -34,6 +34,8 @@ class RCollection: Object {
     @objc dynamic var rawSyncState: Int = 0
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
+    /// Indicates whether the object is deleted locally and needs to be synced with backend
+    @objc dynamic var deleted: Bool = false
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var customLibrary: RCustomLibrary?
     @objc dynamic var group: RGroup?
