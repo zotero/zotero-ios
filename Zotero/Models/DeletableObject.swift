@@ -20,6 +20,12 @@ protocol Deletable: class {
 
 extension RCollection: Deletable {
     func removeChildren(in database: Realm) {
+        self.items.forEach { item in
+            item.changedFields = .collections
+            if let index = item.collections.index(of: self) {
+                item.collections.remove(at: index)
+            }
+        }
         self.children.forEach { child in
             child.removeChildren(in: database)
         }
