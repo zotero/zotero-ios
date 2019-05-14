@@ -11,17 +11,31 @@ import Foundation
 import CocoaLumberjack
 import RealmSwift
 
-struct StoreItemsDbRequest: DbRequest {
+enum StoreItemsError: Error {
+    case itemDeleted(ItemResponse)
+}
+
+struct StoreItemsDbRequest: DbResponseRequest {
+    typealias Response = [StoreItemsError]
+
     let response: [ItemResponse]
     let trash: Bool
     let schemaController: SchemaController
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws {
+    func process(in database: Realm) throws -> [StoreItemsError] {
+        var errors: [StoreItemsError] = []
         for data in self.response {
-            try self.store(data: data, to: database, schemaController: self.schemaController)
+            do {
+                try self.store(data: data, to: database, schemaController: self.schemaController)
+            } catch let error as StoreItemsError {
+                errors.append(error)
+            } catch let error {
+                throw error
+            }
         }
+        return errors
     }
 
     private func store(data: ItemResponse, to database: Realm, schemaController: SchemaController) throws {
@@ -34,6 +48,10 @@ struct StoreItemsDbRequest: DbRequest {
         } else {
             item = RItem()
             database.add(item)
+        }
+
+        if item.deleted {
+            throw StoreItemsError.itemDeleted(data)
         }
 
         item.key = data.key

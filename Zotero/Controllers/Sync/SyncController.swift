@@ -534,7 +534,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishBatchSyncAction(for library: Library, object: Object, allKeys: [Any],
-                                     result: Result<([String], [Error])>) {
+                                     result: Result<([String], [Error], [StoreItemsError])>) {
         switch result {
         case .success(let decodingData):
             if object == .group {
@@ -549,27 +549,28 @@ final class SyncController: SynchronizationController {
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
 
-            if !decodingData.1.isEmpty {
-                self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                    self?.nonFatalErrors.append(contentsOf: decodingData.1)
+            let conflicts = decodingData.2.map({ error -> Action in
+                switch error {
+                case .itemDeleted(let response):
+                    return .resolveConflict(response.key, object, library)
                 }
-            }
-
+            })
             let allStringKeys = (allKeys as? [String]) ?? []
             let failedKeys = allStringKeys.filter({ !decodingData.0.contains($0) })
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.progressHandler.reportBatch(for: object, count: allKeys.count)
-            }
-
-            if failedKeys.isEmpty {
-                self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                    self?.processNextAction()
+                guard let `self` = self else { return }
+                self.progressHandler.reportBatch(for: object, count: allKeys.count)
+                self.nonFatalErrors.append(contentsOf: decodingData.1)
+                self.queue.insert(contentsOf: conflicts, at: 0)
+                if failedKeys.isEmpty {
+                    self.processNextAction()
                 }
-                return
             }
 
-            self.markForResync(keys: Array(failedKeys), library: library, object: object)
+            if !failedKeys.isEmpty {
+                self.markForResync(keys: Array(failedKeys), library: library, object: object)
+            }
 
         case .failure(let error):
             DDLogError("--- BATCH: \(error)")
@@ -651,17 +652,15 @@ final class SyncController: SynchronizationController {
         switch result {
         case .success(let data):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                guard let `self` = self else { return }
                 if !data.0.isEmpty {
                     var conflicts: [Action] = (data.0[.item] ?? []).map({ .resolveConflict($0, .item, data.1) })
-                    self?.enqueue(actions: conflicts, at: 0)
-                    conflicts = (data.0[.search] ?? []).map({ .resolveConflict($0, .search, data.1) })
-                    self?.enqueue(actions: conflicts, at: 0)
-                    conflicts = (data.0[.collection] ?? []).map({ .resolveConflict($0, .collection, data.1) })
-                    self?.enqueue(actions: conflicts, at: 0)
-                    conflicts = (data.0[.tag] ?? []).map({ .resolveConflict($0, .tag, data.1) })
-                    self?.enqueue(actions: conflicts, at: 0)
+                    conflicts.append(contentsOf: (data.0[.search] ?? []).map({ .resolveConflict($0, .search, data.1) }))
+                    conflicts.append(contentsOf: (data.0[.collection] ?? []).map({ .resolveConflict($0, .collection, data.1) }))
+                    conflicts.append(contentsOf: (data.0[.tag] ?? []).map({ .resolveConflict($0, .tag, data.1) }))
+                    self.queue.insert(contentsOf: conflicts, at: 0)
                 }
-                self?.processNextAction()
+                self.processNextAction()
             }
 
         case .failure(let error):
@@ -715,7 +714,7 @@ final class SyncController: SynchronizationController {
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.updateVersionInNextWriteBatch(to: newVersion)
                 if !conflicts.isEmpty {
-                    self?.enqueue(actions: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
+                    self?.queue.insert(contentsOf: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
                 }
                 self?.processNextAction()
             }

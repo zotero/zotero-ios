@@ -85,7 +85,8 @@ protocol SyncActionHandler: class {
                              syncAll: Bool) -> Single<(Int, [Any])>
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable
     func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library,
-                              object: SyncController.Object, version: Int) -> Single<([String], [Error])>
+                              object: SyncController.Object,
+                              version: Int) -> Single<([String], [Error], [StoreItemsError])>
     func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
                               current currentVersion: Int?) -> Single<[SyncController.Object: [String]]>
@@ -221,13 +222,13 @@ extension SyncActionHandlerController: SyncActionHandler {
                              }
     }
 
-    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library,
-                              object: SyncController.Object, version: Int) -> Single<([String], [Error])> {
+    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
+                              version: Int) -> Single<([String], [Error], [StoreItemsError])> {
         let keysString = keys.map({ "\($0)" }).joined(separator: ",")
         let request = ObjectsRequest(libraryType: library, objectType: object, keys: keysString)
         return self.apiClient.send(dataRequest: request)
                              .observeOn(self.scheduler)
-                             .flatMap({ [weak self] response -> Single<([String], [Error])> in
+                             .flatMap({ [weak self] response -> Single<([String], [Error], [StoreItemsError])> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
 
                                  let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
@@ -240,7 +241,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  do {
                                      let decodingData = try self.syncToDb(data: response.0, library: library,
                                                                           object: object)
-                                     return Single.just((decodingData.0, decodingData.1))
+                                     return Single.just(decodingData)
                                  } catch let error {
                                      return Single.error(error)
                                  }
@@ -248,32 +249,32 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     private func syncToDb(data: Data, library: SyncController.Library,
-                          object: SyncController.Object) throws -> ([String], [Error]) {
+                          object: SyncController.Object) throws -> ([String], [Error], [StoreItemsError]) {
         let coordinator = try self.dbStorage.createCoordinator()
 
         switch object {
         case .group:
             let decoded = try JSONDecoder().decode(GroupResponse.self, from: data)
             try coordinator.perform(request: StoreGroupDbRequest(response: decoded))
-            return ([], [])
+            return ([], [], [])
         case .collection:
             let decoded = try JSONDecoder().decode(CollectionsResponse.self, from: data)
             try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded.collections))
-            return (decoded.collections.map({ $0.key }), decoded.errors)
+            return (decoded.collections.map({ $0.key }), decoded.errors, [])
         case .item, .trash:
             let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
             let decoded = try ItemResponse.decode(response: jsonObject)
-            try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0,
-                                                                 trash: object == .trash,
-                                                                 schemaController: self.schemaController))
-            return (decoded.0.map({ $0.key }), decoded.1)
+            let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0,
+                                                                                 trash: object == .trash,
+                                                                                 schemaController: self.schemaController))
+            return (decoded.0.map({ $0.key }), decoded.1, conflicts)
         case .search:
             let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
             try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
-            return (decoded.searches.map({ $0.key }), decoded.errors)
+            return (decoded.searches.map({ $0.key }), decoded.errors, [])
         case .tag: // Tags are not synchronized, this should not be called
             DDLogError("SyncActionHandler: syncToDb tried to sync tags")
-            return ([], [])
+            return ([], [], [])
         }
     }
 
