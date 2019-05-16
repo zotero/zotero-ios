@@ -21,15 +21,22 @@ import Quick
 class SyncControllerSpec: QuickSpec {
     fileprivate static let groupId = 10
     private static let userId = 100
+    private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString)
+    private static var schemaController: SchemaController = {
+        let controller = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
+        controller.reloadSchemaIfNeeded()
+        return controller
+    }()
     private static let userLibrary: SyncController.Library = .user(userId, .myLibrary)
     private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
     private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
     private static let syncHandler = SyncActionHandlerController(userId: userId,
                                                                  apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
                                                                  dbStorage: RealmDbStorage(config: realmConfig),
-                                                                 fileStorage: TestFileStorage())
+                                                                 fileStorage: TestFileStorage(),
+                                                                 schemaController: schemaController)
     private static let updateDataSource = UpdateDataSource(dbStorage: RealmDbStorage(config: realmConfig))
-    private static let emptyUpdateDataSource = TestDataSource(batches: [])
+    private static let emptyUpdateDataSource = TestDataSource(writeBatches: [], deleteBatches: [])
 
     fileprivate static var syncVersionData: (Int, Int) = (0, 0) // version, object count
     fileprivate static var expectedKeys: [String] = []
@@ -299,6 +306,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("processes update actions") {
+                    SyncControllerSpec.syncVersionData = (4, 0)
                     let library = SyncControllerSpec.userLibrary
                     let batch1 = SyncController.WriteBatch(library: library,
                                                            object: .collection,
@@ -308,14 +316,21 @@ class SyncControllerSpec: QuickSpec {
                                                                          "version": 1]])
                     let batch2 = SyncController.WriteBatch(library: library,
                                                            object: .item,
-                                                           version: 2,
+                                                           version: 1,
                                                            parameters: [["title": "B",
                                                                          "key": "BBBBBBBB",
                                                                          "version": 2]])
+                    let expectedBatch2 = SyncController.WriteBatch(library: library,
+                                                                   object: .item,
+                                                                   version: 4,
+                                                                   parameters: [["title": "B",
+                                                                                 "key": "BBBBBBBB",
+                                                                                 "version": 2]])
+
                     var all: [SyncController.Action]?
                     let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), false),
                                                              .submitWriteBatch(batch1),
-                                                             .submitWriteBatch(batch2)]
+                                                             .submitWriteBatch(expectedBatch2)]
 
                     self.controller = self.performActionsTest(libraries: .specific([.custom(.myLibrary)]),
                                                               updates: [batch1, batch2],
@@ -958,7 +973,7 @@ class SyncControllerSpec: QuickSpec {
 
                             switch result {
                             case .success(let data):
-                                expect(data.0).to(contain(.resolveConflict(itemToDelete, .item, library)))
+                                expect(data.0).to(contain(.resolveConflict(itemToDelete, library)))
                             case .failure:
                                 fail("Sync aborted")
                             }
@@ -1545,7 +1560,7 @@ class SyncControllerSpec: QuickSpec {
                                     result: @escaping (TestAction) -> Single<()>,
                                     check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
         let handler = TestHandler()
-        let dataSource = TestDataSource(batches: updates)
+        let dataSource = TestDataSource(writeBatches: updates, deleteBatches: [])
         let controller = SyncController(userId: SyncControllerSpec.userId,
                                         handler: handler, updateDataSource: dataSource)
 
@@ -1600,6 +1615,7 @@ fileprivate enum TestAction {
     case syncDeletions(SyncController.Library)
     case syncSettings(SyncController.Library)
     case submitUpdate(SyncController.Library, SyncController.Object)
+    case submitDeletion(SyncController.Library, SyncController.Object)
 }
 
 fileprivate class TestHandler: SyncActionHandler {
@@ -1642,9 +1658,9 @@ fileprivate class TestHandler: SyncActionHandler {
     }
 
     func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
-                              version: Int) -> Single<([String], [Error])> {
+                              version: Int) -> Single<([String], [Error], [StoreItemsError])> {
         let keys = SyncControllerSpec.expectedKeys
-        return self.result(for: .storeObject(object)).flatMap({ return Single.just((keys, [])) })
+        return self.result(for: .storeObject(object)).flatMap({ return Single.just((keys, [], [])) })
     }
 
     func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable {
@@ -1652,8 +1668,8 @@ fileprivate class TestHandler: SyncActionHandler {
     }
 
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Single<[SyncController.Object: [String]]> {
-        return self.result(for: .syncDeletions(library)).flatMap({ return Single.just([:]) })
+                              current currentVersion: Int?) -> Single<[String]> {
+        return self.result(for: .syncDeletions(library)).flatMap({ return Single.just([]) })
     }
 
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
@@ -1664,29 +1680,36 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object,
-                      parameters: [[String : Any]]) -> Completable {
-        return Completable.empty()
+    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int, parameters: [[String : Any]]) -> Single<(Int, Error?)> {
+        return self.result(for: .submitUpdate(library, object)).flatMap {
+            let data = SyncControllerSpec.syncVersionData
+            return Single.just((data.0, nil))
+        }
     }
 
-
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String : Any]]) -> Single<[String]> {
-        return self.result(for: .submitUpdate(library, object)).flatMap {
-            return Single.just([])
+    func submitDeletion(for library: SyncController.Library, object: SyncController.Object, since version: Int, keys: [String]) -> Single<Int> {
+        return self.result(for: .submitDeletion(library, object)).flatMap {
+            let data = SyncControllerSpec.syncVersionData
+            return Single.just(data.0)
         }
     }
 }
 
 fileprivate class TestDataSource: SyncUpdateDataSource {
-    private let batches: [SyncController.WriteBatch]
+    private let writeBatches: [SyncController.WriteBatch]
+    private let deleteBatches: [SyncController.DeleteBatch]
 
-    init(batches: [SyncController.WriteBatch]) {
-        self.batches = batches
+    init(writeBatches: [SyncController.WriteBatch], deleteBatches: [SyncController.DeleteBatch]) {
+        self.writeBatches = writeBatches
+        self.deleteBatches = deleteBatches
     }
 
     func updates(for library: SyncController.Library, versions: Versions) throws -> [SyncController.WriteBatch] {
-        return self.batches
+        return self.writeBatches
+    }
+
+    func deletions(for library: SyncController.Library, versions: Versions) throws -> [SyncController.DeleteBatch] {
+        return self.deleteBatches
     }
 }
 

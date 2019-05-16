@@ -310,6 +310,9 @@ final class SyncController: SynchronizationController {
             self.processSubmitDeletion(for: batch)
         case .resolveConflict(let key, let library):
             // TODO: - resolve conflict...
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.processNextAction()
+            }
             break
         }
     }
