@@ -89,11 +89,11 @@ protocol SyncActionHandler: class {
                               version: Int) -> Single<([String], [Error], [StoreItemsError])>
     func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Single<[SyncController.Object: [String]]>
+                              current currentVersion: Int?) -> Single<[String]>
     func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
                              since version: Int?) -> Single<(Bool, Int)>
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String: Any]]) -> Single<([String], Int)>
+                      parameters: [[String: Any]]) -> Single<(Int, Error?)>
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
 }
@@ -333,7 +333,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Single<[SyncController.Object : [String]]> {
+                              current currentVersion: Int?) -> Single<[String]> {
         return self.apiClient.send(request: DeletionsRequest(libraryType: library, version: sinceVersion))
                              .observeOn(self.scheduler)
                              .flatMap { [weak self] response in
@@ -383,7 +383,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String : Any]]) -> Single<([String], Int)> {
+                      parameters: [[String : Any]]) -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters, version: version)
         return self.apiClient.send(dataRequest: request)
                              .observeOn(self.scheduler)
@@ -397,7 +397,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      return Single.error(error)
                                  }
                              })
-                             .flatMap({ [weak self] response -> Single<([String], Int)> in
+                             .flatMap({ [weak self] response -> Single<(Int, Error?)> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
                                  let syncedKeys = self.keys(from: (response.successful + response.unchanged),
                                                             parameters: parameters)
@@ -429,15 +429,20 @@ extension SyncActionHandlerController: SyncActionHandler {
                                                                                  type: .object(object))
                                      try coordinator.perform(request: updateVersion)
                                  } catch let error {
-                                     return Single.error(error)
+                                     return Single.just((response.newVersion, error))
                                  }
 
                                  if response.failed.first(where: { $0.code == 412 }) != nil {
-                                     return Single.error(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412)))
+                                     let error = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412))
+                                     return Single.just((response.newVersion, error))
                                  }
 
-                                 let conflicts = response.failed.filter({ $0.code == 409 }).compactMap({ $0.key })
-                                 return Single.just((conflicts, response.newVersion))
+                                 if response.failed.first(where: { $0.code == 409 }) != nil {
+                                     let error = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 409))
+                                     return Single.just((response.newVersion, error))
+                                 }
+
+                                 return Single.just((response.newVersion, nil))
                              })
     }
 

@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct PerformDeletionsDbRequest: DbResponseRequest {
-    typealias Response = [SyncController.Object: [String]]
+    typealias Response = [String]
 
     let libraryId: LibraryIdentifier
     let response: DeletionsResponse
@@ -19,15 +19,10 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws -> [SyncController.Object: [String]] {
-        var conflicts: [SyncController.Object: [String]] = [:]
-
-        self.delete(objectType: RCollection.self, type: .collection, with: self.response.collections,
-                    database: database, conflicts: &conflicts)
-        self.delete(objectType: RItem.self, type: .item, with: self.response.items,
-                    database: database, conflicts: &conflicts)
-        self.delete(objectType: RSearch.self, type: .search, with: self.response.searches,
-                    database: database, conflicts: &conflicts)
+    func process(in database: Realm) throws -> [String] {
+        self.deleteCollections(with: self.response.collections, database: database)
+        self.deleteSearches(with: self.response.searches, database: database)
+        let conflicts = self.deleteItems(with: self.response.items, database: database)
 
         let libraryPredicate = Predicates.library(from: self.libraryId)
         let tagNamePredicate = NSPredicate(format: "name IN %@", self.response.tags)
@@ -59,20 +54,50 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         return conflicts
     }
 
-    private func delete<Obj: UpdatableObject&Syncable&Deletable>(objectType: Obj.Type, type: SyncController.Object,
-                                                       with keys: [String], database: Realm,
-                                                       conflicts: inout [SyncController.Object: [String]]) {
+    private func deleteItems(with keys: [String], database: Realm) -> [String] {
         let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)
-        let objects = database.objects(Obj.self).filter(predicate)
+        let objects = database.objects(RItem.self).filter(predicate)
+
+        var conflicts: [String] = []
 
         for object in objects {
             if object.isChanged {
-                if var array = conflicts[type] {
-                    array.append(object.key)
-                    conflicts[type] = array
-                } else {
-                    conflicts[type] = [object.key]
-                }
+                // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
+                conflicts.append(object.key)
+            } else {
+                object.removeChildren(in: database)
+                database.delete(object)
+            }
+        }
+
+        return conflicts
+    }
+
+    private func deleteCollections(with keys: [String], database: Realm) {
+        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)
+        let objects = database.objects(RCollection.self).filter(predicate)
+
+        for object in objects {
+            if object.isChanged {
+                // If remotely deleted collection is changed locally, we want to keep the collection, so we mark that
+                // this collection is new and it will be reinserted by sync
+                object.changedFields = .all
+            } else {
+                object.removeChildren(in: database)
+                database.delete(object)
+            }
+        }
+    }
+
+    private func deleteSearches(with keys: [String], database: Realm) {
+        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)
+        let objects = database.objects(RSearch.self).filter(predicate)
+
+        for object in objects {
+            if object.isChanged {
+                // If remotely deleted search is changed locally, we want to keep the search, so we mark that
+                // this search is new and it will be reinserted by sync
+                object.changedFields = .all
             } else {
                 object.removeChildren(in: database)
                 database.delete(object)

@@ -63,7 +63,7 @@ extension SyncController.Action {
              .syncDeletions(let library, _),
              .syncSettings(let library, _),
              .storeSettingsVersion(_, let library),
-             .resolveConflict(_, _, let library):
+             .resolveConflict(_, let library):
             return library
         }
     }

@@ -97,7 +97,7 @@ final class SyncController: SynchronizationController {
         case storeSettingsVersion(Int, Library)             // Store new version for settings in library
         case submitWriteBatch(WriteBatch)                   // Submit local changes to backend
         case submitDeleteBatch(DeleteBatch)                 // Submit local deletions to backend
-        case resolveConflict(String, Object, Library)
+        case resolveConflict(String, Library)               // Handle conflict resolution
     }
 
     private static let timeoutPeriod: Double = 15.0
@@ -308,7 +308,7 @@ final class SyncController: SynchronizationController {
             self.processSubmitUpdate(for: batch)
         case .submitDeleteBatch(let batch):
             self.processSubmitDeletion(for: batch)
-        case .resolveConflict(let key, let object, let library):
+        case .resolveConflict(let key, let library):
             // TODO: - resolve conflict...
             break
         }
@@ -552,7 +552,7 @@ final class SyncController: SynchronizationController {
             let conflicts = decodingData.2.map({ error -> Action in
                 switch error {
                 case .itemDeleted(let response):
-                    return .resolveConflict(response.key, object, library)
+                    return .resolveConflict(response.key, library)
                 }
             })
             let allStringKeys = (allKeys as? [String]) ?? []
@@ -648,16 +648,13 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<([Object : [String]], Library)>) {
+    private func finishDeletionsSync(result: Result<([String], Library)>) {
         switch result {
         case .success(let data):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 guard let `self` = self else { return }
                 if !data.0.isEmpty {
-                    var conflicts: [Action] = (data.0[.item] ?? []).map({ .resolveConflict($0, .item, data.1) })
-                    conflicts.append(contentsOf: (data.0[.search] ?? []).map({ .resolveConflict($0, .search, data.1) }))
-                    conflicts.append(contentsOf: (data.0[.collection] ?? []).map({ .resolveConflict($0, .collection, data.1) }))
-                    conflicts.append(contentsOf: (data.0[.tag] ?? []).map({ .resolveConflict($0, .tag, data.1) }))
+                    let conflicts: [Action] = data.0.map({ .resolveConflict($0, data.1) })
                     self.queue.insert(contentsOf: conflicts, at: 0)
                 }
                 self.processNextAction()
@@ -699,65 +696,29 @@ final class SyncController: SynchronizationController {
         self.handler.submitUpdate(for: batch.library, object: batch.object,
                                   since: batch.version, parameters: batch.parameters)
                     .subscribe(onSuccess: { [weak self] data in
-                        self?.finishUpdateSubmission(result: .success(data.0), newVersion: data.1,
-                                                     library: batch.library, object: batch.object)
+                        self?.finishSubmission(error: data.1, newVersion: data.0,
+                                               library: batch.library, object: batch.object)
                     }, onError: { [weak self] error in
-                        self?.finishUpdateSubmission(result: .failure(error), newVersion: batch.version,
-                                                     library: batch.library, object: batch.object)
+                        self?.finishSubmission(error: error, newVersion: batch.version,
+                                               library: batch.library, object: batch.object)
                     })
                     .disposed(by: self.disposeBag)
-    }
-
-    private func finishUpdateSubmission(result: Result<[String]>, newVersion: Int, library: Library, object: Object) {
-        switch result {
-        case .success(let conflicts):
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.updateVersionInNextWriteBatch(to: newVersion)
-                if !conflicts.isEmpty {
-                    self?.queue.insert(contentsOf: conflicts.map({ .resolveConflict($0, object, library) }), at: 0)
-                }
-                self?.processNextAction()
-            }
-
-        case .failure(let error):
-            if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
-                return
-            }
-
-            if let error = self.errorRequiresAbort(error) {
-                self.abort(error: error)
-                return
-            }
-
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.nonFatalErrors.append(error)
-                self?.updateVersionInNextWriteBatch(to: newVersion)
-                self?.processNextAction()
-            }
-        }
     }
 
     private func processSubmitDeletion(for batch: DeleteBatch) {
         self.handler.submitDeletion(for: batch.library, object: batch.object, since: batch.version, keys: batch.keys)
                     .subscribe(onSuccess: { [weak self] version in
-                        self?.finishDeletionSubmission(result: .success(()), newVersion: version,
-                                                       library: batch.library, object: batch.object)
+                        self?.finishSubmission(error: nil, newVersion: version,
+                                               library: batch.library, object: batch.object)
                     }, onError: { [weak self] error in
-                        self?.finishDeletionSubmission(result: .failure(error), newVersion: batch.version,
-                                                       library: batch.library, object: batch.object)
+                        self?.finishSubmission(error: error, newVersion: batch.version,
+                                               library: batch.library, object: batch.object)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionSubmission(result: Result<Void>, newVersion: Int, library: Library, object: Object) {
-        switch result {
-        case .success:
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.updateVersionInNextWriteBatch(to: newVersion)
-                self?.processNextAction()
-            }
-
-        case .failure(let error):
+    private func finishSubmission(error: Error?, newVersion: Int, library: Library, object: Object) {
+        if let error = error {
             if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
                 return
             }
@@ -766,12 +727,14 @@ final class SyncController: SynchronizationController {
                 self.abort(error: error)
                 return
             }
+        }
 
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            if let error = error {
                 self?.nonFatalErrors.append(error)
-                self?.updateVersionInNextWriteBatch(to: newVersion)
-                self?.processNextAction()
             }
+            self?.updateVersionInNextWriteBatch(to: newVersion)
+            self?.processNextAction()
         }
     }
 
