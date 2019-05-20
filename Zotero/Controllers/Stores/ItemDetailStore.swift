@@ -211,7 +211,7 @@ class ItemDetailStore: Store {
             }
 
             init?(item: RItem) {
-                guard item.type == .note else {
+                guard item.rawType == FieldKeys.note else {
                     DDLogError("Trying to create Note from RItem which is not a note!")
                     return nil
                 }
@@ -871,11 +871,11 @@ class ItemDetailPreviewDataSource: ItemDetailDataSource, FieldLocalizable {
         self.fields = fields
         self.creators = item.creators.sorted(byKeyPath: "orderId").map(ItemDetailStore.StoreState.Creator.init)
         self.attachments = item.children
-                               .filter(Predicates.items(type: .attachment, notSyncState: .dirty, trash: false))
+                               .filter(Predicates.items(type: FieldKeys.attachment, notSyncState: .dirty, trash: false))
                                .sorted(byKeyPath: "title")
                                .compactMap({ ItemDetailStore.StoreState.Attachment(item: $0, fileStorage: fileStorage) })
         self.notes = item.children
-                         .filter(Predicates.items(type: .note, notSyncState: .dirty))
+                         .filter(Predicates.items(type: FieldKeys.note, notSyncState: .dirty))
                          .sorted(byKeyPath: "title")
                          .compactMap(ItemDetailStore.StoreState.Note.init)
         self.tags = item.tags.sorted(byKeyPath: "name").map(ItemDetailStore.StoreState.Tag.init)

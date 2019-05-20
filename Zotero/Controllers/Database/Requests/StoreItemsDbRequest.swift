@@ -55,7 +55,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         }
 
         item.key = data.key
-        item.type = data.type
+        item.rawType = data.rawType
         item.creatorSummary = data.creatorSummary ?? ""
         item.parsedDate = data.parsedDate ?? ""
         item.version = data.version
@@ -89,7 +89,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 field.item = item
                 database.add(field)
             }
-            if key == titleField || (item.type == .note && key == FieldKeys.note) {
+            if key == titleField || (item.rawType == FieldKeys.note && key == FieldKeys.note) {
                 var title = value
                 if key == FieldKeys.note {
                     title = title.strippedHtml ?? title

@@ -17,7 +17,7 @@ enum ItemResponseError: Error {
 }
 
 struct ItemResponse {
-    let type: ItemType
+    let rawType: String
     let key: String
     let library: LibraryResponse
     let parentKey: String?
@@ -41,8 +41,7 @@ struct ItemResponse {
 
     init(response: [String: Any]) throws {
         let data: [String: Any] = try ItemResponse.parse(key: "data", from: response)
-        let rawType: String = try ItemResponse.parse(key: "itemType", from: data)
-        self.type = ItemType(rawValue: rawType) ?? .unknown
+        self.rawType = try ItemResponse.parse(key: "itemType", from: data)
         self.key = try ItemResponse.parse(key: "key", from: response)
         self.version = try ItemResponse.parse(key: "version", from: response)
         let collections = data["collections"] as? [String]

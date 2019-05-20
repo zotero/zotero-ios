@@ -186,11 +186,11 @@ extension RItem: ItemCellModel {
     }
 
     var hasAttachment: Bool {
-        return self.children.filter(Predicates.items(type: .attachment, notSyncState: .dirty)).count > 0
+        return self.children.filter(Predicates.items(type: FieldKeys.attachment, notSyncState: .dirty)).count > 0
     }
 
     var hasNote: Bool {
-        return self.children.filter(Predicates.items(type: .note, notSyncState: .dirty)).count > 0
+        return self.children.filter(Predicates.items(type: FieldKeys.note, notSyncState: .dirty)).count > 0
     }
 
     var tagColors: [UIColor] {
@@ -198,6 +198,83 @@ extension RItem: ItemCellModel {
     }
 
     var icon: UIImage? {
-        return self.type.icon
+        let name: String
+        switch self.rawType {
+        case "artwork":
+            name = "icon_item_type_artwork"
+        case "attachment":
+            name = "icon_item_type_attachment"
+        case "audioRecording":
+            name = "icon_item_type_audio-recording"
+        case "book":
+            name = "icon_item_type_book"
+        case "bookSection":
+            name = "icon_item_type_book-section"
+        case "bill":
+            name = "icon_item_type_bill"
+        case "blogPost":
+            name = "icon_item_type_blog-post"
+        case "case":
+            name = "icon_item_type_case"
+        case "computerProgram":
+            name = "icon_item_type_computer-program"
+        case "conferencePaper":
+            name = "icon_item_type_conference-paper"
+        case "dictionaryEntry":
+            name = "icon_item_type_dictionary-entry"
+        case "document":
+            name = "icon_item_type_document"
+        case "email":
+            name = "icon_item_type_e-mail"
+        case "encyclopediaArticle":
+            name = "icon_item_type_encyclopedia-article"
+        case "film":
+            name = "icon_item_type_film"
+        case "forumPost":
+            name = "icon_item_type_forum-post"
+        case "hearing":
+            name = "icon_item_type_hearing"
+        case "instantMessage":
+            name = "icon_item_type_instant-message"
+        case "interview":
+            name = "icon_item_type_interview"
+        case "journalArticle":
+            name = "icon_item_type_journal-article"
+        case "letter":
+            name = "icon_item_type_letter"
+        case "magazineArticle":
+            name = "icon_item_type_magazine-article"
+        case "map":
+            name = "icon_item_type_map"
+        case "manuscript":
+            name = "icon_item_type_manuscript"
+        case "note":
+            name = "icon_item_type_note"
+        case "newspaperArticle":
+            name = "icon_item_type_newspaper-article"
+        case "patent":
+            name = "icon_item_type_patent"
+        case "podcast":
+            name = "icon_item_type_podcast"
+        case "presentation":
+            name = "icon_item_type_presentation"
+        case "radioBroadcast":
+            name = "icon_item_type_radio-broadcast"
+        case "report":
+            name = "icon_item_type_report"
+        case "statute":
+            name = "icon_item_type_statute"
+        case "thesis":
+            name = "icon_item_type_thesis"
+        case "tvBroadcast":
+            name = "icon_item_type_tv-broadcast"
+        case "videoRecording":
+            name = "icon_item_type_video-recording"
+        case "webpage":
+            name = "icon_item_type_web-page"
+        default:
+            name = "icon_item_type_unknown"
+        }
+        return UIImage(named: name)?.withRenderingMode(.alwaysTemplate)
     }
 }

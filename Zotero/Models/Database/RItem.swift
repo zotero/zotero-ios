@@ -59,16 +59,6 @@ class RItem: Object {
     let creators = LinkingObjects(fromType: RCreator.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
 
-    var type: ItemType {
-        get {
-            return ItemType(rawValue: self.rawType) ?? .unknown
-        }
-
-        set {
-            self.rawType = newValue.rawValue
-        }
-    }
-
     var syncState: ObjectSyncState {
         get {
             return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced

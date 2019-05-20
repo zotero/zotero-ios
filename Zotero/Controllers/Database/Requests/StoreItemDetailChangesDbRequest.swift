@@ -77,7 +77,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             } else {
                 let childItem = RItem()
                 childItem.key = KeyGenerator.newKey
-                childItem.type = .note
+                childItem.rawType = FieldKeys.note
                 childItem.syncState = .synced
                 childItem.title = note.title
                 childItem.changedFields = [.fields, .type, .parent]
