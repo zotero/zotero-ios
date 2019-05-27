@@ -37,6 +37,13 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.name = data.data.name
         collection.version = data.version
         collection.syncState = .synced
+        if collection.deleted {
+            collection.items.forEach { item in
+                if item.deleted {
+                    item.deleted = false
+                }
+            }
+        }
         collection.deleted = false // no CR for collections, if it was deleted locally, just restore it
 
         try self.syncLibrary(identifier: libraryId, name: data.library.name, collection: collection, database: database)
@@ -70,6 +77,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         } else {
             parent = RCollection()
             parent.key = key
+            parent.syncState = .dirty
             parent.libraryObject = collection.libraryObject
             database.add(parent)
         }

@@ -88,16 +88,17 @@ final class SyncController: SynchronizationController {
     }
 
     enum Action: Equatable {
-        case syncVersions(Library, Object, Int?)            // Fetch versions from API, update DB based on response
-        case createLibraryActions(LibrarySyncType, Bool)    // Loads required libraries, spawn actions for each
-        case syncBatchToDb(DownloadBatch)                   // Fetch data and store to db
-        case storeVersion(Int, Library, Object)             // Store new version for given library-object
-        case syncDeletions(Library, Int)                    // Synchronize deletions of objects in library
-        case syncSettings(Library, Int?)                    // Synchronize settings for library
-        case storeSettingsVersion(Int, Library)             // Store new version for settings in library
-        case submitWriteBatch(WriteBatch)                   // Submit local changes to backend
-        case submitDeleteBatch(DeleteBatch)                 // Submit local deletions to backend
-        case resolveConflict(String, Library)               // Handle conflict resolution
+        case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
+        case createLibraryActions(LibrarySyncType,
+                                  CreateLibraryActionsOptions) // Loads required libraries, spawn actions for each
+        case syncBatchToDb(DownloadBatch)                      // Fetch data and store to db
+        case storeVersion(Int, Library, Object)                // Store new version for given library-object
+        case syncDeletions(Library, Int)                       // Synchronize deletions of objects in library
+        case syncSettings(Library, Int?)                       // Synchronize settings for library
+        case storeSettingsVersion(Int, Library)                // Store new version for settings in library
+        case submitWriteBatch(WriteBatch)                      // Submit local changes to backend
+        case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
+        case resolveConflict(String, Library)                  // Handle conflict resolution
     }
 
     private static let timeoutPeriod: Double = 15.0
@@ -178,7 +179,7 @@ final class SyncController: SynchronizationController {
                 }
             }
             if customLibrariesOnly {
-                return [.createLibraryActions(libraries, false)]
+                return [.createLibraryActions(libraries, .automatic)]
             }
             return [.syncVersions(.user(self.userId, .myLibrary), .group, nil)]
         }
@@ -241,10 +242,12 @@ final class SyncController: SynchronizationController {
     // MARK: - Queue management
 
     private func enqueue(actions: [Action], at index: Int? = nil) {
-        if let index = index {
-            self.queue.insert(contentsOf: actions, at: index)
-        } else {
-            self.queue.append(contentsOf: actions)
+        if !actions.isEmpty {
+            if let index = index {
+                self.queue.insert(contentsOf: actions, at: index)
+            } else {
+                self.queue.append(contentsOf: actions)
+            }
         }
         self.processNextAction()
     }
@@ -284,8 +287,8 @@ final class SyncController: SynchronizationController {
         DDLogInfo("--- Sync: action ---")
         DDLogInfo("\(action)")
         switch action {
-        case .createLibraryActions(let libraries, let forceDownloads):
-            self.processCreateLibraryActions(for: libraries, forceDownloads: forceDownloads)
+        case .createLibraryActions(let libraries, let options):
+            self.processCreateLibraryActions(for: libraries, options: options)
         case .syncVersions(let library, let objectType, let version):
             if objectType == .group {
                 self.progressHandler.reportGroupSync()
@@ -317,7 +320,11 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func processCreateLibraryActions(for libraries: LibrarySyncType, forceDownloads: Bool) {
+    enum CreateLibraryActionsOptions {
+        case automatic, onlyWrites, forceDownloads
+    }
+
+    private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
         let userId = self.userId
         let action: Single<[LibraryData]>
         switch libraries {
@@ -344,19 +351,20 @@ final class SyncController: SynchronizationController {
                   return Single.just((versionedLibraries, libraryNames))
               }
               .subscribe(onSuccess: { [weak self] data in
-                  if !forceDownloads { // This is internal process of one sync, no need to report library names (again)
+                  if options == .automatic {
+                      // Other options are internal process of one sync, no need to report library names (again)
                       self?.performOnAccessQueue(flags: .barrier) { [weak self] in
                           self?.progressHandler.reportLibraryNames(data: data.1)
                       }
                   }
-                  self?.finishCreateLibraryActions(with: .success((data.0, forceDownloads)))
+                  self?.finishCreateLibraryActions(with: .success((data.0, options)))
               }, onError: { [weak self] error in
                   self?.finishCreateLibraryActions(with: .failure(error))
               })
               .disposed(by: self.disposeBag)
     }
 
-    private func finishCreateLibraryActions(with result: Result<([(Library, Versions)], Bool)>) {
+    private func finishCreateLibraryActions(with result: Result<([(Library, Versions)], CreateLibraryActionsOptions)>) {
         switch result {
         case .failure(let error):
             self.abort(error: SyncError.allLibrariesFetchFailed(error))
@@ -374,26 +382,28 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createLibraryActions(for data: ([(Library, Versions)], Bool)) throws -> ([Action], Int?) {
+    private func createLibraryActions(for data: ([(Library, Versions)], CreateLibraryActionsOptions)) throws -> ([Action], Int?) {
         var allActions: [Action] = []
         for libraryData in data.0 {
-            if data.1 { // Download actions forced, no need to check for updates
+            switch data.1 {
+            case .forceDownloads:
                 allActions.append(contentsOf: self.createDownloadActions(for: libraryData.0,
                                                                          versions: libraryData.1))
-            } else {
+            case .onlyWrites, .automatic:
                 let updates = try self.updateDataSource.updates(for: libraryData.0, versions: libraryData.1)
                 let deletions = try self.updateDataSource.deletions(for: libraryData.0, versions: libraryData.1)
                 if !updates.isEmpty || !deletions.isEmpty {
                     allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
                     allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
-                } else {
+                } else if data.1 == .automatic {
                     allActions.append(contentsOf: self.createDownloadActions(for: libraryData.0,
                                                                              versions: libraryData.1))
                 }
             }
         }
-        let index: Int? = data.1 ? 0 : nil // Forced downloads are pushed to the beginning of the queue,
-                                           // because only currently running action can force downloads
+        let index: Int? = data.1 == .automatic ? nil : 0 // Forced downloads or writes are pushed to the beginning
+                                                         // of the queue, because only currently running action
+                                                         // can force downloads or writes
         return (allActions, index)
     }
 
@@ -459,7 +469,7 @@ final class SyncController: SynchronizationController {
 
         var actions: [Action] = batches.map({ .syncBatchToDb($0) })
         if object == .group {
-            actions.append(.createLibraryActions(self.libraryType, false))
+            actions.append(.createLibraryActions(self.libraryType, .automatic))
         } else if !actions.isEmpty {
             actions.append(.storeVersion(currentVersion, library, object))
         }
@@ -821,15 +831,15 @@ final class SyncController: SynchronizationController {
     private func handleUpdatePreconditionFailureIfNeeded(for error: Error, library: Library) -> Bool {
         guard error.isPreconditionFailure else { return false }
 
-        // Remote has newer version than local, we need to put current write action back into queue and enqueue
-        // download actions so that we update current library to remote version
+        // Remote has newer version than local, we need to remove remaining write actions for this library from queue,
+        // sync remote changes and then try to upload our local changes again, we remove existing write actions from
+        // queue because they might change - for example some deletions might be overwritten by remote changes
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
-            var actions: [Action] = [.createLibraryActions(.specific([library.libraryId]), true)] // force downloads
-            if let current = self.processingAction {
-                actions.append(current)
-            }
+            let actions: [Action] = [.createLibraryActions(.specific([library.libraryId]), .forceDownloads),
+                                     .createLibraryActions(.specific([library.libraryId]), .onlyWrites)]
+            self.removeAllActions(for: library)
             self.enqueue(actions: actions, at: 0)
         }
 

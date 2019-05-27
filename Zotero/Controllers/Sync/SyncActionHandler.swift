@@ -263,7 +263,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             return (decoded.collections.map({ $0.key }), decoded.errors, [])
         case .item, .trash:
             let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-            let decoded = try ItemResponse.decode(response: jsonObject)
+            let decoded = try ItemResponse.decode(response: jsonObject, schemaController: self.schemaController)
             let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0,
                                                                                  trash: object == .trash,
                                                                                  schemaController: self.schemaController))

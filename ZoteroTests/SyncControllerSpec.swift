@@ -137,35 +137,35 @@ class SyncControllerSpec: QuickSpec {
                                                                   deletions: 1, settings: 1)
 
                     let groupId = SyncControllerSpec.groupId
-                    let initial: [SyncController.Action] = [.createLibraryActions(.all, false)]
-                    let expected: [SyncController.Action] = [.createLibraryActions(.all, false),
-                                                   .syncSettings(.group(groupId), 1),
-                                                   .storeSettingsVersion(3, .group(groupId)),
-                                                   .syncVersions(.group(groupId), .collection, 2),
-                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                object: .collection,
-                                                                                keys: ["0"],
-                                                                                version: 3)),
-                                                   .storeVersion(3, .group(groupId), .collection),
-                                                   .syncVersions(.group(groupId), .search, 1),
-                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                              object: .search,
-                                                                              keys: ["0"],
-                                                                              version: 3)),
-                                                   .storeVersion(3, .group(groupId), .search),
-                                                   .syncVersions(.group(groupId), .item, 1),
-                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                object: .item,
-                                                                                keys: ["0"],
-                                                                                version: 3)),
-                                                   .storeVersion(3, .group(groupId), .item),
-                                                   .syncVersions(.group(groupId), .trash, 1),
-                                                   .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                object: .trash,
-                                                                                keys: ["0"],
-                                                                                version: 3)),
-                                                   .storeVersion(3, .group(groupId), .trash),
-                                                   .syncDeletions(.group(groupId), 1)]
+                    let initial: [SyncController.Action] = [.createLibraryActions(.all, .automatic)]
+                    let expected: [SyncController.Action] = [.createLibraryActions(.all, .automatic),
+                                                             .syncSettings(.group(groupId), 1),
+                                                             .storeSettingsVersion(3, .group(groupId)),
+                                                             .syncVersions(.group(groupId), .collection, 2),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
+                                                                                                         object: .collection,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, .group(groupId), .collection),
+                                                             .syncVersions(.group(groupId), .search, 1),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
+                                                                                                         object: .search,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, .group(groupId), .search),
+                                                             .syncVersions(.group(groupId), .item, 1),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
+                                                                                                         object: .item,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, .group(groupId), .item),
+                                                             .syncVersions(.group(groupId), .trash, 1),
+                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
+                                                                                                         object: .trash,
+                                                                                                         keys: ["0"],
+                                                                                                         version: 3)),
+                                                             .storeVersion(3, .group(groupId), .trash),
+                                                             .syncDeletions(.group(groupId), 1)]
                     var all: [SyncController.Action]?
 
                     self.controller = self.performActionsTest(queue: initial,
@@ -192,7 +192,7 @@ class SyncControllerSpec: QuickSpec {
                                                                                                          object: .group,
                                                                                                          keys: [0],
                                                                                                          version: 7)),
-                                                             .createLibraryActions(.all, false),
+                                                             .createLibraryActions(.all, .automatic),
                                                              .syncSettings(groupLibrary, 4),
                                                              .storeSettingsVersion(7, groupLibrary),
                                                              .syncVersions(groupLibrary, .collection, 4),
@@ -249,7 +249,7 @@ class SyncControllerSpec: QuickSpec {
                                                                                                          object: .group,
                                                                                                          keys: [2],
                                                                                                          version: 7)),
-                                                             .createLibraryActions(.specific([.group(groupId)]), false),
+                                                             .createLibraryActions(.specific([.group(groupId)]), .automatic),
                                                              .syncSettings(groupLibrary, 4),
                                                              .storeSettingsVersion(7, groupLibrary),
                                                              .syncVersions(groupLibrary, .collection, 4),
@@ -302,7 +302,7 @@ class SyncControllerSpec: QuickSpec {
                                                               })
                     self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
 
-                    expect(all?.first).toEventually(equal(.createLibraryActions(.specific([.custom(.myLibrary)]), false)))
+                    expect(all?.first).toEventually(equal(.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic)))
                 }
 
                 it("processes update actions") {
@@ -328,7 +328,7 @@ class SyncControllerSpec: QuickSpec {
                                                                                  "version": 2]])
 
                     var all: [SyncController.Action]?
-                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), false),
+                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
                                                              .submitWriteBatch(batch1),
                                                              .submitWriteBatch(expectedBatch2)]
 
@@ -357,9 +357,9 @@ class SyncControllerSpec: QuickSpec {
                                                                          "key": "AAAAAAAA",
                                                                          "version": 1]])
                     var all: [SyncController.Action]?
-                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), false),
+                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
                                                              .submitWriteBatch(batch1),
-                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), true),
+                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .forceDownloads),
                                                              .syncSettings(library, 2),
                                                              .storeSettingsVersion(3, library),
                                                              .syncVersions(library, .collection, 2),
@@ -387,6 +387,7 @@ class SyncControllerSpec: QuickSpec {
                                                                                                          version: 3)),
                                                              .storeVersion(3, library, .trash),
                                                              .syncDeletions(library, 2),
+                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .onlyWrites),
                                                              .submitWriteBatch(batch1)]
                     var updateCount = 0
 
@@ -436,7 +437,7 @@ class SyncControllerSpec: QuickSpec {
 
                 it("doesn't process sync batch to db") {
                     let action = SyncController.DownloadBatch(library: SyncControllerSpec.userLibrary, object: .group,
-                                             keys: [1], version: 0)
+                                                              keys: [1], version: 0)
                     let initial: [SyncController.Action] = [.syncBatchToDb(action)]
                     var error: Zotero.SyncError?
 
@@ -487,7 +488,7 @@ class SyncControllerSpec: QuickSpec {
                 it("doesn't process create groups action") {
                     SyncControllerSpec.syncVersionData = (7, 1)
 
-                    let initial: [SyncController.Action] = [.createLibraryActions(.all, false)]
+                    let initial: [SyncController.Action] = [.createLibraryActions(.all, .automatic)]
                     var error: Zotero.SyncError?
 
                     self.controller = self.performErrorTest(queue: initial,
@@ -569,30 +570,31 @@ class SyncControllerSpec: QuickSpec {
                         switch object {
                         case .collection:
                             objectResponses[object] = [["key": "AAAAAAAA",
-                                                       "version": 1,
-                                                       "library": ["id": 0, "type": "user", "name": "A"],
-                                                       "data": ["name": "A"]]]
+                                                        "version": 1,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "A"]]]
                         case .search:
                             objectResponses[object] = [["key": "AAAAAAAA",
-                                                       "version": 2,
-                                                       "library": ["id": 0, "type": "user", "name": "A"],
-                                                       "data": ["name": "A",
-                                                                "conditions": [["condition": "itemType",
-                                                                               "operator": "is",
-                                                                               "value": "thesis"]]]]]
+                                                        "version": 2,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "A",
+                                                                 "conditions": [["condition": "itemType",
+                                                                                 "operator": "is",
+                                                                                 "value": "thesis"]]]]]
                         case .item:
                             objectResponses[object] = [["key": "AAAAAAAA",
-                                                       "version": 3,
-                                                       "library": ["id": 0, "type": "user", "name": "A"],
-                                                       "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]]]]
+                                                        "version": 3,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["title": "A", "itemType": "thesis",
+                                                                 "tags": [["tag": "A"]]]]]
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
-                                                       "version": 4,
-                                                       "library": ["id": 0, "type": "user", "name": "A"],
-                                                       "data": ["note": "<p>This is a note</p>",
-                                                                "parentItem": "AAAAAAAA",
-                                                                "itemType": "note",
-                                                                "deleted": 1]]]
+                                                        "version": 4,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["note": "<p>This is a note</p>",
+                                                                 "parentItem": "AAAAAAAA",
+                                                                 "itemType": "note",
+                                                                 "deleted": 1]]]
                         case .group, .tag: break
                         }
                     }
@@ -618,7 +620,7 @@ class SyncControllerSpec: QuickSpec {
                                                      handler: SyncControllerSpec.syncHandler,
                                                      updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: 1000000) { doneAction in
                         self.controller?.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -735,10 +737,10 @@ class SyncControllerSpec: QuickSpec {
                     }
 
                     let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA",
-                                                                .search: "AAAAAAAA",
-                                                                .item: "AAAAAAAA",
-                                                                .trash: "BBBBBBBB",
-                                                                .group: groupId.description]
+                                                                       .search: "AAAAAAAA",
+                                                                       .item: "AAAAAAAA",
+                                                                       .trash: "BBBBBBBB",
+                                                                       .group: groupId.description]
                     var objectResponses: [SyncController.Object: Any] = [:]
                     objects.forEach { object in
                         switch object {
@@ -759,7 +761,8 @@ class SyncControllerSpec: QuickSpec {
                             objectResponses[object] = [["key": "AAAAAAAA",
                                                         "version": 3,
                                                         "library": ["id": groupId, "type": "group", "name": "A"],
-                                                        "data": ["title": "A", "itemType": "thesis", "tags": [["tag": "A"]]]]]
+                                                        "data": ["title": "A", "itemType":
+                                                                 "thesis", "tags": [["tag": "A"]]]]]
                         case .trash:
                             objectResponses[object] = [["key": "BBBBBBBB",
                                                         "version": 4,
@@ -855,19 +858,19 @@ class SyncControllerSpec: QuickSpec {
                             expect(versions?.trash).to(equal(3))
 
                             let collection = realm.objects(RCollection.self)
-                                                  .filter(Predicates.keyInLibrary(key: "AAAAAAAA", libraryId: .group(groupId))).first
+                                .filter(Predicates.keyInLibrary(key: "AAAAAAAA", libraryId: .group(groupId))).first
                             expect(collection).toNot(beNil())
                             let item = realm.objects(RItem.self)
-                                            .filter(Predicates.keyInLibrary(key: "AAAAAAAA", libraryId: .group(groupId))).first
+                                .filter(Predicates.keyInLibrary(key: "AAAAAAAA", libraryId: .group(groupId))).first
                             expect(item).toNot(beNil())
                             let item2 = realm.objects(RItem.self)
-                                             .filter(Predicates.keyInLibrary(key: "BBBBBBBB", libraryId: .group(groupId))).first
+                                .filter(Predicates.keyInLibrary(key: "BBBBBBBB", libraryId: .group(groupId))).first
                             expect(item2).toNot(beNil())
                             let search = realm.objects(RSearch.self)
-                                              .filter(Predicates.keyInLibrary(key: "AAAAAAAA", libraryId: .group(groupId))).first
+                                .filter(Predicates.keyInLibrary(key: "AAAAAAAA", libraryId: .group(groupId))).first
                             expect(search).toNot(beNil())
                             let tag = realm.objects(RTag.self)
-                                           .filter(Predicates.nameInLibrary(name: "A", libraryId: .group(groupId))).first
+                                .filter(Predicates.nameInLibrary(name: "A", libraryId: .group(groupId))).first
                             expect(tag).toNot(beNil())
 
                             doneAction()
@@ -950,6 +953,13 @@ class SyncControllerSpec: QuickSpec {
                     let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
                     expect(toBeDeletedItem).toNot(beNil())
 
+                    var statusCode: Int32 = 412
+                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+                        let code = statusCode
+                        statusCode = 200
+                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
+                    })
                     objects.forEach { object in
                         self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
                                         baseUrl: baseUrl, headers: header,
@@ -964,7 +974,7 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1122,7 +1132,7 @@ class SyncControllerSpec: QuickSpec {
                                     switch action {
                                     case .syncBatchToDb(let batch):
                                         guard batch.object == .item,
-                                              let strKeys = batch.keys as? [String] else { return false }
+                                            let strKeys = batch.keys as? [String] else { return false }
                                         return strKeys.contains(unsyncedItemKey) && strKeys.contains(responseItemKey)
                                     default:
                                         return false
@@ -1222,6 +1232,424 @@ class SyncControllerSpec: QuickSpec {
                     }
                 }
 
+                it("should ignore errors when saving downloaded objects") {
+                    let header = ["Last-Modified-Version" : "2"]
+                    let library = SyncControllerSpec.userLibrary
+                    let objects = SyncController.Object.allCases
+
+                    var versionResponses: [SyncController.Object: Any] = [:]
+                    objects.forEach { object in
+                        switch object {
+                        case .collection:
+                            versionResponses[object] = ["AAAAAAAA": 1,
+                                                        "BBBBBBBB": 1,
+                                                        "CCCCCCCC": 1]
+                        case .search:
+                            versionResponses[object] = ["GGGGGGGG": 1,
+                                                        "HHHHHHHH": 1,
+                                                        "IIIIIIII": 1]
+                        case .item:
+                            versionResponses[object] = ["DDDDDDDD": 1,
+                                                        "EEEEEEEE": 1,
+                                                        "FFFFFFFF": 1]
+                        case .group, .tag, .trash: break
+                        }
+                    }
+
+                    let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA,BBBBBBBB,CCCCCCCC",
+                                                                       .search: "GGGGGGGG,HHHHHHHH,IIIIIIII",
+                                                                       .item: "DDDDDDDD,EEEEEEEE,FFFFFFFF"]
+                    var objectResponses: [SyncController.Object: Any] = [:]
+                    objects.forEach { object in
+                        switch object {
+                        case .collection:
+                            objectResponses[object] = [["key": "AAAAAAAA",
+                                                        "version": 1,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "A"]],
+                                                       // Missing parent - should be synced, parent queued
+                                                       ["key": "BBBBBBBB",
+                                                        "version": 1,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "B",
+                                                                 "parentCollection": "ZZZZZZZZ"]],
+                                                       // Unknown field - should be synced, unknown field ignored
+                                                       ["key": "CCCCCCCC",
+                                                        "version": 1,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "C", "unknownField": 5]]]
+                        case .search:
+                                                       // Unknown condition - should be queued
+                            objectResponses[object] = [["key": "GGGGGGGG",
+                                                        "version": 2,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "G",
+                                                                 "conditions": [["condition": "unknownCondition",
+                                                                                 "operator": "is",
+                                                                                 "value": "thesis"]]]],
+                                                       // Unknown operator - should be queued
+                                                       ["key": "HHHHHHHH",
+                                                        "version": 2,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["name": "H",
+                                                                 "conditions": [["condition": "itemType",
+                                                                                 "operator": "unknownOperator",
+                                                                                 "value": "thesis"]]]]]
+                        case .item:
+                                                       // Unknown field - should be queued
+                            objectResponses[object] = [["key": "DDDDDDDD",
+                                                        "version": 3,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["title": "D", "itemType":
+                                                                 "thesis", "tags": [], "unknownField": "B"]],
+                                                       // Unknown item type - should be queued
+                                                       ["key": "EEEEEEEE",
+                                                        "version": 3,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["title": "E", "itemType": "unknownType", "tags": []]],
+                                                       // Parent didn't sync, but item is fine - should be synced
+                                                       ["key": "FFFFFFFF",
+                                                        "version": 3,
+                                                        "library": ["id": 0, "type": "user", "name": "A"],
+                                                        "data": ["note": "This is a note", "itemType": "note",
+                                                                 "tags": [], "parentItem": "EEEEEEEE"]]]
+                        case .group, .tag, .trash: break
+                        }
+                    }
+
+                    objects.forEach { object in
+                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: (versionResponses[object] ?? [:]))
+                    }
+                    objects.forEach { object in
+                        self.createStub(for: ObjectsRequest(libraryType: library, objectType: object, keys: (objectKeys[object] ?? "")),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: (objectResponses[object] ?? [:]))
+                    }
+                    self.createStub(for: SettingsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [], "tags": []])
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            let library = realm.objects(RCustomLibrary.self).first
+                            expect(library).toNot(beNil())
+                            expect(library?.type).to(equal(.myLibrary))
+
+                            expect(library?.collections.count).to(equal(4))
+                            expect(library?.items.count).to(equal(3))
+                            expect(library?.searches.count).to(equal(3))
+                            expect(realm.objects(RCollection.self).count).to(equal(4))
+                            expect(realm.objects(RSearch.self).count).to(equal(3))
+                            expect(realm.objects(RItem.self).count).to(equal(3))
+
+                            let collection = realm.objects(RCollection.self).filter("key = %@", "AAAAAAAA").first
+                            expect(collection).toNot(beNil())
+                            expect(collection?.name).to(equal("A"))
+                            expect(collection?.syncState).to(equal(.synced))
+                            expect(collection?.version).to(equal(1))
+                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.parent).to(beNil())
+                            expect(collection?.children.count).to(equal(0))
+
+                            let collection2 = realm.objects(RCollection.self).filter("key = %@", "BBBBBBBB").first
+                            expect(collection2).toNot(beNil())
+                            expect(collection2?.name).to(equal("B"))
+                            expect(collection2?.syncState).to(equal(.synced))
+                            expect(collection2?.version).to(equal(1))
+                            expect(collection2?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection2?.parent?.key).to(equal("ZZZZZZZZ"))
+                            expect(collection2?.children.count).to(equal(0))
+
+                            let collection3 = realm.objects(RCollection.self).filter("key = %@", "CCCCCCCC").first
+                            expect(collection3).toNot(beNil())
+                            expect(collection3?.name).to(equal("C"))
+                            expect(collection3?.syncState).to(equal(.synced))
+                            expect(collection3?.version).to(equal(1))
+                            expect(collection3?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection3?.parent).to(beNil())
+                            expect(collection3?.children.count).to(equal(0))
+
+                            let collection4 = realm.objects(RCollection.self).filter("key = %@", "ZZZZZZZZ").first
+                            expect(collection4).toNot(beNil())
+                            expect(collection4?.syncState).to(equal(.dirty))
+                            expect(collection4?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection4?.parent).to(beNil())
+                            expect(collection4?.children.count).to(equal(1))
+
+                            let item = realm.objects(RItem.self).filter("key = %@", "DDDDDDDD").first
+                            expect(item).toNot(beNil())
+                            expect(item?.syncState).to(equal(.dirty))
+                            expect(item?.parent).to(beNil())
+                            expect(item?.children.count).to(equal(0))
+
+                            let item2 = realm.objects(RItem.self).filter("key = %@", "EEEEEEEE").first
+                            expect(item2).toNot(beNil())
+                            expect(item2?.syncState).to(equal(.dirty))
+                            expect(item2?.parent).to(beNil())
+                            expect(item2?.children.count).to(equal(1))
+
+                            let item3 = realm.objects(RItem.self).filter("key = %@", "FFFFFFFF").first
+                            expect(item3).toNot(beNil())
+                            expect(item3?.syncState).to(equal(.synced))
+                            expect(item3?.parent?.key).to(equal("EEEEEEEE"))
+                            expect(item3?.parent?.syncState).to(equal(.dirty))
+                            expect(item3?.children.count).to(equal(0))
+
+                            let search = realm.objects(RSearch.self).first
+                            expect(search?.key).to(equal("GGGGGGGG"))
+                            expect(search?.name).to(equal("G"))
+                            expect(search?.syncState).to(equal(.dirty))
+                            expect(search?.conditions.count).to(equal(0))
+
+                            let search2 = realm.objects(RSearch.self).first
+                            expect(search2?.key).to(equal("HHHHHHHH"))
+                            expect(search2?.name).to(equal("H"))
+                            expect(search2?.syncState).to(equal(.dirty))
+                            expect(search2?.conditions.count).to(equal(0))
+
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
+                }
+
+                it("should add items that exist remotely in a locally deleted," +
+                   " remotely modified collection back to collection") {
+                    let header = ["Last-Modified-Version" : "1"]
+                    let library = SyncControllerSpec.userLibrary
+                    let objects = SyncController.Object.allCases
+                    let collectionKey = "AAAAAAAA"
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RCustomLibrary.self,
+                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+
+                        let versions = RVersions()
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        let collection = RCollection()
+                        collection.key = collectionKey
+                        collection.name = "Locally deleted collection"
+                        collection.version = 0
+                        collection.deleted = true
+                        collection.customLibrary = library
+                        realm.add(collection)
+
+                        let item1 = RItem()
+                        item1.key = "BBBBBBBB"
+                        item1.title = "B"
+                        item1.customLibrary = library
+                        item1.collections.append(collection)
+                        realm.add(item1)
+
+                        let item2 = RItem()
+                        item2.key = "CCCCCCCC"
+                        item2.title = "C"
+                        item2.customLibrary = library
+                        item2.collections.append(collection)
+                        realm.add(item2)
+                    }
+
+                    let versionResponses: [SyncController.Object: Any] = [.collection: [collectionKey: 1]]
+                    let objectKeys: [SyncController.Object: String] = [.collection: collectionKey]
+                    let collectionData: [[String: Any]] = [["key": collectionKey,
+                                                            "version": 1,
+                                                            "library": ["id": 0, "type": "user", "name": "A"],
+                                                            "data": ["name": "A"]]]
+                    let objectResponses: [SyncController.Object: Any] = [.collection: collectionData]
+
+                    self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
+                                                                keys: [collectionKey], version: 0),
+                                    baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
+                    objects.forEach { object in
+                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: (versionResponses[object] ?? [:]))
+                    }
+                    objects.forEach { object in
+                        self.createStub(for: ObjectsRequest(libraryType: library, objectType: object,
+                                                            keys: (objectKeys[object] ?? "")),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: (objectResponses[object] ?? [:]))
+                    }
+                    self.createStub(for: SettingsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [], "tags": []])
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            let library = realm.objects(RCustomLibrary.self).first
+                            expect(library).toNot(beNil())
+                            expect(library?.type).to(equal(.myLibrary))
+
+                            expect(library?.collections.count).to(equal(1))
+                            expect(library?.items.count).to(equal(2))
+                            expect(realm.objects(RCollection.self).count).to(equal(1))
+                            expect(realm.objects(RItem.self).count).to(equal(2))
+
+                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
+                            expect(collection).toNot(beNil())
+                            expect(collection?.syncState).to(equal(.synced))
+                            expect(collection?.version).to(equal(1))
+                            expect(collection?.deleted).to(beFalse())
+                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.parent).to(beNil())
+                            expect(collection?.items.count).to(equal(2))
+
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
+                }
+
+                it("should add locally deleted items that exist remotely in a locally deleted, remotely modified" +
+                   " collection to sync queue and remove from delete log") {
+                    let header = ["Last-Modified-Version" : "1"]
+                    let library = SyncControllerSpec.userLibrary
+                    let objects = SyncController.Object.allCases
+                    let collectionKey = "AAAAAAAA"
+                    let deletedItemKey = "CCCCCCCC"
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RCustomLibrary.self,
+                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+
+                        let versions = RVersions()
+                        versions.collections = 1
+                        versions.items = 1
+                        versions.trash = 1
+                        versions.searches = 1
+                        versions.settings = 1
+                        versions.deletions = 1
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        let collection = RCollection()
+                        collection.key = collectionKey
+                        collection.name = "Locally deleted collection"
+                        collection.version = 1
+                        collection.deleted = true
+                        collection.customLibrary = library
+                        realm.add(collection)
+
+                        let item1 = RItem()
+                        item1.key = "BBBBBBBB"
+                        item1.title = "B"
+                        item1.customLibrary = library
+                        item1.collections.append(collection)
+                        realm.add(item1)
+
+                        let item2 = RItem()
+                        item2.key = deletedItemKey
+                        item2.title = "C"
+                        item2.deleted = true
+                        item2.customLibrary = library
+                        item2.collections.append(collection)
+                        realm.add(item2)
+                    }
+
+                    let versionResponses: [SyncController.Object: Any] = [.collection: [collectionKey: 2]]
+                    let objectKeys: [SyncController.Object: String] = [.collection: collectionKey]
+                    let collectionData: [[String: Any]] = [["key": collectionKey,
+                                                            "version": 2,
+                                                            "library": ["id": 0, "type": "user", "name": "A"],
+                                                            "data": ["name": "A"]]]
+                    let objectResponses: [SyncController.Object: Any] = [.collection: collectionData]
+
+                    self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
+                                                                keys: [collectionKey], version: 1),
+                                    baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
+                    self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .item,
+                                                                keys: [deletedItemKey], version: 1),
+                                    baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
+                    objects.forEach { object in
+                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 1),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: (versionResponses[object] ?? [:]))
+                    }
+                    objects.forEach { object in
+                        self.createStub(for: ObjectsRequest(libraryType: library, objectType: object,
+                                                            keys: (objectKeys[object] ?? "")),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: (objectResponses[object] ?? [:]))
+                    }
+                    self.createStub(for: SettingsRequest(libraryType: library, version: 1),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 1),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [], "tags": []])
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            let library = realm.objects(RCustomLibrary.self).first
+                            expect(library).toNot(beNil())
+                            expect(library?.type).to(equal(.myLibrary))
+
+                            expect(library?.collections.count).to(equal(1))
+                            expect(library?.items.count).to(equal(2))
+                            expect(realm.objects(RCollection.self).count).to(equal(1))
+                            expect(realm.objects(RItem.self).count).to(equal(2))
+
+                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
+                            expect(collection).toNot(beNil())
+                            expect(collection?.syncState).to(equal(.synced))
+                            expect(collection?.version).to(equal(2))
+                            expect(collection?.deleted).to(beFalse())
+                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.parent).to(beNil())
+                            expect(collection?.items.count).to(equal(2))
+                            if let collection = collection {
+                                expect(collection.items.map({ $0.key })).to(contain(["BBBBBBBB", "CCCCCCCC"]))
+                            }
+
+                            let item = realm.objects(RItem.self).filter("key = %@", "CCCCCCCC").first
+                            expect(item).toNot(beNil())
+                            expect(item?.deleted).to(beFalse())
+
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
+                }
+            }
+
+            describe("Upload") {
                 it("should update collection and item") {
                     let oldVersion = 3
                     let newVersion = oldVersion + 1
@@ -1520,6 +1948,112 @@ class SyncControllerSpec: QuickSpec {
                         self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
                     }
                 }
+
+                it("should upload new full items and subsequent patches") {
+
+                }
+
+                it("should update library version after upload") {
+
+                }
+
+                it("should process downloads after upload failure") {
+
+                }
+
+                it("should update local objects with remotel saved version after uploading") {
+
+                }
+
+                it("should upload local deletions") {
+                    let header = ["Last-Modified-Version" : "1"]
+                    let library = SyncControllerSpec.userLibrary
+                    let collectionKey = "AAAAAAAA"
+                    let searchKey = "BBBBBBBB"
+                    let itemKey = "CCCCCCCC"
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RCustomLibrary.self,
+                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+
+                        let versions = RVersions()
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        let collection = RCollection()
+                        collection.key = collectionKey
+                        collection.name = "Deleted collection"
+                        collection.version = 0
+                        collection.deleted = true
+                        collection.customLibrary = library
+                        realm.add(collection)
+
+                        let item = RItem()
+                        item.key = itemKey
+                        item.title = "Deleted item"
+                        item.deleted = true
+                        item.customLibrary = library
+                        item.collections.append(collection)
+                        realm.add(item)
+
+                        let search = RSearch()
+                        search.key = searchKey
+                        search.name = "Deleted search"
+                        search.deleted = true
+                        search.customLibrary = library
+                        realm.add(search)
+                    }
+
+                    self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
+                                                                keys: [collectionKey], version: 0),
+                                    baseUrl: baseUrl, headers: header, response: [:])
+                    self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .search,
+                                                                keys: [searchKey], version: 0),
+                                    baseUrl: baseUrl, headers: header, response: [:])
+                    self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .item,
+                                                                keys: [itemKey], version: 0),
+                                    baseUrl: baseUrl, headers: header, response: [:])
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            expect(realm.objects(RCollection.self).count).to(equal(0))
+                            expect(realm.objects(RSearch.self).count).to(equal(0))
+                            expect(realm.objects(RItem.self).count).to(equal(0))
+
+                            let collection = realm.objects(RCollection.self).filter("key = %@", collectionKey).first
+                            expect(collection).to(beNil())
+                            let search = realm.objects(RSearch.self).filter("key = %@", searchKey).first
+                            expect(search).to(beNil())
+                            let item = realm.objects(RItem.self).filter("key = %@", itemKey).first
+                            expect(item).to(beNil())
+
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
+                }
+
+                it("should delay on second upload conflict") {
+                    // Try to upload, get 412
+                    // Download, get new version number
+                    // Try to upload again, get 412
+                    // Delay
+                    // Download, get new version number
+                    // Upload, get 200
+                }
+            }
+
+            it("should make only one request if in sync") {
+
             }
         }
     }
@@ -1628,7 +2162,7 @@ fileprivate class TestHandler: SyncActionHandler {
     func loadAllLibraryData() -> Single<[LibraryData]> {
         return self.result(for: .loadGroups).flatMap {
             let data = LibraryData(identifier: .group(SyncControllerSpec.groupId), name: "",
-                                    versions: SyncControllerSpec.groupIdVersions)
+                                   versions: SyncControllerSpec.groupIdVersions)
             return Single.just([data])
         }
     }
