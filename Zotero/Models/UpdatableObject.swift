@@ -22,7 +22,9 @@ protocol Updatable: class {
 
 extension Updatable {
     func resetChanges() {
-        self.rawChangedFields = 0
+        if self.isChanged {
+            self.rawChangedFields = 0
+        }
     }
 
     var isChanged: Bool {

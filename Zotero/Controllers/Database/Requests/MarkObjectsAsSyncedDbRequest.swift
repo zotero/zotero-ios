@@ -21,7 +21,9 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
         let predicate = Predicates.keysInLibrary(keys: self.keys, libraryId: self.libraryId)
         let objects = database.objects(Obj.self).filter(predicate)
         objects.forEach { object in
-            object.version = self.version
+            if object.version != self.version {
+                object.version = self.version
+            }
             object.resetChanges()
         }
     }

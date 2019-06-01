@@ -259,6 +259,18 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    private func removeAllDownloadActions(for library: Library) {
+        while !self.queue.isEmpty {
+            guard self.queue[0].library == library else { break }
+            switch self.queue[0] {
+            case .resolveConflict, .submitDeleteBatch, .submitWriteBatch:
+                continue
+            default: break
+            }
+            self.queue.removeFirst()
+        }
+    }
+
     private func processNextAction() {
         guard !self.queue.isEmpty else {
             self.processingAction = nil
@@ -439,6 +451,9 @@ final class SyncController: SynchronizationController {
                 self.abort(error: abortError)
                 return
             }
+
+            // 304 is not actually an error, so we need to check before next "if" so that we don't abort on 304 response
+            if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
 
             if object == .group {
                 self.abort(error: SyncError.groupSyncFailed(error))
@@ -654,21 +669,21 @@ final class SyncController: SynchronizationController {
     private func processDeletionsSync(library: Library, since sinceVersion: Int) {
         self.handler.synchronizeDeletions(for: library, since: sinceVersion, current: self.lastReturnedVersion)
                     .subscribe(onSuccess: { [weak self] conflicts in
-                        self?.finishDeletionsSync(result: .success((conflicts, library)))
+                        self?.finishDeletionsSync(result: .success(conflicts), library: library)
                     }, onError: { [weak self] error in
-                        self?.finishDeletionsSync(result: .failure(error))
+                        self?.finishDeletionsSync(result: .failure(error), library: library)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<([String], Library)>) {
+    private func finishDeletionsSync(result: Result<[String]>, library: Library) {
         switch result {
-        case .success(let data):
+        case .success(let conflicts):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 guard let `self` = self else { return }
-                if !data.0.isEmpty {
-                    let conflicts: [Action] = data.0.map({ .resolveConflict($0, data.1) })
-                    self.queue.insert(contentsOf: conflicts, at: 0)
+                if !conflicts.isEmpty {
+                    let actions: [Action] = conflicts.map({ .resolveConflict($0, library) })
+                    self.queue.insert(contentsOf: actions, at: 0)
                 }
                 self.processNextAction()
             }
@@ -678,6 +693,8 @@ final class SyncController: SynchronizationController {
                 self.abort(error: abortError)
                 return
             }
+
+            if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.nonFatalErrors.append(error)
@@ -697,7 +714,16 @@ final class SyncController: SynchronizationController {
                             }
                         }
                     }, onError: { [weak self] error in
-                        self?.performOnAccessQueue(flags: .barrier) { [weak self] in
+                        guard let `self` = self else { return }
+
+                        if let abortError = self.errorRequiresAbort(error) {
+                            self.abort(error: abortError)
+                            return
+                        }
+
+                        if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
+
+                        self.performOnAccessQueue(flags: .barrier) { [weak self] in
                             self?.nonFatalErrors.append(error)
                             self?.processNextAction()
                         }
@@ -846,6 +872,19 @@ final class SyncController: SynchronizationController {
         return true
     }
 
+    private func handleUnchangedFailureIfNeeded(for error: Error, library: Library) -> Bool {
+        guard error.isUnchangedError else { return false }
+
+        // If data is unchanged, we can skip all download actions for this library
+
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            guard let `self` = self else { return }
+            self.removeAllDownloadActions(for: library)
+            self.processNextAction()
+        }
+        return true
+    }
+
     // MARK: - Testing
 
     var reportFinish: ((Result<([Action], [Error])>) -> Void)?
@@ -866,26 +905,36 @@ extension Error {
         return (self as? SyncActionHandlerError) == .versionMismatch
     }
 
-    var isPreconditionFailure: Bool {
-        if let responseError = self as? AFResponseError {
-            return self.isPreconditionFailure(error: responseError.error)
-        }
-        if let alamoError = self as? AFError {
-            return self.isPreconditionFailure(error: alamoError)
-        }
-        return false
+    var isUnchangedError: Bool {
+        return self.afError.flatMap({ $0.statusCode == 304 }) ?? false
     }
 
-    private func isPreconditionFailure(error: AFError) -> Bool {
-        switch error {
+    var isPreconditionFailure: Bool {
+        return self.afError.flatMap({ $0.statusCode == 412 }) ?? false
+    }
+
+    private var afError: AFError? {
+        if let responseError = self as? AFResponseError {
+            return responseError.error
+        }
+        if let alamoError = self as? AFError {
+            return alamoError
+        }
+        return nil
+    }
+}
+
+extension AFError {
+    var statusCode: Int? {
+        switch self {
         case .responseValidationFailed(let reason):
             switch reason {
             case .unacceptableStatusCode(let code):
-                return code == 412
+                return code
             default: break
             }
         default: break
         }
-        return false
+        return nil
     }
 }

@@ -600,7 +600,9 @@ class SyncControllerSpec: QuickSpec {
                     }
 
                     objects.forEach { object in
-                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
@@ -620,7 +622,7 @@ class SyncControllerSpec: QuickSpec {
                                                      handler: SyncControllerSpec.syncHandler,
                                                      updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
 
-                    waitUntil(timeout: 1000000) { doneAction in
+                    waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -901,7 +903,9 @@ class SyncControllerSpec: QuickSpec {
                     expect(toBeDeletedItem).toNot(beNil())
 
                     objects.forEach { object in
-                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: [:])
                     }
@@ -961,7 +965,9 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
                     })
                     objects.forEach { object in
-                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: [:])
                     }
@@ -1020,7 +1026,9 @@ class SyncControllerSpec: QuickSpec {
                                             baseUrl: baseUrl, headers: header,
                                             response: [itemKey: 3])
                         } else {
-                            self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                            let version: Int? = object == .group ? nil : 0
+                            self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                         objectType: object, version: version),
                                             baseUrl: baseUrl, headers: header,
                                             response: [:])
                         }
@@ -1098,7 +1106,9 @@ class SyncControllerSpec: QuickSpec {
                                             baseUrl: baseUrl, headers: header,
                                             response: [responseItemKey: 3])
                         } else {
-                            self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                            let version: Int? = object == .group ? nil : 0
+                            self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                         objectType: object, version: version),
                                             baseUrl: baseUrl, headers: header,
                                             response: [:])
                         }
@@ -1181,7 +1191,9 @@ class SyncControllerSpec: QuickSpec {
                                             baseUrl: baseUrl, headers: header,
                                             response: [correctKey: 3, incorrectKey: 3])
                         } else {
-                            self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                            let version: Int? = object == .group ? nil : 0
+                            self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                         objectType: object, version: version),
                                             baseUrl: baseUrl, headers: header,
                                             response: [:])
                         }
@@ -1318,7 +1330,9 @@ class SyncControllerSpec: QuickSpec {
                     }
 
                     objects.forEach { object in
-                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
@@ -1477,7 +1491,9 @@ class SyncControllerSpec: QuickSpec {
                                                                 keys: [collectionKey], version: 0),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
                     objects.forEach { object in
-                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
@@ -1590,7 +1606,9 @@ class SyncControllerSpec: QuickSpec {
                                                                 keys: [deletedItemKey], version: 1),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
                     objects.forEach { object in
-                        self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 1),
+                        let version: Int? = object == .group ? nil : 1
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
@@ -1709,7 +1727,7 @@ class SyncControllerSpec: QuickSpec {
 
                     let collectionUpdate = UpdatesRequest(libraryType: library, objectType: .collection,
                                                           params: [], version: oldVersion)
-                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl)&&isMethodPOST()
+                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl)
                     stub(condition: collectionConditions, response: { request -> OHHTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
@@ -1723,7 +1741,7 @@ class SyncControllerSpec: QuickSpec {
 
                     let itemUpdate = UpdatesRequest(libraryType: library, objectType: .item,
                                                     params: [], version: oldVersion)
-                    let itemConditions = itemUpdate.stubCondition(with: baseUrl)&&isMethodPOST()
+                    let itemConditions = itemUpdate.stubCondition(with: baseUrl)
                     stub(condition: itemConditions, response: { request -> OHHTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
@@ -1832,7 +1850,7 @@ class SyncControllerSpec: QuickSpec {
 
                     let update = UpdatesRequest(libraryType: library, objectType: .item,
                                                 params: [], version: oldVersion)
-                    let conditions = update.stubCondition(with: baseUrl)&&isMethodPOST()
+                    let conditions = update.stubCondition(with: baseUrl)
                     stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
                         guard let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) }) else {
                             fail("parameters not found")
@@ -1921,7 +1939,7 @@ class SyncControllerSpec: QuickSpec {
 
                     let update = UpdatesRequest(libraryType: library, objectType: .collection,
                                                 params: [], version: oldVersion)
-                    let conditions = update.stubCondition(with: baseUrl)&&isMethodPOST()
+                    let conditions = update.stubCondition(with: baseUrl)
                     stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
                         guard let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) }) else {
                             fail("parameters not found")
@@ -1954,15 +1972,101 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should update library version after upload") {
+                    let oldVersion = 3
+                    let newVersion = oldVersion + 10
 
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let library = realm.object(ofType: RCustomLibrary.self,
+                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+
+                        let versions = RVersions()
+                        versions.collections = oldVersion
+                        versions.items = oldVersion
+                        realm.add(versions)
+                        library?.versions = versions
+
+                        let collection = RCollection()
+                        realm.add(collection)
+
+                        collection.key = "AAAAAAAA"
+                        collection.syncState = .synced
+                        collection.version = oldVersion
+                        collection.changedFields = .all
+                        collection.dateModified = Date()
+                        collection.customLibrary = library
+                    }
+
+                    let library = SyncControllerSpec.userLibrary
+
+                    let update = UpdatesRequest(libraryType: library, objectType: .collection,
+                                                params: [], version: oldVersion)
+                    self.createStub(for: update, baseUrl: baseUrl,
+                                    headers: ["Last-Modified-Version": "\(newVersion)"],
+                                    statusCode: 200,
+                                    response: ["success": ["0": [:]], "unchanged": [], "failed": []])
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            let library = realm.object(ofType: RCustomLibrary.self,
+                                                       forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+
+                            expect(library?.versions?.collections).to(equal(newVersion))
+
+                            doneAction()
+                        }
+                        self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
+                    }
                 }
 
                 it("should process downloads after upload failure") {
+                    let header = ["Last-Modified-Version" : "3"]
+                    let library = SyncControllerSpec.userLibrary
+                    let objects = SyncController.Object.allCases
 
-                }
+                    var downloadCalled = false
 
-                it("should update local objects with remotel saved version after uploading") {
+                    var statusCode: Int32 = 412
+                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+                        let code = statusCode
+                        statusCode = 200
+                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
+                    })
+                    objects.forEach { object in
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
+                                        baseUrl: baseUrl, headers: header, response: [:])
+                    }
+                    stub(condition: SettingsRequest(libraryType: library, version: 0).stubCondition(with: baseUrl),
+                         response: { _ -> OHHTTPStubsResponse in
+                        downloadCalled = true
+                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
+                    })
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [], "tags": []])
 
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            expect(downloadCalled).to(beTrue())
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
                 }
 
                 it("should upload local deletions") {
@@ -2053,7 +2157,30 @@ class SyncControllerSpec: QuickSpec {
             }
 
             it("should make only one request if in sync") {
+                let library = SyncControllerSpec.userLibrary
+                let expected: [SyncController.Action] = [.syncVersions(library, .group, nil)]
 
+                self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: .group, version: nil),
+                                baseUrl: baseUrl, headers: nil, statusCode: 304, response: [:])
+
+                self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                 handler: SyncControllerSpec.syncHandler,
+                                                 updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+
+                waitUntil(timeout: 10) { doneAction in
+                    self.controller?.reportFinish = { result in
+                        switch result {
+                        case .success(let data):
+                            expect(data.0).to(equal(expected))
+                        default:
+                            fail("Test reported unexpected failure")
+                        }
+
+                        doneAction()
+                    }
+
+                    self.controller?.start(type: .normal, libraries: .all)
+                }
             }
         }
     }
