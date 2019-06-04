@@ -69,7 +69,8 @@ extension ObservableType where E == (HTTPURLResponse, Data) {
                       let delay = retryDelay(error) else {
                     return .error(error)
                 }
-                return Observable<Int>.timer(RxTimeInterval(delay.seconds(for: (attempt + 1))),
+                let seconds = Int(delay.seconds(for: (attempt + 1)))
+                return Observable<Int>.timer(.seconds(seconds),
                                              scheduler: MainScheduler.instance)
                                       .map { _ in () }
             }
