@@ -15,6 +15,7 @@ import RxSwift
 enum SyncActionHandlerError: Error, Equatable {
     case expired
     case versionMismatch
+    case objectConflict
 }
 
 struct LibraryData {
@@ -82,7 +83,7 @@ protocol SyncActionHandler: class {
     func loadLibraryData(for identifiers: [LibraryIdentifier]) -> Single<[LibraryData]>
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
-                             syncAll: Bool) -> Single<(Int, [Any])>
+                             syncType: SyncController.SyncType) -> Single<(Int, [Any])>
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable
     func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library,
                               object: SyncController.Object,
@@ -105,15 +106,17 @@ class SyncActionHandlerController {
     private let fileStorage: FileStorage
     private let disposeBag: DisposeBag
     private let schemaController: SchemaController
+    private let syncDelayIntervals: [Double]
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage,
-         fileStorage: FileStorage, schemaController: SchemaController) {
+    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage,
+         schemaController: SchemaController, syncDelayIntervals: [Double]) {
         let queue = DispatchQueue(label: "org.zotero.SyncHandlerActionQueue", qos: .utility, attributes: .concurrent)
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.syncDelayIntervals = syncDelayIntervals
         self.disposeBag = DisposeBag()
     }
 }
@@ -150,19 +153,19 @@ extension SyncActionHandlerController: SyncActionHandler {
 
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
-                             syncAll: Bool) -> Single<(Int, [Any])> {
+                             syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         switch object {
         case .group:
-            return self.synchronizeGroupVersions(library: library, syncAll: syncAll)
+            return self.synchronizeGroupVersions(library: library, syncAll: (syncType == .all))
         case .collection:
             return self.synchronizeVersions(for: RCollection.self, library: library, object: object,
-                                            since: sinceVersion, current: currentVersion, syncAll: syncAll)
+                                            since: sinceVersion, current: currentVersion, syncType: syncType)
         case .item, .trash:
             return self.synchronizeVersions(for: RItem.self, library: library, object: object,
-                                            since: sinceVersion, current: currentVersion, syncAll: syncAll)
+                                            since: sinceVersion, current: currentVersion, syncType: syncType)
         case .search:
             return self.synchronizeVersions(for: RSearch.self, library: library, object: object,
-                                            since: sinceVersion, current: currentVersion, syncAll: syncAll)
+                                            since: sinceVersion, current: currentVersion, syncType: syncType)
         case .tag: // Tags are not synchronized, this should not be called
             DDLogError("SyncActionHandler: synchronizeVersions tried to sync tags")
             return Single.just((0, []))
@@ -188,8 +191,8 @@ extension SyncActionHandlerController: SyncActionHandler {
     private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, library: SyncController.Library,
                                                           object: SyncController.Object, since sinceVersion: Int?,
                                                           current currentVersion: Int?,
-                                                          syncAll: Bool) -> Single<(Int, [Any])> {
-        let forcedSinceVersion = syncAll ? nil : sinceVersion
+                                                          syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
+        let forcedSinceVersion = syncType == .all ? nil : sinceVersion
         let request = VersionsRequest<String>(libraryType: library, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
@@ -212,7 +215,8 @@ extension SyncActionHandlerController: SyncActionHandler {
                                   let request = SyncVersionsDbRequest<Obj>(versions: response.0,
                                                                            libraryId: library.libraryId,
                                                                            isTrash: isTrash,
-                                                                           syncAll: syncAll)
+                                                                           syncType: syncType,
+                                                                           delayIntervals: self.syncDelayIntervals)
                                   do {
                                       let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
                                       return Single.just((newVersion, identifiers))
@@ -433,8 +437,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  }
 
                                  if response.failed.first(where: { $0.code == 412 }) != nil {
-                                     let error = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412))
-                                     return Single.just((response.newVersion, error))
+                                     return Single.just((response.newVersion, SyncActionHandlerError.objectConflict))
                                  }
 
                                  if response.failed.first(where: { $0.code == 409 }) != nil {

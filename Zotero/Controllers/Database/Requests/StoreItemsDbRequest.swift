@@ -63,6 +63,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
         item.dateModified = data.dateModified
         item.dateAdded = data.dateAdded
         item.syncState = .synced
+        item.syncRetries = 0
+        item.lastSyncDate = Date(timeIntervalSince1970: 0)
 
         self.syncFields(data: data, item: item, database: database, schemaController: schemaController)
         try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, item: item, database: database)

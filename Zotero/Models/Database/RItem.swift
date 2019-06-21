@@ -42,6 +42,10 @@ class RItem: Object {
     @objc dynamic var version: Int = 0
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
     @objc dynamic var rawSyncState: Int = 0
+    /// Date when last sync attempt was performed on this object
+    @objc dynamic var lastSyncDate: Date = Date(timeIntervalSince1970: 0)
+    /// Number of retries for sync of this object
+    @objc dynamic var syncRetries: Int = 0
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
     /// Indicates whether the object is deleted locally and needs to be synced with backend

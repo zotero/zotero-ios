@@ -21,6 +21,7 @@ import Quick
 class SyncControllerSpec: QuickSpec {
     fileprivate static let groupId = 10
     private static let userId = 100
+    private static let conflictDelays = [0, 3, 6, 9]
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString)
     private static var schemaController: SchemaController = {
         let controller = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
@@ -34,7 +35,8 @@ class SyncControllerSpec: QuickSpec {
                                                                  apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
                                                                  dbStorage: RealmDbStorage(config: realmConfig),
                                                                  fileStorage: TestFileStorage(),
-                                                                 schemaController: schemaController)
+                                                                 schemaController: schemaController,
+                                                                 syncDelayIntervals: [2])
     private static let updateDataSource = UpdateDataSource(dbStorage: RealmDbStorage(config: realmConfig))
     private static let emptyUpdateDataSource = TestDataSource(writeBatches: [], deleteBatches: [])
 
@@ -620,7 +622,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -828,7 +831,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -918,7 +922,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -980,7 +985,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1044,7 +1050,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1128,7 +1135,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
@@ -1171,7 +1179,7 @@ class SyncControllerSpec: QuickSpec {
                     }
                 }
 
-                it("should mark object as needsSync if not parsed correctly") {
+                it("should mark object as needsSync if not parsed correctly and syncRetries should be increased") {
                     let header = ["Last-Modified-Version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
@@ -1213,29 +1221,25 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { result in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
-                            switch result {
-                            case .success(let data):
-                                expect(data.1.count).to(equal(1))
-                            case .failure:
-                                fail("Sync aborted")
-                            }
-
                             let correctPred = Predicates.keyInLibrary(key: correctKey, libraryId: .custom(.myLibrary))
                             let correctItem = realm.objects(RItem.self).filter(correctPred).first
                             expect(correctItem).toNot(beNil())
                             expect(correctItem?.syncState).to(equal(.synced))
+                            expect(correctItem?.syncRetries).to(equal(0))
 
                             let incorrectPred = Predicates.keyInLibrary(key: incorrectKey, libraryId: .custom(.myLibrary))
                             let incorrectItem = realm.objects(RItem.self).filter(incorrectPred).first
                             expect(incorrectItem).toNot(beNil())
                             expect(incorrectItem?.syncState).to(equal(.dirty))
+                            expect(incorrectItem?.syncRetries).to(equal(1))
 
                             doneAction()
                         }
@@ -1350,7 +1354,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1512,7 +1517,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1627,7 +1633,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1757,7 +1764,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1870,7 +1878,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1957,7 +1966,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -1965,10 +1975,6 @@ class SyncControllerSpec: QuickSpec {
                         }
                         self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
                     }
-                }
-
-                it("should upload new full items and subsequent patches") {
-
                 }
 
                 it("should update library version after upload") {
@@ -2008,7 +2014,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -2057,7 +2064,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                     updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -2121,7 +2129,8 @@ class SyncControllerSpec: QuickSpec {
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
-                                                     updateDataSource: SyncControllerSpec.updateDataSource)
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
 
                     waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
@@ -2147,12 +2156,71 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should delay on second upload conflict") {
-                    // Try to upload, get 412
-                    // Download, get new version number
-                    // Try to upload again, get 412
-                    // Delay
-                    // Download, get new version number
-                    // Upload, get 200
+                    let header = ["Last-Modified-Version" : "3"]
+                    let library = SyncControllerSpec.userLibrary
+                    let itemToDelete = "DDDDDDDD"
+                    let objects = SyncController.Object.allCases
+
+                    let realm = SyncControllerSpec.realm
+                    try! realm.write {
+                        let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
+                        let item = RItem()
+                        item.key = itemToDelete
+                        item.title = "Delete me"
+                        item.changedFields = .fields
+                        item.customLibrary = myLibrary
+                        realm.add(item)
+                    }
+
+                    let predicate = Predicates.keyInLibrary(key: itemToDelete, libraryId: .custom(.myLibrary))
+                    let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
+                    expect(toBeDeletedItem).toNot(beNil())
+
+                    var retryCount = 0
+                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+                        retryCount += 1
+                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: (retryCount <= 2 ? 412 : 200), headers: header)
+                    })
+                    objects.forEach { object in
+                        let version: Int? = object == .group ? nil : 0
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
+                                        baseUrl: baseUrl, headers: header,
+                                        response: [:])
+                    }
+                    self.createStub(for: SettingsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["tagColors" : ["value": [], "version": 2]])
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
+
+                    var lastDelay: Int?
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    self.controller?.reportDelay = { delay in
+                        lastDelay = delay
+                    }
+
+                    waitUntil(timeout: 15) { doneAction in
+                        self.controller?.reportFinish = { _ in
+                            expect(lastDelay).to(equal(3))
+                            expect(retryCount).to(equal(3))
+
+                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+                            realm.refresh()
+
+                            let predicate = Predicates.keyInLibrary(key: itemToDelete, libraryId: .custom(.myLibrary))
+                            let deletedItem = realm.objects(RItem.self).filter(predicate).first
+                            expect(deletedItem).toNot(beNil())
+
+                            doneAction()
+                        }
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
                 }
             }
 
@@ -2165,7 +2233,8 @@ class SyncControllerSpec: QuickSpec {
 
                 self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                  handler: SyncControllerSpec.syncHandler,
-                                                 updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                                 updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                                 conflictDelays: SyncControllerSpec.conflictDelays)
 
                 waitUntil(timeout: 10) { doneAction in
                     self.controller?.reportFinish = { result in
@@ -2202,7 +2271,8 @@ class SyncControllerSpec: QuickSpec {
                                     check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
         let handler = TestHandler()
         let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                        updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                        updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                        conflictDelays: SyncControllerSpec.conflictDelays)
 
         handler.requestResult = result
 
@@ -2223,7 +2293,8 @@ class SyncControllerSpec: QuickSpec {
         let handler = TestHandler()
         let dataSource = TestDataSource(writeBatches: updates, deleteBatches: [])
         let controller = SyncController(userId: SyncControllerSpec.userId,
-                                        handler: handler, updateDataSource: dataSource)
+                                        handler: handler, updateDataSource: dataSource,
+                                        conflictDelays: SyncControllerSpec.conflictDelays)
 
         handler.requestResult = result
         controller.reportFinish = { result in
@@ -2242,7 +2313,8 @@ class SyncControllerSpec: QuickSpec {
                                   check: @escaping (Error) -> Void) -> SyncController {
         let handler = TestHandler()
         let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                        updateDataSource: SyncControllerSpec.emptyUpdateDataSource)
+                                        updateDataSource: SyncControllerSpec.emptyUpdateDataSource,
+                                        conflictDelays: SyncControllerSpec.conflictDelays)
 
         handler.requestResult = result
 
@@ -2301,8 +2373,9 @@ fileprivate class TestHandler: SyncActionHandler {
         }
     }
 
-    func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object, since sinceVersion: Int?,
-                             current currentVersion: Int?, syncAll: Bool) -> Single<(Int, Array<Any>)> {
+    func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
+                             since sinceVersion: Int?, current currentVersion: Int?,
+                             syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         return self.result(for: .syncVersions(object)).flatMap {
             let data = SyncControllerSpec.syncVersionData
             switch object {

@@ -15,9 +15,9 @@ protocol SynchronizationScheduler: class {
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
 
     func requestFullSync()
-    func requestFullSync(ignoringLocalVersions: Bool)
+    func requestFullSync(type: SyncController.SyncType)
     func requestSync(for libraries: [LibraryIdentifier])
-    func requestSync(for libraries: [LibraryIdentifier], ignoringLocalVersions: Bool)
+    func requestSync(for libraries: [LibraryIdentifier], type: SyncController.SyncType)
     func cancelSync()
 }
 
@@ -50,11 +50,13 @@ final class SyncScheduler: SynchronizationScheduler {
         self.syncController.observable
                            .observeOn(self.scheduler)
                            .subscribe(onNext: { [weak self] data in
-                               if data.0 && data.1 != .retry {
-                                   self?.enqueue(action: (.retry, data.2))
-                               }
                                self?.inProgress = nil
-                               self?.startTimer()
+                               if let data = data { // We're retrying, enqueue the new sync
+                                   self?._enqueueAndStartTimer(action: (data.0, data.1))
+                               } else if self?.nextAction != nil {
+                                   // We're not retrying, start timer so that next in queue is processed
+                                   self?.startTimer()
+                               }
                            }, onError: { [weak self] _ in
                                self?.inProgress = nil
                                self?.startTimer()
@@ -66,16 +68,16 @@ final class SyncScheduler: SynchronizationScheduler {
         self.enqueueAndStartTimer(action: (.normal, .all))
     }
 
-    func requestFullSync(ignoringLocalVersions: Bool) {
-        self.enqueueAndStartTimer(action: ((ignoringLocalVersions ? .ignoreVersions : .normal), .all))
+    func requestFullSync(type: SyncController.SyncType) {
+        self.enqueueAndStartTimer(action: (type, .all))
     }
 
     func requestSync(for libraries: [LibraryIdentifier]) {
         self.enqueueAndStartTimer(action: (.normal, .specific(libraries)))
     }
 
-    func requestSync(for libraries: [LibraryIdentifier], ignoringLocalVersions: Bool) {
-        self.enqueueAndStartTimer(action: ((ignoringLocalVersions ? .ignoreVersions : .normal), .specific(libraries)))
+    func requestSync(for libraries: [LibraryIdentifier], type: SyncController.SyncType) {
+        self.enqueueAndStartTimer(action: (type, .specific(libraries)))
     }
 
     func cancelSync() {
@@ -89,16 +91,20 @@ final class SyncScheduler: SynchronizationScheduler {
     }
 
     private func enqueueAndStartTimer(action: SchedulerAction) {
-            self.queue.async(flags: .barrier) { [weak self] in
+        self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
-            self.enqueue(action: action)
+            self._enqueueAndStartTimer(action: action)
+        }
+    }
 
-            switch action.1 {
-            case .all:
-                self.startNextAction()
-            case .specific:
-                self.startTimer()
-            }
+    private func _enqueueAndStartTimer(action: SchedulerAction) {
+        self.enqueue(action: action)
+
+        switch action.1 {
+        case .all:
+            self.startNextAction()
+        case .specific:
+            self.startTimer()
         }
     }
 
@@ -141,9 +147,12 @@ final class SyncScheduler: SynchronizationScheduler {
 extension SyncController.SyncType: Comparable {
     static func < (lhs: SyncController.SyncType, rhs: SyncController.SyncType) -> Bool {
         switch (lhs, rhs) {
-        case (.normal, .ignoreVersions),
-             (.retry, .ignoreVersions),
-             (.retry, .normal):
+        case (.retry, .normal),
+             (.retry, .ignoreIndividualDelays),
+             (.retry, .all),
+             (.normal, .ignoreIndividualDelays),
+             (.normal, .all),
+             (.ignoreIndividualDelays, .all):
             return true
         default:
             return false

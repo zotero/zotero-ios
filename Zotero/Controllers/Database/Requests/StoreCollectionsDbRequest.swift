@@ -37,6 +37,8 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.name = data.data.name
         collection.version = data.version
         collection.syncState = .synced
+        collection.syncRetries = 0
+        collection.lastSyncDate = Date(timeIntervalSince1970: 0)
         if collection.deleted {
             collection.items.forEach { item in
                 if item.deleted {

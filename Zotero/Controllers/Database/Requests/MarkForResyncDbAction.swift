@@ -23,6 +23,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
     }
 
     func process(in database: Realm) throws {
+        let syncDate = Date()
         var toCreate: [String] = self.keys
         let objects = database.objects(Obj.self).filter(Predicates.keysInLibrary(keys: self.keys,
                                                                                  libraryId: self.libraryId))
@@ -30,6 +31,8 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
             if object.syncState == .synced {
                 object.syncState = .outdated
             }
+            object.syncRetries += 1
+            object.lastSyncDate = syncDate
             if let index = toCreate.firstIndex(of: object.key) {
                 toCreate.remove(at: index)
             }
@@ -48,6 +51,8 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
             let object = Obj()
             object.key = key
             object.syncState = .dirty
+            object.syncRetries = 1
+            object.lastSyncDate = syncDate
             object.libraryObject = libraryData.1
             database.add(object)
         }

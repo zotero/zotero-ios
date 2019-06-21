@@ -36,6 +36,8 @@ struct StoreSearchesDbRequest: DbRequest {
         search.name = data.data.name
         search.version = data.version
         search.syncState = .synced
+        search.syncRetries = 0
+        search.lastSyncDate = Date(timeIntervalSince1970: 0)
         search.deleted = false// no CR for searches, if it was deleted locally, just restore it
 
         try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, search: search, database: database)

@@ -16,24 +16,35 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     let versions: [String: Int]
     let libraryId: LibraryIdentifier
     let isTrash: Bool?
-    let syncAll: Bool
+    let syncType: SyncController.SyncType
+    let delayIntervals: [Double]
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> [String] {
         let allKeys = Array(self.versions.keys)
 
-        if self.syncAll { return allKeys }
+        if self.syncType == .all { return allKeys }
 
+        let date = Date()
         var toUpdate: [String] = allKeys
         var objects = database.objects(Obj.self)
         if let trash = self.isTrash {
             objects = objects.filter("trash = %d", trash)
         }
-        objects.forEach { object in
+
+        for object in objects {
             if object.syncState != .synced {
-                if !toUpdate.contains(object.key) {
+                guard !toUpdate.contains(object.key) else { continue }
+
+                if self.syncType == .ignoreIndividualDelays {
                     toUpdate.append(object.key)
+                } else {
+                    let delayIdx = min(object.syncRetries, (self.delayIntervals.count - 1))
+                    let delay = self.delayIntervals[delayIdx]
+                    if date.timeIntervalSince(object.lastSyncDate) >= delay {
+                        toUpdate.append(object.key)
+                    }
                 }
             } else {
                 if let version = self.versions[object.key], version == object.version,
@@ -42,6 +53,7 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
                 }
             }
         }
+
         return toUpdate
     }
 }

@@ -26,6 +26,8 @@ protocol Syncable: class {
     var group: RGroup? { get set }
     var version: Int { get set }
     var syncState: ObjectSyncState { get set }
+    var lastSyncDate: Date { get set }
+    var syncRetries: Int { get set }
 }
 
 extension Syncable {

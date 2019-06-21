@@ -78,6 +78,7 @@
 		B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */; };
 		B38160EA2252319300A2B7A5 /* DeleteAllDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */; };
 		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
+		B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */; };
 		B385E2B52208755500DFE361 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B42208755500DFE361 /* RUser.swift */; };
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
@@ -272,6 +273,7 @@
 		B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAllDbRequest.swift; sourceTree = "<group>"; };
 		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
+		B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DelayIntervals.swift; sourceTree = "<group>"; };
 		B385E2B42208755500DFE361 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
@@ -671,6 +673,7 @@
 				B3630349224B7D7F009F839F /* Library.swift */,
 				B363034B224B8285009F839F /* Predicates.swift */,
 				B3310C552264D06C00E45CD1 /* FieldKeys.swift */,
+				B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1156,6 +1159,7 @@
 				B3E4715A224127AC006E3B20 /* LoginViewController.swift in Sources */,
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */,
+				B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */,
 				B363034C224B8285009F839F /* Predicates.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
