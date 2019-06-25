@@ -24,6 +24,7 @@ enum SyncError: Error {
     case groupSyncFailed(Error)
     case allLibrariesFetchFailed(Error)
     case uploadObjectConflict
+    case permissionLoadingFailed
 }
 
 protocol SynchronizationController: class {
@@ -90,7 +91,25 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    enum CreateLibraryActionsOptions {
+        case automatic, onlyWrites, forceDownloads
+    }
+
+    struct AccessPermissions {
+        struct Permissions {
+            let library: Bool
+            let notes: Bool
+            let files: Bool
+            let write: Bool
+        }
+
+        let user: Permissions
+        let groupDefault: Permissions
+        let groups: [Int: Permissions]
+    }
+
     enum Action: Equatable {
+        case loadKeyPermissions                                // Checks current key for access permissions
         case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
         case createLibraryActions(LibrarySyncType,
                                   CreateLibraryActionsOptions) // Loads required libraries, spawn actions for each
@@ -127,6 +146,7 @@ final class SyncController: SynchronizationController {
     private var disposeBag: DisposeBag
     private var conflictRetries: Int
     private var timerDisposeBag: DisposeBag
+    private var accessPermissions: AccessPermissions?
 
     var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
@@ -182,7 +202,7 @@ final class SyncController: SynchronizationController {
     private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
         switch libraries {
         case .all:
-            return [.syncVersions(.user(self.userId, .myLibrary), .group, nil)]
+            return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
         case .specific(let identifiers):
             var customLibrariesOnly = true
             for identifier in identifiers {
@@ -192,9 +212,9 @@ final class SyncController: SynchronizationController {
                 }
             }
             if customLibrariesOnly {
-                return [.createLibraryActions(libraries, .automatic)]
+                return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
             }
-            return [.syncVersions(.user(self.userId, .myLibrary), .group, nil)]
+            return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
         }
     }
 
@@ -241,6 +261,7 @@ final class SyncController: SynchronizationController {
         self.lastReturnedVersion = nil
         self.conflictRetries = 0
         self.timerDisposeBag = DisposeBag()
+        self.accessPermissions = nil
     }
 
     // MARK: - Error handling
@@ -347,6 +368,8 @@ final class SyncController: SynchronizationController {
         DDLogInfo("--- Sync: action ---")
         DDLogInfo("\(action)")
         switch action {
+        case .loadKeyPermissions:
+            self.processKeyCheckAction()
         case .createLibraryActions(let libraries, let options):
             self.processCreateLibraryActions(for: libraries, options: options)
         case .syncVersions(let library, let objectType, let version):
@@ -376,12 +399,25 @@ final class SyncController: SynchronizationController {
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.processNextAction()
             }
-            break
         }
     }
 
-    enum CreateLibraryActionsOptions {
-        case automatic, onlyWrites, forceDownloads
+    private func processKeyCheckAction() {
+        self.handler.loadPermissions().flatMap { response -> Single<AccessPermissions> in
+                                          let permissions = AccessPermissions(user: response.user,
+                                                                              groupDefault: response.defaultGroup,
+                                                                              groups: response.groups)
+                                          return Single.just(permissions)
+                                      }
+                                      .subscribe(onSuccess: { [weak self] permissions in
+                                          self?.performOnAccessQueue {
+                                              self?.accessPermissions = permissions
+                                              self?.processNextAction()
+                                          }
+                                      }, onError: { error in
+                                          self.abort(error: SyncError.permissionLoadingFailed)
+                                      })
+                                      .disposed(by: self.disposeBag)
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {

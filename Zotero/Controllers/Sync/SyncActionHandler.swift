@@ -79,6 +79,7 @@ struct Versions {
 }
 
 protocol SyncActionHandler: class {
+    func loadPermissions() -> Single<KeyResponse>
     func loadAllLibraryData() -> Single<[LibraryData]>
     func loadLibraryData(for identifiers: [LibraryIdentifier]) -> Single<[LibraryData]>
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
@@ -122,6 +123,20 @@ class SyncActionHandlerController {
 }
 
 extension SyncActionHandlerController: SyncActionHandler {
+    func loadPermissions() -> Single<KeyResponse> {
+        return self.apiClient.send(dataRequest: KeyRequest())
+                             .flatMap { response in
+                                 do {
+                                     let json = try JSONSerialization.jsonObject(with: response.0,
+                                                                                 options: .allowFragments)
+                                     let keyResponse = try KeyResponse(response: json)
+                                     return Single.just(keyResponse)
+                                 } catch let error {
+                                     return Single.error(error)
+                                 }
+                             }
+    }
+
     func loadAllLibraryData() -> Single<[LibraryData]> {
         return self.loadLibraryData(identifiers: nil)
     }

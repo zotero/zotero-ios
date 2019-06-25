@@ -245,8 +245,9 @@ class SyncControllerSpec: QuickSpec {
                     let userLibrary = SyncControllerSpec.userLibrary
                     let keys = ["0", "1", "2", "3", "4"]
 
-                    let initial: [SyncController.Action] = [.syncVersions(userLibrary, .group, nil)]
-                    let expected: [SyncController.Action] = [.syncVersions(userLibrary, .group, nil),
+                    let initial: [SyncController.Action] = [.loadKeyPermissions, .syncVersions(userLibrary, .group, nil)]
+                    let expected: [SyncController.Action] = [.loadKeyPermissions,
+                                                             .syncVersions(userLibrary, .group, nil),
                                                              .syncBatchToDb(SyncController.DownloadBatch(library: userLibrary,
                                                                                                          object: .group,
                                                                                                          keys: [2],
@@ -304,7 +305,7 @@ class SyncControllerSpec: QuickSpec {
                                                               })
                     self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
 
-                    expect(all?.first).toEventually(equal(.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic)))
+                    expect(all?[1]).toEventually(equal(.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic)))
                 }
 
                 it("processes update actions") {
@@ -330,7 +331,8 @@ class SyncControllerSpec: QuickSpec {
                                                                                  "version": 2]])
 
                     var all: [SyncController.Action]?
-                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
+                    let expected: [SyncController.Action] = [.loadKeyPermissions,
+                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
                                                              .submitWriteBatch(batch1),
                                                              .submitWriteBatch(expectedBatch2)]
 
@@ -359,7 +361,8 @@ class SyncControllerSpec: QuickSpec {
                                                                          "key": "AAAAAAAA",
                                                                          "version": 1]])
                     var all: [SyncController.Action]?
-                    let expected: [SyncController.Action] = [.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
+                    let expected: [SyncController.Action] = [.loadKeyPermissions,
+                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
                                                              .submitWriteBatch(batch1),
                                                              .createLibraryActions(.specific([.custom(.myLibrary)]), .forceDownloads),
                                                              .syncSettings(library, 2),
@@ -613,6 +616,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
@@ -816,6 +820,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: myLibrary, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
@@ -913,6 +918,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: [:])
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
@@ -976,6 +982,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: [:])
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
@@ -1039,6 +1046,7 @@ class SyncControllerSpec: QuickSpec {
                                             response: [:])
                         }
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: ObjectsRequest(libraryType: library, objectType: .item, keys: itemKey),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
@@ -1120,6 +1128,7 @@ class SyncControllerSpec: QuickSpec {
                                             response: [:])
                         }
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: ObjectsRequest(libraryType: library, objectType: .item,
                                                         keys: "\(unsyncedItemKey),\(responseItemKey)"),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
@@ -1206,6 +1215,7 @@ class SyncControllerSpec: QuickSpec {
                                             response: [:])
                         }
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: ObjectsRequest(libraryType: library, objectType: .item,
                                                         keys: "\(correctKey),\(incorrectKey)"),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
@@ -1345,6 +1355,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
@@ -1508,6 +1519,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
@@ -1605,6 +1617,7 @@ class SyncControllerSpec: QuickSpec {
                                                             "data": ["name": "A"]]]
                     let objectResponses: [SyncController.Object: Any] = [.collection: collectionData]
 
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
                                                                 keys: [collectionKey], version: 1),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
@@ -1761,6 +1774,7 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
                     })
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
@@ -1875,6 +1889,7 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
                     })
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
@@ -1963,6 +1978,7 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
                     })
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
@@ -2007,6 +2023,7 @@ class SyncControllerSpec: QuickSpec {
 
                     let update = UpdatesRequest(libraryType: library, objectType: .collection,
                                                 params: [], version: oldVersion)
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: update, baseUrl: baseUrl,
                                     headers: ["Last-Modified-Version": "\(newVersion)"],
                                     statusCode: 200,
@@ -2058,6 +2075,7 @@ class SyncControllerSpec: QuickSpec {
                         downloadCalled = true
                         return OHHTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
                     })
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
@@ -2117,6 +2135,7 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(search)
                     }
 
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
                                                                 keys: [collectionKey], version: 0),
                                     baseUrl: baseUrl, headers: header, response: [:])
@@ -2189,6 +2208,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         response: [:])
                     }
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: SettingsRequest(libraryType: library, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
@@ -2226,10 +2246,11 @@ class SyncControllerSpec: QuickSpec {
 
             it("should make only one request if in sync") {
                 let library = SyncControllerSpec.userLibrary
-                let expected: [SyncController.Action] = [.syncVersions(library, .group, nil)]
+                let expected: [SyncController.Action] = [.loadKeyPermissions, .syncVersions(library, .group, nil)]
 
                 self.createStub(for: VersionsRequest<String>(libraryType: library, objectType: .group, version: nil),
                                 baseUrl: baseUrl, headers: nil, statusCode: 304, response: [:])
+                self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
                 self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                  handler: SyncControllerSpec.syncHandler,
@@ -2352,6 +2373,10 @@ fileprivate enum TestAction {
 }
 
 fileprivate class TestHandler: SyncActionHandler {
+    func loadPermissions() -> Single<KeyResponse> {
+        return Single.just(KeyResponse())
+    }
+
     var requestResult: ((TestAction) -> Single<()>)?
 
     private func result(for action: TestAction) -> Single<()> {

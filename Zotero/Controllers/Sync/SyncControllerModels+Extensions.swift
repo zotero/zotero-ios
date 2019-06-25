@@ -50,6 +50,8 @@ extension SyncController.Object {
 extension SyncController.Action {
     var library: SyncController.Library? {
         switch self {
+        case .loadKeyPermissions:
+            return nil
         case .createLibraryActions:
             return nil
         case .syncBatchToDb(let batch):

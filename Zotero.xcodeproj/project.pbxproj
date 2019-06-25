@@ -10,6 +10,8 @@
 		2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */; };
 		2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */; };
 		9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */; };
+		B3045F5D22C0F5090032C8C8 /* KeyRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3045F5C22C0F5090032C8C8 /* KeyRequest.swift */; };
+		B3045F5F22C0F52C0032C8C8 /* KeyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3045F5E22C0F52C0032C8C8 /* KeyResponse.swift */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
@@ -199,6 +201,8 @@
 		5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZoteroUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.release.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.release.xcconfig"; sourceTree = "<group>"; };
 		A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug pdf.xcconfig"; sourceTree = "<group>"; };
+		B3045F5C22C0F5090032C8C8 /* KeyRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyRequest.swift; sourceTree = "<group>"; };
+		B3045F5E22C0F52C0032C8C8 /* KeyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyResponse.swift; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -630,6 +634,7 @@
 				B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */,
 				B3FFDEE222807CB70009EBBE /* SubmitDeletionsRequest.swift */,
 				B3C33D8D223698C90071A763 /* UpdatesRequest.swift */,
+				B3045F5C22C0F5090032C8C8 /* KeyRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -749,6 +754,7 @@
 				B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */,
 				B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */,
 				B3B3B40B225B3D7200E28C34 /* SchemaResponse.swift */,
+				B3045F5E22C0F52C0032C8C8 /* KeyResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1160,6 +1166,7 @@
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */,
 				B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */,
+				B3045F5D22C0F5090032C8C8 /* KeyRequest.swift in Sources */,
 				B363034C224B8285009F839F /* Predicates.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
@@ -1179,6 +1186,7 @@
 				B3DD9CDD2256281F00DE6BAA /* Licenses.swift in Sources */,
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
 				B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */,
+				B3045F5F22C0F52C0032C8C8 /* KeyResponse.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
