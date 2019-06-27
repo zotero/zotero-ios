@@ -2403,12 +2403,14 @@ fileprivate class TestHandler: SyncActionHandler {
                              syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         return self.result(for: .syncVersions(object)).flatMap {
             let data = SyncControllerSpec.syncVersionData
-            switch object {
-            case .group:
-                return Single.just((data.0, Array(0..<data.1)))
-            default:
-                return Single.just((data.0, (0..<data.1).map({ $0.description })))
-            }
+            return Single.just((data.0, (0..<data.1).map({ $0.description })))
+        }
+    }
+
+    func synchronizeGroupVersions(library: SyncController.Library, syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])> {
+        return self.result(for: .syncVersions(.group)).flatMap {
+            let data = SyncControllerSpec.syncVersionData
+            return Single.just((data.0, Array(0..<data.1), []))
         }
     }
 

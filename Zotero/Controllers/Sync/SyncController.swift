@@ -579,8 +579,26 @@ final class SyncController: SynchronizationController {
 
     private func createBatchedGroupActions(for library: Library, updateIds: [Int],
                                            deleteGroups: [(Int, String)], currentVersion: Int) {
-        let batches = updateIds.map({ DownloadBatch(library: .user(self.userId, .myLibrary), object: .group,
-                                                    keys: [$0], version: currentVersion) })
+        var idsToBatch: [Int]
+
+        switch self.libraryType {
+        case .all:
+            idsToBatch = updateIds
+        case .specific(let libraryIds):
+            idsToBatch = []
+            libraryIds.forEach { libraryId in
+                switch libraryId {
+                case .group(let groupId):
+                    if updateIds.contains(groupId) {
+                        idsToBatch.append(groupId)
+                    }
+                case .custom: break
+                }
+            }
+        }
+
+        let batches = idsToBatch.map({ DownloadBatch(library: .user(self.userId, .myLibrary), object: .group,
+                                                     keys: [$0], version: currentVersion) })
         var actions: [Action] = deleteGroups.map({ .resolveDeletedGroup($0.0, $0.1) })
         actions.append(contentsOf: batches.map({ .syncBatchToDb($0) }))
         actions.append(.createLibraryActions(self.libraryType, .automatic))
