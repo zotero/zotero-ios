@@ -60,6 +60,8 @@ extension SyncController.Action {
             return batch.library
         case .submitDeleteBatch(let batch):
             return batch.library
+        case .resolveDeletedGroup(let groupId, _):
+            return .group(groupId)
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
              .syncDeletions(let library, _),

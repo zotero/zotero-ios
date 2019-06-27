@@ -60,30 +60,32 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
 
 
 struct SyncGroupVersionsDbRequest: DbResponseRequest {
-    typealias Response = [Int]
+    typealias Response = ([Int], [(Int, String)])
 
     let versions: [Int: Int]
     let syncAll: Bool
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws -> [Int] {
+    func process(in database: Realm) throws -> ([Int], [(Int, String)]) {
         let allKeys = Array(self.versions.keys)
 
+        // TODO: - Just ask whether we should remove or keep the group
         let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
-        toRemove.forEach { library in
-            library.collections.forEach { collection in
-                collection.removeChildren(in: database)
-            }
-            database.delete(library.collections)
-            library.items.forEach { item in
-                item.removeChildren(in: database)
-            }
-            database.delete(library.items)
-        }
-        database.delete(toRemove)
+        let toRemoveIds = Array(toRemove.map({ ($0.identifier, $0.name) }))
+//        toRemove.forEach { library in
+//            library.collections.forEach { collection in
+//                collection.removeChildren(in: database)
+//            }
+//            database.delete(library.collections)
+//            library.items.forEach { item in
+//                item.removeChildren(in: database)
+//            }
+//            database.delete(library.items)
+//        }
+//        database.delete(toRemove)
 
-        if self.syncAll { return allKeys }
+        if self.syncAll { return (allKeys, toRemoveIds) }
 
         var toUpdate: [Int] = allKeys
         for library in database.objects(RGroup.self) {
@@ -98,6 +100,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
                 }
             }
         }
-        return toUpdate
+
+        return (toUpdate, toRemoveIds)
     }
 }

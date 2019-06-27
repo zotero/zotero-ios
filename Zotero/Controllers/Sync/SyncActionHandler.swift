@@ -85,6 +85,8 @@ protocol SyncActionHandler: class {
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncType: SyncController.SyncType) -> Single<(Int, [Any])>
+    func synchronizeGroupVersions(library: SyncController.Library,
+                                  syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])>
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable
     func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library,
                               object: SyncController.Object,
@@ -170,8 +172,6 @@ extension SyncActionHandlerController: SyncActionHandler {
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         switch object {
-        case .group:
-            return self.synchronizeGroupVersions(library: library, syncAll: (syncType == .all))
         case .collection:
             return self.synchronizeVersions(for: RCollection.self, library: library, object: object,
                                             since: sinceVersion, current: currentVersion, syncType: syncType)
@@ -181,22 +181,28 @@ extension SyncActionHandlerController: SyncActionHandler {
         case .search:
             return self.synchronizeVersions(for: RSearch.self, library: library, object: object,
                                             since: sinceVersion, current: currentVersion, syncType: syncType)
+        case .group:
+            DDLogError("SyncActionHandler synchronizeVersions(for:object:since:current:syncType:) " +
+                       "called for group type")
+            return Single.just((0, []))
         case .tag: // Tags are not synchronized, this should not be called
             DDLogError("SyncActionHandler: synchronizeVersions tried to sync tags")
             return Single.just((0, []))
         }
     }
 
-    private func synchronizeGroupVersions(library: SyncController.Library, syncAll: Bool) -> Single<(Int, [Any])> {
+    func synchronizeGroupVersions(library: SyncController.Library,
+                                  syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])> {
+        let syncAll = syncType == .all
         let request = VersionsRequest<Int>(libraryType: library, objectType: .group, version: nil)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
-                             .flatMap { response -> Single<(Int, [Any])> in
+                             .flatMap { response in
                                  let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
                                  let request =  SyncGroupVersionsDbRequest(versions: response.0, syncAll: syncAll)
                                  do {
                                      let identifiers = try self.dbStorage.createCoordinator().perform(request: request)
-                                     return Single.just((newVersion, identifiers))
+                                     return Single.just((newVersion, identifiers.0, identifiers.1))
                                  } catch let error {
                                      return Single.error(error)
                                  }

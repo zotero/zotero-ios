@@ -121,6 +121,7 @@ final class SyncController: SynchronizationController {
         case submitWriteBatch(WriteBatch)                      // Submit local changes to backend
         case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
         case resolveConflict(String, Library)                  // Handle conflict resolution
+        case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely
     }
 
     private static let timeoutPeriod: Double = 15.0
@@ -204,17 +205,12 @@ final class SyncController: SynchronizationController {
         case .all:
             return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
         case .specific(let identifiers):
-            var customLibrariesOnly = true
             for identifier in identifiers {
                 if case .group = identifier {
-                    customLibrariesOnly = false
-                    break
+                    return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
                 }
             }
-            if customLibrariesOnly {
-                return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
-            }
-            return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
+            return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
         }
     }
 
@@ -399,6 +395,11 @@ final class SyncController: SynchronizationController {
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.processNextAction()
             }
+        case .resolveDeletedGroup(let groupId, let name):
+            // TODO: - Show alert about deleted group, add 2 actions - keep group locally or delete it
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.processNextAction()
+            }
         }
     }
 
@@ -513,101 +514,80 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSyncVersions(library: Library, object: Object, since version: Int?) {
-        self.handler.synchronizeVersions(for: library, object: object, since: version,
-                                         current: self.lastReturnedVersion, syncType: self.type)
-                    .subscribe(onSuccess: { [weak self] data in
-                        self?.finishSyncVersionsAction(for: library, object: object, result: .success((data.1, data.0)))
-                    }, onError: { [weak self] error in
-                        self?.finishSyncVersionsAction(for: library, object: object, result: .failure(error))
-                    })
-                    .disposed(by: self.disposeBag)
-    }
-
-    private func finishSyncVersionsAction(for library: Library, object: Object,
-                                          result: Result<([Any], Int)>) {
-        switch result {
-        case .success(let data):
-            self.progressHandler.reportObjectCount(for: object, count: data.0.count)
-            self.createBatchedActions(from: data.0, currentVersion: data.1, library: library, object: object)
-
-        case .failure(let error):
-            if let abortError = self.errorRequiresAbort(error) {
-                self.abort(error: abortError)
-                return
-            }
-
-            // 304 is not actually an error, so we need to check before next "if" so that we don't abort on 304 response
-            if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
-
-            if object == .group {
-                self.abort(error: SyncError.groupSyncFailed(error))
-                return
-            }
-
-            if self.handleVersionMismatchIfNeeded(for: error, library: library) { return }
-
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                guard let `self` = self else { return }
-                self.nonFatalErrors.append(error)
-                self.processNextAction()
-            }
-        }
-    }
-
-    private func createBatchedActions(from keys: [Any], currentVersion: Int,
-                                      library: Library, object: Object) {
-        let batches: [DownloadBatch]
         switch object {
         case .group:
-            let batchData = self.createBatchGroups(for: keys, version: currentVersion, syncType: self.libraryType)
-            batches = batchData.0
-            // TODO: - report deleted groups?
+            self.handler.synchronizeGroupVersions(library: library, syncType: self.type)
+                        .subscribe(onSuccess: { [weak self] data in
+                            self?.progressHandler.reportObjectCount(for: .group, count: data.1.count)
+                            self?.createBatchedGroupActions(for: library, updateIds: data.1,
+                                                            deleteGroups: data.2, currentVersion: data.0)
+                        }, onError: { [weak self] error in
+                            self?.finishFailedSyncVersionsAction(library: library, object: object, error: error)
+                        })
+                        .disposed(by: self.disposeBag)
         default:
-            batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
+            self.handler.synchronizeVersions(for: library, object: object, since: version,
+                                             current: self.lastReturnedVersion, syncType: self.type)
+                        .subscribe(onSuccess: { [weak self] data in
+                            self?.progressHandler.reportObjectCount(for: object, count: data.1.count)
+                            self?.createBatchedObjectActions(for: library, object: object,
+                                                             from: data.1, currentVersion: data.0)
+                        }, onError: { [weak self] error in
+                            self?.finishFailedSyncVersionsAction(library: library, object: object, error: error)
+                        })
+                        .disposed(by: self.disposeBag)
+        }
+    }
+
+    private func finishFailedSyncVersionsAction(library: Library, object: Object, error: Error) {
+        if let abortError = self.errorRequiresAbort(error) {
+            self.abort(error: abortError)
+            return
         }
 
-        var actions: [Action] = batches.map({ .syncBatchToDb($0) })
+        // 304 is not actually an error, so we need to check before next "if" so that we don't abort on 304 response
+        if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
+
         if object == .group {
-            actions.append(.createLibraryActions(self.libraryType, .automatic))
-        } else if !actions.isEmpty {
+            self.abort(error: SyncError.groupSyncFailed(error))
+            return
+        }
+
+        if self.handleVersionMismatchIfNeeded(for: error, library: library) { return }
+
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            guard let `self` = self else { return }
+            self.nonFatalErrors.append(error)
+            self.processNextAction()
+        }
+    }
+
+    private func createBatchedObjectActions(for library: Library, object: Object,
+                                            from keys: [Any], currentVersion: Int) {
+        let batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
+
+        var actions: [Action] = batches.map({ .syncBatchToDb($0) })
+        if !actions.isEmpty {
             actions.append(.storeVersion(currentVersion, library, object))
         }
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
-            if object != .group {
-                self?.lastReturnedVersion = currentVersion
-            }
+            self?.lastReturnedVersion = currentVersion
             self?.enqueue(actions: actions, at: 0)
         }
     }
 
-    private func createBatchGroups(for keys: [Any], version: Int, syncType: LibrarySyncType) -> ([DownloadBatch], [Int]) {
-        var toSync: [Any] = []
-        var missing: [Int] = []
+    private func createBatchedGroupActions(for library: Library, updateIds: [Int],
+                                           deleteGroups: [(Int, String)], currentVersion: Int) {
+        let batches = updateIds.map({ DownloadBatch(library: .user(self.userId, .myLibrary), object: .group,
+                                                    keys: [$0], version: currentVersion) })
+        var actions: [Action] = deleteGroups.map({ .resolveDeletedGroup($0.0, $0.1) })
+        actions.append(contentsOf: batches.map({ .syncBatchToDb($0) }))
+        actions.append(.createLibraryActions(self.libraryType, .automatic))
 
-        switch syncType {
-        case .all:
-            toSync = keys
-
-        case .specific(let identifiers):
-            guard let intKeys = keys as? [Int] else { return ([], []) }
-
-            identifiers.forEach { identifier in
-                switch identifier {
-                case .group(let groupId):
-                    if intKeys.contains(groupId) {
-                        toSync.append(groupId)
-                    } else {
-                        missing.append(groupId)
-                    }
-                case .custom: break
-                }
-            }
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            self?.enqueue(actions: actions, at: 0)
         }
-
-        let batches = toSync.map { DownloadBatch(library: .user(self.userId, .myLibrary), object: .group,
-                                                 keys: [$0], version: version) }
-        return (batches, missing)
     }
 
     private func createBatchObjects(for keys: [Any], library: Library,
