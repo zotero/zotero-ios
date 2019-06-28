@@ -12,19 +12,44 @@ import RealmSwift
 
 struct StoreGroupDbRequest: DbRequest {
     let response: GroupResponse
+    let userId: Int
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
         let group = try database.autocreatedObject(ofType: RGroup.self, forPrimaryKey: self.response.identifier).1
 
+        let canEditMetadata: Bool
+        let canEditFiles: Bool
+
+        if self.userId == self.response.data.owner {
+            canEditMetadata = true
+            canEditFiles = true
+        } else {
+            if self.response.data.libraryEditing == "admins" {
+                canEditMetadata = (self.response.data.admins ?? []).contains(self.userId)
+            } else {
+                canEditMetadata = true
+            }
+
+            switch self.response.data.fileEditing {
+            case "none":
+                canEditFiles = false
+            case "admins":
+                canEditFiles = (self.response.data.admins ?? []).contains(self.userId)
+            case "members":
+                canEditFiles = true
+            default:
+                canEditFiles = false
+            }
+        }
+
         group.name = self.response.data.name
         group.desc = self.response.data.description
         group.owner = self.response.data.owner
-        group.type = self.response.data.type
-        group.libraryReading = self.response.data.libraryReading
-        group.libraryEditing = self.response.data.libraryEditing
-        group.fileEditing = self.response.data.fileEditing
+        group.rawType = self.response.data.type
+        group.canEditMetadata = canEditMetadata
+        group.canEditFiles = canEditFiles
         group.version = self.response.version
         group.syncState = .synced
 

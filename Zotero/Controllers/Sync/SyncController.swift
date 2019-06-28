@@ -632,7 +632,7 @@ final class SyncController: SynchronizationController {
 
     private func processBatchSync(for batch: DownloadBatch) {
         self.handler.fetchAndStoreObjects(with: batch.keys, library: batch.library,
-                                          object: batch.object, version: batch.version)
+                                          object: batch.object, version: batch.version, userId: self.userId)
                     .subscribe(onSuccess: { [weak self] decodingData in
                         self?.finishBatchSyncAction(for: batch.library, object: batch.object,
                                                     allKeys: batch.keys, result: .success(decodingData))

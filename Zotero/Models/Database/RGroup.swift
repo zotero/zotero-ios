@@ -10,15 +10,19 @@ import Foundation
 
 import RealmSwift
 
+enum GroupType: String {
+    case `public` = "Public"
+    case `private` = "Private"
+}
+
 class RGroup: Object {
     @objc dynamic var identifier: Int = 0
     @objc dynamic var owner: Int = 0
     @objc dynamic var name: String = ""
     @objc dynamic var desc: String = ""
-    @objc dynamic var type: String = ""
-    @objc dynamic var libraryReading: String = ""
-    @objc dynamic var libraryEditing: String = ""
-    @objc dynamic var fileEditing: String = ""
+    @objc dynamic var rawType: String = ""
+    @objc dynamic var canEditMetadata: Bool = false
+    @objc dynamic var canEditFiles: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var orderId: Int = 0
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
@@ -37,6 +41,16 @@ class RGroup: Object {
 
         set {
             self.rawSyncState = newValue.rawValue
+        }
+    }
+
+    var type: GroupType {
+        get {
+            return GroupType(rawValue: self.rawType) ?? .private
+        }
+
+        set {
+            self.rawType = newValue.rawValue
         }
     }
 

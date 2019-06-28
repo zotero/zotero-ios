@@ -2419,7 +2419,7 @@ fileprivate class TestHandler: SyncActionHandler {
     }
 
     func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
-                              version: Int) -> Single<([String], [Error], [StoreItemsError])> {
+                              version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])> {
         let keys = SyncControllerSpec.expectedKeys
         return self.result(for: .storeObject(object)).flatMap({ return Single.just((keys, [], [])) })
     }

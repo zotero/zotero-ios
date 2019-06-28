@@ -88,9 +88,8 @@ protocol SyncActionHandler: class {
     func synchronizeGroupVersions(library: SyncController.Library,
                                   syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])>
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable
-    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library,
-                              object: SyncController.Object,
-                              version: Int) -> Single<([String], [Error], [StoreItemsError])>
+    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
+                              version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])>
     func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable
     func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
                               current currentVersion: Int?) -> Single<[String]>
@@ -248,7 +247,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
-                              version: Int) -> Single<([String], [Error], [StoreItemsError])> {
+                              version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])> {
         let keysString = keys.map({ "\($0)" }).joined(separator: ",")
         let request = ObjectsRequest(libraryType: library, objectType: object, keys: keysString)
         return self.apiClient.send(dataRequest: request)
@@ -265,7 +264,7 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                  do {
                                      let decodingData = try self.syncToDb(data: response.0, library: library,
-                                                                          object: object)
+                                                                          object: object, userId: userId)
                                      return Single.just(decodingData)
                                  } catch let error {
                                      return Single.error(error)
@@ -274,13 +273,13 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     private func syncToDb(data: Data, library: SyncController.Library,
-                          object: SyncController.Object) throws -> ([String], [Error], [StoreItemsError]) {
+                          object: SyncController.Object, userId: Int) throws -> ([String], [Error], [StoreItemsError]) {
         let coordinator = try self.dbStorage.createCoordinator()
 
         switch object {
         case .group:
             let decoded = try JSONDecoder().decode(GroupResponse.self, from: data)
-            try coordinator.perform(request: StoreGroupDbRequest(response: decoded))
+            try coordinator.perform(request: StoreGroupDbRequest(response: decoded, userId: userId))
             return ([], [], [])
         case .collection:
             let decoded = try JSONDecoder().decode(CollectionsResponse.self, from: data)

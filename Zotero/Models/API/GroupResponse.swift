@@ -17,6 +17,8 @@ struct GroupResponse {
         let libraryEditing: String
         let libraryReading: String
         let fileEditing: String
+        let admins: [Int]?
+        let members: [Int]?
     }
 
     let identifier: Int
