@@ -122,6 +122,8 @@ final class SyncController: SynchronizationController {
         case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
         case resolveConflict(String, Library)                  // Handle conflict resolution
         case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely
+        case resolveGroupMetadataWritePermission(Int, String)  // Resolve when group had metadata editing allowed,
+                                                               // but it was disabled and we try to upload new data
     }
 
     private static let timeoutPeriod: Double = 15.0
@@ -400,6 +402,11 @@ final class SyncController: SynchronizationController {
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.processNextAction()
             }
+        case .resolveGroupMetadataWritePermission(let groupId, let name):
+            // TODO: - Show alert about changed permissions, add 2 actions - keep writes or restore original
+            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                self?.processNextAction()
+            }
         }
     }
 
@@ -422,7 +429,6 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
-        let userId = self.userId
         let action: Single<[LibraryData]>
         switch libraries {
         case .all:
@@ -431,44 +437,32 @@ final class SyncController: SynchronizationController {
             action = self.handler.loadLibraryData(for: identifiers)
         }
 
-        action.flatMap { libraryData -> Single<([(Library, Versions)], [LibraryIdentifier: String])> in
-                  var libraryNames: [LibraryIdentifier: String] = [:]
-                  var versionedLibraries: [(Library, Versions)] = []
-
-                  for data in libraryData {
-                      libraryNames[data.identifier] = data.name
-                      switch data.identifier {
-                      case .custom(let type):
-                          versionedLibraries.append((.user(userId, type), data.versions))
-                      case .group(let identifier):
-                          versionedLibraries.append((.group(identifier), data.versions))
-                      }
-                  }
-
-                  return Single.just((versionedLibraries, libraryNames))
-              }
-              .subscribe(onSuccess: { [weak self] data in
+        action.subscribe(onSuccess: { [weak self] data in
                   if options == .automatic {
                       // Other options are internal process of one sync, no need to report library names (again)
+                      var libraryNames: [LibraryIdentifier: String] = [:]
+                      for libraryData in data {
+                          libraryNames[libraryData.identifier] = libraryData.name
+                      }
                       self?.performOnAccessQueue(flags: .barrier) { [weak self] in
-                          self?.progressHandler.reportLibraryNames(data: data.1)
+                          self?.progressHandler.reportLibraryNames(data: libraryNames)
                       }
                   }
-                  self?.finishCreateLibraryActions(with: .success((data.0, options)))
+                  self?.finishCreateLibraryActions(with: .success((data, options)))
               }, onError: { [weak self] error in
                   self?.finishCreateLibraryActions(with: .failure(error))
               })
               .disposed(by: self.disposeBag)
     }
 
-    private func finishCreateLibraryActions(with result: Result<([(Library, Versions)], CreateLibraryActionsOptions)>) {
+    private func finishCreateLibraryActions(with result: Result<([LibraryData], CreateLibraryActionsOptions)>) {
         switch result {
         case .failure(let error):
             self.abort(error: SyncError.allLibrariesFetchFailed(error))
 
         case .success(let data):
             do {
-                let actionData = try self.createLibraryActions(for: data)
+                let actionData = try self.createLibraryActions(for: data.0, creationOptions: data.1)
                 self.performOnAccessQueue(flags: .barrier) { [weak self] in
                     self?.enqueue(actions: actionData.0, at: actionData.1)
                 }
@@ -479,28 +473,49 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createLibraryActions(for data: ([(Library, Versions)], CreateLibraryActionsOptions)) throws -> ([Action], Int?) {
+    private func createLibraryActions(for data: [LibraryData],
+                                      creationOptions: CreateLibraryActionsOptions) throws -> ([Action], Int?) {
         var allActions: [Action] = []
-        for libraryData in data.0 {
-            switch data.1 {
+        for libraryData in data {
+            let library: Library
+            switch libraryData.identifier {
+            case .custom(let type):
+                library = .user(self.userId, type)
+            case .group(let identifier):
+                library = .group(identifier)
+            }
+
+            switch creationOptions {
             case .forceDownloads:
-                allActions.append(contentsOf: self.createDownloadActions(for: libraryData.0,
-                                                                         versions: libraryData.1))
+                allActions.append(contentsOf: self.createDownloadActions(for: library,
+                                                                         versions: libraryData.versions))
             case .onlyWrites, .automatic:
-                let updates = try self.updateDataSource.updates(for: libraryData.0, versions: libraryData.1)
-                let deletions = try self.updateDataSource.deletions(for: libraryData.0, versions: libraryData.1)
+                let updates = try self.updateDataSource.updates(for: library, versions: libraryData.versions)
+                let deletions = try self.updateDataSource.deletions(for: library, versions: libraryData.versions)
                 if !updates.isEmpty || !deletions.isEmpty {
-                    allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
-                    allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
-                } else if data.1 == .automatic {
-                    allActions.append(contentsOf: self.createDownloadActions(for: libraryData.0,
-                                                                             versions: libraryData.1))
+                    switch libraryData.identifier {
+                    case .group(let groupId):
+                        // We need to check permissions for group
+                        if libraryData.canEditMetadata {
+                            allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
+                            allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+                        } else {
+                            allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
+                        }
+                    case .custom:
+                        // We can always write to custom libraries
+                        allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
+                        allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+                    }
+                } else if creationOptions == .automatic {
+                    allActions.append(contentsOf: self.createDownloadActions(for: library,
+                                                                             versions: libraryData.versions))
                 }
             }
         }
-        let index: Int? = data.1 == .automatic ? nil : 0 // Forced downloads or writes are pushed to the beginning
-                                                         // of the queue, because only currently running action
-                                                         // can force downloads or writes
+        let index: Int? = creationOptions == .automatic ? nil : 0 // Forced downloads or writes are pushed to the beginning
+                                                                  // of the queue, because only currently running action
+                                                                  // can force downloads or writes
         return (allActions, index)
     }
 

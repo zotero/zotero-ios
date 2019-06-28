@@ -13,33 +13,43 @@ import CocoaLumberjack
 import RxSwift
 
 enum SyncActionHandlerError: Error, Equatable {
-    case expired
-    case versionMismatch
-    case objectConflict
+    case expired            // Used when we can't get a `self` from `weak self` in a closure, when object was deallocated
+    case versionMismatch    // Used when versions from previous request and current request response don't match
+    case objectConflict     // Used when there are 412 returned for individual objects when writing data to remote
 }
 
 struct LibraryData {
     let identifier: LibraryIdentifier
     let name: String
     let versions: Versions
-
-    init(identifier: LibraryIdentifier, name: String, versions: Versions) {
-        self.identifier = identifier
-        self.name = name
-        self.versions = versions
-    }
+    let canEditMetadata: Bool
+    let canEditFiles: Bool
 
     init(object: RCustomLibrary) {
         let type = object.type
         self.identifier = .custom(type)
         self.name = type.libraryName
         self.versions = Versions(versions: object.versions)
+        self.canEditMetadata = true
+        self.canEditFiles = true
     }
 
     init(object: RGroup) {
         self.identifier = .group(object.identifier)
         self.name = object.name
         self.versions = Versions(versions: object.versions)
+        self.canEditMetadata = object.canEditMetadata
+        self.canEditFiles = object.canEditFiles
+    }
+
+    // MARK: - Testing only
+
+    init(identifier: LibraryIdentifier, name: String, versions: Versions) {
+        self.identifier = identifier
+        self.name = name
+        self.versions = versions
+        self.canEditMetadata = true
+        self.canEditFiles = true
     }
 }
 
