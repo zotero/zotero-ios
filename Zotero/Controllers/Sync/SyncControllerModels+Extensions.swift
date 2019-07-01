@@ -61,15 +61,30 @@ extension SyncController.Action {
         case .submitDeleteBatch(let batch):
             return batch.library
         case .resolveDeletedGroup(let groupId, _),
-             .resolveGroupMetadataWritePermission(let groupId, _):
+             .resolveGroupMetadataWritePermission(let groupId, _),
+             .deleteGroup(let groupId),
+             .markGroupAsLocalOnly(let groupId),
+             .revertGroupToOriginal(let groupId):
             return .group(groupId)
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
              .syncDeletions(let library, _),
              .syncSettings(let library, _),
              .storeSettingsVersion(_, let library),
-             .resolveConflict(_, let library):
+             .resolveConflict(_, let library),
+             .markChangesAsResolved(let library):
             return library
+        }
+    }
+
+    var requiresConflictReceiver: Bool {
+        switch self {
+        case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+            return true
+        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertGroupToOriginal:
+            return false
         }
     }
 }

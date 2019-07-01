@@ -54,6 +54,8 @@
 		B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */; };
 		B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD362221C73A1003F8073 /* UIView+Nibname.swift */; };
 		B3310C562264D06C00E45CD1 /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3310C552264D06C00E45CD1 /* FieldKeys.swift */; };
+		B3341F6D22CA314900580FE8 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */; };
+		B3341F6F22CA580E00580FE8 /* DeleteGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */; };
 		B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */; };
 		B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
 		B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
@@ -251,6 +253,8 @@
 		B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailStore.swift; sourceTree = "<group>"; };
 		B32CD362221C73A1003F8073 /* UIView+Nibname.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Nibname.swift"; sourceTree = "<group>"; };
 		B3310C552264D06C00E45CD1 /* FieldKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldKeys.swift; sourceTree = "<group>"; };
+		B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolutionController.swift; sourceTree = "<group>"; };
+		B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteGroupDbRequest.swift; sourceTree = "<group>"; };
 		B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Utils.swift"; sourceTree = "<group>"; };
 		B33FBA5F220B2AAD005906C4 /* SyncController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionHandler.swift; sourceTree = "<group>"; };
@@ -618,6 +622,7 @@
 				B39372972229420A008B2A96 /* SyncProgressHandler.swift */,
 				B3C33D852236676C0071A763 /* SyncScheduler.swift */,
 				B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */,
+				B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -736,6 +741,7 @@
 				B38C968C223FFB2800343F8F /* UpdateVersionsDbRequest.swift */,
 				B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */,
 				B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */,
+				B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1101,6 +1107,7 @@
 				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
 				B3FFDEE322807CB70009EBBE /* SubmitDeletionsRequest.swift in Sources */,
 				B312AD2822428F3A00EDD5A4 /* ItemAbstractCell.swift in Sources */,
+				B3341F6D22CA314900580FE8 /* ConflictResolutionController.swift in Sources */,
 				B38160EA2252319300A2B7A5 /* DeleteAllDbRequest.swift in Sources */,
 				B38C96A7223FFB2900343F8F /* ReadUserDbRequest.swift in Sources */,
 				B30D59BB2207451B00884C4A /* ApiClient.swift in Sources */,
@@ -1203,6 +1210,7 @@
 				B312AD1B22428F1400EDD5A4 /* ItemFieldCell.swift in Sources */,
 				B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */,
 				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
+				B3341F6F22CA580E00580FE8 /* DeleteGroupDbRequest.swift in Sources */,
 				B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */,
 				B312AD1E22428F1400EDD5A4 /* TextFieldCell.swift in Sources */,
 				B38C969C223FFB2900343F8F /* ReadLibrariesDataDbRequest.swift in Sources */,

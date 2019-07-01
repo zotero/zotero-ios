@@ -25,7 +25,7 @@ fileprivate enum PrimaryColumnState {
     case dynamic(CGFloat)
 }
 
-class MainViewController: UISplitViewController {
+class MainViewController: UISplitViewController, ConflictPresenter {
     // Constants
     private static let minPrimaryColumnWidth: CGFloat = 300
     private static let maxPrimaryColumnFraction: CGFloat = 0.4

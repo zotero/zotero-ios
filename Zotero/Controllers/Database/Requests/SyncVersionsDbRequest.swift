@@ -73,17 +73,6 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
         // TODO: - Just ask whether we should remove or keep the group
         let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
         let toRemoveIds = Array(toRemove.map({ ($0.identifier, $0.name) }))
-//        toRemove.forEach { library in
-//            library.collections.forEach { collection in
-//                collection.removeChildren(in: database)
-//            }
-//            database.delete(library.collections)
-//            library.items.forEach { item in
-//                item.removeChildren(in: database)
-//            }
-//            database.delete(library.items)
-//        }
-//        database.delete(toRemove)
 
         if self.syncAll { return (allKeys, toRemoveIds) }
 

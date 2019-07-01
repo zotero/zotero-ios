@@ -39,6 +39,9 @@ class AppDelegate: UIResponder {
         case .main:
             let controller = MainViewController(controllers: self.controllers)
             self.show(viewController: controller)
+
+            self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)
+            self.controllers.userControllers?.syncScheduler.requestFullSync()
         }
     }
 
@@ -59,8 +62,10 @@ class AppDelegate: UIResponder {
     }
 
     private func sessionChanged(to userId: Int?) {
-        self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
+        // This needs to be called before store change, because we need to have userControllers instance initialized
+        // so that we can assign presenting controller for conflicts in store update(to:).
         self.controllers.sessionChanged(userId: userId)
+        self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
     }
 
     // MARK: - Setups

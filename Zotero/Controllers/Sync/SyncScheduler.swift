@@ -13,6 +13,7 @@ import RxSwift
 
 protocol SynchronizationScheduler: class {
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
+    var syncController: SynchronizationController { get }
 
     func requestFullSync()
     func requestFullSync(type: SyncController.SyncType)

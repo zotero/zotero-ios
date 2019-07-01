@@ -33,6 +33,7 @@ protocol SynchronizationController: class {
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
 
     func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
+    func setConflictPresenter(_ presenter: ConflictPresenter)
     func cancel()
 }
 
@@ -124,6 +125,12 @@ final class SyncController: SynchronizationController {
         case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely
         case resolveGroupMetadataWritePermission(Int, String)  // Resolve when group had metadata editing allowed,
                                                                // but it was disabled and we try to upload new data
+        case revertGroupToOriginal(Int)                        // Revert all changes performed to this group to original
+                                                               // cached version of this group.
+        case markChangesAsResolved(Library)                    // Local changes couldn't be written remotely, but we
+                                                               // want to keep them locally anyway
+        case deleteGroup(Int)                                  // Removes group from db
+        case markGroupAsLocalOnly(Int)                         // Marks group as local only (not synced with backend)
     }
 
     private static let timeoutPeriod: Double = 15.0
@@ -150,6 +157,7 @@ final class SyncController: SynchronizationController {
     private var conflictRetries: Int
     private var timerDisposeBag: DisposeBag
     private var accessPermissions: AccessPermissions?
+    private var conflictReceiver: ConflictReceiver?
 
     var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
@@ -176,6 +184,19 @@ final class SyncController: SynchronizationController {
         self.timerDisposeBag = DisposeBag()
         self.conflictDelays = conflictDelays
         self.conflictRetries = 0
+    }
+
+    func setConflictPresenter(_ presenter: ConflictPresenter) {
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            self?.conflictReceiver = ConflictResolutionController(presenter: presenter)
+
+            guard let `self` = self, let action = self.processingAction else { return }
+            // ConflictReceiver was nil and we are waiting for CR action. Which means it was ignored previously and
+            // we need to restart it.
+            if action.requiresConflictReceiver {
+                self.process(action: action)
+            }
+        }
     }
 
     // MARK: - Sync management
@@ -392,19 +413,39 @@ final class SyncController: SynchronizationController {
             self.processSubmitUpdate(for: batch)
         case .submitDeleteBatch(let batch):
             self.processSubmitDeletion(for: batch)
+        case .deleteGroup(let groupId):
+            self.deleteGroup(with: groupId)
+        case .markGroupAsLocalOnly(let groupId):
+            // TODO
+            break
+        case .revertGroupToOriginal(let groupId):
+            // TODO
+            break
+        case .markChangesAsResolved(let library):
+            // TODO
+            break
         case .resolveConflict(let key, let library):
             // TODO: - resolve conflict...
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.processNextAction()
             }
         case .resolveDeletedGroup(let groupId, let name):
-            // TODO: - Show alert about deleted group, add 2 actions - keep group locally or delete it
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.processNextAction()
-            }
+            self.resolve(conflict: .groupRemoved(groupId, name))
         case .resolveGroupMetadataWritePermission(let groupId, let name):
-            // TODO: - Show alert about changed permissions, add 2 actions - keep writes or restore original
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            self.resolve(conflict: .groupWriteDenied(groupId, name))
+        }
+    }
+
+    private func resolve(conflict: Conflict) {
+        // If conflict receiver isn't yet assigned, we just wait for it and process current action when it's assigned
+        // It's assigned either after login or shortly after app is launched, so we should never stay stuck on this.
+        guard let receiver = self.conflictReceiver else { return }
+
+        receiver.resolve(conflict: conflict) { [weak self] action in
+            self?.performOnAccessQueue(flags: .barrier) {
+                if let action = action {
+                    self?.enqueue(actions: [action], at: 0)
+                }
                 self?.processNextAction()
             }
         }
@@ -875,6 +916,30 @@ final class SyncController: SynchronizationController {
                 self?.nonFatalErrors.append(error)
             }
             self?.updateVersionInNextWriteBatch(to: newVersion)
+            self?.processNextAction()
+        }
+    }
+
+    private func deleteGroup(with groupId: Int) {
+        self.handler.deleteGroup(with: groupId)
+                    .subscribe(onCompleted: { [weak self] in
+                        self?.finishDbOnlyAction(error: nil)
+                    }, onError: { [weak self] error in
+                        self?.finishDbOnlyAction(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
+    }
+
+    private func finishDbOnlyAction(error: Error?) {
+        if let error = error.flatMap({ self.errorRequiresAbort($0) }) {
+            self.abort(error: error)
+            return
+        }
+
+        self.performOnAccessQueue(flags: .barrier) { [weak self] in
+            if let error = error {
+                self?.nonFatalErrors.append(error)
+            }
             self?.processNextAction()
         }
     }

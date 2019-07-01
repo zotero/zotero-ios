@@ -109,6 +109,7 @@ protocol SyncActionHandler: class {
                       parameters: [[String: Any]]) -> Single<(Int, Error?)>
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
+    func deleteGroup(with groupId: Int) -> Completable
 }
 
 class SyncActionHandlerController {
@@ -313,21 +314,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable {
-        return Completable.create(subscribe: { [weak self] subscriber -> Disposable in
-            guard let `self` = self else {
-                subscriber(.error(SyncActionHandlerError.expired))
-                return Disposables.create()
-            }
-
-            do {
-                let request = UpdateVersionsDbRequest(version: version, library: library, type: type)
-                try self.dbStorage.createCoordinator().perform(request: request)
-                subscriber(.completed)
-            } catch let error {
-                subscriber(.error(error))
-            }
-            return Disposables.create()
-        }).observeOn(self.scheduler)
+        return self.createCompletableDbRequest(UpdateVersionsDbRequest(version: version, library: library, type: type))
     }
 
     func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable {
@@ -516,6 +503,27 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                 return Single.just(newVersion)
                              })
+    }
+
+    func deleteGroup(with groupId: Int) -> Completable {
+        return self.createCompletableDbRequest(DeleteGroupDbRequest(groupId: groupId))
+    }
+
+    private func createCompletableDbRequest<Request: DbRequest>(_ request: Request) -> Completable {
+        return Completable.create(subscribe: { [weak self] subscriber -> Disposable in
+            guard let `self` = self else {
+                subscriber(.error(SyncActionHandlerError.expired))
+                return Disposables.create()
+            }
+
+            do {
+                try self.dbStorage.createCoordinator().perform(request: request)
+                subscriber(.completed)
+            } catch let error {
+                subscriber(.error(error))
+            }
+            return Disposables.create()
+        }).observeOn(self.scheduler)
     }
 
     private func keys(from indices: [String], parameters: [[String: Any]]) -> [String] {

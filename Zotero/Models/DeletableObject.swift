@@ -32,6 +32,7 @@ extension RCollection: Deletable {
         database.delete(self.children)
     }
 }
+
 extension RItem: Deletable {
     func removeChildren(in database: Realm) {
         self.children.forEach { child in
@@ -40,6 +41,7 @@ extension RItem: Deletable {
         database.delete(self.children)
     }
 }
+
 extension RSearch: Deletable {
     func removeChildren(in database: Realm) {}
 }
