@@ -547,7 +547,7 @@ class SyncControllerSpec: QuickSpec {
 
             describe("Download") {
                 it("should download items into a new library") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
 
@@ -723,7 +723,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should download items into a new read-only group") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let groupId = 123
                     let library = SyncController.Library.group(groupId)
                     let objects = SyncController.Object.allCases
@@ -892,7 +892,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should apply remote deletions") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let itemToDelete = "CCCCCCCC"
                     let objects = SyncController.Object.allCases
@@ -948,7 +948,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should ignore remote deletions if local object changed") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let itemToDelete = "DDDDDDDD"
                     let objects = SyncController.Object.allCases
@@ -1019,7 +1019,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should handle new remote item referencing locally missing collection") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
                     let itemKey = "AAAAAAAA"
@@ -1085,7 +1085,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should include unsynced objects in sync queue") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
                     let unsyncedItemKey = "AAAAAAAA"
@@ -1189,7 +1189,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should mark object as needsSync if not parsed correctly and syncRetries should be increased") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
                     let correctKey = "AAAAAAAA"
@@ -1259,7 +1259,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should ignore errors when saving downloaded objects") {
-                    let header = ["Last-Modified-Version" : "2"]
+                    let header = ["last-modified-version" : "2"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
 
@@ -1458,7 +1458,7 @@ class SyncControllerSpec: QuickSpec {
 
                 it("should add items that exist remotely in a locally deleted," +
                    " remotely modified collection back to collection") {
-                    let header = ["Last-Modified-Version" : "1"]
+                    let header = ["last-modified-version" : "1"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
                     let collectionKey = "AAAAAAAA"
@@ -1564,7 +1564,7 @@ class SyncControllerSpec: QuickSpec {
 
                 it("should add locally deleted items that exist remotely in a locally deleted, remotely modified" +
                    " collection to sync queue and remove from delete log") {
-                    let header = ["Last-Modified-Version" : "1"]
+                    let header = ["last-modified-version" : "1"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
                     let collectionKey = "AAAAAAAA"
@@ -1756,7 +1756,7 @@ class SyncControllerSpec: QuickSpec {
                         expect(firstParams["version"] as? Int).to(equal(oldVersion))
                         expect(firstParams["name"] as? String).to(equal("New name"))
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                                                   statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
 
                     let itemUpdate = UpdatesRequest(libraryType: library, objectType: .item,
@@ -1772,7 +1772,7 @@ class SyncControllerSpec: QuickSpec {
                         expect(firstParams["numPages"] as? String).to(equal("1"))
                         expect(firstParams["callNumber"]).to(beNil())
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                                                   statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
@@ -1887,7 +1887,7 @@ class SyncControllerSpec: QuickSpec {
                         expect(parentPos).to(beLessThan(childPos))
 
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                                                   statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
@@ -1976,7 +1976,7 @@ class SyncControllerSpec: QuickSpec {
                         expect(params[2]["key"] as? String).to(equal(thirdKey))
 
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                   statusCode: 200, headers: ["Last-Modified-Version": "\(newVersion)"])
+                                                   statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
@@ -2025,7 +2025,7 @@ class SyncControllerSpec: QuickSpec {
                                                 params: [], version: oldVersion)
                     self.createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     self.createStub(for: update, baseUrl: baseUrl,
-                                    headers: ["Last-Modified-Version": "\(newVersion)"],
+                                    headers: ["last-modified-version": "\(newVersion)"],
                                     statusCode: 200,
                                     response: ["success": ["0": [:]], "unchanged": [], "failed": []])
 
@@ -2051,7 +2051,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should process downloads after upload failure") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let objects = SyncController.Object.allCases
 
@@ -2096,7 +2096,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should upload local deletions") {
-                    let header = ["Last-Modified-Version" : "1"]
+                    let header = ["last-modified-version" : "1"]
                     let library = SyncControllerSpec.userLibrary
                     let collectionKey = "AAAAAAAA"
                     let searchKey = "BBBBBBBB"
@@ -2175,7 +2175,7 @@ class SyncControllerSpec: QuickSpec {
                 }
 
                 it("should delay on second upload conflict") {
-                    let header = ["Last-Modified-Version" : "3"]
+                    let header = ["last-modified-version" : "3"]
                     let library = SyncControllerSpec.userLibrary
                     let itemToDelete = "DDDDDDDD"
                     let objects = SyncController.Object.allCases

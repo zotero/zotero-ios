@@ -23,6 +23,7 @@ class RGroup: Object {
     @objc dynamic var rawType: String = ""
     @objc dynamic var canEditMetadata: Bool = false
     @objc dynamic var canEditFiles: Bool = false
+    @objc dynamic var isLocalOnly: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var orderId: Int = 0
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info

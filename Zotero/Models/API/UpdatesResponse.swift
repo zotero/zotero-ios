@@ -15,6 +15,7 @@ enum UpdatesResponseError: Error {
 
 struct UpdatesResponse {
     let successful: [String]
+    let successfulJsonObjects: [Any]
     let unchanged: [String]
     let failed: [FailedUpdateResponse]
     let newVersion: Int
@@ -26,6 +27,8 @@ struct UpdatesResponse {
 
         let successful = (dictionary["success"] as? [String: Any]) ?? [:]
         self.successful = Array(successful.keys)
+        let successfulJsons = (dictionary["successful"] as? [String: Any]) ?? [:]
+        self.successfulJsonObjects = Array(successfulJsons.values)
         let unchanged = (dictionary["unchanged"] as? [String: Any]) ?? [:]
         self.unchanged = Array(unchanged.keys)
         let failed = (dictionary["failed"] as? [String: [String: Any]]) ?? [:]

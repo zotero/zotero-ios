@@ -416,14 +416,12 @@ final class SyncController: SynchronizationController {
         case .deleteGroup(let groupId):
             self.deleteGroup(with: groupId)
         case .markGroupAsLocalOnly(let groupId):
-            // TODO
-            break
+            self.markGroupAsLocalOnly(with: groupId)
         case .revertGroupToOriginal(let groupId):
             // TODO
             break
         case .markChangesAsResolved(let library):
-            // TODO
-            break
+            self.markUpdatesAsSynced(in: library)
         case .resolveConflict(let key, let library):
             // TODO: - resolve conflict...
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -926,6 +924,26 @@ final class SyncController: SynchronizationController {
                         self?.finishDbOnlyAction(error: nil)
                     }, onError: { [weak self] error in
                         self?.finishDbOnlyAction(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
+    }
+
+    private func markUpdatesAsSynced(in library: Library) {
+        self.handler.markLibraryUpdatesAsSynced(in: library)
+                    .subscribe(onCompleted: { [weak self] in
+                        self?.finishDbOnlyAction(error: nil)
+                        }, onError: { [weak self] error in
+                            self?.finishDbOnlyAction(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
+    }
+
+    private func markGroupAsLocalOnly(with groupId: Int) {
+        self.handler.markGroupAsLocalOnly(with: groupId)
+                    .subscribe(onCompleted: { [weak self] in
+                        self?.finishDbOnlyAction(error: nil)
+                        }, onError: { [weak self] error in
+                            self?.finishDbOnlyAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }

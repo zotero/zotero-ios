@@ -23,8 +23,16 @@ struct Files {
                         name: "library_\(libraryId.fileName)_item_\(key)", ext: ext)
     }
 
+    static func libraryFile(libraryId: LibraryIdentifier, ext: String) -> File {
+        return FileData(rootPath: Files.documentsRootPath,
+                        relativeComponents: ["downloads"],
+                        name: libraryId.fileName, ext: ext)
+    }
+
     static var dbFile: File {
-        return FileData(rootPath: Files.documentsRootPath, relativeComponents: [], name: "maindb", ext: "realm")
+        return FileData(rootPath: Files.documentsRootPath,
+                        relativeComponents: [],
+                        name: "maindb", ext: "realm")
     }
 }
 

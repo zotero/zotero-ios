@@ -28,7 +28,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         }
         allLibraryData.append(contentsOf: customLibraries.map(LibraryData.init))
 
-        var groups = database.objects(RGroup.self)
+        var groups = database.objects(RGroup.self).filter("isLocalOnly = false")
         if let groupIds = separatedIds?.group {
             groups = groups.filter("identifier IN %@", groupIds)
         }

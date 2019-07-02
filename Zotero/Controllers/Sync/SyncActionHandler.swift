@@ -110,6 +110,8 @@ protocol SyncActionHandler: class {
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
     func deleteGroup(with groupId: Int) -> Completable
+    func markLibraryUpdatesAsSynced(in library: SyncController.Library) -> Completable
+    func markGroupAsLocalOnly(with groupId: Int) -> Completable
 }
 
 class SyncActionHandlerController {
@@ -289,6 +291,10 @@ extension SyncActionHandlerController: SyncActionHandler {
 
         switch object {
         case .group:
+            // Cache JSON locally for later use (CR - reset group to original)
+            let file = Files.libraryFile(libraryId: library.libraryId, ext: "json")
+            try? self.fileStorage.write(data, to: file, options: .atomicWrite)
+
             let decoded = try JSONDecoder().decode(GroupResponse.self, from: data)
             try coordinator.perform(request: StoreGroupDbRequest(response: decoded, userId: userId))
             return ([], [], [])
@@ -298,11 +304,17 @@ extension SyncActionHandlerController: SyncActionHandler {
             return (decoded.collections.map({ $0.key }), decoded.errors, [])
         case .item, .trash:
             let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+
             let decoded = try ItemResponse.decode(response: jsonObject, schemaController: self.schemaController)
+            let parsedKeys = decoded.0.map({ $0.key })
+            // Cache JSONs locally for later use (in CR)
+            self.storeIndividualItemJsonObjects(from: jsonObject, keys: parsedKeys, libraryId: library.libraryId)
+
             let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0,
                                                                                  trash: object == .trash,
                                                                                  schemaController: self.schemaController))
-            return (decoded.0.map({ $0.key }), decoded.1, conflicts)
+
+            return (parsedKeys, decoded.1, conflicts)
         case .search:
             let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
             try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
@@ -432,6 +444,11 @@ extension SyncActionHandlerController: SyncActionHandler {
                                                                                                  version: response.newVersion)
                                          try coordinator.perform(request: request)
                                      case .item, .trash:
+                                        // Cache JSONs locally for later use (in CR)
+                                        self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects,
+                                                                            keys: nil,
+                                                                            libraryId: library.libraryId)
+
                                         let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: library.libraryId,
                                                                                           keys: syncedKeys,
                                                                                           version: response.newVersion)
@@ -509,6 +526,14 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.createCompletableDbRequest(DeleteGroupDbRequest(groupId: groupId))
     }
 
+    func markLibraryUpdatesAsSynced(in library: SyncController.Library) -> Completable {
+        return self.createCompletableDbRequest(MarkAllLibraryObjectsAsSyncedDbRequest(library: library))
+    }
+
+    func markGroupAsLocalOnly(with groupId: Int) -> Completable {
+        return self.createCompletableDbRequest(MarkGroupAsLocalOnlyDbRequest(groupId: groupId))
+    }
+
     private func createCompletableDbRequest<Request: DbRequest>(_ request: Request) -> Completable {
         return Completable.create(subscribe: { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
@@ -526,11 +551,22 @@ extension SyncActionHandlerController: SyncActionHandler {
         }).observeOn(self.scheduler)
     }
 
+    private func storeIndividualItemJsonObjects(from jsonObject: Any, keys: [String]?, libraryId: LibraryIdentifier) {
+        guard let array = jsonObject as? [[String: Any]] else { return }
+
+        for object in array {
+            guard let key = object["key"] as? String, (keys?.contains(key) ?? true),
+                  let data = try? JSONSerialization.data(withJSONObject: object, options: []) else { continue }
+            let file = Files.itemFile(libraryId: libraryId, key: key, ext: "json")
+            try? self.fileStorage.write(data, to: file, options: .atomicWrite)
+        }
+    }
+
     private func keys(from indices: [String], parameters: [[String: Any]]) -> [String] {
         return indices.compactMap({ Int($0) }).map({ parameters[$0] }).compactMap({ $0["key"] as? String })
     }
 
     private class func lastVersion(from headers: ResponseHeaders) -> Int {
-        return (headers["Last-Modified-Version"] as? String).flatMap(Int.init) ?? 0
+        return (headers["last-modified-version"] as? String).flatMap(Int.init) ?? 0
     }
 }
