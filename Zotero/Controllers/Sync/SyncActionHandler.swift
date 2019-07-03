@@ -291,15 +291,17 @@ extension SyncActionHandlerController: SyncActionHandler {
 
         switch object {
         case .group:
-            // Cache JSON locally for later use (CR - reset group to original)
-            let file = Files.libraryFile(libraryId: library.libraryId, ext: "json")
-            try? self.fileStorage.write(data, to: file, options: .atomicWrite)
-
             let decoded = try JSONDecoder().decode(GroupResponse.self, from: data)
             try coordinator.perform(request: StoreGroupDbRequest(response: decoded, userId: userId))
             return ([], [], [])
         case .collection:
             let decoded = try JSONDecoder().decode(CollectionsResponse.self, from: data)
+
+            // Cache JSONs locally for later use (in CR)
+            self.storeIndividualCodableJsonObjects(from: decoded.collections,
+                                                   type: .collection,
+                                                   libraryId: library.libraryId)
+
             try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded.collections))
             return (decoded.collections.map({ $0.key }), decoded.errors, [])
         case .item, .trash:
@@ -307,6 +309,7 @@ extension SyncActionHandlerController: SyncActionHandler {
 
             let decoded = try ItemResponse.decode(response: jsonObject, schemaController: self.schemaController)
             let parsedKeys = decoded.0.map({ $0.key })
+
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualItemJsonObjects(from: jsonObject, keys: parsedKeys, libraryId: library.libraryId)
 
@@ -317,6 +320,10 @@ extension SyncActionHandlerController: SyncActionHandler {
             return (parsedKeys, decoded.1, conflicts)
         case .search:
             let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
+            
+            // Cache JSONs locally for later use (in CR)
+            self.storeIndividualCodableJsonObjects(from: decoded.searches, type: .search, libraryId: library.libraryId)
+
             try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
             return (decoded.searches.map({ $0.key }), decoded.errors, [])
         case .tag: // Tags are not synchronized, this should not be called
@@ -557,8 +564,22 @@ extension SyncActionHandlerController: SyncActionHandler {
         for object in array {
             guard let key = object["key"] as? String, (keys?.contains(key) ?? true),
                   let data = try? JSONSerialization.data(withJSONObject: object, options: []) else { continue }
-            let file = Files.itemFile(libraryId: libraryId, key: key, ext: "json")
+            let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "json")
             try? self.fileStorage.write(data, to: file, options: .atomicWrite)
+        }
+    }
+
+    private func storeIndividualCodableJsonObjects<Object: KeyedResponse&Codable>(from objects: [Object],
+                                                                                  type: SyncController.Object,
+                                                                                  libraryId: LibraryIdentifier) {
+        for object in objects {
+            do {
+                let data = try JSONEncoder().encode(object)
+                let file = Files.objectFile(for: type, libraryId: libraryId, key: object.key, ext: "json")
+                try self.fileStorage.write(data, to: file, options: .atomicWrite)
+            } catch let error {
+                DDLogError("SyncActionHandler: can't encode/write object - \(error)\n\(object)")
+            }
         }
     }
 

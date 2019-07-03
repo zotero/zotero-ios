@@ -932,8 +932,8 @@ final class SyncController: SynchronizationController {
         self.handler.markLibraryUpdatesAsSynced(in: library)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishDbOnlyAction(error: nil)
-                        }, onError: { [weak self] error in
-                            self?.finishDbOnlyAction(error: error)
+                    }, onError: { [weak self] error in
+                        self?.finishDbOnlyAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }
@@ -942,8 +942,8 @@ final class SyncController: SynchronizationController {
         self.handler.markGroupAsLocalOnly(with: groupId)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishDbOnlyAction(error: nil)
-                        }, onError: { [weak self] error in
-                            self?.finishDbOnlyAction(error: error)
+                    }, onError: { [weak self] error in
+                        self?.finishDbOnlyAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }

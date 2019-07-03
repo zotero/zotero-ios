@@ -133,7 +133,7 @@ class ItemDetailStore: Store {
                 if !contentType.isEmpty { // File attachment
                     if let ext = contentType.mimeTypeExtension,
                        let libraryId = item.libraryObject?.identifier {
-                        let file = Files.itemFile(libraryId: libraryId, key: item.key, ext: ext)
+                        let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: ext)
                         let isLocal = fileStorage.has(file)
                         type = .file(file: file, isLocal: isLocal)
                     } else {

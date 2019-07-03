@@ -33,7 +33,7 @@ extension CollectionsResponse: Decodable {
     }
 }
 
-struct CollectionResponse: Decodable {
+struct CollectionResponse: Codable, KeyedResponse {
     struct Data {
         let name: String
         let parentCollection: String?
@@ -46,7 +46,7 @@ struct CollectionResponse: Decodable {
     let version: Int
 }
 
-extension CollectionResponse.Data: Decodable {
+extension CollectionResponse.Data: Codable {
     private enum Keys: String, CodingKey {
         case name, parentCollection
     }
@@ -63,5 +63,15 @@ extension CollectionResponse.Data: Decodable {
             parent = try container.decodeIfPresent(String.self, forKey: .parentCollection)
         } catch {}
         self.init(name: name, parentCollection: parent)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CollectionResponse.Data.Keys.self)
+        try container.encode(self.name, forKey: .name)
+        if let parent = self.parentCollection {
+            try container.encode(parent, forKey: .parentCollection)
+        } else {
+            try container.encode(false, forKey: .parentCollection)
+        }
     }
 }

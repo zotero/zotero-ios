@@ -17,16 +17,26 @@ struct Files {
         return NSSearchPathForDirectoriesInDomains(.cachesDirectory, .allDomainsMask, true).first ?? "/"
     }()
 
-    static func itemFile(libraryId: LibraryIdentifier, key: String, ext: String) -> File {
-        return FileData(rootPath: Files.documentsRootPath,
-                        relativeComponents: ["downloads"],
-                        name: "library_\(libraryId.fileName)_item_\(key)", ext: ext)
-    }
+    static func objectFile(for object: SyncController.Object, libraryId: LibraryIdentifier,
+                           key: String, ext: String) -> File {
+        let objectName: String
 
-    static func libraryFile(libraryId: LibraryIdentifier, ext: String) -> File {
+        switch object {
+        case .collection:
+            objectName = "collection"
+        case .item, .trash:
+            objectName = "item"
+        case .search:
+            objectName = "search"
+        case .tag:
+            objectName = "tag"
+        case .group:
+            objectName = "group"
+        }
+
         return FileData(rootPath: Files.documentsRootPath,
                         relativeComponents: ["downloads"],
-                        name: libraryId.fileName, ext: ext)
+                        name: "library_\(libraryId.fileName)_\(objectName)_\(key)", ext: ext)
     }
 
     static var dbFile: File {

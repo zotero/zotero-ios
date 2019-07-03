@@ -8,12 +8,12 @@
 
 import Foundation
 
-struct LinksResponse: Decodable {
+struct LinksResponse: Codable {
     let main: LinkResponse?
     let alternate: LinkResponse?
 }
 
-struct LinkResponse: Decodable {
+struct LinkResponse: Codable {
     let href: String
     let type: String
 }

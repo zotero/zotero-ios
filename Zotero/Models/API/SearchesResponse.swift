@@ -33,8 +33,8 @@ extension SearchesResponse: Decodable {
     }
 }
 
-struct SearchResponse: Decodable {
-    struct Data: Decodable {
+struct SearchResponse: Codable, KeyedResponse {
+    struct Data: Codable {
         let name: String
         let conditions: [ConditionResponse]
     }
@@ -46,7 +46,7 @@ struct SearchResponse: Decodable {
     let version: Int
 }
 
-struct ConditionResponse: Decodable {
+struct ConditionResponse: Codable {
     let condition: String
     let `operator`: String
     let value: String
