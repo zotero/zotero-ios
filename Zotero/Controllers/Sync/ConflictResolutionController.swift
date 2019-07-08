@@ -66,7 +66,7 @@ class ConflictResolutionController: ConflictReceiver {
 
         case .groupWriteDenied(let groupId, let groupName):
             let actions = [UIAlertAction(title: "Revert to original", style: .cancel, handler: { [weak self] _ in
-                               self?.finish(with: .revertGroupToOriginal(groupId))
+                               self?.finish(with: .revertLibraryToOriginal(.group(groupId)))
                            }),
                            UIAlertAction(title: "Keep changes", style: .default, handler: { [weak self] _ in
                                self?.finish(with: .markChangesAsResolved(.group(groupId)))

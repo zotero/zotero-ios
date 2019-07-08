@@ -69,13 +69,13 @@ final class UpdateDataSource: SyncUpdateDataSource {
         let parameters: [[String: Any]]
         switch object {
         case .collection:
-            let request = ReadChangedCollectionUpdateParametersDbRequest(libraryId: library.libraryId)
+            let request = ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: library.libraryId)
             parameters = try coordinator.perform(request: request)
         case .search:
-            let request = ReadChangedSearchUpdateParametersDbRequest(libraryId: library.libraryId)
+            let request = ReadUpdatedSearchUpdateParametersDbRequest(libraryId: library.libraryId)
             parameters = try coordinator.perform(request: request)
         case .item, .trash:
-            let request = ReadChangedItemUpdateParametersDbRequest(libraryId: library.libraryId)
+            let request = ReadUpdatedItemUpdateParametersDbRequest(libraryId: library.libraryId)
             parameters = try coordinator.perform(request: request)
         case .group, .tag:
             fatalError("UpdateDataSource: Updating unsupported object type")

@@ -63,8 +63,7 @@ extension SyncController.Action {
         case .resolveDeletedGroup(let groupId, _),
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
-             .markGroupAsLocalOnly(let groupId),
-             .revertGroupToOriginal(let groupId):
+             .markGroupAsLocalOnly(let groupId):
             return .group(groupId)
         case .syncVersions(let library, _, _),
              .storeVersion(_, let library, _),
@@ -72,7 +71,8 @@ extension SyncController.Action {
              .syncSettings(let library, _),
              .storeSettingsVersion(_, let library),
              .resolveConflict(_, let library),
-             .markChangesAsResolved(let library):
+             .markChangesAsResolved(let library),
+             .revertLibraryToOriginal(let library):
             return library
         }
     }
@@ -83,7 +83,7 @@ extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertGroupToOriginal:
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal:
             return false
         }
     }

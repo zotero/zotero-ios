@@ -110,8 +110,9 @@ protocol SyncActionHandler: class {
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
     func deleteGroup(with groupId: Int) -> Completable
-    func markLibraryUpdatesAsSynced(in library: SyncController.Library) -> Completable
     func markGroupAsLocalOnly(with groupId: Int) -> Completable
+    func markChangesAsResolved(in library: SyncController.Library) -> Completable
+    func revertLibraryUpdates(in library: SyncController.Library) -> Single<[SyncController.Object: [String]]>
 }
 
 class SyncActionHandlerController {
@@ -314,8 +315,8 @@ extension SyncActionHandlerController: SyncActionHandler {
             self.storeIndividualItemJsonObjects(from: jsonObject, keys: parsedKeys, libraryId: library.libraryId)
 
             let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: decoded.0,
-                                                                                 trash: object == .trash,
-                                                                                 schemaController: self.schemaController))
+                                                                                 schemaController: self.schemaController,
+                                                                                 preferRemoteData: false))
 
             return (parsedKeys, decoded.1, conflicts)
         case .search:
@@ -533,12 +534,114 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.createCompletableDbRequest(DeleteGroupDbRequest(groupId: groupId))
     }
 
-    func markLibraryUpdatesAsSynced(in library: SyncController.Library) -> Completable {
-        return self.createCompletableDbRequest(MarkAllLibraryObjectsAsSyncedDbRequest(library: library))
-    }
-
     func markGroupAsLocalOnly(with groupId: Int) -> Completable {
         return self.createCompletableDbRequest(MarkGroupAsLocalOnlyDbRequest(groupId: groupId))
+    }
+
+    func markChangesAsResolved(in library: SyncController.Library) -> Completable {
+        return self.createCompletableDbRequest(MarkAllLibraryObjectChangesAsSyncedDbRequest(libraryId: library.libraryId))
+    }
+
+    func revertLibraryUpdates(in library: SyncController.Library) -> Single<[SyncController.Object : [String]]> {
+        return Single.create { [weak self] subscriber -> Disposable in
+            guard let `self` = self else {
+                subscriber(.error(SyncActionHandlerError.expired))
+                return Disposables.create()
+            }
+
+            do {
+                let coordinator = try self.dbStorage.createCoordinator()
+                let libraryId = library.libraryId
+                let jsonDecoder = JSONDecoder()
+
+                let collections = try self.loadCachedJsonsForChangedDecodableObjects(of: RCollection.self,
+                                                                                     objectType: .collection,
+                                                                                     response: CollectionResponse.self,
+                                                                                     in: libraryId,
+                                                                                     coordinator: coordinator,
+                                                                                     decoder: jsonDecoder)
+                let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
+                try coordinator.perform(request: storeCollectionsRequest)
+
+                let items = try self.loadCachedJsonForItems(in: libraryId, coordinator: coordinator)
+                let storeItemsRequest = StoreItemsDbRequest(response: items.responses,
+                                                            schemaController: self.schemaController,
+                                                            preferRemoteData: true)
+                _ = try coordinator.perform(request: storeItemsRequest)
+
+                let searches = try self.loadCachedJsonsForChangedDecodableObjects(of: RSearch.self,
+                                                                                  objectType: .search,
+                                                                                  response: SearchResponse.self,
+                                                                                  in: libraryId,
+                                                                                  coordinator: coordinator,
+                                                                                  decoder: jsonDecoder)
+                let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
+                try coordinator.perform(request: storeSearchesRequest)
+
+                let failures: [SyncController.Object : [String]] = [.collection: collections.failed,
+                                                                    .search: searches.failed,
+                                                                    .item: items.failed]
+
+                subscriber(.success(failures))
+            } catch let error {
+                subscriber(.error(error))
+            }
+
+            return Disposables.create()
+        }.observeOn(self.scheduler)
+    }
+
+    private func loadCachedJsonForItems(in libraryId: LibraryIdentifier,
+                                        coordinator: DbCoordinator) throws -> (responses: [ItemResponse], failed: [String]) {
+        let itemsRequest = ReadAnyChangedObjectsInLibraryDbRequest<RItem>(libraryId: libraryId)
+        let items = try coordinator.perform(request: itemsRequest)
+        var responses: [ItemResponse] = []
+        var failed: [String] = []
+
+        items.forEach { item in
+            do {
+                let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: "json")
+                let data = try self.fileStorage.read(file)
+                let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+
+                if let jsonData = jsonObject as? [String: Any] {
+                    let response = try ItemResponse(response: jsonData, schemaController: self.schemaController)
+                    responses.append(response)
+                } else {
+                    failed.append(item.key)
+                }
+            } catch {
+                failed.append(item.key)
+            }
+        }
+
+        return (responses, failed)
+    }
+
+    private func loadCachedJsonsForChangedDecodableObjects<Obj: Syncable&UpdatableObject, Response: Decodable>(of type: Obj.Type,
+                                                                                                               objectType: SyncController.Object,
+                                                                                                               response: Response.Type,
+                                                                                                               in libraryId: LibraryIdentifier,
+                                                                                                               coordinator: DbCoordinator,
+                                                                                                               decoder: JSONDecoder) throws -> (responses: [Response], failed: [String]) {
+        let request = ReadAnyChangedObjectsInLibraryDbRequest<Obj>(libraryId: libraryId)
+        let objects = try coordinator.perform(request: request)
+        var responses: [Response] = []
+        var failed: [String] = []
+
+        objects.forEach({ object in
+            do {
+                let file = Files.objectFile(for: objectType, libraryId: libraryId,
+                                            key: object.key, ext: "json")
+                let data = try self.fileStorage.read(file)
+                let response = try decoder.decode(Response.self, from: data)
+                responses.append(response)
+            } catch {
+                failed.append(object.key)
+            }
+        })
+
+        return (responses, failed)
     }
 
     private func createCompletableDbRequest<Request: DbRequest>(_ request: Request) -> Completable {

@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct ReadChangedSearchUpdateParametersDbRequest: DbResponseRequest {
+struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 
     let libraryId: LibraryIdentifier
@@ -20,12 +20,12 @@ struct ReadChangedSearchUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        let predicate = Predicates.changesInLibrary(libraryId: self.libraryId)
+        let predicate = Predicates.changesWithoutDeletionsInLibrary(libraryId: self.libraryId)
         return database.objects(RSearch.self).filter(predicate).compactMap({ $0.updateParameters })
     }
 }
 
-struct ReadChangedItemUpdateParametersDbRequest: DbResponseRequest {
+struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 
     let libraryId: LibraryIdentifier
@@ -35,14 +35,14 @@ struct ReadChangedItemUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        let predicate = Predicates.changesInLibrary(libraryId: self.libraryId)
+        let predicate = Predicates.changesWithoutDeletionsInLibrary(libraryId: self.libraryId)
         return database.objects(RItem.self).filter(predicate)
                                            .sorted(byKeyPath: "parent.rawChangedFields", ascending: false) // parents first, children later
                                            .compactMap({ $0.updateParameters })
     }
 }
 
-struct ReadChangedCollectionUpdateParametersDbRequest: DbResponseRequest {
+struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 
     let libraryId: LibraryIdentifier
@@ -52,7 +52,7 @@ struct ReadChangedCollectionUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        let predicate = Predicates.changesInLibrary(libraryId: self.libraryId)
+        let predicate = Predicates.changesWithoutDeletionsInLibrary(libraryId: self.libraryId)
         let objects = database.objects(RCollection.self).filter(predicate)
 
         if objects.count == 1 {

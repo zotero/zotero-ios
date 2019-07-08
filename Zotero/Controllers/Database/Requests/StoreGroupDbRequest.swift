@@ -52,6 +52,7 @@ struct StoreGroupDbRequest: DbRequest {
         group.canEditFiles = canEditFiles
         group.version = self.response.version
         group.syncState = .synced
+        group.isLocalOnly = false
 
         if group.versions == nil {
             let versions = RVersions()

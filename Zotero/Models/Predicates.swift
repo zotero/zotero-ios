@@ -55,11 +55,31 @@ struct Predicates {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [namePredicate, libraryPredicate])
     }
 
-    static func changesInLibrary(libraryId: LibraryIdentifier) -> NSPredicate {
-        let changePredicate = NSPredicate(format: "rawChangedFields > 0")
+    static var changed: NSPredicate {
+        return NSPredicate(format: "rawChangedFields > 0")
+    }
+
+    static var changedOrDeleted: NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.changed, Predicates.deleted(true)])
+    }
+
+    static func changesWithoutDeletionsInLibrary(libraryId: LibraryIdentifier) -> NSPredicate {
+        let changePredicate = Predicates.changed
         let libraryPredicate = Predicates.library(from: libraryId)
         let deletedPredicate = Predicates.deleted(false)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
+    }
+
+    static func changesOrDeletionsInLibrary(libraryId: LibraryIdentifier) -> NSPredicate {
+        let changePredicate = Predicates.changed
+        let deletedPredicate = Predicates.deleted(true)
+        let changesPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [changePredicate, deletedPredicate])
+        let libraryPredicate = Predicates.library(from: libraryId)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [changesPredicate, libraryPredicate])
+    }
+
+    static func syncState(_ syncState: ObjectSyncState) -> NSPredicate {
+        return NSPredicate(format: "rawSyncState = %d", syncState.rawValue)
     }
 
     static func notSyncState(_ syncState: ObjectSyncState) -> NSPredicate {

@@ -23,10 +23,8 @@ struct MarkGroupAsLocalOnlyDbRequest: DbRequest {
         group.isLocalOnly = true
         group.canEditFiles = false
         group.canEditMetadata = false
-        // Mark all local changes as synced, we're keeping the group in current state
-        let predicate = Predicates.changesInLibrary(libraryId: .group(self.groupId))
-        database.objects(RCollection.self).filter(predicate).forEach({ $0.resetChanges() })
-        database.objects(RItem.self).filter(predicate).forEach({ $0.resetChanges() })
-        database.objects(RSearch.self).filter(predicate).forEach({ $0.resetChanges() })
+
+        // Since the group will be local only, we want to keep the current state of the group as synced
+        try MarkAllLibraryObjectChangesAsSyncedDbRequest(libraryId: .group(self.groupId)).process(in: database)
     }
 }

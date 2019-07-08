@@ -1,5 +1,5 @@
 //
-//  ReadChangedObjectsDbRequest.swift
+//  ReadAnyChangedObjectsDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 14/03/2019.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct ReadChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest {
+struct ReadAnyChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest {
     typealias Response = Results<Obj>
 
     var needsWrite: Bool {
@@ -18,6 +18,6 @@ struct ReadChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> Results<Obj> {
-        return database.objects(Obj.self).filter("rawChangedFields > 0 OR deleted = true")
+        return database.objects(Obj.self).filter(Predicates.changedOrDeleted)
     }
 }

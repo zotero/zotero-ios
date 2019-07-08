@@ -125,7 +125,7 @@ final class SyncController: SynchronizationController {
         case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely
         case resolveGroupMetadataWritePermission(Int, String)  // Resolve when group had metadata editing allowed,
                                                                // but it was disabled and we try to upload new data
-        case revertGroupToOriginal(Int)                        // Revert all changes performed to this group to original
+        case revertLibraryToOriginal(Library)                  // Revert all changes to original
                                                                // cached version of this group.
         case markChangesAsResolved(Library)                    // Local changes couldn't be written remotely, but we
                                                                // want to keep them locally anyway
@@ -417,11 +417,10 @@ final class SyncController: SynchronizationController {
             self.deleteGroup(with: groupId)
         case .markGroupAsLocalOnly(let groupId):
             self.markGroupAsLocalOnly(with: groupId)
-        case .revertGroupToOriginal(let groupId):
-            // TODO
-            break
+        case .revertLibraryToOriginal(let library):
+            self.revertGroupData(in: library)
         case .markChangesAsResolved(let library):
-            self.markUpdatesAsSynced(in: library)
+            self.markChangesAsResolved(in: library)
         case .resolveConflict(let key, let library):
             // TODO: - resolve conflict...
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -717,6 +716,8 @@ final class SyncController: SynchronizationController {
                 switch error {
                 case .itemDeleted(let response):
                     return .resolveConflict(response.key, library)
+                case .itemChanged(let response):
+                    return .resolveConflict(response.key, library)
                 }
             })
             let allStringKeys = (allKeys as? [String]) ?? []
@@ -928,8 +929,8 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func markUpdatesAsSynced(in library: Library) {
-        self.handler.markLibraryUpdatesAsSynced(in: library)
+    private func markGroupAsLocalOnly(with groupId: Int) {
+        self.handler.markGroupAsLocalOnly(with: groupId)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishDbOnlyAction(error: nil)
                     }, onError: { [weak self] error in
@@ -938,12 +939,23 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func markGroupAsLocalOnly(with groupId: Int) {
-        self.handler.markGroupAsLocalOnly(with: groupId)
+    private func markChangesAsResolved(in library: Library) {
+        self.handler.markChangesAsResolved(in: library)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishDbOnlyAction(error: nil)
                     }, onError: { [weak self] error in
                         self?.finishDbOnlyAction(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
+    }
+
+    private func revertGroupData(in library: Library) {
+        self.handler.revertLibraryUpdates(in: library)
+                    .subscribe(onSuccess: { [weak self] failures in
+                        // TODO: - report failures?
+                        self?.finishDbOnlyAction(error: nil)
+                    }, onError: { [weak self] error in
+                        self?.finishDbOnlyAction(error: nil)
                     })
                     .disposed(by: self.disposeBag)
     }
