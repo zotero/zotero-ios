@@ -2454,6 +2454,22 @@ fileprivate class TestHandler: SyncActionHandler {
             return Single.just(data.0)
         }
     }
+
+    func deleteGroup(with groupId: Int) -> Completable {
+        return Completable.empty()
+    }
+
+    func markGroupAsLocalOnly(with groupId: Int) -> Completable {
+        return Completable.empty()
+    }
+
+    func markChangesAsResolved(in library: SyncController.Library) -> Completable {
+        return Completable.empty()
+    }
+
+    func revertLibraryUpdates(in library: SyncController.Library) -> Single<[SyncController.Object : [String]]> {
+        return Single.just([:])
+    }
 }
 
 fileprivate class TestDataSource: SyncUpdateDataSource {
