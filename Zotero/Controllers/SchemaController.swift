@@ -32,6 +32,7 @@ class SchemaController {
 
     private(set) var itemSchemas: [String: ItemSchema] = [:]
     private(set) var locales: [String: SchemaLocale] = [:]
+    private(set) var version: Int = 0
 
     init(apiClient: ApiClient, userDefaults: UserDefaults) {
         self.apiClient = apiClient
@@ -70,7 +71,7 @@ class SchemaController {
                       .subscribe(onSuccess: { [weak self] response in
                           guard let `self` = self else { return }
                           self.reloadSchema(from: response.0)
-                          if let etag = response.1["Etag"] as? String {
+                          if let etag = response.1["etag"] as? String {
                               self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
                           }
                           self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
@@ -100,7 +101,7 @@ class SchemaController {
         guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
         guard let schemaData = try? Data(contentsOf: url),
-              let schemaChunks = self.chunks(from: schemaData, separator: "\n\n") else { return }
+              let schemaChunks = self.chunks(from: schemaData, separator: "\r\n\r\n") else { return }
         self.storeEtag(from: schemaChunks.0)
         self.reloadSchema(from: schemaChunks.1)
     }
@@ -117,13 +118,14 @@ class SchemaController {
         let schema = SchemaResponse(data: jsonData)
         self.itemSchemas = schema.itemSchemas
         self.locales = schema.locales
+        self.version = schema.version
     }
 
     private func etag(from data: Data) -> String? {
         guard let headers = String(data: data, encoding: .utf8) else { return nil }
 
-        for line in headers.split(separator: "\n") {
-            guard line.contains("ETag") else { continue }
+        for line in headers.split(separator: "\r\n") {
+            guard line.contains("etag") else { continue }
             let separator = ":"
             let separatorChar = separator[separator.startIndex]
             guard let etag = line.split(separator: separatorChar).last.flatMap(String.init) else { continue }

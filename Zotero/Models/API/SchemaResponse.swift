@@ -9,6 +9,7 @@
 import Foundation
 
 struct SchemaResponse {
+    let version: Int
     let itemSchemas: [String: ItemSchema]
     let locales: [String: SchemaLocale]
 
@@ -29,6 +30,7 @@ struct SchemaResponse {
             }
         }
 
+        self.version = (data["version"] as? Int) ?? 0
         self.itemSchemas = itemTypes
         self.locales = locales
     }
