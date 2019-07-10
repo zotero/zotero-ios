@@ -32,7 +32,7 @@ class SyncControllerSpec: QuickSpec {
     private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
     private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
     private static let syncHandler = SyncActionHandlerController(userId: userId,
-                                                                 apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
+                                                                 apiClient: apiClient,
                                                                  dbStorage: RealmDbStorage(config: realmConfig),
                                                                  fileStorage: TestFileStorage(),
                                                                  schemaController: schemaController,
