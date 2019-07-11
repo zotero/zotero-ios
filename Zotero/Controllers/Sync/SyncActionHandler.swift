@@ -89,7 +89,8 @@ struct Versions {
 }
 
 protocol SyncActionHandler: class {
-    func loadPermissions() -> Single<KeyResponse>
+    func loadPermissions() -> Single<(KeyResponse, Bool)> // Key response, Bool indicates whether schema needs an update
+    func updateSchema() -> Completable
     func loadAllLibraryData() -> Single<[LibraryData]>
     func loadLibraryData(for identifiers: [LibraryIdentifier]) -> Single<[LibraryData]>
     func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
@@ -138,18 +139,24 @@ class SyncActionHandlerController {
 }
 
 extension SyncActionHandlerController: SyncActionHandler {
-    func loadPermissions() -> Single<KeyResponse> {
+    func loadPermissions() -> Single<(KeyResponse, Bool)> {
         return self.apiClient.send(dataRequest: KeyRequest())
                              .flatMap { response in
                                  do {
+                                     let schemaVersion = (response.1["zotero-schema-version"] as? String).flatMap(Int.init) ?? 0
+                                     let schemaNeedsUpdate = schemaVersion > self.schemaController.version
                                      let json = try JSONSerialization.jsonObject(with: response.0,
                                                                                  options: .allowFragments)
                                      let keyResponse = try KeyResponse(response: json)
-                                     return Single.just(keyResponse)
+                                     return Single.just((keyResponse, schemaNeedsUpdate))
                                  } catch let error {
                                      return Single.error(error)
                                  }
                              }
+    }
+
+    func updateSchema() -> Completable {
+        return self.schemaController.createFetchSchemaCompletable().observeOn(self.scheduler)
     }
 
     func loadAllLibraryData() -> Single<[LibraryData]> {

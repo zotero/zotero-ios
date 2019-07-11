@@ -65,36 +65,29 @@ class SchemaController {
     }
 
     private func fetchSchema() {
-        let etag = self.userDefaults.string(forKey: self.defaultsEtagKey)
-        self.apiClient.send(dataRequest: SchemaRequest(etag: etag))
-                      .observeOn(MainScheduler.instance)
-                      .subscribe(onSuccess: { [weak self] response in
-                          guard let `self` = self else { return }
-                          self.reloadSchema(from: response.0)
-                          if let etag = response.1["etag"] as? String {
-                              self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
-                          }
-                          self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
-                      }, onError: { error in
-                          if let responseError = error as? AFResponseError {
-                              switch responseError.error {
-                              case .responseValidationFailed(let reason):
-                                  switch reason {
-                                  case .unacceptableStatusCode(let code):
-                                      if code == 304 {
-                                          return
-                                      }
-                                  default: break
-                                  }
-                              default: break
-                              }
-                          }
+        self.createFetchSchemaCompletable().observeOn(MainScheduler.instance).subscribe().disposed(by: self.disposeBag)
+    }
 
-                          // Don't need to do anything, we've got bundled schema, we've got auto retries
-                          // on backend errors, if everything fails we'll try again on app becoming active
-                          DDLogError("SchemaController: could not fetch schema - \(error)")
-                      })
-                      .disposed(by: self.disposeBag)
+    func createFetchSchemaCompletable() -> Completable {
+        let etag = self.userDefaults.string(forKey: self.defaultsEtagKey)
+        return self.apiClient.send(dataRequest: SchemaRequest(etag: etag))
+                             .do(onSuccess: { [weak self] response in
+                                 guard let `self` = self else { return }
+                                 self.reloadSchema(from: response.0)
+                                 if let etag = response.1["etag"] as? String {
+                                     self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
+                                 }
+                                 self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
+                             }, onError: { error in
+                                 if error.isUnchangedError {
+                                     return
+                                 }
+
+                                 // Don't need to do anything, we've got bundled schema, we've got auto retries
+                                 // on backend errors, if everything fails we'll try again on app becoming active
+                                 DDLogError("SchemaController: could not fetch schema - \(error)")
+                             })
+                             .asCompletable()
     }
 
     private func loadBundledData() {

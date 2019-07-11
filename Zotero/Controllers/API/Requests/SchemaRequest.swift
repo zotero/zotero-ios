@@ -9,8 +9,6 @@
 import Foundation
 
 struct SchemaRequest: ApiRequest {
-    typealias Response = SettingsResponse
-
     let etag: String?
 
     var path: String {

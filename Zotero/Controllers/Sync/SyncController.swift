@@ -111,6 +111,7 @@ final class SyncController: SynchronizationController {
 
     enum Action: Equatable {
         case loadKeyPermissions                                // Checks current key for access permissions
+        case updateSchema                                      // Updates currently cached schema
         case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
         case createLibraryActions(LibrarySyncType,
                                   CreateLibraryActionsOptions) // Loads required libraries, spawn actions for each
@@ -389,6 +390,8 @@ final class SyncController: SynchronizationController {
         switch action {
         case .loadKeyPermissions:
             self.processKeyCheckAction()
+        case .updateSchema:
+            self.updateSchema()
         case .createLibraryActions(let libraries, let options):
             self.processCreateLibraryActions(for: libraries, options: options)
         case .syncVersions(let library, let objectType, let version):
@@ -449,21 +452,34 @@ final class SyncController: SynchronizationController {
     }
 
     private func processKeyCheckAction() {
-        self.handler.loadPermissions().flatMap { response -> Single<AccessPermissions> in
-                                          let permissions = AccessPermissions(user: response.user,
-                                                                              groupDefault: response.defaultGroup,
-                                                                              groups: response.groups)
-                                          return Single.just(permissions)
+        self.handler.loadPermissions().flatMap { response -> Single<(AccessPermissions, Bool)> in
+                                          let permissions = AccessPermissions(user: response.0.user,
+                                                                              groupDefault: response.0.defaultGroup,
+                                                                              groups: response.0.groups)
+                                          return Single.just((permissions, response.1))
                                       }
-                                      .subscribe(onSuccess: { [weak self] permissions in
+                                      .subscribe(onSuccess: { [weak self] response in
                                           self?.performOnAccessQueue {
-                                              self?.accessPermissions = permissions
+                                              self?.accessPermissions = response.0
+                                              if response.1 {
+                                                  self?.enqueue(actions: [.updateSchema], at: 0)
+                                              }
                                               self?.processNextAction()
                                           }
                                       }, onError: { error in
                                           self.abort(error: SyncError.permissionLoadingFailed)
                                       })
                                       .disposed(by: self.disposeBag)
+    }
+
+    private func updateSchema() {
+        self.handler.updateSchema()
+                    .subscribe(onCompleted: { [weak self] in
+                        self?.finishCompletableAction(error: nil)
+                    }, onError: { [weak self] error in
+                        self?.finishCompletableAction(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
@@ -755,55 +771,19 @@ final class SyncController: SynchronizationController {
     private func processStoreVersion(library: Library, type: UpdateVersionType, version: Int) {
         self.handler.storeVersion(version, for: library, type: type)
                     .subscribe(onCompleted: { [weak self] in
-                        self?.finishProcessingStoreVersionAction(error:  nil)
+                        self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
-                        self?.finishProcessingStoreVersionAction(error: error)
+                        self?.finishCompletableAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
-    }
-
-    private func finishProcessingStoreVersionAction(error: Error?) {
-        guard let error = error else {
-            self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                self?.processNextAction()
-            }
-            return
-        }
-
-        if let abortError = self.errorRequiresAbort(error) {
-            self.abort(error: abortError)
-            return
-        }
-
-        // If we only failed to store correct versions we can continue as usual, we'll just try to fetch from
-        // older version on next sync and most objects will be up to date
-        self.performOnAccessQueue(flags: .barrier) { [weak self] in
-            self?.nonFatalErrors.append(error)
-            self?.processNextAction()
-        }
     }
 
     private func markForResync(keys: [Any], library: Library, object: Object) {
         self.handler.markForResync(keys: keys, library: library, object: object)
                     .subscribe(onCompleted: { [weak self] in
-                        self?.performOnAccessQueue(flags: .barrier) { [weak self] in
-                            guard let `self` = self else { return }
-                            self.processNextAction()
-                        }
+                        self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
-                        guard let `self` = self else { return }
-
-                        if let abortError = self.errorRequiresAbort(error) {
-                            self.abort(error: abortError)
-                            return
-                        }
-
-                        self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                            guard let `self` = self else { return }
-                            self.nonFatalErrors.append(error)
-                            self.removeAllActions(for: library)
-                            self.processNextAction()
-                        }
+                        self?.finishCompletableAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }
@@ -922,9 +902,9 @@ final class SyncController: SynchronizationController {
     private func deleteGroup(with groupId: Int) {
         self.handler.deleteGroup(with: groupId)
                     .subscribe(onCompleted: { [weak self] in
-                        self?.finishDbOnlyAction(error: nil)
+                        self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
-                        self?.finishDbOnlyAction(error: error)
+                        self?.finishCompletableAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }
@@ -932,9 +912,9 @@ final class SyncController: SynchronizationController {
     private func markGroupAsLocalOnly(with groupId: Int) {
         self.handler.markGroupAsLocalOnly(with: groupId)
                     .subscribe(onCompleted: { [weak self] in
-                        self?.finishDbOnlyAction(error: nil)
+                        self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
-                        self?.finishDbOnlyAction(error: error)
+                        self?.finishCompletableAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }
@@ -942,9 +922,9 @@ final class SyncController: SynchronizationController {
     private func markChangesAsResolved(in library: Library) {
         self.handler.markChangesAsResolved(in: library)
                     .subscribe(onCompleted: { [weak self] in
-                        self?.finishDbOnlyAction(error: nil)
+                        self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
-                        self?.finishDbOnlyAction(error: error)
+                        self?.finishCompletableAction(error: error)
                     })
                     .disposed(by: self.disposeBag)
     }
@@ -953,14 +933,14 @@ final class SyncController: SynchronizationController {
         self.handler.revertLibraryUpdates(in: library)
                     .subscribe(onSuccess: { [weak self] failures in
                         // TODO: - report failures?
-                        self?.finishDbOnlyAction(error: nil)
+                        self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
-                        self?.finishDbOnlyAction(error: nil)
+                        self?.finishCompletableAction(error: nil)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDbOnlyAction(error: Error?) {
+    private func finishCompletableAction(error: Error?) {
         if let error = error.flatMap({ self.errorRequiresAbort($0) }) {
             self.abort(error: error)
             return

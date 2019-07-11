@@ -21,7 +21,7 @@ import Quick
 class SyncControllerSpec: QuickSpec {
     fileprivate static let groupId = 10
     private static let userId = 100
-    private static let conflictDelays = [0, 3, 6, 9]
+    private static let conflictDelays = [0, 1, 2, 3]
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString)
     private static var schemaController: SchemaController = {
         let controller = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
@@ -1685,6 +1685,50 @@ class SyncControllerSpec: QuickSpec {
                         self.controller?.start(type: .normal, libraries: .all)
                     }
                 }
+
+                it("should update schema if keys return newer schema version") {
+                    let newVersion = (SyncControllerSpec.schemaController.version + 1)
+                    let header: [String : Any] = ["last-modified-version" : "1",
+                                                  "zotero-schema-version": "\(newVersion)"]
+                    let library = SyncControllerSpec.userLibrary
+
+                    let objects = SyncController.Object.allCases
+
+                    self.createStub(for: SchemaRequest(etag: nil), baseUrl:  baseUrl, response: [:])
+                    self.createStub(for: KeyRequest(), baseUrl: baseUrl,
+                                    headers: header, response: ["access": ["":""]])
+                    self.createStub(for: SettingsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["tagColors" : ["value": [], "version": 2]])
+                    self.createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                                    baseUrl: baseUrl, headers: header,
+                                    response: ["collections": [], "searches": [], "items": [], "tags": []])
+                    objects.forEach { object in
+                        let version: Int? = object == .group ? nil : 1
+                        self.createStub(for: VersionsRequest<String>(libraryType: library,
+                                                                     objectType: object, version: version),
+                                        baseUrl: baseUrl, headers: header, response: [:])
+                    }
+
+                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+                                                     handler: SyncControllerSpec.syncHandler,
+                                                     updateDataSource: SyncControllerSpec.updateDataSource,
+                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+
+                    waitUntil(timeout: 10) { doneAction in
+                        self.controller?.reportFinish = { result in
+                            switch result {
+                            case .success(let data):
+                                expect(data.0[1]).to(equal(.updateSchema))
+                            case .failure(let error):
+                                fail("\(error)")
+                            }
+                            doneAction()
+                        }
+
+                        self.controller?.start(type: .normal, libraries: .all)
+                    }
+                }
             }
 
             describe("Upload") {
@@ -2225,9 +2269,9 @@ class SyncControllerSpec: QuickSpec {
                         lastDelay = delay
                     }
 
-                    waitUntil(timeout: 15) { doneAction in
+                    waitUntil(timeout: 10) { doneAction in
                         self.controller?.reportFinish = { _ in
-                            expect(lastDelay).to(equal(3))
+                            expect(lastDelay).to(equal(1))
                             expect(retryCount).to(equal(3))
 
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
@@ -2373,8 +2417,12 @@ fileprivate enum TestAction {
 }
 
 fileprivate class TestHandler: SyncActionHandler {
-    func loadPermissions() -> Single<KeyResponse> {
-        return Single.just(KeyResponse())
+    func loadPermissions() -> Single<(KeyResponse, Bool)> {
+        return Single.just((KeyResponse(), false))
+    }
+
+    func updateSchema() -> Completable {
+        return Completable.empty()
     }
 
     var requestResult: ((TestAction) -> Single<()>)?

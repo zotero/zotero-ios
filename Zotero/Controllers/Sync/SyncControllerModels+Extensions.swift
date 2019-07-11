@@ -50,9 +50,7 @@ extension SyncController.Object {
 extension SyncController.Action {
     var library: SyncController.Library? {
         switch self {
-        case .loadKeyPermissions:
-            return nil
-        case .createLibraryActions:
+        case .loadKeyPermissions, .updateSchema, .createLibraryActions:
             return nil
         case .syncBatchToDb(let batch):
             return batch.library
@@ -83,7 +81,7 @@ extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal:
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema:
             return false
         }
     }
