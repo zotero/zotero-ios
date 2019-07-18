@@ -13,6 +13,7 @@ import CocoaLumberjack
 import RealmSwift
 import RxCocoa
 import RxSwift
+import RxAlamofire
 
 enum SyncError: Error {
     case cancelled
@@ -75,8 +76,36 @@ final class SyncController: SynchronizationController {
         let version: Int
         let parameters: [[String: Any]]
 
+        var uploads: [AttachmentUpload] {
+            return self.parameters.filter({ ($0["itemType"] as? String) == FieldKeys.attachment })
+                                  .compactMap({ parameters -> SyncController.AttachmentUpload? in
+                                      guard let key = parameters["key"] as? String,
+                                            let contentType = parameters[FieldKeys.contentType] as? String,
+                                            let ext = contentType.mimeTypeExtension else { return nil }
+                                      let filename = (parameters[FieldKeys.filename] as? String) ?? ""
+                                      let md5 = parameters[FieldKeys.md5] as? String
+                                      let mtime = parameters[FieldKeys.mtime] as? Int
+                                      return SyncController.AttachmentUpload(library: library, key: key,
+                                                                             filename: filename, extension: ext,
+                                                                             md5: md5, mtime: mtime)
+                                  })
+        }
+
         func copy(withVersion version: Int) -> WriteBatch {
             return WriteBatch(library: self.library, object: self.object, version: version, parameters: self.parameters)
+        }
+    }
+
+    struct AttachmentUpload: Equatable {
+        let library: Library
+        let key: String
+        let filename: String
+        let `extension`: String
+        let md5: String?
+        let mtime: Int?
+
+        var file: File {
+            return Files.objectFile(for: .item, libraryId: self.library.libraryId, key: self.key, ext: self.extension)
         }
     }
 
@@ -113,14 +142,15 @@ final class SyncController: SynchronizationController {
         case loadKeyPermissions                                // Checks current key for access permissions
         case updateSchema                                      // Updates currently cached schema
         case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
-        case createLibraryActions(LibrarySyncType,
-                                  CreateLibraryActionsOptions) // Loads required libraries, spawn actions for each
+        case createLibraryActions(LibrarySyncType,             // Loads required libraries, spawn actions for each
+                                  CreateLibraryActionsOptions)
         case syncBatchToDb(DownloadBatch)                      // Fetch data and store to db
         case storeVersion(Int, Library, Object)                // Store new version for given library-object
         case syncDeletions(Library, Int)                       // Synchronize deletions of objects in library
         case syncSettings(Library, Int?)                       // Synchronize settings for library
         case storeSettingsVersion(Int, Library)                // Store new version for settings in library
         case submitWriteBatch(WriteBatch)                      // Submit local changes to backend
+        case uploadAttachment(AttachmentUpload)                      // Upload local attachment to backend
         case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
         case resolveConflict(String, Library)                  // Handle conflict resolution
         case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely
@@ -414,6 +444,8 @@ final class SyncController: SynchronizationController {
             self.processStoreVersion(library: library, type: .settings, version: version)
         case .submitWriteBatch(let batch):
             self.processSubmitUpdate(for: batch)
+        case .uploadAttachment(let upload):
+            self.processUploadAttachment(for: upload)
         case .submitDeleteBatch(let batch):
             self.processSubmitDeletion(for: batch)
         case .deleteGroup(let groupId):
@@ -546,20 +578,21 @@ final class SyncController: SynchronizationController {
             case .onlyWrites, .automatic:
                 let updates = try self.updateDataSource.updates(for: library, versions: libraryData.versions)
                 let deletions = try self.updateDataSource.deletions(for: library, versions: libraryData.versions)
+
                 if !updates.isEmpty || !deletions.isEmpty {
                     switch libraryData.identifier {
                     case .group(let groupId):
                         // We need to check permissions for group
                         if libraryData.canEditMetadata {
-                            allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
-                            allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+                            allActions.append(contentsOf: self.createUpdateActions(updates: updates,
+                                                                                   deletions: deletions))
                         } else {
                             allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
                         }
                     case .custom:
                         // We can always write to custom libraries
-                        allActions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
-                        allActions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+                        allActions.append(contentsOf: self.createUpdateActions(updates: updates,
+                                                                               deletions: deletions))
                     }
                 } else if creationOptions == .automatic {
                     allActions.append(contentsOf: self.createDownloadActions(for: library,
@@ -571,6 +604,16 @@ final class SyncController: SynchronizationController {
                                                                   // of the queue, because only currently running action
                                                                   // can force downloads or writes
         return (allActions, index)
+    }
+
+    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch]) -> [Action] {
+        var actions: [Action] = []
+        updates.forEach { batch in
+            actions.append(.submitWriteBatch(batch))
+            batch.uploads.forEach { actions.append(.uploadAttachment($0)) }
+        }
+        actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+        return actions
     }
 
     private func createDownloadActions(for library: Library, versions: Versions) -> [Action] {
@@ -866,6 +909,21 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
+    private func processUploadAttachment(for upload: AttachmentUpload) {
+        let observers = self.handler.uploadAttachment(for: upload.library, key: upload.key, file: upload.file,
+                                                      filename: upload.filename, md5: upload.md5, mtime: upload.mtime)
+        observers.0.subscribe(onCompleted: { [weak self] in
+                                  self?.finishSubmission(error: nil, newVersion: nil,
+                                                         library: upload.library, object: .item)
+                              }, onError: { [weak self] error in
+                                  self?.finishSubmission(error: error, newVersion: nil,
+                                                         library: upload.library, object: .item)
+                              })
+                              .disposed(by: self.disposeBag)
+
+        // TODO: - observe upload progress in observers.1
+    }
+
     private func processSubmitDeletion(for batch: DeleteBatch) {
         self.handler.submitDeletion(for: batch.library, object: batch.object, since: batch.version, keys: batch.keys)
                     .subscribe(onSuccess: { [weak self] version in
@@ -878,7 +936,7 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int, library: Library, object: Object) {
+    private func finishSubmission(error: Error?, newVersion: Int?, library: Library, object: Object) {
         if let error = error {
             if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
                 return
@@ -894,7 +952,9 @@ final class SyncController: SynchronizationController {
             if let error = error {
                 self?.nonFatalErrors.append(error)
             }
-            self?.updateVersionInNextWriteBatch(to: newVersion)
+            if let version = newVersion {
+                self?.updateVersionInNextWriteBatch(to: version)
+            }
             self?.processNextAction()
         }
     }

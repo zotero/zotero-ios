@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import RxAlamofire
 import RxSwift
 
@@ -43,7 +44,13 @@ protocol ApiDownloadRequest: ApiRequest {
     var downloadUrl: URL { get }
 }
 
-typealias RequestCompletion<Response> = (Result<Response, Error>) -> Void
+protocol ApiUploadRequest {
+    var url: URL { get }
+    var httpMethod: ApiHttpMethod { get }
+    var headers: [String: String]? { get }
+}
+
+typealias RequestCompletion<Response> = (Swift.Result<Response, Error>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: class {
@@ -51,4 +58,5 @@ protocol ApiClient: class {
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
     func send(dataRequest: ApiRequest) -> Single<(Data, ResponseHeaders)>
     func download(request: ApiDownloadRequest) -> Observable<RxProgress>
+    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Observable<UploadRequest>
 }

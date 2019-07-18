@@ -60,6 +60,10 @@
 		B3341F6D22CA314900580FE8 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */; };
 		B3341F6F22CA580E00580FE8 /* DeleteGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */; };
 		B335E2D622D7436B009F9061 /* Observable+Completable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B335E2D522D7436B009F9061 /* Observable+Completable.swift */; };
+		B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */; };
+		B337AB6522E0C7CF0092AC22 /* AuthorizeUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */; };
+		B337AB6722E0CAD90092AC22 /* AuthorizeUploadResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */; };
+		B337AB6922E0DD080092AC22 /* AttachmentUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */; };
 		B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */; };
 		B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
 		B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
@@ -268,6 +272,10 @@
 		B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolutionController.swift; sourceTree = "<group>"; };
 		B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteGroupDbRequest.swift; sourceTree = "<group>"; };
 		B335E2D522D7436B009F9061 /* Observable+Completable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Observable+Completable.swift"; sourceTree = "<group>"; };
+		B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckItemIsChangedDbRequest.swift; sourceTree = "<group>"; };
+		B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadRequest.swift; sourceTree = "<group>"; };
+		B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadResponse.swift; sourceTree = "<group>"; };
+		B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentUploadRequest.swift; sourceTree = "<group>"; };
 		B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Utils.swift"; sourceTree = "<group>"; };
 		B33FBA5F220B2AAD005906C4 /* SyncController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionHandler.swift; sourceTree = "<group>"; };
@@ -672,6 +680,8 @@
 				B3FFDEE222807CB70009EBBE /* SubmitDeletionsRequest.swift */,
 				B3C33D8D223698C90071A763 /* UpdatesRequest.swift */,
 				B3045F5C22C0F5090032C8C8 /* KeyRequest.swift */,
+				B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */,
+				B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -777,6 +787,7 @@
 				B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */,
 				B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */,
 				B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */,
+				B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -796,6 +807,7 @@
 				B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */,
 				B3B3B40B225B3D7200E28C34 /* SchemaResponse.swift */,
 				B3045F5E22C0F52C0032C8C8 /* KeyResponse.swift */,
+				B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1157,6 +1169,7 @@
 				B312AD2122428F1400EDD5A4 /* LibraryCell.swift in Sources */,
 				B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */,
 				B38C969F223FFB2900343F8F /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
+				B337AB6922E0DD080092AC22 /* AttachmentUploadRequest.swift in Sources */,
 				B3C6F655224A95BF001722B4 /* ReadAllGroupsDbRequest.swift in Sources */,
 				B30F668E220CBB37009E7A8F /* ObjectsRequest.swift in Sources */,
 				B38C9697223FFB2900343F8F /* ReadSearchesDbRequest.swift in Sources */,
@@ -1186,6 +1199,7 @@
 				B38C9696223FFB2900343F8F /* ReadItemsDbRequest.swift in Sources */,
 				B3FFDEDD228031F60009EBBE /* MarkObjectAsDeletedDbRequest.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
+				B337AB6522E0C7CF0092AC22 /* AuthorizeUploadRequest.swift in Sources */,
 				B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncControllerModels+Extensions.swift in Sources */,
 				B31BD20E2224352D00FA8249 /* RCreator.swift in Sources */,
@@ -1245,6 +1259,7 @@
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
 				B30E6CB9225DE84B0001B93A /* ObservableRequestExtensions.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
+				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3E47160224127AC006E3B20 /* RegisterViewController.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
@@ -1273,6 +1288,7 @@
 				B30F6690220CC02D009E7A8F /* RCollection.swift in Sources */,
 				B38C9695223FFB2900343F8F /* StoreUserDbRequest.swift in Sources */,
 				B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */,
+				B337AB6722E0CAD90092AC22 /* AuthorizeUploadResponse.swift in Sources */,
 				B38C96A9223FFB5600343F8F /* StoreCollectionDbRequest.swift in Sources */,
 				B38C96A5223FFB2900343F8F /* InitializeCustomLibrariesDbRequest.swift in Sources */,
 				B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */,

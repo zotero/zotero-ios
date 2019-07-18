@@ -58,6 +58,8 @@ extension SyncController.Action {
             return batch.library
         case .submitDeleteBatch(let batch):
             return batch.library
+        case .uploadAttachment(let upload):
+            return upload.library
         case .resolveDeletedGroup(let groupId, _),
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
@@ -81,7 +83,7 @@ extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema:
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema, .uploadAttachment:
             return false
         }
     }

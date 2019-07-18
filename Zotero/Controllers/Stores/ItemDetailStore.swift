@@ -128,7 +128,7 @@ class ItemDetailStore: Store {
                 }
 
                 var type: AttachmentType?
-                let contentType = item.fields.filter("key = %@", "contentType").first?.value ?? ""
+                let contentType = item.fields.filter("key = %@", FieldKeys.contentType).first?.value ?? ""
 
                 if !contentType.isEmpty { // File attachment
                     if let ext = contentType.mimeTypeExtension,

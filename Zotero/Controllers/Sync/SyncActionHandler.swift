@@ -10,12 +10,16 @@ import Foundation
 
 import Alamofire
 import CocoaLumberjack
+import RxAlamofire
 import RxSwift
 
 enum SyncActionHandlerError: Error, Equatable {
-    case expired            // Used when we can't get a `self` from `weak self` in a closure, when object was deallocated
-    case versionMismatch    // Used when versions from previous request and current request response don't match
-    case objectConflict     // Used when there are 412 returned for individual objects when writing data to remote
+    case expired                    // Used when we can't get a `self` from `weak self` in a closure, when object was deallocated
+    case versionMismatch            // Used when versions from previous request and current request response don't match
+    case objectConflict             // Used when there are 412 returned for individual objects when writing data to remote
+    case attachmentItemNotSubmitted // Used when the item object for given attachment upload was not submitted to backend
+    case attachmentMissing          // Used when we can't find local file for attachment upload
+    case attachmentAlreadyUploaded        // Used when we tried to authorize file upload for existing file
 }
 
 struct LibraryData {
@@ -108,6 +112,8 @@ protocol SyncActionHandler: class {
                              since version: Int?) -> Single<(Bool, Int)>
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
                       parameters: [[String: Any]]) -> Single<(Int, Error?)>
+    func uploadAttachment(for library: SyncController.Library, key: String, file: File,
+                          filename: String, md5: String?, mtime: Int?) -> (Completable, Observable<RxProgress>)
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
     func deleteGroup(with groupId: Int) -> Completable
@@ -498,10 +504,72 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
+    func uploadAttachment(for library: SyncController.Library, key: String, file: File,
+                          filename: String, md5: String?, mtime: Int?) -> (Completable, Observable<RxProgress>) {
+        let libraryId = library.libraryId
+        let dbCheck: Single<()> = Single.create { [weak self] subscriber -> Disposable in
+                                      guard let `self` = self else {
+                                          subscriber(.error(SyncActionHandlerError.expired))
+                                          return Disposables.create()
+                                      }
+
+                                     do {
+                                         let request = CheckItemIsChangedDbRequest(libraryId: libraryId,
+                                                                                   key: key)
+                                          let isChanged = try self.dbStorage.createCoordinator()
+                                                                            .perform(request: request)
+                                          if !isChanged {
+                                              subscriber(.success(()))
+                                          } else {
+                                              subscriber(.error(SyncActionHandlerError.attachmentItemNotSubmitted))
+                                          }
+                                      } catch let error {
+                                          subscriber(.error(error))
+                                      }
+
+                                      return Disposables.create()
+                                  }
+
+        let upload = dbCheck.flatMap { [weak self] _ -> Single<UInt64> in
+                                guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+                                let size = self.fileStorage.size(of: file)
+                                if size == 0 {
+                                    return Single.error(SyncActionHandlerError.attachmentMissing)
+                                } else {
+                                    return Single.just(size)
+                                }
+                            }
+                            .flatMap { [weak self] filesize -> Single<(AuthorizeUploadResponse, ResponseHeaders)> in
+                                guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+                                let request = AuthorizeUploadRequest(libraryType: library, key: key,
+                                                                     filename: filename, filesize: filesize,
+                                                                     md5: md5, mtime: mtime)
+                                return self.apiClient.send(request: request)
+                            }
+                            .asObservable()
+                            .flatMap { [weak self] responseData -> Observable<UploadRequest> in
+                                guard let `self` = self else { return Observable.error(SyncActionHandlerError.expired) }
+                                switch responseData.0 {
+                                case .exists:
+                                    return Observable.error(SyncActionHandlerError.attachmentAlreadyUploaded)
+                                case .new(let response):
+                                    let request = AttachmentUploadRequest(url: response.url)
+                                    return self.apiClient.upload(request: request) { data in
+                                        data.append("test".data(using: .utf8)!, withName: "test")
+                                    }
+                                }
+                            }
+
+        let response = upload.flatMap({ $0.rx.data() }).asSingle().asCompletable().observeOn(self.scheduler)
+        let progress = upload.flatMap({ $0.rx.progress() }).observeOn(self.scheduler)
+        return (response, progress)
+    }
+
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int> {
         let request = SubmitDeletionsRequest(libraryType: library, objectType: object, keys: keys, version: version)
         return self.apiClient.send(dataRequest: request)
+                             .observeOn(self.scheduler)
                              .flatMap({ response -> Single<Int> in
                                 let newVersion = SyncActionHandlerController.lastVersion(from: response.1)
 

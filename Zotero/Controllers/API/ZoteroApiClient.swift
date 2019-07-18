@@ -100,6 +100,32 @@ class ZoteroApiClient: ApiClient {
                                   return downloadRequest.rx.progress()
                               }
     }
+
+    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Observable<UploadRequest> {
+        return Observable.create { [weak self] observer in
+                                     guard let `self` = self else {
+                                         observer.onError(ZoteroApiError.expired)
+                                         return Disposables.create()
+                                     }
+
+                                     let method = HTTPMethod(rawValue: request.httpMethod.rawValue)!
+                                     self.manager.upload(multipartFormData: multipartFormData,
+                                                         to: request.url,
+                                                         method: method,
+                                                         headers: request.headers,
+                                                         encodingCompletion: { result in
+                                         switch result {
+                                         case .success(let request, _, _):
+                                             observer.onNext(request)
+                                             observer.onCompleted()
+                                         case .failure(let error):
+                                             observer.onError(error)
+                                         }
+                                     })
+
+                                     return Disposables.create()
+                                 }
+    }
 }
 
 struct Convertible {

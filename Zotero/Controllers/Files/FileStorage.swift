@@ -23,6 +23,7 @@ protocol FileStorage {
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws
     func remove(_ file: File) throws
     func has(_ file: File) -> Bool
+    func size(of file: File) -> UInt64
     func createDictionaries(for file: File) throws
 }
 
@@ -45,6 +46,11 @@ class FileStorageController: FileStorage {
 
     func has(_ file: File) -> Bool {
         return self.fileManager.fileExists(atPath: file.createUrl().path)
+    }
+
+    func size(of file: File) -> UInt64 {
+        let attributes = try? self.fileManager.attributesOfItem(atPath: file.createUrl().path)
+        return (attributes?[FileAttributeKey.size] as? UInt64) ?? 0
     }
 
     func createDictionaries(for file: File) throws {
