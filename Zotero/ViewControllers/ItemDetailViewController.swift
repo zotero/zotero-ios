@@ -96,7 +96,7 @@ class ItemDetailViewController: UIViewController {
         let titles = sortedData.map({ $0.1 })
 
         let pickerController = PickerViewController(values: titles) { [weak self] row in
-            let type = sortedData[row].0
+            let (type, _) = sortedData[row]
             self?.store.handle(action: .changeType(type))
         }
 

@@ -71,10 +71,10 @@ class SchemaController {
     func createFetchSchemaCompletable() -> Completable {
         let etag = self.userDefaults.string(forKey: self.defaultsEtagKey)
         return self.apiClient.send(dataRequest: SchemaRequest(etag: etag))
-                             .do(onSuccess: { [weak self] response in
+                             .do(onSuccess: { [weak self] (data, headers) in
                                  guard let `self` = self else { return }
-                                 self.reloadSchema(from: response.0)
-                                 if let etag = response.1["etag"] as? String {
+                                 self.reloadSchema(from: data)
+                                 if let etag = headers["etag"] as? String {
                                      self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
                                  }
                                  self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
@@ -94,9 +94,9 @@ class SchemaController {
         guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
         guard let schemaData = try? Data(contentsOf: url),
-              let schemaChunks = self.chunks(from: schemaData, separator: "\r\n\r\n") else { return }
-        self.storeEtag(from: schemaChunks.0)
-        self.reloadSchema(from: schemaChunks.1)
+              let (etagPart, schemaPart) = self.chunks(from: schemaData, separator: "\r\n\r\n") else { return }
+        self.storeEtag(from: etagPart)
+        self.reloadSchema(from: schemaPart)
     }
 
     private func storeEtag(from data: Data) {

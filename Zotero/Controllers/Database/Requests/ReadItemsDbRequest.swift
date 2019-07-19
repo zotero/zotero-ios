@@ -21,7 +21,7 @@ struct ReadItemsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RItem> {
-        let libraryPredicate = Predicates.library(from: self.libraryId)
+        let libraryPredicate = Predicates.library(with: self.libraryId)
         let syncPredicate = Predicates.notSyncState(.dirty)
         let deletedPredicate = Predicates.deleted(false)
         var predicates: [NSPredicate] = [libraryPredicate, syncPredicate, deletedPredicate]

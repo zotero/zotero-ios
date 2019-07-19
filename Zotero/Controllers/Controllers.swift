@@ -111,9 +111,7 @@ class UserControllers {
                                                       fileStorage: controllers.fileStorage,
                                                       schemaController: controllers.schemaController,
                                                       syncDelayIntervals: DelayIntervals.sync)
-        let updateDataSource = UpdateDataSource(dbStorage: controllers.dbStorage)
         let syncController = SyncController(userId: userId, handler: syncHandler,
-                                            updateDataSource: updateDataSource,
                                             conflictDelays: DelayIntervals.conflict)
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.changeObserver = RealmObjectChangeObserver(dbStorage: controllers.dbStorage)

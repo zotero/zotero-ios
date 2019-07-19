@@ -11,7 +11,7 @@ import Foundation
 import RxCocoa
 import RxSwift
 
-typealias SyncProgressData = (Int, Int) // completed count, total count
+typealias SyncProgressData = (completed: Int, total: Int)
 
 enum SyncProgress {
     case groups

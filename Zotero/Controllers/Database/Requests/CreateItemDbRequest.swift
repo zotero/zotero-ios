@@ -48,7 +48,7 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         if let key = self.collectionKey,
            let collection = database.objects(RCollection.self)
-                                    .filter(Predicates.keyInLibrary(key: key, libraryId: self.libraryId))
+                                    .filter(Predicates.key(key, in: self.libraryId))
                                     .first {
             item.collections.append(collection)
             changes.insert(.collections)

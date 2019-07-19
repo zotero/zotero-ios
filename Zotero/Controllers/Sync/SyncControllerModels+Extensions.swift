@@ -72,7 +72,8 @@ extension SyncController.Action {
              .storeSettingsVersion(_, let library),
              .resolveConflict(_, let library),
              .markChangesAsResolved(let library),
-             .revertLibraryToOriginal(let library):
+             .revertLibraryToOriginal(let library),
+             .createUploadActions(let library):
             return library
         }
     }
@@ -83,7 +84,8 @@ extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema, .uploadAttachment:
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema, .uploadAttachment,
+             .createUploadActions:
             return false
         }
     }

@@ -18,7 +18,7 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let predicate = Predicates.keysInLibrary(keys: self.keys, libraryId: self.libraryId)
+        let predicate = Predicates.keys(self.keys, in: self.libraryId)
         let objects = database.objects(Obj.self).filter(predicate)
         objects.forEach { object in
             if object.version != self.version {

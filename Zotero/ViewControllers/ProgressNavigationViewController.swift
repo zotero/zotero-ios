@@ -105,8 +105,8 @@ class ProgressNavigationViewController: UINavigationController {
             }
 
             var progressSubtitle = "\(objectName)"
-            if let progress = progress {
-                let percentage = (Double(progress.0) / Double(progress.1)) * 100
+            if let (completed, total) = progress {
+                let percentage = (Double(completed) / Double(total)) * 100
                 progressSubtitle += String(format: " %.1f%%", percentage)
             } else {
                 progressSubtitle += " 0.0%"
@@ -155,11 +155,12 @@ class ProgressNavigationViewController: UINavigationController {
         let leftSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let rightSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let progressView = self.createProgressView()
-        let customView = UIBarButtonItem(customView: progressView.0)
-        return ([buttonSpacer, self.syncButton, leftSpacer, customView, rightSpacer], progressView.1, progressView.2)
+        let customView = UIBarButtonItem(customView: progressView.stackView)
+        return ([buttonSpacer, self.syncButton, leftSpacer, customView, rightSpacer],
+                progressView.title, progressView.subtitle)
     }
 
-    private func createProgressView() -> (UIView, UILabel, UILabel) {
+    private func createProgressView() -> (stackView: UIView, title: UILabel, subtitle: UILabel) {
         let titleLabel = UILabel()
         titleLabel.font = UIFont.systemFont(ofSize: 14)
         let subtitleLabel = UILabel()
@@ -185,15 +186,15 @@ class ProgressNavigationViewController: UINavigationController {
 }
 
 class ProgressNavigationDelegate: NSObject, UINavigationControllerDelegate {
-    var createItems: (() -> ([UIBarButtonItem], UILabel, UILabel)?)?
+    var createItems: (() -> (toolbarIems: [UIBarButtonItem], title: UILabel, subtitle: UILabel)?)?
 
     func navigationController(_ navigationController: UINavigationController,
                               willShow viewController: UIViewController, animated: Bool) {
         if let progressController = viewController as? ProgressToolbarController,
            let items = self.createItems?() {
-            progressController.setToolbarItems(items.0, animated: false)
-            progressController.toolbarTitleLabel = items.1
-            progressController.toolbarSubtitleLabel = items.2
+            progressController.setToolbarItems(items.toolbarIems, animated: false)
+            progressController.toolbarTitleLabel = items.title
+            progressController.toolbarSubtitleLabel = items.subtitle
         }
     }
 }

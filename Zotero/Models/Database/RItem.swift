@@ -40,6 +40,8 @@ class RItem: Object {
     @objc dynamic var parsedDate: String = ""
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
+    /// Indicates whether attachemnt (file) needs to be uploaded to backend
+    @objc dynamic var attachmentNeedsSync: Bool = false
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
     @objc dynamic var rawSyncState: Int = 0
     /// Date when last sync attempt was performed on this object

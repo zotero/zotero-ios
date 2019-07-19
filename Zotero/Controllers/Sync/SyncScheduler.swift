@@ -22,7 +22,7 @@ protocol SynchronizationScheduler: class {
     func cancelSync()
 }
 
-fileprivate typealias SchedulerAction = (SyncController.SyncType, SyncController.LibrarySyncType)
+fileprivate typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
 
 final class SyncScheduler: SynchronizationScheduler {
     private static let timeout = 3.0
@@ -53,7 +53,7 @@ final class SyncScheduler: SynchronizationScheduler {
                            .subscribe(onNext: { [weak self] data in
                                self?.inProgress = nil
                                if let data = data { // We're retrying, enqueue the new sync
-                                   self?._enqueueAndStartTimer(action: (data.0, data.1))
+                                   self?._enqueueAndStartTimer(action: data)
                                } else if self?.nextAction != nil {
                                    // We're not retrying, start timer so that next in queue is processed
                                    self?.startTimer()
@@ -110,13 +110,13 @@ final class SyncScheduler: SynchronizationScheduler {
     }
 
     private func enqueue(action: SchedulerAction) {
-        guard let nextAction = self.nextAction else {
+        guard let (nextSyncType, nextLibrarySyncType) = self.nextAction else {
             self.nextAction = action
             return
         }
 
-        let type = nextAction.0 > action.0 ? nextAction.0 : action.0
-        switch (nextAction.1, action.1) {
+        let type = nextSyncType > action.syncType ? nextSyncType : action.syncType
+        switch (nextLibrarySyncType, action.librarySyncType) {
         case (.all, .all):
             self.nextAction = (type, .all)
         case (.specific, .all):
@@ -138,10 +138,10 @@ final class SyncScheduler: SynchronizationScheduler {
     }
 
     private func startNextAction() {
-        guard self.inProgress == nil, let action = self.nextAction else { return }
+        guard self.inProgress == nil, let (syncType, librarySyncType) = self.nextAction else { return }
+        self.inProgress = self.nextAction
         self.nextAction = nil
-        self.inProgress = action
-        self.syncController.start(type: action.0, libraries: action.1)
+        self.syncController.start(type: syncType, libraries: librarySyncType)
     }
 }
 

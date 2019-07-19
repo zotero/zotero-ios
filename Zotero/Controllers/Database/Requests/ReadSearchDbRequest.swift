@@ -19,7 +19,7 @@ struct ReadSearchDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> RSearch {
-        let predicate = Predicates.keyInLibrary(key: self.key, libraryId: self.libraryId)
+        let predicate = Predicates.key(self.key, in: self.libraryId)
         guard let search = database.objects(RSearch.self).filter(predicate).first else {
             throw DbError.objectNotFound
         }

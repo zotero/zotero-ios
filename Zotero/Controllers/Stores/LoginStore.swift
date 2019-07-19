@@ -98,19 +98,19 @@ class LoginStore: Store {
         let request = LoginRequest(username: username, password: password)
         self.apiClient.send(request: request)
                       .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                      .flatMap { response -> Single<(Int, String)> in
+                      .flatMap { (response, _) -> Single<(Int, String)> in
                           do {
-                              let request = StoreUserDbRequest(loginResponse: response.0)
+                              let request = StoreUserDbRequest(loginResponse: response)
                               try self.dbStorage.createCoordinator().perform(request: request)
-                              return Single.just((response.0.userId, response.0.key))
+                              return Single.just((response.userId, response.key))
                           } catch let error {
                               return Single.error(error)
                           }
                       }
-                      .subscribe(onSuccess: { data in
-                          self.secureStorage.apiToken = data.1
-                          self.apiClient.set(authToken: data.1)
-                          NotificationCenter.default.post(name: .sessionChanged, object: data.0)
+                      .subscribe(onSuccess: { (userId, token) in
+                          self.secureStorage.apiToken = token
+                          self.apiClient.set(authToken: token)
+                          NotificationCenter.default.post(name: .sessionChanged, object: userId)
                       }, onError: { error in
                           DDLogError("LoginStore: could not log in - \(error)")
                           self.updater.updateState(action: { newState in

@@ -132,13 +132,15 @@
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
 		B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB3C132237BF0100581248 /* UpdatableObject.swift */; };
-		B3ADB3882232BE980064E150 /* SyncUpdateDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */; };
 		B3B1959C22661B0700D8524F /* NoteViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1959A22661B0700D8524F /* NoteViewController.swift */; };
 		B3B1959D22661B0700D8524F /* NoteViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B1959B22661B0700D8524F /* NoteViewController.xib */; };
 		B3B3B40A225B387800E28C34 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B3B409225B387800E28C34 /* schema.json */; };
 		B3B3B40C225B3D7200E28C34 /* SchemaResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B40B225B3D7200E28C34 /* SchemaResponse.swift */; };
 		B3B3B40E225B4A8600E28C34 /* SchemaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B40D225B4A8600E28C34 /* SchemaController.swift */; };
 		B3B3B410225B5B3D00E28C34 /* SchemaRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B40F225B5B3D00E28C34 /* SchemaRequest.swift */; };
+		B3B5514B22E1B0A3001E23CB /* RegisterUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B5514A22E1B0A3001E23CB /* RegisterUploadRequest.swift */; };
+		B3B5514D22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */; };
+		B3B5514F22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B5514E22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift */; };
 		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
@@ -344,13 +346,15 @@
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
 		B3AB3C132237BF0100581248 /* UpdatableObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatableObject.swift; sourceTree = "<group>"; };
-		B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUpdateDataSource.swift; sourceTree = "<group>"; };
 		B3B1959A22661B0700D8524F /* NoteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteViewController.swift; sourceTree = "<group>"; };
 		B3B1959B22661B0700D8524F /* NoteViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteViewController.xib; sourceTree = "<group>"; };
 		B3B3B409225B387800E28C34 /* schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = schema.json; sourceTree = "<group>"; };
 		B3B3B40B225B3D7200E28C34 /* SchemaResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaResponse.swift; sourceTree = "<group>"; };
 		B3B3B40D225B4A8600E28C34 /* SchemaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaController.swift; sourceTree = "<group>"; };
 		B3B3B40F225B5B3D00E28C34 /* SchemaRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaRequest.swift; sourceTree = "<group>"; };
+		B3B5514A22E1B0A3001E23CB /* RegisterUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUploadRequest.swift; sourceTree = "<group>"; };
+		B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAttachmentUploadsDbRequest.swift; sourceTree = "<group>"; };
+		B3B5514E22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkAttachmentUploadedDbRequest.swift; sourceTree = "<group>"; };
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
@@ -661,7 +665,6 @@
 				B33FBA63220B2AFD005906C4 /* SyncControllerModels+Extensions.swift */,
 				B39372972229420A008B2A96 /* SyncProgressHandler.swift */,
 				B3C33D852236676C0071A763 /* SyncScheduler.swift */,
-				B3ADB3872232BE980064E150 /* SyncUpdateDataSource.swift */,
 				B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */,
 			);
 			path = Sync;
@@ -682,6 +685,7 @@
 				B3045F5C22C0F5090032C8C8 /* KeyRequest.swift */,
 				B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */,
 				B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */,
+				B3B5514A22E1B0A3001E23CB /* RegisterUploadRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -754,6 +758,7 @@
 				B3670ADF2273527200B566B1 /* CreateItemDbRequest.swift */,
 				B38C968E223FFB2800343F8F /* InitializeCustomLibrariesDbRequest.swift */,
 				B346E47322CB5F0C00256AC2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
+				B3B5514E22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift */,
 				B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */,
 				B346E47522CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift */,
 				B3FFDEDC228031F60009EBBE /* MarkObjectAsDeletedDbRequest.swift */,
@@ -788,6 +793,7 @@
 				B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */,
 				B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */,
 				B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */,
+				B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1152,6 +1158,7 @@
 			files = (
 				B312AD1822428F1400EDD5A4 /* ItemCell.swift in Sources */,
 				B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */,
+				B3B5514D22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
 				B363034A224B7D7F009F839F /* Library.swift in Sources */,
 				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
@@ -1195,7 +1202,6 @@
 				B3E47159224127AC006E3B20 /* CollectionPickerViewController.swift in Sources */,
 				B3E4713E22412693006E3B20 /* CollectionCellData.swift in Sources */,
 				B30DF3F92209A282000B6DE2 /* RCustomLibrary.swift in Sources */,
-				B3ADB3882232BE980064E150 /* SyncUpdateDataSource.swift in Sources */,
 				B38C9696223FFB2900343F8F /* ReadItemsDbRequest.swift in Sources */,
 				B3FFDEDD228031F60009EBBE /* MarkObjectAsDeletedDbRequest.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
@@ -1223,6 +1229,7 @@
 				B38C9694223FFB2900343F8F /* ReadCollectionsDbRequest.swift in Sources */,
 				B38C969A223FFB2900343F8F /* MarkForResyncDbAction.swift in Sources */,
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
+				B3B5514B22E1B0A3001E23CB /* RegisterUploadRequest.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
 				B3E4715A224127AC006E3B20 /* LoginViewController.swift in Sources */,
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
@@ -1262,6 +1269,7 @@
 				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3E47160224127AC006E3B20 /* RegisterViewController.swift in Sources */,
+				B3B5514F22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B3FFDEDF22805C9D0009EBBE /* ReadSearchDbRequest.swift in Sources */,
 				B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */,

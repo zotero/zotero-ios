@@ -19,7 +19,7 @@ struct ReadCollectionDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> RCollection {
-        let predicate = Predicates.keyInLibrary(key: self.key, libraryId: self.libraryId)
+        let predicate = Predicates.key(self.key, in: self.libraryId)
         guard let collection = database.objects(RCollection.self).filter(predicate).first else {
             throw DbError.objectNotFound
         }

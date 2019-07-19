@@ -76,21 +76,6 @@ final class SyncController: SynchronizationController {
         let version: Int
         let parameters: [[String: Any]]
 
-        var uploads: [AttachmentUpload] {
-            return self.parameters.filter({ ($0["itemType"] as? String) == FieldKeys.attachment })
-                                  .compactMap({ parameters -> SyncController.AttachmentUpload? in
-                                      guard let key = parameters["key"] as? String,
-                                            let contentType = parameters[FieldKeys.contentType] as? String,
-                                            let ext = contentType.mimeTypeExtension else { return nil }
-                                      let filename = (parameters[FieldKeys.filename] as? String) ?? ""
-                                      let md5 = parameters[FieldKeys.md5] as? String
-                                      let mtime = parameters[FieldKeys.mtime] as? Int
-                                      return SyncController.AttachmentUpload(library: library, key: key,
-                                                                             filename: filename, extension: ext,
-                                                                             md5: md5, mtime: mtime)
-                                  })
-        }
-
         func copy(withVersion version: Int) -> WriteBatch {
             return WriteBatch(library: self.library, object: self.object, version: version, parameters: self.parameters)
         }
@@ -144,16 +129,17 @@ final class SyncController: SynchronizationController {
         case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
         case createLibraryActions(LibrarySyncType,             // Loads required libraries, spawn actions for each
                                   CreateLibraryActionsOptions)
+        case createUploadActions(Library)
         case syncBatchToDb(DownloadBatch)                      // Fetch data and store to db
         case storeVersion(Int, Library, Object)                // Store new version for given library-object
         case syncDeletions(Library, Int)                       // Synchronize deletions of objects in library
         case syncSettings(Library, Int?)                       // Synchronize settings for library
         case storeSettingsVersion(Int, Library)                // Store new version for settings in library
         case submitWriteBatch(WriteBatch)                      // Submit local changes to backend
-        case uploadAttachment(AttachmentUpload)                      // Upload local attachment to backend
+        case uploadAttachment(AttachmentUpload)                // Upload local attachment to backend
         case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
         case resolveConflict(String, Library)                  // Handle conflict resolution
-        case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely
+        case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely - (Id, Name)
         case resolveGroupMetadataWritePermission(Int, String)  // Resolve when group had metadata editing allowed,
                                                                // but it was disabled and we try to upload new data
         case revertLibraryToOriginal(Library)                  // Revert all changes to original
@@ -170,7 +156,6 @@ final class SyncController: SynchronizationController {
     private let accessQueue: DispatchQueue
     private let timerScheduler: ConcurrentDispatchQueueScheduler
     private let handler: SyncActionHandler
-    private let updateDataSource: SyncUpdateDataSource
     private let progressHandler: SyncProgressHandler
     private let conflictDelays: [Int]
     /// Bool specifies whether a new sync is needed, SyncType and LibrarySyncType are types used for new sync
@@ -198,12 +183,11 @@ final class SyncController: SynchronizationController {
         return self.progressHandler.observable
     }
 
-    init(userId: Int, handler: SyncActionHandler, updateDataSource: SyncUpdateDataSource, conflictDelays: [Int]) {
+    init(userId: Int, handler: SyncActionHandler, conflictDelays: [Int]) {
         self.userId = userId
         let accessQueue = DispatchQueue(label: "org.zotero.SyncAccessQueue", qos: .utility, attributes: .concurrent)
         self.accessQueue = accessQueue
         self.handler = handler
-        self.updateDataSource = updateDataSource
         self.timerScheduler = ConcurrentDispatchQueueScheduler(queue: accessQueue)
         self.observable = PublishSubject()
         self.progressHandler = SyncProgressHandler()
@@ -424,6 +408,8 @@ final class SyncController: SynchronizationController {
             self.updateSchema()
         case .createLibraryActions(let libraries, let options):
             self.processCreateLibraryActions(for: libraries, options: options)
+        case .createUploadActions(let library):
+            self.processCreateUploadActions(for: library)
         case .syncVersions(let library, let objectType, let version):
             if objectType == .group {
                 self.progressHandler.reportGroupSync()
@@ -477,26 +463,28 @@ final class SyncController: SynchronizationController {
             self?.performOnAccessQueue(flags: .barrier) {
                 if let action = action {
                     self?.enqueue(actions: [action], at: 0)
+                } else {
+                    self?.processNextAction()
                 }
-                self?.processNextAction()
             }
         }
     }
 
     private func processKeyCheckAction() {
-        self.handler.loadPermissions().flatMap { response -> Single<(AccessPermissions, Bool)> in
-                                          let permissions = AccessPermissions(user: response.0.user,
-                                                                              groupDefault: response.0.defaultGroup,
-                                                                              groups: response.0.groups)
-                                          return Single.just((permissions, response.1))
+        self.handler.loadPermissions().flatMap { (response, needsSchemaUpdate) -> Single<(AccessPermissions, Bool)> in
+                                          let permissions = AccessPermissions(user: response.user,
+                                                                              groupDefault: response.defaultGroup,
+                                                                              groups: response.groups)
+                                          return Single.just((permissions, needsSchemaUpdate))
                                       }
-                                      .subscribe(onSuccess: { [weak self] response in
+                                      .subscribe(onSuccess: { [weak self] (permissions, needsSchemaUpdate) in
                                           self?.performOnAccessQueue {
-                                              self?.accessPermissions = response.0
-                                              if response.1 {
+                                              self?.accessPermissions = permissions
+                                              if needsSchemaUpdate {
                                                   self?.enqueue(actions: [.updateSchema], at: 0)
+                                              } else {
+                                                  self?.processNextAction()
                                               }
-                                              self?.processNextAction()
                                           }
                                       }, onError: { error in
                                           self.abort(error: SyncError.permissionLoadingFailed)
@@ -515,30 +503,13 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
-        let action: Single<[LibraryData]>
-        switch libraries {
-        case .all:
-            action = self.handler.loadAllLibraryData()
-        case .specific(let identifiers):
-            action = self.handler.loadLibraryData(for: identifiers)
-        }
-
-        action.subscribe(onSuccess: { [weak self] data in
-                  if options == .automatic {
-                      // Other options are internal process of one sync, no need to report library names (again)
-                      var libraryNames: [LibraryIdentifier: String] = [:]
-                      for libraryData in data {
-                          libraryNames[libraryData.identifier] = libraryData.name
-                      }
-                      self?.performOnAccessQueue(flags: .barrier) { [weak self] in
-                          self?.progressHandler.reportLibraryNames(data: libraryNames)
-                      }
-                  }
-                  self?.finishCreateLibraryActions(with: .success((data, options)))
-              }, onError: { [weak self] error in
-                  self?.finishCreateLibraryActions(with: .failure(error))
-              })
-              .disposed(by: self.disposeBag)
+        self.handler.loadLibraryData(for: libraries, fetchUpdates: (options != .forceDownloads))
+                    .subscribe(onSuccess: { [weak self] data in
+                        self?.finishCreateLibraryActions(with: .success((data, options)))
+                    }, onError: { [weak self] error in
+                        self?.finishCreateLibraryActions(with: .failure(error))
+                    })
+                    .disposed(by: self.disposeBag)
     }
 
     private func finishCreateLibraryActions(with result: Result<([LibraryData], CreateLibraryActionsOptions)>) {
@@ -546,11 +517,25 @@ final class SyncController: SynchronizationController {
         case .failure(let error):
             self.abort(error: SyncError.allLibrariesFetchFailed(error))
 
-        case .success(let data):
+        case .success(let data, let options):
+            var libraryNames: [LibraryIdentifier: String]?
+
+            if options == .automatic {
+                var nameDictionary: [LibraryIdentifier: String] = [:]
+                // Other options are internal process of one sync, no need to report library names (again)
+                for libraryData in data {
+                    nameDictionary[libraryData.identifier] = libraryData.name
+                }
+                libraryNames = nameDictionary
+            }
+
             do {
-                let actionData = try self.createLibraryActions(for: data.0, creationOptions: data.1)
+                let (actions, queueIndex) = try self.createLibraryActions(for: data, creationOptions: options)
                 self.performOnAccessQueue(flags: .barrier) { [weak self] in
-                    self?.enqueue(actions: actionData.0, at: actionData.1)
+                    if let names = libraryNames {
+                        self?.progressHandler.reportLibraryNames(data: names)
+                    }
+                    self?.enqueue(actions: actions, at: queueIndex)
                 }
             } catch let error {
                 DDLogError("SyncController: could not read updates from db - \(error)")
@@ -576,23 +561,22 @@ final class SyncController: SynchronizationController {
                 allActions.append(contentsOf: self.createDownloadActions(for: library,
                                                                          versions: libraryData.versions))
             case .onlyWrites, .automatic:
-                let updates = try self.updateDataSource.updates(for: library, versions: libraryData.versions)
-                let deletions = try self.updateDataSource.deletions(for: library, versions: libraryData.versions)
-
-                if !updates.isEmpty || !deletions.isEmpty {
+                if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty {
                     switch libraryData.identifier {
                     case .group(let groupId):
                         // We need to check permissions for group
                         if libraryData.canEditMetadata {
-                            allActions.append(contentsOf: self.createUpdateActions(updates: updates,
-                                                                                   deletions: deletions))
+                            allActions.append(contentsOf: self.createUpdateActions(updates: libraryData.updates,
+                                                                                   deletions: libraryData.deletions,
+                                                                                   library: library))
                         } else {
                             allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
                         }
                     case .custom:
                         // We can always write to custom libraries
-                        allActions.append(contentsOf: self.createUpdateActions(updates: updates,
-                                                                               deletions: deletions))
+                        allActions.append(contentsOf: self.createUpdateActions(updates: libraryData.updates,
+                                                                               deletions: libraryData.deletions,
+                                                                               library: library))
                     }
                 } else if creationOptions == .automatic {
                     allActions.append(contentsOf: self.createDownloadActions(for: library,
@@ -606,13 +590,11 @@ final class SyncController: SynchronizationController {
         return (allActions, index)
     }
 
-    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch]) -> [Action] {
+    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], library: Library) -> [Action] {
         var actions: [Action] = []
-        updates.forEach { batch in
-            actions.append(.submitWriteBatch(batch))
-            batch.uploads.forEach { actions.append(.uploadAttachment($0)) }
-        }
+        actions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
         actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+        actions.append(.createUploadActions(library))
         return actions
     }
 
@@ -625,14 +607,26 @@ final class SyncController: SynchronizationController {
                 .syncDeletions(library, versions.deletions)]
     }
 
+    private func processCreateUploadActions(for library: Library) {
+        self.handler.loadUploadData(in: library)
+                    .subscribe(onSuccess: { [weak self] uploads in
+                        self?.performOnAccessQueue(flags: .barrier) { [weak self] in
+                            self?.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
+                        }
+                    }, onError: { [weak self] error in
+                        self?.finishCompletableAction(error: error)
+                    })
+                    .disposed(by: self.disposeBag)
+    }
+
     private func processSyncVersions(library: Library, object: Object, since version: Int?) {
         switch object {
         case .group:
             self.handler.synchronizeGroupVersions(library: library, syncType: self.type)
-                        .subscribe(onSuccess: { [weak self] data in
-                            self?.progressHandler.reportObjectCount(for: .group, count: data.1.count)
-                            self?.createBatchedGroupActions(for: library, updateIds: data.1,
-                                                            deleteGroups: data.2, currentVersion: data.0)
+                        .subscribe(onSuccess: { [weak self] (version, toUpdate, toRemove) in
+                            self?.progressHandler.reportObjectCount(for: .group, count: toUpdate.count)
+                            self?.createBatchedGroupActions(for: library, updateIds: toUpdate,
+                                                            deleteGroups: toRemove, currentVersion: version)
                         }, onError: { [weak self] error in
                             self?.finishFailedSyncVersionsAction(library: library, object: object, error: error)
                         })
@@ -640,10 +634,10 @@ final class SyncController: SynchronizationController {
         default:
             self.handler.synchronizeVersions(for: library, object: object, since: version,
                                              current: self.lastReturnedVersion, syncType: self.type)
-                        .subscribe(onSuccess: { [weak self] data in
-                            self?.progressHandler.reportObjectCount(for: object, count: data.1.count)
+                        .subscribe(onSuccess: { [weak self] (version, toUpdate) in
+                            self?.progressHandler.reportObjectCount(for: object, count: toUpdate.count)
                             self?.createBatchedObjectActions(for: library, object: object,
-                                                             from: data.1, currentVersion: data.0)
+                                                             from: toUpdate, currentVersion: version)
                         }, onError: { [weak self] error in
                             self?.finishFailedSyncVersionsAction(library: library, object: object, error: error)
                         })
@@ -758,7 +752,7 @@ final class SyncController: SynchronizationController {
     private func finishBatchSyncAction(for library: Library, object: Object, allKeys: [Any],
                                      result: Result<([String], [Error], [StoreItemsError])>) {
         switch result {
-        case .success(let decodingData):
+        case .success(let ids, let parseErrors, let itemConflicts):
             if object == .group {
                 // Groups always sync 1-by-1, so if an error happens it's always reported as .failure, only successful
                 // actions are reported here, so we can directly skip to next action
@@ -771,8 +765,8 @@ final class SyncController: SynchronizationController {
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
 
-            let conflicts = decodingData.2.map({ error -> Action in
-                switch error {
+            let conflicts = itemConflicts.map({ conflict -> Action in
+                switch conflict {
                 case .itemDeleted(let response):
                     return .resolveConflict(response.key, library)
                 case .itemChanged(let response):
@@ -780,12 +774,13 @@ final class SyncController: SynchronizationController {
                 }
             })
             let allStringKeys = (allKeys as? [String]) ?? []
-            let failedKeys = allStringKeys.filter({ !decodingData.0.contains($0) })
+            let failedKeys = allStringKeys.filter({ !ids.contains($0) })
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 guard let `self` = self else { return }
                 self.progressHandler.reportBatch(for: object, count: allKeys.count)
                 self.queue.insert(contentsOf: conflicts, at: 0)
+                self.nonFatalErrors.append(contentsOf: parseErrors)
                 if failedKeys.isEmpty {
                     self.processNextAction()
                 }
@@ -870,10 +865,10 @@ final class SyncController: SynchronizationController {
 
     private func processSettingsSync(for library: Library, since version: Int?) {
         self.handler.synchronizeSettings(for: library, current: self.lastReturnedVersion, since: version)
-                    .subscribe(onSuccess: { [weak self] data in
+                    .subscribe(onSuccess: { [weak self] (hasNewSettings, version) in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
-                            if data.0 {
-                                self?.enqueue(actions: [.storeSettingsVersion(data.1, library)], at: 0)
+                            if hasNewSettings {
+                                self?.enqueue(actions: [.storeSettingsVersion(version, library)], at: 0)
                             } else {
                                 self?.processNextAction()
                             }
@@ -899,8 +894,8 @@ final class SyncController: SynchronizationController {
     private func processSubmitUpdate(for batch: WriteBatch) {
         self.handler.submitUpdate(for: batch.library, object: batch.object,
                                   since: batch.version, parameters: batch.parameters)
-                    .subscribe(onSuccess: { [weak self] data in
-                        self?.finishSubmission(error: data.1, newVersion: data.0,
+                    .subscribe(onSuccess: { [weak self] (version, error) in
+                        self?.finishSubmission(error: error, newVersion: version,
                                                library: batch.library, object: batch.object)
                     }, onError: { [weak self] error in
                         self?.finishSubmission(error: error, newVersion: batch.version,
@@ -910,16 +905,16 @@ final class SyncController: SynchronizationController {
     }
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
-        let observers = self.handler.uploadAttachment(for: upload.library, key: upload.key, file: upload.file,
+        let (response, progress) = self.handler.uploadAttachment(for: upload.library, key: upload.key, file: upload.file,
                                                       filename: upload.filename, md5: upload.md5, mtime: upload.mtime)
-        observers.0.subscribe(onCompleted: { [weak self] in
-                                  self?.finishSubmission(error: nil, newVersion: nil,
-                                                         library: upload.library, object: .item)
-                              }, onError: { [weak self] error in
-                                  self?.finishSubmission(error: error, newVersion: nil,
-                                                         library: upload.library, object: .item)
-                              })
-                              .disposed(by: self.disposeBag)
+        response.subscribe(onCompleted: { [weak self] in
+                              self?.finishSubmission(error: nil, newVersion: nil,
+                                                     library: upload.library, object: .item)
+                          }, onError: { [weak self] error in
+                              self?.finishSubmission(error: error, newVersion: nil,
+                                                     library: upload.library, object: .item)
+                          })
+                          .disposed(by: self.disposeBag)
 
         // TODO: - observe upload progress in observers.1
     }

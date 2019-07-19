@@ -16,8 +16,8 @@ protocol ItemNavigationDelegate: class {
     func showAllItems(for libraryId: LibraryIdentifier)
     func showTrashItems(for libraryId: LibraryIdentifier)
     func showPublications(for libraryId: LibraryIdentifier)
-    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (String, String))
-    func showSearchItems(libraryId: LibraryIdentifier, searchData: (String, String))
+    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String))
+    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String))
 }
 
 fileprivate enum PrimaryColumnState {
@@ -195,12 +195,12 @@ extension MainViewController: ItemNavigationDelegate {
         self.showItems(for: .publications, libraryId: libraryId)
     }
 
-    func showSearchItems(libraryId: LibraryIdentifier, searchData: (String, String)) {
-        self.showItems(for: .search(searchData.0, searchData.1), libraryId: libraryId)
+    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String)) {
+        self.showItems(for: .search(searchData.key, searchData.name), libraryId: libraryId)
     }
 
-    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (String, String)) {
-        self.showItems(for: .collection(collectionData.0, collectionData.1), libraryId: libraryId)
+    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String)) {
+        self.showItems(for: .collection(collectionData.key, collectionData.name), libraryId: libraryId)
     }
 
     private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: LibraryIdentifier) {

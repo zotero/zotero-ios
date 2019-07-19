@@ -26,7 +26,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     let titleField: String?
 
     func process(in database: Realm) throws {
-        let predicate = Predicates.keyInLibrary(key: self.itemKey, libraryId: self.libraryId)
+        let predicate = Predicates.key(self.itemKey, in: self.libraryId)
         guard let item = database.objects(RItem.self).filter(predicate).first else { return }
 
         if let type = self.type {

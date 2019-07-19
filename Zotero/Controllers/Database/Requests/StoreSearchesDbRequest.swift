@@ -24,7 +24,7 @@ struct StoreSearchesDbRequest: DbRequest {
     private func store(data: SearchResponse, to database: Realm) throws {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
         let search: RSearch
-        let predicate = Predicates.keyInLibrary(key: data.key, libraryId: libraryId)
+        let predicate = Predicates.key(data.key, in: libraryId)
         if let existing = database.objects(RSearch.self).filter(predicate).first {
             search = existing
         } else {
@@ -46,9 +46,9 @@ struct StoreSearchesDbRequest: DbRequest {
 
     private func syncLibrary(identifier: LibraryIdentifier, libraryName: String,
                              search: RSearch, database: Realm) throws {
-        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
-        if libraryData.0 {
-            switch libraryData.1 {
+        let (isNew, object) = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
+        if isNew {
+            switch object {
             case .group(let object):
                 object.name = libraryName
                 object.syncState = .outdated
@@ -56,7 +56,7 @@ struct StoreSearchesDbRequest: DbRequest {
             case .custom: break // Custom library doesnt need sync or name update
             }
         }
-        search.libraryObject = libraryData.1
+        search.libraryObject = object
     }
 
     private func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {

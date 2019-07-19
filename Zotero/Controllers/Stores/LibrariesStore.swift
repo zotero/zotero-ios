@@ -96,9 +96,9 @@ class LibrariesStore: Store {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let cellData = self.reload(libraries: objects, groups: nil)
+                    let (libraryCellData, _) = self.reload(libraries: objects, groups: nil)
                     self.updater.updateState(action: { state in
-                        state.customLibraries = cellData.0
+                        state.customLibraries = libraryCellData
                         state.version += 1
                     })
                 case .initial: break
@@ -114,9 +114,9 @@ class LibrariesStore: Store {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let cellData = self.reload(libraries: nil, groups: objects)
+                    let (_, groupCellData) = self.reload(libraries: nil, groups: objects)
                     self.updater.updateState(action: { state in
-                        state.groupLibraries = cellData.1
+                        state.groupLibraries = groupCellData
                         state.version += 1
                     })
                 case .initial: break
@@ -128,13 +128,13 @@ class LibrariesStore: Store {
                 }
             }
 
-            let cellData = self.reload(libraries: libraries, groups: groups)
+            let (libraryCellData, groupCellData) = self.reload(libraries: libraries, groups: groups)
             self.updater.updateState { state in
                 state.libraries = libraries
                 state.groups = groups
                 state.version += 1
-                state.customLibraries = cellData.0
-                state.groupLibraries = cellData.1
+                state.customLibraries = libraryCellData
+                state.groupLibraries = groupCellData
                 state.librariesToken = librariesToken
                 state.groupsToken = groupsToken
             }

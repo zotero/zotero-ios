@@ -43,7 +43,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
-        let predicate = Predicates.keyInLibrary(key: data.key, libraryId: libraryId)
+        let predicate = Predicates.key(data.key, in: libraryId)
         if let existing = database.objects(RItem.self).filter(predicate).first {
             item = existing
         } else {
@@ -114,16 +114,16 @@ struct StoreItemsDbRequest: DbResponseRequest {
     }
 
     private func syncLibrary(identifier: LibraryIdentifier, libraryName: String, item: RItem, database: Realm) throws {
-        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
-        if libraryData.0 {
-            switch libraryData.1 {
+        let (isNew, object) = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
+        if isNew {
+            switch object {
             case .group(let object):
                 object.name = libraryName
                 object.syncState = .outdated
             case .custom: break
             }
         }
-        item.libraryObject = libraryData.1
+        item.libraryObject = object
     }
 
     private func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
@@ -132,7 +132,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         guard let key = key else { return }
 
         let parent: RItem
-        let predicate = Predicates.keyInLibrary(key: key, libraryId: libraryId)
+        let predicate = Predicates.key(key, in: libraryId)
 
         if let existing = database.objects(RItem.self).filter(predicate).first {
             parent = existing
@@ -153,7 +153,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         guard !keys.isEmpty else { return }
 
         var remainingCollections = keys
-        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: libraryId)
+        let predicate = Predicates.keys(keys, in: libraryId)
         let existingCollections = database.objects(RCollection.self).filter(predicate)
 
         for collection in existingCollections {
@@ -186,7 +186,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         for object in tags.enumerated() {
             guard !existingIndices.contains(object.offset) else { continue }
             let tag: RTag
-            let predicate = Predicates.nameInLibrary(name: object.element.tag, libraryId: libraryId)
+            let predicate = Predicates.name(object.element.tag, in: libraryId)
             if let existing = database.objects(RTag.self).filter(predicate).first {
                 tag = existing
             } else {

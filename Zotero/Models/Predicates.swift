@@ -22,7 +22,7 @@ struct Predicates {
         return NSPredicate(format: "key IN %@", keys)
     }
 
-    static func library(from identifier: LibraryIdentifier) -> NSPredicate {
+    static func library(with identifier: LibraryIdentifier) -> NSPredicate {
         switch identifier {
         case .custom(let type):
             return NSPredicate(format: "customLibrary.rawType = %d", type.rawValue)
@@ -31,26 +31,26 @@ struct Predicates {
         }
     }
 
-    static func keyInLibrary(key: String, libraryId: LibraryIdentifier) -> NSPredicate {
+    static func key(_ key: String, in libraryId: LibraryIdentifier) -> NSPredicate {
         let keyPredicate = Predicates.key(key)
-        let libraryPredicate = Predicates.library(from: libraryId)
+        let libraryPredicate = Predicates.library(with: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
     }
 
-    static func keysInLibrary(keys: [String], libraryId: LibraryIdentifier) -> NSPredicate {
+    static func keys(_ keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
         let keyPredicate = Predicates.key(in: keys)
-        let libraryPredicate = Predicates.library(from: libraryId)
+        let libraryPredicate = Predicates.library(with: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
     }
 
-    static func keysInLibrary(keys: Set<String>, libraryId: LibraryIdentifier) -> NSPredicate {
+    static func keys(_ keys: Set<String>, in libraryId: LibraryIdentifier) -> NSPredicate {
         let keyPredicate = Predicates.key(in: keys)
-        let libraryPredicate = Predicates.library(from: libraryId)
+        let libraryPredicate = Predicates.library(with: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
     }
 
-    static func nameInLibrary(name: String, libraryId: LibraryIdentifier) -> NSPredicate {
-        let libraryPredicate = Predicates.library(from: libraryId)
+    static func name(_ name: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+        let libraryPredicate = Predicates.library(with: libraryId)
         let namePredicate = NSPredicate(format: "name = %@", name)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [namePredicate, libraryPredicate])
     }
@@ -59,22 +59,26 @@ struct Predicates {
         return NSPredicate(format: "rawChangedFields > 0")
     }
 
+    static var notChanged: NSPredicate {
+        return NSPredicate(format: "rawChangedFields = 0")
+    }
+
     static var changedOrDeleted: NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.changed, Predicates.deleted(true)])
     }
 
-    static func changesWithoutDeletionsInLibrary(libraryId: LibraryIdentifier) -> NSPredicate {
+    static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
         let changePredicate = Predicates.changed
-        let libraryPredicate = Predicates.library(from: libraryId)
+        let libraryPredicate = Predicates.library(with: libraryId)
         let deletedPredicate = Predicates.deleted(false)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
     }
 
-    static func changesOrDeletionsInLibrary(libraryId: LibraryIdentifier) -> NSPredicate {
+    static func changesOrDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
         let changePredicate = Predicates.changed
         let deletedPredicate = Predicates.deleted(true)
         let changesPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [changePredicate, deletedPredicate])
-        let libraryPredicate = Predicates.library(from: libraryId)
+        let libraryPredicate = Predicates.library(with: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changesPredicate, libraryPredicate])
     }
 
@@ -88,7 +92,7 @@ struct Predicates {
 
     static func notSyncState(_ syncState: ObjectSyncState, in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notSyncState(syncState),
-                                                                   Predicates.library(from: libraryId)])
+                                                                   Predicates.library(with: libraryId)])
     }
 
     static func deleted(_ deleted: Bool) -> NSPredicate {
@@ -97,12 +101,12 @@ struct Predicates {
 
     static func deleted(_ deleted: Bool, in libraryId: LibraryIdentifier) -> NSPredicate {
         let deletedPredicate = Predicates.deleted(deleted)
-        let libraryPredicate = Predicates.library(from: libraryId)
+        let libraryPredicate = Predicates.library(with: libraryId)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, deletedPredicate])
     }
 
     static func items(type: String, notSyncState syncState: ObjectSyncState, trash: Bool? = nil) -> NSPredicate {
-        let typePredicate = NSPredicate(format: "rawType = %@", type)
+        let typePredicate = Predicates.item(type: type)
         let syncPredicate = Predicates.notSyncState(syncState)
         var predicates: [NSPredicate] = [typePredicate, syncPredicate]
         if let trash = trash {
@@ -110,5 +114,20 @@ struct Predicates {
             predicates.append(trashPredicate)
         }
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
+    static var attachmentNeedsUpload: NSPredicate {
+        return NSPredicate(format: "attachmentNeedsSync = true")
+    }
+
+    static func item(type: String) -> NSPredicate {
+        return NSPredicate(format: "rawType = %@", type)
+    }
+
+    static func itemsNotChangedAndNeedUpload(in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notChanged,
+                                                                   Predicates.attachmentNeedsUpload,
+                                                                   Predicates.item(type: FieldKeys.attachment),
+                                                                   Predicates.library(with: libraryId)])
     }
 }

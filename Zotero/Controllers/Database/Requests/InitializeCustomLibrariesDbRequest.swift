@@ -15,14 +15,14 @@ struct InitializeCustomLibrariesDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        let libraryData = try database.autocreatedObject(ofType: RCustomLibrary.self,
-                                                         forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
+        let (isNew, object) = try database.autocreatedObject(ofType: RCustomLibrary.self,
+                                                             forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
 
-        if libraryData.0 {
-            libraryData.1.orderId = 1
+        if isNew {
+            object.orderId = 1
             let versions = RVersions()
             database.add(versions)
-            libraryData.1.versions = versions
+            object.versions = versions
         }
     }
 }

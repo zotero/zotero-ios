@@ -24,7 +24,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         self.deleteSearches(with: self.response.searches, database: database)
         let conflicts = self.deleteItems(with: self.response.items, database: database)
 
-        let libraryPredicate = Predicates.library(from: self.libraryId)
+        let libraryPredicate = Predicates.library(with: self.libraryId)
         let tagNamePredicate = NSPredicate(format: "name IN %@", self.response.tags)
         let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [tagNamePredicate, libraryPredicate])
         let tags = database.objects(RTag.self).filter(tagPredicate)
@@ -55,7 +55,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteItems(with keys: [String], database: Realm) -> [String] {
-        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)
+        let predicate = Predicates.keys(keys, in: self.libraryId)
         let objects = database.objects(RItem.self).filter(predicate)
 
         var conflicts: [String] = []
@@ -74,7 +74,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteCollections(with keys: [String], database: Realm) {
-        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)
+        let predicate = Predicates.keys(keys, in: self.libraryId)
         let objects = database.objects(RCollection.self).filter(predicate)
 
         for object in objects {
@@ -90,7 +90,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteSearches(with keys: [String], database: Realm) {
-        let predicate = Predicates.keysInLibrary(keys: keys, libraryId: self.libraryId)
+        let predicate = Predicates.keys(keys, in: self.libraryId)
         let objects = database.objects(RSearch.self).filter(predicate)
 
         for object in objects {

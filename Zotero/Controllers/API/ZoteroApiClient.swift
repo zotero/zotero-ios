@@ -64,11 +64,11 @@ class ZoteroApiClient: ApiClient {
                               .responseDataWithResponseError()
                               .log(request: request, convertible: convertible)
                               .retryIfNeeded()
-                              .flatMap { response -> Observable<(Request.Response, ResponseHeaders)> in
+                              .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
                                       let decodedResponse = try JSONDecoder().decode(Request.Response.self,
-                                                                                     from: response.1)
-                                      return Observable.just((decodedResponse, response.0.allHeaderFields))
+                                                                                     from: data)
+                                      return Observable.just((decodedResponse, response.allHeaderFields))
                                   } catch let error {
                                       return Observable.error(error)
                                   }
@@ -84,8 +84,8 @@ class ZoteroApiClient: ApiClient {
                               .responseDataWithResponseError()
                               .log(request: dataRequest, convertible: convertible)
                               .retryIfNeeded()
-                              .flatMap { response -> Observable<(Data, [AnyHashable : Any])> in
-                                  return Observable.just((response.1, response.0.allHeaderFields))
+                              .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
+                                  return Observable.just((data, response.allHeaderFields))
                               }
                               .asSingle()
     }

@@ -21,7 +21,7 @@ struct StoreCollectionDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        let predicate = Predicates.keyInLibrary(key: self.key, libraryId: self.libraryId)
+        let predicate = Predicates.key(self.key, in: self.libraryId)
         guard let collection = database.objects(RCollection.self).filter(predicate).first else { return }
 
         var changes: RCollectionChanges = []
@@ -33,7 +33,7 @@ struct StoreCollectionDbRequest: DbRequest {
 
         if collection.parent?.key != self.parentKey {
             if let key = self.parentKey {
-                let predicate = Predicates.keyInLibrary(key: key, libraryId: self.libraryId)
+                let predicate = Predicates.key(key, in: self.libraryId)
                 collection.parent = database.objects(RCollection.self).filter(predicate).first
             } else {
                 collection.parent = nil

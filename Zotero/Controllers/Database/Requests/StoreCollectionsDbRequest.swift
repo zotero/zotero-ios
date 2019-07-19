@@ -24,7 +24,7 @@ struct StoreCollectionsDbRequest: DbRequest {
     private func store(data: CollectionResponse, to database: Realm) throws {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
-        let predicate = Predicates.keyInLibrary(key: data.key, libraryId: libraryId)
+        let predicate = Predicates.key(data.key, in: libraryId)
         let collection: RCollection
         if let existing = database.objects(RCollection.self).filter(predicate).first {
             collection = existing
@@ -54,16 +54,16 @@ struct StoreCollectionsDbRequest: DbRequest {
 
     private func syncLibrary(identifier: LibraryIdentifier, name: String,
                              collection: RCollection, database: Realm) throws {
-        let libraryData = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
-        if libraryData.0 {
-            switch libraryData.1 {
+        let (isNew, object) = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
+        if isNew {
+            switch object {
             case .group(let group):
                 group.name = name
                 group.syncState = .outdated
             case .custom: break
             }
         }
-        collection.libraryObject = libraryData.1
+        collection.libraryObject = object
     }
 
     private func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data,
@@ -72,7 +72,7 @@ struct StoreCollectionsDbRequest: DbRequest {
 
         guard let key = data.parentCollection else { return }
 
-        let predicate = Predicates.keyInLibrary(key: key, libraryId: libraryId)
+        let predicate = Predicates.key(key, in: libraryId)
         let parent: RCollection
         if let existing = database.objects(RCollection.self).filter(predicate).first {
             parent = existing
