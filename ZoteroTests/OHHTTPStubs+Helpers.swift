@@ -13,6 +13,13 @@ import Foundation
 import Alamofire
 import OHHTTPStubs
 
+func createStub(for request: ApiRequest, baseUrl: URL, headers: [String: Any]? = nil,
+                statusCode: Int32 = 200, response: Any) {
+    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+        return OHHTTPStubsResponse(jsonObject: response, statusCode: statusCode, headers: headers)
+    })
+}
+
 extension ApiRequest {
     func stubCondition(with baseUrl: URL) -> OHHTTPStubsTestBlock {
         guard let url = (try? Convertible(request: self, baseUrl: baseUrl,
@@ -43,7 +50,7 @@ extension ApiRequest {
     }
 }
 
-public func isQuery(_ query: String?) -> OHHTTPStubsTestBlock {
+fileprivate func isQuery(_ query: String?) -> OHHTTPStubsTestBlock {
     return {
         if $0.url?.query == query {
             return true

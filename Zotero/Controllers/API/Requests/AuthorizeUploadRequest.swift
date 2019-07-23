@@ -9,8 +9,6 @@
 import Foundation
 
 struct AuthorizeUploadRequest: ApiRequest {
-    typealias Response = AuthorizeUploadResponse
-
     let libraryType: SyncController.Library
     let key: String
     let filename: String

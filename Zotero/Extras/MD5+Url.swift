@@ -11,7 +11,7 @@ import Foundation
 
 import CocoaLumberjack
 
-func md5(from url: URL) -> Data? {
+func md5(from url: URL) -> String? {
     let bufferSize = 1024 * 1024
 
     do {
@@ -42,7 +42,7 @@ func md5(from url: URL) -> Data? {
         var digest: [UInt8] = Array(repeating: 0, count: Int(CC_MD5_DIGEST_LENGTH))
         _ = CC_MD5_Final(&digest, &context)
 
-        return Data(digest)
+        return Data(digest).map({ String(format: "%02hhx", $0) }).joined()
     } catch {
         DDLogError("Could not create MD5 from url: \(error)")
         return nil
