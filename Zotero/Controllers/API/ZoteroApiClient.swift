@@ -101,10 +101,10 @@ class ZoteroApiClient: ApiClient {
                               }
     }
 
-    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Observable<UploadRequest> {
-        return Observable.create { [weak self] observer in
+    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
+        return Single.create { [weak self] subscriber in
                                      guard let `self` = self else {
-                                         observer.onError(ZoteroApiError.expired)
+                                         subscriber(.error(ZoteroApiError.expired))
                                          return Disposables.create()
                                      }
 
@@ -116,10 +116,9 @@ class ZoteroApiClient: ApiClient {
                                                          encodingCompletion: { result in
                                          switch result {
                                          case .success(let request, _, _):
-                                             observer.onNext(request)
-                                             observer.onCompleted()
+                                             subscriber(.success(request))
                                          case .failure(let error):
-                                             observer.onError(error)
+                                             subscriber(.error(error))
                                          }
                                      })
 

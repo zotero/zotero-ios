@@ -86,8 +86,8 @@ final class SyncController: SynchronizationController {
         let key: String
         let filename: String
         let `extension`: String
-        let md5: String?
-        let mtime: Int?
+        let md5: String
+        let mtime: Int
 
         var file: File {
             return Files.objectFile(for: .item, libraryId: self.library.libraryId, key: self.key, ext: self.extension)
@@ -906,7 +906,7 @@ final class SyncController: SynchronizationController {
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
         let (response, progress) = self.handler.uploadAttachment(for: upload.library, key: upload.key, file: upload.file,
-                                                      filename: upload.filename, md5: upload.md5, mtime: upload.mtime)
+                                                                 filename: upload.filename, md5: upload.md5, mtime: upload.mtime)
         response.subscribe(onCompleted: { [weak self] in
                               self?.finishSubmission(error: nil, newVersion: nil,
                                                      library: upload.library, object: .item)

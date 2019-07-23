@@ -21,10 +21,10 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
         let items = database.objects(RItem.self).filter(Predicates.itemsNotChangedAndNeedUpload(in: self.library.libraryId))
         let uploads = items.compactMap({ item -> SyncController.AttachmentUpload? in
             guard let contentType = item.fields.filter("key = %@", FieldKeys.contentType).first?.value,
-                  let ext = contentType.mimeTypeExtension else { return nil }
+                  let ext = contentType.mimeTypeExtension,
+                  let md5 = item.fields.filter("key = %@", FieldKeys.md5).first?.value,
+                  let mtime = (item.fields.filter("key = %@", FieldKeys.mtime).first?.value).flatMap(Int.init) else { return nil }
             let filename = item.fields.filter("key = %@", FieldKeys.filename).first?.value ?? ""
-            let md5 = item.fields.filter("key = %@", FieldKeys.md5).first?.value
-            let mtime = (item.fields.filter("key = %@", FieldKeys.mtime).first?.value).flatMap(Int.init)
             return SyncController.AttachmentUpload(library: self.library, key: item.key,
                                                    filename: filename, extension: ext,
                                                    md5: md5, mtime: mtime)

@@ -79,6 +79,7 @@
 		B353370A22CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
 		B356247F2267302B006D039F /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356247E2267302B006D039F /* KeyGenerator.swift */; };
 		B3562481226758EE006D039F /* CreateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */; };
+		B35CF5DA22E5BE7A007ADAAA /* MD5+Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */; };
 		B35E39D122772DA300A368C7 /* ResolveItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */; };
 		B36171CD2270B81200246E45 /* PickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36171CB2270B81200246E45 /* PickerViewController.swift */; };
 		B36171CE2270B81200246E45 /* PickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36171CC2270B81200246E45 /* PickerViewController.xib */; };
@@ -293,6 +294,7 @@
 		B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnyChangedObjectsInLibraryDbRequest.swift; sourceTree = "<group>"; };
 		B356247E2267302B006D039F /* KeyGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyGenerator.swift; sourceTree = "<group>"; };
 		B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MD5+Url.swift"; sourceTree = "<group>"; };
 		B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveItemDbRequest.swift; sourceTree = "<group>"; };
 		B36171CB2270B81200246E45 /* PickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickerViewController.swift; sourceTree = "<group>"; };
 		B36171CC2270B81200246E45 /* PickerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PickerViewController.xib; sourceTree = "<group>"; };
@@ -607,6 +609,7 @@
 				B3DD9CDC2256281F00DE6BAA /* Licenses.swift */,
 				B356247E2267302B006D039F /* KeyGenerator.swift */,
 				B335E2D522D7436B009F9061 /* Observable+Completable.swift */,
+				B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -1178,6 +1181,7 @@
 				B38C969F223FFB2900343F8F /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B337AB6922E0DD080092AC22 /* AttachmentUploadRequest.swift in Sources */,
 				B3C6F655224A95BF001722B4 /* ReadAllGroupsDbRequest.swift in Sources */,
+				B35CF5DA22E5BE7A007ADAAA /* MD5+Url.swift in Sources */,
 				B30F668E220CBB37009E7A8F /* ObjectsRequest.swift in Sources */,
 				B38C9697223FFB2900343F8F /* ReadSearchesDbRequest.swift in Sources */,
 				B3562481226758EE006D039F /* CreateCollectionDbRequest.swift in Sources */,

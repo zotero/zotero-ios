@@ -19,7 +19,7 @@ enum SyncActionHandlerError: Error, Equatable {
     case objectConflict             // Used when there are 412 returned for individual objects when writing data to remote
     case attachmentItemNotSubmitted // Used when the item object for given attachment upload was not submitted to backend
     case attachmentMissing          // Used when we can't find local file for attachment upload
-    case attachmentAlreadyUploaded        // Used when we tried to authorize file upload for existing file
+    case attachmentAlreadyUploaded  // Used when we tried to authorize file upload for existing file
 }
 
 struct LibraryData {
@@ -174,7 +174,7 @@ protocol SyncActionHandler: class {
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
                       parameters: [[String: Any]]) -> Single<(Int, Error?)>
     func uploadAttachment(for library: SyncController.Library, key: String, file: File,
-                          filename: String, md5: String?, mtime: Int?) -> (Completable, Observable<RxProgress>)
+                          filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>)
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
     func deleteGroup(with groupId: Int) -> Completable
@@ -553,7 +553,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func uploadAttachment(for library: SyncController.Library, key: String, file: File,
-                          filename: String, md5: String?, mtime: Int?) -> (Completable, Observable<RxProgress>) {
+                          filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>) {
         let libraryId = library.libraryId
         let dbCheck: Single<()> = Single.create { [weak self] subscriber -> Disposable in
                                       guard let `self` = self else {
@@ -587,41 +587,100 @@ extension SyncActionHandlerController: SyncActionHandler {
                                     return Single.just(size)
                                 }
                             }
-                            .flatMap { [weak self] filesize -> Single<(AuthorizeUploadResponse, ResponseHeaders)> in
+                            .flatMap { [weak self] filesize -> Single<AuthorizeUploadResponse> in
                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
                                 let request = AuthorizeUploadRequest(libraryType: library, key: key,
                                                                      filename: filename, filesize: filesize,
                                                                      md5: md5, mtime: mtime)
-                                return self.apiClient.send(request: request)
+                                return self.apiClient.send(dataRequest: request)
+                                                     .flatMap({ (data, _) -> Single<AuthorizeUploadResponse> in
+                                                        do {
+                                                            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+                                                            let response = try AuthorizeUploadResponse(from: jsonObject)
+                                                            return Single.just(response)
+                                                        } catch {
+                                                            return Single.error(error)
+                                                        }
+                                                     })
                             }
-                            .asObservable()
-                            .flatMap { [weak self] (response, _) -> Observable<(UploadRequest, String)> in
-                                guard let `self` = self else { return Observable.error(SyncActionHandlerError.expired) }
+                            .flatMap { [weak self] response -> Single<Swift.Result<(UploadRequest, String), SyncActionHandlerError>> in
+                                guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
                                 switch response {
                                 case .exists:
-                                    return Observable.error(SyncActionHandlerError.attachmentAlreadyUploaded)
+                                    return Single.just(.failure(SyncActionHandlerError.attachmentAlreadyUploaded))
                                 case .new(let response):
                                     let request = AttachmentUploadRequest(url: response.url)
                                     return self.apiClient.upload(request: request) { data in
-                                        data.append("test".data(using: .utf8)!, withName: "test")
-                                    }.flatMap({ Observable.just(($0, response.uploadKey)) })
+                                        response.params.forEach({ (key, value) in
+                                            if let stringData = value.data(using: .utf8) {
+                                                data.append(stringData, withName: key)
+                                            }
+                                            data.append(file.createUrl(), withName: "file",
+                                                        fileName: filename, mimeType: file.mimeType)
+                                        })
+                                    }.flatMap({ Single.just(.success(($0, response.uploadKey))) })
                                 }
                             }
 
-        let response = upload.flatMap({ (uploadRequest, uploadKey) -> Observable<(Data, String)> in
-                                 return uploadRequest.rx.data().flatMap({ Observable.just(($0, uploadKey)) })
+        let response = upload.flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionHandlerError>> in
+                                 switch result {
+                                 case .success(let uploadRequest, let uploadKey):
+                                      return uploadRequest.rx.data()
+                                                             .asSingle()
+                                                             .flatMap({ Single.just(.success(($0, uploadKey))) })
+                                 case .failure(let error):
+                                     return Single.just(.failure(error))
+                                 }
                              })
-                             .asSingle()
-                             .flatMap({ [weak self] (_, uploadKey) -> Single<(Data, ResponseHeaders)> in
+                             .flatMap({ [weak self] result -> Single<Swift.Result<(Data, ResponseHeaders), SyncActionHandlerError>> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-                                 let request = RegisterUploadRequest(libraryType: library,
-                                                                     key: key,
-                                                                     uploadKey: uploadKey)
-                                 return self.apiClient.send(dataRequest: request)
+
+                                 switch result {
+                                 case .success(_, let uploadKey):
+                                     let request = RegisterUploadRequest(libraryType: library,
+                                                                         key: key,
+                                                                         uploadKey: uploadKey)
+                                     return self.apiClient.send(dataRequest: request).flatMap({ Single.just(.success($0)) })
+                                 case .failure(let error):
+                                     return Single.just(.failure(error))
+                                 }
+                             })
+                             .flatMap({ [weak self] result -> Single<()> in
+                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
+
+                                 let markDbAction: () -> Single<()> = {
+                                     do {
+                                         let request = MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key)
+                                         try self.dbStorage.createCoordinator().perform(request: request)
+                                         return Single.just(())
+                                     } catch let error {
+                                         return Single.error(error)
+                                     }
+                                 }
+
+                                 switch result {
+                                 case .success:
+                                     return markDbAction()
+                                 case .failure(let error) where error == .attachmentAlreadyUploaded:
+                                     return markDbAction()
+                                 case .failure(let error):
+                                     return Single.error(error)
+                                 }
                              })
                              .asCompletable()
                              .observeOn(self.scheduler)
-        let progress = upload.flatMap({ $0.0.rx.progress() }).observeOn(self.scheduler)
+
+        let progress = upload.asObservable()
+                             .flatMap({ result -> Observable<RxProgress> in
+                                 switch result {
+                                 case .success(let uploadRequest, _):
+                                     return uploadRequest.rx.progress()
+                                 case .failure(let error):
+                                     return Observable.error(error)
+                                 }
+                             })
+                             .observeOn(self.scheduler)
+
         return (response, progress)
     }
 

@@ -8,29 +8,42 @@
 
 import Foundation
 
-enum AuthorizeUploadResponse: Decodable {
+enum AuthorizeUploadResponseError: Error {
+    case notDictionary, missingKeys
+}
+
+enum AuthorizeUploadResponse {
     case exists
     case new(AuthorizeNewUploadResponse)
 
-    private enum Keys: String, CodingKey {
-        case url, contentType, prefix, suffix, uploadKey, exists
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: Keys.self)
-
-        if container.contains(.exists) {
-            self = .exists
+    init(from jsonObject: Any) throws {
+        guard let data = jsonObject as? [String: Any] else {
+            throw AuthorizeUploadResponseError.notDictionary
         }
 
-        self = .exists
+        if data["exists"] != nil {
+            self = .exists
+        } else {
+            self = try .new(AuthorizeNewUploadResponse(from: data))
+        }
     }
 }
 
-struct AuthorizeNewUploadResponse: Decodable {
+struct AuthorizeNewUploadResponse {
     let url: URL
-    let contentType: String
-    let prefix: String
-    let suffix: String
     let uploadKey: String
+    let params: [String: String]
+
+    init(from jsonObject: [String: Any]) throws {
+        guard let urlString = jsonObject["url"] as? String,
+              let url = URL(string: urlString.replacingOccurrences(of: "\\", with: "")),
+              let uploadKey = jsonObject["uploadKey"] as? String,
+              let params = jsonObject["params"] as? [String: String] else {
+            throw AuthorizeUploadResponseError.missingKeys
+        }
+
+        self.url = url
+        self.uploadKey = uploadKey
+        self.params = params
+    }
 }

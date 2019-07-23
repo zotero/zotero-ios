@@ -58,5 +58,5 @@ protocol ApiClient: class {
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
     func send(dataRequest: ApiRequest) -> Single<(Data, ResponseHeaders)>
     func download(request: ApiDownloadRequest) -> Observable<RxProgress>
-    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Observable<UploadRequest>
+    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
 }
