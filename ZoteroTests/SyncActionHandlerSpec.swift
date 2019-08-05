@@ -348,6 +348,7 @@ class SyncActionHandlerSpec: QuickSpec {
 
             it("it doesn't reupload when file is already uploaded") {
                 let key = "AAAAAAAA"
+                let filename = "doc.txt"
                 let library = SyncController.Library.group(1)
                 let file = Files.objectFile(for: .item, libraryId: library.libraryId, key: key, ext: "txt")
 
@@ -378,20 +379,20 @@ class SyncActionHandlerSpec: QuickSpec {
 
                     let filenameField = RItemField()
                     filenameField.key = FieldKeys.filename
-                    filenameField.value = "doc.txt"
+                    filenameField.value = filename
                     filenameField.item = item
                     realm.add(filenameField)
                 }
 
-                createStub(for: AuthorizeUploadRequest(libraryType: library, key: key, filename: "doc.txt",
+                createStub(for: AuthorizeUploadRequest(libraryType: library, key: key, filename: filename,
                                                        filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
                            baseUrl: baseUrl, response: ["exists": 1])
 
                 waitUntil(timeout: 10, action: { doneAction in
                     SyncActionHandlerSpec.syncHandler
                                          .uploadAttachment(for: library, key: key,
-                                                           file: file, filename: "doc.pdf",
-                                                           md5: "aaaaaaaa", mtime: 0).0
+                                                           file: file, filename: filename,
+                                                           md5: fileMd5, mtime: 123).0
                                          .subscribe(onCompleted: {
                                              doneAction()
                                          }, onError: { error in
@@ -403,7 +404,75 @@ class SyncActionHandlerSpec: QuickSpec {
             }
 
             it("uploads new file") {
+                let key = "AAAAAAAA"
+                let filename = "doc.txt"
+                let library = SyncController.Library.group(1)
+                let file = Files.objectFile(for: .item, libraryId: library.libraryId, key: key, ext: "txt")
 
+                let data = "test string".data(using: .utf8)!
+                try! FileStorageController().write(data, to: file, options: .atomicWrite)
+                let fileMd5 = md5(from: file.createUrl())!
+
+                let realm = SyncActionHandlerSpec.realm
+
+                try! realm.write {
+                    let library = RGroup()
+                    library.identifier = 1
+                    realm.add(library)
+
+                    let item = RItem()
+                    item.key = key
+                    item.rawType = "attachment"
+                    item.group = library
+                    item.rawChangedFields = 0
+                    item.attachmentNeedsSync = true
+                    realm.add(item)
+
+                    let contentField = RItemField()
+                    contentField.key = FieldKeys.contentType
+                    contentField.value = "text/plain"
+                    contentField.item = item
+                    realm.add(contentField)
+
+                    let filenameField = RItemField()
+                    filenameField.key = FieldKeys.filename
+                    filenameField.value = filename
+                    filenameField.item = item
+                    realm.add(filenameField)
+                }
+
+                createStub(for: AuthorizeUploadRequest(libraryType: library, key: key, filename: filename,
+                                                       filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
+                           baseUrl: baseUrl, response: ["url": "https://www.zotero.org/",
+                                                        "uploadKey": "key",
+                                                        "params": ["key": "key"]])
+                createStub(for: RegisterUploadRequest(libraryType: library, key: key, uploadKey: "key"),
+                           baseUrl: baseUrl, headers: nil, statusCode: 204, response: [:])
+                stub(condition: { request -> Bool in
+                    return request.url?.absoluteString == "https://www.zotero.org/"
+                }, response: { _ -> OHHTTPStubsResponse in
+                    return OHHTTPStubsResponse(jsonObject: [:], statusCode: 201, headers: nil)
+                })
+
+                waitUntil(timeout: 10, action: { doneAction in
+                    SyncActionHandlerSpec.syncHandler
+                                         .uploadAttachment(for: library, key: key,
+                                                           file: file, filename: filename,
+                                                           md5: fileMd5, mtime: 123).0
+                                         .subscribe(onCompleted: {
+                                             let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
+                                             realm.refresh()
+
+                                             let item = realm.objects(RItem.self).filter(Predicates.key(key)).first
+                                             expect(item?.attachmentNeedsSync).to(beFalse())
+
+                                             doneAction()
+                                         }, onError: { error in
+                                             fail("Unknown error: \(error.localizedDescription)")
+                                             doneAction()
+                                         })
+                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                })
             }
         }
     }

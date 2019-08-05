@@ -972,7 +972,9 @@ class SyncControllerSpec: QuickSpec {
 
                     var statusCode: Int32 = 412
                     let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
-                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+                    // We don't care about specific post params here, we just want to track all update requests
+                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
+                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
                         let code = statusCode
                         statusCode = 200
                         return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
@@ -1785,7 +1787,8 @@ class SyncControllerSpec: QuickSpec {
 
                     let collectionUpdate = UpdatesRequest(libraryType: library, objectType: .collection,
                                                           params: [], version: oldVersion)
-                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl)
+                    // We don't care about specific params, we just want to catch update for all objecfts of this type
+                    let collectionConditions = collectionUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
                     stub(condition: collectionConditions, response: { request -> OHHTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
@@ -1799,7 +1802,8 @@ class SyncControllerSpec: QuickSpec {
 
                     let itemUpdate = UpdatesRequest(libraryType: library, objectType: .item,
                                                     params: [], version: oldVersion)
-                    let itemConditions = itemUpdate.stubCondition(with: baseUrl)
+                    // We don't care about specific params, we just want to catch update for all objecfts of this type
+                    let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
                     stub(condition: itemConditions, response: { request -> OHHTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
@@ -2059,10 +2063,11 @@ class SyncControllerSpec: QuickSpec {
                     let update = UpdatesRequest(libraryType: library, objectType: .collection,
                                                 params: [], version: oldVersion)
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: update, baseUrl: baseUrl,
-                                    headers: ["last-modified-version": "\(newVersion)"],
-                                    statusCode: 200,
-                                    response: ["success": ["0": [:]], "unchanged": [], "failed": []])
+                    // We don't care about specific post params, we just need to catch all updates for given type
+                    createStub(for: update, ignorePostParams: true, baseUrl: baseUrl,
+                               headers: ["last-modified-version": "\(newVersion)"],
+                               statusCode: 200,
+                               response: ["success": ["0": [:]], "unchanged": [], "failed": []])
 
                     self.controller = SyncController(userId: SyncControllerSpec.userId,
                                                      handler: SyncControllerSpec.syncHandler,
@@ -2229,7 +2234,9 @@ class SyncControllerSpec: QuickSpec {
 
                     var retryCount = 0
                     let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
-                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+                    // We don't care about specific params, we just need to count all update requests
+                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
+                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
                         retryCount += 1
                         return OHHTTPStubsResponse(jsonObject: [:], statusCode: (retryCount <= 2 ? 412 : 200), headers: header)
                     })

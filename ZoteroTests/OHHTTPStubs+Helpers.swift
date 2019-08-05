@@ -13,17 +13,20 @@ import Foundation
 import Alamofire
 import OHHTTPStubs
 
-func createStub(for request: ApiRequest, baseUrl: URL, headers: [String: Any]? = nil,
+func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
+                baseUrl: URL, headers: [String: Any]? = nil,
                 statusCode: Int32 = 200, response: Any) {
-    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+    stub(condition: request.stubCondition(with: baseUrl,
+                                          ignorePostParams: ignorePostParams), response: { _ -> OHHTTPStubsResponse in
         return OHHTTPStubsResponse(jsonObject: response, statusCode: statusCode, headers: headers)
     })
 }
 
 extension ApiRequest {
-    func stubCondition(with baseUrl: URL) -> OHHTTPStubsTestBlock {
-        guard let url = (try? Convertible(request: self, baseUrl: baseUrl,
-                                          token: nil, headers: [:]).asURLRequest())?.url,
+    func stubCondition(with baseUrl: URL, ignorePostParams: Bool = false) -> OHHTTPStubsTestBlock {
+        guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl,
+                                                 token: nil, headers: [:]).asURLRequest()),
+              let url = urlRequest.url,
               let host = baseUrl.host else {
             return { _ in false }
         }
@@ -46,7 +49,14 @@ extension ApiRequest {
             methodCondition = isMethodGET()
         }
 
-        return methodCondition&&isHost(host)&&isPath(url.path)&&isQuery(url.query)
+        let bodyCondition: OHHTTPStubsTestBlock
+        if ignorePostParams {
+            bodyCondition = { _ in return true }
+        } else {
+            bodyCondition = { $0.ohhttpStubs_httpBody == urlRequest.ohhttpStubs_httpBody }
+        }
+
+        return methodCondition&&isHost(host)&&isPath(url.path)&&isQuery(url.query)&&bodyCondition
     }
 }
 
