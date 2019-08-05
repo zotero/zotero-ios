@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -915,10 +915,12 @@
 					};
 					B30D596A2206F60500884C4A = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1030;
 						TestTargetID = B30D59542206F60400884C4A;
 					};
 					B30D59752206F60500884C4A = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1030;
 						TestTargetID = B30D59542206F60400884C4A;
 					};
 				};
@@ -1492,7 +1494,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
 			};
@@ -1514,7 +1516,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
 			};
@@ -1535,7 +1537,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Zotero;
 			};
@@ -1556,7 +1558,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Zotero;
 			};
@@ -1660,7 +1662,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
 			};
@@ -1681,7 +1683,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Zotero;
 			};

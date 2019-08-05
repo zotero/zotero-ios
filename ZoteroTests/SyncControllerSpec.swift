@@ -1921,8 +1921,8 @@ class SyncControllerSpec: QuickSpec {
                         }
 
                         expect(params.count).to(equal(3))
-                        let parentPos = params.index(where: { ($0["key"] as? String) == parentKey }) ?? -1
-                        let childPos = params.index(where: { ($0["key"] as? String) == childKey }) ?? -1
+                        let parentPos = params.firstIndex(where: { ($0["key"] as? String) == parentKey }) ?? -1
+                        let childPos = params.firstIndex(where: { ($0["key"] as? String) == childKey }) ?? -1
                         expect(parentPos).toNot(equal(-1))
                         expect(childPos).toNot(equal(-1))
                         expect(parentPos).to(beLessThan(childPos))
