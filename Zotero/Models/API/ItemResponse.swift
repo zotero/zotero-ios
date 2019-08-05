@@ -55,10 +55,25 @@ struct ItemResponse {
         if let schemaFields = schemaController.fields(for: rawType) {
             for object in data {
                 guard !excludedKeys.contains(object.key) else { continue }
-                // Note is not a field on backend but we consider it as one, since it can be returned with fields
-                // together with other data
-                if object.key != FieldKeys.note && !schemaFields.contains(where: { $0.field == object.key }) {
-                    throw ItemResponseError.unknownField(object.key)
+
+                // Check whether schema contains this key
+                if !schemaFields.contains(where: { $0.field == object.key }) {
+                    if rawType == FieldKeys.attachment {
+                        // Attachments don't have some fields that are returned by backend in schema,
+                        // so we have to filter them out here manually.
+                        if object.key != FieldKeys.contentType && object.key != FieldKeys.md5 &&
+                           object.key != FieldKeys.mtime && object.key != FieldKeys.filename &&
+                           object.key != FieldKeys.linkMode && object.key != "charset" &&
+                           object.key != FieldKeys.note {
+                            throw ItemResponseError.unknownField(object.key)
+                        }
+                    } else {
+                        // Note is not a field in schema but we consider it as one, since it can be returned with fields
+                        // together with other data. So we filter it out as well and report all other keys.
+                        if object.key != FieldKeys.note {
+                            throw ItemResponseError.unknownField(object.key)
+                        }
+                    }
                 }
                 fields[object.key] = object.value as? String
             }
