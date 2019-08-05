@@ -30,6 +30,6 @@ struct StoreUserDbRequest: DbRequest {
         let user = RUser()
         user.identifier = self.identifier
         user.name = self.name
-        database.add(user, update: true)
+        database.add(user, update: .modified)
     }
 }

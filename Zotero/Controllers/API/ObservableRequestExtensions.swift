@@ -36,8 +36,8 @@ extension RetryDelay {
     }
 }
 
-extension ObservableType where E == (HTTPURLResponse, Data) {
-    func retryIfNeeded() -> Observable<E> {
+extension ObservableType where Element == (HTTPURLResponse, Data) {
+    func retryIfNeeded() -> Observable<Element> {
         return self.retry(maxAttemptCount: 10,
                           retryDelay: { error -> RetryDelay? in
             guard let responseError = error as? AFResponseError else { return nil }
@@ -62,7 +62,7 @@ extension ObservableType where E == (HTTPURLResponse, Data) {
         })
     }
 
-    private func retry(maxAttemptCount: Int, retryDelay: @escaping (Error) -> RetryDelay?) -> Observable<E> {
+    private func retry(maxAttemptCount: Int, retryDelay: @escaping (Error) -> RetryDelay?) -> Observable<Element> {
         return retryWhen { errors in
             return errors.enumerated().flatMap { attempt, error -> Observable<Void> in
                 guard (attempt + 1) < maxAttemptCount,
@@ -77,7 +77,7 @@ extension ObservableType where E == (HTTPURLResponse, Data) {
         }
     }
 
-    func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<E> {
+    func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<Element> {
         return self.asObservable()
                    .do(onNext: { response in
                        #if DEBUG
@@ -110,7 +110,7 @@ extension ObservableType where E == (HTTPURLResponse, Data) {
     }
 }
 
-extension ObservableType where E == DataRequest {
+extension ObservableType where Element == DataRequest {
     func responseDataWithResponseError() -> Observable<(HTTPURLResponse, Data)> {
         return self.flatMap { $0.rx.responseDataWithResponseError() }
     }

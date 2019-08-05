@@ -397,7 +397,7 @@ extension ItemDetailViewController: UITableViewDataSource {
             case .fields:
                 if let field = dataSource.field(at: indexPath.row) {
                     cell.setup(with: field.name, value: field.value, editing: tableView.isEditing)
-                    cell.textObservable.throttle(0.8, scheduler: MainScheduler.instance)
+                    cell.textObservable.throttle(.milliseconds(800), scheduler: MainScheduler.instance)
                         .subscribe { [weak self] event in
                             switch event {
                             case .next(let string):

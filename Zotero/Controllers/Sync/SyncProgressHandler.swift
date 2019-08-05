@@ -23,8 +23,8 @@ enum SyncProgress {
 
 final class SyncProgressHandler {
     let observable: BehaviorRelay<SyncProgress?>
-    private let finishVisibilityTime: Double = 2
-    private let errorVisibilityTime: Double = 3.5
+    private let finishVisibilityTime: RxTimeInterval = .seconds(2)
+    private let errorVisibilityTime: RxTimeInterval = .milliseconds(3500)
 
     private var libraryNames: [LibraryIdentifier: String]?
     private var currentLibrary: String?
@@ -86,7 +86,7 @@ final class SyncProgressHandler {
 
     // MARK: - Helpers
 
-    private func finish(with state: SyncProgress, timeout: Double) {
+    private func finish(with state: SyncProgress, timeout: RxTimeInterval) {
         self.cleanup()
         self.observable.accept(state)
 

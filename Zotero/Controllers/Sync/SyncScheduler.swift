@@ -25,7 +25,7 @@ protocol SynchronizationScheduler: class {
 fileprivate typealias SchedulerAction = (syncType: SyncController.SyncType, librarySyncType: SyncController.LibrarySyncType)
 
 final class SyncScheduler: SynchronizationScheduler {
-    private static let timeout = 3.0
+    private static let timeout: RxTimeInterval = .seconds(3)
     let syncController: SynchronizationController
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
