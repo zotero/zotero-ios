@@ -20,6 +20,8 @@ struct CreateItemDbRequest: DbResponseRequest {
     let abstract: String?
     let fields: [ItemDetailStore.StoreState.Field]
     let notes: [ItemDetailStore.StoreState.Note]
+    let attachments: [ItemDetailStore.StoreState.Attachment]
+    let tags: [ItemDetailStore.StoreState.Tag]
     let allFields: [FieldSchema]
 
     var needsWrite: Bool {
@@ -36,6 +38,8 @@ struct CreateItemDbRequest: DbResponseRequest {
         item.dateModified = Date()
 
         var changes: RItemChanges = [.type, .fields]
+        var newFields: [RItemField] = []
+        var newChildItems: [RItem] = []
 
         switch self.libraryId {
         case .custom(let type):
@@ -54,13 +58,12 @@ struct CreateItemDbRequest: DbResponseRequest {
             changes.insert(.collections)
         }
 
-        var fields: [RItemField] = []
         self.allFields.forEach { schema in
             let rField = RItemField()
             rField.key = schema.field
             rField.item = item
 
-            if let field = self.fields.first(where: { $0.type == schema.field }) {
+            if let field = self.fields.first(where: { $0.key == schema.field }) {
                 rField.value = field.value
                 rField.changed = field.changed
             } else {
@@ -76,11 +79,9 @@ struct CreateItemDbRequest: DbResponseRequest {
                 }
             }
 
-            fields.append(rField)
+            newFields.append(rField)
         }
 
-        var notes: [RItem] = []
-        var noteFields: [RItemField] = []
         self.notes.forEach { note in
             let childItem = RItem()
             childItem.key = KeyGenerator.newKey
@@ -92,22 +93,82 @@ struct CreateItemDbRequest: DbResponseRequest {
             childItem.parent = item
             childItem.dateAdded = Date()
             childItem.dateModified = Date()
-            notes.append(childItem)
+            newChildItems.append(childItem)
 
             let noteField = RItemField()
             noteField.key = FieldKeys.note
             noteField.value = note.text
             noteField.changed = true
             noteField.item = childItem
-            noteFields.append(noteField)
+            newFields.append(noteField)
+        }
+
+        let attachmentKeys = FieldKeys.attachmentFieldKeys
+
+        self.attachments.forEach { attachment in
+            let childItem = RItem()
+            childItem.key = attachment.key
+            childItem.rawType = FieldKeys.attachment
+            childItem.syncState = .synced
+            childItem.title = attachment.title
+            childItem.changedFields = [.type, .fields, .parent]
+            childItem.libraryObject = item.libraryObject
+            childItem.parent = item
+            childItem.dateAdded = Date()
+            childItem.dateModified = Date()
+            newChildItems.append(childItem)
+
+            for fieldKey in attachmentKeys {
+                let field = RItemField()
+                field.key = fieldKey
+
+                switch attachment.type {
+                case .file(let file, _):
+                    switch fieldKey {
+                    case FieldKeys.title, FieldKeys.filename:
+                        field.value = attachment.title
+                    case FieldKeys.contentType:
+                        field.value = file.mimeType
+                    case FieldKeys.linkMode:
+                        field.value = "imported_file"
+                    case FieldKeys.md5:
+                        field.value = md5(from: file.createUrl()) ?? ""
+                    case FieldKeys.mtime:
+                        field.value = "0"
+                    default: break
+                    }
+
+                case .url(let url):
+                    switch fieldKey {
+                    case FieldKeys.url:
+                        field.value = url.absoluteString
+                    case FieldKeys.linkMode:
+                        field.value = "linked_url"
+                    default: break
+                    }
+                }
+
+                field.changed = true
+                field.item = childItem
+                newFields.append(field)
+            }
         }
 
         item.changedFields = changes
 
         database.add(item)
-        database.add(fields)
-        database.add(notes)
-        database.add(noteFields)
+        database.add(newChildItems)
+        database.add(newFields)
+
+        self.tags.forEach { tag in
+            if let rTag = database.objects(RTag.self).filter(Predicates.name(tag.name, in: self.libraryId)).first {
+                rTag.items.append(item)
+            }
+        }
+
+        if !self.tags.isEmpty {
+            changes.insert(.tags)
+        }
 
         return item
     }

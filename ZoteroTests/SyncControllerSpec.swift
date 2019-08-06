@@ -2559,6 +2559,8 @@ fileprivate class TestFileStorage: FileStorage {
         return file.createUrl() == self.file?.createUrl()
     }
 
+    func copy(from url: URL, to file: File) throws {}
+
     func size(of file: File) -> UInt64 {
         return UInt64(self.data?.count ?? 0)
     }

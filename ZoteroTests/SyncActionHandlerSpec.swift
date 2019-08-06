@@ -94,13 +94,16 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: StoreCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
                                                                            name: "New name", parentKey: nil))
-                let titleField = SyncActionHandlerSpec.schemaController.titleField(for: itemResponse.rawType)
+                let allFields = SyncActionHandlerSpec.schemaController.fields(for: itemResponse.rawType) ?? []
                 try! coordinator.perform(request: StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
                                                                                   itemKey: "AAAAAAAA", type: nil,
                                                                                   title: "New title",
                                                                                   abstract: "New abstract",
-                                                                                  fields: [], notes: [],
-                                                                                  titleField: titleField))
+                                                                                  fields: [],
+                                                                                  notes: [],
+                                                                                  attachments: [],
+                                                                                  tags: [],
+                                                                                  allFields: allFields))
 
                 let realm = SyncActionHandlerSpec.realm
                 realm.refresh()
@@ -195,13 +198,16 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: StoreCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
                                                                            name: "New name", parentKey: nil))
-                let titleField = SyncActionHandlerSpec.schemaController.titleField(for: itemResponse.rawType)
+                let allFields = SyncActionHandlerSpec.schemaController.fields(for: itemResponse.rawType) ?? []
                 try! coordinator.perform(request: StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
                                                                                   itemKey: "AAAAAAAA", type: nil,
                                                                                   title: "New title",
                                                                                   abstract: "New abstract",
-                                                                                  fields: [], notes: [],
-                                                                                  titleField: titleField))
+                                                                                  fields: [],
+                                                                                  notes: [],
+                                                                                  attachments: [],
+                                                                                  tags: [],
+                                                                                  allFields: allFields))
 
                 let realm = SyncActionHandlerSpec.realm
                 realm.refresh()

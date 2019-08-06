@@ -16,7 +16,7 @@ protocol SchemaDataSource: class {
 
     func fields(for type: String) -> [FieldSchema]?
     func creators(for type: String) -> [CreatorSchema]?
-    func titleField(for type: String) -> String?
+    func titleKey(for type: String) -> String?
     func localized(itemType: String) -> String?
     func localized(field: String) -> String?
     func localized(creator: String) -> String?
@@ -151,7 +151,7 @@ extension SchemaController: SchemaDataSource {
         return self.itemSchemas[type]?.fields
     }
 
-    func titleField(for type: String) -> String? {
+    func titleKey(for type: String) -> String? {
         return self.fields(for: type)?.first(where: { $0.field == FieldKeys.title ||
                                                       $0.baseField == FieldKeys.title })?.field
     }

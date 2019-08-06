@@ -396,6 +396,7 @@
 		B3E47154224127AC006E3B20 /* LoginViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
 		B3E47155224127AC006E3B20 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3E47156224127AC006E3B20 /* LibrariesViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
+		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
 		B3FD6B30220D80EB008D9D74 /* CollectionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionResponse.swift; sourceTree = "<group>"; };
 		B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryResponse.swift; sourceTree = "<group>"; };
 		B3FD6B34220D814F008D9D74 /* LinksResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinksResponse.swift; sourceTree = "<group>"; };
@@ -497,6 +498,7 @@
 				B30D59662206F60500884C4A /* Info.plist */,
 				B3DD9CE92256340400DE6BAA /* licenses.plist */,
 				B39B18E7223947050019F467 /* main.swift */,
+				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -912,6 +914,14 @@
 					B30D59542206F60400884C4A = {
 						CreatedOnToolsVersion = 10.1;
 						LastSwiftMigration = 1020;
+						SystemCapabilities = {
+							com.apple.Keychain = {
+								enabled = 0;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 					B30D596A2206F60500884C4A = {
 						CreatedOnToolsVersion = 10.1;
@@ -1442,6 +1452,7 @@
 			baseConfigurationReference = B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = Zotero/Info.plist;
@@ -1462,6 +1473,7 @@
 			baseConfigurationReference = 8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = Zotero/Info.plist;
@@ -1630,6 +1642,7 @@
 			baseConfigurationReference = A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = Zotero/Info.plist;

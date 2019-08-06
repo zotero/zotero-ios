@@ -35,9 +35,9 @@ class ItemSpecialCell: UITableViewCell {
 
     func setAttachmentType(_ type: ItemDetailStore.StoreState.AttachmentType) {
         switch type {
-        case .file(_, let isLocal):
-            self.downloadIndicator.isHidden = isLocal
-            self.accessoryType = isLocal ? .disclosureIndicator : .none
+        case .file(_, let isCached):
+            self.downloadIndicator.isHidden = isCached
+            self.accessoryType = isCached ? .disclosureIndicator : .none
 
         case .url:
             self.downloadIndicator.isHidden = true

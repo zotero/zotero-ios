@@ -23,31 +23,60 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     let abstract: String?
     let fields: [ItemDetailStore.StoreState.Field]
     let notes: [ItemDetailStore.StoreState.Note]
-    let titleField: String?
+    let attachments: [ItemDetailStore.StoreState.Attachment]
+    let tags: [ItemDetailStore.StoreState.Tag]
+    let allFields: [FieldSchema]
 
     func process(in database: Realm) throws {
         let predicate = Predicates.key(self.itemKey, in: self.libraryId)
         guard let item = database.objects(RItem.self).filter(predicate).first else { return }
 
+        var fieldsDidChange = false
+
         if let type = self.type {
             item.rawType = type
             item.changedFields.insert(.type)
-        }
 
-        var fieldsDidChange = false
+            // If type changed, we need to sync all fields, since different types can have different fields
 
-        for field in self.fields {
-            guard field.changed,
-                  let itemField = item.fields.filter(Predicates.key(field.type)).first else { continue }
-            itemField.value = field.value
-            itemField.changed = true
-            fieldsDidChange = true
+            // Remove fields that don't exist in this new type
+            let fieldKeys = self.allFields.map({ $0.field })
+            let toRemove = item.fields.filter("key not in %@", fieldKeys)
+            database.delete(toRemove)
+
+            self.allFields.forEach { field in
+                let rField: RItemField
+                if let existing = item.fields.filter(Predicates.key(field.field)).first {
+                    rField = existing
+                } else {
+                    rField = RItemField()
+                    rField.key = field.field
+                    rField.item = item
+                    database.add(rField)
+                }
+
+                if let field = self.fields.first(where: { $0.key == field.field }), field.changed {
+                    rField.value = field.value
+                    rField.changed = true
+                    fieldsDidChange = true
+                }
+            }
+        } else {
+            // If type didn't change, we change just updated existing fields
+            for field in self.fields {
+                guard field.changed,
+                      let itemField = item.fields.filter(Predicates.key(field.key)).first else { continue }
+                itemField.value = field.value
+                itemField.changed = true
+                fieldsDidChange = true
+            }
         }
 
         if let title = self.title {
             item.title = title
-            if let titleField = self.titleField,
-               let field = item.fields.filter(Predicates.key(titleField)).first {
+            if let titleKey = self.allFields.first(where: { $0.field == FieldKeys.title ||
+                                                            $0.baseField == FieldKeys.title })?.field,
+               let field = item.fields.filter(Predicates.key(titleKey)).first {
                 field.value = title
                 field.changed = true
             }
@@ -64,6 +93,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         if fieldsDidChange {
             item.changedFields.insert(.fields)
         }
+
+        // TODO: - remove notes that were deleted
 
         for note in self.notes {
             guard note.changed else { continue }
@@ -95,5 +126,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 database.add(noteField)
             }
         }
+
+        // TODO: sync attachments, sync tags
     }
 }

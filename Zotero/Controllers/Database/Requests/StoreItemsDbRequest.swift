@@ -88,7 +88,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
     }
 
     private func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController) {
-        let titleField = schemaController.titleField(for: item.rawType)
+        let titleKey = schemaController.titleKey(for: item.rawType)
         let allFieldKeys = Array(data.fields.keys)
         let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
         database.delete(toRemove)
@@ -103,7 +103,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 field.item = item
                 database.add(field)
             }
-            if key == titleField || (item.rawType == FieldKeys.note && key == FieldKeys.note) {
+            if key == titleKey || (item.rawType == FieldKeys.note && key == FieldKeys.note) {
                 var title = value
                 if key == FieldKeys.note {
                     title = title.strippedHtml ?? title

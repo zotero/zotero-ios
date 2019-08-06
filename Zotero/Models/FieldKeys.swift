@@ -20,4 +20,12 @@ struct FieldKeys {
     static let md5 = "md5"
     static let mtime = "mtime"
     static let filename = "filename"
+    static let url = "url"
+
+    static var attachmentFieldKeys: [String] {
+        return [FieldKeys.title, FieldKeys.filename,
+                FieldKeys.contentType, FieldKeys.linkMode,
+                FieldKeys.md5, FieldKeys.mtime,
+                FieldKeys.url]
+    }
 }

@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import MobileCoreServices
 import UIKit
 
 import CocoaLumberjack
@@ -77,8 +78,8 @@ class ItemDetailViewController: UIViewController {
             }
         }
         if state.changes.contains(.download) {
-            self.updateDownloadStates(state.attachmentStates)
-            self.showAttachmentIfNeeded(in: state.attachmentStates)
+            self.updateDownloadStates(state.attachmentDownloadStates)
+            self.showAttachmentIfNeeded(in: state.attachmentDownloadStates)
         }
         if let error = state.error {
             // TODO: Show error
@@ -136,8 +137,12 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func addAttachment() {
-
+    private func addAttachment(from view: UIView) {
+        let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
+        let controller = UIDocumentMenuViewController(documentTypes: documentTypes, in: .import)
+        controller.delegate = self
+        controller.popoverPresentationController?.sourceView = view
+        self.present(controller, animated: true, completion: nil)
     }
 
     private func addNote() {
@@ -162,7 +167,7 @@ class ItemDetailViewController: UIViewController {
         self.present(navigationController, animated: true, completion: nil)
     }
 
-    private func showAttachmentIfNeeded(in states: [String: ItemDetailStore.StoreState.AttachmentState]) {
+    private func showAttachmentIfNeeded(in states: [String: ItemDetailStore.StoreState.AttachmentDownloadState]) {
         for data in states {
             switch data.value {
             case .result(let type, let wasDownloaded):
@@ -191,7 +196,7 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func updateDownloadStates(_ states: [String: ItemDetailStore.StoreState.AttachmentState]) {
+    private func updateDownloadStates(_ states: [String: ItemDetailStore.StoreState.AttachmentDownloadState]) {
         let sections = self.store.state.value.dataSource?.sections ?? []
         guard let attachmentSection = sections.firstIndex(of: .attachments),
               let visibleIndexPaths = self.tableView.indexPathsForVisibleRows else { return }
@@ -210,7 +215,7 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func updateDownloadState(_ state: ItemDetailStore.StoreState.AttachmentState,
+    private func updateDownloadState(_ state: ItemDetailStore.StoreState.AttachmentDownloadState,
                                      at indexPath: IndexPath) -> Bool {
         switch state {
         case .progress(let progress):
@@ -401,7 +406,7 @@ extension ItemDetailViewController: UITableViewDataSource {
                         .subscribe { [weak self] event in
                             switch event {
                             case .next(let string):
-                                self?.store.handle(action: .updateField(field.type, string))
+                                self?.store.handle(action: .updateField(field.key, string))
                             default: break
                             }
                         }
@@ -425,8 +430,9 @@ extension ItemDetailViewController: UITableViewDataSource {
         } else if let cell = cell as? ItemSpecialTitleCell {
             switch section {
             case .attachments:
-                cell.setup(with: "Attachments", showAddButton: tableView.isEditing, addAction: { [weak self] in
-                    self?.addAttachment()
+                cell.setup(with: "Attachments", showAddButton: tableView.isEditing, addAction: { [weak self, weak cell] in
+                    guard let cell = cell else { return }
+                    self?.addAttachment(from: cell.addButton)
                 })
             case .notes:
                 cell.setup(with: "Notes", showAddButton: tableView.isEditing, addAction: { [weak self] in
@@ -452,7 +458,7 @@ extension ItemDetailViewController: UITableViewDataSource {
                 attachmentType = data?.type
 
                 if let key = data?.key,
-                   let attachmentState = self.store.state.value.attachmentStates[key] {
+                   let attachmentState = self.store.state.value.attachmentDownloadStates[key] {
                     switch attachmentState {
                     case .progress(let fileProgress):
                         progress = Float(fileProgress)
@@ -523,6 +529,49 @@ extension ItemDetailViewController: UITableViewDelegate {
             }
         default: break
         }
+    }
+
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        guard editingStyle == .delete && self.store.state.value.isEditing,
+              let dataSource = self.store.state.value.dataSource else { return }
+
+        let index = indexPath.row - 1
+        switch dataSource.sections[indexPath.section] {
+        case .attachments:
+            if let attachment = dataSource.attachment(at: index) {
+                self.store.handle(action: .deleteAttachment(attachment.key))
+            }
+        case .notes:
+            if let note = dataSource.note(at: index) {
+                self.store.handle(action: .deleteNote(note.key))
+            }
+        case .tags:
+            if let tag = dataSource.tag(at: index) {
+                self.store.handle(action: .deleteTag(tag.name))
+            }
+        default: break
+        }
+    }
+}
+
+extension ItemDetailViewController: UIDocumentMenuDelegate {
+    func documentMenu(_ documentMenu: UIDocumentMenuViewController, didPickDocumentPicker documentPicker: UIDocumentPickerViewController) {
+        documentPicker.delegate = self
+        self.present(documentPicker, animated: true, completion: nil)
+    }
+
+    func documentMenuWasCancelled(_ documentMenu: UIDocumentMenuViewController) {
+        self.dismiss(animated: true, completion: nil)
+    }
+}
+
+extension ItemDetailViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        self.store.handle(action: .createAttachments(urls))
+    }
+
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        self.dismiss(animated: true, completion: nil)
     }
 }
 

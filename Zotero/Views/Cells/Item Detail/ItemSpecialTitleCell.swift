@@ -10,7 +10,7 @@ import UIKit
 
 class ItemSpecialTitleCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var addButton: UIButton!
+    @IBOutlet private(set) weak var addButton: UIButton!
 
     private var addAction: (() -> Void)?
 

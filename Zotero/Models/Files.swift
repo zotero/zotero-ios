@@ -39,6 +39,11 @@ struct Files {
                         name: "library_\(libraryId.fileName)_\(objectName)_\(key)", ext: ext)
     }
 
+    static func file(from url: URL) -> File {
+        return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],
+                        name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension.lowercased())
+    }
+
     static var dbFile: File {
         return FileData(rootPath: Files.documentsRootPath,
                         relativeComponents: [],

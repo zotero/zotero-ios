@@ -13,7 +13,7 @@ import CocoaLumberjack
 private let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
 
 extension String {
-    var mimeTypeExtension: String? {
+    var extensionFromMimeType: String? {
         guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, self as CFString, nil),
               let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
             return nil
