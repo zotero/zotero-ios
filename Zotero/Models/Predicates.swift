@@ -15,15 +15,15 @@ struct Predicates {
     }
 
     static func key(in keys: [String]) -> NSPredicate {
-        return NSPredicate(format: "key IN %@", keys)
+        return NSPredicate(format: "key in %@", keys)
     }
 
     static func key(in keys: Set<String>) -> NSPredicate {
-        return NSPredicate(format: "key IN %@", keys)
+        return NSPredicate(format: "key in %@", keys)
     }
 
     static func key(notIn keys: [String]) -> NSPredicate {
-        return NSPredicate(format: "key NOT IN %@", keys)
+        return NSPredicate(format: "not key in %@", keys)
     }
 
     static func name(_ name: String) -> NSPredicate {
@@ -31,7 +31,7 @@ struct Predicates {
     }
 
     static func name(notIn names: [String]) -> NSPredicate {
-        return NSPredicate(format: "name not in %@", names)
+        return NSPredicate(format: "not name in %@", names)
     }
 
     static func library(with identifier: LibraryIdentifier) -> NSPredicate {
