@@ -58,7 +58,7 @@ struct ItemResponse {
 
                 // Check whether schema contains this key
                 if !schemaFields.contains(where: { $0.field == object.key }) {
-                    if rawType == FieldKeys.attachment {
+                    if rawType == ItemTypes.attachment {
                         // Attachments don't have some fields that are returned by backend in schema,
                         // so we have to filter them out here manually.
                         if object.key != FieldKeys.contentType && object.key != FieldKeys.md5 &&

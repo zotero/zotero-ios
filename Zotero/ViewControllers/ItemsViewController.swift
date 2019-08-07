@@ -186,11 +186,11 @@ extension RItem: ItemCellModel {
     }
 
     var hasAttachment: Bool {
-        return self.children.filter(Predicates.items(type: FieldKeys.attachment, notSyncState: .dirty)).count > 0
+        return self.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
     }
 
     var hasNote: Bool {
-        return self.children.filter(Predicates.items(type: FieldKeys.note, notSyncState: .dirty)).count > 0
+        return self.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
     }
 
     var tagColors: [UIColor] {

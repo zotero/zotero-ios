@@ -22,6 +22,18 @@ struct Predicates {
         return NSPredicate(format: "key IN %@", keys)
     }
 
+    static func key(notIn keys: [String]) -> NSPredicate {
+        return NSPredicate(format: "key NOT IN %@", keys)
+    }
+
+    static func name(_ name: String) -> NSPredicate {
+        return NSPredicate(format: "name = %@", name)
+    }
+
+    static func name(notIn names: [String]) -> NSPredicate {
+        return NSPredicate(format: "name not in %@", names)
+    }
+
     static func library(with identifier: LibraryIdentifier) -> NSPredicate {
         switch identifier {
         case .custom(let type):
@@ -50,9 +62,8 @@ struct Predicates {
     }
 
     static func name(_ name: String, in libraryId: LibraryIdentifier) -> NSPredicate {
-        let libraryPredicate = Predicates.library(with: libraryId)
-        let namePredicate = NSPredicate(format: "name = %@", name)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [namePredicate, libraryPredicate])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.name(name),
+                                                                   Predicates.library(with: libraryId)])
     }
 
     static var changed: NSPredicate {
@@ -127,7 +138,7 @@ struct Predicates {
     static func itemsNotChangedAndNeedUpload(in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notChanged,
                                                                    Predicates.attachmentNeedsUpload,
-                                                                   Predicates.item(type: FieldKeys.attachment),
+                                                                   Predicates.item(type: ItemTypes.attachment),
                                                                    Predicates.library(with: libraryId)])
     }
 }

@@ -157,6 +157,9 @@
 		B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */; };
 		B3C6F653224A90CC001722B4 /* RGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6F652224A90CC001722B4 /* RGroup.swift */; };
 		B3C6F655224A95BF001722B4 /* ReadAllGroupsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6F654224A95BF001722B4 /* ReadAllGroupsDbRequest.swift */; };
+		B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */; };
+		B3D9CC2522FAE294009CEE36 /* CreateNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */; };
+		B3D9CC2722FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */; };
 		B3DD9CDD2256281F00DE6BAA /* Licenses.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DD9CDC2256281F00DE6BAA /* Licenses.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
 		B3E4713C2241206A006E3B20 /* CollectionPickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4713B2241206A006E3B20 /* CollectionPickerStore.swift */; };
@@ -372,6 +375,9 @@
 		B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsStore.swift; sourceTree = "<group>"; };
 		B3C6F652224A90CC001722B4 /* RGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGroup.swift; sourceTree = "<group>"; };
 		B3C6F654224A95BF001722B4 /* ReadAllGroupsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllGroupsDbRequest.swift; sourceTree = "<group>"; };
+		B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypes.swift; sourceTree = "<group>"; };
+		B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNoteDbRequest.swift; sourceTree = "<group>"; };
+		B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B3DD9CDC2256281F00DE6BAA /* Licenses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Licenses.swift; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
 		B3E4713B2241206A006E3B20 /* CollectionPickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerStore.swift; sourceTree = "<group>"; };
@@ -736,6 +742,7 @@
 				B3310C552264D06C00E45CD1 /* FieldKeys.swift */,
 				B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */,
 				B353370722CCB620005648CB /* KeyedResponse.swift */,
+				B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -799,6 +806,8 @@
 				B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */,
 				B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */,
 				B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */,
+				B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */,
+				B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1187,6 +1196,7 @@
 				B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncControllerModels+Extensions.swift in Sources */,
 				B31BD20E2224352D00FA8249 /* RCreator.swift in Sources */,
+				B3D9CC2722FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift in Sources */,
 				B353370A22CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B30F6685220CA148009E7A8F /* SyncableObject.swift in Sources */,
 				B3E4716A224127AC006E3B20 /* LibrariesViewController.swift in Sources */,
@@ -1245,6 +1255,7 @@
 				B30E6CB9225DE84B0001B93A /* ObservableRequestExtensions.swift in Sources */,
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
+				B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B3E47160224127AC006E3B20 /* RegisterViewController.swift in Sources */,
 				B3B5514F22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift in Sources */,
@@ -1262,6 +1273,7 @@
 				B3487303221DBD1500244CCC /* String+Extensions.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* Store.swift in Sources */,
 				B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */,
+				B3D9CC2522FAE294009CEE36 /* CreateNoteDbRequest.swift in Sources */,
 				B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */,
 				B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */,
 				B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */,

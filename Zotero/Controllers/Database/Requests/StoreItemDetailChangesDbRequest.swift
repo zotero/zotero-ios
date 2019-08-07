@@ -19,13 +19,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let itemKey: String
     let type: String?
-    let title: String?
-    let abstract: String?
     let fields: [ItemDetailStore.StoreState.Field]
     let notes: [ItemDetailStore.StoreState.Note]
     let attachments: [ItemDetailStore.StoreState.Attachment]
     let tags: [ItemDetailStore.StoreState.Tag]
-    let allFields: [FieldSchema]
 
     func process(in database: Realm) throws {
         let predicate = Predicates.key(self.itemKey, in: self.libraryId)
@@ -33,100 +30,121 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
         var fieldsDidChange = false
 
+        // Update item type
+
         if let type = self.type {
+            // If type changed, we need to sync all fields, since different types can have different fields
             item.rawType = type
             item.changedFields.insert(.type)
 
-            // If type changed, we need to sync all fields, since different types can have different fields
-
             // Remove fields that don't exist in this new type
-            let fieldKeys = self.allFields.map({ $0.field })
-            let toRemove = item.fields.filter("key not in %@", fieldKeys)
+            let fieldKeys = self.fields.map({ $0.key })
+            let toRemove = item.fields.filter(Predicates.key(notIn: fieldKeys))
             database.delete(toRemove)
-
-            self.allFields.forEach { field in
-                let rField: RItemField
-                if let existing = item.fields.filter(Predicates.key(field.field)).first {
-                    rField = existing
-                } else {
-                    rField = RItemField()
-                    rField.key = field.field
-                    rField.item = item
-                    database.add(rField)
-                }
-
-                if let field = self.fields.first(where: { $0.key == field.field }), field.changed {
-                    rField.value = field.value
-                    rField.changed = true
-                    fieldsDidChange = true
-                }
-            }
-        } else {
-            // If type didn't change, we change just updated existing fields
-            for field in self.fields {
-                guard field.changed,
-                      let itemField = item.fields.filter(Predicates.key(field.key)).first else { continue }
-                itemField.value = field.value
-                itemField.changed = true
-                fieldsDidChange = true
-            }
+            fieldsDidChange = !toRemove.isEmpty
         }
 
-        if let title = self.title {
-            item.title = title
-            if let titleKey = self.allFields.first(where: { $0.field == FieldKeys.title ||
-                                                            $0.baseField == FieldKeys.title })?.field,
-               let field = item.fields.filter(Predicates.key(titleKey)).first {
-                field.value = title
-                field.changed = true
-            }
-            fieldsDidChange = true
-        }
+        // Update fields
 
-        if let abstract = self.abstract,
-           let abstractField = item.fields.filter(Predicates.key(FieldKeys.abstract)).first {
-            abstractField.value = abstract
-            abstractField.changed = true
-            fieldsDidChange = true
+        for field in self.fields {
+            // Either type changed and we're updating all fields (so that we create missing fields for this new type)
+            // or type didn't change and we're updating only changed fields
+            guard self.type != nil || field.changed else { continue }
+
+            if let existing = item.fields.filter(Predicates.key(field.key)).first {
+                if field.changed {
+                    existing.value = field.value
+                    existing.changed = true
+                }
+            } else {
+                let rField = RItemField()
+                rField.key = field.key
+                rField.value = field.value
+                rField.changed = field.changed
+                rField.item = item
+                database.add(rField)
+            }
         }
 
         if fieldsDidChange {
             item.changedFields.insert(.fields)
         }
 
-        // TODO: - remove notes that were deleted
+        // Update notes
+
+        let noteKeys = self.notes.map({ $0.key })
+        let notesToRemove = item.children.filter(Predicates.item(type: ItemTypes.note))
+                                         .filter(Predicates.key(notIn: noteKeys))
+        notesToRemove.forEach { $0.deleted = true }
 
         for note in self.notes {
             guard note.changed else { continue }
 
             if let childItem = item.children.filter(Predicates.key(note.key)).first,
                let noteField = childItem.fields.filter(Predicates.key(FieldKeys.note)).first {
-                childItem.changedFields.insert(.fields)
+                guard noteField.value != note.text else { continue }
                 childItem.title = note.title
+                childItem.changedFields.insert(.fields)
                 noteField.value = note.text
                 noteField.changed = true
             } else {
-                let childItem = RItem()
-                childItem.key = KeyGenerator.newKey
-                childItem.rawType = FieldKeys.note
-                childItem.syncState = .synced
-                childItem.title = note.title
-                childItem.changedFields = [.fields, .type, .parent]
-                childItem.libraryObject = item.libraryObject
+                let childItem = try CreateNoteDbRequest(note: note).process(in: database)
                 childItem.parent = item
-                childItem.dateAdded = Date()
-                childItem.dateModified = Date()
-                database.add(childItem)
-
-                let noteField = RItemField()
-                noteField.key = FieldKeys.note
-                noteField.value = note.text
-                noteField.changed = true
-                noteField.item = childItem
-                database.add(noteField)
+                childItem.libraryObject = item.libraryObject
+                childItem.changedFields.insert(.parent)
             }
         }
 
-        // TODO: sync attachments, sync tags
+        // Update attachments
+
+        let attachmentKeys = self.attachments.map({ $0.key })
+        let attachmentsToRemove = item.children.filter(Predicates.item(type: ItemTypes.attachment))
+                                               .filter(Predicates.key(notIn: attachmentKeys))
+        attachmentsToRemove.forEach { $0.deleted = true }
+
+        for attachment in self.attachments {
+            guard attachment.changed else { continue }
+
+            if let childItem = item.children.filter(Predicates.key(attachment.key)).first,
+               let titleField = childItem.fields.filter(Predicates.key(FieldKeys.title)).first {
+                guard titleField.value != attachment.title else { continue }
+                // Only title can change for attachment, if you want to change the file you have to delete the old
+                // and create a new attachment
+                childItem.title = attachment.title
+                childItem.changedFields.insert(.fields)
+                titleField.value = attachment.title
+                titleField.changed = true
+            } else {
+                let childItem = try CreateAttachmentDbRequest(attachment: attachment).process(in: database)
+                childItem.libraryObject = item.libraryObject
+                childItem.parent = item
+                childItem.changedFields.insert(.parent)
+            }
+        }
+
+        // Update tags
+
+        var tagsDidChange = false
+
+        let tagNames = self.tags.map({ $0.name })
+        let tagsToRemove = item.tags.filter(Predicates.name(notIn: tagNames))
+        tagsToRemove.forEach { tag in
+            if let index = tag.items.index(of: item) {
+                tag.items.remove(at: index)
+            }
+            tagsDidChange = true
+        }
+
+        self.tags.forEach { tag in
+            if let rTag = database.objects(RTag.self).filter(Predicates.name(tag.name, in: self.libraryId))
+                                                     .filter("not (any items.key = %@)", self.itemKey).first {
+                rTag.items.append(item)
+                tagsDidChange = true
+            }
+        }
+
+        if tagsDidChange {
+            item.changedFields.insert(.tags)
+        }
     }
 }

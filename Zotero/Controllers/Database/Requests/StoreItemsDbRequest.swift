@@ -103,7 +103,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 field.item = item
                 database.add(field)
             }
-            if key == titleKey || (item.rawType == FieldKeys.note && key == FieldKeys.note) {
+            if key == titleKey || (item.rawType == ItemTypes.note && key == FieldKeys.note) {
                 var title = value
                 if key == FieldKeys.note {
                     title = title.strippedHtml ?? title

@@ -12,8 +12,6 @@ struct FieldKeys {
     static let title = "title"
     static let abstract = "abstractNote"
     static let note = "note"
-    // Item types
-    static let attachment = "attachment"
     // Attachment attributes
     static let linkMode = "linkMode"
     static let contentType = "contentType"

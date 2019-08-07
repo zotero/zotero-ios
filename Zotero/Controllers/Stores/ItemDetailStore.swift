@@ -118,14 +118,19 @@ class ItemDetailStore: Store {
         struct Attachment {
             let key: String
             let title: String
+            let filename: String
             let type: AttachmentType
             let libraryId: LibraryIdentifier
+            let changed: Bool
 
-            init(key: String, title: String, type: AttachmentType, libraryId: LibraryIdentifier) {
+            init(key: String, title: String, filename: String,
+                 type: AttachmentType, libraryId: LibraryIdentifier, changed: Bool) {
                 self.key = key
                 self.title = title
+                self.filename = filename
                 self.type = type
                 self.libraryId = libraryId
+                self.changed = changed
             }
 
             init?(item: RItem, fileStorage: FileStorage) {
@@ -135,7 +140,8 @@ class ItemDetailStore: Store {
                 }
 
                 let type: AttachmentType
-                let contentType = item.fields.filter("key = %@", FieldKeys.contentType).first?.value ?? ""
+                let contentType = item.fields.filter(Predicates.key(FieldKeys.contentType)).first?.value ?? ""
+                let filename = item.fields.filter(Predicates.key(FieldKeys.filename)).first?.value ?? item.title
 
                 if !contentType.isEmpty { // File attachment
                     if let ext = contentType.extensionFromMimeType,
@@ -160,16 +166,18 @@ class ItemDetailStore: Store {
                 self.libraryId = libraryId
                 self.key = item.key
                 self.title = item.title
+                self.filename = filename
                 self.type = type
+                self.changed = false
             }
 
             func changed(isCached: Bool) -> Attachment {
                 switch type {
                 case .url: return self
                 case .file(let file, _):
-                    return Attachment(key: self.key, title: self.title,
+                    return Attachment(key: self.key, title: self.title, filename: self.filename,
                                       type: .file(file: file, isCached: isCached),
-                                      libraryId: self.libraryId)
+                                      libraryId: self.libraryId, changed: self.changed)
                 }
             }
         }
@@ -211,7 +219,7 @@ class ItemDetailStore: Store {
             }
 
             init?(item: RItem) {
-                guard item.rawType == FieldKeys.note else {
+                guard item.rawType == ItemTypes.note else {
                     DDLogError("Trying to create Note from RItem which is not a note!")
                     return nil
                 }
@@ -453,20 +461,26 @@ class ItemDetailStore: Store {
 
     private func createItem(from dataSource: ItemDetailEditingDataSource,
                             libraryId: LibraryIdentifier, collectionKey: String?) throws -> RItem {
-        guard let allFields = self.schemaController.fields(for: dataSource.type) else {
-            throw ItemDetailStore.StoreError.typeNotSupported
+        // We need to collect all fields for this item type, so we add back title and abstract, which are excluded
+        // from fields in ItemDetailEditingDataSource and used separately
+        var allFields = dataSource.fields
+        if let titleKey = self.schemaController.titleKey(for: dataSource.type) {
+            allFields.append(ItemDetailStore.StoreState.Field(key: titleKey, name: "",
+                                                              value: dataSource.title,
+                                                              changed: !dataSource.title.isEmpty))
         }
-
+        if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
+            allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
+                                                              value: (dataSource.abstract ?? ""),
+                                                              changed: (dataSource.abstract != nil)))
+        }
         let request = CreateItemDbRequest(libraryId: libraryId,
                                           collectionKey: collectionKey,
                                           type: dataSource.type,
-                                          title: dataSource.title,
-                                          abstract: dataSource.abstract,
-                                          fields: dataSource.fields,
+                                          fields: allFields,
                                           notes: dataSource.notes,
                                           attachments: dataSource.attachments,
-                                          tags: dataSource.tags,
-                                          allFields: allFields)
+                                          tags: dataSource.tags)
         return try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -507,23 +521,25 @@ class ItemDetailStore: Store {
     private func updateItem(with key: String, libraryId: LibraryIdentifier,
                             from dataSource: ItemDetailEditingDataSource,
                             originalSource: ItemDetailPreviewDataSource) throws {
-        guard let allFields = self.schemaController.fields(for: dataSource.type) else {
-            throw ItemDetailStore.StoreError.typeNotSupported
-        }
-
         let type: String? = dataSource.type == originalSource.type ? nil : dataSource.type
-        let title: String? = dataSource.title == originalSource.title ? nil : dataSource.title
-        let abstract: String? = dataSource.abstract == originalSource.abstract ? nil : dataSource.abstract
+        var allFields = dataSource.fields
+        if let titleKey = self.schemaController.titleKey(for: dataSource.type) {
+            allFields.append(ItemDetailStore.StoreState.Field(key: titleKey, name: "",
+                                                              value: dataSource.title,
+                                                              changed: (dataSource.title != originalSource.title)))
+        }
+        if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
+            allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
+                                                              value: (dataSource.abstract ?? ""),
+                                                              changed: (dataSource.abstract != originalSource.abstract)))
+        }
         let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
                                                       itemKey: key,
                                                       type: type,
-                                                      title: title,
-                                                      abstract: abstract,
-                                                      fields: dataSource.fields,
+                                                      fields: allFields,
                                                       notes: dataSource.notes,
                                                       attachments: dataSource.attachments,
-                                                      tags: dataSource.tags,
-                                                      allFields: allFields)
+                                                      tags: dataSource.tags)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -786,9 +802,9 @@ fileprivate class ItemDetailEditingDataSource {
     func addAttachments(_ files: [File], libraryId: LibraryIdentifier) {
         let attachments = files.map({ file -> ItemDetailStore.StoreState.Attachment in
             let key = KeyGenerator.newKey
-            return ItemDetailStore.StoreState.Attachment(key: key, title: file.name,
+            return ItemDetailStore.StoreState.Attachment(key: key, title: file.name, filename: file.name,
                                                          type: .file(file: file, isCached: true),
-                                                         libraryId: libraryId)
+                                                         libraryId: libraryId, changed: true)
         })
         self.attachments.append(contentsOf: attachments)
         self.attachments.sort(by: { $0.title > $1.title })
@@ -940,11 +956,11 @@ fileprivate class ItemDetailPreviewDataSource {
         self.fields = fields
         self.creators = item.creators.sorted(byKeyPath: "orderId").map(ItemDetailStore.StoreState.Creator.init)
         self.attachments = item.children
-                               .filter(Predicates.items(type: FieldKeys.attachment, notSyncState: .dirty, trash: false))
+                               .filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
                                .sorted(byKeyPath: "title")
                                .compactMap({ ItemDetailStore.StoreState.Attachment(item: $0, fileStorage: fileStorage) })
         self.notes = item.children
-                         .filter(Predicates.items(type: FieldKeys.note, notSyncState: .dirty))
+                         .filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty))
                          .sorted(byKeyPath: "title")
                          .compactMap(ItemDetailStore.StoreState.Note.init)
         self.tags = item.tags.sorted(byKeyPath: "name").map(ItemDetailStore.StoreState.Tag.init)
