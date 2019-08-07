@@ -74,7 +74,10 @@ class SchemaController {
                              .do(onSuccess: { [weak self] (data, headers) in
                                  guard let `self` = self else { return }
                                  self.reloadSchema(from: data)
-                                 if let etag = headers["etag"] as? String {
+                                 // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
+                                 let lowercase = headers["etag"] as? String
+                                 let uppercase = headers["ETag"] as? String
+                                 if let etag = lowercase ?? uppercase {
                                      self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
                                  }
                                  self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
@@ -94,7 +97,7 @@ class SchemaController {
         guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
         guard let schemaData = try? Data(contentsOf: url),
-              let (etagPart, schemaPart) = self.chunks(from: schemaData, separator: "\r\n\r\n") else { return }
+              let (etagPart, schemaPart) = self.chunks(from: schemaData, separator: "\n\n") else { return }
         self.storeEtag(from: etagPart)
         self.reloadSchema(from: schemaPart)
     }
@@ -117,7 +120,7 @@ class SchemaController {
     private func etag(from data: Data) -> String? {
         guard let headers = String(data: data, encoding: .utf8) else { return nil }
 
-        for line in headers.split(separator: "\r\n") {
+        for line in headers.split(separator: "\n") {
             guard line.contains("etag") else { continue }
             let separator = ":"
             let separatorChar = separator[separator.startIndex]

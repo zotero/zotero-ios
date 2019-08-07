@@ -211,7 +211,10 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.apiClient.send(dataRequest: KeyRequest())
                              .flatMap { (response, headers) in
                                  do {
-                                     let schemaVersion = (headers["zotero-schema-version"] as? String).flatMap(Int.init) ?? 0
+                                     // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
+                                     let lowercase = headers["zotero-schema-version"] as? String
+                                     let uppercase = headers["Zotero-Schema-Version"] as? String
+                                     let schemaVersion = (lowercase ?? uppercase).flatMap(Int.init) ?? 0
                                      let schemaNeedsUpdate = schemaVersion > self.schemaController.version
                                      let json = try JSONSerialization.jsonObject(with: response,
                                                                                  options: .allowFragments)
@@ -908,6 +911,9 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     private class func lastVersion(from headers: ResponseHeaders) -> Int {
-        return (headers["last-modified-version"] as? String).flatMap(Int.init) ?? 0
+        // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
+        let lowercase = headers["last-modified-version"] as? String
+        let uppercase = headers["Last-Modified-Version"] as? String
+        return (lowercase ?? uppercase).flatMap(Int.init) ?? 0
     }
 }
