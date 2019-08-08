@@ -29,11 +29,13 @@ struct ReadItemsDbRequest: DbResponseRequest {
             predicates.append(NSPredicate(format: "ANY collections.key = %@", collectionId))
         }
         if let key = self.parentKey {
-            predicates.append(NSPredicate(format: "parent.key = %@", key))
-        } else {
-            predicates.append(NSPredicate(format: "parent = nil"))
+            if key.isEmpty {
+                predicates.append(NSPredicate(format: "parent = nil"))
+            } else {
+                predicates.append(NSPredicate(format: "parent.key = %@", key))
+            }
         }
-        predicates.append(NSPredicate(format: "trash = %li", self.trash))
+        predicates.append(NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: self.trash)))
 
         let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         return database.objects(RItem.self)

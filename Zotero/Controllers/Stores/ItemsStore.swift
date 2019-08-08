@@ -104,7 +104,7 @@ class ItemsStore: Store {
             switch self.state.value.type {
             case .all:
                 request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
-                                             collectionKey: nil, parentKey: nil, trash: false)
+                                             collectionKey: nil, parentKey: "", trash: false)
             case .trash:
                 request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
                                              collectionKey: nil, parentKey: nil, trash: true)
@@ -114,7 +114,7 @@ class ItemsStore: Store {
                                              collectionKey: nil, parentKey: nil, trash: true)
             case .collection(let key, _):
                 request = ReadItemsDbRequest(libraryId: self.state.value.libraryId,
-                                             collectionKey: key, parentKey: nil, trash: false)
+                                             collectionKey: key, parentKey: "", trash: false)
             }
 
             let items = try self.dbStorage.createCoordinator().perform(request: request)
