@@ -26,6 +26,7 @@ class AppDelegate: UIResponder {
     var window: UIWindow?
     var controllers: Controllers!
     private var store: AppStore!
+    private var didPresentInitialScreen = false
 
     // MARK: - Actions
 
@@ -41,8 +42,13 @@ class AppDelegate: UIResponder {
             self.show(viewController: controller)
 
             self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)
-            self.controllers.userControllers?.syncScheduler.requestFullSync()
+            if self.didPresentInitialScreen {
+                // request will be sent in didBecomeActive, this should be called only after login
+                self.controllers.userControllers?.syncScheduler.requestFullSync()
+            }
         }
+
+        self.didPresentInitialScreen = true
     }
 
     private func show(viewController: UIViewController?, animated: Bool = false) {
