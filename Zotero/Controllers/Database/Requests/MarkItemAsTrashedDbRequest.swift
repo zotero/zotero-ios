@@ -11,14 +11,19 @@ import Foundation
 import RealmSwift
 
 struct MarkItemtAsTrashedDbRequest: DbRequest {
-    let object: RItem
+    let key: String
+    let libraryId: LibraryIdentifier
+    let trashed: Bool
 
     var needsWrite: Bool {
         return true
     }
 
     func process(in database: Realm) throws {
-        self.object.trash = true
-        self.object.changedFields.insert(.trash)
+        guard let object = database.objects(RItem.self).filter(Predicates.key(self.key, in: self.libraryId)).first else {
+            throw DbError.objectNotFound
+        }
+        object.trash = self.trashed
+        object.changedFields.insert(.trash)
     }
 }

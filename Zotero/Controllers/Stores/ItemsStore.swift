@@ -26,6 +26,7 @@ class ItemsStore: Store {
         case load
         case trash(IndexPath)
         case delete(IndexPath)
+        case restore(IndexPath)
     }
 
     enum StoreError: Error, Equatable {
@@ -44,6 +45,15 @@ class ItemsStore: Store {
                     return key
                 default:
                     return nil
+                }
+            }
+
+            var isTrash: Bool {
+                switch self {
+                case .trash:
+                    return true
+                default:
+                    return false
                 }
             }
         }
@@ -98,6 +108,8 @@ class ItemsStore: Store {
             self.delete(at: indexPath)
         case .trash(let indexPath):
             self.trash(at: indexPath)
+        case .restore(let indexPath):
+            self.restore(at: indexPath)
         }
     }
 
@@ -155,26 +167,26 @@ class ItemsStore: Store {
     }
 
     private func delete(at indexPath: IndexPath) {
-        guard let item = self.state.value.dataSource?.items(for: indexPath.section)?[indexPath.row] else {
-            DDLogError("ItemsStore: can't find item")
-            self.updater.updateState { newState in
-                newState.error = .deletion
-            }
-            return
-        }
-
-        do {
-            try self.dbStorage.createCoordinator().perform(request: MarkObjectAsDeletedDbRequest(object: item))
-        } catch let error {
-            DDLogError("ItemsStore: can't delete object - \(error)")
-            self.updater.updateState { newState in
-                newState.error = .deletion
-            }
-        }
+        self.performAsyncDbRequestOnItem(at: indexPath) { return MarkObjectAsDeletedDbRequest<RItem>(key: $0,
+                                                                                                     libraryId: $1) }
     }
 
     private func trash(at indexPath: IndexPath) {
-        guard let item = self.state.value.dataSource?.items(for: indexPath.section)?[indexPath.row] else {
+        self.performAsyncDbRequestOnItem(at: indexPath) { return MarkItemtAsTrashedDbRequest(key: $0,
+                                                                                             libraryId: $1,
+                                                                                             trashed: true) }
+    }
+
+    private func restore(at indexPath: IndexPath) {
+        self.performAsyncDbRequestOnItem(at: indexPath) { return MarkItemtAsTrashedDbRequest(key: $0,
+                                                                                             libraryId: $1,
+                                                                                             trashed: false) }
+    }
+
+    private func performAsyncDbRequestOnItem<Request: DbRequest>(at indexPath: IndexPath,
+                                                                 createRequest: (String, LibraryIdentifier) -> Request) {
+        guard let item = self.state.value.dataSource?.items(for: indexPath.section)?[indexPath.row],
+              let libraryId = item.libraryId else {
             DDLogError("ItemsStore: can't find item")
             self.updater.updateState { newState in
                 newState.error = .deletion
@@ -182,12 +194,17 @@ class ItemsStore: Store {
             return
         }
 
-        do {
-            try self.dbStorage.createCoordinator().perform(request: MarkItemtAsTrashedDbRequest(object: item))
-        } catch let error {
-            DDLogError("ItemsStore: can't trash object - \(error)")
-            self.updater.updateState { newState in
-                newState.error = .deletion
+        let request = createRequest(item.key, libraryId)
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let `self` = self else { return }
+            do {
+                try self.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                DDLogError("ItemsStore: can't perform db request \(type(of: request)) - \(error)")
+                self.updater.updateState { newState in
+                    newState.error = .deletion
+                }
             }
         }
     }

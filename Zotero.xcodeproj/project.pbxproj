@@ -777,6 +777,7 @@
 				B346E47522CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift */,
 				B3FFDEDC228031F60009EBBE /* MarkObjectAsDeletedDbRequest.swift */,
 				B38C9688223FFB2800343F8F /* MarkObjectsAsSyncedDbRequest.swift */,
+				B36989EE22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift */,
 				B38C968D223FFB2800343F8F /* PerformDeletionsDbRequest.swift */,
 				B38C967C223FFB2700343F8F /* ReadAllCustomLibrariesDbRequest.swift */,
 				B3C6F654224A95BF001722B4 /* ReadAllGroupsDbRequest.swift */,
@@ -810,7 +811,6 @@
 				B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */,
 				B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */,
 				B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */,
-				B36989EE22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";

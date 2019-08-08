@@ -127,25 +127,24 @@ class CollectionsStore: Store {
 
     private func deleteCollection(at index: Int) {
         let data = self.state.value.collectionCellData[index]
-        self.deleteObject { coordinator -> DeletableObject in
-            let request = ReadCollectionDbRequest(libraryId: self.state.value.libraryId, key: data.key)
-            return try coordinator.perform(request: request)
+        let libraryId = self.state.value.libraryId
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.delete(object: RCollection.self, key: data.key, libraryId: libraryId)
         }
     }
 
     private func deleteSearch(at index: Int) {
         let data = self.state.value.searchCellData[index]
-        self.deleteObject { coordinator -> DeletableObject in
-            let request = ReadSearchDbRequest(libraryId: self.state.value.libraryId, key: data.key)
-            return try coordinator.perform(request: request)
+        let libraryId = self.state.value.libraryId
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.delete(object: RSearch.self, key: data.key, libraryId: libraryId)
         }
     }
 
-    private func deleteObject(readAction: (DbCoordinator) throws -> DeletableObject) {
+    private func delete<Obj: DeletableObject>(object: Obj.Type, key: String, libraryId: LibraryIdentifier) {
         do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            let object = try readAction(coordinator)
-            try coordinator.perform(request: MarkObjectAsDeletedDbRequest(object: object))
+            let request = MarkObjectAsDeletedDbRequest<Obj>(key: key, libraryId: libraryId)
+            try self.dbStorage.createCoordinator().perform(request: request)
         } catch let error {
             DDLogError("CollectionsStore: can't delete object - \(error)")
             self.updater.updateState { newState in

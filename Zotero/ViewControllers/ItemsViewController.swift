@@ -165,21 +165,25 @@ extension ItemsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
-        let title: String
-        switch self.store.state.value.type {
-        case .trash:
-            title = "Delete"
-        default:
-            title = "Trash"
-        }
+        let isTrash = self.store.state.value.type.isTrash
+        let deleteTitle = isTrash ? "Delete" : "Trash"
 
         let deleteAction = UITableViewRowAction(style: .destructive,
-                                                title: title) { [weak self, weak tableView] _, indexPath in
+                                                title: deleteTitle) { [weak self, weak tableView] _, indexPath in
             if let cell = tableView?.cellForRow(at: indexPath) {
                 self?.deleteItem(at: indexPath, cell: cell)
             }
         }
-        return [deleteAction]
+
+        if !isTrash {
+            return [deleteAction]
+        }
+
+        let restoreAction = UITableViewRowAction(style: .normal, title: "Restore") { [weak self] _, indexPath in
+            self?.store.handle(action: .restore(indexPath))
+        }
+
+        return [restoreAction, deleteAction]
     }
 }
 
