@@ -75,7 +75,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         let noteKeys = self.notes.map({ $0.key })
         let notesToRemove = item.children.filter(Predicates.item(type: ItemTypes.note))
                                          .filter(Predicates.key(notIn: noteKeys))
-        notesToRemove.forEach { $0.deleted = true }
+        notesToRemove.forEach {
+            $0.trash = true
+            $0.changedFields.insert(.trash)
+        }
 
         for note in self.notes {
             guard note.changed else { continue }
@@ -100,7 +103,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         let attachmentKeys = self.attachments.map({ $0.key })
         let attachmentsToRemove = item.children.filter(Predicates.item(type: ItemTypes.attachment))
                                                .filter(Predicates.key(notIn: attachmentKeys))
-        attachmentsToRemove.forEach { $0.deleted = true }
+        attachmentsToRemove.forEach {
+            $0.trash = true
+            $0.changedFields.insert(.trash)
+        }
 
         for attachment in self.attachments {
             guard attachment.changed else { continue }
