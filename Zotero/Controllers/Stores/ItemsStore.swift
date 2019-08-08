@@ -24,6 +24,7 @@ class ItemsStore: Store {
 
     enum StoreAction {
         case load
+        case trash(IndexPath)
         case delete(IndexPath)
     }
 
@@ -95,6 +96,8 @@ class ItemsStore: Store {
             self.loadData()
         case .delete(let indexPath):
             self.delete(at: indexPath)
+        case .trash(let indexPath):
+            self.trash(at: indexPath)
         }
     }
 
@@ -164,6 +167,25 @@ class ItemsStore: Store {
             try self.dbStorage.createCoordinator().perform(request: MarkObjectAsDeletedDbRequest(object: item))
         } catch let error {
             DDLogError("ItemsStore: can't delete object - \(error)")
+            self.updater.updateState { newState in
+                newState.error = .deletion
+            }
+        }
+    }
+
+    private func trash(at indexPath: IndexPath) {
+        guard let item = self.state.value.dataSource?.items(for: indexPath.section)?[indexPath.row] else {
+            DDLogError("ItemsStore: can't find item")
+            self.updater.updateState { newState in
+                newState.error = .deletion
+            }
+            return
+        }
+
+        do {
+            try self.dbStorage.createCoordinator().perform(request: MarkItemtAsTrashedDbRequest(object: item))
+        } catch let error {
+            DDLogError("ItemsStore: can't trash object - \(error)")
             self.updater.updateState { newState in
                 newState.error = .deletion
             }

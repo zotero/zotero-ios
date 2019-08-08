@@ -104,7 +104,13 @@ class ItemsViewController: UIViewController {
         let controller = UIAlertController(title: "Are you sure?", message: nil, preferredStyle: .actionSheet)
 
         controller.addAction(UIAlertAction(title: "Yes", style: .destructive, handler: { [weak self] _ in
-            self?.store.handle(action: .delete(indexPath))
+            guard let `self` = self else { return }
+            switch self.store.state.value.type {
+            case .trash:
+                self.store.handle(action: .delete(indexPath))
+            default:
+                self.store.handle(action: .trash(indexPath))
+            }
         }))
 
         controller.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
@@ -159,8 +165,16 @@ extension ItemsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        let title: String
+        switch self.store.state.value.type {
+        case .trash:
+            title = "Delete"
+        default:
+            title = "Trash"
+        }
+
         let deleteAction = UITableViewRowAction(style: .destructive,
-                                                title: "Delete") { [weak self, weak tableView] _, indexPath in
+                                                title: title) { [weak self, weak tableView] _, indexPath in
             if let cell = tableView?.cellForRow(at: indexPath) {
                 self?.deleteItem(at: indexPath, cell: cell)
             }
