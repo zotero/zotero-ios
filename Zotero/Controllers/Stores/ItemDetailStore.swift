@@ -960,7 +960,7 @@ fileprivate class ItemDetailPreviewDataSource {
                                .sorted(byKeyPath: "title")
                                .compactMap({ ItemDetailStore.StoreState.Attachment(item: $0, fileStorage: fileStorage) })
         self.notes = item.children
-                         .filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty))
+                         .filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                          .sorted(byKeyPath: "title")
                          .compactMap(ItemDetailStore.StoreState.Note.init)
         self.tags = item.tags.sorted(byKeyPath: "name").map(ItemDetailStore.StoreState.Tag.init)
