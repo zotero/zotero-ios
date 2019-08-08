@@ -75,7 +75,7 @@ struct Predicates {
     }
 
     static var changedOrDeleted: NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.changed, Predicates.deleted(true)])
+        return NSCompoundPredicate(orPredicateWithSubpredicates: [Predicates.changed, Predicates.deleted(true)])
     }
 
     static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
