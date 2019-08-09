@@ -74,6 +74,10 @@ struct Predicates {
         return NSPredicate(format: "rawChangedFields = 0")
     }
 
+    static var attachmentChanged: NSPredicate {
+        return NSPredicate(format: "attachmentNeedsSync = true")
+    }
+
     static var changedOrDeleted: NSPredicate {
         return NSCompoundPredicate(orPredicateWithSubpredicates: [Predicates.changed, Predicates.deleted(true)])
     }
@@ -83,6 +87,16 @@ struct Predicates {
         let libraryPredicate = Predicates.library(with: libraryId)
         let deletedPredicate = Predicates.deleted(false)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
+    }
+
+    static func itemChangesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
+        let fieldChangePredicate = Predicates.changed
+        let attachmentChangePredicate = Predicates.attachmentChanged
+        let changePredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [fieldChangePredicate, attachmentChangePredicate])
+        let libraryPredicate = Predicates.library(with: libraryId)
+        let deletedPredicate = Predicates.deleted(false)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
+
     }
 
     static func changesOrDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {

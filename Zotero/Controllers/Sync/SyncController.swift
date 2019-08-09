@@ -561,7 +561,7 @@ final class SyncController: SynchronizationController {
                 allActions.append(contentsOf: self.createDownloadActions(for: library,
                                                                          versions: libraryData.versions))
             case .onlyWrites, .automatic:
-                if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty {
+                if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty || libraryData.hasUpload {
                     switch libraryData.identifier {
                     case .group(let groupId):
                         // We need to check permissions for group
@@ -592,8 +592,12 @@ final class SyncController: SynchronizationController {
 
     private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], library: Library) -> [Action] {
         var actions: [Action] = []
-        actions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
-        actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+        if !updates.isEmpty {
+            actions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
+        }
+        if !deletions.isEmpty {
+            actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
+        }
         actions.append(.createUploadActions(library))
         return actions
     }

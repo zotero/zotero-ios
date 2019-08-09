@@ -26,7 +26,7 @@ struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
 }
 
 struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
-    typealias Response = [[String: Any]]
+    typealias Response = ([[String: Any]], Bool)
 
     let libraryId: LibraryIdentifier
 
@@ -34,11 +34,22 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
         return false
     }
 
-    func process(in database: Realm) throws -> [[String : Any]] {
-        let predicate = Predicates.changesWithoutDeletions(in: self.libraryId)
-        return database.objects(RItem.self).filter(predicate)
-                                           .sorted(byKeyPath: "parent.rawChangedFields", ascending: false) // parents first, children later
-                                           .compactMap({ $0.updateParameters })
+    func process(in database: Realm) throws -> ([[String: Any]], Bool) {
+        let predicate = Predicates.itemChangesWithoutDeletions(in: self.libraryId)
+        let items =  database.objects(RItem.self).filter(predicate)
+                                                 .sorted(byKeyPath: "parent.rawChangedFields", ascending: false) // parents first, children later
+
+        var hasUpload = false
+        var parameters: [[String: Any]] = []
+        items.forEach { item in
+            if item.attachmentNeedsSync {
+                hasUpload = true
+            }
+            if let itemParams = item.updateParameters {
+                parameters.append(itemParams)
+            }
+        }
+        return (parameters, hasUpload)
     }
 }
 

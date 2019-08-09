@@ -30,6 +30,7 @@ struct LibraryData {
     let canEditFiles: Bool
     let updates: [SyncController.WriteBatch]
     let deletions: [SyncController.DeleteBatch]
+    let hasUpload: Bool
 
     private static func updates(from chunkedParams: [SyncController.Object: [[[String: Any]]]],
                                 version: Int,
@@ -72,7 +73,8 @@ struct LibraryData {
 
     init(object: RCustomLibrary, userId: Int,
          chunkedUpdateParams: [SyncController.Object: [[[String: Any]]]],
-         chunkedDeletionKeys: [SyncController.Object: [[String]]]) {
+         chunkedDeletionKeys: [SyncController.Object: [[String]]],
+         hasUpload: Bool) {
         let type = object.type
         let versions = Versions(versions: object.versions)
         let maxVersion = versions.max
@@ -82,6 +84,7 @@ struct LibraryData {
         self.versions = versions
         self.canEditMetadata = true
         self.canEditFiles = true
+        self.hasUpload = hasUpload
         self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion,
                                            library: .user(userId, type))
         self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion,
@@ -90,7 +93,8 @@ struct LibraryData {
 
     init(object: RGroup,
          chunkedUpdateParams: [SyncController.Object: [[[String: Any]]]],
-         chunkedDeletionKeys: [SyncController.Object: [[String]]]) {
+         chunkedDeletionKeys: [SyncController.Object: [[String]]],
+         hasUpload: Bool) {
         let versions = Versions(versions: object.versions)
         let maxVersion = versions.max
 
@@ -99,6 +103,7 @@ struct LibraryData {
         self.versions = versions
         self.canEditMetadata = object.canEditMetadata
         self.canEditFiles = object.canEditFiles
+        self.hasUpload = hasUpload
         self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion,
                                            library: .group(object.identifier))
         self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion,
@@ -116,6 +121,7 @@ struct LibraryData {
         self.canEditFiles = true
         self.updates = updates
         self.deletions = deletions
+        self.hasUpload = false
     }
 }
 

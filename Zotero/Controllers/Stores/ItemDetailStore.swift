@@ -428,6 +428,7 @@ class ItemDetailStore: Store {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let `self` = self else { return }
             do {
+                self.copyAttachmentFilesIfNeeded(for: dataSource.attachments)
                 let newItem = try self.createItem(from: dataSource, libraryId: libraryId, collectionKey: collectionKey)
                 let newDataSource = try ItemDetailPreviewDataSource(item: newItem,
                                                                     schemaController: self.schemaController,
@@ -505,6 +506,7 @@ class ItemDetailStore: Store {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let `self` = self else { return }
             do {
+                self.copyAttachmentFilesIfNeeded(for: editingDataSource.attachments)
                 try self.updateItem(with: itemKey, libraryId: libraryId,
                                     from: editingDataSource, originalSource: previewDataSource)
                 previewDataSource.merge(with: editingDataSource)
@@ -541,6 +543,27 @@ class ItemDetailStore: Store {
                                                       attachments: dataSource.attachments,
                                                       tags: dataSource.tags)
         try self.dbStorage.createCoordinator().perform(request: request)
+    }
+
+    /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)
+    /// - parameter attachments: Attachments which will be copied if needed
+    private func copyAttachmentFilesIfNeeded(for attachments: [StoreState.Attachment]) {
+        for attachment in attachments {
+            guard attachment.changed else { continue }
+
+            switch attachment.type {
+            case .url: continue
+            case .file(let originalFile, _):
+                let newFile = Files.objectFile(for: .item, libraryId: attachment.libraryId,
+                                               key: attachment.key, ext: originalFile.ext)
+                // Make sure that the file was not already moved to our internal location before
+                guard originalFile.createUrl() != newFile.createUrl() else { continue }
+
+                // We can just try to copy the file here, if it doesn't work the user will be notified during sync  
+                // process and can try to remove/re-add the attachment
+                try? self.fileStorage.copy(from: originalFile, to: newFile)
+            }
+        }
     }
 
     private func setEditing(_ editing: Bool, previewDataSource: ItemDetailPreviewDataSource,

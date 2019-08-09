@@ -24,7 +24,7 @@ protocol FileStorage {
     func read(_ file: File) throws -> Data
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws
     func remove(_ file: File) throws
-    func copy(from url: URL, to file: File) throws
+    func copy(from url: File, to file: File) throws
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
     func createDictionaries(for file: File) throws
@@ -47,8 +47,8 @@ class FileStorageController: FileStorage {
         try self.fileManager.removeItem(at: file.createUrl())
     }
 
-    func copy(from url: URL, to file: File) throws {
-        try self.fileManager.copyItem(at: url, to: file.createUrl())
+    func copy(from fromFile: File, to toFile: File) throws {
+        try self.fileManager.copyItem(at: fromFile.createUrl(), to: toFile.createUrl())
     }
 
     func has(_ file: File) -> Bool {

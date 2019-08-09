@@ -29,9 +29,11 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         }
         let customData = try customLibraries.map({ library -> LibraryData in
             let libraryId = LibraryIdentifier.custom(library.type)
+            let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
             return LibraryData(object: library, userId: userId,
-                               chunkedUpdateParams: try self.updates(for: libraryId, database: database),
-                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database))
+                               chunkedUpdateParams: updates,
+                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database),
+                               hasUpload: hasUpload)
         })
         allLibraryData.append(contentsOf: customData)
 
@@ -41,9 +43,11 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         }
         let groupData = try groups.map({ group -> LibraryData in
             let libraryId = LibraryIdentifier.group(group.identifier)
+            let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
             return LibraryData(object: group,
-                               chunkedUpdateParams: try self.updates(for: libraryId, database: database),
-                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database))
+                               chunkedUpdateParams: updates,
+                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database),
+                               hasUpload: hasUpload)
         })
         allLibraryData.append(contentsOf: groupData)
 
@@ -71,10 +75,12 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
                 .item: try ReadDeletedObjectsDbRequest<RItem>(libraryId: libraryId).process(in: database).map({ $0.key }).chunked(into: chunkSize)]
     }
 
-    private func updates(for libraryId: LibraryIdentifier, database: Realm) throws -> [SyncController.Object: [[[String: Any]]]] {
+    private func updates(for libraryId: LibraryIdentifier, database: Realm) throws -> ([SyncController.Object: [[[String: Any]]]], Bool) {
         let chunkSize = SyncController.WriteBatch.maxCount
-        return [.collection: try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
-                .search: try ReadUpdatedSearchUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
-                .item: try ReadUpdatedItemUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize)]
+        let (itemParams, hasUpload) = try ReadUpdatedItemUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
+        return ([.collection: try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
+                 .search: try ReadUpdatedSearchUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
+                 .item: itemParams.chunked(into: chunkSize)],
+                hasUpload)
     }
 }
