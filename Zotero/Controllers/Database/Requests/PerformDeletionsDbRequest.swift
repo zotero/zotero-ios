@@ -23,13 +23,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         self.deleteCollections(with: self.response.collections, database: database)
         self.deleteSearches(with: self.response.searches, database: database)
         let conflicts = self.deleteItems(with: self.response.items, database: database)
-
-        let libraryPredicate = Predicates.library(with: self.libraryId)
-        let tagNamePredicate = NSPredicate(format: "name IN %@", self.response.tags)
-        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [tagNamePredicate, libraryPredicate])
-        let tags = database.objects(RTag.self).filter(tagPredicate)
-        // TODO: - Check tags changes
-        database.delete(tags)
+        self.deleteTags(with: self.response.tags, database: database)
 
         switch self.libraryId {
         case .custom(let type):
@@ -103,5 +97,22 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                 database.delete(object)
             }
         }
+    }
+
+    private func deleteTags(with names: [String], database: Realm) {
+        let libraryPredicate = Predicates.library(with: self.libraryId)
+        let tagNamePredicate = NSPredicate(format: "name IN %@", names)
+        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [tagNamePredicate, libraryPredicate])
+        let tags = database.objects(RTag.self).filter(tagPredicate)
+        for object in tags {
+            if object.rawChangedFields > 0 {
+                // If remotely deleted tag is changed locally, we want to keep the tag, so we mark that
+                // this tag is new and it will be reinserted by sync
+                object.changedFields = .all
+            } else {
+                database.delete(object)
+            }
+        }
+        database.delete(tags)
     }
 }
