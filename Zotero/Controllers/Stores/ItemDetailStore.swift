@@ -204,18 +204,11 @@ class ItemDetailStore: Store {
             let text: String
             let changed: Bool
 
-            init(key: String, title: String, text: String, changed: Bool) {
+            init(key: String, text: String, changed: Bool = true) {
                 self.key = key
-                self.title = title
-                self.text = text
-                self.changed = changed
-            }
-
-            init(text: String) {
-                self.key = KeyGenerator.newKey
                 self.title = text.strippedHtml ?? text
                 self.text = text
-                self.changed = true
+                self.changed = changed
             }
 
             init?(item: RItem) {
@@ -228,11 +221,6 @@ class ItemDetailStore: Store {
                 self.title = item.title
                 self.text = item.fields.filter(Predicates.key(FieldKeys.note)).first?.value ?? ""
                 self.changed = false
-            }
-
-            func changed(text: String) -> Note {
-                let title = text.strippedHtml ?? text
-                return Note(key: self.key, title: title, text: text, changed: true)
             }
         }
 
@@ -829,15 +817,16 @@ fileprivate class ItemDetailEditingDataSource {
                                                          type: .file(file: file, isCached: true),
                                                          libraryId: libraryId, changed: true)
         })
-        self.attachments.append(contentsOf: attachments)
-        self.attachments.sort(by: { $0.title > $1.title })
+        attachments.forEach { attachment in
+            let index = self.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+            self.attachments.insert(attachment, at: index)
+        }
     }
 
     func addNote(with text: String) {
-        // TODO: - optimise insertion
-        let note = ItemDetailStore.StoreState.Note(text: text)
-        self.notes.append(note)
-        self.notes.sort(by: { $0.title > $1.title })
+        let note = ItemDetailStore.StoreState.Note(key: KeyGenerator.newKey, text: text)
+        let index = self.notes.index(of: note, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+        self.notes.insert(note, at: index)
     }
 
     func deleteAttachment(with key: String) {
@@ -853,11 +842,12 @@ fileprivate class ItemDetailEditingDataSource {
     }
 
     func updateNote(with key: String, to text: String) {
-        // TODO: - optimise sorting - remove original note, edit, place note into correct position
-        guard let index = self.notes.firstIndex(where: { $0.key == key }) else { return }
-        let newNote = self.notes[index].changed(text: text)
-        self.notes[index] = newNote
-        self.notes.sort(by: { $0.title > $1.title })
+        guard let oldIndex = self.notes.firstIndex(where: { $0.key == key }) else { return }
+        self.notes.remove(at: oldIndex)
+
+        let note = ItemDetailStore.StoreState.Note(key: key, text: text)
+        let index = self.notes.index(of: note, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+        self.notes.insert(note, at: index)
     }
 
     func updateField(_ key: String, to value: String) {
