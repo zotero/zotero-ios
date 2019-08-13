@@ -113,13 +113,13 @@ class CollectionEditorViewController: UIViewController {
                    .disposed(by: self.disposeBag)
     }
 
-    private func delete() {
+    private func delete(all: Bool) {
         guard let section = self.store.state.value.sections.firstIndex(of: .actions) else { return }
         let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: section))
 
         let controller = UIAlertController(title: "Are you sure?", message: nil, preferredStyle: .actionSheet)
         controller.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
-            self?.store.handle(action: .delete)
+            self?.store.handle(action: (all ? .deleteCollectionAndItems : .deleteCollection))
         }))
         controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
 
@@ -184,7 +184,12 @@ extension CollectionEditorViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 1
+        switch self.store.state.value.sections[section] {
+        case .actions:
+            return self.store.state.value.actions.count
+        case .name, .parent:
+            return 1
+        }
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -207,7 +212,12 @@ extension CollectionEditorViewController: UITableViewDataSource {
                 self?.store.handle(action: .changeName(newName))
             }
         } else {
-            cell.textLabel?.text = "Delete Collection"
+            switch self.store.state.value.actions[indexPath.row] {
+            case .deleteCollection:
+                cell.textLabel?.text = "Delete Collection"
+            case .deleteCollectionAndItems:
+                cell.textLabel?.text = "Delete Collection and Items"
+            }
             cell.textLabel?.textColor = .red
             cell.textLabel?.textAlignment = .center
         }
@@ -225,8 +235,11 @@ extension CollectionEditorViewController: UITableViewDelegate {
         case .parent:
             self.showParentPicker()
         case .actions:
-            if indexPath.row == 0 {
-                self.delete()
+            switch self.store.state.value.actions[indexPath.row] {
+            case .deleteCollection:
+                self.delete(all: false)
+            case .deleteCollectionAndItems:
+                self.delete(all: true)
             }
         default: break
         }

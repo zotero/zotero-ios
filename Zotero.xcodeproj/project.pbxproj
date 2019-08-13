@@ -185,6 +185,7 @@
 		B3E47168224127AC006E3B20 /* LoginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E47154224127AC006E3B20 /* LoginViewController.xib */; };
 		B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47155224127AC006E3B20 /* MainViewController.swift */; };
 		B3E4716A224127AC006E3B20 /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47156224127AC006E3B20 /* LibrariesViewController.swift */; };
+		B3EAB8DE23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */; };
 		B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B30220D80EB008D9D74 /* CollectionResponse.swift */; };
 		B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */; };
 		B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B34220D814F008D9D74 /* LinksResponse.swift */; };
@@ -404,6 +405,7 @@
 		B3E47154224127AC006E3B20 /* LoginViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
 		B3E47155224127AC006E3B20 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3E47156224127AC006E3B20 /* LibrariesViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
+		B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkCollectionAndItemsAsDeletedDbRequest.swift; sourceTree = "<group>"; };
 		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
 		B3FD6B30220D80EB008D9D74 /* CollectionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionResponse.swift; sourceTree = "<group>"; };
 		B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryResponse.swift; sourceTree = "<group>"; };
@@ -773,6 +775,7 @@
 				B38C968E223FFB2800343F8F /* InitializeCustomLibrariesDbRequest.swift */,
 				B346E47322CB5F0C00256AC2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
 				B3B5514E22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift */,
+				B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */,
 				B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */,
 				B346E47522CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift */,
 				B3FFDEDC228031F60009EBBE /* MarkObjectAsDeletedDbRequest.swift */,
@@ -1210,6 +1213,7 @@
 				B3E47157224127AC006E3B20 /* ProgressNavigationViewController.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
 				B3E4715D224127AC006E3B20 /* OnboardingViewController.swift in Sources */,
+				B3EAB8DE23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B3E47162224127AC006E3B20 /* CollectionsViewController.swift in Sources */,
 				B38C9673223FDC0000343F8F /* CollectionEditStore.swift in Sources */,
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,

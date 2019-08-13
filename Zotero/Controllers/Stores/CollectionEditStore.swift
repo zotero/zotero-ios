@@ -18,7 +18,8 @@ class CollectionEditStore: Store {
     enum StoreAction {
         case changeName(String)
         case changeParent(CollectionCellData)
-        case delete
+        case deleteCollection
+        case deleteCollectionAndItems
         case save
     }
 
@@ -43,6 +44,10 @@ class CollectionEditStore: Store {
             case name, parent, actions
         }
 
+        enum Action {
+            case deleteCollection, deleteCollectionAndItems
+        }
+
         struct Parent: Equatable {
             let key: String
             let name: String
@@ -60,6 +65,7 @@ class CollectionEditStore: Store {
 
         fileprivate let isEditing: Bool
         let sections: [Section]
+        let actions: [Action]
         let libraryId: LibraryIdentifier
         let libraryName: String
         let key: String
@@ -73,6 +79,7 @@ class CollectionEditStore: Store {
         init(libraryId: LibraryIdentifier, libraryName: String) {
             self.isEditing = false
             self.sections = [.name, .parent]
+            self.actions = []
             self.key = KeyGenerator.newKey
             self.name = ""
             self.parent = nil
@@ -86,6 +93,7 @@ class CollectionEditStore: Store {
             guard let libraryObject = collection.libraryObject else { throw StoreError.collectionNotStoredInLibrary }
 
             self.sections = [.name, .parent, .actions]
+            self.actions = [.deleteCollection, .deleteCollectionAndItems]
             self.isEditing = true
             self.libraryId = libraryObject.identifier
             switch libraryObject {
@@ -134,7 +142,13 @@ class CollectionEditStore: Store {
                                                                      name: state.name, parentKey: state.parent?.key))
             }
 
-        case .delete: break // TODO: - Add deletion
+        case .deleteCollection:
+            self.perform(storeRequest: MarkObjectAsDeletedDbRequest<RCollection>(key: self.state.value.key,
+                                                                                 libraryId: self.state.value.libraryId))
+
+        case .deleteCollectionAndItems:
+            self.perform(storeRequest: MarkCollectionAndItemsAsDeletedDbRequest(key: self.state.value.key,
+                                                                                libraryId: self.state.value.libraryId))
 
         case .changeName(let name):
             self.updater.updateState { state in
