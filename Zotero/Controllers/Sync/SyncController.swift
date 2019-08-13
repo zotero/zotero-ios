@@ -47,7 +47,7 @@ final class SyncController: SynchronizationController {
         case retry                  // A retry after previous broken sync.
     }
 
-    enum LibrarySyncType: Equatable {
+    enum LibrarySyncType {
         case all                              // Syncs all libraries
         case specific([LibraryIdentifier])    // Syncs only specific libraries
     }
@@ -57,7 +57,7 @@ final class SyncController: SynchronizationController {
         case group(Int)
     }
 
-    enum Object: Equatable, CaseIterable {
+    enum Object: CaseIterable {
         case group, collection, search, item, trash, tag
     }
 
@@ -81,7 +81,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    struct AttachmentUpload: Equatable {
+    struct AttachmentUpload {
         let library: Library
         let key: String
         let filename: String
@@ -123,7 +123,7 @@ final class SyncController: SynchronizationController {
         let groups: [Int: Permissions]
     }
 
-    enum Action: Equatable {
+    enum Action {
         case loadKeyPermissions                                // Checks current key for access permissions
         case updateSchema                                      // Updates currently cached schema
         case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
@@ -357,15 +357,15 @@ final class SyncController: SynchronizationController {
 
     private func removeAllActions(for library: Library) {
         while !self.queue.isEmpty {
-            guard self.queue[0].library == library else { break }
+            guard self.queue.first?.library == library else { break }
             self.queue.removeFirst()
         }
     }
 
     private func removeAllDownloadActions(for library: Library) {
         while !self.queue.isEmpty {
-            guard self.queue[0].library == library else { break }
-            switch self.queue[0] {
+            guard let action = self.queue.first, action.library == library else { break }
+            switch action {
             case .resolveConflict, .submitDeleteBatch, .submitWriteBatch:
                 continue
             default: break

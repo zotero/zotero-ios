@@ -13,7 +13,7 @@ import CocoaLumberjack
 import RxAlamofire
 import RxSwift
 
-enum SyncActionHandlerError: Error, Equatable {
+enum SyncActionHandlerError: Error {
     case expired                    // Used when we can't get a `self` from `weak self` in a closure, when object was deallocated
     case versionMismatch            // Used when versions from previous request and current request response don't match
     case objectConflict             // Used when there are 412 returned for individual objects when writing data to remote
