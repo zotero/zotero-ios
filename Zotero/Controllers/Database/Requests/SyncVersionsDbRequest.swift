@@ -70,7 +70,6 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> ([Int], [(Int, String)]) {
         let allKeys = Array(self.versions.keys)
 
-        // TODO: - Just ask whether we should remove or keep the group
         let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
         let toRemoveIds = Array(toRemove.map({ ($0.identifier, $0.name) }))
 
