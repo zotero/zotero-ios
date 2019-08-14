@@ -55,13 +55,15 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         var conflicts: [String] = []
 
         for object in objects {
-            if object.isChanged {
+            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
+            // locally, even if the user changed it
+//            if object.isChanged {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
-                conflicts.append(object.key)
-            } else {
+//                conflicts.append(object.key)
+//            } else {
                 object.removeChildren(in: database)
                 database.delete(object)
-            }
+//            }
         }
 
         return conflicts
@@ -72,14 +74,16 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         let objects = database.objects(RCollection.self).filter(predicate)
 
         for object in objects {
-            if object.isChanged {
+            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
+            // locally, even if the user changed it
+//            if object.isChanged {
                 // If remotely deleted collection is changed locally, we want to keep the collection, so we mark that
                 // this collection is new and it will be reinserted by sync
-                object.changedFields = .all
-            } else {
+//                object.changedFields = .all
+//            } else {
                 object.removeChildren(in: database)
                 database.delete(object)
-            }
+//            }
         }
     }
 
@@ -88,14 +92,16 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         let objects = database.objects(RSearch.self).filter(predicate)
 
         for object in objects {
-            if object.isChanged {
+            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
+            // locally, even if the user changed it
+//            if object.isChanged {
                 // If remotely deleted search is changed locally, we want to keep the search, so we mark that
                 // this search is new and it will be reinserted by sync
-                object.changedFields = .all
-            } else {
+//                object.changedFields = .all
+//            } else {
                 object.removeChildren(in: database)
                 database.delete(object)
-            }
+//            }
         }
     }
 
@@ -105,13 +111,15 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [tagNamePredicate, libraryPredicate])
         let tags = database.objects(RTag.self).filter(tagPredicate)
         for object in tags {
-            if object.rawChangedFields > 0 {
+            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
+            // locally, even if the user changed it
+//            if object.rawChangedFields > 0 {
                 // If remotely deleted tag is changed locally, we want to keep the tag, so we mark that
                 // this tag is new and it will be reinserted by sync
-                object.changedFields = .all
-            } else {
+//                object.changedFields = .all
+//            } else {
                 database.delete(object)
-            }
+//            }
         }
         database.delete(tags)
     }

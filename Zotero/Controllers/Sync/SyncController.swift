@@ -769,21 +769,26 @@ final class SyncController: SynchronizationController {
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
 
-            let conflicts = itemConflicts.map({ conflict -> Action in
-                switch conflict {
-                case .itemDeleted(let response):
-                    return .resolveConflict(response.key, library)
-                case .itemChanged(let response):
-                    return .resolveConflict(response.key, library)
-                }
-            })
+            // BETA: - no conflicts are created in beta, we prefer remote over everything local, so the itemConflicts
+            // should be always empty now, but let's comment it just to be sure we don't unnecessarily create conflicts
+            let conflicts: [Action] = []
+//            let conflicts = itemConflicts.map({ conflict -> Action in
+//                switch conflict {
+//                case .itemDeleted(let response):
+//                    return .resolveConflict(response.key, library)
+//                case .itemChanged(let response):
+//                    return .resolveConflict(response.key, library)
+//                }
+//            })
             let allStringKeys = (allKeys as? [String]) ?? []
             let failedKeys = allStringKeys.filter({ !ids.contains($0) })
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 guard let `self` = self else { return }
                 self.progressHandler.reportBatch(for: object, count: allKeys.count)
-                self.queue.insert(contentsOf: conflicts, at: 0)
+                if !conflicts.isEmpty {
+                    self.queue.insert(contentsOf: conflicts, at: 0)
+                }
                 self.nonFatalErrors.append(contentsOf: parseErrors)
                 if failedKeys.isEmpty {
                     self.processNextAction()
@@ -845,10 +850,12 @@ final class SyncController: SynchronizationController {
         case .success(let conflicts):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 guard let `self` = self else { return }
-                if !conflicts.isEmpty {
-                    let actions: [Action] = conflicts.map({ .resolveConflict($0, library) })
-                    self.queue.insert(contentsOf: actions, at: 0)
-                }
+                // BETA: - no conflicts are created in beta, we prefer remote over everything local, so the conflicts
+                // should be always empty now, but let's comment it just to be sure we don't unnecessarily create conflicts
+//                if !conflicts.isEmpty {
+//                    let actions: [Action] = conflicts.map({ .resolveConflict($0, library) })
+//                    self.queue.insert(contentsOf: actions, at: 0)
+//                }
                 self.processNextAction()
             }
 

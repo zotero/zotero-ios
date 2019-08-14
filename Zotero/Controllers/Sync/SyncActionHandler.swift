@@ -384,9 +384,10 @@ extension SyncActionHandlerController: SyncActionHandler {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualItemJsonObjects(from: jsonObject, keys: parsedKeys, libraryId: library.libraryId)
 
+            // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
             let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: items,
                                                                                  schemaController: self.schemaController,
-                                                                                 preferRemoteData: false))
+                                                                                 preferRemoteData: true))
 
             return (parsedKeys, parseErrors, conflicts)
         case .search:

@@ -39,6 +39,8 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.syncState = .synced
         collection.syncRetries = 0
         collection.lastSyncDate = Date(timeIntervalSince1970: 0)
+
+        // No CR for collections, if it was changed or deleted locally, just restore it
         if collection.deleted {
             collection.items.forEach { item in
                 if item.deleted {
@@ -46,7 +48,8 @@ struct StoreCollectionsDbRequest: DbRequest {
                 }
             }
         }
-        collection.deleted = false // no CR for collections, if it was deleted locally, just restore it
+        collection.deleted = false
+        collection.resetChanges()
 
         try self.syncLibrary(identifier: libraryId, name: data.library.name, collection: collection, database: database)
         self.syncParent(libraryId: libraryId, data: data.data, collection: collection, database: database)
