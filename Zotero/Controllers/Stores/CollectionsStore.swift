@@ -49,6 +49,8 @@ class CollectionsStore: Store {
         let title: String
         let allItemsCellData: [CollectionCellData]
         let sections: [Section]
+        let metadataEditable: Bool
+        let filesEditable: Bool
 
         fileprivate(set) var collectionCellData: [CollectionCellData]
         fileprivate(set) var searchCellData: [CollectionCellData]
@@ -62,7 +64,7 @@ class CollectionsStore: Store {
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
 
-        init(libraryId: LibraryIdentifier, title: String) {
+        init(libraryId: LibraryIdentifier, title: String, metadataEditable: Bool, filesEditable: Bool) {
             self.libraryId = libraryId
             self.title = title
             self.collectionCellData = []
@@ -77,6 +79,8 @@ class CollectionsStore: Store {
             customCellData.append(CollectionCellData(custom: .trash))
             self.customCellData = customCellData
             self.sections = [.allItems, .collections, .searches, .custom]
+            self.metadataEditable = metadataEditable
+            self.filesEditable = filesEditable
         }
     }
 

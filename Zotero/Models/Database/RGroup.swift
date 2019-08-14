@@ -23,6 +23,8 @@ class RGroup: Object {
     @objc dynamic var rawType: String = ""
     @objc dynamic var canEditMetadata: Bool = false
     @objc dynamic var canEditFiles: Bool = false
+    /// Flag that indicates that this group is kept only locally on this device, the group was either removed remotely
+    // or the user was removed from the group, but the user chose to keep it
     @objc dynamic var isLocalOnly: Bool = false
     @objc dynamic var version: Int = 0
     @objc dynamic var orderId: Int = 0

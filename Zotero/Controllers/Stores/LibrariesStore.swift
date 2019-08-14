@@ -15,16 +15,22 @@ import RxSwift
 struct LibraryCellData {
     let identifier: LibraryIdentifier
     let name: String
+    let metadataEditable: Bool
+    let filesEditable: Bool
 
     init(object: RGroup) {
         self.identifier = .group(object.identifier)
         self.name = object.name
+        self.metadataEditable = object.canEditMetadata
+        self.filesEditable = object.canEditFiles
     }
 
     init(object: RCustomLibrary) {
         let type = object.type
         self.identifier = .custom(type)
         self.name = type.libraryName
+        self.metadataEditable = true
+        self.filesEditable = true
     }
 }
 

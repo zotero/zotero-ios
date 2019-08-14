@@ -305,6 +305,8 @@ class ItemDetailViewController: UIViewController {
     }
 
     private func setupNavigationBar(forEditing editing: Bool) {
+        guard self.store.state.value.metadataEditable else { return }
+
         var buttons: [UIBarButtonItem] = []
 
         switch self.store.state.value.type {
@@ -430,7 +432,8 @@ extension ItemDetailViewController: UITableViewDataSource {
         } else if let cell = cell as? ItemSpecialTitleCell {
             switch section {
             case .attachments:
-                cell.setup(with: "Attachments", showAddButton: tableView.isEditing, addAction: { [weak self, weak cell] in
+                let editable = self.store.state.value.filesEditable && tableView.isEditing
+                cell.setup(with: "Attachments", showAddButton: editable, addAction: { [weak self, weak cell] in
                     guard let cell = cell else { return }
                     self?.addAttachment(from: cell.addButton)
                 })
@@ -491,17 +494,31 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
-        if !tableView.isEditing {
-            return .none
-        }
-
-        guard let dataSource = self.store.state.value.dataSource else { return .none }
+        guard tableView.isEditing,
+              let dataSource = self.store.state.value.dataSource else { return .none }
 
         switch dataSource.sections[indexPath.section] {
         case .title, .fields, .abstract, .creators:
             return .none
-        case .attachments, .tags, .related, .notes:
+        case .attachments:
+            if !self.store.state.value.filesEditable {
+                return .none
+            }
             return indexPath.row == 0 ? .none : .delete
+        case .tags, .related, .notes:
+            return indexPath.row == 0 ? .none : .delete
+        }
+    }
+
+    func tableView(_ tableView: UITableView, shouldIndentWhileEditingRowAt indexPath: IndexPath) -> Bool {
+        guard tableView.isEditing,
+              let dataSource = self.store.state.value.dataSource else { return false }
+
+        switch dataSource.sections[indexPath.section] {
+        case .attachments:
+            return self.store.state.value.filesEditable
+        default:
+            return true
         }
     }
 }

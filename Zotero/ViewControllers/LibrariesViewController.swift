@@ -55,7 +55,7 @@ class LibrariesViewController: UIViewController, ProgressToolbarController {
         super.viewWillAppear(animated)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.navigationDelegate?.showAllItems(for: .custom(.myLibrary))
+            self.navigationDelegate?.showAllItems(for: .custom(.myLibrary), metadataEditable: true, filesEditable: true)
         }
     }
 
@@ -134,9 +134,13 @@ extension LibrariesViewController: UITableViewDelegate {
             data = self.store.state.value.groupLibraries[indexPath.row]
         }
 
-        self.navigationDelegate?.showCollections(for: data.identifier, libraryName: data.name)
+        self.navigationDelegate?.showCollections(for: data.identifier, libraryName: data.name,
+                                                 metadataEditable: data.metadataEditable,
+                                                 filesEditable: data.filesEditable)
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.navigationDelegate?.showAllItems(for: data.identifier)
+            self.navigationDelegate?.showAllItems(for: data.identifier,
+                                                  metadataEditable: data.metadataEditable,
+                                                  filesEditable: data.filesEditable)
         }
     }
 }

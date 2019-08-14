@@ -61,13 +61,15 @@ class ItemsStore: Store {
         let libraryId: LibraryIdentifier
         let type: ItemType
         let title: String
+        let metadataEditable: Bool
+        let filesEditable: Bool
 
         fileprivate(set) var dataSource: ItemsDataSource?
         fileprivate(set) var error: StoreError?
         fileprivate var version: Int
         fileprivate var itemsToken: NotificationToken?
 
-        init(libraryId: LibraryIdentifier, type: ItemType) {
+        init(libraryId: LibraryIdentifier, type: ItemType, metadataEditable: Bool, filesEditable: Bool) {
             self.libraryId = libraryId
             self.type = type
             switch type {
@@ -81,6 +83,8 @@ class ItemsStore: Store {
                 self.title = "My Publications"
             }
             self.version = 0
+            self.metadataEditable = metadataEditable
+            self.filesEditable = filesEditable
         }
     }
 

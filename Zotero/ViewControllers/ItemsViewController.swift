@@ -62,7 +62,10 @@ class ItemsViewController: UIViewController {
     private func addItem() {
         let libraryId = self.store.state.value.libraryId
         let collectionKey = self.store.state.value.type.collectionKey
-        self.showItemDetail(with: .creation(libraryId: libraryId, collectionKey: collectionKey))
+        let filesEditable = self.store.state.value.filesEditable
+        self.showItemDetail(with: .creation(libraryId: libraryId,
+                                            collectionKey: collectionKey,
+                                            filesEditable: filesEditable))
     }
 
     @objc private func showOptions() {
@@ -124,6 +127,8 @@ class ItemsViewController: UIViewController {
     // MARK: - Setups
 
     private func setupNavbar() {
+        guard self.store.state.value.metadataEditable else { return }
+
         let options = UIBarButtonItem(image: UIImage(named: "navbar_options"), style: .plain, target: self,
                                       action: #selector(ItemsViewController.showOptions))
         self.navigationItem.rightBarButtonItem = options
@@ -165,6 +170,8 @@ extension ItemsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        guard self.store.state.value.metadataEditable else { return [] }
+
         let isTrash = self.store.state.value.type.isTrash
         let deleteTitle = isTrash ? "Delete" : "Trash"
 

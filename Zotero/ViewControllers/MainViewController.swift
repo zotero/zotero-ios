@@ -12,12 +12,14 @@ import RxSwift
 
 protocol ItemNavigationDelegate: class {
     func didShowLibraries()
-    func showCollections(for libraryId: LibraryIdentifier, libraryName: String)
-    func showAllItems(for libraryId: LibraryIdentifier)
-    func showTrashItems(for libraryId: LibraryIdentifier)
-    func showPublications(for libraryId: LibraryIdentifier)
-    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String))
-    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String))
+    func showCollections(for libraryId: LibraryIdentifier, libraryName: String, metadataEditable: Bool, filesEditable: Bool)
+    func showAllItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool)
+    func showTrashItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool)
+    func showPublications(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool)
+    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String),
+                             metadataEditable: Bool, filesEditable: Bool)
+    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String),
+                         metadataEditable: Bool, filesEditable: Bool)
 }
 
 fileprivate enum PrimaryColumnState {
@@ -56,12 +58,15 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
 
         let collectionsState = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
-                                                           title: RCustomLibraryType.myLibrary.libraryName)
+                                                           title: RCustomLibraryType.myLibrary.libraryName,
+                                                           metadataEditable: true,
+                                                           filesEditable: true)
         let collectionsStore = CollectionsStore(initialState: collectionsState, dbStorage: controllers.dbStorage)
         let collectionsController = CollectionsViewController(store: collectionsStore, delegate: self)
         leftNavigationController.pushViewController(collectionsController, animated: false)
 
-        let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all)
+        let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all,
+                                              metadataEditable: true, filesEditable: true)
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
                                    fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
                                    schemaController: controllers.schemaController)
@@ -165,10 +170,12 @@ extension MainViewController: ItemNavigationDelegate {
         self.setPrimaryColumn(state: .minimum, animated: true)
     }
 
-    func showCollections(for libraryId: LibraryIdentifier, libraryName: String) {
+    func showCollections(for libraryId: LibraryIdentifier, libraryName: String, metadataEditable: Bool, filesEditable: Bool) {
         guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
 
-        let state = CollectionsStore.StoreState(libraryId: libraryId, title: libraryName)
+        let state = CollectionsStore.StoreState(libraryId: libraryId, title: libraryName,
+                                                metadataEditable: metadataEditable,
+                                                filesEditable: filesEditable)
         let store = CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)
         let controller = CollectionsViewController(store: store, delegate: self)
         navigationController.pushViewController(controller, animated: true)
@@ -183,28 +190,37 @@ extension MainViewController: ItemNavigationDelegate {
         })
     }
 
-    func showAllItems(for libraryId: LibraryIdentifier) {
-        self.showItems(for: .all, libraryId: libraryId)
+    func showAllItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool) {
+        self.showItems(for: .all, libraryId: libraryId,
+                       metadataEditable: metadataEditable, filesEditable: filesEditable)
     }
 
-    func showTrashItems(for libraryId: LibraryIdentifier) {
-        self.showItems(for: .trash, libraryId: libraryId)
+    func showTrashItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool) {
+        self.showItems(for: .trash, libraryId: libraryId,
+                       metadataEditable: metadataEditable, filesEditable: filesEditable)
     }
 
-    func showPublications(for libraryId: LibraryIdentifier) {
-        self.showItems(for: .publications, libraryId: libraryId)
+    func showPublications(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool) {
+        self.showItems(for: .publications, libraryId: libraryId,
+                       metadataEditable: metadataEditable, filesEditable: filesEditable)
     }
 
-    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String)) {
-        self.showItems(for: .search(searchData.key, searchData.name), libraryId: libraryId)
+    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String),
+                         metadataEditable: Bool, filesEditable: Bool) {
+        self.showItems(for: .search(searchData.key, searchData.name), libraryId: libraryId,
+                       metadataEditable: metadataEditable, filesEditable: filesEditable)
     }
 
-    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String)) {
-        self.showItems(for: .collection(collectionData.key, collectionData.name), libraryId: libraryId)
+    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String),
+                             metadataEditable: Bool, filesEditable: Bool) {
+        self.showItems(for: .collection(collectionData.key, collectionData.name), libraryId: libraryId,
+                       metadataEditable: metadataEditable, filesEditable: filesEditable)
     }
 
-    private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: LibraryIdentifier) {
-        let state = ItemsStore.StoreState(libraryId: libraryId, type: type)
+    private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: LibraryIdentifier,
+                           metadataEditable: Bool, filesEditable: Bool) {
+        let state = ItemsStore.StoreState(libraryId: libraryId, type: type,
+                                          metadataEditable: metadataEditable, filesEditable: filesEditable)
         let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
                                fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,
                                schemaController: self.controllers.schemaController)

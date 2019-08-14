@@ -83,7 +83,7 @@ class ItemDetailStore: Store {
 
     struct StoreState {
         enum DetailType {
-            case creation(libraryId: LibraryIdentifier, collectionKey: String?)
+            case creation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
             case preview(RItem)
 
             var item: RItem? {
@@ -261,8 +261,11 @@ class ItemDetailStore: Store {
 
         fileprivate static let allSections: [StoreState.Section] = [.title, .creators, .fields, .abstract,
                                                                     .notes, .tags, .attachments]
-        fileprivate(set) var type: DetailType
 
+        let metadataEditable: Bool
+        let filesEditable: Bool
+
+        fileprivate(set) var type: DetailType
         fileprivate(set) var changes: Changes
         fileprivate(set) var attachmentDownloadStates: [String: AttachmentDownloadState]
         fileprivate(set) var isEditing: Bool
@@ -280,10 +283,17 @@ class ItemDetailStore: Store {
             self.changes = []
             self.version = 0
             switch type {
-            case .preview:
+            case .preview(let item):
                 self.isEditing = false
-            case .creation:
+                // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
+                self.metadataEditable = item.group?.canEditMetadata ?? true
+                // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
+                self.filesEditable = item.group?.canEditFiles ?? true
+            case .creation(_, _, let filesEditable):
                 self.isEditing = true
+                // Since we're in creation mode editing must have beeen enabled
+                self.metadataEditable = true
+                self.filesEditable = filesEditable
             }
         }
     }
@@ -329,7 +339,7 @@ class ItemDetailStore: Store {
             switch self.state.value.type {
             case .preview:
                 self.stopEditing(shouldSaveChanges: save)
-            case .creation(let libraryId, let collectionKey):
+            case .creation(let libraryId, let collectionKey, _):
                 self.createItem(with: libraryId, collectionKey: collectionKey)
             }
         case .updateField(let type, let value):
@@ -372,7 +382,7 @@ class ItemDetailStore: Store {
     private func createAttachments(from urls: [URL]) {
         let libraryId: LibraryIdentifier
         switch self.state.value.type {
-        case .creation(let identifier, _):
+        case .creation(let identifier, _, _):
             libraryId = identifier
         case .preview(let item):
             if let identifier = item.libraryId {

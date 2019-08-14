@@ -179,6 +179,7 @@ class CollectionsViewController: UIViewController, ProgressToolbarController {
     }
 
     private func setupNavbar() {
+        guard self.store.state.value.metadataEditable else { return }
         let options = UIBarButtonItem(image: UIImage(named: "navbar_options"), style: .plain, target: self,
                                       action: #selector(CollectionsViewController.showOptions))
         self.navigationItem.rightBarButtonItem = options
@@ -208,8 +209,13 @@ extension CollectionsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
-        let section = self.store.state.value.sections[indexPath.section]
-        guard section == .collections || section == .searches else { return nil }
+        guard self.store.state.value.metadataEditable else { return [] }
+
+        switch self.data(for: indexPath.section)[indexPath.row].type {
+        // Don't add cell actions for custom types (all items, my publications, ...)
+        case .custom: return []
+        default: break
+        }
 
         let editAction = UITableViewRowAction(style: .normal, title: "Edit") { [weak self] _, indexPath in
             self?.edit(at: indexPath)
@@ -237,17 +243,28 @@ extension CollectionsViewController: UITableViewDelegate {
         switch data.type {
         case .collection:
             self.navigationDelegate?.showCollectionItems(libraryId: state.libraryId,
-                                                         collectionData: (data.key, data.name))
+                                                         collectionData: (data.key, data.name),
+                                                         metadataEditable: state.metadataEditable,
+                                                         filesEditable: state.filesEditable)
         case .search:
-            self.navigationDelegate?.showSearchItems(libraryId: state.libraryId, searchData: (data.key, data.name))
+            self.navigationDelegate?.showSearchItems(libraryId: state.libraryId,
+                                                     searchData: (data.key, data.name),
+                                                     metadataEditable: state.metadataEditable,
+                                                     filesEditable: state.filesEditable)
         case .custom(let type):
             switch type {
             case .all:
-                self.navigationDelegate?.showAllItems(for: state.libraryId)
+                self.navigationDelegate?.showAllItems(for: state.libraryId,
+                                                      metadataEditable: state.metadataEditable,
+                                                      filesEditable: state.filesEditable)
             case .trash:
-                self.navigationDelegate?.showTrashItems(for: state.libraryId)
+                self.navigationDelegate?.showTrashItems(for: state.libraryId,
+                                                        metadataEditable: state.metadataEditable,
+                                                        filesEditable: state.filesEditable)
             case .publications:
-                self.navigationDelegate?.showPublications(for: state.libraryId)
+                self.navigationDelegate?.showPublications(for: state.libraryId,
+                                                          metadataEditable: state.metadataEditable,
+                                                          filesEditable: state.filesEditable)
             }
         }
     }
