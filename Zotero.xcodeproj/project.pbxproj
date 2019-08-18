@@ -1100,7 +1100,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ -f $SCRIPT_OUTPUT_FILE_0 ]; then\nexit\nfi\n\nmkdir \"pdf-keys\"\n\ncat > $SCRIPT_OUTPUT_FILE_0 <<EOF\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n<key>pspdfkit</key>\n<string></string>\n</dict>\n</plist>\nEOF\n";
+			shellScript = "if [ -f \"$SCRIPT_OUTPUT_FILE_0\" ]; then\nexit\nfi\n\nmkdir \"pdf-keys\"\n\ncat > \"$SCRIPT_OUTPUT_FILE_0\" <<EOF\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n<key>pspdfkit</key>\n<string></string>\n</dict>\n</plist>\nEOF\n";
 		};
 		B433DBB4F006A1955D51B03A /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
