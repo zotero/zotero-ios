@@ -55,6 +55,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 if field.changed {
                     existing.value = field.value
                     existing.changed = true
+
+                    if field.isTitle {
+                        item.title = field.value
+                    }
                 }
             } else {
                 let rField = RItemField()
@@ -63,6 +67,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 rField.changed = field.changed
                 rField.item = item
                 database.add(rField)
+
+                item.title = field.value
             }
         }
 

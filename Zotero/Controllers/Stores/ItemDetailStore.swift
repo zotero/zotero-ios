@@ -104,14 +104,15 @@ class ItemDetailStore: Store {
             let key: String
             let name: String
             let value: String
+            let isTitle: Bool
             let changed: Bool
 
             func changed(value: String) -> Field {
-                return Field(key: self.key, name: self.name, value: value, changed: true)
+                return Field(key: self.key, name: self.name, value: value, isTitle: self.isTitle, changed: true)
             }
 
             func changed(name: String) -> Field {
-                return Field(key: self.key, name: name, value: self.value, changed: self.changed)
+                return Field(key: self.key, name: name, value: self.value, isTitle: self.isTitle, changed: self.changed)
             }
         }
 
@@ -466,11 +467,13 @@ class ItemDetailStore: Store {
         if let titleKey = self.schemaController.titleKey(for: dataSource.type) {
             allFields.append(ItemDetailStore.StoreState.Field(key: titleKey, name: "",
                                                               value: dataSource.title,
+                                                              isTitle: true,
                                                               changed: !dataSource.title.isEmpty))
         }
         if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
             allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
                                                               value: (dataSource.abstract ?? ""),
+                                                              isTitle: false,
                                                               changed: (dataSource.abstract != nil)))
         }
         let request = CreateItemDbRequest(libraryId: libraryId,
@@ -522,15 +525,18 @@ class ItemDetailStore: Store {
                             from dataSource: ItemDetailEditingDataSource,
                             originalSource: ItemDetailPreviewDataSource) throws {
         let type: String? = dataSource.type == originalSource.type ? nil : dataSource.type
+        let titleKey = self.schemaController.titleKey(for: dataSource.type)
         var allFields = dataSource.fields
-        if let titleKey = self.schemaController.titleKey(for: dataSource.type) {
-            allFields.append(ItemDetailStore.StoreState.Field(key: titleKey, name: "",
+        if let key = titleKey {
+            allFields.append(ItemDetailStore.StoreState.Field(key: key, name: "",
                                                               value: dataSource.title,
+                                                              isTitle: true,
                                                               changed: (dataSource.title != originalSource.title)))
         }
         if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
             allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
                                                               value: (dataSource.abstract ?? ""),
+                                                              isTitle: false,
                                                               changed: (dataSource.abstract != originalSource.abstract)))
         }
         let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
@@ -769,7 +775,8 @@ fileprivate class ItemDetailEditingDataSource {
         for key in sortedFieldKeys {
             if key == FieldKeys.abstract || key == titleKey { continue }
             let localized = schemaController.localized(field: key) ?? ""
-            fields.append(ItemDetailStore.StoreState.Field(key: key, name: localized, value: "", changed: false))
+            fields.append(ItemDetailStore.StoreState.Field(key: key, name: localized, value: "",
+                                                           isTitle: false, changed: false))
         }
 
         self.sections = sections
@@ -803,7 +810,8 @@ fileprivate class ItemDetailEditingDataSource {
                 fields.append(field)
             } else {
                 let localized = schemaController.localized(field: key) ?? ""
-                fields.append(ItemDetailStore.StoreState.Field(key: key, name: localized, value: "", changed: false))
+                fields.append(ItemDetailStore.StoreState.Field(key: key, name: localized, value: "",
+                                                               isTitle: false, changed: false))
             }
         }
 
@@ -877,6 +885,7 @@ fileprivate class ItemDetailEditingDataSource {
             let oldField = self.fields.first(where: { $0.key == key })
             return ItemDetailStore.StoreState.Field(key: key, name: localized,
                                                     value: (oldField?.value ?? ""),
+                                                    isTitle: false,
                                                     changed: (oldField?.changed ?? false))
         }
 
@@ -968,8 +977,8 @@ fileprivate class ItemDetailPreviewDataSource {
         let fields: [ItemDetailStore.StoreState.Field] = sortedFieldKeys.compactMap { key in
             if key == FieldKeys.abstract || key == titleKey { return nil }
             let localized = schemaController.localized(field: key) ?? ""
-            return values[key].flatMap({ ItemDetailStore.StoreState.Field(key: key, name: localized,
-                                                                          value: $0, changed: false) })
+            return values[key].flatMap({ ItemDetailStore.StoreState.Field(key: key, name: localized, value: $0,
+                                                                          isTitle: false, changed: false) })
         }
 
         self.fileStorage = fileStorage
