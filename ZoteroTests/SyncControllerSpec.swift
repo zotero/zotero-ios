@@ -949,77 +949,78 @@ class SyncControllerSpec: QuickSpec {
                     }
                 }
 
-                it("should ignore remote deletions if local object changed") {
-                    let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let itemToDelete = "DDDDDDDD"
-                    let objects = SyncController.Object.allCases
-
-                    let realm = SyncControllerSpec.realm
-                    try! realm.write {
-                        let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
-                        let item = RItem()
-                        item.key = itemToDelete
-                        item.title = "Delete me"
-                        item.changedFields = .fields
-                        item.customLibrary = myLibrary
-                        realm.add(item)
-                    }
-
-                    let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
-                    let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
-                    expect(toBeDeletedItem).toNot(beNil())
-
-                    var statusCode: Int32 = 412
-                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
-                    // We don't care about specific post params here, we just want to track all update requests
-                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
-                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
-                        let code = statusCode
-                        statusCode = 200
-                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
-                    })
-                    objects.forEach { object in
-                        let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
-                                                                     objectType: object, version: version),
-                                        baseUrl: baseUrl, headers: header,
-                                        response: [:])
-                    }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
-                                    baseUrl: baseUrl, headers: header,
-                                    response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
-                                    baseUrl: baseUrl, headers: header,
-                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
-
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
-                    waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { result in
-                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
-                            realm.refresh()
-
-                            switch result {
-                            case .success(let data):
-                                expect(data.0).to(contain(.resolveConflict(itemToDelete, library)))
-                            case .failure:
-                                fail("Sync aborted")
-                            }
-
-                            let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
-                            let deletedItem = realm.objects(RItem.self).filter(predicate).first
-                            expect(deletedItem).toNot(beNil())
-
-                            doneAction()
-                        }
-
-                        self.controller?.start(type: .normal, libraries: .all)
-                    }
-                }
+                // TODO: Enable when proper CR is implemented
+//                it("should ignore remote deletions if local object changed") {
+//                    let header = ["last-modified-version" : "3"]
+//                    let library = SyncControllerSpec.userLibrary
+//                    let itemToDelete = "DDDDDDDD"
+//                    let objects = SyncController.Object.allCases
+//
+//                    let realm = SyncControllerSpec.realm
+//                    try! realm.write {
+//                        let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
+//                        let item = RItem()
+//                        item.key = itemToDelete
+//                        item.title = "Delete me"
+//                        item.changedFields = .fields
+//                        item.customLibrary = myLibrary
+//                        realm.add(item)
+//                    }
+//
+//                    let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
+//                    let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
+//                    expect(toBeDeletedItem).toNot(beNil())
+//
+//                    var statusCode: Int32 = 412
+//                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+//                    // We don't care about specific post params here, we just want to track all update requests
+//                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
+//                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
+//                        let code = statusCode
+//                        statusCode = 200
+//                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
+//                    })
+//                    objects.forEach { object in
+//                        let version: Int? = object == .group ? nil : 0
+//                        createStub(for: VersionsRequest<String>(libraryType: library,
+//                                                                     objectType: object, version: version),
+//                                        baseUrl: baseUrl, headers: header,
+//                                        response: [:])
+//                    }
+//                    createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
+//                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+//                                    baseUrl: baseUrl, headers: header,
+//                                    response: ["tagColors" : ["value": [], "version": 2]])
+//                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+//                                    baseUrl: baseUrl, headers: header,
+//                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
+//
+//                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+//                                                     handler: SyncControllerSpec.syncHandler,
+//                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+//
+//                    waitUntil(timeout: 10) { doneAction in
+//                        self.controller?.reportFinish = { result in
+//                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+//                            realm.refresh()
+//
+//                            switch result {
+//                            case .success(let data):
+//                                expect(data.0).to(contain(.resolveConflict(itemToDelete, library)))
+//                            case .failure:
+//                                fail("Sync aborted")
+//                            }
+//
+//                            let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
+//                            let deletedItem = realm.objects(RItem.self).filter(predicate).first
+//                            expect(deletedItem).toNot(beNil())
+//
+//                            doneAction()
+//                        }
+//
+//                        self.controller?.start(type: .normal, libraries: .all)
+//                    }
+//                }
 
                 it("should handle new remote item referencing locally missing collection") {
                     let header = ["last-modified-version" : "3"]
@@ -2211,75 +2212,76 @@ class SyncControllerSpec: QuickSpec {
                     }
                 }
 
-                it("should delay on second upload conflict") {
-                    let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let itemToDelete = "DDDDDDDD"
-                    let objects = SyncController.Object.allCases
-
-                    let realm = SyncControllerSpec.realm
-                    try! realm.write {
-                        let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
-                        let item = RItem()
-                        item.key = itemToDelete
-                        item.title = "Delete me"
-                        item.changedFields = .fields
-                        item.customLibrary = myLibrary
-                        realm.add(item)
-                    }
-
-                    let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
-                    let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
-                    expect(toBeDeletedItem).toNot(beNil())
-
-                    var retryCount = 0
-                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
-                    // We don't care about specific params, we just need to count all update requests
-                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
-                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
-                        retryCount += 1
-                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: (retryCount <= 2 ? 412 : 200), headers: header)
-                    })
-                    objects.forEach { object in
-                        let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
-                                                                     objectType: object, version: version),
-                                        baseUrl: baseUrl, headers: header,
-                                        response: [:])
-                    }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
-                                    baseUrl: baseUrl, headers: header,
-                                    response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
-                                    baseUrl: baseUrl, headers: header,
-                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
-
-                    var lastDelay: Int?
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-                    self.controller?.reportDelay = { delay in
-                        lastDelay = delay
-                    }
-
-                    waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
-                            expect(lastDelay).to(equal(1))
-                            expect(retryCount).to(equal(3))
-
-                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
-                            realm.refresh()
-
-                            let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
-                            let deletedItem = realm.objects(RItem.self).filter(predicate).first
-                            expect(deletedItem).toNot(beNil())
-
-                            doneAction()
-                        }
-                        self.controller?.start(type: .normal, libraries: .all)
-                    }
-                }
+                // TODO: Enable when proper CR is implemented
+//                it("should delay on second upload conflict") {
+//                    let header = ["last-modified-version" : "3"]
+//                    let library = SyncControllerSpec.userLibrary
+//                    let itemToDelete = "DDDDDDDD"
+//                    let objects = SyncController.Object.allCases
+//
+//                    let realm = SyncControllerSpec.realm
+//                    try! realm.write {
+//                        let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
+//                        let item = RItem()
+//                        item.key = itemToDelete
+//                        item.title = "Delete me"
+//                        item.changedFields = .fields
+//                        item.customLibrary = myLibrary
+//                        realm.add(item)
+//                    }
+//
+//                    let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
+//                    let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
+//                    expect(toBeDeletedItem).toNot(beNil())
+//
+//                    var retryCount = 0
+//                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+//                    // We don't care about specific params, we just need to count all update requests
+//                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
+//                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
+//                        retryCount += 1
+//                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: (retryCount <= 2 ? 412 : 200), headers: header)
+//                    })
+//                    objects.forEach { object in
+//                        let version: Int? = object == .group ? nil : 0
+//                        createStub(for: VersionsRequest<String>(libraryType: library,
+//                                                                     objectType: object, version: version),
+//                                        baseUrl: baseUrl, headers: header,
+//                                        response: [:])
+//                    }
+//                    createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
+//                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+//                                    baseUrl: baseUrl, headers: header,
+//                                    response: ["tagColors" : ["value": [], "version": 2]])
+//                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+//                                    baseUrl: baseUrl, headers: header,
+//                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
+//
+//                    var lastDelay: Int?
+//                    self.controller = SyncController(userId: SyncControllerSpec.userId,
+//                                                     handler: SyncControllerSpec.syncHandler,
+//                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+//                    self.controller?.reportDelay = { delay in
+//                        lastDelay = delay
+//                    }
+//
+//                    waitUntil(timeout: 1000) { doneAction in
+//                        self.controller?.reportFinish = { _ in
+//                            expect(lastDelay).to(equal(1))
+//                            expect(retryCount).to(equal(3))
+//
+//                            let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
+//                            realm.refresh()
+//
+//                            let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
+//                            let deletedItem = realm.objects(RItem.self).filter(predicate).first
+//                            expect(deletedItem).toNot(beNil())
+//
+//                            doneAction()
+//                        }
+//                        self.controller?.start(type: .normal, libraries: .all)
+//                    }
+//                }
             }
 
             it("should make only one request if in sync") {
@@ -2559,7 +2561,7 @@ fileprivate class TestFileStorage: FileStorage {
         return file.createUrl() == self.file?.createUrl()
     }
 
-    func copy(from url: URL, to file: File) throws {}
+    func copy(from url: File, to file: File) throws {}
 
     func size(of file: File) -> UInt64 {
         return UInt64(self.data?.count ?? 0)

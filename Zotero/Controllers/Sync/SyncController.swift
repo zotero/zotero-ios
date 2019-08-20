@@ -47,7 +47,7 @@ final class SyncController: SynchronizationController {
         case retry                  // A retry after previous broken sync.
     }
 
-    enum LibrarySyncType {
+    enum LibrarySyncType: Equatable {
         case all                              // Syncs all libraries
         case specific([LibraryIdentifier])    // Syncs only specific libraries
     }
@@ -57,19 +57,26 @@ final class SyncController: SynchronizationController {
         case group(Int)
     }
 
-    enum Object: CaseIterable {
+    enum Object: CaseIterable, Equatable {
         case group, collection, search, item, trash, tag
     }
 
-    struct DownloadBatch {
+    struct DownloadBatch: Equatable {
         static let maxCount = 50
         let library: Library
         let object: Object
         let keys: [Any]
         let version: Int
+
+        // We don't really need equatability in this target, we need it for testing. Swift can't automatically
+        // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
+        // equatability functions here so that Action equatability is synthesized automatically.
+        static func ==(lhs: DownloadBatch, rhs: DownloadBatch) -> Bool {
+            return true
+        }
     }
 
-    struct WriteBatch {
+    struct WriteBatch: Equatable {
         static let maxCount = 50
         let library: Library
         let object: Object
@@ -79,9 +86,16 @@ final class SyncController: SynchronizationController {
         func copy(withVersion version: Int) -> WriteBatch {
             return WriteBatch(library: self.library, object: self.object, version: version, parameters: self.parameters)
         }
+
+        // We don't really need equatability in this target, we need it for testing. Swift can't automatically
+        // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
+        // equatability functions here so that Action equatability is synthesized automatically.
+        static func ==(lhs: WriteBatch, rhs: WriteBatch) -> Bool {
+            return true
+        }
     }
 
-    struct AttachmentUpload {
+    struct AttachmentUpload: Equatable {
         let library: Library
         let key: String
         let filename: String
@@ -94,7 +108,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    struct DeleteBatch {
+    struct DeleteBatch: Equatable {
         static let maxCount = 50
         let library: Library
         let object: Object
@@ -104,9 +118,16 @@ final class SyncController: SynchronizationController {
         func copy(withVersion version: Int) -> DeleteBatch {
             return DeleteBatch(library: self.library, object: self.object, version: version, keys: self.keys)
         }
+
+        // We don't really need equatability in this target, we need it for testing. Swift can't automatically
+        // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
+        // equatability functions here so that Action equatability is synthesized automatically.
+        static func ==(lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
+            return true
+        }
     }
 
-    enum CreateLibraryActionsOptions {
+    enum CreateLibraryActionsOptions: Equatable {
         case automatic, onlyWrites, forceDownloads
     }
 
@@ -123,7 +144,7 @@ final class SyncController: SynchronizationController {
         let groups: [Int: Permissions]
     }
 
-    enum Action {
+    enum Action: Equatable {
         case loadKeyPermissions                                // Checks current key for access permissions
         case updateSchema                                      // Updates currently cached schema
         case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
