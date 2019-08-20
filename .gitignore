@@ -68,6 +68,9 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
+# MacOS files
+.DS_Store
+
 # Licenses
 
 pdf-keys
