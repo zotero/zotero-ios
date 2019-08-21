@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjack
 import RxSwift
 
-class LoginStore: Store {
+class LoginStore: OldStore {
     typealias Action = StoreAction
     typealias State = StoreState
 

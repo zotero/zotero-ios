@@ -16,7 +16,7 @@ enum AppState {
     case onboarding, main
 }
 
-class AppStore: Store {
+class AppStore: OldStore {
     typealias Action = AppAction
     typealias State = AppState
 

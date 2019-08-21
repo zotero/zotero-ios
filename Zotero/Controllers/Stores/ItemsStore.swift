@@ -18,7 +18,7 @@ protocol ItemsDataSource {
     func items(for section: Int) -> Results<RItem>?
 }
 
-class ItemsStore: Store {
+class ItemsStore: OldStore {
     typealias Action = StoreAction
     typealias State = StoreState
 

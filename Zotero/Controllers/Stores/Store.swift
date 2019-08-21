@@ -2,46 +2,43 @@
 //  Store.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 03/02/2019.
+//  Created by Michal Rentka on 20/08/2019.
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import Foundation
 
-import RxSwift
-import RxCocoa
-
-protocol Store: class {
+protocol Store: ObservableObject {
     associatedtype Action
-    associatedtype State: Equatable
-
-    var updater: StoreStateUpdater<State> { get }
-    var state: BehaviorRelay<State> { get }
+    associatedtype State
+    
+    var state: State { get }
 
     func handle(action: Action)
 }
 
-extension Store {
-    var state: BehaviorRelay<State> { return self.updater.state }
+protocol StateUpdater: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+    associatedtype State
+    
+    var state: State { get }
+    
+    func updateState(_ action: @escaping (State) -> Void)
 }
 
-typealias UpdaterStateUpdateAction<State> = (inout State) -> Void
-
-class StoreStateUpdater<State: Equatable> {
-    var state: BehaviorRelay<State>
-    var stateCleanupAction: ((inout State) -> Void)?
-
-    init(initialState: State) {
-        self.state = BehaviorRelay(value: initialState)
-    }
-
-    func updateState(action: @escaping UpdaterStateUpdateAction<State>) {
-        var newState = self.state.value
-        self.stateCleanupAction?(&newState)
-        action(&newState)
-
-        if newState != self.state.value {
-            self.state.accept(newState)
+extension StateUpdater {
+    func updateState(_ action: @escaping (State) -> Void) {
+        if Thread.isMainThread {
+            self._updateState(action)
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?._updateState(action)
+            }
         }
+    }
+    
+    private func _updateState(_ action: @escaping (State) -> Void) {
+        self.objectWillChange.send()
+        action(self.state)
     }
 }

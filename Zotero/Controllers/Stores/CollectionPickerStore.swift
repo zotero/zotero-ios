@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjack
 import RealmSwift
 
-class CollectionPickerStore: Store {
+class CollectionPickerStore: OldStore {
     typealias Action = StoreAction
     typealias State = StoreState
 

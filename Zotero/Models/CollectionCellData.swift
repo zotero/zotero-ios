@@ -10,24 +10,53 @@ import Foundation
 
 import RealmSwift
 
-struct CollectionCellData {
-    enum DataType {
-        case collection(Bool) // hasChildren
+struct CollectionCellData: Identifiable {
+    
+    enum DataType: Equatable {
+        case collection
         case search
         case custom(CustomType)
     }
 
-    enum CustomType {
+    enum CustomType: Equatable {
         case all, trash, publications
     }
-
+    
+    var id: String {
+        switch self.type {
+        case .custom(let type):
+            switch type {
+            case .all: return "all"
+            case .publications: return "publications"
+            case .trash: return "trash"
+            }
+        case .collection, .search:
+            return self.key
+        }
+    }
     let type: CollectionCellData.DataType
     let key: String
     let name: String
     let level: Int
+    
+    var iconName: String {
+        switch self.type {
+        case .collection:
+            return "icon_cell_collection"
+        case .search:
+            return "icon_cell_document"
+        case .custom(let type):
+            switch type {
+            case .all, .publications:
+                return "icon_cell_document"
+            case .trash:
+                return "icon_cell_trash"
+            }
+        }
+    }
 
     init(object: RCollection, level: Int) {
-        self.type = .collection(!object.children.isEmpty)
+        self.type = .collection
         self.key = object.key
         self.name = object.name
         self.level = level

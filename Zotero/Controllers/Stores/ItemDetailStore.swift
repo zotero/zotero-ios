@@ -41,7 +41,7 @@ fileprivate protocol FieldLocalizable {
     func set(fields: [ItemDetailStore.StoreState.Field])
 }
 
-class ItemDetailStore: Store {
+class ItemDetailStore: OldStore {
     typealias Action = StoreAction
     typealias State = StoreState
 

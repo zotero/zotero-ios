@@ -34,7 +34,7 @@ struct LibraryCellData {
     }
 }
 
-class LibrariesStore: Store {
+class LibrariesStore: OldStore {
     typealias Action = StoreAction
     typealias State = StoreState
 

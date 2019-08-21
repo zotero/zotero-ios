@@ -274,8 +274,8 @@ extension CollectionCellData: CollectionCellModel {
     var icon: UIImage? {
         let name: String
         switch self.type {
-        case .collection(let hasChildren):
-            name = "icon_cell_collection" + (hasChildren ? "s" : "")
+        case .collection:
+            name = "icon_cell_collection"
         case .search:
             name = "icon_cell_document"
         case .custom(let type):

@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjack
 import RealmSwift
 
-class CollectionEditStore: Store {
+class CollectionEditStore: OldStore {
     typealias Action = StoreAction
     typealias State = StoreState
 

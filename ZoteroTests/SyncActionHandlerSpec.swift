@@ -128,7 +128,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              expect(failures[.search]).to(beEmpty())
 
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
-                                             realm.refresh
+                                             realm.refresh()
 
                                              let item = realm.objects(RItem.self).filter(Predicates.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("thesis"))
@@ -153,7 +153,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              expect(failures[.search]).to(beEmpty())
 
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
-                                             realm.refresh
+                                             realm.refresh()
 
                                              let collection = realm.objects(RCollection.self).filter(Predicates.key("BBBBBBBB")).first
                                              expect(collection?.name).to(equal("Bachelor sources"))
@@ -230,7 +230,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                          .markChangesAsResolved(in: .user(0, .myLibrary))
                                          .subscribe(onCompleted: {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
-                                             realm.refresh
+                                             realm.refresh()
 
                                              let item = realm.objects(RItem.self).filter(Predicates.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("thesis"))
@@ -251,7 +251,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                          .markChangesAsResolved(in: .group(1234123))
                                          .subscribe(onCompleted: {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
-                                             realm.refresh
+                                             realm.refresh()
 
                                              let collection = realm.objects(RCollection.self).filter(Predicates.key("BBBBBBBB")).first
                                              expect(collection?.name).to(equal("New name"))

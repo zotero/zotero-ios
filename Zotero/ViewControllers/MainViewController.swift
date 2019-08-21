@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SwiftUI
 import UIKit
 
 import RxSwift
@@ -62,8 +63,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                                            metadataEditable: true,
                                                            filesEditable: true)
         let collectionsStore = CollectionsStore(initialState: collectionsState, dbStorage: controllers.dbStorage)
+        let newCollectionsState = NewCollectionsStore.StoreState(libraryId: .custom(.myLibrary),
+                                                              title: RCustomLibraryType.myLibrary.libraryName,
+                                                              metadataEditable: true,
+                                                              filesEditable: true)
+        let newStore = NewCollectionsStore(initialState: newCollectionsState, dbStorage: controllers.dbStorage)
+        let newCollectionsController = UIHostingController(rootView: CollectionsView(store: newStore))
         let collectionsController = CollectionsViewController(store: collectionsStore, delegate: self)
-        leftNavigationController.pushViewController(collectionsController, animated: false)
+        leftNavigationController.pushViewController(newCollectionsController, animated: false)
 
         let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all,
                                               metadataEditable: true, filesEditable: true)
