@@ -161,6 +161,7 @@
 		B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */; };
 		B3C6F653224A90CC001722B4 /* RGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6F652224A90CC001722B4 /* RGroup.swift */; };
 		B3C6F655224A95BF001722B4 /* ReadAllGroupsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6F654224A95BF001722B4 /* ReadAllGroupsDbRequest.swift */; };
+		B3C6FE2D230FE56600560D4B /* ItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6FE2C230FE56600560D4B /* ItemsView.swift */; };
 		B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */; };
 		B3D9CC2522FAE294009CEE36 /* CreateNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */; };
 		B3D9CC2722FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */; };
@@ -383,6 +384,7 @@
 		B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsStore.swift; sourceTree = "<group>"; };
 		B3C6F652224A90CC001722B4 /* RGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGroup.swift; sourceTree = "<group>"; };
 		B3C6F654224A95BF001722B4 /* ReadAllGroupsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAllGroupsDbRequest.swift; sourceTree = "<group>"; };
+		B3C6FE2C230FE56600560D4B /* ItemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsView.swift; sourceTree = "<group>"; };
 		B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypes.swift; sourceTree = "<group>"; };
 		B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNoteDbRequest.swift; sourceTree = "<group>"; };
 		B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentDbRequest.swift; sourceTree = "<group>"; };
@@ -580,6 +582,7 @@
 				B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */,
 				B34FD9E0230C31A2008338FD /* CollectionsView.swift */,
 				B34111DA230C4EAE0021B2FA /* CollectionRow.swift */,
+				B3C6FE2C230FE56600560D4B /* ItemsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1154,6 +1157,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B312AD1822428F1400EDD5A4 /* ItemCell.swift in Sources */,
+				B3C6FE2D230FE56600560D4B /* ItemsView.swift in Sources */,
 				B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */,
 				B3B5514D22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
