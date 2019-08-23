@@ -16,6 +16,13 @@ struct CollectionCellData: Identifiable {
         case collection
         case search
         case custom(CustomType)
+        
+        var isCustom: Bool {
+            switch self {
+            case .custom: return true
+            default: return false
+            }
+        }
     }
 
     enum CustomType: Equatable {

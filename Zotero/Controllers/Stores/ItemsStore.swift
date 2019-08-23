@@ -171,7 +171,7 @@ class ItemsStore: OldStore {
     }
 
     private func delete(at indexPath: IndexPath) {
-        self.performAsyncDbRequestOnItem(at: indexPath) { return MarkObjectAsDeletedDbRequest<RItem>(key: $0,
+        self.performAsyncDbRequestOnItem(at: indexPath) { return MarkObjectsAsDeletedDbRequest<RItem>(keys: [$0],
                                                                                                      libraryId: $1) }
     }
 

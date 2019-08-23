@@ -14,14 +14,24 @@ struct CollectionsView: View {
     @ObservedObject private(set) var store: NewCollectionsStore
 
     var body: some View {
-        NSLog("CELLS: \(self.store.state.cellData.count)")
-        return List(self.store.state.cellData) { cell in
-            CollectionRow(data: cell)
-        }.onAppear {
+        List {
+            ForEach(self.store.state.cellData) { cell in
+                CollectionRow(data: cell)
+                    .deleteDisabled(cell.type.isCustom)
+            }
+            .onDelete(perform: self.delete)
+        }
+        .onAppear {
             self.store.handle(action: .load)
         }
     }
+    
+    private func delete(at offsets: IndexSet) {
+        self.store.handle(action: .deleteCells(offsets))
+    }
 }
+
+#if DEBUG
 
 struct CollectionsView_Previews: PreviewProvider {
     static var previews: some View {
@@ -32,3 +42,5 @@ struct CollectionsView_Previews: PreviewProvider {
         return CollectionsView(store: store)
     }
 }
+
+#endif

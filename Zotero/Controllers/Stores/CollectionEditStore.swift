@@ -143,7 +143,7 @@ class CollectionEditStore: OldStore {
             }
 
         case .deleteCollection:
-            self.perform(storeRequest: MarkObjectAsDeletedDbRequest<RCollection>(key: self.state.value.key,
+            self.perform(storeRequest: MarkObjectsAsDeletedDbRequest<RCollection>(keys: [self.state.value.key],
                                                                                  libraryId: self.state.value.libraryId))
 
         case .deleteCollectionAndItems:

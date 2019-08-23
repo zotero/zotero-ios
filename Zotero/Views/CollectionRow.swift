@@ -16,9 +16,12 @@ struct CollectionRow: View {
         HStack {
             Image(self.data.iconName)
             Text(self.data.name)
-        }.padding(.leading, CGFloat(self.data.level) * CollectionRow.levelOffset)
+        }
+        .padding(.leading, CGFloat(self.data.level) * CollectionRow.levelOffset)
     }
 }
+
+#if DEBUG
 
 struct CollectionRow_Previews: PreviewProvider {
     static var previews: some View {
@@ -29,3 +32,5 @@ struct CollectionRow_Previews: PreviewProvider {
         }.previewLayout(.fixed(width: 320, height: 44))
     }
 }
+
+#endif
