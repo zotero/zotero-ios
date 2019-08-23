@@ -44,7 +44,6 @@ final class SyncController: SynchronizationController {
                                     // with old version or unsynced objects with backoff schedule.
         case ignoreIndividualDelays // Same as .normal, but individual backoff schedule is ignored.
         case all                    // All objects are fetched. Both individual backoff schedule and local versions are ignored.
-        case retry                  // A retry after previous broken sync.
     }
 
     enum LibrarySyncType: Equatable {
@@ -185,6 +184,7 @@ final class SyncController: SynchronizationController {
     private var queue: [Action]
     private var processingAction: Action?
     private var type: SyncType
+    private var previousType: SyncType?
     private var libraryType: LibrarySyncType
     /// Version returned by last object sync, used to check for version mismatches between object syncs
     private var lastReturnedVersion: Int?
@@ -216,6 +216,7 @@ final class SyncController: SynchronizationController {
         self.queue = []
         self.nonFatalErrors = []
         self.type = .normal
+        self.previousType = nil
         self.libraryType = .all
         self.timerDisposeBag = DisposeBag()
         self.conflictDelays = conflictDelays
@@ -323,6 +324,7 @@ final class SyncController: SynchronizationController {
 
     private func report(fatalError: Error) {
         self.progressHandler.reportAbort(with: fatalError)
+        self.previousType = nil
 
         if let syncError = fatalError as? SyncError, syncError == .uploadObjectConflict {
             // In case of this fatal error we retry the sync with special type. This error was most likely caused
@@ -337,19 +339,22 @@ final class SyncController: SynchronizationController {
     private func reportFinish(nonFatalErrors errors: [Error]) {
         self.progressHandler.reportFinish(with: errors)
 
-        // If we have non-fatal errors the first time, we try to do the same sync as a retry. Maybe retrying in a while
-        // will help us out. If retry sync doesn't help and we still have errors we schedule a new full sync.
-        // If that doesn't help something is broken and we can't recover from it anyway, so we just stop.
-
-        if errors.isEmpty {
+        if errors.isEmpty || self.type == .all {
+            // We either have no errors and can finish or we already did full sync now and another one will probably not fix anything
+            self.previousType = nil
             self.observable.on(.next(nil))
             return
         }
 
-        if self.type == .retry {
-            self.observable.on(.next((.all, .all)))
+        let previousType = self.previousType
+        self.previousType = self.type
+
+        if previousType == nil {
+            // There was no sync before this, so let's try the same sync again as a retry
+            self.observable.on(.next((self.type, self.libraryType)))
         } else {
-            self.observable.on(.next((.retry, self.libraryType)))
+            // There was already a retry sync previously, so we try to run a full sync which might fix things
+            self.observable.on(.next((.all, self.libraryType)))
         }
     }
 

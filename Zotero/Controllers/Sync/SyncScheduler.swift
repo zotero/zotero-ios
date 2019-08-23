@@ -148,10 +148,7 @@ final class SyncScheduler: SynchronizationScheduler {
 extension SyncController.SyncType: Comparable {
     static func < (lhs: SyncController.SyncType, rhs: SyncController.SyncType) -> Bool {
         switch (lhs, rhs) {
-        case (.retry, .normal),
-             (.retry, .ignoreIndividualDelays),
-             (.retry, .all),
-             (.normal, .ignoreIndividualDelays),
+        case (.normal, .ignoreIndividualDelays),
              (.normal, .all),
              (.ignoreIndividualDelays, .all):
             return true
