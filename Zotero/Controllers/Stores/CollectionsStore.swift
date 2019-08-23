@@ -13,7 +13,7 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-class NewCollectionsStore: Store, StateUpdater {
+class CollectionsStore: Store, StateUpdater {
     typealias Action = StoreAction
     typealias State = StoreState
     

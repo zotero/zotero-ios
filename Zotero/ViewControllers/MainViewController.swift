@@ -57,20 +57,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
         let leftNavigationController = ProgressNavigationViewController(rootViewController: librariesController)
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
-
+        
         let collectionsState = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
-                                                           title: RCustomLibraryType.myLibrary.libraryName,
-                                                           metadataEditable: true,
-                                                           filesEditable: true)
-        let collectionsStore = CollectionsStore(initialState: collectionsState, dbStorage: controllers.dbStorage)
-        let newCollectionsState = NewCollectionsStore.StoreState(libraryId: .custom(.myLibrary),
                                                               title: RCustomLibraryType.myLibrary.libraryName,
                                                               metadataEditable: true,
                                                               filesEditable: true)
-        let newStore = NewCollectionsStore(initialState: newCollectionsState, dbStorage: controllers.dbStorage)
-        let newCollectionsController = UIHostingController(rootView: CollectionsView(store: newStore))
-        let collectionsController = CollectionsViewController(store: collectionsStore, delegate: self)
-        leftNavigationController.pushViewController(newCollectionsController, animated: false)
+        let collectionsStore = CollectionsStore(initialState: collectionsState, dbStorage: controllers.dbStorage)
+        let collectionsController = UIHostingController(rootView: CollectionsView(store: collectionsStore))
+        leftNavigationController.pushViewController(collectionsController, animated: false)
 
         let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all,
                                               metadataEditable: true, filesEditable: true)
@@ -83,7 +77,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
 
-        let newFraction = self.calculatePrimaryColumnFraction(from: collectionsStore.state.value.collectionCellData)
+        let newFraction = self.calculatePrimaryColumnFraction(from: collectionsStore.state.cellData)
         self.currentLandscapePrimaryColumnFraction = newFraction
         if UIDevice.current.orientation.isLandscape {
             self.setPrimaryColumn(state: .dynamic(newFraction), animated: false)
@@ -184,11 +178,11 @@ extension MainViewController: ItemNavigationDelegate {
                                                 metadataEditable: metadataEditable,
                                                 filesEditable: filesEditable)
         let store = CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)
-        let controller = CollectionsViewController(store: store, delegate: self)
+        let controller = UIHostingController(rootView: CollectionsView(store: store))
         navigationController.pushViewController(controller, animated: true)
 
         navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in
-            let newFraction = self.calculatePrimaryColumnFraction(from: store.state.value.collectionCellData)
+            let newFraction = self.calculatePrimaryColumnFraction(from: store.state.cellData)
             self.currentLandscapePrimaryColumnFraction = newFraction
 
             if UIDevice.current.orientation.isLandscape {

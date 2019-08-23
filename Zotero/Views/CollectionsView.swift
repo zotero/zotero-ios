@@ -11,7 +11,7 @@ import SwiftUI
 import RealmSwift
 
 struct CollectionsView: View {
-    @ObservedObject private(set) var store: NewCollectionsStore
+    @ObservedObject private(set) var store: CollectionsStore
 
     var body: some View {
         List {
@@ -36,9 +36,9 @@ struct CollectionsView: View {
 struct CollectionsView_Previews: PreviewProvider {
     static var previews: some View {
         let config = Realm.Configuration(inMemoryIdentifier: "swiftui")
-        let state = NewCollectionsStore.StoreState(libraryId: .custom(.myLibrary), title: "Test", metadataEditable: true, filesEditable: true)
-        let store = NewCollectionsStore(initialState: state,
-                                        dbStorage: RealmDbStorage(config: config))
+        let state = CollectionsStore.StoreState(libraryId: .custom(.myLibrary), title: "Test", metadataEditable: true, filesEditable: true)
+        let store = CollectionsStore(initialState: state,
+                                     dbStorage: RealmDbStorage(config: config))
         return CollectionsView(store: store)
     }
 }

@@ -70,7 +70,7 @@ extension CollectionPickerViewController: UITableViewDataSource {
 
         if let cell = cell as? CollectionCell {
             let model = self.store.state.value.cellData[indexPath.row]
-            cell.setup(with: model)
+//            cell.setup(with: model)
         }
 
         return cell
