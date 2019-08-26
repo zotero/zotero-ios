@@ -26,15 +26,13 @@ struct ItemsView: UIViewControllerRepresentable {
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
-        let config = Realm.Configuration(inMemoryIdentifier: "swiftui")
-        let storage = RealmDbStorage(config: config)
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, headers: ["Zotero-API-Version": ApiConstants.version.description])
+        let controllers = Controllers()
         let state = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all, metadataEditable: true, filesEditable: true)
         let store = ItemsStore(initialState: state,
-                               apiClient: apiClient,
-                               fileStorage: FileStorageController(),
-                               dbStorage: storage,
-                               schemaController: SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard))
+                               apiClient: controllers.apiClient,
+                               fileStorage: controllers.fileStorage,
+                               dbStorage: controllers.dbStorage,
+                               schemaController: controllers.schemaController)
         return ItemsView(store: store)
     }
 }

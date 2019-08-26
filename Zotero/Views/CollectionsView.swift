@@ -35,10 +35,12 @@ struct CollectionsView: View {
 
 struct CollectionsView_Previews: PreviewProvider {
     static var previews: some View {
-        let config = Realm.Configuration(inMemoryIdentifier: "swiftui")
-        let state = CollectionsStore.StoreState(libraryId: .custom(.myLibrary), title: "Test", metadataEditable: true, filesEditable: true)
+        let state = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
+                                                title: "Test",
+                                                metadataEditable: true,
+                                                filesEditable: true)
         let store = CollectionsStore(initialState: state,
-                                     dbStorage: RealmDbStorage(config: config))
+                                     dbStorage: Controllers().dbStorage)
         return CollectionsView(store: store)
     }
 }
