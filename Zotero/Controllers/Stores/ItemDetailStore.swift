@@ -6,11 +6,329 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import  Combine
 import Foundation
 
 import CocoaLumberjack
 import RealmSwift
 import RxSwift
+
+class NewItemDetailStore: Store {
+
+    enum StoreError: Error, Equatable {
+        case typeNotSupported, libraryNotAssigned,
+             contentTypeUnknown, userMissing, downloadError, unknown,
+             cantStoreChanges
+        case fileNotCopied(String)
+    }
+
+    enum StoreAction {
+
+    }
+
+    class StoreState {
+        enum DetailType {
+            case creation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
+            case preview(RItem)
+
+            var item: RItem? {
+                switch self {
+                case .preview(let item):
+                    return item
+                case .creation:
+                    return nil
+                }
+            }
+        }
+
+        struct Field {
+            let key: String
+            let name: String
+            let value: String
+            let isTitle: Bool
+            let changed: Bool
+
+            func changed(value: String) -> Field {
+                return Field(key: self.key, name: self.name, value: value, isTitle: self.isTitle, changed: true)
+            }
+
+            func changed(name: String) -> Field {
+                return Field(key: self.key, name: name, value: self.value, isTitle: self.isTitle, changed: self.changed)
+            }
+        }
+
+        struct Attachment {
+            enum ContentType: Equatable {
+                case file(file: File, isCached: Bool)
+                case url(URL)
+
+                static func == (lhs: ContentType, rhs: ContentType) -> Bool {
+                    switch (lhs, rhs) {
+                    case (.url(let lUrl), .url(let rUrl)):
+                        return lUrl == rUrl
+                    case (.file(let lFile, _), .file(let rFile, _)):
+                        return lFile.createUrl() == rFile.createUrl()
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            let key: String
+            let title: String
+            let filename: String
+            let type: ContentType
+            let libraryId: LibraryIdentifier
+            let changed: Bool
+
+            init(key: String, title: String,
+                 filename: String, type: ContentType,
+                 libraryId: LibraryIdentifier, changed: Bool) {
+                self.key = key
+                self.title = title
+                self.filename = filename
+                self.type = type
+                self.libraryId = libraryId
+                self.changed = changed
+            }
+
+            init?(item: RItem, type: ContentType) {
+                guard let libraryId = item.libraryObject?.identifier else {
+                    DDLogError("Attachment: library not assigned to item (\(item.key))")
+                    return nil
+                }
+
+                self.libraryId = libraryId
+                self.key = item.key
+                self.title = item.title
+                self.filename = item.fields.filter(Predicates.key(FieldKeys.filename)).first?.value ?? item.title
+                self.type = type
+                self.changed = false
+            }
+
+            func changed(isCached: Bool) -> Attachment {
+                switch type {
+                case .url: return self
+                case .file(let file, _):
+                    return Attachment(key: self.key, title: self.title, filename: self.filename,
+                                      type: .file(file: file, isCached: isCached),
+                                      libraryId: self.libraryId, changed: self.changed)
+                }
+            }
+        }
+
+        struct Note {
+            let key: String
+            let title: String
+            let text: String
+            let changed: Bool
+
+            init(key: String, text: String, changed: Bool = true) {
+                self.key = key
+                self.title = text.strippedHtml ?? text
+                self.text = text
+                self.changed = changed
+            }
+
+            init?(item: RItem) {
+                guard item.rawType == ItemTypes.note else {
+                    DDLogError("Trying to create Note from RItem which is not a note!")
+                    return nil
+                }
+
+                self.key = item.key
+                self.title = item.title
+                self.text = item.fields.filter(Predicates.key(FieldKeys.note)).first?.value ?? ""
+                self.changed = false
+            }
+        }
+
+        struct Tag {
+            let name: String
+            let color: String
+
+            var uiColor: UIColor? {
+                guard !self.color.isEmpty else { return nil }
+                return UIColor(hex: self.color)
+            }
+
+            init(tag: RTag) {
+                self.name = tag.name
+                self.color = tag.color
+            }
+        }
+
+        struct Creator {
+            let rawType: String
+            let firstName: String
+            let lastName: String
+            let name: String
+
+            init(creator: RCreator) {
+                self.rawType = creator.rawType
+                self.firstName = creator.firstName
+                self.lastName = creator.lastName
+                self.name = creator.name
+            }
+        }
+
+        struct Data {
+            fileprivate(set) var title: String
+            fileprivate(set) var type: String
+            fileprivate(set) var creators: [Creator]
+            fileprivate(set) var fields: [Field]
+            fileprivate(set) var abstract: String?
+            fileprivate(set) var notes: [Note]
+            fileprivate(set) var attachments: [Attachment]
+            fileprivate(set) var tags: [Tag]
+        }
+
+        let type: DetailType
+        let userId: Int
+        let metadataEditable: Bool
+        let filesEditable: Bool
+
+        fileprivate(set) var data: Data
+
+        init(userId: Int, type: DetailType, data: StoreState.Data) {
+            self.userId = userId
+            self.type = type
+            self.data = data
+
+            switch type {
+            case .preview(let item):
+                // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
+                self.metadataEditable = item.group?.canEditMetadata ?? true
+                // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
+                self.filesEditable = item.group?.canEditFiles ?? true
+            case .creation(_, _, let filesEditable):
+                // Since we're in creation mode editing must have beeen enabled
+                self.metadataEditable = true
+                self.filesEditable = filesEditable
+            }
+        }
+    }
+
+    let state: StoreState
+    let apiClient: ApiClient
+    let fileStorage: FileStorage
+    let dbStorage: DbStorage
+    let schemaController: SchemaController
+
+    init(type: StoreState.DetailType, userId: Int,
+         apiClient: ApiClient, fileStorage: FileStorage,
+         dbStorage: DbStorage, schemaController: SchemaController) throws {
+        let data = try NewItemDetailStore.createData(from: type,
+                                                     schemaController: schemaController,
+                                                     fileStorage: fileStorage)
+        self.state = StoreState(userId: userId, type: type, data: data)
+        self.apiClient = apiClient
+        self.fileStorage = fileStorage
+        self.dbStorage = dbStorage
+        self.schemaController = schemaController
+    }
+
+    private static func createData(from type: StoreState.DetailType,
+                                   schemaController: SchemaController,
+                                   fileStorage: FileStorage) throws -> StoreState.Data {
+        switch type {
+        case .creation:
+            guard let itemType = schemaController.itemTypes.sorted().first,
+                  let fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }) else {
+                throw StoreError.typeNotSupported
+            }
+
+            let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
+            let titleKey = schemaController.titleKey(for: itemType)
+            let fields = fieldKeys.compactMap { key -> StoreState.Field? in
+                guard key != FieldKeys.abstract && key != titleKey else { return nil }
+                let name = schemaController.localized(field: key) ?? ""
+                return StoreState.Field(key: key, name: name, value: "", isTitle: false, changed: false)
+            }
+
+            return StoreState.Data(title: "",
+                                   type: itemType,
+                                   creators: [],
+                                   fields: fields,
+                                   abstract: (hasAbstract ? "" : nil),
+                                   notes: [],
+                                   attachments: [],
+                                   tags: [])
+
+        case .preview(let item):
+            guard let fieldKeys = schemaController.fields(for: item.rawType)?.map({ $0.field }) else {
+                throw StoreError.typeNotSupported
+            }
+
+            let titleKey = schemaController.titleKey(for: item.rawType) ?? ""
+            var abstract: String?
+            var fieldValues: [String: String] = [:]
+
+            item.fields.forEach { field in
+                switch field.key {
+                case titleKey: break
+                case FieldKeys.abstract:
+                    abstract = field.value
+                default:
+                    fieldValues[field.key] = field.value
+                }
+            }
+
+            let fields = fieldKeys.compactMap { key -> StoreState.Field? in
+                guard key != FieldKeys.abstract && key != titleKey else { return nil }
+                let name = schemaController.localized(field: key) ?? ""
+                let value = fieldValues[key] ?? ""
+                return StoreState.Field(key: key, name: name, value: value, isTitle: false, changed: false)
+            }
+            let creators = item.creators.sorted(byKeyPath: "orderId").map(StoreState.Creator.init)
+            let notes = item.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
+                                     .sorted(byKeyPath: "title")
+                                     .compactMap(StoreState.Note.init)
+            let attachments = item.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
+                                           .sorted(byKeyPath: "title")
+                                           .compactMap({ item -> StoreState.Attachment? in
+                                               return attachmentType(for: item, fileStorage: fileStorage).flatMap({ StoreState.Attachment(item: item, type: $0) })
+                                           })
+            let tags = item.tags.sorted(byKeyPath: "name").map(StoreState.Tag.init)
+
+            return StoreState.Data(title: item.title,
+                                   type: item.rawType,
+                                   creators: Array(creators),
+                                   fields: fields,
+                                   abstract: abstract,
+                                   notes: Array(notes),
+                                   attachments: Array(attachments),
+                                   tags: Array(tags))
+        }
+    }
+
+    private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> StoreState.Attachment.ContentType? {
+        let contentType = item.fields.filter(Predicates.key(FieldKeys.contentType)).first?.value ?? ""
+        if !contentType.isEmpty { // File attachment
+            if let ext = contentType.extensionFromMimeType,
+               let libraryId = item.libraryObject?.identifier {
+                let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: ext)
+                let isCached = fileStorage.has(file)
+                return .file(file: file, isCached: isCached)
+            } else {
+                DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
+                return nil
+            }
+        } else { // Some other attachment (url, etc.)
+            if let urlString = item.fields.filter("key = %@", "url").first?.value,
+               let url = URL(string: urlString) {
+                return .url(url)
+            } else {
+                DDLogError("Attachment: unknown attachment, fields: \(item.fields.map({ $0.key }))")
+                return nil
+            }
+        }
+    }
+
+    func handle(action: StoreAction) {
+
+    }
+}
 
 struct EditingSectionDiff {
     enum DiffType {
