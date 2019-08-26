@@ -71,7 +71,8 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
                                    fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
                                    schemaController: controllers.schemaController)
-        let rightNavigationController = UINavigationController(rootViewController: ItemsViewController(store: itemStore))
+        let itemsController = UIHostingController(rootView: ItemsView(store: itemStore))
+        let rightNavigationController = UINavigationController(rootViewController: itemsController)
 
         self.viewControllers = [leftNavigationController, rightNavigationController]
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
@@ -225,7 +226,7 @@ extension MainViewController: ItemNavigationDelegate {
         let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
                                fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,
                                schemaController: self.controllers.schemaController)
-        let controller = ItemsViewController(store: store)
+        let controller = UIHostingController(rootView: ItemsView(store: store))
         self.showSecondaryController(controller)
     }
 }

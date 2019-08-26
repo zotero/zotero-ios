@@ -8,16 +8,35 @@
 
 import SwiftUI
 
-struct ItemsView: View {
-    @ObservedObject private(set) var store: CollectionsStore
+import RealmSwift
 
-    var body: some View {
-        
+struct ItemsView: UIViewControllerRepresentable {
+    let store: ItemsStore
+
+    func makeUIViewController(context: Context) -> ItemsViewController {
+        return ItemsViewController(store: self.store)
+    }
+
+    func updateUIViewController(_ uiViewController: ItemsViewController, context: Context) {
+
     }
 }
+
+#if DEBUG
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemsView()
+        let config = Realm.Configuration(inMemoryIdentifier: "swiftui")
+        let storage = RealmDbStorage(config: config)
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, headers: ["Zotero-API-Version": ApiConstants.version.description])
+        let state = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all, metadataEditable: true, filesEditable: true)
+        let store = ItemsStore(initialState: state,
+                               apiClient: apiClient,
+                               fileStorage: FileStorageController(),
+                               dbStorage: storage,
+                               schemaController: SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard))
+        return ItemsView(store: store)
     }
 }
+
+#endif

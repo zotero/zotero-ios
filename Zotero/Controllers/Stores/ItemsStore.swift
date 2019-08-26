@@ -13,74 +13,74 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-class NewItemStore: Store {
-    typealias Action = StoreAction
-    typealias State = StoreState
-    
-    enum StoreAction {
-        case load
-        case trash(IndexSet)
-        case delete(IndexSet)
-        case restore(IndexSet)
-    }
-    
-    class StoreState {
-        enum ItemType {
-            case all, trash, publications
-            case collection(String, String) // Key, Title
-            case search(String, String) // Key, Title
-
-            var collectionKey: String? {
-                switch self {
-                case .collection(let key, _):
-                    return key
-                default:
-                    return nil
-                }
-            }
-
-            var isTrash: Bool {
-                switch self {
-                case .trash:
-                    return true
-                default:
-                    return false
-                }
-            }
-        }
-        
-        let libraryId: LibraryIdentifier
-        let type: ItemType
-        let title: String
-        let metadataEditable: Bool
-        let filesEditable: Bool
-        
-        private var token: NotificationToken?
-        
-        init(libraryId: LibraryIdentifier, type: ItemType, metadataEditable: Bool, filesEditable: Bool) {
-            self.libraryId = libraryId
-            self.type = type
-            switch type {
-            case .collection(_, let title), .search(_, let title):
-                self.title = title
-            case .all:
-                self.title = "All Items"
-            case .trash:
-                self.title = "Trash"
-            case .publications:
-                self.title = "My Publications"
-            }
-            self.metadataEditable = metadataEditable
-            self.filesEditable = filesEditable
-        }
-    }
-    
-    let state: StoreState
-    
-    func handle(action: StoreAction) {
-        
-    }
-}
+//class NewItemStore: Store {
+//    typealias Action = StoreAction
+//    typealias State = StoreState
+//
+//    enum StoreAction {
+//        case load
+//        case trash(IndexSet)
+//        case delete(IndexSet)
+//        case restore(IndexSet)
+//    }
+//
+//    class StoreState {
+//        enum ItemType {
+//            case all, trash, publications
+//            case collection(String, String) // Key, Title
+//            case search(String, String) // Key, Title
+//
+//            var collectionKey: String? {
+//                switch self {
+//                case .collection(let key, _):
+//                    return key
+//                default:
+//                    return nil
+//                }
+//            }
+//
+//            var isTrash: Bool {
+//                switch self {
+//                case .trash:
+//                    return true
+//                default:
+//                    return false
+//                }
+//            }
+//        }
+//
+//        let libraryId: LibraryIdentifier
+//        let type: ItemType
+//        let title: String
+//        let metadataEditable: Bool
+//        let filesEditable: Bool
+//
+//        private var token: NotificationToken?
+//
+//        init(libraryId: LibraryIdentifier, type: ItemType, metadataEditable: Bool, filesEditable: Bool) {
+//            self.libraryId = libraryId
+//            self.type = type
+//            switch type {
+//            case .collection(_, let title), .search(_, let title):
+//                self.title = title
+//            case .all:
+//                self.title = "All Items"
+//            case .trash:
+//                self.title = "Trash"
+//            case .publications:
+//                self.title = "My Publications"
+//            }
+//            self.metadataEditable = metadataEditable
+//            self.filesEditable = filesEditable
+//        }
+//    }
+//
+//    let state: StoreState
+//
+//    func handle(action: StoreAction) {
+//
+//    }
+//}
 
 protocol ItemsDataSource {
     var sectionCount: Int { get }
