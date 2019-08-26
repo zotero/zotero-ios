@@ -13,7 +13,7 @@ struct MainView: View {
 
     var body: some View {
         NavigationView {
-            CollectionsView(store: self.defaultCollectionsStore)
+            CollectionsView(store: self.defaultCollectionsStore, controllers: self.controllers)
             ItemsView(store: self.defaultItemsStore)
         }
     }
