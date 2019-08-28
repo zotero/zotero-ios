@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 import CocoaLumberjack
 import RxSwift
@@ -88,14 +89,16 @@ class ItemsViewController: UIViewController {
         self.showItemDetail(with: .preview(item))
     }
 
-    private func showItemDetail(with type: ItemDetailStore.StoreState.DetailType) {
+    private func showItemDetail(with type: NewItemDetailStore.StoreState.DetailType) {
         do {
-            let store = try ItemDetailStore(initialState: ItemDetailStore.StoreState(type: type),
-                                            apiClient: self.store.apiClient,
-                                            fileStorage: self.store.fileStorage,
-                                            dbStorage: self.store.dbStorage,
-                                            schemaController: self.store.schemaController)
-            let controller = ItemDetailViewController(store: store)
+            let userId = try self.store.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
+            let store = try NewItemDetailStore(type: type,
+                                               userId: userId,
+                                               apiClient: self.store.apiClient,
+                                               fileStorage: self.store.fileStorage,
+                                               dbStorage: self.store.dbStorage,
+                                               schemaController: self.store.schemaController)
+            let controller = UIHostingController(rootView: ItemDetailView(store: store))
             self.navigationController?.pushViewController(controller, animated: true)
         } catch let error {
             DDLogError("ItemsViewController: could not create ItemDewtailStore: \(error)")

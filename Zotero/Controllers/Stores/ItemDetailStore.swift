@@ -41,12 +41,14 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Field {
+        struct Field: Identifiable {
             let key: String
             let name: String
             let value: String
             let isTitle: Bool
             let changed: Bool
+
+            var id: String { return self.key }
 
             func changed(value: String) -> Field {
                 return Field(key: self.key, name: self.name, value: value, isTitle: self.isTitle, changed: true)
@@ -57,7 +59,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Attachment {
+        struct Attachment: Identifiable {
             enum ContentType: Equatable {
                 case file(file: File, isCached: Bool)
                 case url(URL)
@@ -80,6 +82,8 @@ class NewItemDetailStore: Store {
             let type: ContentType
             let libraryId: LibraryIdentifier
             let changed: Bool
+
+            var id: String { return self.key }
 
             init(key: String, title: String,
                  filename: String, type: ContentType,
@@ -117,11 +121,13 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Note {
+        struct Note: Identifiable {
             let key: String
             let title: String
             let text: String
             let changed: Bool
+
+            var id: String { return self.key }
 
             init(key: String, text: String, changed: Bool = true) {
                 self.key = key
@@ -143,9 +149,11 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Tag {
+        struct Tag: Identifiable {
             let name: String
             let color: String
+
+            var id: String { return self.name }
 
             var uiColor: UIColor? {
                 guard !self.color.isEmpty else { return nil }
@@ -158,11 +166,13 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Creator {
+        struct Creator: Identifiable {
             let rawType: String
             let firstName: String
             let lastName: String
             let name: String
+
+            var id: UUID { return UUID() }
 
             init(creator: RCreator) {
                 self.rawType = creator.rawType
