@@ -14,6 +14,7 @@ struct ItemDetailView: View {
     var body: some View {
         List {
             FieldsSection(title: self.store.state.data.title,
+                          type: self.store.title(for: self.store.state.data.type),
                           fields: self.store.state.data.fields.filter({ !$0.value.isEmpty }),
                           abstract: self.store.state.data.abstract)
 
@@ -34,14 +35,16 @@ struct ItemDetailView: View {
 
 fileprivate struct FieldsSection: View {
     let title: String
+    let type: String
     let fields: [NewItemDetailStore.StoreState.Field]
     let abstract: String?
 
     var body: some View {
         Section {
             ItemDetailTitleView(title: self.title)
+            ItemDetailFieldView(title: "Item Type", value: self.type)
             ForEach(self.fields) { field in
-                ItemDetailFieldView(field: field)
+                ItemDetailFieldView(title: field.name, value: field.value)
             }
             self.abstract.flatMap(ItemDetailAbstractView.init)
         }
@@ -86,6 +89,9 @@ fileprivate struct AttachmentsSection: View {
             ItemDetailTitleView(title: "Attachments")
                 // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
                 .listRowBackground(Color.gray.opacity(0.15))
+            ForEach(self.attachments) { attachment in
+                ItemDetailAttachmentView(filename: attachment.filename)
+            }
         }
     }
 }

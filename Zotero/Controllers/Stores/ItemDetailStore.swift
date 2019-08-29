@@ -338,6 +338,10 @@ class NewItemDetailStore: Store {
     func handle(action: StoreAction) {
 
     }
+
+    func title(for itemType: String) -> String {
+        return self.schemaController.localized(itemType: itemType) ?? "Unknown"
+    }
 }
 
 struct EditingSectionDiff {

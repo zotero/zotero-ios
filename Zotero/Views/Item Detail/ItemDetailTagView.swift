@@ -14,15 +14,23 @@ struct ItemDetailTagView: View {
 
     var body: some View {
         HStack {
-            self.color.flatMap { Circle().foregroundColor($0) }
+            self.color.flatMap {
+                Circle().foregroundColor($0)
+                        .aspectRatio(1.0, contentMode: .fit)
+                        .frame(maxHeight: 16)
+            }
             Text(self.name)
-            Spacer()
         }
     }
 }
 
+#if DEBUG
+
 struct ItemDetailTagView_Previews: PreviewProvider {
     static var previews: some View {
         ItemDetailTagView(color: .red, name: "Books")
+            .previewLayout(.fixed(width: 320, height: 44))
     }
 }
+
+#endif

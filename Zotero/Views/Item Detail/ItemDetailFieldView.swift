@@ -9,15 +9,16 @@
 import SwiftUI
 
 struct ItemDetailFieldView: View {
-    let field: NewItemDetailStore.StoreState.Field
+    let title: String
+    let value: String
 
     var body: some View {
         HStack {
-            Text(self.field.name)
+            Text(self.title)
                 .foregroundColor(.gray)
                 .font(.headline)
                 .fontWeight(.regular)
-            Text(self.field.value)
+            Text(self.value)
         }
     }
 }
@@ -27,15 +28,9 @@ struct ItemDetailFieldView: View {
 struct ItemDetailFieldView_Previews: PreviewProvider {
     static var previews: some View {
         List {
-            ItemDetailFieldView(field: .init(key: "", name: "Title",
-                                             value: "Some journal article", isTitle: true,
-                                             changed: false))
-            ItemDetailFieldView(field: .init(key: "", name: "Item Type",
-                                             value: "Journal article", isTitle: true,
-                                             changed: false))
-            ItemDetailFieldView(field: .init(key: "", name: "Pages",
-                                             value: "23", isTitle: true,
-                                             changed: false))
+            ItemDetailFieldView(title: "Title", value: "Some title")
+            ItemDetailFieldView(title: "Item type", value: "Journal article")
+            ItemDetailFieldView(title: "Pages", value: "23")
         }
     }
 }

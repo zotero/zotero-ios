@@ -82,6 +82,7 @@
 		B353370A22CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
 		B356247F2267302B006D039F /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356247E2267302B006D039F /* KeyGenerator.swift */; };
 		B3562481226758EE006D039F /* CreateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */; };
+		B356360C2318318600C77B62 /* ItemDetailAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356360B2318318600C77B62 /* ItemDetailAttachmentView.swift */; };
 		B35CF5DA22E5BE7A007ADAAA /* MD5+Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */; };
 		B35E39D122772DA300A368C7 /* ResolveItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */; };
 		B36171CD2270B81200246E45 /* PickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36171CB2270B81200246E45 /* PickerViewController.swift */; };
@@ -313,6 +314,7 @@
 		B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnyChangedObjectsInLibraryDbRequest.swift; sourceTree = "<group>"; };
 		B356247E2267302B006D039F /* KeyGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyGenerator.swift; sourceTree = "<group>"; };
 		B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B356360B2318318600C77B62 /* ItemDetailAttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailAttachmentView.swift; sourceTree = "<group>"; };
 		B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MD5+Url.swift"; sourceTree = "<group>"; };
 		B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveItemDbRequest.swift; sourceTree = "<group>"; };
 		B36171CB2270B81200246E45 /* PickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickerViewController.swift; sourceTree = "<group>"; };
@@ -875,6 +877,7 @@
 				B3E14B9E2316857C00E31ABD /* ItemDetailSectionView.swift */,
 				B3E14BA02316925800E31ABD /* ItemDetailNoteView.swift */,
 				B37DC68C23169497009A5AA7 /* ItemDetailTagView.swift */,
+				B356360B2318318600C77B62 /* ItemDetailAttachmentView.swift */,
 			);
 			path = "Item Detail";
 			sourceTree = "<group>";
@@ -1277,6 +1280,7 @@
 				B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */,
 				B3045F5D22C0F5090032C8C8 /* KeyRequest.swift in Sources */,
 				B353370822CCB620005648CB /* KeyedResponse.swift in Sources */,
+				B356360C2318318600C77B62 /* ItemDetailAttachmentView.swift in Sources */,
 				B363034C224B8285009F839F /* Predicates.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
