@@ -167,24 +167,36 @@ class NewItemDetailStore: Store {
         }
 
         struct Creator: Identifiable {
-            let rawType: String
-            let firstName: String
-            let lastName: String
+            let type: String
+            let localizedType: String
             let name: String
 
             var id: UUID { return UUID() }
 
-            init(creator: RCreator) {
-                self.rawType = creator.rawType
-                self.firstName = creator.firstName
-                self.lastName = creator.lastName
-                self.name = creator.name
+            init(firstName: String, lastName: String, fullName: String, type: String, localizedType: String) {
+                self.type = type
+                self.localizedType = localizedType
+
+                if !fullName.isEmpty {
+                    self.name = fullName
+                } else {
+                    if !firstName.isEmpty || !lastName.isEmpty {
+                        var name = lastName
+                        if !lastName.isEmpty {
+                            name +te= ", "
+                        }
+                        self.name = name + firstName
+                    } else {
+                        self.name = ""
+                    }
+                }
             }
         }
 
         struct Data {
             fileprivate(set) var title: String
             fileprivate(set) var type: String
+            fileprivate(set) var localizedType: String
             fileprivate(set) var creators: [Creator]
             fileprivate(set) var fields: [Field]
             fileprivate(set) var abstract: String?
@@ -244,7 +256,8 @@ class NewItemDetailStore: Store {
         switch type {
         case .creation:
             guard let itemType = schemaController.itemTypes.sorted().first,
-                  let fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }) else {
+                  let fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }),
+                  let localizedType = schemaController.localized(itemType: itemType) else {
                 throw StoreError.typeNotSupported
             }
 
@@ -258,6 +271,7 @@ class NewItemDetailStore: Store {
 
             return StoreState.Data(title: "",
                                    type: itemType,
+                                   localizedType: localizedType,
                                    creators: [],
                                    fields: fields,
                                    abstract: (hasAbstract ? "" : nil),
@@ -266,7 +280,8 @@ class NewItemDetailStore: Store {
                                    tags: [])
 
         case .preview(let item):
-            guard let fieldKeys = schemaController.fields(for: item.rawType)?.map({ $0.field }) else {
+            guard let fieldKeys = schemaController.fields(for: item.rawType)?.map({ $0.field }),
+                  let localizedType = schemaController.localized(itemType: item.rawType) else {
                 throw StoreError.typeNotSupported
             }
 
@@ -290,7 +305,11 @@ class NewItemDetailStore: Store {
                 let value = fieldValues[key] ?? ""
                 return StoreState.Field(key: key, name: name, value: value, isTitle: false, changed: false)
             }
-            let creators = item.creators.sorted(byKeyPath: "orderId").map(StoreState.Creator.init)
+            let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> StoreState.Creator? in
+                guard let localizedType = schemaController.localized(creator: creator.rawType) else { return nil }
+                return StoreState.Creator(firstName: creator.firstName, lastName: creator.lastName,
+                                          fullName: creator.name, type: creator.rawType, localizedType: localizedType)
+            }
             let notes = item.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                      .sorted(byKeyPath: "title")
                                      .compactMap(StoreState.Note.init)
@@ -303,6 +322,7 @@ class NewItemDetailStore: Store {
 
             return StoreState.Data(title: item.title,
                                    type: item.rawType,
+                                   localizedType: localizedType,
                                    creators: Array(creators),
                                    fields: fields,
                                    abstract: abstract,
@@ -337,10 +357,6 @@ class NewItemDetailStore: Store {
 
     func handle(action: StoreAction) {
 
-    }
-
-    func title(for itemType: String) -> String {
-        return self.schemaController.localized(itemType: itemType) ?? "Unknown"
     }
 }
 

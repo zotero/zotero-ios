@@ -14,8 +14,9 @@ struct ItemDetailView: View {
     var body: some View {
         List {
             FieldsSection(title: self.store.state.data.title,
-                          type: self.store.title(for: self.store.state.data.type),
+                          type: self.store.state.data.localizedType,
                           fields: self.store.state.data.fields.filter({ !$0.value.isEmpty }),
+                          creators: self.store.state.data.creators,
                           abstract: self.store.state.data.abstract)
 
             if !self.store.state.data.notes.isEmpty {
@@ -37,12 +38,16 @@ fileprivate struct FieldsSection: View {
     let title: String
     let type: String
     let fields: [NewItemDetailStore.StoreState.Field]
+    let creators: [NewItemDetailStore.StoreState.Creator]
     let abstract: String?
 
     var body: some View {
         Section {
             ItemDetailTitleView(title: self.title)
             ItemDetailFieldView(title: "Item Type", value: self.type)
+            ForEach(self.creators) { creator in
+                ItemDetailFieldView(title: creator.localizedType, value: creator.name)
+            }
             ForEach(self.fields) { field in
                 ItemDetailFieldView(title: field.name, value: field.value)
             }
