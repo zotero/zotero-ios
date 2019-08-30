@@ -183,7 +183,7 @@ class NewItemDetailStore: Store {
                     if !firstName.isEmpty || !lastName.isEmpty {
                         var name = lastName
                         if !lastName.isEmpty {
-                            name +te= ", "
+                            name += ", "
                         }
                         self.name = name + firstName
                     } else {

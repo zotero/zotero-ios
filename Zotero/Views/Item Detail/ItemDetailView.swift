@@ -10,14 +10,19 @@ import SwiftUI
 
 struct ItemDetailView: View {
     @ObservedObject private(set) var store: NewItemDetailStore
+    @Environment(\.editMode) private var editMode: Binding<EditMode>
+    private var isEditing: Bool {
+        return self.editMode?.wrappedValue.isEditing ?? false
+    }
 
     var body: some View {
         List {
             FieldsSection(title: self.store.state.data.title,
                           type: self.store.state.data.localizedType,
-                          fields: self.store.state.data.fields.filter({ !$0.value.isEmpty }),
+                          fields: self.visibleFields,
                           creators: self.store.state.data.creators,
-                          abstract: self.store.state.data.abstract)
+                          abstract: self.store.state.data.abstract,
+                          isEditing: self.isEditing)
 
             if !self.store.state.data.notes.isEmpty {
                 NotesSection(notes: self.store.state.data.notes)
@@ -31,6 +36,25 @@ struct ItemDetailView: View {
                 AttachmentsSection(attachments: self.store.state.data.attachments)
             }
         }
+        .navigationBarItems(trailing:
+            Button(action: { self.editMode?.wrappedValue.toggle() }) {
+                Text(self.isEditing ? "Done" : "Edit")
+            }
+        )
+    }
+
+    var visibleFields: [NewItemDetailStore.StoreState.Field] {
+        if self.editMode?.wrappedValue.isEditing ?? false {
+            return self.store.state.data.fields
+        } else {
+            return self.store.state.data.fields.filter({ !$0.value.isEmpty })
+        }
+    }
+}
+
+private extension EditMode {
+    mutating func toggle() {
+        self = self == .active ? .inactive : .active
     }
 }
 
@@ -40,6 +64,7 @@ fileprivate struct FieldsSection: View {
     let fields: [NewItemDetailStore.StoreState.Field]
     let creators: [NewItemDetailStore.StoreState.Creator]
     let abstract: String?
+    let isEditing: Bool
 
     var body: some View {
         Section {
@@ -51,7 +76,9 @@ fileprivate struct FieldsSection: View {
             ForEach(self.fields) { field in
                 ItemDetailFieldView(title: field.name, value: field.value)
             }
-            self.abstract.flatMap(ItemDetailAbstractView.init)
+            if self.isEditing || !(self.abstract?.isEmpty ?? true) {
+                self.abstract.flatMap(ItemDetailAbstractView.init)
+            }
         }
     }
 }
@@ -66,8 +93,12 @@ fileprivate struct NotesSection: View {
                 .listRowBackground(Color.gray.opacity(0.15))
             ForEach(self.notes) { note in
                 ItemDetailNoteView(text: note.title)
-            }
+            }.onDelete(perform: self.delete)
         }
+    }
+
+    private func delete(at offsets: IndexSet) {
+
     }
 }
 
@@ -81,8 +112,12 @@ fileprivate struct TagsSection: View {
                 .listRowBackground(Color.gray.opacity(0.15))
             ForEach(self.tags) { tag in
                 ItemDetailTagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
-            }
+            }.onDelete(perform: self.delete)
         }
+    }
+
+    private func delete(at offsets: IndexSet) {
+
     }
 }
 
@@ -96,8 +131,12 @@ fileprivate struct AttachmentsSection: View {
                 .listRowBackground(Color.gray.opacity(0.15))
             ForEach(self.attachments) { attachment in
                 ItemDetailAttachmentView(filename: attachment.filename)
-            }
+            }.onDelete(perform: self.delete)
         }
+    }
+
+    private func delete(at offsets: IndexSet) {
+
     }
 }
 

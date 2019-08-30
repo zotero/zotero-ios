@@ -17,7 +17,6 @@ struct CollectionsView: View {
     var body: some View {
         List {
             ForEach(self.store.state.cellData) { cell in
-                
                 NavigationLink(destination: self.itemsView(from: cell)) {
                     CollectionRow(data: cell).deleteDisabled(cell.type.isCustom)
                 }
