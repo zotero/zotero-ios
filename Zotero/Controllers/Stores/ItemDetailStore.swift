@@ -6,14 +6,14 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import  Combine
+import Combine
 import Foundation
 
 import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-class NewItemDetailStore: Store {
+class NewItemDetailStore: Store, StateUpdater {
 
     enum StoreError: Error, Equatable {
         case typeNotSupported, libraryNotAssigned,
@@ -23,7 +23,7 @@ class NewItemDetailStore: Store {
     }
 
     enum StoreAction {
-
+        case startEditing, saveChanges, cancelChanges
     }
 
     class StoreState {
@@ -41,7 +41,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Field: Identifiable {
+        struct Field: Identifiable, Equatable {
             let key: String
             let name: String
             let value: String
@@ -59,7 +59,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Attachment: Identifiable {
+        struct Attachment: Identifiable, Equatable {
             enum ContentType: Equatable {
                 case file(file: File, isCached: Bool)
                 case url(URL)
@@ -121,7 +121,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Note: Identifiable {
+        struct Note: Identifiable, Equatable {
             let key: String
             let title: String
             let text: String
@@ -149,7 +149,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Tag: Identifiable {
+        struct Tag: Identifiable, Equatable {
             let name: String
             let color: String
 
@@ -166,7 +166,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Creator: Identifiable {
+        struct Creator: Identifiable, Equatable {
             let type: String
             let localizedType: String
             let name: String
@@ -193,7 +193,7 @@ class NewItemDetailStore: Store {
             }
         }
 
-        struct Data {
+        struct Data: Equatable {
             fileprivate(set) var title: String
             fileprivate(set) var type: String
             fileprivate(set) var localizedType: String
@@ -203,14 +203,35 @@ class NewItemDetailStore: Store {
             fileprivate(set) var notes: [Note]
             fileprivate(set) var attachments: [Attachment]
             fileprivate(set) var tags: [Tag]
+
+            fileprivate func allFields(schemaController: SchemaController) -> [Field] {
+                var allFields = self.fields
+                if let titleKey = schemaController.titleKey(for: self.type) {
+                    allFields.append(StoreState.Field(key: titleKey,
+                                                      name: "",
+                                                      value: self.title,
+                                                      isTitle: true,
+                                                      changed: !self.title.isEmpty))
+                }
+                if let abstract = self.abstract {
+                    allFields.append(StoreState.Field(key: FieldKeys.abstract,
+                                                      name: "",
+                                                      value: abstract,
+                                                      isTitle: false,
+                                                      changed: !abstract.isEmpty))
+                }
+                return allFields
+            }
         }
 
-        let type: DetailType
         let userId: Int
         let metadataEditable: Bool
         let filesEditable: Bool
 
+        fileprivate(set) var type: DetailType
         fileprivate(set) var data: Data
+        fileprivate(set) var snapshot: Data?
+        fileprivate(set) var error: StoreError?
 
         init(userId: Int, type: DetailType, data: StoreState.Data) {
             self.userId = userId
@@ -356,7 +377,96 @@ class NewItemDetailStore: Store {
     }
 
     func handle(action: StoreAction) {
+        switch action {
+        case .startEditing:
+            // We just create a snapshot of current data, we don't need to update the SwiftUI view,
+            // so let's just assign the snapshot directly
+            self.state.snapshot = self.state.data
+        case .saveChanges:
+            let didChange = self.state.snapshot != self.state.data
+            // We just remove the snapshot from previous data, we don't need to update the SwiftUI view,
+            // so let's just remove it directly
+            self.state.snapshot = nil
+            if didChange {
+                self.saveChanges()
+            }
+        case .cancelChanges:
+            guard let snapshot = self.state.snapshot else { return }
+            self.updateState { state in
+                state.data = snapshot
+                state.snapshot = nil
+            }
+        }
+    }
 
+    private func saveChanges() {
+        // TODO: - move to background thread if possible
+        // SWIFTUI BUG: - sync store with environmentt .editMode so that we can switch edit mode when background task finished
+
+        self.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
+
+        do {
+            switch self.state.type {
+            case .preview(let item):
+                guard let libraryId = item.libraryId else {
+                    self.updateState { $0.error = .libraryNotAssigned }
+                    return
+                }
+                try self.updateItem(key: item.key, libraryId: libraryId, data: self.state.data)
+
+            case .creation(let libraryId, let collectionKey, _):
+                let item = try self.createItem(with: libraryId, collectionKey: collectionKey, data: self.state.data)
+                self.updateState { state in
+                    state.type = .preview(item)
+                }
+            }
+        } catch let error {
+            DDLogError("ItemDetailStore: can't store changes - \(error)")
+            self.updateState { $0.error = (error as? StoreError) ?? .cantStoreChanges }
+        }
+    }
+
+    private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: StoreState.Data) throws -> RItem {
+        let request = CreateItemDbRequest(libraryId: libraryId,
+                                          collectionKey: collectionKey,
+                                          type: data.type,
+                                          fields: data.allFields(schemaController: self.schemaController),
+                                          notes: data.notes,
+                                          attachments: data.attachments,
+                                          tags: data.tags)
+        return try self.dbStorage.createCoordinator().perform(request: request)
+    }
+
+    private func updateItem(key: String, libraryId: LibraryIdentifier, data: StoreState.Data) throws {
+        let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
+                                                      itemKey: key,
+                                                      type: data.type,
+                                                      fields: data.allFields(schemaController: self.schemaController),
+                                                      notes: data.notes,
+                                                      attachments: data.attachments,
+                                                      tags: data.tags)
+        try self.dbStorage.createCoordinator().perform(request: request)
+    }
+
+    /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)
+    /// - parameter attachments: Attachments which will be copied if needed
+    private func copyAttachmentFilesIfNeeded(for attachments: [StoreState.Attachment]) {
+        for attachment in attachments {
+            guard attachment.changed else { continue }
+
+            switch attachment.type {
+            case .url: continue
+            case .file(let originalFile, _):
+                let newFile = Files.objectFile(for: .item, libraryId: attachment.libraryId,
+                                               key: attachment.key, ext: originalFile.ext)
+                // Make sure that the file was not already moved to our internal location before
+                guard originalFile.createUrl() != newFile.createUrl() else { continue }
+
+                // We can just try to copy the file here, if it doesn't work the user will be notified during sync
+                // process and can try to remove/re-add the attachment
+                try? self.fileStorage.copy(from: originalFile, to: newFile)
+            }
+        }
     }
 }
 
@@ -770,69 +880,69 @@ class ItemDetailStore: OldStore {
     }
 
     private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?) {
-        guard let dataSource = self.state.value.editingDataSource else { return }
-
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let `self` = self else { return }
-            do {
-                self.copyAttachmentFilesIfNeeded(for: dataSource.attachments)
-                let newItem = try self.createItem(from: dataSource, libraryId: libraryId, collectionKey: collectionKey)
-                let newDataSource = try ItemDetailPreviewDataSource(item: newItem,
-                                                                    schemaController: self.schemaController,
-                                                                    fileStorage: self.fileStorage)
-                let diff = self.diff(between: newDataSource, and: dataSource, isEditing: false)
-                let itemRef = ThreadSafeReference(to: newItem)
-
-                DispatchQueue.main.async { [weak self] in
-                    let request = ResolveItemDbRequest(itemRef: itemRef)
-                    guard let coordinator = try? self?.dbStorage.createCoordinator(),
-                          let item = try? coordinator.perform(request: request) else { return }
-
-                    self?.updater.updateState { state in
-                        state.editingDiff = diff
-                        state.editingDataSource = nil
-                        state.previewDataSource = newDataSource
-                        state.dataSource = newDataSource
-                        state.isEditing = false
-                        state.type = .preview(item)
-                        state.changes.insert(.data)
-                    }
-                }
-            } catch let error {
-                DDLogError("ItemDetailStore: can't store changes: \(error)")
-                self.updater.updateState { state in
-                    state.error = .cantStoreChanges
-                }
-            }
-        }
+//        guard let dataSource = self.state.value.editingDataSource else { return }
+//
+//        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+//            guard let `self` = self else { return }
+//            do {
+//                self.copyAttachmentFilesIfNeeded(for: dataSource.attachments)
+//                let newItem = try self.createItem(from: dataSource, libraryId: libraryId, collectionKey: collectionKey)
+//                let newDataSource = try ItemDetailPreviewDataSource(item: newItem,
+//                                                                    schemaController: self.schemaController,
+//                                                                    fileStorage: self.fileStorage)
+//                let diff = self.diff(between: newDataSource, and: dataSource, isEditing: false)
+//                let itemRef = ThreadSafeReference(to: newItem)
+//
+//                DispatchQueue.main.async { [weak self] in
+//                    let request = ResolveItemDbRequest(itemRef: itemRef)
+//                    guard let coordinator = try? self?.dbStorage.createCoordinator(),
+//                          let item = try? coordinator.perform(request: request) else { return }
+//
+//                    self?.updater.updateState { state in
+//                        state.editingDiff = diff
+//                        state.editingDataSource = nil
+//                        state.previewDataSource = newDataSource
+//                        state.dataSource = newDataSource
+//                        state.isEditing = false
+//                        state.type = .preview(item)
+//                        state.changes.insert(.data)
+//                    }
+//                }
+//            } catch let error {
+//                DDLogError("ItemDetailStore: can't store changes: \(error)")
+//                self.updater.updateState { state in
+//                    state.error = .cantStoreChanges
+//                }
+//            }
+//        }
     }
 
-    private func createItem(from dataSource: ItemDetailEditingDataSource,
-                            libraryId: LibraryIdentifier, collectionKey: String?) throws -> RItem {
-        // We need to collect all fields for this item type, so we add back title and abstract, which are excluded
-        // from fields in ItemDetailEditingDataSource and used separately
-        var allFields = dataSource.fields
-        if let titleKey = self.schemaController.titleKey(for: dataSource.type) {
-            allFields.append(ItemDetailStore.StoreState.Field(key: titleKey, name: "",
-                                                              value: dataSource.title,
-                                                              isTitle: true,
-                                                              changed: !dataSource.title.isEmpty))
-        }
-        if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
-            allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
-                                                              value: (dataSource.abstract ?? ""),
-                                                              isTitle: false,
-                                                              changed: (dataSource.abstract != nil)))
-        }
-        let request = CreateItemDbRequest(libraryId: libraryId,
-                                          collectionKey: collectionKey,
-                                          type: dataSource.type,
-                                          fields: allFields,
-                                          notes: dataSource.notes,
-                                          attachments: dataSource.attachments,
-                                          tags: dataSource.tags)
-        return try self.dbStorage.createCoordinator().perform(request: request)
-    }
+//    private func createItem(from dataSource: ItemDetailEditingDataSource,
+//                            libraryId: LibraryIdentifier, collectionKey: String?) throws -> RItem {
+//        // We need to collect all fields for this item type, so we add back title and abstract, which are excluded
+//        // from fields in ItemDetailEditingDataSource and used separately
+//        var allFields = dataSource.fields
+//        if let titleKey = self.schemaController.titleKey(for: dataSource.type) {
+//            allFields.append(ItemDetailStore.StoreState.Field(key: titleKey, name: "",
+//                                                              value: dataSource.title,
+//                                                              isTitle: true,
+//                                                              changed: !dataSource.title.isEmpty))
+//        }
+//        if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
+//            allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
+//                                                              value: (dataSource.abstract ?? ""),
+//                                                              isTitle: false,
+//                                                              changed: (dataSource.abstract != nil)))
+//        }
+//        let request = CreateItemDbRequest(libraryId: libraryId,
+//                                          collectionKey: collectionKey,
+//                                          type: dataSource.type,
+//                                          fields: allFields,
+//                                          notes: dataSource.notes,
+//                                          attachments: dataSource.attachments,
+//                                          tags: dataSource.tags)
+//        return try self.dbStorage.createCoordinator().perform(request: request)
+//    }
 
     private func startEditing() {
         guard let dataSource = self.state.value.previewDataSource else { return }
@@ -872,29 +982,29 @@ class ItemDetailStore: OldStore {
     private func updateItem(with key: String, libraryId: LibraryIdentifier,
                             from dataSource: ItemDetailEditingDataSource,
                             originalSource: ItemDetailPreviewDataSource) throws {
-        let type: String? = dataSource.type == originalSource.type ? nil : dataSource.type
-        let titleKey = self.schemaController.titleKey(for: dataSource.type)
-        var allFields = dataSource.fields
-        if let key = titleKey {
-            allFields.append(ItemDetailStore.StoreState.Field(key: key, name: "",
-                                                              value: dataSource.title,
-                                                              isTitle: true,
-                                                              changed: (dataSource.title != originalSource.title)))
-        }
-        if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
-            allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
-                                                              value: (dataSource.abstract ?? ""),
-                                                              isTitle: false,
-                                                              changed: (dataSource.abstract != originalSource.abstract)))
-        }
-        let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
-                                                      itemKey: key,
-                                                      type: type,
-                                                      fields: allFields,
-                                                      notes: dataSource.notes,
-                                                      attachments: dataSource.attachments,
-                                                      tags: dataSource.tags)
-        try self.dbStorage.createCoordinator().perform(request: request)
+//        let type: String? = dataSource.type == originalSource.type ? nil : dataSource.type
+//        let titleKey = self.schemaController.titleKey(for: dataSource.type)
+//        var allFields = dataSource.fields
+//        if let key = titleKey {
+//            allFields.append(ItemDetailStore.StoreState.Field(key: key, name: "",
+//                                                              value: dataSource.title,
+//                                                              isTitle: true,
+//                                                              changed: (dataSource.title != originalSource.title)))
+//        }
+//        if dataSource.sections.contains(.abstract) { // if this item type has abstract, add a field for it
+//            allFields.append(ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
+//                                                              value: (dataSource.abstract ?? ""),
+//                                                              isTitle: false,
+//                                                              changed: (dataSource.abstract != originalSource.abstract)))
+//        }
+//        let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
+//                                                      itemKey: key,
+//                                                      type: type,
+//                                                      fields: allFields,
+//                                                      notes: dataSource.notes,
+//                                                      attachments: dataSource.attachments,
+//                                                      tags: dataSource.tags)
+//        try self.dbStorage.createCoordinator().perform(request: request)
     }
 
     /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)

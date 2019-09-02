@@ -37,10 +37,28 @@ struct ItemDetailView: View {
             }
         }
         .navigationBarItems(trailing:
-            Button(action: { self.editMode?.wrappedValue.toggle() }) {
-                Text(self.isEditing ? "Done" : "Edit")
+            HStack {
+                if self.isEditing {
+                    Button(action: {
+                        self.store.handle(action: .cancelChanges)
+                        self.editMode?.wrappedValue = .inactive
+                    }) {
+                        Text("Cancel")
+                    }
+                }
+                Button(action: {
+                    if self.isEditing {
+                        self.store.handle(action: .saveChanges)
+                    } else {
+                        self.store.handle(action: .startEditing)
+                    }
+                    self.editMode?.wrappedValue.toggle()
+                }) {
+                    Text(self.isEditing ? "Done" : "Edit")
+                }
             }
         )
+        .navigationBarBackButtonHidden(self.isEditing)
     }
 
     var visibleFields: [NewItemDetailStore.StoreState.Field] {

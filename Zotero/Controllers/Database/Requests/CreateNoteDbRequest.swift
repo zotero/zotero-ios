@@ -13,7 +13,7 @@ import RealmSwift
 struct CreateNoteDbRequest: DbResponseRequest {
     typealias Response = RItem
 
-    let note: ItemDetailStore.StoreState.Note
+    let note: NewItemDetailStore.StoreState.Note
 
     var needsWrite: Bool { return true }
 
