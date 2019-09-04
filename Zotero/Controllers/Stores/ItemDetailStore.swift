@@ -21,7 +21,7 @@ class NewItemDetailStore: ObservableObject {
         case fileNotCopied(String)
     }
 
-    class StoreState {
+    struct StoreState {
         enum DetailType {
             case creation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
             case preview(RItem)
@@ -232,8 +232,6 @@ class NewItemDetailStore: ObservableObject {
         let userId: Int
         let metadataEditable: Bool
         let filesEditable: Bool
-        // SWIFTUI BUG: should be defined by default, but bugged in current version
-        let objectWillChange: ObservableObjectPublisher
 
         var type: DetailType
         var data: Data
@@ -244,7 +242,6 @@ class NewItemDetailStore: ObservableObject {
             self.userId = userId
             self.type = type
             self.data = data
-            self.objectWillChange = ObservableObjectPublisher()
 
             switch type {
             case .preview(let item):
@@ -264,8 +261,14 @@ class NewItemDetailStore: ObservableObject {
     private let fileStorage: FileStorage
     private let dbStorage: DbStorage
     private let schemaController: SchemaController
+    // SWIFTUI BUG: should be defined by default, but bugged in current version
+    let objectWillChange: ObservableObjectPublisher
 
-    var state: StoreState
+    var state: StoreState {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
 
     init(type: StoreState.DetailType, userId: Int,
          apiClient: ApiClient, fileStorage: FileStorage,
@@ -278,6 +281,7 @@ class NewItemDetailStore: ObservableObject {
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
+        self.objectWillChange = ObservableObjectPublisher()
     }
 
     private static func createData(from type: StoreState.DetailType,
@@ -403,26 +407,21 @@ class NewItemDetailStore: ObservableObject {
     }
 
     func startEditing() {
-        self.updateState { state in
-            state.snapshot = state.data
-            // We need to change visibleFields from fields that only have some filled-in content to all fields
-            state.data.visibleFields = self.schemaController.fields(for: state.data.type)?.map({ $0.field }) ?? []
-        }
+        self.state.snapshot = state.data
+        // We need to change visibleFields from fields that only have some filled-in content to all fields
+        self.state.data.visibleFields = self.schemaController.fields(for: state.data.type)?.map({ $0.field }) ?? []
     }
 
     func cancelChanges() {
         guard let snapshot = self.state.snapshot else { return }
-        self.updateState { state in
-            state.data = snapshot
-            state.snapshot = nil
-        }
+        self.state.data = snapshot
+        self.state.snapshot = nil
     }
 
     func saveChanges() {
         if self.state.snapshot != self.state.data {
             self._saveChanges()
         } else {
-            // If data didn't change we just remove the snapshot from previous data, we don't need to update the SwiftUI view
             self.state.snapshot = nil
         }
     }
@@ -439,7 +438,7 @@ class NewItemDetailStore: ObservableObject {
             switch self.state.type {
             case .preview(let item):
                 guard let libraryId = item.libraryId else {
-                    self.updateState { $0.error = .libraryNotAssigned }
+                    self.state.error = .libraryNotAssigned
                     return
                 }
                 try self.updateItem(key: item.key, libraryId: libraryId, data: self.state.data)
@@ -451,17 +450,14 @@ class NewItemDetailStore: ObservableObject {
 
             let titleKey = self.schemaController.titleKey(for: self.state.data.type) ?? ""
             let fieldKeys = self.schemaController.fields(for: self.state.data.type)?.map { $0.field } ?? []
-
-            self.updateState { state in
-                state.snapshot = nil
-                if let type = newType {
-                    state.type = type
-                }
-                state.data.visibleFields = self.nonEmptyFieldKeys(for: state.data.fields, titleKey: titleKey, allFieldKeys: fieldKeys)
+            self.state.snapshot = nil
+            self.state.data.visibleFields = self.nonEmptyFieldKeys(for: state.data.fields, titleKey: titleKey, allFieldKeys: fieldKeys)
+            if let type = newType {
+                self.state.type = type
             }
         } catch let error {
             DDLogError("ItemDetailStore: can't store changes - \(error)")
-            self.updateState { $0.error = (error as? StoreError) ?? .cantStoreChanges }
+            self.state.error = (error as? StoreError) ?? .cantStoreChanges
         }
     }
 
@@ -519,8 +515,6 @@ class NewItemDetailStore: ObservableObject {
         }
     }
 }
-
-extension NewItemDetailStore: StateUpdater {}
 
 struct EditingSectionDiff {
     enum DiffType {

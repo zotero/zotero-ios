@@ -203,7 +203,6 @@
 		B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B34220D814F008D9D74 /* LinksResponse.swift */; };
 		B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3A220D8879008D9D74 /* ItemResponse.swift */; };
 		B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3E220D9084008D9D74 /* RVersions.swift */; };
-		B3FE4F8E230C3A3A0019A7D1 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FE4F8D230C3A3A0019A7D1 /* Store.swift */; };
 		B3FFDEDB228031AA0009EBBE /* DeletableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FFDEDA228031AA0009EBBE /* DeletableObject.swift */; };
 		B3FFDEDD228031F60009EBBE /* MarkObjectsAsDeletedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FFDEDC228031F60009EBBE /* MarkObjectsAsDeletedDbRequest.swift */; };
 		B3FFDEDF22805C9D0009EBBE /* ReadSearchDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FFDEDE22805C9D0009EBBE /* ReadSearchDbRequest.swift */; };
@@ -437,7 +436,6 @@
 		B3FD6B34220D814F008D9D74 /* LinksResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinksResponse.swift; sourceTree = "<group>"; };
 		B3FD6B3A220D8879008D9D74 /* ItemResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemResponse.swift; sourceTree = "<group>"; };
 		B3FD6B3E220D9084008D9D74 /* RVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RVersions.swift; sourceTree = "<group>"; };
-		B3FE4F8D230C3A3A0019A7D1 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		B3FFDEDA228031AA0009EBBE /* DeletableObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletableObject.swift; sourceTree = "<group>"; };
 		B3FFDEDC228031F60009EBBE /* MarkObjectsAsDeletedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsDeletedDbRequest.swift; sourceTree = "<group>"; };
 		B3FFDEDE22805C9D0009EBBE /* ReadSearchDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadSearchDbRequest.swift; sourceTree = "<group>"; };
@@ -590,7 +588,6 @@
 				B3C62EC52211DA41000FFBFF /* LibrariesStore.swift */,
 				B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */,
 				B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */,
-				B3FE4F8D230C3A3A0019A7D1 /* Store.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -1313,7 +1310,6 @@
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */,
-				B3FE4F8E230C3A3A0019A7D1 /* Store.swift in Sources */,
 				B3670AE02273527200B566B1 /* CreateItemDbRequest.swift in Sources */,
 				B30F668A220CB413009E7A8F /* FileManager+Utils.swift in Sources */,
 				B30E6CB9225DE84B0001B93A /* ObservableRequestExtensions.swift in Sources */,

@@ -21,10 +21,10 @@ struct CollectionsView: View {
                     CollectionRow(data: cell).deleteDisabled(cell.type.isCustom)
                 }
             }
-            .onDelete(perform: self.delete)
+            .onDelete(perform: self.store.deleteCells)
         }
         .onAppear {
-            self.store.handle(action: .load)
+            self.store.loadData()
         }
     }
 
@@ -54,10 +54,6 @@ struct CollectionsView: View {
                                            fileStorage: self.controllers.fileStorage,
                                            dbStorage: self.controllers.dbStorage,
                                            schemaController: self.controllers.schemaController))
-    }
-    
-    private func delete(at offsets: IndexSet) {
-        self.store.handle(action: .deleteCells(offsets))
     }
 }
 

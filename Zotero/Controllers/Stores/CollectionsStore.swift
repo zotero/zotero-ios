@@ -13,23 +13,14 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-class CollectionsStore: Store, StateUpdater {
-    typealias Action = StoreAction
-    typealias State = StoreState
-    
-    enum StoreAction {
-        case load
-        case deleteCells(IndexSet)
-        case editCell(Int)
-    }
-    
+class CollectionsStore: ObservableObject {
     enum StoreError: Error, Equatable {
         case dataLoading
         case collectionNotFound
         case deletion
     }
     
-    class StoreState {
+    struct StoreState {
         let libraryId: LibraryIdentifier
         let title: String
         let metadataEditable: Bool
@@ -51,7 +42,11 @@ class CollectionsStore: Store, StateUpdater {
         }
     }
     
-    let state: StoreState
+    private(set) var state: StoreState {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
@@ -60,19 +55,6 @@ class CollectionsStore: Store, StateUpdater {
         self.state = initialState
         self.dbStorage = dbStorage
         self.objectWillChange = ObservableObjectPublisher()
-    }
-
-    func handle(action: StoreAction) {
-        switch action {
-        case .load:
-            // SWIFTUI BUG: - need to delay it a little because it's called on `onAppear` and it reloads the state immediately which causes a tableview reload crash, remove dispatch after when fixed
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.loadData()
-            }
-        case .editCell(let index): break
-        case .deleteCells(let indexSet):
-            self.deleteCells(at: indexSet)
-        }
     }
     
 //    private func editCollection(at index: Int) {
@@ -92,7 +74,7 @@ class CollectionsStore: Store, StateUpdater {
 //        }
 //    }
 //
-    private func deleteCells(at indexSet: IndexSet) {
+    func deleteCells(at indexSet: IndexSet) {
         let cells = self.state.cellData
         let libraryId = self.state.libraryId
 
@@ -127,11 +109,20 @@ class CollectionsStore: Store, StateUpdater {
             try self.dbStorage.createCoordinator().perform(request: request)
         } catch let error {
             DDLogError("CollectionsStore: can't delete object - \(error)")
-            self.updateState { $0.error = .deletion }
+            DispatchQueue.main.async { [weak self] in
+                self?.state.error = .deletion
+            }
         }
     }
 
-    private func loadData() {
+    func loadData() {
+        // SWIFTUI BUG: - need to delay it a little because it's called on `onAppear` and it reloads the state immediately which causes a tableview reload crash, remove dispatch after when fixed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self._loadData()
+        }
+    }
+
+    private func _loadData() {
         guard self.state.collectionToken == nil && self.state.searchToken == nil else { return }
 
         do {
@@ -148,7 +139,7 @@ class CollectionsStore: Store, StateUpdater {
                 case .initial: break
                 case .error(let error):
                     DDLogError("CollectionsStore: can't load collection update: \(error)")
-                    self.updateState { $0.error = .dataLoading }
+                    self.state.error = .dataLoading
                 }
             })
 
@@ -160,19 +151,17 @@ class CollectionsStore: Store, StateUpdater {
                 case .initial: break
                 case .error(let error):
                     DDLogError("CollectionsStore: can't load collection update: \(error)")
-                    self.updateState { $0.error = .dataLoading }
+                      self.state.error = .dataLoading
                 }
             })
 
             let cells = CollectionCellData.createCells(from: collections) + CollectionCellData.createCells(from: searches)
-            self.updateState { state in
-                state.cellData.insert(contentsOf: cells, at: 1) // insert after .all custom cell
-                state.collectionToken = collectionToken
-                state.searchToken = searchToken
-            }
+            self.state.cellData.insert(contentsOf: cells, at: 1)
+            self.state.collectionToken = collectionToken
+            self.state.searchToken = searchToken
         } catch let error {
             DDLogError("CollectionsStore: can't load collections: \(error)")
-            self.updateState { $0.error = .dataLoading }
+            self.state.error = .dataLoading
         }
     }
     
@@ -203,9 +192,7 @@ class CollectionsStore: Store, StateUpdater {
         if startIndex == -1 && endIndex == -1 { return } // no object of that type found
         
         // Replace old cells of this type with new cells
-        self.updateState { state in
-            state.cellData.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
-            state.cellData.insert(contentsOf: cells, at: startIndex)
-        }
+        self.state.cellData.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
+        self.state.cellData.insert(contentsOf: cells, at: startIndex)
     }
 }
