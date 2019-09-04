@@ -137,6 +137,7 @@
 		B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E3223942160019F467 /* ObjectChangeObserver.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
+		B3A6ABB6231ECA4500425A49 /* ClosureTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A6ABB5231ECA4500425A49 /* ClosureTextField.swift */; };
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
@@ -369,6 +370,7 @@
 		B39B18E3223942160019F467 /* ObjectChangeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectChangeObserver.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
+		B3A6ABB5231ECA4500425A49 /* ClosureTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosureTextField.swift; sourceTree = "<group>"; };
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
@@ -603,6 +605,7 @@
 				B34111DA230C4EAE0021B2FA /* CollectionRow.swift */,
 				B3C6FE2C230FE56600560D4B /* ItemsView.swift */,
 				B3E86D4F2314085E00DAA6D8 /* MainView.swift */,
+				B3A6ABB5231ECA4500425A49 /* ClosureTextField.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1266,6 +1269,7 @@
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
 				B3E47158224127AC006E3B20 /* ItemDetailViewController.swift in Sources */,
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
+				B3A6ABB6231ECA4500425A49 /* ClosureTextField.swift in Sources */,
 				B312AD2422428F2900EDD5A4 /* ItemTitleCell.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B312AD2C22428F7200EDD5A4 /* ItemSpecialCell.swift in Sources */,

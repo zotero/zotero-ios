@@ -17,9 +17,10 @@ struct ItemDetailView: View {
 
     var body: some View {
         List {
-            FieldsSection(title: self.store.state.data.title,
+            FieldsSection(title: self.$store.state.data.title,
                           type: self.store.state.data.localizedType,
-                          fields: self.visibleFields,
+                          visibleFields: self.store.state.data.visibleFields,
+                          fields: self.$store.state.data.fields,
                           creators: self.store.state.data.creators,
                           abstract: self.store.state.data.abstract,
                           isEditing: self.isEditing)
@@ -40,7 +41,7 @@ struct ItemDetailView: View {
             HStack {
                 if self.isEditing {
                     Button(action: {
-                        self.store.handle(action: .cancelChanges)
+                        self.store.cancelChanges()
                         self.editMode?.wrappedValue = .inactive
                     }) {
                         Text("Cancel")
@@ -48,9 +49,9 @@ struct ItemDetailView: View {
                 }
                 Button(action: {
                     if self.isEditing {
-                        self.store.handle(action: .saveChanges)
+                        self.store.saveChanges()
                     } else {
-                        self.store.handle(action: .startEditing)
+                        self.store.startEditing()
                     }
                     self.editMode?.wrappedValue.toggle()
                 }) {
@@ -59,14 +60,6 @@ struct ItemDetailView: View {
             }
         )
         .navigationBarBackButtonHidden(self.isEditing)
-    }
-
-    var visibleFields: [NewItemDetailStore.StoreState.Field] {
-        if self.editMode?.wrappedValue.isEditing ?? false {
-            return self.store.state.data.fields
-        } else {
-            return self.store.state.data.fields.filter({ !$0.value.isEmpty })
-        }
     }
 }
 
@@ -77,22 +70,27 @@ private extension EditMode {
 }
 
 fileprivate struct FieldsSection: View {
-    let title: String
+    @Binding var title: String
     let type: String
-    let fields: [NewItemDetailStore.StoreState.Field]
+    let visibleFields: [String]
+    @Binding var fields: [String: NewItemDetailStore.StoreState.Field]
     let creators: [NewItemDetailStore.StoreState.Creator]
     let abstract: String?
     let isEditing: Bool
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: self.title)
-            ItemDetailFieldView(title: "Item Type", value: self.type)
+            ItemDetailTitleView(title: self.$title, editingEnabled: self.isEditing)
+            ItemDetailFieldView(title: "Item Type", value: .constant(self.type), editingEnabled: false)
             ForEach(self.creators) { creator in
-                ItemDetailFieldView(title: creator.localizedType, value: creator.name)
+                ItemDetailFieldView(title: creator.localizedType, value: .constant(creator.name), editingEnabled: false)
             }
-            ForEach(self.fields) { field in
-                ItemDetailFieldView(title: field.name, value: field.value)
+            ForEach(self.visibleFields, id: \.self) { key in
+                Binding(self.$fields[key]).flatMap {
+                    ItemDetailFieldView(title: $0.wrappedValue.name,
+                                        value: $0.value,
+                                        editingEnabled: self.isEditing)
+                }
             }
             if self.isEditing || !(self.abstract?.isEmpty ?? true) {
                 self.abstract.flatMap(ItemDetailAbstractView.init)
@@ -106,7 +104,7 @@ fileprivate struct NotesSection: View {
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: "Notes")
+            ItemDetailTitleView(title: .constant("Notes"), editingEnabled: false)
                 // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
                 .listRowBackground(Color.gray.opacity(0.15))
             ForEach(self.notes) { note in
@@ -125,7 +123,7 @@ fileprivate struct TagsSection: View {
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: "Tags")
+            ItemDetailTitleView(title: .constant("Tags"), editingEnabled: false)
                 // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
                 .listRowBackground(Color.gray.opacity(0.15))
             ForEach(self.tags) { tag in
@@ -144,7 +142,7 @@ fileprivate struct AttachmentsSection: View {
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: "Attachments")
+            ItemDetailTitleView(title: .constant("Attachments"), editingEnabled: false)
                 // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
                 .listRowBackground(Color.gray.opacity(0.15))
             ForEach(self.attachments) { attachment in

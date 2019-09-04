@@ -10,7 +10,8 @@ import SwiftUI
 
 struct ItemDetailFieldView: View {
     let title: String
-    let value: String
+    @Binding var value: String
+    let editingEnabled: Bool
 
     var body: some View {
         HStack {
@@ -18,7 +19,11 @@ struct ItemDetailFieldView: View {
                 .foregroundColor(.gray)
                 .font(.headline)
                 .fontWeight(.regular)
-            Text(self.value)
+            if self.editingEnabled {
+                TextField(self.title, text: self.$value)
+            } else {
+                Text(self.value)
+            }
         }
     }
 }
@@ -28,9 +33,9 @@ struct ItemDetailFieldView: View {
 struct ItemDetailFieldView_Previews: PreviewProvider {
     static var previews: some View {
         List {
-            ItemDetailFieldView(title: "Title", value: "Some title")
-            ItemDetailFieldView(title: "Item type", value: "Journal article")
-            ItemDetailFieldView(title: "Pages", value: "23")
+            ItemDetailFieldView(title: "Title", value: .constant("Some title"), editingEnabled: false)
+            ItemDetailFieldView(title: "Item type", value: .constant("Journal article"), editingEnabled: false)
+            ItemDetailFieldView(title: "Pages", value: .constant("23"), editingEnabled: false)
         }
     }
 }

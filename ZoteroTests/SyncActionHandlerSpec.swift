@@ -94,9 +94,9 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: StoreCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
                                                                            name: "New name", parentKey: nil))
-                let fields = [ItemDetailStore.StoreState.Field(key: "title", name: "",
+                let fields = [NewItemDetailStore.StoreState.Field(key: "title", name: "",
                                                                value: "New title", isTitle: true, changed: true),
-                              ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
+                              NewItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
                                                                value: "New abstract", isTitle: false, changed: true)]
                 try! coordinator.perform(request: StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
                                                                                   itemKey: "AAAAAAAA",
@@ -199,9 +199,9 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: StoreCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
                                                                            name: "New name", parentKey: nil))
-                let fields = [ItemDetailStore.StoreState.Field(key: "title", name: "",
+                let fields = [NewItemDetailStore.StoreState.Field(key: "title", name: "",
                                                                value: "New title", isTitle: true, changed: true),
-                              ItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
+                              NewItemDetailStore.StoreState.Field(key: FieldKeys.abstract, name: "",
                                                                value: "New abstract", isTitle: false, changed: true)]
                 try! coordinator.perform(request: StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
                                                                                   itemKey: "AAAAAAAA", type: nil,

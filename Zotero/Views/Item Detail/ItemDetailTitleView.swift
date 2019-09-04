@@ -9,22 +9,31 @@
 import SwiftUI
 
 struct ItemDetailTitleView: View {
-    let title: String
+    @Binding var title: String
+    let editingEnabled: Bool
 
     var body: some View {
-        Text(self.title)
-            .fontWeight(.light)
-            .font(.title)
-            .padding(.top)
+        Group {
+            if self.editingEnabled {
+                TextField("Title", text: self.$title)
+                    .font(.title)
+            } else {
+                Text(self.title)
+                    .fontWeight(.light)
+                    .font(.title)
+            }
+        }
+        .padding(.top)
     }
 }
 
 #if DEBUG
 
 struct ItemDetailTitleView_Previews: PreviewProvider {
+    
     static var previews: some View {
         List {
-            ItemDetailTitleView(title: "Some title")
+            ItemDetailTitleView(title: .constant("Some title"), editingEnabled: true)
         }
     }
 }

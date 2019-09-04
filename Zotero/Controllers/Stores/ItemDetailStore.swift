@@ -13,17 +13,12 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-class NewItemDetailStore: Store, StateUpdater {
-
+class NewItemDetailStore: ObservableObject {
     enum StoreError: Error, Equatable {
         case typeNotSupported, libraryNotAssigned,
              contentTypeUnknown, userMissing, downloadError, unknown,
              cantStoreChanges
         case fileNotCopied(String)
-    }
-
-    enum StoreAction {
-        case startEditing, saveChanges, cancelChanges
     }
 
     class StoreState {
@@ -43,13 +38,22 @@ class NewItemDetailStore: Store, StateUpdater {
 
         struct Field: Identifiable, Equatable {
             let key: String
-            let name: String
-            let value: String
+            var name: String {
+                didSet {
+                    self.changed = true
+                }
+            }
+            var value: String {
+                didSet {
+                    self.changed = true
+                }
+            }
             let isTitle: Bool
-            let changed: Bool
+            var changed: Bool
 
             var id: String { return self.key }
 
+            // TODO: - remove after swiftui refactoring
             func changed(value: String) -> Field {
                 return Field(key: self.key, name: self.name, value: value, isTitle: self.isTitle, changed: true)
             }
@@ -194,18 +198,19 @@ class NewItemDetailStore: Store, StateUpdater {
         }
 
         struct Data: Equatable {
-            fileprivate(set) var title: String
-            fileprivate(set) var type: String
-            fileprivate(set) var localizedType: String
-            fileprivate(set) var creators: [Creator]
-            fileprivate(set) var fields: [Field]
-            fileprivate(set) var abstract: String?
-            fileprivate(set) var notes: [Note]
-            fileprivate(set) var attachments: [Attachment]
-            fileprivate(set) var tags: [Tag]
+            var title: String
+            var type: String
+            var localizedType: String
+            var creators: [Creator]
+            var fields: [String: Field]
+            var visibleFields: [String]
+            var abstract: String?
+            var notes: [Note]
+            var attachments: [Attachment]
+            var tags: [Tag]
 
             fileprivate func allFields(schemaController: SchemaController) -> [Field] {
-                var allFields = self.fields
+                var allFields = Array(self.fields.values)
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(StoreState.Field(key: titleKey,
                                                       name: "",
@@ -227,16 +232,19 @@ class NewItemDetailStore: Store, StateUpdater {
         let userId: Int
         let metadataEditable: Bool
         let filesEditable: Bool
+        // SWIFTUI BUG: should be defined by default, but bugged in current version
+        let objectWillChange: ObservableObjectPublisher
 
-        fileprivate(set) var type: DetailType
-        fileprivate(set) var data: Data
-        fileprivate(set) var snapshot: Data?
-        fileprivate(set) var error: StoreError?
+        var type: DetailType
+        var data: Data
+        var snapshot: Data?
+        var error: StoreError?
 
         init(userId: Int, type: DetailType, data: StoreState.Data) {
             self.userId = userId
             self.type = type
             self.data = data
+            self.objectWillChange = ObservableObjectPublisher()
 
             switch type {
             case .preview(let item):
@@ -252,11 +260,12 @@ class NewItemDetailStore: Store, StateUpdater {
         }
     }
 
-    let state: StoreState
-    let apiClient: ApiClient
-    let fileStorage: FileStorage
-    let dbStorage: DbStorage
-    let schemaController: SchemaController
+    private let apiClient: ApiClient
+    private let fileStorage: FileStorage
+    private let dbStorage: DbStorage
+    private let schemaController: SchemaController
+
+    var state: StoreState
 
     init(type: StoreState.DetailType, userId: Int,
          apiClient: ApiClient, fileStorage: FileStorage,
@@ -282,12 +291,15 @@ class NewItemDetailStore: Store, StateUpdater {
                 throw StoreError.typeNotSupported
             }
 
+            // Creation has editing enabled by default, so we'll see all available fields
+
             let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
             let titleKey = schemaController.titleKey(for: itemType)
-            let fields = fieldKeys.compactMap { key -> StoreState.Field? in
-                guard key != FieldKeys.abstract && key != titleKey else { return nil }
+            var fields: [String: StoreState.Field] = [:]
+            for key in fieldKeys {
+                guard key != FieldKeys.abstract && key != titleKey else { continue }
                 let name = schemaController.localized(field: key) ?? ""
-                return StoreState.Field(key: key, name: name, value: "", isTitle: false, changed: false)
+                fields[key] = StoreState.Field(key: key, name: name, value: "", isTitle: false, changed: false)
             }
 
             return StoreState.Data(title: "",
@@ -295,6 +307,7 @@ class NewItemDetailStore: Store, StateUpdater {
                                    localizedType: localizedType,
                                    creators: [],
                                    fields: fields,
+                                   visibleFields: fieldKeys,
                                    abstract: (hasAbstract ? "" : nil),
                                    notes: [],
                                    attachments: [],
@@ -320,12 +333,24 @@ class NewItemDetailStore: Store, StateUpdater {
                 }
             }
 
-            let fields = fieldKeys.compactMap { key -> StoreState.Field? in
-                guard key != FieldKeys.abstract && key != titleKey else { return nil }
-                let name = schemaController.localized(field: key) ?? ""
+            // Preview has editing disabled by default, so we'll see only fields with some filled-in values
+            var visibleFields: [String] = fieldKeys
+            var fields: [String: StoreState.Field] = [:]
+
+            for key in fieldKeys {
                 let value = fieldValues[key] ?? ""
-                return StoreState.Field(key: key, name: name, value: value, isTitle: false, changed: false)
+                if value.isEmpty {
+                    if let index = visibleFields.firstIndex(of: key) {
+                        visibleFields.remove(at: index)
+                    }
+                }
+
+                guard key != titleKey && key != FieldKeys.abstract else { continue }
+
+                let name = schemaController.localized(field: key) ?? ""
+                fields[key] = StoreState.Field(key: key, name: name, value: value, isTitle: false, changed: false)
             }
+
             let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> StoreState.Creator? in
                 guard let localizedType = schemaController.localized(creator: creator.rawType) else { return nil }
                 return StoreState.Creator(firstName: creator.firstName, lastName: creator.lastName,
@@ -346,6 +371,7 @@ class NewItemDetailStore: Store, StateUpdater {
                                    localizedType: localizedType,
                                    creators: Array(creators),
                                    fields: fields,
+                                   visibleFields: visibleFields,
                                    abstract: abstract,
                                    notes: Array(notes),
                                    attachments: Array(attachments),
@@ -376,34 +402,38 @@ class NewItemDetailStore: Store, StateUpdater {
         }
     }
 
-    func handle(action: StoreAction) {
-        switch action {
-        case .startEditing:
-            // We just create a snapshot of current data, we don't need to update the SwiftUI view,
-            // so let's just assign the snapshot directly
-            self.state.snapshot = self.state.data
-        case .saveChanges:
-            let didChange = self.state.snapshot != self.state.data
-            // We just remove the snapshot from previous data, we don't need to update the SwiftUI view,
-            // so let's just remove it directly
-            self.state.snapshot = nil
-            if didChange {
-                self.saveChanges()
-            }
-        case .cancelChanges:
-            guard let snapshot = self.state.snapshot else { return }
-            self.updateState { state in
-                state.data = snapshot
-                state.snapshot = nil
-            }
+    func startEditing() {
+        self.updateState { state in
+            state.snapshot = state.data
+            // We need to change visibleFields from fields that only have some filled-in content to all fields
+            state.data.visibleFields = self.schemaController.fields(for: state.data.type)?.map({ $0.field }) ?? []
         }
     }
 
-    private func saveChanges() {
+    func cancelChanges() {
+        guard let snapshot = self.state.snapshot else { return }
+        self.updateState { state in
+            state.data = snapshot
+            state.snapshot = nil
+        }
+    }
+
+    func saveChanges() {
+        if self.state.snapshot != self.state.data {
+            self._saveChanges()
+        } else {
+            // If data didn't change we just remove the snapshot from previous data, we don't need to update the SwiftUI view
+            self.state.snapshot = nil
+        }
+    }
+
+    private func _saveChanges() {
         // TODO: - move to background thread if possible
         // SWIFTUI BUG: - sync store with environmentt .editMode so that we can switch edit mode when background task finished
 
         self.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
+
+        var newType: StoreState.DetailType?
 
         do {
             switch self.state.type {
@@ -416,14 +446,34 @@ class NewItemDetailStore: Store, StateUpdater {
 
             case .creation(let libraryId, let collectionKey, _):
                 let item = try self.createItem(with: libraryId, collectionKey: collectionKey, data: self.state.data)
-                self.updateState { state in
-                    state.type = .preview(item)
+                newType = .preview(item)
+            }
+
+            let titleKey = self.schemaController.titleKey(for: self.state.data.type) ?? ""
+            let fieldKeys = self.schemaController.fields(for: self.state.data.type)?.map { $0.field } ?? []
+
+            self.updateState { state in
+                state.snapshot = nil
+                if let type = newType {
+                    state.type = type
                 }
+                state.data.visibleFields = self.nonEmptyFieldKeys(for: state.data.fields, titleKey: titleKey, allFieldKeys: fieldKeys)
             }
         } catch let error {
             DDLogError("ItemDetailStore: can't store changes - \(error)")
             self.updateState { $0.error = (error as? StoreError) ?? .cantStoreChanges }
         }
+    }
+
+    private func nonEmptyFieldKeys(for fields: [String: StoreState.Field], titleKey: String, allFieldKeys: [String]) -> [String] {
+        var visibleKeys = allFieldKeys
+        for key in allFieldKeys {
+            let value = fields[key]?.value ?? ""
+            if value.isEmpty, let index = visibleKeys.firstIndex(of: key) {
+                visibleKeys.remove(at: index)
+            }
+        }
+        return visibleKeys
     }
 
     private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: StoreState.Data) throws -> RItem {
@@ -469,6 +519,8 @@ class NewItemDetailStore: Store, StateUpdater {
         }
     }
 }
+
+extension NewItemDetailStore: StateUpdater {}
 
 struct EditingSectionDiff {
     enum DiffType {

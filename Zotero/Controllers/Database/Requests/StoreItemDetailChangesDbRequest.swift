@@ -112,6 +112,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         attachmentsToRemove.forEach {
             $0.trash = true
             $0.changedFields.insert(.trash)
+            // TODO: - check if files need to be deleted
         }
 
         for attachment in self.attachments {
