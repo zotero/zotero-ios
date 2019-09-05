@@ -143,6 +143,20 @@ class SchemaController {
 
         return nil
     }
+
+    private var locale: SchemaLocale? {
+        let localeId = Locale.autoupdatingCurrent.identifier
+
+        if let locale = self.locales[localeId] {
+            return locale
+        }
+
+        if let locale = self.locales.first(where: { $0.key.contains(localeId) })?.value {
+            return locale
+        }
+
+        return self.locales["en-US"]
+    }
 }
 
 extension SchemaController: SchemaDataSource {
@@ -164,17 +178,14 @@ extension SchemaController: SchemaDataSource {
     }
 
     func localized(itemType: String) -> String? {
-        let localeId = Locale.autoupdatingCurrent.identifier
-        return self.locales[localeId]?.itemTypes[itemType]
+        return self.locale?.itemTypes[itemType]
     }
 
     func localized(field: String) -> String? {
-        let localeId = Locale.autoupdatingCurrent.identifier
-        return self.locales[localeId]?.fields[field]
+        return self.locale?.fields[field]
     }
 
     func localized(creator: String) -> String? {
-        let localeId = Locale.autoupdatingCurrent.identifier
-        return self.locales[localeId]?.creatorTypes[creator]
+        return self.locale?.creatorTypes[creator]
     }
 }
