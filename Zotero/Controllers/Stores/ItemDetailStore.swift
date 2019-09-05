@@ -171,28 +171,66 @@ class NewItemDetailStore: ObservableObject {
         }
 
         struct Creator: Identifiable, Equatable {
+            enum NamePresentation: Equatable {
+                case separate, full
+            }
+
             let type: String
             let localizedType: String
-            let name: String
+            var fullName: String
+            var firstName: String
+            var lastName: String
+            var namePresentation: NamePresentation
+
+            var name: String {
+                if !self.fullName.isEmpty {
+                    return self.fullName
+                }
+
+                guard !self.firstName.isEmpty || !self.lastName.isEmpty else { return "" }
+
+                var name = self.lastName
+                if !self.lastName.isEmpty {
+                    name += ", "
+                }
+                return name + self.firstName
+            }
 
             var id: UUID { return UUID() }
 
             init(firstName: String, lastName: String, fullName: String, type: String, localizedType: String) {
                 self.type = type
                 self.localizedType = localizedType
+                self.fullName = fullName
+                self.firstName = firstName
+                self.lastName = lastName
+                self.namePresentation = fullName.isEmpty ? .separate : .full
+            }
 
-                if !fullName.isEmpty {
-                    self.name = fullName
-                } else {
-                    if !firstName.isEmpty || !lastName.isEmpty {
-                        var name = lastName
-                        if !lastName.isEmpty {
-                            name += ", "
-                        }
-                        self.name = name + firstName
-                    } else {
-                        self.name = ""
+            mutating func change(namePresentation: NamePresentation) {
+                guard namePresentation != self.namePresentation else { return }
+
+                switch namePresentation {
+                case .full:
+                    self.fullName = self.firstName + (self.firstName.isEmpty ? "" : " ") + self.lastName
+                    self.firstName = ""
+                    self.lastName = ""
+                case .separate:
+                    if self.fullName.isEmpty {
+                        self.firstName = ""
+                        self.lastName = ""
+                        return
                     }
+
+                    if !self.fullName.contains(" ") {
+                        self.lastName = self.fullName
+                        self.firstName = ""
+                        return
+                    }
+
+                    let components = self.fullName.components(separatedBy: " ")
+                    self.firstName = components.dropLast().joined(separator: " ")
+                    self.lastName = components.last ?? ""
                 }
             }
         }
@@ -404,6 +442,14 @@ class NewItemDetailStore: ObservableObject {
                 return nil
             }
         }
+    }
+
+    func deleteCreators(at offsets: IndexSet) {
+        self.state.data.creators.remove(atOffsets: offsets)
+    }
+
+    func moveCreators(from offsets: IndexSet, to index: Int) {
+        self.state.data.creators.move(fromOffsets: offsets, toOffset: index)
     }
 
     func startEditing() {

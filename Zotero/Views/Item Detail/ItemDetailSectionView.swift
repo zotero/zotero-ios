@@ -14,7 +14,9 @@ struct ItemDetailSectionView: View {
     var body: some View {
         Text(self.title)
             .fontWeight(.light)
-            .font(.headline)
+            .font(.title)
+            .padding(.top)
+            .listRowBackground(Color.gray.opacity(0.15))
     }
 }
 

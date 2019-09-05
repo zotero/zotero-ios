@@ -15,10 +15,7 @@ struct ItemDetailFieldView: View {
 
     var body: some View {
         HStack {
-            Text(self.title)
-                .foregroundColor(.gray)
-                .font(.headline)
-                .fontWeight(.regular)
+            ItemDetailFieldTitleView(title: self.title)
             if self.editingEnabled {
                 TextField(self.title, text: self.$value)
             } else {

@@ -17,22 +17,22 @@ struct ItemDetailView: View {
 
     var body: some View {
         List {
-            FieldsSection(title: self.$store.state.data.title,
-                          type: self.store.state.data.localizedType,
+            ItemDetailTitleView(title: self.$store.state.data.title,
+                                editingEnabled: self.isEditing)
+            FieldsSection(type: self.store.state.data.localizedType,
                           visibleFields: self.store.state.data.visibleFields,
                           fields: self.$store.state.data.fields,
-                          creators: self.store.state.data.creators,
-                          abstract: self.store.state.data.abstract,
-                          isEditing: self.isEditing)
-
+                          creators: self.$store.state.data.creators,
+                          abstract: self.$store.state.data.abstract,
+                          isEditing: self.isEditing,
+                          deleteCreators: self.store.deleteCreators,
+                          moveCreators: self.store.moveCreators)
             if !self.store.state.data.notes.isEmpty {
                 NotesSection(notes: self.store.state.data.notes)
             }
-
             if !self.store.state.data.tags.isEmpty {
                 TagsSection(tags: self.store.state.data.tags)
             }
-
             if !self.store.state.data.attachments.isEmpty {
                 AttachmentsSection(attachments: self.store.state.data.attachments)
             }
@@ -63,28 +63,36 @@ struct ItemDetailView: View {
     }
 }
 
-private extension EditMode {
+fileprivate extension EditMode {
     mutating func toggle() {
         self = self == .active ? .inactive : .active
     }
 }
 
 fileprivate struct FieldsSection: View {
-    @Binding var title: String
     let type: String
     let visibleFields: [String]
     @Binding var fields: [String: NewItemDetailStore.StoreState.Field]
-    let creators: [NewItemDetailStore.StoreState.Creator]
-    let abstract: String?
+    @Binding var creators: [NewItemDetailStore.StoreState.Creator]
+    @Binding var abstract: String?
     let isEditing: Bool
+
+    let deleteCreators: (IndexSet) -> Void
+    let moveCreators: (IndexSet, Int) -> Void
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: self.$title, editingEnabled: self.isEditing)
             ItemDetailFieldView(title: "Item Type", value: .constant(self.type), editingEnabled: false)
+
             ForEach(self.creators) { creator in
-                ItemDetailFieldView(title: creator.localizedType, value: .constant(creator.name), editingEnabled: false)
-            }
+                // SWIFTUI BUG: - create a bindable instance of creator somehow, when using
+                // ForEach(0..<self.creators.count) we get a crash after onDelete because
+                // the index gets out of sync with the array
+                ItemDetailCreatorView(creator: .constant(creator),
+                                      editingEnabled: self.isEditing)
+            }.onDelete(perform: self.deleteCreators)
+             .onMove(perform: self.moveCreators)
+
             ForEach(self.visibleFields, id: \.self) { key in
                 Binding(self.$fields[key]).flatMap {
                     ItemDetailFieldView(title: $0.wrappedValue.name,
@@ -92,8 +100,9 @@ fileprivate struct FieldsSection: View {
                                         editingEnabled: self.isEditing)
                 }
             }
+
             if self.isEditing || !(self.abstract?.isEmpty ?? true) {
-                self.abstract.flatMap(ItemDetailAbstractView.init)
+                Binding(self.$abstract).flatMap { ItemDetailAbstractView(abstract: $0, isEditing: self.isEditing) }
             }
         }
     }
@@ -104,9 +113,7 @@ fileprivate struct NotesSection: View {
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: .constant("Notes"), editingEnabled: false)
-                // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
-                .listRowBackground(Color.gray.opacity(0.15))
+            ItemDetailSectionView(title: "Notes")
             ForEach(self.notes) { note in
                 ItemDetailNoteView(text: note.title)
             }.onDelete(perform: self.delete)
@@ -123,9 +130,7 @@ fileprivate struct TagsSection: View {
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: .constant("Tags"), editingEnabled: false)
-                // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
-                .listRowBackground(Color.gray.opacity(0.15))
+            ItemDetailSectionView(title: "Tags")
             ForEach(self.tags) { tag in
                 ItemDetailTagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
             }.onDelete(perform: self.delete)
@@ -142,9 +147,7 @@ fileprivate struct AttachmentsSection: View {
 
     var body: some View {
         Section {
-            ItemDetailTitleView(title: .constant("Attachments"), editingEnabled: false)
-                // SWIFTUI BUG: - this doesn't work if specified in the child view, move to child when possible
-                .listRowBackground(Color.gray.opacity(0.15))
+            ItemDetailSectionView(title: "Attachments")
             ForEach(self.attachments) { attachment in
                 ItemDetailAttachmentView(filename: attachment.filename)
             }.onDelete(perform: self.delete)

@@ -96,6 +96,8 @@
 		B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795EC22077CCD003D0471 /* LoginRequest.swift */; };
 		B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B36795FF2207965F003D0471 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FE2207965F003D0471 /* UIViewController+Alert.swift */; };
+		B367F16C23215FCD00FC4814 /* ItemDetailFieldTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367F16B23215FCD00FC4814 /* ItemDetailFieldTitleView.swift */; };
+		B367F16E2321606A00FC4814 /* ItemDetailCreatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367F16D2321606A00FC4814 /* ItemDetailCreatorView.swift */; };
 		B36989EF22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36989EE22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift */; };
 		B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */; };
 		B37DC68D23169497009A5AA7 /* ItemDetailTagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DC68C23169497009A5AA7 /* ItemDetailTagView.swift */; };
@@ -328,6 +330,8 @@
 		B36795EC22077CCD003D0471 /* LoginRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginRequest.swift; sourceTree = "<group>"; };
 		B36795FC22078F15003D0471 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
 		B36795FE2207965F003D0471 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		B367F16B23215FCD00FC4814 /* ItemDetailFieldTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldTitleView.swift; sourceTree = "<group>"; };
+		B367F16D2321606A00FC4814 /* ItemDetailCreatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailCreatorView.swift; sourceTree = "<group>"; };
 		B36989EE22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkItemAsTrashedDbRequest.swift; sourceTree = "<group>"; };
 		B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B37DC68C23169497009A5AA7 /* ItemDetailTagView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTagView.swift; sourceTree = "<group>"; };
@@ -878,6 +882,8 @@
 				B3E14BA02316925800E31ABD /* ItemDetailNoteView.swift */,
 				B37DC68C23169497009A5AA7 /* ItemDetailTagView.swift */,
 				B356360B2318318600C77B62 /* ItemDetailAttachmentView.swift */,
+				B367F16B23215FCD00FC4814 /* ItemDetailFieldTitleView.swift */,
+				B367F16D2321606A00FC4814 /* ItemDetailCreatorView.swift */,
 			);
 			path = "Item Detail";
 			sourceTree = "<group>";
@@ -1246,6 +1252,7 @@
 				B3FFDEDD228031F60009EBBE /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B3E14B9F2316857C00E31ABD /* ItemDetailSectionView.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
+				B367F16C23215FCD00FC4814 /* ItemDetailFieldTitleView.swift in Sources */,
 				B337AB6522E0C7CF0092AC22 /* AuthorizeUploadRequest.swift in Sources */,
 				B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */,
 				B33FBA64220B2AFD005906C4 /* SyncControllerModels+Extensions.swift in Sources */,
@@ -1273,6 +1280,7 @@
 				B38C9694223FFB2900343F8F /* ReadCollectionsDbRequest.swift in Sources */,
 				B38C969A223FFB2900343F8F /* MarkForResyncDbAction.swift in Sources */,
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
+				B367F16E2321606A00FC4814 /* ItemDetailCreatorView.swift in Sources */,
 				B3B5514B22E1B0A3001E23CB /* RegisterUploadRequest.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
 				B3E4715A224127AC006E3B20 /* LoginViewController.swift in Sources */,
