@@ -173,6 +173,10 @@ class NewItemDetailStore: ObservableObject {
         struct Creator: Identifiable, Equatable {
             enum NamePresentation: Equatable {
                 case separate, full
+
+                mutating func toggle() {
+                    self = self == .full ? .separate : .full
+                }
             }
 
             let type: String
@@ -196,6 +200,10 @@ class NewItemDetailStore: ObservableObject {
                 return name + self.firstName
             }
 
+            var isEmpty: Bool {
+                return self.fullName.isEmpty && self.firstName.isEmpty && self.lastName.isEmpty
+            }
+
             var id: UUID { return UUID() }
 
             init(firstName: String, lastName: String, fullName: String, type: String, localizedType: String) {
@@ -205,6 +213,15 @@ class NewItemDetailStore: ObservableObject {
                 self.firstName = firstName
                 self.lastName = lastName
                 self.namePresentation = fullName.isEmpty ? .separate : .full
+            }
+
+            init(type: String, localizedType: String) {
+                self.type = type
+                self.localizedType = localizedType
+                self.fullName = ""
+                self.firstName = ""
+                self.lastName = ""
+                self.namePresentation = .full
             }
 
             mutating func change(namePresentation: NamePresentation) {
@@ -442,6 +459,14 @@ class NewItemDetailStore: ObservableObject {
                 return nil
             }
         }
+    }
+
+    func addCreator() {
+        // Check whether there already is an empty/new creator, add only if there is none
+        guard self.state.data.creators.reversed().first(where: { $0.isEmpty }) == nil,
+              let schema = self.schemaController.creators(for: self.state.data.type)?.first(where: { $0.primary }),
+              let localized = self.schemaController.localized(creator: schema.creatorType) else { return }
+        self.state.data.creators.append(.init(type: schema.creatorType, localizedType: localized))
     }
 
     func deleteCreators(at offsets: IndexSet) {

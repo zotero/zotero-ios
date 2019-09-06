@@ -95,6 +95,8 @@ struct CreateItemDbRequest: DbResponseRequest {
             changes.insert(.tags)
         }
 
+        // TODO: - Add creators
+
         // Update changed fields
         item.changedFields = changes
 

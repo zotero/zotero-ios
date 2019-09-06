@@ -159,5 +159,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         if tagsDidChange {
             item.changedFields.insert(.tags)
         }
+
+        // TODO: - Update creators
     }
 }

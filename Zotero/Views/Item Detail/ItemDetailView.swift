@@ -19,6 +19,7 @@ struct ItemDetailView: View {
         List {
             ItemDetailTitleView(title: self.$store.state.data.title,
                                 editingEnabled: self.isEditing)
+
             FieldsSection(type: self.store.state.data.localizedType,
                           visibleFields: self.store.state.data.visibleFields,
                           fields: self.$store.state.data.fields,
@@ -26,15 +27,19 @@ struct ItemDetailView: View {
                           abstract: self.$store.state.data.abstract,
                           isEditing: self.isEditing,
                           deleteCreators: self.store.deleteCreators,
-                          moveCreators: self.store.moveCreators)
-            if !self.store.state.data.notes.isEmpty {
-                NotesSection(notes: self.store.state.data.notes)
+                          moveCreators: self.store.moveCreators,
+                          addCreator: self.store.addCreator)
+
+            if !self.store.state.data.notes.isEmpty || self.isEditing {
+                NotesSection(notes: self.store.state.data.notes,
+                             isEditing: self.isEditing)
             }
-            if !self.store.state.data.tags.isEmpty {
-                TagsSection(tags: self.store.state.data.tags)
-            }
-            if !self.store.state.data.attachments.isEmpty {
-                AttachmentsSection(attachments: self.store.state.data.attachments)
+
+            TagsSection(tags: self.store.state.data.tags)
+
+            if !self.store.state.data.attachments.isEmpty || self.isEditing {
+                AttachmentsSection(attachments: self.store.state.data.attachments,
+                                   isEditing: self.isEditing)
             }
         }
         .navigationBarItems(trailing:
@@ -79,6 +84,7 @@ fileprivate struct FieldsSection: View {
 
     let deleteCreators: (IndexSet) -> Void
     let moveCreators: (IndexSet, Int) -> Void
+    let addCreator: () -> Void
 
     var body: some View {
         Section {
@@ -92,6 +98,11 @@ fileprivate struct FieldsSection: View {
                                       editingEnabled: self.isEditing)
             }.onDelete(perform: self.deleteCreators)
              .onMove(perform: self.moveCreators)
+            if self.isEditing {
+                // SWITCHUI BUG: - should probably change to Button so that we get selection effect,
+                // but currently the button doesn't work ehre
+                ItemDetailAddView(title: "Add author").onTapGesture(perform: self.addCreator)
+            }
 
             ForEach(self.visibleFields, id: \.self) { key in
                 Binding(self.$fields[key]).flatMap {
@@ -110,6 +121,7 @@ fileprivate struct FieldsSection: View {
 
 fileprivate struct NotesSection: View {
     let notes: [NewItemDetailStore.StoreState.Note]
+    let isEditing: Bool
 
     var body: some View {
         Section {
@@ -117,6 +129,9 @@ fileprivate struct NotesSection: View {
             ForEach(self.notes) { note in
                 ItemDetailNoteView(text: note.title)
             }.onDelete(perform: self.delete)
+            if self.isEditing {
+                ItemDetailAddView(title: "Add note")
+            }
         }
     }
 
@@ -134,6 +149,7 @@ fileprivate struct TagsSection: View {
             ForEach(self.tags) { tag in
                 ItemDetailTagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
             }.onDelete(perform: self.delete)
+            ItemDetailAddView(title: "Add tag")
         }
     }
 
@@ -144,6 +160,7 @@ fileprivate struct TagsSection: View {
 
 fileprivate struct AttachmentsSection: View {
     let attachments: [NewItemDetailStore.StoreState.Attachment]
+    let isEditing: Bool
 
     var body: some View {
         Section {
@@ -151,6 +168,9 @@ fileprivate struct AttachmentsSection: View {
             ForEach(self.attachments) { attachment in
                 ItemDetailAttachmentView(filename: attachment.filename)
             }.onDelete(perform: self.delete)
+            if self.isEditing {
+                ItemDetailAddView(title: "Add attachment")
+            }
         }
     }
 

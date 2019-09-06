@@ -24,7 +24,13 @@ struct ItemDetailCreatorView: View {
                     TextField("Last name", text: self.$creator.lastName)
                     Text(", ")
                     TextField("First name", text: self.$creator.firstName)
-                    Spacer()
+                }
+                Spacer()
+                // SWIFTUI BUG: - Button action in cell not called
+                Button(action: {
+                    self.creator.namePresentation.toggle()
+                }) {
+                    Text(self.creator.namePresentation == .full ? "Split name" : "Merge name").foregroundColor(.blue)
                 }
             }
         }

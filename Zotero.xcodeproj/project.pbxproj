@@ -100,6 +100,7 @@
 		B367F16E2321606A00FC4814 /* ItemDetailCreatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367F16D2321606A00FC4814 /* ItemDetailCreatorView.swift */; };
 		B36989EF22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36989EE22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift */; };
 		B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */; };
+		B373569823226B6400AF96E2 /* ItemDetailAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373569723226B6400AF96E2 /* ItemDetailAddView.swift */; };
 		B37DC68D23169497009A5AA7 /* ItemDetailTagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37DC68C23169497009A5AA7 /* ItemDetailTagView.swift */; };
 		B37F4C0D23166ADF00425E72 /* ItemDetailTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F4C0C23166ADF00425E72 /* ItemDetailTitleView.swift */; };
 		B38160EA2252319300A2B7A5 /* DeleteAllDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */; };
@@ -334,6 +335,7 @@
 		B367F16D2321606A00FC4814 /* ItemDetailCreatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailCreatorView.swift; sourceTree = "<group>"; };
 		B36989EE22FC5B9400264856 /* MarkItemAsTrashedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkItemAsTrashedDbRequest.swift; sourceTree = "<group>"; };
 		B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
+		B373569723226B6400AF96E2 /* ItemDetailAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailAddView.swift; sourceTree = "<group>"; };
 		B37DC68C23169497009A5AA7 /* ItemDetailTagView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTagView.swift; sourceTree = "<group>"; };
 		B37F4C0C23166ADF00425E72 /* ItemDetailTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTitleView.swift; sourceTree = "<group>"; };
 		B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAllDbRequest.swift; sourceTree = "<group>"; };
@@ -884,6 +886,7 @@
 				B356360B2318318600C77B62 /* ItemDetailAttachmentView.swift */,
 				B367F16B23215FCD00FC4814 /* ItemDetailFieldTitleView.swift */,
 				B367F16D2321606A00FC4814 /* ItemDetailCreatorView.swift */,
+				B373569723226B6400AF96E2 /* ItemDetailAddView.swift */,
 			);
 			path = "Item Detail";
 			sourceTree = "<group>";
@@ -1315,6 +1318,7 @@
 				B3045F5F22C0F52C0032C8C8 /* KeyResponse.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
 				B34FD9E1230C31A2008338FD /* CollectionsView.swift in Sources */,
+				B373569823226B6400AF96E2 /* ItemDetailAddView.swift in Sources */,
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */,
