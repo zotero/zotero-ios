@@ -38,7 +38,11 @@ struct ItemDetailView: View {
                              editAction: self.store.editNote)
             }
 
-            TagsSection(tags: self.store.state.data.tags)
+            TagsSection(tags: self.store.state.data.tags,
+                        addAction: {
+                            self.store.state.showTagPicker = true
+                        },
+                        deleteAction: self.store.deleteTags)
 
             if !self.store.state.data.attachments.isEmpty || self.isEditing {
                 AttachmentsSection(attachments: self.store.state.data.attachments,
@@ -73,6 +77,13 @@ struct ItemDetailView: View {
             self.store.state.presentedNote = nil
         }, content: { note in
             NoteEditingView(note: note, saveAction: self.store.saveNote)
+        })
+        .sheet(isPresented: self.$store.state.showTagPicker, onDismiss: {
+            self.store.state.showTagPicker = false
+        }, content: {
+            TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
+                                                selectedTags: Set(self.store.state.data.tags),
+                                                dbStorage: self.store.dbStorage))
         })
     }
 }
@@ -155,20 +166,19 @@ fileprivate struct NotesSection: View {
 }
 
 fileprivate struct TagsSection: View {
-    let tags: [NewItemDetailStore.StoreState.Tag]
+    let tags: [Tag]
+
+    let addAction: () -> Void
+    let deleteAction: (IndexSet) -> Void
 
     var body: some View {
         Section {
             ItemDetailSectionView(title: "Tags")
             ForEach(self.tags) { tag in
                 TagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
-            }.onDelete(perform: self.delete)
-            ItemDetailAddView(title: "Add tag", action: {})
+            }.onDelete(perform: self.deleteAction)
+            ItemDetailAddView(title: "Add tag", action: self.addAction)
         }
-    }
-
-    private func delete(at offsets: IndexSet) {
-
     }
 }
 
@@ -202,6 +212,7 @@ struct ItemDetailView_Previews: PreviewProvider {
         let store = try! NewItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
                                                             collectionKey: nil, filesEditable: true),
                                             userId: userId,
+                                            libraryId: .custom(.myLibrary),
                                             apiClient: controllers.apiClient,
                                             fileStorage: controllers.fileStorage,
                                             dbStorage: controllers.dbStorage,

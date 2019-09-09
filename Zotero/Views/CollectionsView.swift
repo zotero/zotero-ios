@@ -23,9 +23,7 @@ struct CollectionsView: View {
             }
             .onDelete(perform: self.store.deleteCells)
         }
-        .onAppear {
-            self.store.loadData()
-        }
+        .onAppear(perform: self.store.loadData)
     }
 
     private func itemsView(from data: Collection) -> ItemsView {

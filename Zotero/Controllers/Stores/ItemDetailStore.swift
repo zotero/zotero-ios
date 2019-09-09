@@ -153,23 +153,6 @@ class NewItemDetailStore: ObservableObject {
             }
         }
 
-        struct Tag: Identifiable, Equatable {
-            let name: String
-            let color: String
-
-            var id: String { return self.name }
-
-            var uiColor: UIColor? {
-                guard !self.color.isEmpty else { return nil }
-                return UIColor(hex: self.color)
-            }
-
-            init(tag: RTag) {
-                self.name = tag.name
-                self.color = tag.color
-            }
-        }
-
         struct Creator: Identifiable, Equatable {
             enum NamePresentation: Equatable {
                 case separate, full
@@ -285,6 +268,7 @@ class NewItemDetailStore: ObservableObject {
         }
 
         let userId: Int
+        let libraryId: LibraryIdentifier
         let metadataEditable: Bool
         let filesEditable: Bool
 
@@ -293,11 +277,14 @@ class NewItemDetailStore: ObservableObject {
         var snapshot: Data?
         var error: StoreError?
         var presentedNote: Note?
+        var showTagPicker: Bool
 
-        init(userId: Int, type: DetailType, data: StoreState.Data) {
+        init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, data: Data) {
             self.userId = userId
+            self.libraryId = libraryId
             self.type = type
             self.data = data
+            self.showTagPicker = false
 
             switch type {
             case .preview(let item):
@@ -313,10 +300,10 @@ class NewItemDetailStore: ObservableObject {
         }
     }
 
-    private let apiClient: ApiClient
-    private let fileStorage: FileStorage
-    private let dbStorage: DbStorage
-    private let schemaController: SchemaController
+    let apiClient: ApiClient
+    let fileStorage: FileStorage
+    let dbStorage: DbStorage
+    let schemaController: SchemaController
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher
 
@@ -326,13 +313,13 @@ class NewItemDetailStore: ObservableObject {
         }
     }
 
-    init(type: StoreState.DetailType, userId: Int,
+    init(type: StoreState.DetailType, userId: Int, libraryId: LibraryIdentifier,
          apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, schemaController: SchemaController) throws {
         let data = try NewItemDetailStore.createData(from: type,
                                                      schemaController: schemaController,
                                                      fileStorage: fileStorage)
-        self.state = StoreState(userId: userId, type: type, data: data)
+        self.state = StoreState(userId: userId, libraryId: libraryId, type: type, data: data)
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
@@ -424,7 +411,7 @@ class NewItemDetailStore: ObservableObject {
                                            .compactMap({ item -> StoreState.Attachment? in
                                                return attachmentType(for: item, fileStorage: fileStorage).flatMap({ StoreState.Attachment(item: item, type: $0) })
                                            })
-            let tags = item.tags.sorted(byKeyPath: "name").map(StoreState.Tag.init)
+            let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
 
             return StoreState.Data(title: item.title,
                                    type: item.rawType,
@@ -500,8 +487,8 @@ class NewItemDetailStore: ObservableObject {
         self.state.presentedNote = nil
     }
 
-    func note(for key: String) -> StoreState.Note? {
-        return self.state.data.notes.first(where: { $0.key == key })
+    func deleteTags(at offsets: IndexSet) {
+        self.state.data.tags.remove(atOffsets: offsets)
     }
 
     func startEditing() {

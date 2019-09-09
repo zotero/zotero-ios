@@ -92,8 +92,10 @@ class ItemsViewController: UIViewController {
     private func showItemDetail(with type: NewItemDetailStore.StoreState.DetailType) {
         do {
             let userId = try self.store.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
+            let libraryId = self.store.state.value.libraryId
             let store = try NewItemDetailStore(type: type,
                                                userId: userId,
+                                               libraryId: libraryId,
                                                apiClient: self.store.apiClient,
                                                fileStorage: self.store.fileStorage,
                                                dbStorage: self.store.dbStorage,

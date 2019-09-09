@@ -19,7 +19,7 @@ struct CreateItemDbRequest: DbResponseRequest {
     let fields: [NewItemDetailStore.StoreState.Field]
     let notes: [NewItemDetailStore.StoreState.Note]
     let attachments: [NewItemDetailStore.StoreState.Attachment]
-    let tags: [NewItemDetailStore.StoreState.Tag]
+    let tags: [Tag]
 
     var needsWrite: Bool {
         return true
