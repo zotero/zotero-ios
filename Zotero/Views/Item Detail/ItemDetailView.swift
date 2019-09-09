@@ -32,7 +32,10 @@ struct ItemDetailView: View {
 
             if !self.store.state.data.notes.isEmpty || self.isEditing {
                 NotesSection(notes: self.store.state.data.notes,
-                             isEditing: self.isEditing)
+                             isEditing: self.isEditing,
+                             deleteAction: self.store.deleteNotes,
+                             addAction: self.store.addNote,
+                             editAction: self.store.editNote)
             }
 
             TagsSection(tags: self.store.state.data.tags)
@@ -65,6 +68,12 @@ struct ItemDetailView: View {
             }
         )
         .navigationBarBackButtonHidden(self.isEditing)
+        // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
+        .sheet(item: self.$store.state.presentedNote, onDismiss: {
+            self.store.state.presentedNote = nil
+        }, content: { note in
+            NoteEditingView(note: note, saveAction: self.store.saveNote)
+        })
     }
 }
 
@@ -99,9 +108,7 @@ fileprivate struct FieldsSection: View {
             }.onDelete(perform: self.deleteCreators)
              .onMove(perform: self.moveCreators)
             if self.isEditing {
-                // SWITCHUI BUG: - should probably change to Button so that we get selection effect,
-                // but currently the button doesn't work ehre
-                ItemDetailAddView(title: "Add author").onTapGesture(perform: self.addCreator)
+                ItemDetailAddView(title: "Add author", action: self.addCreator)
             }
 
             ForEach(self.visibleFields, id: \.self) { key in
@@ -123,20 +130,27 @@ fileprivate struct NotesSection: View {
     let notes: [NewItemDetailStore.StoreState.Note]
     let isEditing: Bool
 
+    let deleteAction: (IndexSet) -> Void
+    let addAction: () -> Void
+    let editAction: (NewItemDetailStore.StoreState.Note) -> Void
+
     var body: some View {
         Section {
             ItemDetailSectionView(title: "Notes")
             ForEach(self.notes) { note in
-                ItemDetailNoteView(text: note.title)
-            }.onDelete(perform: self.delete)
+                // SWIFTUI BUG: - Button action in cell not called
+                Button(action: {
+                    self.editAction(note)
+                }) {
+                    ItemDetailNoteView(text: note.title)
+                }.onTapGesture {
+                    self.editAction(note)
+                }
+            }.onDelete(perform: self.deleteAction)
             if self.isEditing {
-                ItemDetailAddView(title: "Add note")
+                ItemDetailAddView(title: "Add note", action: self.addAction)
             }
         }
-    }
-
-    private func delete(at offsets: IndexSet) {
-
     }
 }
 
@@ -149,7 +163,7 @@ fileprivate struct TagsSection: View {
             ForEach(self.tags) { tag in
                 ItemDetailTagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
             }.onDelete(perform: self.delete)
-            ItemDetailAddView(title: "Add tag")
+            ItemDetailAddView(title: "Add tag", action: {})
         }
     }
 
@@ -169,7 +183,7 @@ fileprivate struct AttachmentsSection: View {
                 ItemDetailAttachmentView(filename: attachment.filename)
             }.onDelete(perform: self.delete)
             if self.isEditing {
-                ItemDetailAddView(title: "Add attachment")
+                ItemDetailAddView(title: "Add attachment", action: {})
             }
         }
     }

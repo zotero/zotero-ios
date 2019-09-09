@@ -292,6 +292,7 @@ class NewItemDetailStore: ObservableObject {
         var data: Data
         var snapshot: Data?
         var error: StoreError?
+        var presentedNote: Note?
 
         init(userId: Int, type: DetailType, data: StoreState.Data) {
             self.userId = userId
@@ -475,6 +476,32 @@ class NewItemDetailStore: ObservableObject {
 
     func moveCreators(from offsets: IndexSet, to index: Int) {
         self.state.data.creators.move(fromOffsets: offsets, toOffset: index)
+    }
+
+    func addNote() {
+        self.state.presentedNote = StoreState.Note(key: KeyGenerator.newKey, text: "")
+    }
+
+    func deleteNotes(at offsets: IndexSet) {
+        self.state.data.notes.remove(atOffsets: offsets)
+    }
+
+    func editNote(_ note: StoreState.Note) {
+        self.state.presentedNote = note
+    }
+
+    func saveNote() {
+        guard let note = self.state.presentedNote else { return }
+        if let index = self.state.data.notes.firstIndex(where: { $0.key == note.key }) {
+            self.state.data.notes[index] = note
+        } else {
+            self.state.data.notes.append(note)
+        }
+        self.state.presentedNote = nil
+    }
+
+    func note(for key: String) -> StoreState.Note? {
+        return self.state.data.notes.first(where: { $0.key == key })
     }
 
     func startEditing() {

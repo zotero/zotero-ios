@@ -10,18 +10,22 @@ import SwiftUI
 
 struct ItemDetailAddView: View {
     let title: String
+    let action: () -> Void
 
     var body: some View {
-        HStack {
-            Image(systemName: "plus.circle")
-                .imageScale(.large)
-            Text(self.title)
-        }.foregroundColor(.blue)
+        // SWIFTUI BUG: - Button action in cell not called
+        Button(action: self.action, label: {
+            HStack {
+                Image(systemName: "plus.circle")
+                    .imageScale(.large)
+                Text(self.title)
+            }.foregroundColor(.blue)
+        }).onTapGesture(perform: self.action)
     }
 }
 
 struct ItemDetailAddView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetailAddView(title: "Add creator")
+        ItemDetailAddView(title: "Add creator", action: {})
     }
 }

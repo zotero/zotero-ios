@@ -31,6 +31,8 @@ struct ItemDetailCreatorView: View {
                     self.creator.namePresentation.toggle()
                 }) {
                     Text(self.creator.namePresentation == .full ? "Split name" : "Merge name").foregroundColor(.blue)
+                }.onTapGesture {
+                    self.creator.namePresentation.toggle()
                 }
             }
         }
