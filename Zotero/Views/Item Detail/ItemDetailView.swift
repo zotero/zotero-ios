@@ -161,7 +161,7 @@ fileprivate struct TagsSection: View {
         Section {
             ItemDetailSectionView(title: "Tags")
             ForEach(self.tags) { tag in
-                ItemDetailTagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
+                TagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
             }.onDelete(perform: self.delete)
             ItemDetailAddView(title: "Add tag", action: {})
         }

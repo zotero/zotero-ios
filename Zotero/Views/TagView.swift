@@ -1,5 +1,5 @@
 //
-//  ItemDetailTagView.swift
+//  TagView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 28/08/2019.
@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-struct ItemDetailTagView: View {
+struct TagView: View {
     let color: Color?
     let name: String
 
@@ -26,9 +26,9 @@ struct ItemDetailTagView: View {
 
 #if DEBUG
 
-struct ItemDetailTagView_Previews: PreviewProvider {
+struct TagView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetailTagView(color: .red, name: "Books")
+        TagView(color: .red, name: "Books")
             .previewLayout(.fixed(width: 320, height: 44))
     }
 }
