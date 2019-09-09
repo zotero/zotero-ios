@@ -1,5 +1,5 @@
 //
-//  CollectionCellData.swift
+//  Collection.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19/03/2019.
@@ -10,9 +10,9 @@ import Foundation
 
 import RealmSwift
 
-struct CollectionCellData: Identifiable {
+struct Collection: Identifiable {
     
-    enum DataType: Equatable {
+    enum CollectionType: Equatable {
         case collection
         case search
         case custom(CustomType)
@@ -41,7 +41,8 @@ struct CollectionCellData: Identifiable {
             return self.key
         }
     }
-    let type: CollectionCellData.DataType
+
+    let type: CollectionType
     let key: String
     let name: String
     let level: Int
@@ -88,42 +89,5 @@ struct CollectionCellData: Identifiable {
         case .trash:
             self.name = "Trash"
         }
-    }
-}
-
-extension CollectionCellData {
-    static func createCells(from searches: Results<RSearch>) -> [CollectionCellData] {
-        return searches.map(CollectionCellData.init)
-    }
-
-    static func createCells(from collections: Results<RCollection>) -> [CollectionCellData] {
-        return CollectionCellData.cells(for: collections, parentKey: nil, level: 0)
-    }
-
-    private static func cells(for results: Results<RCollection>, parentKey: String?, level: Int) -> [CollectionCellData] {
-        var filteredResults: Results<RCollection>
-        if let key = parentKey {
-            filteredResults = results.filter("parent.key = %@", key)
-        } else {
-            filteredResults = results.filter("parent == nil")
-        }
-
-        guard !filteredResults.isEmpty else { return [] }
-
-        filteredResults = filteredResults.sorted(by: [SortDescriptor(keyPath: "name"),
-                                                      SortDescriptor(keyPath: "key")])
-
-        var cells: [CollectionCellData] = []
-        for rCollection in filteredResults {
-            let collection = CollectionCellData(object: rCollection, level: level)
-            cells.append(collection)
-
-            if rCollection.children.count > 0 {
-                cells.append(contentsOf: CollectionCellData.cells(for: results,
-                                                                  parentKey: collection.key,
-                                                                  level: (level + 1)))
-            }
-        }
-        return cells
     }
 }

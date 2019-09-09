@@ -28,7 +28,7 @@ struct CollectionsView: View {
         }
     }
 
-    private func itemsView(from data: CollectionCellData) -> ItemsView {
+    private func itemsView(from data: Collection) -> ItemsView {
         let type: ItemsStore.StoreState.ItemType
 
         switch data.type {

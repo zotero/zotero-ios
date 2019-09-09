@@ -26,15 +26,15 @@ class CollectionsStore: ObservableObject {
         let metadataEditable: Bool
         let filesEditable: Bool
 
-        fileprivate(set) var cellData: [CollectionCellData]
+        fileprivate(set) var cellData: [Collection]
         fileprivate(set) var error: StoreError?
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
 
         init(libraryId: LibraryIdentifier, title: String, metadataEditable: Bool, filesEditable: Bool) {
-            self.cellData = [CollectionCellData(custom: .all),
-                             CollectionCellData(custom: .publications),
-                             CollectionCellData(custom: .trash)]
+            self.cellData = [Collection(custom: .all),
+                             Collection(custom: .publications),
+                             Collection(custom: .trash)]
             self.libraryId = libraryId
             self.title = title
             self.metadataEditable = metadataEditable
@@ -131,7 +131,7 @@ class CollectionsStore: ObservableObject {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    self.update(cellData: CollectionCellData.createCells(from: objects))
+                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
                 case .initial: break
                 case .error(let error):
                     DDLogError("CollectionsStore: can't load collection update: \(error)")
@@ -143,7 +143,7 @@ class CollectionsStore: ObservableObject {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    self.update(cellData: CollectionCellData.createCells(from: objects))
+                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
                 case .initial: break
                 case .error(let error):
                     DDLogError("CollectionsStore: can't load collection update: \(error)")
@@ -151,7 +151,7 @@ class CollectionsStore: ObservableObject {
                 }
             })
 
-            let cells = CollectionCellData.createCells(from: collections) + CollectionCellData.createCells(from: searches)
+            let cells = CollectionTreeBuilder.collections(from: collections) + CollectionTreeBuilder.collections(from: searches)
             self.state.cellData.insert(contentsOf: cells, at: 1)
             self.state.collectionToken = collectionToken
             self.state.searchToken = searchToken
@@ -161,7 +161,7 @@ class CollectionsStore: ObservableObject {
         }
     }
     
-    private func update(cellData cells: [CollectionCellData]) {
+    private func update(cellData cells: [Collection]) {
         guard let type = cells.first?.type else { return }
         
         // Find range of cells with the same type

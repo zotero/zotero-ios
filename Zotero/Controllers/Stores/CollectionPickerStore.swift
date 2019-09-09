@@ -38,8 +38,8 @@ class CollectionPickerStore: OldStore {
         fileprivate let libraryId: LibraryIdentifier
         fileprivate let excludedKey: String
 
-        fileprivate(set) var cellData: [CollectionCellData]
-        fileprivate(set) var pickedData: CollectionCellData?
+        fileprivate(set) var cellData: [Collection]
+        fileprivate(set) var pickedData: Collection?
         fileprivate(set) var changes: Changes
         fileprivate var version: Int
         fileprivate(set) var error: StoreError?
@@ -70,7 +70,7 @@ class CollectionPickerStore: OldStore {
             do {
                 let request = ReadCollectionsDbRequest(libraryId: self.state.value.libraryId)
                 let collections = try self.dbStorage.createCoordinator().perform(request: request)
-                let cells = CollectionCellData.createCells(from: collections)
+                let cells = CollectionTreeBuilder.collections(from: collections)
                 self.updater.updateState { state in
                     state.cellData = cells
                     state.changes.insert(.data)

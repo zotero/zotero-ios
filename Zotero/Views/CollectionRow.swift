@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CollectionRow: View {
     private static let levelOffset: CGFloat = 20.0
-    let data: CollectionCellData
+    let data: Collection
 
     var body: some View {
         HStack {
@@ -26,9 +26,9 @@ struct CollectionRow: View {
 struct CollectionRow_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            CollectionRow(data: CollectionCellData(custom: .all))
-            CollectionRow(data: CollectionCellData(custom: .publications))
-            CollectionRow(data: CollectionCellData(custom: .trash))
+            CollectionRow(data: Collection(custom: .all))
+            CollectionRow(data: Collection(custom: .publications))
+            CollectionRow(data: Collection(custom: .trash))
         }.previewLayout(.fixed(width: 320, height: 44))
     }
 }

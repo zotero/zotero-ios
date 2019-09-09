@@ -17,7 +17,7 @@ class CollectionEditStore: OldStore {
 
     enum StoreAction {
         case changeName(String)
-        case changeParent(CollectionCellData)
+        case changeParent(Collection)
         case deleteCollection
         case deleteCollectionAndItems
         case save
@@ -57,7 +57,7 @@ class CollectionEditStore: OldStore {
                 self.name = collection.name
             }
 
-            init(collection: CollectionCellData) {
+            init(collection: Collection) {
                 self.key = collection.key
                 self.name = collection.name
             }

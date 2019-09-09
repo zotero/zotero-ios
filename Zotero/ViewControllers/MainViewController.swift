@@ -132,10 +132,10 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         }
     }
 
-    private func calculatePrimaryColumnFraction(from collections: [CollectionCellData]) -> CGFloat {
+    private func calculatePrimaryColumnFraction(from collections: [Collection]) -> CGFloat {
         guard !collections.isEmpty else { return 0 }
 
-        var maxCollection: CollectionCellData?
+        var maxCollection: Collection?
         var maxWidth: CGFloat = 0
 
         collections.forEach { data in
