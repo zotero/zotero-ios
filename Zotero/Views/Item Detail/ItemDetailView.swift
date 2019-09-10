@@ -39,6 +39,7 @@ struct ItemDetailView: View {
             }
 
             TagsSection(tags: self.store.state.data.tags,
+                        isEditing: self.isEditing,
                         addAction: {
                             self.store.state.showTagPicker = true
                         },
@@ -82,8 +83,10 @@ struct ItemDetailView: View {
             self.store.state.showTagPicker = false
         }, content: {
             TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
-                                                selectedTags: Set(self.store.state.data.tags),
-                                                dbStorage: self.store.dbStorage))
+                                                selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
+                                                dbStorage: self.store.dbStorage), saveAction: { tags in
+                self.store.setTags(tags)
+            })
         })
     }
 }
@@ -167,6 +170,7 @@ fileprivate struct NotesSection: View {
 
 fileprivate struct TagsSection: View {
     let tags: [Tag]
+    let isEditing: Bool
 
     let addAction: () -> Void
     let deleteAction: (IndexSet) -> Void
@@ -177,7 +181,9 @@ fileprivate struct TagsSection: View {
             ForEach(self.tags) { tag in
                 TagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
             }.onDelete(perform: self.deleteAction)
-            ItemDetailAddView(title: "Add tag", action: self.addAction)
+            if self.isEditing {
+                ItemDetailAddView(title: "Add tag", action: self.addAction)
+            }
         }
     }
 }

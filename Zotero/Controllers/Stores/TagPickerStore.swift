@@ -20,7 +20,7 @@ class TagPickerStore: ObservableObject {
         let libraryId: LibraryIdentifier
         var tags: [Tag]
         var error: Error?
-        var selectedTags: Set<Tag>
+        var selectedTags: Set<String>
     }
 
     var state: State {
@@ -32,7 +32,7 @@ class TagPickerStore: ObservableObject {
     let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
 
-    init(libraryId: LibraryIdentifier, selectedTags: Set<Tag>, dbStorage: DbStorage) {
+    init(libraryId: LibraryIdentifier, selectedTags: Set<String>, dbStorage: DbStorage) {
         self.state = State(libraryId: libraryId, tags: [], selectedTags: selectedTags)
         self.dbStorage = dbStorage
         self.objectWillChange = ObservableObjectPublisher()

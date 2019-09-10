@@ -487,6 +487,11 @@ class NewItemDetailStore: ObservableObject {
         self.state.presentedNote = nil
     }
 
+    func setTags(_ tags: [Tag]) {
+        self.state.data.tags = tags
+        self.state.showTagPicker = false
+    }
+
     func deleteTags(at offsets: IndexSet) {
         self.state.data.tags.remove(atOffsets: offsets)
     }
