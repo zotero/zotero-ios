@@ -14,14 +14,14 @@ import RealmSwift
 import RxSwift
 
 class ItemDetailStore: ObservableObject {
-    enum StoreError: Error, Equatable {
+    enum Error: Swift.Error, Equatable {
         case typeNotSupported, libraryNotAssigned,
              contentTypeUnknown, userMissing, downloadError, unknown,
              cantStoreChanges
         case fileNotCopied(String)
     }
 
-    struct StoreState {
+    struct State {
         enum DetailType {
             case creation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
             case preview(RItem)
@@ -250,14 +250,14 @@ class ItemDetailStore: ObservableObject {
             fileprivate func allFields(schemaController: SchemaController) -> [Field] {
                 var allFields = Array(self.fields.values)
                 if let titleKey = schemaController.titleKey(for: self.type) {
-                    allFields.append(StoreState.Field(key: titleKey,
+                    allFields.append(State.Field(key: titleKey,
                                                       name: "",
                                                       value: self.title,
                                                       isTitle: true,
                                                       changed: !self.title.isEmpty))
                 }
                 if let abstract = self.abstract {
-                    allFields.append(StoreState.Field(key: FieldKeys.abstract,
+                    allFields.append(State.Field(key: FieldKeys.abstract,
                                                       name: "",
                                                       value: abstract,
                                                       isTitle: false,
@@ -275,9 +275,18 @@ class ItemDetailStore: ObservableObject {
         var type: DetailType
         var data: Data
         var snapshot: Data?
-        var error: StoreError?
+        var error: Error?
         var presentedNote: Note?
         var showTagPicker: Bool
+
+        fileprivate var library: SyncController.Library {
+            switch self.libraryId {
+            case .custom(let type):
+                return .user(self.userId, type)
+            case .group(let id):
+                return .group(id)
+            }
+        }
 
         init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, data: Data) {
             self.userId = userId
@@ -304,52 +313,54 @@ class ItemDetailStore: ObservableObject {
     let fileStorage: FileStorage
     let dbStorage: DbStorage
     let schemaController: SchemaController
+    private let disposeBag: DisposeBag
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher
 
-    var state: StoreState {
+    var state: State {
         willSet {
             self.objectWillChange.send()
         }
     }
 
-    init(type: StoreState.DetailType, userId: Int, libraryId: LibraryIdentifier,
+    init(type: State.DetailType, userId: Int, libraryId: LibraryIdentifier,
          apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, schemaController: SchemaController) throws {
         let data = try ItemDetailStore.createData(from: type,
                                                      schemaController: schemaController,
                                                      fileStorage: fileStorage)
-        self.state = StoreState(userId: userId, libraryId: libraryId, type: type, data: data)
+        self.state = State(userId: userId, libraryId: libraryId, type: type, data: data)
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
+        self.disposeBag = DisposeBag()
         self.objectWillChange = ObservableObjectPublisher()
     }
 
-    private static func createData(from type: StoreState.DetailType,
+    private static func createData(from type: State.DetailType,
                                    schemaController: SchemaController,
-                                   fileStorage: FileStorage) throws -> StoreState.Data {
+                                   fileStorage: FileStorage) throws -> State.Data {
         switch type {
         case .creation:
             guard let itemType = schemaController.itemTypes.sorted().first,
                   let fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }),
                   let localizedType = schemaController.localized(itemType: itemType) else {
-                throw StoreError.typeNotSupported
+                throw Error.typeNotSupported
             }
 
             // Creation has editing enabled by default, so we'll see all available fields
 
             let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
             let titleKey = schemaController.titleKey(for: itemType)
-            var fields: [String: StoreState.Field] = [:]
+            var fields: [String: State.Field] = [:]
             for key in fieldKeys {
                 guard key != FieldKeys.abstract && key != titleKey else { continue }
                 let name = schemaController.localized(field: key) ?? ""
-                fields[key] = StoreState.Field(key: key, name: name, value: "", isTitle: false, changed: false)
+                fields[key] = State.Field(key: key, name: name, value: "", isTitle: false, changed: false)
             }
 
-            return StoreState.Data(title: "",
+            return State.Data(title: "",
                                    type: itemType,
                                    localizedType: localizedType,
                                    creators: [],
@@ -363,7 +374,7 @@ class ItemDetailStore: ObservableObject {
         case .preview(let item):
             guard let fieldKeys = schemaController.fields(for: item.rawType)?.map({ $0.field }),
                   let localizedType = schemaController.localized(itemType: item.rawType) else {
-                throw StoreError.typeNotSupported
+                throw Error.typeNotSupported
             }
 
             let titleKey = schemaController.titleKey(for: item.rawType) ?? ""
@@ -382,7 +393,7 @@ class ItemDetailStore: ObservableObject {
 
             // Preview has editing disabled by default, so we'll see only fields with some filled-in values
             var visibleFields: [String] = fieldKeys
-            var fields: [String: StoreState.Field] = [:]
+            var fields: [String: State.Field] = [:]
 
             for key in fieldKeys {
                 let value = fieldValues[key] ?? ""
@@ -395,25 +406,25 @@ class ItemDetailStore: ObservableObject {
                 guard key != titleKey && key != FieldKeys.abstract else { continue }
 
                 let name = schemaController.localized(field: key) ?? ""
-                fields[key] = StoreState.Field(key: key, name: name, value: value, isTitle: false, changed: false)
+                fields[key] = State.Field(key: key, name: name, value: value, isTitle: false, changed: false)
             }
 
-            let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> StoreState.Creator? in
+            let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> State.Creator? in
                 guard let localizedType = schemaController.localized(creator: creator.rawType) else { return nil }
-                return StoreState.Creator(firstName: creator.firstName, lastName: creator.lastName,
+                return State.Creator(firstName: creator.firstName, lastName: creator.lastName,
                                           fullName: creator.name, type: creator.rawType, localizedType: localizedType)
             }
             let notes = item.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                      .sorted(byKeyPath: "title")
-                                     .compactMap(StoreState.Note.init)
+                                     .compactMap(State.Note.init)
             let attachments = item.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
                                            .sorted(byKeyPath: "title")
-                                           .compactMap({ item -> StoreState.Attachment? in
-                                               return attachmentType(for: item, fileStorage: fileStorage).flatMap({ StoreState.Attachment(item: item, type: $0) })
+                                           .compactMap({ item -> State.Attachment? in
+                                               return attachmentType(for: item, fileStorage: fileStorage).flatMap({ State.Attachment(item: item, type: $0) })
                                            })
             let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
 
-            return StoreState.Data(title: item.title,
+            return State.Data(title: item.title,
                                    type: item.rawType,
                                    localizedType: localizedType,
                                    creators: Array(creators),
@@ -426,7 +437,7 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
-    private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> StoreState.Attachment.ContentType? {
+    private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> State.Attachment.ContentType? {
         let contentType = item.fields.filter(Predicates.key(FieldKeys.contentType)).first?.value ?? ""
         if !contentType.isEmpty { // File attachment
             if let ext = contentType.extensionFromMimeType,
@@ -466,14 +477,14 @@ class ItemDetailStore: ObservableObject {
     }
 
     func addNote() {
-        self.state.presentedNote = StoreState.Note(key: KeyGenerator.newKey, text: "")
+        self.state.presentedNote = State.Note(key: KeyGenerator.newKey, text: "")
     }
 
     func deleteNotes(at offsets: IndexSet) {
         self.state.data.notes.remove(atOffsets: offsets)
     }
 
-    func editNote(_ note: StoreState.Note) {
+    func editNote(_ note: State.Note) {
         self.state.presentedNote = note
     }
 
@@ -494,6 +505,47 @@ class ItemDetailStore: ObservableObject {
 
     func deleteTags(at offsets: IndexSet) {
         self.state.data.tags.remove(atOffsets: offsets)
+    }
+
+    func deleteAttachments(at offsets: IndexSet) {
+        self.state.data.attachments.remove(atOffsets: offsets)
+    }
+
+    func openAttachment(_ attachment: State.Attachment) {
+        switch attachment.type {
+        case .url(let url):
+            self.openUrl(url)
+        case .file(let file, let isCached):
+            if isCached {
+                self.openFile(file)
+            } else {
+                self.cacheFile(file, key: attachment.key)
+            }
+        }
+    }
+
+    private func cacheFile(_ file: File, key: String) {
+        let request = FileRequest(library: self.state.library, key: key, destination: file)
+        self.apiClient.download(request: request)
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] progress in
+                          let progress = progress.totalBytes == 0 ? 0 : Double(progress.bytesWritten) / Double(progress.totalBytes)
+                          
+                      }, onError: { [weak self] error in
+                          DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
+
+                      }, onCompleted: { [weak self] in
+
+                      })
+                      .disposed(by: self.disposeBag)
+    }
+
+    private func openFile(_ file: File) {
+        // TODO: - open file in appropriate controller
+    }
+
+    private func openUrl(_ url: URL) {
+        // TODO: - open safari web controller
     }
 
     func startEditing() {
@@ -522,7 +574,7 @@ class ItemDetailStore: ObservableObject {
 
         self.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
 
-        var newType: StoreState.DetailType?
+        var newType: State.DetailType?
 
         do {
             switch self.state.type {
@@ -547,11 +599,11 @@ class ItemDetailStore: ObservableObject {
             }
         } catch let error {
             DDLogError("ItemDetailStore: can't store changes - \(error)")
-            self.state.error = (error as? StoreError) ?? .cantStoreChanges
+            self.state.error = (error as? Error) ?? .cantStoreChanges
         }
     }
 
-    private func nonEmptyFieldKeys(for fields: [String: StoreState.Field], titleKey: String, allFieldKeys: [String]) -> [String] {
+    private func nonEmptyFieldKeys(for fields: [String: State.Field], titleKey: String, allFieldKeys: [String]) -> [String] {
         var visibleKeys = allFieldKeys
         for key in allFieldKeys {
             let value = fields[key]?.value ?? ""
@@ -562,7 +614,7 @@ class ItemDetailStore: ObservableObject {
         return visibleKeys
     }
 
-    private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: StoreState.Data) throws -> RItem {
+    private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: State.Data) throws -> RItem {
         let request = CreateItemDbRequest(libraryId: libraryId,
                                           collectionKey: collectionKey,
                                           type: data.type,
@@ -573,7 +625,7 @@ class ItemDetailStore: ObservableObject {
         return try self.dbStorage.createCoordinator().perform(request: request)
     }
 
-    private func updateItem(key: String, libraryId: LibraryIdentifier, data: StoreState.Data) throws {
+    private func updateItem(key: String, libraryId: LibraryIdentifier, data: State.Data) throws {
         let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
                                                       itemKey: key,
                                                       type: data.type,
@@ -586,7 +638,7 @@ class ItemDetailStore: ObservableObject {
 
     /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)
     /// - parameter attachments: Attachments which will be copied if needed
-    private func copyAttachmentFilesIfNeeded(for attachments: [StoreState.Attachment]) {
+    private func copyAttachmentFilesIfNeeded(for attachments: [State.Attachment]) {
         for attachment in attachments {
             guard attachment.changed else { continue }
 

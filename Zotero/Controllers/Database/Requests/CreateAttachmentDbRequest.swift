@@ -13,7 +13,7 @@ import RealmSwift
 struct CreateAttachmentDbRequest: DbResponseRequest {
     typealias Response = RItem
 
-    let attachment: ItemDetailStore.StoreState.Attachment
+    let attachment: ItemDetailStore.State.Attachment
 
     var needsWrite: Bool { return true }
 

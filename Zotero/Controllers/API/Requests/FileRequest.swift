@@ -9,12 +9,12 @@
 import Foundation
 
 struct FileRequest: ApiDownloadRequest {
-    let groupType: SyncController.Library
+    let library: SyncController.Library
     let key: String
     let destination: File
 
     var path: String {
-        return "\(self.groupType.apiPath)/items/\(self.key)/file"
+        return "\(self.library.apiPath)/items/\(self.key)/file"
     }
 
     var httpMethod: ApiHttpMethod {

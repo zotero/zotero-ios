@@ -49,7 +49,13 @@ struct ItemDetailView: View {
 
             if !self.store.state.data.attachments.isEmpty || self.isEditing {
                 AttachmentsSection(attachments: self.store.state.data.attachments,
-                                   isEditing: self.isEditing)
+                                   isEditing: self.isEditing,
+                                   tapAction: { attachment in
+                                       if !self.isEditing {
+                                          self.store.openAttachment(attachment)
+                                       }
+                                   },
+                                   deleteAction: self.store.deleteAttachments)
             }
         }
         .navigationBarItems(trailing:
@@ -102,8 +108,8 @@ fileprivate extension EditMode {
 fileprivate struct FieldsSection: View {
     let type: String
     let visibleFields: [String]
-    @Binding var fields: [String: ItemDetailStore.StoreState.Field]
-    @Binding var creators: [ItemDetailStore.StoreState.Creator]
+    @Binding var fields: [String: ItemDetailStore.State.Field]
+    @Binding var creators: [ItemDetailStore.State.Creator]
     @Binding var abstract: String?
     let isEditing: Bool
 
@@ -143,12 +149,12 @@ fileprivate struct FieldsSection: View {
 }
 
 fileprivate struct NotesSection: View {
-    let notes: [ItemDetailStore.StoreState.Note]
+    let notes: [ItemDetailStore.State.Note]
     let isEditing: Bool
 
     let deleteAction: (IndexSet) -> Void
     let addAction: () -> Void
-    let editAction: (ItemDetailStore.StoreState.Note) -> Void
+    let editAction: (ItemDetailStore.State.Note) -> Void
 
     var body: some View {
         Section {
@@ -191,8 +197,11 @@ fileprivate struct TagsSection: View {
 }
 
 fileprivate struct AttachmentsSection: View {
-    let attachments: [ItemDetailStore.StoreState.Attachment]
+    let attachments: [ItemDetailStore.State.Attachment]
     let isEditing: Bool
+
+    let tapAction: (ItemDetailStore.State.Attachment) -> Void
+    let deleteAction: (IndexSet) -> Void
 
     var body: some View {
         Section {
@@ -200,17 +209,13 @@ fileprivate struct AttachmentsSection: View {
             ForEach(self.attachments) { attachment in
                 // SWIFTUI BUG: - Button action in cell not called
                 Button(action: {
-                    if self.isEditing {
-
-                    } else {
-
-                    }
+                    self.tapAction(attachment)
                 }) {
                     ItemDetailAttachmentView(filename: attachment.filename)
                 }.onTapGesture {
-
+                    self.tapAction(attachment)
                 }
-            }.onDelete(perform: self.delete)
+            }.onDelete(perform: self.deleteAction)
             if self.isEditing {
                 ItemDetailAddView(title: "Add attachment", action: {})
             }

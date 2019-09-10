@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ItemDetailCreatorView: View {
-    @Binding var creator: ItemDetailStore.StoreState.Creator
+    @Binding var creator: ItemDetailStore.State.Creator
     let editingEnabled: Bool
 
     var body: some View {
