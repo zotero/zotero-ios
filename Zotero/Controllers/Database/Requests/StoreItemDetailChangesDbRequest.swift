@@ -19,9 +19,9 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let itemKey: String
     let type: String?
-    let fields: [NewItemDetailStore.StoreState.Field]
-    let notes: [NewItemDetailStore.StoreState.Note]
-    let attachments: [NewItemDetailStore.StoreState.Attachment]
+    let fields: [ItemDetailStore.StoreState.Field]
+    let notes: [ItemDetailStore.StoreState.Note]
+    let attachments: [ItemDetailStore.StoreState.Attachment]
     let tags: [Tag]
 
     func process(in database: Realm) throws {

@@ -13,7 +13,7 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-class NewItemDetailStore: ObservableObject {
+class ItemDetailStore: ObservableObject {
     enum StoreError: Error, Equatable {
         case typeNotSupported, libraryNotAssigned,
              contentTypeUnknown, userMissing, downloadError, unknown,
@@ -316,7 +316,7 @@ class NewItemDetailStore: ObservableObject {
     init(type: StoreState.DetailType, userId: Int, libraryId: LibraryIdentifier,
          apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, schemaController: SchemaController) throws {
-        let data = try NewItemDetailStore.createData(from: type,
+        let data = try ItemDetailStore.createData(from: type,
                                                      schemaController: schemaController,
                                                      fileStorage: fileStorage)
         self.state = StoreState(userId: userId, libraryId: libraryId, type: type, data: data)

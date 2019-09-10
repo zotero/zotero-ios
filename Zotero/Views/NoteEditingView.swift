@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct NoteEditingView: View {
-    var note: NewItemDetailStore.StoreState.Note
+    var note: ItemDetailStore.StoreState.Note
     let saveAction: () -> Void
 
     var body: some View {

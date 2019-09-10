@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ItemDetailView: View {
-    @ObservedObject private(set) var store: NewItemDetailStore
+    @ObservedObject private(set) var store: ItemDetailStore
     @Environment(\.editMode) private var editMode: Binding<EditMode>
     private var isEditing: Bool {
         return self.editMode?.wrappedValue.isEditing ?? false
@@ -38,12 +38,14 @@ struct ItemDetailView: View {
                              editAction: self.store.editNote)
             }
 
-            TagsSection(tags: self.store.state.data.tags,
-                        isEditing: self.isEditing,
-                        addAction: {
-                            self.store.state.showTagPicker = true
-                        },
-                        deleteAction: self.store.deleteTags)
+            if !self.store.state.data.tags.isEmpty || self.isEditing {
+                TagsSection(tags: self.store.state.data.tags,
+                            isEditing: self.isEditing,
+                            addAction: {
+                                self.store.state.showTagPicker = true
+                            },
+                            deleteAction: self.store.deleteTags)
+            }
 
             if !self.store.state.data.attachments.isEmpty || self.isEditing {
                 AttachmentsSection(attachments: self.store.state.data.attachments,
@@ -100,8 +102,8 @@ fileprivate extension EditMode {
 fileprivate struct FieldsSection: View {
     let type: String
     let visibleFields: [String]
-    @Binding var fields: [String: NewItemDetailStore.StoreState.Field]
-    @Binding var creators: [NewItemDetailStore.StoreState.Creator]
+    @Binding var fields: [String: ItemDetailStore.StoreState.Field]
+    @Binding var creators: [ItemDetailStore.StoreState.Creator]
     @Binding var abstract: String?
     let isEditing: Bool
 
@@ -141,12 +143,12 @@ fileprivate struct FieldsSection: View {
 }
 
 fileprivate struct NotesSection: View {
-    let notes: [NewItemDetailStore.StoreState.Note]
+    let notes: [ItemDetailStore.StoreState.Note]
     let isEditing: Bool
 
     let deleteAction: (IndexSet) -> Void
     let addAction: () -> Void
-    let editAction: (NewItemDetailStore.StoreState.Note) -> Void
+    let editAction: (ItemDetailStore.StoreState.Note) -> Void
 
     var body: some View {
         Section {
@@ -189,14 +191,25 @@ fileprivate struct TagsSection: View {
 }
 
 fileprivate struct AttachmentsSection: View {
-    let attachments: [NewItemDetailStore.StoreState.Attachment]
+    let attachments: [ItemDetailStore.StoreState.Attachment]
     let isEditing: Bool
 
     var body: some View {
         Section {
             ItemDetailSectionView(title: "Attachments")
             ForEach(self.attachments) { attachment in
-                ItemDetailAttachmentView(filename: attachment.filename)
+                // SWIFTUI BUG: - Button action in cell not called
+                Button(action: {
+                    if self.isEditing {
+
+                    } else {
+
+                    }
+                }) {
+                    ItemDetailAttachmentView(filename: attachment.filename)
+                }.onTapGesture {
+
+                }
             }.onDelete(perform: self.delete)
             if self.isEditing {
                 ItemDetailAddView(title: "Add attachment", action: {})
@@ -214,15 +227,17 @@ fileprivate struct AttachmentsSection: View {
 struct ItemDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let userId = 23//try! controllers.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
-        let store = try! NewItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
-                                                            collectionKey: nil, filesEditable: true),
-                                            userId: userId,
-                                            libraryId: .custom(.myLibrary),
-                                            apiClient: controllers.apiClient,
-                                            fileStorage: controllers.fileStorage,
-                                            dbStorage: controllers.dbStorage,
-                                            schemaController: controllers.schemaController)
+        controllers.schemaController.reloadSchemaIfNeeded()
+        let userId = 23
+        let store = try! ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
+                                                         collectionKey: nil, filesEditable: true),
+                                         userId: userId,
+                                         libraryId: .custom(.myLibrary),
+                                         apiClient: controllers.apiClient,
+                                         fileStorage: controllers.fileStorage,
+                                         dbStorage: controllers.dbStorage,
+                                         schemaController: controllers.schemaController)
+
         return ItemDetailView(store: store)
     }
 }

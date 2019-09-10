@@ -89,11 +89,11 @@ class ItemsViewController: UIViewController {
         self.showItemDetail(with: .preview(item))
     }
 
-    private func showItemDetail(with type: NewItemDetailStore.StoreState.DetailType) {
+    private func showItemDetail(with type: ItemDetailStore.StoreState.DetailType) {
         do {
             let userId = try self.store.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
             let libraryId = self.store.state.value.libraryId
-            let store = try NewItemDetailStore(type: type,
+            let store = try ItemDetailStore(type: type,
                                                userId: userId,
                                                libraryId: libraryId,
                                                apiClient: self.store.apiClient,
