@@ -26,7 +26,7 @@ struct ItemDetailCreatorView: View {
                     TextField("First name", text: self.$creator.firstName)
                 }
                 Spacer()
-                // SWIFTUI BUG: - Button action in cell not called
+                // SWIFTUI BUG: - Button action in cell not called in EditMode.active
                 Button(action: {
                     self.creator.namePresentation.toggle()
                 }) {

@@ -13,7 +13,7 @@ struct ItemDetailAddView: View {
     let action: () -> Void
 
     var body: some View {
-        // SWIFTUI BUG: - Button action in cell not called
+        // SWIFTUI BUG: - Button action in cell not called in EditMode.active
         Button(action: self.action, label: {
             HStack {
                 Image(systemName: "plus.circle")

@@ -65,14 +65,14 @@ class ItemDetailStore: ObservableObject {
 
         struct Attachment: Identifiable, Equatable {
             enum ContentType: Equatable {
-                case file(file: File, isCached: Bool)
+                case file(file: File, filename: String, isLocal: Bool)
                 case url(URL)
 
                 static func == (lhs: ContentType, rhs: ContentType) -> Bool {
                     switch (lhs, rhs) {
                     case (.url(let lUrl), .url(let rUrl)):
                         return lUrl == rUrl
-                    case (.file(let lFile, _), .file(let rFile, _)):
+                    case (.file(let lFile, _, _), .file(let rFile, _, _)):
                         return lFile.createUrl() == rFile.createUrl()
                     default:
                         return false
@@ -82,19 +82,16 @@ class ItemDetailStore: ObservableObject {
 
             let key: String
             let title: String
-            let filename: String
             let type: ContentType
             let libraryId: LibraryIdentifier
             let changed: Bool
 
             var id: String { return self.key }
 
-            init(key: String, title: String,
-                 filename: String, type: ContentType,
+            init(key: String, title: String, type: ContentType,
                  libraryId: LibraryIdentifier, changed: Bool) {
                 self.key = key
                 self.title = title
-                self.filename = filename
                 self.type = type
                 self.libraryId = libraryId
                 self.changed = changed
@@ -109,17 +106,16 @@ class ItemDetailStore: ObservableObject {
                 self.libraryId = libraryId
                 self.key = item.key
                 self.title = item.title
-                self.filename = item.fields.filter(Predicates.key(FieldKeys.filename)).first?.value ?? item.title
                 self.type = type
                 self.changed = false
             }
 
-            func changed(isCached: Bool) -> Attachment {
+            func changed(isLocal: Bool) -> Attachment {
                 switch type {
                 case .url: return self
-                case .file(let file, _):
-                    return Attachment(key: self.key, title: self.title, filename: self.filename,
-                                      type: .file(file: file, isCached: isCached),
+                case .file(let file, let filename, _):
+                    return Attachment(key: self.key, title: self.title,
+                                      type: .file(file: file, filename: filename, isLocal: isLocal),
                                       libraryId: self.libraryId, changed: self.changed)
                 }
             }
@@ -275,6 +271,8 @@ class ItemDetailStore: ObservableObject {
         var type: DetailType
         var data: Data
         var snapshot: Data?
+        var downloadProgress: [String: Double]
+        var downloadError: [String: ItemDetailStore.Error]
         var error: Error?
         var presentedNote: Note?
         var showTagPicker: Bool
@@ -293,6 +291,8 @@ class ItemDetailStore: ObservableObject {
             self.libraryId = libraryId
             self.type = type
             self.data = data
+            self.downloadProgress = [:]
+            self.downloadError = [:]
             self.showTagPicker = false
 
             switch type {
@@ -442,9 +442,10 @@ class ItemDetailStore: ObservableObject {
         if !contentType.isEmpty { // File attachment
             if let ext = contentType.extensionFromMimeType,
                let libraryId = item.libraryObject?.identifier {
+                let filename = item.fields.filter(Predicates.key(FieldKeys.filename)).first?.value ?? (item.title + "." + ext)
                 let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: ext)
-                let isCached = fileStorage.has(file)
-                return .file(file: file, isCached: isCached)
+                let isLocal = fileStorage.has(file)
+                return .file(file: file, filename: filename, isLocal: isLocal)
             } else {
                 DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
                 return nil
@@ -515,7 +516,7 @@ class ItemDetailStore: ObservableObject {
         switch attachment.type {
         case .url(let url):
             self.openUrl(url)
-        case .file(let file, let isCached):
+        case .file(let file, _, let isCached):
             if isCached {
                 self.openFile(file)
             } else {
@@ -530,22 +531,56 @@ class ItemDetailStore: ObservableObject {
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in
                           let progress = progress.totalBytes == 0 ? 0 : Double(progress.bytesWritten) / Double(progress.totalBytes)
-                          
+                          self?.state.downloadProgress[key] = progress
                       }, onError: { [weak self] error in
-                          DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
-
+                          self?.finishCachingFile(for: key, result: .failure(error))
                       }, onCompleted: { [weak self] in
-
+                          self?.finishCachingFile(for: key, result: .success(()))
                       })
                       .disposed(by: self.disposeBag)
     }
 
+    private func finishCachingFile(for key: String, result: Result<(), Swift.Error>) {
+        switch result {
+        case .failure(let error):
+            DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
+            self.state.downloadError[key] = .downloadError
+
+        case .success:
+            self.state.downloadProgress[key] = nil
+            if let (index, attachment) = self.state.data.attachments.enumerated().first(where: { $1.key == key }) {
+                self.state.data.attachments[index] = attachment.changed(isLocal: true)
+            }
+        }
+    }
+
     private func openFile(_ file: File) {
-        // TODO: - open file in appropriate controller
+        switch file.ext {
+        case "pdf":
+            self.openPdf(from: file)
+        default:
+            self.openUnknownFile(file)
+        }
+    }
+
+    private func openPdf(from file: File) {
+        /*
+            TODO: - turn PSPDFViewController into SwiftUI View, open
+            #if PDFENABLED
+            let document = PSPDFDocument(url: file.createUrl())
+            let pdfController = PSPDFViewController(document: document)
+            let navigationController = UINavigationController(rootViewController: pdfController)
+            self.present(navigationController, animated: true, completion: nil)
+            #endif
+         */
+    }
+
+    private func openUnknownFile(_ file: File) {
+        // TODO: - open UIActivityViewController with file url
     }
 
     private func openUrl(_ url: URL) {
-        // TODO: - open safari web controller
+        // TODO: - open SFSafariViewController
     }
 
     func startEditing() {
@@ -644,7 +679,7 @@ class ItemDetailStore: ObservableObject {
 
             switch attachment.type {
             case .url: continue
-            case .file(let originalFile, _):
+            case .file(let originalFile, _, _):
                 let newFile = Files.objectFile(for: .item, libraryId: attachment.libraryId,
                                                key: attachment.key, ext: originalFile.ext)
                 // Make sure that the file was not already moved to our internal location before

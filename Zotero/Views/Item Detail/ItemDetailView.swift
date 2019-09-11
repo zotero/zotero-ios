@@ -49,6 +49,8 @@ struct ItemDetailView: View {
 
             if !self.store.state.data.attachments.isEmpty || self.isEditing {
                 AttachmentsSection(attachments: self.store.state.data.attachments,
+                                   downloadProgress: self.store.state.downloadProgress,
+                                   downloadError: self.store.state.downloadError,
                                    isEditing: self.isEditing,
                                    tapAction: { attachment in
                                        if !self.isEditing {
@@ -160,7 +162,7 @@ fileprivate struct NotesSection: View {
         Section {
             ItemDetailSectionView(title: "Notes")
             ForEach(self.notes) { note in
-                // SWIFTUI BUG: - Button action in cell not called
+                // SWIFTUI BUG: - Button action in cell not called in EditMode.active
                 Button(action: {
                     self.editAction(note)
                 }) {
@@ -198,6 +200,8 @@ fileprivate struct TagsSection: View {
 
 fileprivate struct AttachmentsSection: View {
     let attachments: [ItemDetailStore.State.Attachment]
+    let downloadProgress: [String: Double]
+    let downloadError: [String: Error]
     let isEditing: Bool
 
     let tapAction: (ItemDetailStore.State.Attachment) -> Void
@@ -207,11 +211,15 @@ fileprivate struct AttachmentsSection: View {
         Section {
             ItemDetailSectionView(title: "Attachments")
             ForEach(self.attachments) { attachment in
-                // SWIFTUI BUG: - Button action in cell not called
+                // SWIFTUI BUG: - Button action in cell not called in EditMode.active
                 Button(action: {
                     self.tapAction(attachment)
                 }) {
-                    ItemDetailAttachmentView(filename: attachment.filename)
+                    ItemDetailAttachmentView(title: attachment.title,
+                                             rightAccessory: self.accessory(for: attachment,
+                                                                            progress: self.downloadProgress[attachment.key],
+                                                                            error: self.downloadError[attachment.key]),
+                                             progress: self.downloadProgress[attachment.key])
                 }.onTapGesture {
                     self.tapAction(attachment)
                 }
@@ -222,8 +230,22 @@ fileprivate struct AttachmentsSection: View {
         }
     }
 
-    private func delete(at offsets: IndexSet) {
+    private func accessory(for attachment: ItemDetailStore.State.Attachment,
+                           progress: Double?, error: Error?) -> AccessoryView.Accessory {
+        if error != nil {
+            return .error
+        }
 
+        if progress != nil {
+            return .progress
+        }
+
+        switch attachment.type {
+        case .file(_, _, let isLocal):
+            return isLocal ? .disclosureIndicator : .downloadIcon
+        case .url:
+            return .disclosureIndicator
+        }
     }
 }
 
@@ -233,7 +255,7 @@ struct ItemDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
         controllers.schemaController.reloadSchemaIfNeeded()
-        let userId = 23
+        let userId = (try? controllers.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()))?.identifier ?? 23
         let store = try! ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
                                                          collectionKey: nil, filesEditable: true),
                                          userId: userId,
@@ -243,7 +265,7 @@ struct ItemDetailView_Previews: PreviewProvider {
                                          dbStorage: controllers.dbStorage,
                                          schemaController: controllers.schemaController)
 
-        return ItemDetailView(store: store)
+        return ItemDetailView(store: store).environment(\.editMode, .constant(.active))
     }
 }
 
