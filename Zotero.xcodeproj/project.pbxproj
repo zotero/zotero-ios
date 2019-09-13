@@ -51,6 +51,9 @@
 		B3341F6D22CA314900580FE8 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */; };
 		B3341F6F22CA580E00580FE8 /* DeleteGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */; };
 		B335E2D622D7436B009F9061 /* Observable+Completable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B335E2D522D7436B009F9061 /* Observable+Completable.swift */; };
+		B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33744F8232BDA280082760A /* PdfReaderView.swift */; };
+		B33744FB232BDAE40082760A /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33744FA232BDAE40082760A /* SafariView.swift */; };
+		B33744FD232BEAD70082760A /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33744FC232BEAD70082760A /* ActivityView.swift */; };
 		B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */; };
 		B337AB6522E0C7CF0092AC22 /* AuthorizeUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */; };
 		B337AB6722E0CAD90092AC22 /* AuthorizeUploadResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */; };
@@ -281,6 +284,9 @@
 		B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolutionController.swift; sourceTree = "<group>"; };
 		B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteGroupDbRequest.swift; sourceTree = "<group>"; };
 		B335E2D522D7436B009F9061 /* Observable+Completable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Observable+Completable.swift"; sourceTree = "<group>"; };
+		B33744F8232BDA280082760A /* PdfReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfReaderView.swift; sourceTree = "<group>"; };
+		B33744FA232BDAE40082760A /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
+		B33744FC232BEAD70082760A /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckItemIsChangedDbRequest.swift; sourceTree = "<group>"; };
 		B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadRequest.swift; sourceTree = "<group>"; };
 		B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadResponse.swift; sourceTree = "<group>"; };
@@ -604,6 +610,9 @@
 				B3A6ABB5231ECA4500425A49 /* ClosureTextField.swift */,
 				B372764F23265A6000E2C522 /* NoteEditingView.swift */,
 				B372765D2326951A00E2C522 /* TagPickerView.swift */,
+				B33744F8232BDA280082760A /* PdfReaderView.swift */,
+				B33744FA232BDAE40082760A /* SafariView.swift */,
+				B33744FC232BEAD70082760A /* ActivityView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1175,6 +1184,7 @@
 				B3C6FE2D230FE56600560D4B /* ItemsView.swift in Sources */,
 				B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */,
 				B3B5514D22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift in Sources */,
+				B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
 				B363034A224B7D7F009F839F /* Library.swift in Sources */,
 				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
@@ -1258,6 +1268,7 @@
 				B367F16E2321606A00FC4814 /* ItemDetailCreatorView.swift in Sources */,
 				B3B5514B22E1B0A3001E23CB /* RegisterUploadRequest.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
+				B33744FB232BDAE40082760A /* SafariView.swift in Sources */,
 				B3E4715A224127AC006E3B20 /* LoginViewController.swift in Sources */,
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */,
@@ -1266,6 +1277,7 @@
 				B353370822CCB620005648CB /* KeyedResponse.swift in Sources */,
 				B356360C2318318600C77B62 /* ItemDetailAttachmentView.swift in Sources */,
 				B363034C224B8285009F839F /* Predicates.swift in Sources */,
+				B33744FD232BEAD70082760A /* ActivityView.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
 				B3FFDEDB228031AA0009EBBE /* DeletableObject.swift in Sources */,

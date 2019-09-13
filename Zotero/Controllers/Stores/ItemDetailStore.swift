@@ -275,7 +275,15 @@ class ItemDetailStore: ObservableObject {
         var downloadError: [String: ItemDetailStore.Error]
         var error: Error?
         var presentedNote: Note?
+
         var showTagPicker: Bool
+        var webAttachment: URL?
+        var pdfAttachment: URL?
+        var unknownAttachment: URL?
+
+        var isAnyAttachmentOpened: Bool {
+            return self.webAttachment != nil || self.pdfAttachment != nil || self.unknownAttachment != nil
+        }
 
         fileprivate var library: SyncController.Library {
             switch self.libraryId {
@@ -515,7 +523,7 @@ class ItemDetailStore: ObservableObject {
     func openAttachment(_ attachment: State.Attachment) {
         switch attachment.type {
         case .url(let url):
-            self.openUrl(url)
+            self.state.webAttachment = url
         case .file(let file, _, let isCached):
             if isCached {
                 self.openFile(file)
@@ -550,6 +558,9 @@ class ItemDetailStore: ObservableObject {
             self.state.downloadProgress[key] = nil
             if let (index, attachment) = self.state.data.attachments.enumerated().first(where: { $1.key == key }) {
                 self.state.data.attachments[index] = attachment.changed(isLocal: true)
+                if !self.state.isAnyAttachmentOpened {
+                    self.openAttachment(attachment)
+                }
             }
         }
     }
@@ -557,30 +568,12 @@ class ItemDetailStore: ObservableObject {
     private func openFile(_ file: File) {
         switch file.ext {
         case "pdf":
-            self.openPdf(from: file)
-        default:
-            self.openUnknownFile(file)
-        }
-    }
-
-    private func openPdf(from file: File) {
-        /*
-            TODO: - turn PSPDFViewController into SwiftUI View, open
             #if PDFENABLED
-            let document = PSPDFDocument(url: file.createUrl())
-            let pdfController = PSPDFViewController(document: document)
-            let navigationController = UINavigationController(rootViewController: pdfController)
-            self.present(navigationController, animated: true, completion: nil)
+            self.state.pdfAttachment = file.createUrl()
             #endif
-         */
-    }
-
-    private func openUnknownFile(_ file: File) {
-        // TODO: - open UIActivityViewController with file url
-    }
-
-    private func openUrl(_ url: URL) {
-        // TODO: - open SFSafariViewController
+        default:
+            self.state.unknownAttachment = file.createUrl()
+        }
     }
 
     func startEditing() {
