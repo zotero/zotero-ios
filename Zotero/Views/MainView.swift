@@ -19,11 +19,11 @@ struct MainView: View {
     }
 
     private var defaultCollectionsStore: CollectionsStore {
-        let state = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
-                                                title: RCustomLibraryType.myLibrary.libraryName,
-                                                metadataEditable: true,
-                                                filesEditable: true)
-        return CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)
+        return CollectionsStore(libraryId: .custom(.myLibrary),
+                                title: RCustomLibraryType.myLibrary.libraryName,
+                                metadataEditable: true,
+                                filesEditable: true,
+                                dbStorage: self.controllers.dbStorage)
     }
 
     private var defaultItemsStore: ItemsStore {

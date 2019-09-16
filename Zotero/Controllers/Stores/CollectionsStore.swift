@@ -30,16 +30,6 @@ class CollectionsStore: ObservableObject {
         fileprivate(set) var error: StoreError?
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
-
-        init(libraryId: LibraryIdentifier, title: String, metadataEditable: Bool, filesEditable: Bool) {
-            self.cellData = [Collection(custom: .all),
-                             Collection(custom: .publications),
-                             Collection(custom: .trash)]
-            self.libraryId = libraryId
-            self.title = title
-            self.metadataEditable = metadataEditable
-            self.filesEditable = filesEditable
-        }
     }
     
     private(set) var state: StoreState {
@@ -51,10 +41,55 @@ class CollectionsStore: ObservableObject {
     let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
     
-    init(initialState: StoreState, dbStorage: DbStorage) {
-        self.state = initialState
+    init(libraryId: LibraryIdentifier, title: String, metadataEditable: Bool, filesEditable: Bool, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
         self.objectWillChange = ObservableObjectPublisher()
+
+        do {
+            let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId)
+            let collections = try dbStorage.createCoordinator().perform(request: collectionsRequest)
+            let searchesRequest = ReadSearchesDbRequest(libraryId: libraryId)
+            let searches = try dbStorage.createCoordinator().perform(request: searchesRequest)
+
+            var allCollections: [Collection] = [Collection(custom: .all),
+                                                Collection(custom: .publications),
+                                                Collection(custom: .trash)]
+            allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections) +
+                                              CollectionTreeBuilder.collections(from: searches),
+                                  at: 1)
+
+            self.state = StoreState(libraryId: libraryId, title: title,
+                                    metadataEditable: metadataEditable,
+                                    filesEditable: filesEditable,
+                                    cellData: allCollections)
+
+            let collectionToken = collections.observe({ [weak self] changes in
+                guard let `self` = self else { return }
+                switch changes {
+                case .update(let objects, _, _, _):
+                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
+                case .initial: break
+                case .error: break
+                }
+            })
+
+            let searchToken = searches.observe({ [weak self] changes in
+                guard let `self` = self else { return }
+                switch changes {
+                case .update(let objects, _, _, _):
+                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
+                case .initial: break
+                case .error: break
+                }
+            })
+
+            self.state.collectionToken = collectionToken
+            self.state.searchToken = searchToken
+        } catch let error {
+            DDLogError("CollectionsStore: can't load collections: \(error)")
+            self.state = StoreState(libraryId: libraryId, title: title, metadataEditable: metadataEditable,
+                                    filesEditable: filesEditable, cellData: [], error: .dataLoading)
+        }
     }
     
 //    private func editCollection(at index: Int) {
@@ -112,56 +147,6 @@ class CollectionsStore: ObservableObject {
             DispatchQueue.main.async { [weak self] in
                 self?.state.error = .deletion
             }
-        }
-    }
-
-    func loadData() {
-        // SWIFTUI BUG: - need to delay it a little because it's called on `onAppear` and it reloads the state immediately which causes a tableview reload crash, remove dispatch after when fixed
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self._loadData()
-        }
-    }
-
-    private func _loadData() {
-        guard self.state.collectionToken == nil && self.state.searchToken == nil else { return }
-
-        do {
-            let collectionsRequest = ReadCollectionsDbRequest(libraryId: self.state.libraryId)
-            let collections = try self.dbStorage.createCoordinator().perform(request: collectionsRequest)
-            let searchesRequest = ReadSearchesDbRequest(libraryId: self.state.libraryId)
-            let searches = try self.dbStorage.createCoordinator().perform(request: searchesRequest)
-
-            let collectionToken = collections.observe({ [weak self] changes in
-                guard let `self` = self else { return }
-                switch changes {
-                case .update(let objects, _, _, _):
-                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
-                case .initial: break
-                case .error(let error):
-                    DDLogError("CollectionsStore: can't load collection update: \(error)")
-                    self.state.error = .dataLoading
-                }
-            })
-
-            let searchToken = searches.observe({ [weak self] changes in
-                guard let `self` = self else { return }
-                switch changes {
-                case .update(let objects, _, _, _):
-                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
-                case .initial: break
-                case .error(let error):
-                    DDLogError("CollectionsStore: can't load collection update: \(error)")
-                      self.state.error = .dataLoading
-                }
-            })
-
-            let cells = CollectionTreeBuilder.collections(from: collections) + CollectionTreeBuilder.collections(from: searches)
-            self.state.cellData.insert(contentsOf: cells, at: 1)
-            self.state.collectionToken = collectionToken
-            self.state.searchToken = searchToken
-        } catch let error {
-            DDLogError("CollectionsStore: can't load collections: \(error)")
-            self.state.error = .dataLoading
         }
     }
     

@@ -22,8 +22,8 @@ struct CollectionsView: View {
                 }
             }
             .onDelete(perform: self.store.deleteCells)
-        }
-        .onAppear(perform: self.store.loadData)
+        }.navigationBarTitle(Text(self.store.state.title), displayMode: .inline)
+         .navigationBarItems(trailing: EditButton())
     }
 
     private func itemsView(from data: Collection) -> ItemsView {
@@ -60,13 +60,11 @@ struct CollectionsView: View {
 struct CollectionsView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let state = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
-                                                title: "Test",
-                                                metadataEditable: true,
-                                                filesEditable: true)
-        let store = CollectionsStore(initialState: state,
+        let store = CollectionsStore(libraryId: .custom(.myLibrary),
+                                     title: "Test",
+                                     metadataEditable: true,
+                                     filesEditable: true,
                                      dbStorage: controllers.dbStorage)
-
         return CollectionsView(store: store, controllers: controllers)
     }
 }

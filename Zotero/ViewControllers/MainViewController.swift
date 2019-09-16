@@ -58,11 +58,11 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let leftNavigationController = ProgressNavigationViewController(rootViewController: librariesController)
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
         
-        let collectionsState = CollectionsStore.StoreState(libraryId: .custom(.myLibrary),
-                                                              title: RCustomLibraryType.myLibrary.libraryName,
-                                                              metadataEditable: true,
-                                                              filesEditable: true)
-        let collectionsStore = CollectionsStore(initialState: collectionsState, dbStorage: controllers.dbStorage)
+        let collectionsStore = CollectionsStore(libraryId: .custom(.myLibrary),
+                                                title: RCustomLibraryType.myLibrary.libraryName,
+                                                metadataEditable: true,
+                                                filesEditable: true,
+                                                dbStorage: controllers.dbStorage)
         let collectionsController = UIHostingController(rootView: CollectionsView(store: collectionsStore, controllers: controllers))
         leftNavigationController.pushViewController(collectionsController, animated: false)
 
@@ -175,10 +175,10 @@ extension MainViewController: ItemNavigationDelegate {
     func showCollections(for libraryId: LibraryIdentifier, libraryName: String, metadataEditable: Bool, filesEditable: Bool) {
         guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
 
-        let state = CollectionsStore.StoreState(libraryId: libraryId, title: libraryName,
-                                                metadataEditable: metadataEditable,
-                                                filesEditable: filesEditable)
-        let store = CollectionsStore(initialState: state, dbStorage: self.controllers.dbStorage)
+        let store = CollectionsStore(libraryId: libraryId, title: libraryName,
+                                     metadataEditable: metadataEditable,
+                                     filesEditable: filesEditable,
+                                     dbStorage: self.controllers.dbStorage)
         let controller = UIHostingController(rootView: CollectionsView(store: store, controllers: self.controllers))
         navigationController.pushViewController(controller, animated: true)
 

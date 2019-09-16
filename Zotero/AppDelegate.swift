@@ -10,6 +10,7 @@ import UIKit
 
 import CocoaLumberjack
 import RxSwift
+import SwiftUI
 
 #if PDFENABLED
 import PSPDFKit
@@ -17,6 +18,12 @@ import PSPDFKit
 
 extension Notification.Name {
     static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
+}
+
+extension UIHostingController: ConflictPresenter {
+    func present(controller: UIAlertController) {
+        self.present(controller, animated: true, completion: nil)
+    }
 }
 
 class AppDelegate: UIResponder {
@@ -38,7 +45,7 @@ class AppDelegate: UIResponder {
                                                       dbStorage: self.controllers.dbStorage)
             self.show(viewController: controller, animated: true)
         case .main:
-            let controller = MainViewController(controllers: self.controllers)
+            let controller = UIHostingController(rootView: MainView(controllers: self.controllers))
             self.show(viewController: controller)
 
             self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)
