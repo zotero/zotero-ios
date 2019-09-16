@@ -27,7 +27,7 @@ struct CollectionsView: View {
     }
 
     private func itemsView(from data: Collection) -> ItemsView {
-        let type: ItemsStore.StoreState.ItemType
+        let type: NewItemsStore.State.ItemType
 
         switch data.type {
         case .collection:
@@ -45,13 +45,11 @@ struct CollectionsView: View {
             }
         }
 
-        let state = ItemsStore.StoreState(libraryId: self.store.state.libraryId, type: type,
-                                          metadataEditable: true, filesEditable: true)
-        return ItemsView(store: ItemsStore(initialState: state,
-                                           apiClient: self.controllers.apiClient,
-                                           fileStorage: self.controllers.fileStorage,
-                                           dbStorage: self.controllers.dbStorage,
-                                           schemaController: self.controllers.schemaController))
+        return ItemsView(store: NewItemsStore(libraryId: self.store.state.libraryId,
+                                              type: type,
+                                              metadataEditable: self.store.state.metadataEditable,
+                                              filesEditable: self.store.state.filesEditable,
+                                              dbStorage: self.controllers.dbStorage))
     }
 }
 

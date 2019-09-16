@@ -10,15 +10,29 @@ import SwiftUI
 
 import RealmSwift
 
-struct ItemsView: UIViewControllerRepresentable {
-    let store: ItemsStore
+struct ItemsView: View {
+    @ObservedObject private(set) var store: NewItemsStore
 
-    func makeUIViewController(context: Context) -> ItemsViewController {
-        return ItemsViewController(store: self.store)
+    var body: some View {
+        List {
+            self.store.state.sections.flatMap {
+                ForEach($0, id: \.self) { section in
+                    self.store.state.items(for: section).flatMap { ItemSectionView(results: $0) }
+                }
+            }
+        }
     }
+}
 
-    func updateUIViewController(_ uiViewController: ItemsViewController, context: Context) {
+fileprivate struct ItemSectionView: View {
+    let results: Results<RItem>
 
+    var body: some View {
+        Section {
+            ForEach(self.results, id: \.key) { item in
+                ItemRow(item: item)
+            }
+        }
     }
 }
 
@@ -26,14 +40,11 @@ struct ItemsView: UIViewControllerRepresentable {
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
-        let controllers = Controllers()
-        let state = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all, metadataEditable: true, filesEditable: true)
-        let store = ItemsStore(initialState: state,
-                               apiClient: controllers.apiClient,
-                               fileStorage: controllers.fileStorage,
-                               dbStorage: controllers.dbStorage,
-                               schemaController: controllers.schemaController)
-        return ItemsView(store: store)
+        ItemsView(store: NewItemsStore(libraryId: .custom(.myLibrary),
+                                       type: .all,
+                                       metadataEditable: true,
+                                       filesEditable: true,
+                                       dbStorage: Controllers().dbStorage))
     }
 }
 

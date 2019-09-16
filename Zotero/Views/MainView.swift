@@ -26,16 +26,12 @@ struct MainView: View {
                                 dbStorage: self.controllers.dbStorage)
     }
 
-    private var defaultItemsStore: ItemsStore {
-        let state = ItemsStore.StoreState(libraryId: .custom(.myLibrary),
-                                          type: .all,
-                                          metadataEditable: true,
-                                          filesEditable: true)
-        return ItemsStore(initialState: state,
-                          apiClient: self.controllers.apiClient,
-                          fileStorage: self.controllers.fileStorage,
-                          dbStorage: self.controllers.dbStorage,
-                          schemaController: self.controllers.schemaController)
+    private var defaultItemsStore: NewItemsStore {
+        return NewItemsStore(libraryId: .custom(.myLibrary),
+                             type: .all,
+                             metadataEditable: true,
+                             filesEditable: true,
+                             dbStorage: self.controllers.dbStorage)
     }
 }
 

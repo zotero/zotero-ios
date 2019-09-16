@@ -13,74 +13,120 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-//class NewItemStore: Store {
-//    typealias Action = StoreAction
-//    typealias State = StoreState
-//
-//    enum StoreAction {
-//        case load
-//        case trash(IndexSet)
-//        case delete(IndexSet)
-//        case restore(IndexSet)
-//    }
-//
-//    class StoreState {
-//        enum ItemType {
-//            case all, trash, publications
-//            case collection(String, String) // Key, Title
-//            case search(String, String) // Key, Title
-//
-//            var collectionKey: String? {
-//                switch self {
-//                case .collection(let key, _):
-//                    return key
-//                default:
-//                    return nil
-//                }
-//            }
-//
-//            var isTrash: Bool {
-//                switch self {
-//                case .trash:
-//                    return true
-//                default:
-//                    return false
-//                }
-//            }
-//        }
-//
-//        let libraryId: LibraryIdentifier
-//        let type: ItemType
-//        let title: String
-//        let metadataEditable: Bool
-//        let filesEditable: Bool
-//
-//        private var token: NotificationToken?
-//
-//        init(libraryId: LibraryIdentifier, type: ItemType, metadataEditable: Bool, filesEditable: Bool) {
-//            self.libraryId = libraryId
-//            self.type = type
-//            switch type {
-//            case .collection(_, let title), .search(_, let title):
-//                self.title = title
-//            case .all:
-//                self.title = "All Items"
-//            case .trash:
-//                self.title = "Trash"
-//            case .publications:
-//                self.title = "My Publications"
-//            }
-//            self.metadataEditable = metadataEditable
-//            self.filesEditable = filesEditable
-//        }
-//    }
-//
-//    let state: StoreState
-//
-//    func handle(action: StoreAction) {
-//
-//    }
-//}
+class NewItemsStore: ObservableObject {
+    enum Error: Swift.Error, Equatable {
+        case dataLoading, deletion
+    }
+
+    struct State {
+        enum ItemType {
+            case all, trash, publications
+            case collection(String, String) // Key, Title
+            case search(String, String) // Key, Title
+
+            var collectionKey: String? {
+                switch self {
+                case .collection(let key, _):
+                    return key
+                default:
+                    return nil
+                }
+            }
+
+            var isTrash: Bool {
+                switch self {
+                case .trash:
+                    return true
+                default:
+                    return false
+                }
+            }
+        }
+
+        let libraryId: LibraryIdentifier
+        let type: ItemType
+        let metadataEditable: Bool
+        let filesEditable: Bool
+
+        fileprivate(set) var sections: [String]?
+        fileprivate var results: Results<RItem>?
+        fileprivate(set) var error: Error?
+        fileprivate var itemsToken: NotificationToken?
+
+        func items(for section: String) -> Results<RItem>? {
+            if section == "-" {
+                return self.results?.filter("title == ''")
+            } else {
+                return self.results?.filter("title BEGINSWITH[c] %@", section)
+            }
+        }
+    }
+
+    private(set) var state: State {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
+    // SWIFTUI BUG: should be defined by default, but bugged in current version
+    let objectWillChange: ObservableObjectPublisher
+    let dbStorage: DbStorage
+
+    init(libraryId: LibraryIdentifier, type: State.ItemType, metadataEditable: Bool, filesEditable: Bool, dbStorage: DbStorage) {
+        self.objectWillChange = ObservableObjectPublisher()
+        self.dbStorage = dbStorage
+
+        do {
+            let items = try dbStorage.createCoordinator().perform(request: NewItemsStore.request(for: type, libraryId: libraryId))
+            let sections = NewItemsStore.sections(from: items)
+            self.state = State(libraryId: libraryId, type: type,
+                               metadataEditable: metadataEditable,
+                               filesEditable: filesEditable,
+                               sections: sections, results: items)
+
+            let token = items.observe { [weak self] changes in
+                switch changes {
+                case .error: break
+                case .initial: break
+                case .update(let results, _, _, _):
+                    self?.state.results = results
+                    self?.state.sections = NewItemsStore.sections(from: results)
+                }
+            }
+            self.state.itemsToken = token
+        } catch let error {
+            DDLogError("ItemStore: can't load items - \(error)")
+            self.state = State(libraryId: libraryId, type: type,
+                               metadataEditable: metadataEditable,
+                               filesEditable: filesEditable,
+                               error: .dataLoading)
+        }
+    }
+
+    private class func request(for type: State.ItemType, libraryId: LibraryIdentifier) -> ReadItemsDbRequest {
+        let request: ReadItemsDbRequest
+        switch type {
+        case .all:
+            request = ReadItemsDbRequest(libraryId: libraryId,
+                                         collectionKey: nil, parentKey: "", trash: false)
+        case .trash:
+            request = ReadItemsDbRequest(libraryId: libraryId,
+                                         collectionKey: nil, parentKey: nil, trash: true)
+        case .publications, .search:
+            // TODO: - implement publications and search fetching
+            request = ReadItemsDbRequest(libraryId: .group(-1),
+                                         collectionKey: nil, parentKey: nil, trash: true)
+        case .collection(let key, _):
+            request = ReadItemsDbRequest(libraryId: libraryId,
+                                         collectionKey: key, parentKey: "", trash: false)
+        }
+        return request
+    }
+
+    private class func sections(from results: Results<RItem>) -> [String] {
+        return Set(results.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "-" })).sorted()
+    }
+}
+
 
 protocol ItemsDataSource {
     var sectionCount: Int { get }

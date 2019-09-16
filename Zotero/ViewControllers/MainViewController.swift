@@ -66,11 +66,11 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let collectionsController = UIHostingController(rootView: CollectionsView(store: collectionsStore, controllers: controllers))
         leftNavigationController.pushViewController(collectionsController, animated: false)
 
-        let itemState = ItemsStore.StoreState(libraryId: .custom(.myLibrary), type: .all,
-                                              metadataEditable: true, filesEditable: true)
-        let itemStore = ItemsStore(initialState: itemState, apiClient: controllers.apiClient,
-                                   fileStorage: controllers.fileStorage, dbStorage: controllers.dbStorage,
-                                   schemaController: controllers.schemaController)
+        let itemStore = NewItemsStore(libraryId: .custom(.myLibrary),
+                                      type: .all,
+                                      metadataEditable: true,
+                                      filesEditable: true,
+                                      dbStorage: controllers.dbStorage)
         let itemsController = UIHostingController(rootView: ItemsView(store: itemStore))
         let rightNavigationController = UINavigationController(rootViewController: itemsController)
 
@@ -219,13 +219,13 @@ extension MainViewController: ItemNavigationDelegate {
                        metadataEditable: metadataEditable, filesEditable: filesEditable)
     }
 
-    private func showItems(for type: ItemsStore.StoreState.ItemType, libraryId: LibraryIdentifier,
+    private func showItems(for type: NewItemsStore.State.ItemType, libraryId: LibraryIdentifier,
                            metadataEditable: Bool, filesEditable: Bool) {
-        let state = ItemsStore.StoreState(libraryId: libraryId, type: type,
-                                          metadataEditable: metadataEditable, filesEditable: filesEditable)
-        let store = ItemsStore(initialState: state, apiClient: self.controllers.apiClient,
-                               fileStorage: self.controllers.fileStorage, dbStorage: self.controllers.dbStorage,
-                               schemaController: self.controllers.schemaController)
+        let store = NewItemsStore(libraryId: libraryId,
+                                  type: type,
+                                  metadataEditable: metadataEditable,
+                                  filesEditable: filesEditable,
+                                  dbStorage: self.controllers.dbStorage)
         let controller = UIHostingController(rootView: ItemsView(store: store))
         self.showSecondaryController(controller)
     }
