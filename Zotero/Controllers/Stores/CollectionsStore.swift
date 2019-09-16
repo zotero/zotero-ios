@@ -42,7 +42,11 @@ class CollectionsStore: ObservableObject {
         }
     }
     
-    @Published private(set) var state: StoreState
+    private(set) var state: StoreState {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
