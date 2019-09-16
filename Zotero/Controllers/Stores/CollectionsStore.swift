@@ -14,25 +14,25 @@ import RealmSwift
 import RxSwift
 
 class CollectionsStore: ObservableObject {
-    enum StoreError: Error, Equatable {
+    enum Error: Swift.Error, Equatable {
         case dataLoading
         case collectionNotFound
         case deletion
     }
     
-    struct StoreState {
+    struct State {
         let libraryId: LibraryIdentifier
         let title: String
         let metadataEditable: Bool
         let filesEditable: Bool
 
         fileprivate(set) var cellData: [Collection]
-        fileprivate(set) var error: StoreError?
+        fileprivate(set) var error: Error?
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
     }
     
-    private(set) var state: StoreState {
+    private(set) var state: State {
         willSet {
             self.objectWillChange.send()
         }
@@ -58,10 +58,10 @@ class CollectionsStore: ObservableObject {
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
 
-            self.state = StoreState(libraryId: libraryId, title: title,
-                                    metadataEditable: metadataEditable,
-                                    filesEditable: filesEditable,
-                                    cellData: allCollections)
+            self.state = State(libraryId: libraryId, title: title,
+                               metadataEditable: metadataEditable,
+                               filesEditable: filesEditable,
+                               cellData: allCollections)
 
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }
@@ -87,8 +87,8 @@ class CollectionsStore: ObservableObject {
             self.state.searchToken = searchToken
         } catch let error {
             DDLogError("CollectionsStore: can't load collections: \(error)")
-            self.state = StoreState(libraryId: libraryId, title: title, metadataEditable: metadataEditable,
-                                    filesEditable: filesEditable, cellData: [], error: .dataLoading)
+            self.state = State(libraryId: libraryId, title: title, metadataEditable: metadataEditable,
+                               filesEditable: filesEditable, cellData: [], error: .dataLoading)
         }
     }
     
