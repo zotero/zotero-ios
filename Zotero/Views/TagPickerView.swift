@@ -17,7 +17,7 @@ struct TagPickerView: View {
             VStack(spacing: 0) {
                 List(selection: self.$store.state.selectedTags) {
                     ForEach(self.store.state.tags) { tag in
-                        TagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
+                        TagView(color: .init(hex: tag.color), name: tag.name)
                     }
                     // SWIFTUI BUG: - selection doesn't show up when deletion is not addeds
                     .onDelete(perform: { _ in })

@@ -71,11 +71,6 @@ class RTag: Object {
         }
     }
 
-    var uiColor: UIColor? {
-        guard !self.color.isEmpty else { return nil }
-        return UIColor(hex: self.color)
-    }
-
     override class func indexedProperties() -> [String] {
         return ["name"]
     }

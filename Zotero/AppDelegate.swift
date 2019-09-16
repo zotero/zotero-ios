@@ -45,7 +45,12 @@ class AppDelegate: UIResponder {
                                                       dbStorage: self.controllers.dbStorage)
             self.show(viewController: controller, animated: true)
         case .main:
-            let controller = UIHostingController(rootView: MainView(controllers: self.controllers))
+            let view = MainView(controllers: self.controllers)
+                            .environment(\.dbStorage, self.controllers.dbStorage)
+                            .environment(\.apiClient, self.controllers.apiClient)
+                            .environment(\.fileStorage, self.controllers.fileStorage)
+                            .environment(\.schemaController, self.controllers.schemaController)
+            let controller = UIHostingController(rootView: view)
             self.show(viewController: controller)
 
             self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)

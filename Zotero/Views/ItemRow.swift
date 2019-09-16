@@ -14,7 +14,29 @@ struct ItemRow: View {
     var body: some View {
         HStack {
             Image(self.item.iconName)
-            Text(self.item.title)
+                .renderingMode(.template)
+                .foregroundColor(.blue)
+                .padding(.vertical, 8)
+                .padding(.trailing, 14)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(self.item.title)
+                    .font(.headline)
+                    .fontWeight(.regular)
+                HStack {
+                    self.item.subtitle.flatMap {
+                        Text($0)
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                    if self.item.hasAttachment {
+                        Image(systemName: "paperclip")
+                    }
+                    if self.item.hasNote {
+                        Image(systemName: "doc.text")
+                    }
+                    TagCirclesView(colors: self.item.tagHexColors)
+                }
+            }
         }
     }
 }
@@ -22,14 +44,16 @@ struct ItemRow: View {
 struct ItemCell_Previews: PreviewProvider {
     static var previews: some View {
         let item = RItem()
-        item.title = "Item"
+        item.title = "Bitcoin: A Peer-to-Peer Electronics Cash System"
         item.rawType = "artwork"
+        item.creatorSummary = "Rentka"
+        item.parsedDate = "2014"
         return List { ItemRow(item: item) }
     }
 }
 
 extension RItem {
-    var iconName: String {
+    fileprivate var iconName: String {
         switch self.rawType {
         case "artwork":
             return "icon_item_type_artwork"
@@ -106,5 +130,29 @@ extension RItem {
         default:
             return "icon_item_type_unknown"
         }
+    }
+
+    fileprivate var subtitle: String? {
+        if self.creatorSummary.isEmpty && self.parsedDate.isEmpty { return nil }
+
+        var subtitle = "(\(self.creatorSummary)"
+        if !self.parsedDate.isEmpty {
+            if subtitle.count > 1 {
+                subtitle += ", "
+            }
+        }
+        return subtitle + "\(self.parsedDate))"
+    }
+
+    fileprivate var hasAttachment: Bool {
+        return true//self.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
+    }
+
+    fileprivate var hasNote: Bool {
+        return true//self.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
+    }
+
+    fileprivate var tagHexColors: [String] {
+        return self.tags.compactMap({ $0.color.isEmpty ? nil : $0.color })
     }
 }

@@ -17,7 +17,10 @@ struct ItemsView: View {
         List {
             self.store.state.sections.flatMap {
                 ForEach($0, id: \.self) { section in
-                    self.store.state.items(for: section).flatMap { ItemSectionView(results: $0) }
+                    self.store.state.items(for: section).flatMap { section in
+                        ItemSectionView(results: section,
+                                        libraryId: self.store.state.libraryId)
+                    }
                 }
             }
         }
@@ -26,13 +29,30 @@ struct ItemsView: View {
 
 fileprivate struct ItemSectionView: View {
     let results: Results<RItem>
+    let libraryId: LibraryIdentifier
+
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
+    @Environment(\.apiClient) private var apiClient: ApiClient
+    @Environment(\.schemaController) private var schemaController: SchemaController
+    @Environment(\.fileStorage) private var fileStorage: FileStorage
 
     var body: some View {
         Section {
             ForEach(self.results, id: \.key) { item in
-                ItemRow(item: item)
+                NavigationLink(destination: ItemDetailView(store: self.detailStore(for: item))) {
+                    ItemRow(item: item)
+                }
             }
         }
+    }
+
+    private func detailStore(for item: RItem) -> ItemDetailStore {
+        return ItemDetailStore(type: .preview(item),
+                               libraryId: self.libraryId,
+                               apiClient: self.apiClient,
+                               fileStorage: self.fileStorage,
+                               dbStorage: self.dbStorage,
+                               schemaController: self.schemaController)
     }
 }
 

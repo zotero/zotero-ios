@@ -220,7 +220,7 @@ fileprivate struct TagsSection: View {
         Section {
             ItemDetailSectionView(title: "Tags")
             ForEach(self.tags) { tag in
-                TagView(color: tag.uiColor.flatMap(Color.init), name: tag.name)
+                TagView(color: .init(hex: tag.color), name: tag.name)
             }.onDelete(perform: self.deleteAction)
             if self.isEditing {
                 ItemDetailAddView(title: "Add tag", action: self.addAction)
@@ -286,10 +286,8 @@ struct ItemDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
         controllers.schemaController.reloadSchemaIfNeeded()
-        let userId = (try? controllers.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()))?.identifier ?? 23
         let store = try! ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
                                                          collectionKey: nil, filesEditable: true),
-                                         userId: userId,
                                          libraryId: .custom(.myLibrary),
                                          apiClient: controllers.apiClient,
                                          fileStorage: controllers.fileStorage,

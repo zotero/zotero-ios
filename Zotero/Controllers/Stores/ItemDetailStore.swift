@@ -294,7 +294,7 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, data: Data) {
+        init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, data: Data, error: Error? = nil) {
             self.userId = userId
             self.libraryId = libraryId
             self.type = type
@@ -302,6 +302,7 @@ class ItemDetailStore: ObservableObject {
             self.downloadProgress = [:]
             self.downloadError = [:]
             self.showTagPicker = false
+            self.error = error
 
             switch type {
             case .preview(let item):
@@ -314,6 +315,18 @@ class ItemDetailStore: ObservableObject {
                 self.metadataEditable = true
                 self.filesEditable = filesEditable
             }
+        }
+
+        init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, error: Error) {
+            self.init(userId: userId,
+                      libraryId: libraryId,
+                      type: type,
+                      data: Data(title: "", type: "",
+                                 localizedType: "", creators: [],
+                                 fields: [:], visibleFields: [],
+                                 abstract: nil, notes: [],
+                                 attachments: [], tags: []),
+                      error: error)
         }
     }
 
@@ -331,19 +344,28 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
-    init(type: State.DetailType, userId: Int, libraryId: LibraryIdentifier,
+    init(type: State.DetailType, libraryId: LibraryIdentifier,
          apiClient: ApiClient, fileStorage: FileStorage,
-         dbStorage: DbStorage, schemaController: SchemaController) throws {
-        let data = try ItemDetailStore.createData(from: type,
-                                                     schemaController: schemaController,
-                                                     fileStorage: fileStorage)
-        self.state = State(userId: userId, libraryId: libraryId, type: type, data: data)
+         dbStorage: DbStorage, schemaController: SchemaController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
         self.disposeBag = DisposeBag()
         self.objectWillChange = ObservableObjectPublisher()
+
+        do {
+            let data = try ItemDetailStore.createData(from: type,
+                                                      schemaController: schemaController,
+                                                      fileStorage: fileStorage)
+            let userId = try dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
+            self.state = State(userId: userId, libraryId: libraryId, type: type, data: data)
+        } catch let error {
+            self.state = State(userId: 0,
+                               libraryId: libraryId,
+                               type: type,
+                               error: (error as? Error) ?? .typeNotSupported)
+        }
     }
 
     private static func createData(from type: State.DetailType,
