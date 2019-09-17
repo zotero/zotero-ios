@@ -34,21 +34,11 @@ struct ItemRow: View {
                     if self.item.hasNote {
                         Image(systemName: "doc.text")
                     }
-                    TagCirclesView(colors: self.item.tagHexColors)
+//                    TagCirclesView(colors: self.item.tagHexColors)
+//                        .frame(height: 15)
                 }
             }
         }
-    }
-}
-
-struct ItemCell_Previews: PreviewProvider {
-    static var previews: some View {
-        let item = RItem()
-        item.title = "Bitcoin: A Peer-to-Peer Electronics Cash System"
-        item.rawType = "artwork"
-        item.creatorSummary = "Rentka"
-        item.parsedDate = "2014"
-        return List { ItemRow(item: item) }
     }
 }
 
@@ -145,14 +135,26 @@ extension RItem {
     }
 
     fileprivate var hasAttachment: Bool {
-        return true//self.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
+        return self.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
     }
 
     fileprivate var hasNote: Bool {
-        return true//self.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
+        return self.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
     }
 
     fileprivate var tagHexColors: [String] {
         return self.tags.compactMap({ $0.color.isEmpty ? nil : $0.color })
+    }
+}
+
+struct ItemCell_Previews: PreviewProvider {
+    static var previews: some View {
+        let item = RItem()
+        item.title = "Bitcoin: A Peer-to-Peer Electronics Cash System"
+        item.rawType = "artwork"
+        item.creatorSummary = "Rentka"
+        item.parsedDate = "2014"
+
+        return List { ItemRow(item: item) }
     }
 }
