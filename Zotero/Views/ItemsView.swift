@@ -24,6 +24,7 @@ struct ItemsView: View {
                 }
             }
         }
+        .navigationBarTitle("", displayMode: .inline)
     }
 }
 

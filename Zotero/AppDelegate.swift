@@ -40,9 +40,7 @@ class AppDelegate: UIResponder {
     private func update(to state: AppState) {
         switch state {
         case .onboarding:
-            let controller = OnboardingViewController(apiClient: self.controllers.apiClient,
-                                                      secureStorage: self.controllers.secureStorage,
-                                                      dbStorage: self.controllers.dbStorage)
+            let controller = UIHostingController(rootView: OnboardingView())
             self.show(viewController: controller, animated: true)
         case .main:
             let view = MainView(controllers: self.controllers)
