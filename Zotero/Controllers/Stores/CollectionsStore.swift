@@ -67,7 +67,7 @@ class CollectionsStore: ObservableObject {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
+                    self.update(collections: CollectionTreeBuilder.collections(from: objects))
                 case .initial: break
                 case .error: break
                 }
@@ -77,7 +77,7 @@ class CollectionsStore: ObservableObject {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    self.update(cellData: CollectionTreeBuilder.collections(from: objects))
+                    self.update(collections: CollectionTreeBuilder.collections(from: objects))
                 case .initial: break
                 case .error: break
                 }
@@ -149,15 +149,34 @@ class CollectionsStore: ObservableObject {
             }
         }
     }
-    
-    private func update(cellData cells: [Collection]) {
-        guard let type = cells.first?.type else { return }
-        
-        // Find range of cells with the same type
-        
-        var startIndex: Int = -1
-        var endIndex: Int = -1
-        
+
+    /// Updates existing collections of the same type. If no collection of given type exists yet, collections are inserted
+    /// into appropriate position based on CollectionType.
+    /// - parameter collections: collections to be inserted/updated
+    private func update(collections: [Collection]) {
+        guard !collections.isEmpty, let type = collections.first?.type else { return }
+
+        if self.replaceCollections(of: type, with: collections) { return }
+
+        switch type {
+        case .collection:
+            // Insert new "collection" collections after "all" collection
+            self.state.cellData.insert(contentsOf: collections, at: 1)
+        case .search:
+            // Insert new "search" collections before "publications" collection, after "collection" collections
+            self.state.cellData.insert(contentsOf: collections, at: self.state.cellData.count - 2)
+        case .custom: return // don't update custom collections
+        }
+    }
+
+    /// Replaces existing collections of the same type with new collections
+    /// - parameter type: type of collections
+    /// - parameter collections: new collections to replace existing ones
+    /// - returns: False if there are no collections to replace, true otherwise
+    private func replaceCollections(of type: Collection.CollectionType, with collections: [Collection]) -> Bool {
+        var startIndex = -1
+        var endIndex = -1
+
         for data in self.state.cellData.enumerated() {
             if startIndex == -1 {
                 if data.element.type == type {
@@ -169,15 +188,17 @@ class CollectionsStore: ObservableObject {
                 }
             }
         }
-        
-        if startIndex != -1 && endIndex == -1 { // last cell was of the same type, so endIndex is at the end
+
+        if startIndex == -1 { return false } // no object of given type found
+
+        if endIndex == -1 { // last cell was of the same type, so endIndex is at the end
             endIndex = self.state.cellData.count
         }
-        
-        if startIndex == -1 && endIndex == -1 { return } // no object of that type found
-        
-        // Replace old cells of this type with new cells
+
+        // Replace old collections of this type with new collections
         self.state.cellData.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
-        self.state.cellData.insert(contentsOf: cells, at: startIndex)
+        self.state.cellData.insert(contentsOf: collections, at: startIndex)
+
+        return true
     }
 }
