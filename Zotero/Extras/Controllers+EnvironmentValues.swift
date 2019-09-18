@@ -37,6 +37,12 @@ struct SchemaControllerEnvironmentKey: EnvironmentKey {
     }
 }
 
+struct SecureStorageEnvironmentKey: EnvironmentKey {
+    static var defaultValue: SecureStorage {
+        return KeychainSecureStorage()
+    }
+}
+
 extension EnvironmentValues {
     var dbStorage: DbStorage {
         get { self[DbStorageEnvironmentKey.self] }
@@ -56,5 +62,10 @@ extension EnvironmentValues {
     var schemaController: SchemaController {
         get { self[SchemaControllerEnvironmentKey.self] }
         set { self[SchemaControllerEnvironmentKey.self] = newValue }
+    }
+
+    var secureStorage: SecureStorage {
+        get { self[SecureStorageEnvironmentKey.self] }
+        set { self[SecureStorageEnvironmentKey.self] = newValue }
     }
 }

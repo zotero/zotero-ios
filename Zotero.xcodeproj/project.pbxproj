@@ -147,6 +147,8 @@
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
 		B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB3C132237BF0100581248 /* UpdatableObject.swift */; };
+		B3AC620723322C430091DD74 /* ActivityIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620623322C430091DD74 /* ActivityIndicatorView.swift */; };
+		B3AC6209233231AF0091DD74 /* OnboardingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC6208233231AF0091DD74 /* OnboardingButton.swift */; };
 		B3B1959C22661B0700D8524F /* NoteViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1959A22661B0700D8524F /* NoteViewController.swift */; };
 		B3B1959D22661B0700D8524F /* NoteViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B1959B22661B0700D8524F /* NoteViewController.xib */; };
 		B3B262B32331250100552E63 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B22331250100552E63 /* OnboardingView.swift */; };
@@ -187,16 +189,10 @@
 		B3E4713E22412693006E3B20 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4713D22412693006E3B20 /* Collection.swift */; };
 		B3E47157224127AC006E3B20 /* ProgressNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47143224127AB006E3B20 /* ProgressNavigationViewController.swift */; };
 		B3E47159224127AC006E3B20 /* CollectionPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47145224127AB006E3B20 /* CollectionPickerViewController.swift */; };
-		B3E4715A224127AC006E3B20 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47146224127AB006E3B20 /* LoginViewController.swift */; };
-		B3E4715B224127AC006E3B20 /* OnboardingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E47147224127AB006E3B20 /* OnboardingViewController.xib */; };
-		B3E4715D224127AC006E3B20 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47149224127AB006E3B20 /* OnboardingViewController.swift */; };
-		B3E4715E224127AC006E3B20 /* RegisterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E4714A224127AB006E3B20 /* RegisterViewController.xib */; };
 		B3E4715F224127AC006E3B20 /* CollectionPickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E4714B224127AB006E3B20 /* CollectionPickerViewController.xib */; };
-		B3E47160224127AC006E3B20 /* RegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4714C224127AB006E3B20 /* RegisterViewController.swift */; };
 		B3E47161224127AC006E3B20 /* CollectionEditorViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E4714D224127AB006E3B20 /* CollectionEditorViewController.xib */; };
 		B3E47165224127AC006E3B20 /* LibrariesViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E47151224127AB006E3B20 /* LibrariesViewController.xib */; };
 		B3E47167224127AC006E3B20 /* CollectionEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47153224127AB006E3B20 /* CollectionEditorViewController.swift */; };
-		B3E47168224127AC006E3B20 /* LoginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3E47154224127AC006E3B20 /* LoginViewController.xib */; };
 		B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47155224127AC006E3B20 /* MainViewController.swift */; };
 		B3E4716A224127AC006E3B20 /* LibrariesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47156224127AC006E3B20 /* LibrariesViewController.swift */; };
 		B3E86D502314085E00DAA6D8 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E86D4F2314085E00DAA6D8 /* MainView.swift */; };
@@ -383,6 +379,8 @@
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
 		B3AB3C132237BF0100581248 /* UpdatableObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatableObject.swift; sourceTree = "<group>"; };
+		B3AC620623322C430091DD74 /* ActivityIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIndicatorView.swift; sourceTree = "<group>"; };
+		B3AC6208233231AF0091DD74 /* OnboardingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingButton.swift; sourceTree = "<group>"; };
 		B3B1959A22661B0700D8524F /* NoteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteViewController.swift; sourceTree = "<group>"; };
 		B3B1959B22661B0700D8524F /* NoteViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NoteViewController.xib; sourceTree = "<group>"; };
 		B3B262B22331250100552E63 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -423,16 +421,10 @@
 		B3E4713D22412693006E3B20 /* Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collection.swift; sourceTree = "<group>"; };
 		B3E47143224127AB006E3B20 /* ProgressNavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressNavigationViewController.swift; sourceTree = "<group>"; };
 		B3E47145224127AB006E3B20 /* CollectionPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionPickerViewController.swift; sourceTree = "<group>"; };
-		B3E47146224127AB006E3B20 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
-		B3E47147224127AB006E3B20 /* OnboardingViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingViewController.xib; sourceTree = "<group>"; };
-		B3E47149224127AB006E3B20 /* OnboardingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
-		B3E4714A224127AB006E3B20 /* RegisterViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = RegisterViewController.xib; sourceTree = "<group>"; };
 		B3E4714B224127AB006E3B20 /* CollectionPickerViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CollectionPickerViewController.xib; sourceTree = "<group>"; };
-		B3E4714C224127AB006E3B20 /* RegisterViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
 		B3E4714D224127AB006E3B20 /* CollectionEditorViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CollectionEditorViewController.xib; sourceTree = "<group>"; };
 		B3E47151224127AB006E3B20 /* LibrariesViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LibrariesViewController.xib; sourceTree = "<group>"; };
 		B3E47153224127AB006E3B20 /* CollectionEditorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditorViewController.swift; sourceTree = "<group>"; };
-		B3E47154224127AC006E3B20 /* LoginViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
 		B3E47155224127AC006E3B20 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3E47156224127AC006E3B20 /* LibrariesViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesViewController.swift; sourceTree = "<group>"; };
 		B3E86D4F2314085E00DAA6D8 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -624,6 +616,8 @@
 				B3B262B22331250100552E63 /* OnboardingView.swift */,
 				B3B262B42331257200552E63 /* LoginView.swift */,
 				B3B262B62331257A00552E63 /* RegisterView.swift */,
+				B3AC620623322C430091DD74 /* ActivityIndicatorView.swift */,
+				B3AC6208233231AF0091DD74 /* OnboardingButton.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -637,16 +631,10 @@
 				B3E4714B224127AB006E3B20 /* CollectionPickerViewController.xib */,
 				B3E47156224127AC006E3B20 /* LibrariesViewController.swift */,
 				B3E47151224127AB006E3B20 /* LibrariesViewController.xib */,
-				B3E47146224127AB006E3B20 /* LoginViewController.swift */,
-				B3E47154224127AC006E3B20 /* LoginViewController.xib */,
 				B3E47155224127AC006E3B20 /* MainViewController.swift */,
 				B3B1959A22661B0700D8524F /* NoteViewController.swift */,
 				B3B1959B22661B0700D8524F /* NoteViewController.xib */,
-				B3E47149224127AB006E3B20 /* OnboardingViewController.swift */,
-				B3E47147224127AB006E3B20 /* OnboardingViewController.xib */,
 				B3E47143224127AB006E3B20 /* ProgressNavigationViewController.swift */,
-				B3E4714C224127AB006E3B20 /* RegisterViewController.swift */,
-				B3E4714A224127AB006E3B20 /* RegisterViewController.xib */,
 				B36171CB2270B81200246E45 /* PickerViewController.swift */,
 				B36171CC2270B81200246E45 /* PickerViewController.xib */,
 			);
@@ -1023,7 +1011,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B3E4715B224127AC006E3B20 /* OnboardingViewController.xib in Resources */,
 				B3E47165224127AC006E3B20 /* LibrariesViewController.xib in Resources */,
 				B32CD32F221C58DF003F8073 /* Assets.xcassets in Resources */,
 				B3E47161224127AC006E3B20 /* CollectionEditorViewController.xib in Resources */,
@@ -1033,9 +1020,7 @@
 				B3B1959D22661B0700D8524F /* NoteViewController.xib in Resources */,
 				B312AD2022428F1400EDD5A4 /* TextFieldCell.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
-				B3E4715E224127AC006E3B20 /* RegisterViewController.xib in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
-				B3E47168224127AC006E3B20 /* LoginViewController.xib in Resources */,
 				B36171CE2270B81200246E45 /* PickerViewController.xib in Resources */,
 				B312AD1D22428F1400EDD5A4 /* LibraryCell.xib in Resources */,
 			);
@@ -1261,7 +1246,6 @@
 				B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */,
 				B3E47157224127AC006E3B20 /* ProgressNavigationViewController.swift in Sources */,
 				B36795FD22078F15003D0471 /* SecureStorage.swift in Sources */,
-				B3E4715D224127AC006E3B20 /* OnboardingViewController.swift in Sources */,
 				B372765023265A6000E2C522 /* NoteEditingView.swift in Sources */,
 				B3EAB8DE23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B38C9673223FDC0000343F8F /* CollectionEditStore.swift in Sources */,
@@ -1273,11 +1257,11 @@
 				B38C969A223FFB2900343F8F /* MarkForResyncDbAction.swift in Sources */,
 				B372765623268BBA00E2C522 /* Tag.swift in Sources */,
 				B3C62EC62211DA41000FFBFF /* LibrariesStore.swift in Sources */,
+				B3AC6209233231AF0091DD74 /* OnboardingButton.swift in Sources */,
 				B367F16E2321606A00FC4814 /* ItemDetailCreatorView.swift in Sources */,
 				B3B5514B22E1B0A3001E23CB /* RegisterUploadRequest.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
 				B33744FB232BDAE40082760A /* SafariView.swift in Sources */,
-				B3E4715A224127AC006E3B20 /* LoginViewController.swift in Sources */,
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */,
 				B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */,
@@ -1315,6 +1299,7 @@
 				B34FD9E1230C31A2008338FD /* CollectionsView.swift in Sources */,
 				B373569823226B6400AF96E2 /* ItemDetailAddView.swift in Sources */,
 				B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */,
+				B3AC620723322C430091DD74 /* ActivityIndicatorView.swift in Sources */,
 				B39B18E4223942160019F467 /* ObjectChangeObserver.swift in Sources */,
 				B38C96A1223FFB2900343F8F /* SyncVersionsDbRequest.swift in Sources */,
 				B3670AE02273527200B566B1 /* CreateItemDbRequest.swift in Sources */,
@@ -1324,7 +1309,6 @@
 				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
-				B3E47160224127AC006E3B20 /* RegisterViewController.swift in Sources */,
 				B3B5514F22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B3E86D502314085E00DAA6D8 /* MainView.swift in Sources */,

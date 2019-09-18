@@ -6,19 +6,22 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import Foundation
 
 import CocoaLumberjack
 import RxSwift
 
-class LoginStore: OldStore {
-    typealias Action = StoreAction
-    typealias State = StoreState
+class LoginStore: ObservableObject {
 
-    enum StoreError: Error, Equatable {
+    enum Error: Swift.Error, Identifiable {
         case invalidUsername
         case invalidPassword
         case loginFailed
+
+        var id: Error {
+            return self
+        }
 
         var localizedDescription: String {
             switch self {
@@ -32,70 +35,56 @@ class LoginStore: OldStore {
         }
     }
 
-    enum StoreAction {
-        case login(username: String, password: String)
-        case hideError
-    }
-
-    enum StoreState {
-        case error(StoreError)
-        case loading
-        case input
+    struct State {
+        var username: String
+        var password: String
+        var isLoading: Bool
+        var error: Error?
     }
 
     private let apiClient: ApiClient
     private let secureStorage: SecureStorage
     private let dbStorage: DbStorage
     private let disposeBag: DisposeBag
+    // SWIFTUI BUG: should be defined by default, but bugged in current version
+    let objectWillChange: ObservableObjectPublisher
 
-    var updater: StoreStateUpdater<StoreState>
+    var state: State {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
 
     init(apiClient: ApiClient, secureStorage: SecureStorage, dbStorage: DbStorage) {
         self.apiClient = apiClient
         self.secureStorage = secureStorage
         self.dbStorage = dbStorage
         self.disposeBag = DisposeBag()
-        self.updater = StoreStateUpdater(initialState: .input)
-    }
-
-    func handle(action: StoreAction) {
-        switch action {
-        case .hideError:
-            self.updater.updateState { newState in
-                newState = .input
-            }
-
-        case .login(let username, let password):
-            self.handleLogin(username: username, password: password)
-        }
+        self.state = State(username: "", password: "",
+                           isLoading: false, error: nil)
+        self.objectWillChange = ObservableObjectPublisher()
     }
 
     private func isValid(username: String, password: String) -> Bool {
         if username.isEmpty {
-            self.updater.updateState { newState in
-                newState = .error(StoreError.invalidUsername)
-            }
+            self.state.error = .invalidUsername
             return false
         }
 
         if password.isEmpty {
-            self.updater.updateState { newState in
-                newState = .error(StoreError.invalidPassword)
-            }
+            self.state.error = .invalidPassword
             return false
         }
 
         return true
     }
 
-    private func handleLogin(username: String, password: String) {
-        guard self.isValid(username: username, password: password) else { return }
+    func login() {
+        guard self.isValid(username: self.state.username, password: self.state.password) else { return }
 
-        self.updater.updateState { newState in
-            newState = .loading
-        }
+        self.state.isLoading = true
 
-        let request = LoginRequest(username: username, password: password)
+        let request = LoginRequest(username: self.state.username, password: self.state.password)
         self.apiClient.send(request: request)
                       .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                       .flatMap { (response, _) -> Single<(Int, String)> in
@@ -107,31 +96,16 @@ class LoginStore: OldStore {
                               return Single.error(error)
                           }
                       }
+                      .observeOn(MainScheduler.instance)
                       .subscribe(onSuccess: { (userId, token) in
                           self.secureStorage.apiToken = token
                           self.apiClient.set(authToken: token)
                           NotificationCenter.default.post(name: .sessionChanged, object: userId)
                       }, onError: { error in
                           DDLogError("LoginStore: could not log in - \(error)")
-                          self.updater.updateState(action: { newState in
-                              newState = .error(.loginFailed)
-                          })
+                          self.state.error = .loginFailed
+                          self.state.isLoading = false
                       })
                       .disposed(by: self.disposeBag)
-    }
-}
-
-extension LoginStore.StoreState: Equatable {
-    static func == (lhs: LoginStore.StoreState, rhs: LoginStore.StoreState) -> Bool {
-        switch (lhs, rhs) {
-        case (.loading, .loading):
-            return true
-        case (.input, .input):
-            return true
-        case (.error(let lError), .error(let rError)):
-            return lError == rError
-        default:
-            return false
-        }
     }
 }

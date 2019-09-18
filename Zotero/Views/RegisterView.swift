@@ -15,18 +15,31 @@ struct RegisterView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(spacing: 8) {
-                TextField("Email", text: self.$email)
-                    .padding()
-                SecureField("Password", text: self.$password)
-                    .padding()
-                SecureField("Repeat password", text: self.$repeatPassword)
-                    .padding()
+            VStack(spacing: 20) {
+                VStack {
+                    TextField("Email", text: self.$email)
+                        .padding([.horizontal, .top])
+                    Divider()
+                }
+
+                VStack {
+                    SecureField("Password", text: self.$password)
+                        .padding([.horizontal, .top])
+                    Divider()
+                }
+
+                VStack {
+                    SecureField("Repeat password", text: self.$repeatPassword)
+                        .padding([.horizontal, .top])
+                    Divider()
+                }
+
                 Button(action: {
 
                 }) {
                     OnboardingButton(title: "Create account",
-                                     width: proxy.size.width)
+                                     width: proxy.size.width,
+                                     isLoading: false)
                 }
             }
         }

@@ -11,18 +11,24 @@ import SwiftUI
 struct OnboardingView: View {
     private let spacing: CGFloat = 20
 
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
+    @Environment(\.apiClient) private var apiClient: ApiClient
+    @Environment(\.secureStorage) private var secureStorage: SecureStorage
+
     var body: some View {
         NavigationView {
             GeometryReader { proxy in
                 HStack(spacing: self.spacing) {
-                    NavigationLink(destination: LoginView()) {
+                    NavigationLink(destination: LoginView(store: self.loginStore)) {
                         OnboardingButton(title: "Sign in",
-                                         width: (proxy.size.width - self.spacing) / 2.0)
+                                         width: (proxy.size.width - self.spacing) / 2.0,
+                                         isLoading: false)
                     }
 
                     NavigationLink(destination: RegisterView()) {
                         OnboardingButton(title: "Create account",
-                                         width: (proxy.size.width - self.spacing) / 2.0)
+                                         width: (proxy.size.width - self.spacing) / 2.0,
+                                         isLoading: false)
                     }
                 }
             }
@@ -30,22 +36,11 @@ struct OnboardingView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
-}
 
-struct OnboardingButton: View {
-    let title: String
-    let width: CGFloat?
-
-    var body: some View {
-        Text(self.title)
-            .fontWeight(.semibold)
-            .foregroundColor(.white)
-            .padding()
-            .frame(width: self.width)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .foregroundColor(.red)
-            )
+    private var loginStore: LoginStore {
+        return LoginStore(apiClient: self.apiClient,
+                          secureStorage: self.secureStorage,
+                          dbStorage: self.dbStorage)
     }
 }
 
