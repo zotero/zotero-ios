@@ -286,13 +286,13 @@ struct ItemDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
         controllers.schemaController.reloadSchemaIfNeeded()
-        let store = try! ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
-                                                         collectionKey: nil, filesEditable: true),
-                                         libraryId: .custom(.myLibrary),
-                                         apiClient: controllers.apiClient,
-                                         fileStorage: controllers.fileStorage,
-                                         dbStorage: controllers.dbStorage,
-                                         schemaController: controllers.schemaController)
+        let store = ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
+                                                    collectionKey: nil, filesEditable: true),
+                                    libraryId: .custom(.myLibrary),
+                                    apiClient: controllers.apiClient,
+                                    fileStorage: controllers.fileStorage,
+                                    dbStorage: controllers.dbStorage,
+                                    schemaController: controllers.schemaController)
 
         return ItemDetailView(store: store).environment(\.editMode, .constant(.active))
     }
