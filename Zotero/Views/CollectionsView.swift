@@ -12,7 +12,8 @@ import RealmSwift
 
 struct CollectionsView: View {
     @ObservedObject private(set) var store: CollectionsStore
-    let controllers: Controllers
+
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
         List {
@@ -49,7 +50,7 @@ struct CollectionsView: View {
                                               type: type,
                                               metadataEditable: self.store.state.metadataEditable,
                                               filesEditable: self.store.state.filesEditable,
-                                              dbStorage: self.controllers.dbStorage))
+                                              dbStorage: self.dbStorage))
     }
 }
 
@@ -57,13 +58,12 @@ struct CollectionsView: View {
 
 struct CollectionsView_Previews: PreviewProvider {
     static var previews: some View {
-        let controllers = Controllers()
         let store = CollectionsStore(libraryId: .custom(.myLibrary),
                                      title: "Test",
                                      metadataEditable: true,
                                      filesEditable: true,
-                                     dbStorage: controllers.dbStorage)
-        return CollectionsView(store: store, controllers: controllers)
+                                     dbStorage: Controllers().dbStorage)
+        return CollectionsView(store: store)
     }
 }
 

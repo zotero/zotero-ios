@@ -9,11 +9,12 @@
 import SwiftUI
 
 struct MainView: View {
-    let controllers: Controllers
+
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
         NavigationView {
-            CollectionsView(store: self.defaultCollectionsStore, controllers: self.controllers)
+            CollectionsView(store: self.defaultCollectionsStore)
             ItemsView(store: self.defaultItemsStore)
         }
     }
@@ -23,7 +24,7 @@ struct MainView: View {
                                 title: RCustomLibraryType.myLibrary.libraryName,
                                 metadataEditable: true,
                                 filesEditable: true,
-                                dbStorage: self.controllers.dbStorage)
+                                dbStorage: self.dbStorage)
     }
 
     private var defaultItemsStore: NewItemsStore {
@@ -31,7 +32,7 @@ struct MainView: View {
                              type: .all,
                              metadataEditable: true,
                              filesEditable: true,
-                             dbStorage: self.controllers.dbStorage)
+                             dbStorage: self.dbStorage)
     }
 }
 
@@ -39,7 +40,7 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView(controllers: Controllers())
+        MainView()
     }
 }
 

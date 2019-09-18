@@ -23,7 +23,7 @@ struct ItemRow: View {
                     .font(.headline)
                     .fontWeight(.regular)
                 HStack {
-                    Text(self.item.subtitle ?? "")
+                    Text(self.item.subtitle ?? " ")
                         .foregroundColor(.gray)
                     Spacer()
                     if self.item.hasAttachment {

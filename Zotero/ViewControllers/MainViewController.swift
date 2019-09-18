@@ -63,7 +63,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                                 metadataEditable: true,
                                                 filesEditable: true,
                                                 dbStorage: controllers.dbStorage)
-        let collectionsController = UIHostingController(rootView: CollectionsView(store: collectionsStore, controllers: controllers))
+        let collectionsController = UIHostingController(rootView: CollectionsView(store: collectionsStore))
         leftNavigationController.pushViewController(collectionsController, animated: false)
 
         let itemStore = NewItemsStore(libraryId: .custom(.myLibrary),
@@ -179,7 +179,7 @@ extension MainViewController: ItemNavigationDelegate {
                                      metadataEditable: metadataEditable,
                                      filesEditable: filesEditable,
                                      dbStorage: self.controllers.dbStorage)
-        let controller = UIHostingController(rootView: CollectionsView(store: store, controllers: self.controllers))
+        let controller = UIHostingController(rootView: CollectionsView(store: store))
         navigationController.pushViewController(controller, animated: true)
 
         navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in

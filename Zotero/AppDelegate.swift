@@ -46,7 +46,7 @@ class AppDelegate: UIResponder {
                             .environment(\.secureStorage, self.controllers.secureStorage)
             self.show(viewController: UIHostingController(rootView: view), animated: true)
         case .main:
-            let view = MainView(controllers: self.controllers)
+            let view = MainView()
                             .environment(\.dbStorage, self.controllers.dbStorage)
                             .environment(\.apiClient, self.controllers.apiClient)
                             .environment(\.fileStorage, self.controllers.fileStorage)
