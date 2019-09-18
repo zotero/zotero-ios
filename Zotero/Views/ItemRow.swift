@@ -23,10 +23,8 @@ struct ItemRow: View {
                     .font(.headline)
                     .fontWeight(.regular)
                 HStack {
-                    self.item.subtitle.flatMap {
-                        Text($0)
-                            .foregroundColor(.gray)
-                    }
+                    Text(self.item.subtitle ?? "")
+                        .foregroundColor(.gray)
                     Spacer()
                     if self.item.hasAttachment {
                         Image(systemName: "paperclip")
