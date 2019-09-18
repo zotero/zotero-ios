@@ -38,7 +38,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // Variables
     private var currentLandscapePrimaryColumnFraction: CGFloat = 0
     private var isViewingLibraries: Bool {
-        return (self.viewControllers.first as? UINavigationController)?.topViewController is LibrariesViewController
+        return false//(self.viewControllers.first as? UINavigationController)?.topViewController is LibrariesViewController
     }
     private var maxSize: CGFloat {
         return max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -53,7 +53,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         super.init(nibName: nil, bundle: nil)
 
         let librariesStore = LibrariesStore(dbStorage: controllers.dbStorage)
-        let librariesController = LibrariesViewController(store: librariesStore, delegate: self)
+        let librariesController = UIViewController()//LibrariesViewController(store: librariesStore, delegate: self)
 
         let leftNavigationController = ProgressNavigationViewController(rootViewController: librariesController)
         leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler

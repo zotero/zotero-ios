@@ -6,113 +6,53 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import Foundation
 
 import CocoaLumberjack
 import RealmSwift
-import RxSwift
 
-struct LibraryCellData {
-    let identifier: LibraryIdentifier
-    let name: String
-    let metadataEditable: Bool
-    let filesEditable: Bool
 
-    init(object: RGroup) {
-        self.identifier = .group(object.identifier)
-        self.name = object.name
-        self.metadataEditable = object.canEditMetadata
-        self.filesEditable = object.canEditFiles
-    }
-
-    init(object: RCustomLibrary) {
-        let type = object.type
-        self.identifier = .custom(type)
-        self.name = type.libraryName
-        self.metadataEditable = true
-        self.filesEditable = true
-    }
-}
-
-class LibrariesStore: OldStore {
-    typealias Action = StoreAction
-    typealias State = StoreState
-
-    enum StoreAction {
-        case load
-    }
-
-    enum StoreError: Error, Equatable {
+class LibrariesStore: ObservableObject {
+    enum Error: Swift.Error {
         case cantLoadData
     }
 
-    struct StoreState {
-        enum Section {
-            case custom, groups
-        }
-
-        let sections: [Section] = [.custom, .groups]
-
-        fileprivate(set) var customLibraries: [LibraryCellData]
-        fileprivate(set) var groupLibraries: [LibraryCellData]
-        fileprivate(set) var error: StoreError?
-        // To avoid comparing the whole arrays in == function, we just have a version which we increment
-        // on each change and we'll compare just versions.
-        fileprivate var version: Int
-        fileprivate var libraries: Results<RCustomLibrary>?
-        fileprivate var groups: Results<RGroup>?
+    struct State {
+        var customLibraries: Results<RCustomLibrary>?
+        var groupLibraries: Results<RGroup>?
+        var error: Error?
         fileprivate var librariesToken: NotificationToken?
         fileprivate var groupsToken: NotificationToken?
-
-        init() {
-            self.customLibraries = []
-            self.groupLibraries = []
-            self.version = 0
-        }
     }
 
+    var state: State {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
+    // SWIFTUI BUG: should be defined by default, but bugged in current version
+    let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
-
-    var updater: StoreStateUpdater<StoreState>
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.updater = StoreStateUpdater(initialState: StoreState())
-    }
+        self.objectWillChange = ObservableObjectPublisher()
 
-    func handle(action: StoreAction) {
-        switch action {
-        case .load:
-            self.loadData()
-        }
-    }
-
-    private func reload(libraries: Results<RCustomLibrary>?,
-                        groups: Results<RGroup>?) -> ([LibraryCellData], [LibraryCellData]) {
-        return ((libraries.flatMap({ Array($0.map(LibraryCellData.init)) }) ?? []),
-                (groups.flatMap({ Array($0.map(LibraryCellData.init)) }) ?? []))
-    }
-
-    private func loadData() {
         do {
             let libraries = try self.dbStorage.createCoordinator().perform(request: ReadAllCustomLibrariesDbRequest())
             let groups = try self.dbStorage.createCoordinator().perform(request: ReadAllGroupsDbRequest())
+
+            self.state = State(customLibraries: libraries,
+                               groupLibraries: groups)
 
             let librariesToken = libraries.observe({ [weak self] changes in
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let (libraryCellData, _) = self.reload(libraries: objects, groups: nil)
-                    self.updater.updateState(action: { state in
-                        state.customLibraries = libraryCellData
-                        state.version += 1
-                    })
+                    self.state.customLibraries = objects
                 case .initial: break
-                case .error(let error):
-                    DDLogError("LibrariesStore: can't update libraries from db - \(error)")
-                    self.updater.updateState { state in
-                        state.error = .cantLoadData
-                    }
+                case .error: break
                 }
             })
 
@@ -120,41 +60,17 @@ class LibrariesStore: OldStore {
                 guard let `self` = self else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let (_, groupCellData) = self.reload(libraries: nil, groups: objects)
-                    self.updater.updateState(action: { state in
-                        state.groupLibraries = groupCellData
-                        state.version += 1
-                    })
+                    self.state.groupLibraries = objects
                 case .initial: break
-                case .error(let error):
-                    DDLogError("LibrariesStore: can't update groups from db - \(error)")
-                    self.updater.updateState { state in
-                        state.error = .cantLoadData
-                    }
+                case .error: break
                 }
             }
 
-            let (libraryCellData, groupCellData) = self.reload(libraries: libraries, groups: groups)
-            self.updater.updateState { state in
-                state.libraries = libraries
-                state.groups = groups
-                state.version += 1
-                state.customLibraries = libraryCellData
-                state.groupLibraries = groupCellData
-                state.librariesToken = librariesToken
-                state.groupsToken = groupsToken
-            }
+            self.state.librariesToken = librariesToken
+            self.state.groupsToken = groupsToken
         } catch let error {
-            DDLogError("LibrariesStore: can't load libraries from db - \(error)")
-            self.updater.updateState { newState in
-                newState.error = .cantLoadData
-            }
+            DDLogError("LibrariesStore: - can't load data: \(error)")
+            self.state = State(error: .cantLoadData)
         }
-    }
-}
-
-extension LibrariesStore.StoreState: Equatable {
-    static func == (lhs: LibrariesStore.StoreState, rhs: LibrariesStore.StoreState) -> Bool {
-        return lhs.error == rhs.error && lhs.version == rhs.version
     }
 }

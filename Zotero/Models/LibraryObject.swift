@@ -1,5 +1,5 @@
 //
-//  Library.swift
+//  LibraryObject.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 27/03/2019.
