@@ -6,22 +6,10 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import SwiftUI
 import UIKit
+import SwiftUI
 
 import RxSwift
-
-protocol ItemNavigationDelegate: class {
-    func didShowLibraries()
-    func showCollections(for libraryId: LibraryIdentifier, libraryName: String, metadataEditable: Bool, filesEditable: Bool)
-    func showAllItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool)
-    func showTrashItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool)
-    func showPublications(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool)
-    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String),
-                             metadataEditable: Bool, filesEditable: Bool)
-    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String),
-                         metadataEditable: Bool, filesEditable: Bool)
-}
 
 fileprivate enum PrimaryColumnState {
     case minimum
@@ -33,6 +21,8 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private static let minPrimaryColumnWidth: CGFloat = 300
     private static let maxPrimaryColumnFraction: CGFloat = 0.4
     private static let averageCharacterWidth: CGFloat = 10.0
+    private let defaultLibrary: Library
+    private let defaultCollection: Collection
     private let controllers: Controllers
     private let disposeBag: DisposeBag
     // Variables
@@ -47,42 +37,27 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // MARK: - Lifecycle
 
     init(controllers: Controllers) {
+        self.defaultLibrary = Library(identifier: .custom(.myLibrary),
+                                      name: RCustomLibraryType.myLibrary.libraryName,
+                                      metadataEditable: true,
+                                      filesEditable: true)
+        self.defaultCollection = Collection(custom: .all)
         self.controllers = controllers
         self.disposeBag = DisposeBag()
 
         super.init(nibName: nil, bundle: nil)
 
-        let librariesStore = LibrariesStore(dbStorage: controllers.dbStorage)
-        let librariesController = UIViewController()//LibrariesViewController(store: librariesStore, delegate: self)
+        self.setupControllers()
 
-        let leftNavigationController = ProgressNavigationViewController(rootViewController: librariesController)
-        leftNavigationController.syncScheduler = controllers.userControllers?.syncScheduler
-        
-        let collectionsStore = CollectionsStore(libraryId: .custom(.myLibrary),
-                                                title: RCustomLibraryType.myLibrary.libraryName,
-                                                metadataEditable: true,
-                                                filesEditable: true,
-                                                dbStorage: controllers.dbStorage)
-        let collectionsController = UIHostingController(rootView: CollectionsView(store: collectionsStore))
-        leftNavigationController.pushViewController(collectionsController, animated: false)
-
-        let itemStore = NewItemsStore(libraryId: .custom(.myLibrary),
-                                      type: .all,
-                                      metadataEditable: true,
-                                      filesEditable: true,
-                                      dbStorage: controllers.dbStorage)
-        let itemsController = UIHostingController(rootView: ItemsView(store: itemStore))
-        let rightNavigationController = UINavigationController(rootViewController: itemsController)
-
-        self.viewControllers = [leftNavigationController, rightNavigationController]
+        self.preferredDisplayMode = .allVisible
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
 
-        let newFraction = self.calculatePrimaryColumnFraction(from: collectionsStore.state.cellData)
-        self.currentLandscapePrimaryColumnFraction = newFraction
-        if UIDevice.current.orientation.isLandscape {
-            self.setPrimaryColumn(state: .dynamic(newFraction), animated: false)
-        }
+//        let newFraction = self.calculatePrimaryColumnFraction(from: collectionsStore.state.cellData)
+//        self.currentLandscapePrimaryColumnFraction = newFraction
+//        if UIDevice.current.orientation.isLandscape {
+//            self.setPrimaryColumn(state: .dynamic(newFraction), animated: false)
+//        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -110,6 +85,58 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     // MARK: - Actions
+
+    private func showCollections(in library: Library) {
+        let view = CollectionsView(store: CollectionsStore(library: library,
+                                                           dbStorage: self.controllers.dbStorage),
+                                   rowSelected: self.showItems)
+        (self.viewControllers.first as? UINavigationController)?.pushViewController(UIHostingController(rootView: view), animated: true)
+
+        self.showItems(in: Collection(custom: .all), library: library)
+    }
+
+    private func showItems(in collection: Collection, library: Library) {
+        let view = ItemsView(store: self.itemsStore(for: collection, library: library))
+                        .environment(\.dbStorage, self.controllers.dbStorage)
+                        .environment(\.apiClient, self.controllers.apiClient)
+                        .environment(\.fileStorage, self.controllers.fileStorage)
+                        .environment(\.schemaController, self.controllers.schemaController)
+        self.showSecondaryController(UIHostingController(rootView: view))
+    }
+
+    private func showSecondaryController(_ controller: UIViewController) {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            (self.viewControllers.last as? UINavigationController)?.setViewControllers([controller], animated: false)
+        case .phone:
+            (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
+        default: break
+        }
+    }
+
+    private func itemsStore(for collection: Collection, library: Library) -> NewItemsStore {
+        let type: NewItemsStore.State.ItemType
+
+        switch collection.type {
+        case .collection:
+            type = .collection(collection.key, collection.name)
+        case .search:
+            type = .search(collection.key, collection.name)
+        case .custom(let customType):
+            switch customType {
+            case .all:
+                type = .all
+            case .publications:
+                type = .publications
+            case .trash:
+                type = .trash
+            }
+        }
+
+        return NewItemsStore(type: type, library: library, dbStorage: self.controllers.dbStorage)
+    }
+
+    // MARK: - Dynamic primary column
 
     private func setPrimaryColumn(state: PrimaryColumnState, animated: Bool) {
         let primaryColumnFraction: CGFloat
@@ -155,79 +182,29 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         return min(1.0, (actualWidth / self.maxSize))
     }
 
-    private func showSecondaryController(_ controller: UIViewController) {
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            (self.viewControllers.last as? UINavigationController)?.setViewControllers([controller], animated: false)
-        case .phone:
-            (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
-        default: break
-        }
-    }
-}
+    // MARK: - Setups
 
-extension MainViewController: ItemNavigationDelegate {
-    func didShowLibraries() {
-        guard UIDevice.current.orientation.isLandscape else { return }
-        self.setPrimaryColumn(state: .minimum, animated: true)
-    }
+    private func setupControllers() {
+        let librariesView = LibrariesView(store: LibrariesStore(dbStorage: self.controllers.dbStorage),
+                                          librarySelected: self.showCollections)
+        let collectionsView = CollectionsView(store: CollectionsStore(library: self.defaultLibrary,
+                                                                      dbStorage: self.controllers.dbStorage),
+                                              rowSelected: self.showItems)
 
-    func showCollections(for libraryId: LibraryIdentifier, libraryName: String, metadataEditable: Bool, filesEditable: Bool) {
-        guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
+        let masterController = UINavigationController()
+        masterController.viewControllers = [UIHostingController(rootView: librariesView),
+                                            UIHostingController(rootView: collectionsView)]
 
-        let store = CollectionsStore(libraryId: libraryId, title: libraryName,
-                                     metadataEditable: metadataEditable,
-                                     filesEditable: filesEditable,
-                                     dbStorage: self.controllers.dbStorage)
-        let controller = UIHostingController(rootView: CollectionsView(store: store))
-        navigationController.pushViewController(controller, animated: true)
+        let itemsView = ItemsView(store: self.itemsStore(for: self.defaultCollection,
+                                                         library: self.defaultLibrary))
+                            .environment(\.dbStorage, self.controllers.dbStorage)
+                            .environment(\.apiClient, self.controllers.apiClient)
+                            .environment(\.fileStorage, self.controllers.fileStorage)
+                            .environment(\.schemaController, self.controllers.schemaController)
 
-        navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in
-            let newFraction = self.calculatePrimaryColumnFraction(from: store.state.cellData)
-            self.currentLandscapePrimaryColumnFraction = newFraction
+        let detailController = UINavigationController(rootViewController: UIHostingController(rootView: itemsView))
 
-            if UIDevice.current.orientation.isLandscape {
-                self.setPrimaryColumn(state: .dynamic(newFraction), animated: true)
-            }
-        })
-    }
-
-    func showAllItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool) {
-        self.showItems(for: .all, libraryId: libraryId,
-                       metadataEditable: metadataEditable, filesEditable: filesEditable)
-    }
-
-    func showTrashItems(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool) {
-        self.showItems(for: .trash, libraryId: libraryId,
-                       metadataEditable: metadataEditable, filesEditable: filesEditable)
-    }
-
-    func showPublications(for libraryId: LibraryIdentifier, metadataEditable: Bool, filesEditable: Bool) {
-        self.showItems(for: .publications, libraryId: libraryId,
-                       metadataEditable: metadataEditable, filesEditable: filesEditable)
-    }
-
-    func showSearchItems(libraryId: LibraryIdentifier, searchData: (key: String, name: String),
-                         metadataEditable: Bool, filesEditable: Bool) {
-        self.showItems(for: .search(searchData.key, searchData.name), libraryId: libraryId,
-                       metadataEditable: metadataEditable, filesEditable: filesEditable)
-    }
-
-    func showCollectionItems(libraryId: LibraryIdentifier, collectionData: (key: String, name: String),
-                             metadataEditable: Bool, filesEditable: Bool) {
-        self.showItems(for: .collection(collectionData.key, collectionData.name), libraryId: libraryId,
-                       metadataEditable: metadataEditable, filesEditable: filesEditable)
-    }
-
-    private func showItems(for type: NewItemsStore.State.ItemType, libraryId: LibraryIdentifier,
-                           metadataEditable: Bool, filesEditable: Bool) {
-        let store = NewItemsStore(libraryId: libraryId,
-                                  type: type,
-                                  metadataEditable: metadataEditable,
-                                  filesEditable: filesEditable,
-                                  dbStorage: self.controllers.dbStorage)
-        let controller = UIHostingController(rootView: ItemsView(store: store))
-        self.showSecondaryController(controller)
+        self.viewControllers = [masterController, detailController]
     }
 }
 

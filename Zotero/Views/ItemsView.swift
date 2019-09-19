@@ -19,7 +19,7 @@ struct ItemsView: View {
                 ForEach($0, id: \.self) { section in
                     self.store.state.items(for: section).flatMap { section in
                         ItemSectionView(results: section,
-                                        libraryId: self.store.state.libraryId)
+                                        libraryId: self.store.state.library.identifier)
                     }
                 }
             }
@@ -49,7 +49,6 @@ fileprivate struct ItemSectionView: View {
 
     private func detailStore(for item: RItem) -> ItemDetailStore {
         return ItemDetailStore(type: .preview(item),
-                               libraryId: self.libraryId,
                                apiClient: self.apiClient,
                                fileStorage: self.fileStorage,
                                dbStorage: self.dbStorage,
@@ -61,10 +60,9 @@ fileprivate struct ItemSectionView: View {
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemsView(store: NewItemsStore(libraryId: .custom(.myLibrary),
-                                       type: .all,
-                                       metadataEditable: true,
-                                       filesEditable: true,
+        ItemsView(store: NewItemsStore(type: .all,
+                                       library: Library(identifier: .custom(.myLibrary), name: "My library",
+                                                        metadataEditable: true, filesEditable: true),
                                        dbStorage: Controllers().dbStorage))
     }
 }

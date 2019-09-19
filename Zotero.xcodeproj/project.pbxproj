@@ -136,6 +136,7 @@
 		B38C96A6223FFB2900343F8F /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */; };
 		B38C96A7223FFB2900343F8F /* ReadUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */; };
 		B38C96A9223FFB5600343F8F /* StoreCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */; };
+		B38F5F8A2333C9F1002EF78B /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F5F892333C9F1002EF78B /* Library.swift */; };
 		B3924C4B2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3924C4A2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift */; };
 		B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
 		B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */; };
@@ -368,6 +369,7 @@
 		B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemsDbRequest.swift; sourceTree = "<group>"; };
 		B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadUserDbRequest.swift; sourceTree = "<group>"; };
 		B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B38F5F892333C9F1002EF78B /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		B3924C4A2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreItemDetailChangesDbRequest.swift; sourceTree = "<group>"; };
 		B39372972229420A008B2A96 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
@@ -764,6 +766,7 @@
 				B353370722CCB620005648CB /* KeyedResponse.swift */,
 				B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */,
 				B372765523268BBA00E2C522 /* Tag.swift */,
+				B38F5F892333C9F1002EF78B /* Library.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1196,6 +1199,7 @@
 				B38C969F223FFB2900343F8F /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B337AB6922E0DD080092AC22 /* AttachmentUploadRequest.swift in Sources */,
 				B3C6F655224A95BF001722B4 /* ReadAllGroupsDbRequest.swift in Sources */,
+				B38F5F8A2333C9F1002EF78B /* Library.swift in Sources */,
 				B35CF5DA22E5BE7A007ADAAA /* MD5+Url.swift in Sources */,
 				B30F668E220CBB37009E7A8F /* ObjectsRequest.swift in Sources */,
 				B38C9697223FFB2900343F8F /* ReadSearchesDbRequest.swift in Sources */,

@@ -75,16 +75,6 @@ class RItem: Object {
         }
     }
 
-    var libraryId: LibraryIdentifier? {
-        if let custom = self.customLibrary {
-            return .custom(custom.type)
-        }
-        if let group = self.group {
-            return .group(group.identifier)
-        }
-        return nil
-    }
-
     var changedFields: RItemChanges {
         get {
             return RItemChanges(rawValue: self.rawChangedFields)

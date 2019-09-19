@@ -20,12 +20,6 @@ extension Notification.Name {
     static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
 }
 
-extension UIHostingController: ConflictPresenter {
-    func present(controller: UIAlertController) {
-        self.present(controller, animated: true, completion: nil)
-    }
-}
-
 class AppDelegate: UIResponder {
 
     private let disposeBag: DisposeBag = DisposeBag()
@@ -46,12 +40,7 @@ class AppDelegate: UIResponder {
                             .environment(\.secureStorage, self.controllers.secureStorage)
             self.show(viewController: UIHostingController(rootView: view), animated: true)
         case .main:
-            let view = MainView()
-                            .environment(\.dbStorage, self.controllers.dbStorage)
-                            .environment(\.apiClient, self.controllers.apiClient)
-                            .environment(\.fileStorage, self.controllers.fileStorage)
-                            .environment(\.schemaController, self.controllers.schemaController)
-            let controller = UIHostingController(rootView: view)
+            let controller = MainViewController(controllers: self.controllers)
             self.show(viewController: controller)
 
             self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)

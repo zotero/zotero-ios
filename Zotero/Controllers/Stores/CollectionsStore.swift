@@ -21,11 +21,7 @@ class CollectionsStore: ObservableObject {
     }
     
     struct State {
-        let libraryId: LibraryIdentifier
-        let title: String
-        let metadataEditable: Bool
-        let filesEditable: Bool
-
+        let library: Library
         fileprivate(set) var cellData: [Collection]
         fileprivate(set) var error: Error?
         fileprivate var collectionToken: NotificationToken?
@@ -41,14 +37,14 @@ class CollectionsStore: ObservableObject {
     let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
     
-    init(libraryId: LibraryIdentifier, title: String, metadataEditable: Bool, filesEditable: Bool, dbStorage: DbStorage) {
+    init(library: Library, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
         self.objectWillChange = ObservableObjectPublisher()
 
         do {
-            let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId)
+            let collectionsRequest = ReadCollectionsDbRequest(libraryId: library.identifier)
             let collections = try dbStorage.createCoordinator().perform(request: collectionsRequest)
-            let searchesRequest = ReadSearchesDbRequest(libraryId: libraryId)
+            let searchesRequest = ReadSearchesDbRequest(libraryId: library.identifier)
             let searches = try dbStorage.createCoordinator().perform(request: searchesRequest)
 
             var allCollections: [Collection] = [Collection(custom: .all),
@@ -58,10 +54,7 @@ class CollectionsStore: ObservableObject {
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
 
-            self.state = State(libraryId: libraryId, title: title,
-                               metadataEditable: metadataEditable,
-                               filesEditable: filesEditable,
-                               cellData: allCollections)
+            self.state = State(library: library, cellData: allCollections)
 
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }
@@ -87,8 +80,7 @@ class CollectionsStore: ObservableObject {
             self.state.searchToken = searchToken
         } catch let error {
             DDLogError("CollectionsStore: can't load collections: \(error)")
-            self.state = State(libraryId: libraryId, title: title, metadataEditable: metadataEditable,
-                               filesEditable: filesEditable, cellData: [], error: .dataLoading)
+            self.state = State(library: library, cellData: [], error: .dataLoading)
         }
     }
     
@@ -111,7 +103,7 @@ class CollectionsStore: ObservableObject {
 //
     func deleteCells(at indexSet: IndexSet) {
         let cells = self.state.cellData
-        let libraryId = self.state.libraryId
+        let libraryId = self.state.library.identifier
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var collectionKeys: [String] = []

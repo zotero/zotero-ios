@@ -294,9 +294,8 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, data: Data, error: Error? = nil) {
+        init(userId: Int, type: DetailType, data: Data, error: Error? = nil) {
             self.userId = userId
-            self.libraryId = libraryId
             self.type = type
             self.data = data
             self.downloadProgress = [:]
@@ -306,20 +305,21 @@ class ItemDetailStore: ObservableObject {
 
             switch type {
             case .preview(let item):
+                self.libraryId = item.libraryObject?.identifier ?? .custom(.myLibrary)
                 // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
                 self.metadataEditable = item.group?.canEditMetadata ?? true
                 // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
                 self.filesEditable = item.group?.canEditFiles ?? true
-            case .creation(_, _, let filesEditable):
+            case .creation(let libraryId, _, let filesEditable):
+                self.libraryId = libraryId
                 // Since we're in creation mode editing must have beeen enabled
                 self.metadataEditable = true
                 self.filesEditable = filesEditable
             }
         }
 
-        init(userId: Int, libraryId: LibraryIdentifier, type: DetailType, error: Error) {
+        init(userId: Int, type: DetailType, error: Error) {
             self.init(userId: userId,
-                      libraryId: libraryId,
                       type: type,
                       data: Data(title: "", type: "",
                                  localizedType: "", creators: [],
@@ -344,7 +344,7 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
-    init(type: State.DetailType, libraryId: LibraryIdentifier,
+    init(type: State.DetailType,
          apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, schemaController: SchemaController) {
         self.apiClient = apiClient
@@ -359,10 +359,9 @@ class ItemDetailStore: ObservableObject {
                                                       schemaController: schemaController,
                                                       fileStorage: fileStorage)
             let userId = try dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
-            self.state = State(userId: userId, libraryId: libraryId, type: type, data: data)
+            self.state = State(userId: userId, type: type, data: data)
         } catch let error {
             self.state = State(userId: 0,
-                               libraryId: libraryId,
                                type: type,
                                error: (error as? Error) ?? .typeNotSupported)
         }
@@ -629,14 +628,10 @@ class ItemDetailStore: ObservableObject {
         do {
             switch self.state.type {
             case .preview(let item):
-                guard let libraryId = item.libraryId else {
-                    self.state.error = .libraryNotAssigned
-                    return
-                }
-                try self.updateItem(key: item.key, libraryId: libraryId, data: self.state.data)
+                try self.updateItem(key: item.key, libraryId: self.state.libraryId, data: self.state.data)
 
-            case .creation(let libraryId, let collectionKey, _):
-                let item = try self.createItem(with: libraryId, collectionKey: collectionKey, data: self.state.data)
+            case .creation(_, let collectionKey, _):
+                let item = try self.createItem(with: self.state.libraryId, collectionKey: collectionKey, data: self.state.data)
                 newType = .preview(item)
             }
 

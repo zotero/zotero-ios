@@ -17,12 +17,20 @@ struct LibraryRow: View {
                 .renderingMode(.template)
                 .foregroundColor(.blue)
             Text(self.title)
+                .foregroundColor(.black)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
         }
     }
 }
 
 struct LibraryRow_Previews: PreviewProvider {
     static var previews: some View {
-        LibraryRow(title: "My library")
+        NavigationView {
+            List {
+                LibraryRow(title: "My library")
+            }
+        }.navigationViewStyle(StackNavigationViewStyle())
     }
 }

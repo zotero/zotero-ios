@@ -43,10 +43,8 @@ class NewItemsStore: ObservableObject {
             }
         }
 
-        let libraryId: LibraryIdentifier
         let type: ItemType
-        let metadataEditable: Bool
-        let filesEditable: Bool
+        let library: Library
 
         fileprivate(set) var sections: [String]?
         fileprivate var results: Results<RItem>?
@@ -71,17 +69,17 @@ class NewItemsStore: ObservableObject {
     let objectWillChange: ObservableObjectPublisher
     let dbStorage: DbStorage
 
-    init(libraryId: LibraryIdentifier, type: State.ItemType, metadataEditable: Bool, filesEditable: Bool, dbStorage: DbStorage) {
+    init(type: State.ItemType, library: Library, dbStorage: DbStorage) {
         self.objectWillChange = ObservableObjectPublisher()
         self.dbStorage = dbStorage
 
         do {
-            let items = try dbStorage.createCoordinator().perform(request: NewItemsStore.request(for: type, libraryId: libraryId))
-            let sections = NewItemsStore.sections(from: items)
-            self.state = State(libraryId: libraryId, type: type,
-                               metadataEditable: metadataEditable,
-                               filesEditable: filesEditable,
-                               sections: sections, results: items)
+            let items = try dbStorage.createCoordinator().perform(request: NewItemsStore.request(for: type, libraryId: library.identifier))
+
+            self.state = State(type: type,
+                               library: library,
+                               sections: NewItemsStore.sections(from: items),
+                               results: items)
 
             let token = items.observe { [weak self] changes in
                 switch changes {
@@ -95,9 +93,8 @@ class NewItemsStore: ObservableObject {
             self.state.itemsToken = token
         } catch let error {
             DDLogError("ItemStore: can't load items - \(error)")
-            self.state = State(libraryId: libraryId, type: type,
-                               metadataEditable: metadataEditable,
-                               filesEditable: filesEditable,
+            self.state = State(type: type,
+                               library: library,
                                error: .dataLoading)
         }
     }
@@ -306,7 +303,7 @@ class ItemsStore: OldStore {
     private func performAsyncDbRequestOnItem<Request: DbRequest>(at indexPath: IndexPath,
                                                                  createRequest: (String, LibraryIdentifier) -> Request) {
         guard let item = self.state.value.dataSource?.items(for: indexPath.section)?[indexPath.row],
-              let libraryId = item.libraryId else {
+              let libraryId = item.libraryObject?.identifier else {
             DDLogError("ItemsStore: can't find item")
             self.updater.updateState { newState in
                 newState.error = .deletion

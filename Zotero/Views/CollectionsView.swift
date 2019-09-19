@@ -13,44 +13,20 @@ import RealmSwift
 struct CollectionsView: View {
     @ObservedObject private(set) var store: CollectionsStore
 
-    @Environment(\.dbStorage) private var dbStorage: DbStorage
+    let rowSelected: (Collection, Library) -> Void
 
     var body: some View {
         List {
             ForEach(self.store.state.cellData) { cell in
-                NavigationLink(destination: self.itemsView(from: cell)) {
+                Button(action: {
+                    self.rowSelected(cell, self.store.state.library)
+                }) {
                     CollectionRow(data: cell).deleteDisabled(cell.type.isCustom)
                 }
             }
             .onDelete(perform: self.store.deleteCells)
-        }.navigationBarTitle(Text(self.store.state.title), displayMode: .inline)
+        }.navigationBarTitle(Text(self.store.state.library.name), displayMode: .inline)
          .navigationBarItems(trailing: EditButton())
-    }
-
-    private func itemsView(from data: Collection) -> ItemsView {
-        let type: NewItemsStore.State.ItemType
-
-        switch data.type {
-        case .collection:
-            type = .collection(data.key, data.name)
-        case .search:
-            type = .search(data.key, data.name)
-        case .custom(let customType):
-            switch customType {
-            case .all:
-                type = .all
-            case .publications:
-                type = .publications
-            case .trash:
-                type = .trash
-            }
-        }
-
-        return ItemsView(store: NewItemsStore(libraryId: self.store.state.libraryId,
-                                              type: type,
-                                              metadataEditable: self.store.state.metadataEditable,
-                                              filesEditable: self.store.state.filesEditable,
-                                              dbStorage: self.dbStorage))
     }
 }
 
@@ -58,12 +34,10 @@ struct CollectionsView: View {
 
 struct CollectionsView_Previews: PreviewProvider {
     static var previews: some View {
-        let store = CollectionsStore(libraryId: .custom(.myLibrary),
-                                     title: "Test",
-                                     metadataEditable: true,
-                                     filesEditable: true,
+        let store = CollectionsStore(library: Library(identifier: .custom(.myLibrary), name: "My library",
+                                                      metadataEditable: true, filesEditable: true),
                                      dbStorage: Controllers().dbStorage)
-        return CollectionsView(store: store)
+        return CollectionsView(store: store, rowSelected: { _, _ in })
     }
 }
 

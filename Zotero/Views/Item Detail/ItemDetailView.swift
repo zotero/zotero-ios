@@ -288,7 +288,6 @@ struct ItemDetailView_Previews: PreviewProvider {
         controllers.schemaController.reloadSchemaIfNeeded()
         let store = ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
                                                     collectionKey: nil, filesEditable: true),
-                                    libraryId: .custom(.myLibrary),
                                     apiClient: controllers.apiClient,
                                     fileStorage: controllers.fileStorage,
                                     dbStorage: controllers.dbStorage,

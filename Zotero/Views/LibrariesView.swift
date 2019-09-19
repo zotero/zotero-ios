@@ -11,7 +11,7 @@ import SwiftUI
 struct LibrariesView: View {
     @ObservedObject private(set) var store: LibrariesStore
 
-    @Environment(\.dbStorage) private var dbStorage: DbStorage
+    let librarySelected: (Library) -> Void
 
     var body: some View {
         List {
@@ -19,7 +19,9 @@ struct LibrariesView: View {
                 self.store.state.customLibraries.flatMap { libraries in
                     Section {
                         ForEach(libraries) { library in
-                            NavigationLink(destination: CollectionsView(store: self.store(for: library))) {
+                            Button(action: {
+                                self.librarySelected(Library(customLibrary: library))
+                            }) {
                                 LibraryRow(title: library.type.libraryName)
                             }
                         }
@@ -31,7 +33,9 @@ struct LibrariesView: View {
                 self.store.state.groupLibraries.flatMap { libraries in
                     Section {
                         ForEach(libraries) { library in
-                            NavigationLink(destination: CollectionsView(store: self.store(for: library))) {
+                            Button(action: {
+                                self.librarySelected(Library(group: library))
+                            }) {
                                 LibraryRow(title: library.name)
                             }
                         }
@@ -40,28 +44,12 @@ struct LibrariesView: View {
             }
         }.listStyle(GroupedListStyle())
     }
-
-    private func store(for library: RCustomLibrary) -> CollectionsStore {
-        return CollectionsStore(libraryId: .custom(library.type),
-                                title: library.type.libraryName,
-                                metadataEditable: true,
-                                filesEditable: true,
-                                dbStorage: self.dbStorage)
-    }
-
-    private func store(for library: RGroup) -> CollectionsStore {
-        return CollectionsStore(libraryId: .group(library.identifier),
-                                title: library.name,
-                                metadataEditable: library.canEditMetadata,
-                                filesEditable: library.canEditFiles,
-                                dbStorage: self.dbStorage)
-    }
 }
 
 struct LibrariesView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            LibrariesView(store: LibrariesStore(dbStorage: Controllers().dbStorage))
+            LibrariesView(store: LibrariesStore(dbStorage: Controllers().dbStorage)) { _ in }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
