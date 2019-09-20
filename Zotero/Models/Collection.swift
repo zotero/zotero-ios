@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct Collection: Identifiable {
+struct Collection: Identifiable, Equatable {
     
     enum CollectionType: Equatable {
         case collection

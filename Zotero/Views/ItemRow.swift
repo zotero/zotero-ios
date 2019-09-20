@@ -18,10 +18,12 @@ struct ItemRow: View {
                 .foregroundColor(.blue)
                 .padding(.vertical, 8)
                 .padding(.trailing, 14)
+
             VStack(alignment: .leading, spacing: 6) {
-                Text(self.item.title)
+                Text(self.item.title.isEmpty ? " " : self.item.title)
                     .font(.headline)
                     .fontWeight(.regular)
+
                 HStack {
                     Text(self.item.subtitle ?? " ")
                         .foregroundColor(.gray)
@@ -32,8 +34,7 @@ struct ItemRow: View {
                     if self.item.hasNote {
                         Image(systemName: "doc.text")
                     }
-//                    TagCirclesView(colors: self.item.tagHexColors)
-//                        .frame(height: 15)
+                    TagCirclesView(colors: self.item.tagHexColors, height: 18)
                 }
             }
         }

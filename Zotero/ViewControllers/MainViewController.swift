@@ -28,7 +28,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // Variables
     private var currentLandscapePrimaryColumnFraction: CGFloat = 0
     private var isViewingLibraries: Bool {
-        return false//(self.viewControllers.first as? UINavigationController)?.topViewController is LibrariesViewController
+        return (self.viewControllers.first as? UINavigationController)?.viewControllers.count == 1
     }
     private var maxSize: CGFloat {
         return max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -52,12 +52,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.preferredDisplayMode = .allVisible
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
-
-//        let newFraction = self.calculatePrimaryColumnFraction(from: collectionsStore.state.cellData)
-//        self.currentLandscapePrimaryColumnFraction = newFraction
-//        if UIDevice.current.orientation.isLandscape {
-//            self.setPrimaryColumn(state: .dynamic(newFraction), animated: false)
-//        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -87,12 +81,16 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // MARK: - Actions
 
     private func showCollections(in library: Library) {
-        let view = CollectionsView(store: CollectionsStore(library: library,
-                                                           dbStorage: self.controllers.dbStorage),
-                                   rowSelected: self.showItems)
-        (self.viewControllers.first as? UINavigationController)?.pushViewController(UIHostingController(rootView: view), animated: true)
+        guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
+        let store = CollectionsStore(library: library, dbStorage: self.controllers.dbStorage)
+        let view = CollectionsView(store: store, rowSelected: self.showItems)
 
         self.showItems(in: Collection(custom: .all), library: library)
+
+        navigationController.pushViewController(UIHostingController(rootView: view), animated: true)
+        navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in
+            self.reloadPrimaryColumnFraction(with: store.state.cellData, animated: true)
+        })
     }
 
     private func showItems(in collection: Collection, library: Library) {
@@ -137,6 +135,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     // MARK: - Dynamic primary column
+
+    private func reloadPrimaryColumnFraction(with data: [Collection], animated: Bool) {
+        let newFraction = self.calculatePrimaryColumnFraction(from: data)
+        self.currentLandscapePrimaryColumnFraction = newFraction
+        if UIDevice.current.orientation.isLandscape {
+            self.setPrimaryColumn(state: .dynamic(newFraction), animated: animated)
+        }
+    }
 
     private func setPrimaryColumn(state: PrimaryColumnState, animated: Bool) {
         let primaryColumnFraction: CGFloat
@@ -187,9 +193,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private func setupControllers() {
         let librariesView = LibrariesView(store: LibrariesStore(dbStorage: self.controllers.dbStorage),
                                           librarySelected: self.showCollections)
-        let collectionsView = CollectionsView(store: CollectionsStore(library: self.defaultLibrary,
-                                                                      dbStorage: self.controllers.dbStorage),
-                                              rowSelected: self.showItems)
+        let collectionsStore = CollectionsStore(library: self.defaultLibrary,
+                                                dbStorage: self.controllers.dbStorage)
+        let collectionsView = CollectionsView(store: collectionsStore, rowSelected: self.showItems)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
@@ -205,6 +211,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let detailController = UINavigationController(rootViewController: UIHostingController(rootView: itemsView))
 
         self.viewControllers = [masterController, detailController]
+        self.reloadPrimaryColumnFraction(with: collectionsStore.state.cellData, animated: false)
     }
 }
 

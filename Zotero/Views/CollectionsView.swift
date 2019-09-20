@@ -17,12 +17,14 @@ struct CollectionsView: View {
 
     var body: some View {
         List {
-            ForEach(self.store.state.cellData) { cell in
-                Button(action: {
-                    self.rowSelected(cell, self.store.state.library)
-                }) {
-                    CollectionRow(data: cell).deleteDisabled(cell.type.isCustom)
-                }
+            ForEach(self.store.state.cellData) { collection in
+                CollectionRow(data: collection,
+                              isSelected: (collection == self.store.state.selectedCollection))
+                    .onTapGesture {
+                        self.store.state.selectedCollection = collection
+                        self.rowSelected(collection, self.store.state.library)
+                    }
+                    .deleteDisabled(collection.type.isCustom)
             }
             .onDelete(perform: self.store.deleteCells)
         }.navigationBarTitle(Text(self.store.state.library.name), displayMode: .inline)

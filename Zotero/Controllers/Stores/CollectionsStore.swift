@@ -22,13 +22,14 @@ class CollectionsStore: ObservableObject {
     
     struct State {
         let library: Library
+        var selectedCollection: Collection?
         fileprivate(set) var cellData: [Collection]
         fileprivate(set) var error: Error?
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
     }
     
-    private(set) var state: State {
+    var state: State {
         willSet {
             self.objectWillChange.send()
         }
@@ -54,7 +55,7 @@ class CollectionsStore: ObservableObject {
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
 
-            self.state = State(library: library, cellData: allCollections)
+            self.state = State(library: library, selectedCollection: allCollections.first, cellData: allCollections)
 
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }

@@ -10,25 +10,40 @@ import SwiftUI
 
 struct TagCirclesView: View {
     let colors: [String]
+    let height: CGFloat
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(self.colors, id: \.self) { color in
+        ZStack {
+            ForEach(self.colors.indices) { index in
                 Circle()
-                    .aspectRatio(1, contentMode: .fit)
-                    .foregroundColor(Color(hex: color))
+                    .foregroundColor(Color(hex: self.colors[index]))
                     .overlay(
                         Circle()
                             .strokeBorder(style: StrokeStyle(lineWidth: 1))
                             .foregroundColor(.white)
                     )
+                    .frame(width: self.height, height: self.height)
+                    .position(self.position(at: index))
             }
         }
+        .frame(width: self.containerWidth(count: self.colors.count), height: self.height)
+    }
+
+    private func containerWidth(count: Int) -> CGFloat {
+        guard count > 0 else { return 0 }
+        let circleWidth = self.height
+        return circleWidth + (CGFloat(count - 1) * (circleWidth / 2.0))
+    }
+
+    private func position(at index: Int) -> CGPoint {
+        let width = self.height
+        return CGPoint(x: (CGFloat(index + 1) * (width / 2.0)),
+                       y: self.height / 2.0)
     }
 }
 
 struct TagCirclesView_Previews: PreviewProvider {
     static var previews: some View {
-        TagCirclesView(colors: ["#123321", "#ff112d", "#ee1289"])
+        TagCirclesView(colors: ["#123321", "#ff112d", "#ee1289"], height: 44)
     }
 }
