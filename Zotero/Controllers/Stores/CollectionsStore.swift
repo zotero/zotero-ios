@@ -102,32 +102,18 @@ class CollectionsStore: ObservableObject {
 //        }
 //    }
 //
-    func deleteCells(at indexSet: IndexSet) {
-        let cells = self.state.cellData
-        let libraryId = self.state.library.identifier
 
+    func deleteCollection(with key: String) {
+        let libraryId = self.state.library.identifier
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            var collectionKeys: [String] = []
-            var searchKeys: [String] = []
-            
-            indexSet.forEach { index in
-                let cell = cells[index]
-                switch cell.type {
-                case .collection:
-                    collectionKeys.append(cell.key)
-                case .search:
-                    searchKeys.append(cell.key)
-                case .custom: break
-                }
-            }
-            
-            if !collectionKeys.isEmpty {
-                self?.delete(object: RCollection.self, keys: collectionKeys, libraryId: libraryId)
-            }
-            
-            if !searchKeys.isEmpty {
-                self?.delete(object: RSearch.self, keys: searchKeys, libraryId: libraryId)
-            }
+            self?.delete(object: RCollection.self, keys: [key], libraryId: libraryId)
+        }
+    }
+
+    func deleteSearch(with key: String) {
+        let libraryId = self.state.library.identifier
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.delete(object: RSearch.self, keys: [key], libraryId: libraryId)
         }
     }
 
