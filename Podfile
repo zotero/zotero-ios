@@ -1,4 +1,4 @@
-platform :ios, '10.3'
+platform :ios, '13.0'
 
 target 'Zotero' do
     use_frameworks!
@@ -11,6 +11,7 @@ target 'Zotero' do
     pod 'RxCocoa', '5.0.0'
     pod 'CocoaLumberjack/Core', '3.5.3'
     pod 'CocoaLumberjack/Swift', '3.5.3'
+    pod 'BetterSheet', '1.0.0'
     #pspdfkit
 
     target 'ZoteroTests' do

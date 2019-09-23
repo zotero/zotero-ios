@@ -8,6 +8,8 @@
 
 import SwiftUI
 
+import BetterSheet
+
 struct ItemDetailView: View {
     @ObservedObject private(set) var store: ItemDetailStore
     @Environment(\.editMode) private var editMode: Binding<EditMode>
@@ -84,14 +86,14 @@ struct ItemDetailView: View {
         )
         .navigationBarBackButtonHidden(self.isEditing)
         // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
-        .sheet(item: self.$store.state.presentedNote,
+        .betterSheet(item: self.$store.state.presentedNote,
                onDismiss: {
                    self.store.state.presentedNote = nil
                },
                content: { note in
                    NoteEditingView(note: note, saveAction: self.store.saveNote)
                })
-        .sheet(isPresented: self.$store.state.showTagPicker,
+        .betterSheet(isPresented: self.$store.state.showTagPicker,
                onDismiss: {
                    self.store.state.showTagPicker = false
                },
@@ -101,27 +103,26 @@ struct ItemDetailView: View {
                                                        dbStorage: self.store.dbStorage),
                                  saveAction: self.store.setTags)
                })
-        // TODO: - SWIFTUI BUG: - this sheet is not presented for some reason, content block is called, it doesn't help to replace PdfReaderView for other view
-        .sheet(item: self.$store.state.pdfAttachment,
+        .betterSheet(item: self.$store.state.pdfAttachment,
                onDismiss: {
                    self.store.state.pdfAttachment = nil
                },
                content: { url in
-                   return PdfReaderView(url: url)
+                   PdfReaderView(url: url)
                })
-        .sheet(item: self.$store.state.webAttachment,
+        .betterSheet(item: self.$store.state.webAttachment,
                onDismiss: {
                    self.store.state.webAttachment = nil
                },
                content: { url in
-                   return SafariView(url: url)
+                   SafariView(url: url)
                })
-        .sheet(item: self.$store.state.unknownAttachment,
+        .betterSheet(item: self.$store.state.unknownAttachment,
                onDismiss: {
                    self.store.state.unknownAttachment = nil
                },
                content: { url in
-                   return ActivityView(activityItems: [url], applicationActivities: nil)
+                   ActivityView(activityItems: [url], applicationActivities: nil)
                })
     }
 }

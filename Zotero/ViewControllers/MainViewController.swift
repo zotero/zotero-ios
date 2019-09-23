@@ -9,6 +9,7 @@
 import UIKit
 import SwiftUI
 
+import BetterSheet
 import RxSwift
 
 fileprivate enum PrimaryColumnState {
@@ -99,7 +100,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                         .environment(\.apiClient, self.controllers.apiClient)
                         .environment(\.fileStorage, self.controllers.fileStorage)
                         .environment(\.schemaController, self.controllers.schemaController)
-        self.showSecondaryController(UIHostingController(rootView: view))
+        self.showSecondaryController(UIHostingController.withBetterSheetSupport(rootView: view))
     }
 
     private func showSecondaryController(_ controller: UIViewController) {
@@ -208,7 +209,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                             .environment(\.fileStorage, self.controllers.fileStorage)
                             .environment(\.schemaController, self.controllers.schemaController)
 
-        let detailController = UINavigationController(rootViewController: UIHostingController(rootView: itemsView))
+        let detailController = UINavigationController(rootViewController: UIHostingController.withBetterSheetSupport(rootView: itemsView))
 
         self.viewControllers = [masterController, detailController]
         self.reloadPrimaryColumnFraction(with: collectionsStore.state.cellData, animated: false)
