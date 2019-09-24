@@ -329,10 +329,10 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
-    let apiClient: ApiClient
-    let fileStorage: FileStorage
-    let dbStorage: DbStorage
-    let schemaController: SchemaController
+    private let apiClient: ApiClient
+    private let fileStorage: FileStorage
+    private let dbStorage: DbStorage
+    private let schemaController: SchemaController
     private let disposeBag: DisposeBag
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher

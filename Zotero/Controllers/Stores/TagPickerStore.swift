@@ -30,7 +30,7 @@ class TagPickerStore: ObservableObject {
     }
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher
-    let dbStorage: DbStorage
+    private let dbStorage: DbStorage
 
     init(libraryId: LibraryIdentifier, selectedTags: Set<String>, dbStorage: DbStorage) {
         self.state = State(libraryId: libraryId, tags: [], selectedTags: selectedTags)

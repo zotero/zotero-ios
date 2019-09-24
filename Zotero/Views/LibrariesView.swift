@@ -42,7 +42,8 @@ struct LibrariesView: View {
                     }
                 }
             }
-        }.listStyle(GroupedListStyle())
+        }
+        .listStyle(GroupedListStyle())
     }
 }
 

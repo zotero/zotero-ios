@@ -21,12 +21,32 @@ class CollectionsStore: ObservableObject {
     }
     
     struct State {
+        enum EditingType: Identifiable {
+            case add
+            case addSubcollection(Collection)
+            case edit(Collection)
+
+            var id: String {
+                switch self {
+                case .add:
+                    return "add"
+                case .addSubcollection(let collection):
+                    return "addsub" + collection.key
+                case .edit(let collection):
+                    return "edit" + collection.key
+                }
+            }
+        }
+
         let library: Library
+
         var selectedCollection: Collection?
-        fileprivate(set) var cellData: [Collection]
+        fileprivate(set) var collections: [Collection]
         fileprivate(set) var error: Error?
         fileprivate var collectionToken: NotificationToken?
         fileprivate var searchToken: NotificationToken?
+
+        var editingType: EditingType?
     }
     
     var state: State {
@@ -36,7 +56,7 @@ class CollectionsStore: ObservableObject {
     }
     // SWIFTUI BUG: should be defined by default, but bugged in current version
     let objectWillChange: ObservableObjectPublisher
-    let dbStorage: DbStorage
+    private let dbStorage: DbStorage
     
     init(library: Library, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
@@ -55,7 +75,9 @@ class CollectionsStore: ObservableObject {
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
 
-            self.state = State(library: library, selectedCollection: allCollections.first, cellData: allCollections)
+            self.state = State(library: library,
+                               selectedCollection: allCollections.first,
+                               collections: allCollections)
 
             let collectionToken = collections.observe({ [weak self] changes in
                 guard let `self` = self else { return }
@@ -81,7 +103,7 @@ class CollectionsStore: ObservableObject {
             self.state.searchToken = searchToken
         } catch let error {
             DDLogError("CollectionsStore: can't load collections: \(error)")
-            self.state = State(library: library, cellData: [], error: .dataLoading)
+            self.state = State(library: library, collections: [], error: .dataLoading)
         }
     }
     
@@ -140,10 +162,10 @@ class CollectionsStore: ObservableObject {
         switch type {
         case .collection:
             // Insert new "collection" collections after "all" collection
-            self.state.cellData.insert(contentsOf: collections, at: 1)
+            self.state.collections.insert(contentsOf: collections, at: 1)
         case .search:
             // Insert new "search" collections before "publications" collection, after "collection" collections
-            self.state.cellData.insert(contentsOf: collections, at: self.state.cellData.count - 2)
+            self.state.collections.insert(contentsOf: collections, at: self.state.collections.count - 2)
         case .custom: return // don't update custom collections
         }
     }
@@ -156,7 +178,7 @@ class CollectionsStore: ObservableObject {
         var startIndex = -1
         var endIndex = -1
 
-        for data in self.state.cellData.enumerated() {
+        for data in self.state.collections.enumerated() {
             if startIndex == -1 {
                 if data.element.type == type {
                     startIndex = data.offset
@@ -171,12 +193,12 @@ class CollectionsStore: ObservableObject {
         if startIndex == -1 { return false } // no object of given type found
 
         if endIndex == -1 { // last cell was of the same type, so endIndex is at the end
-            endIndex = self.state.cellData.count
+            endIndex = self.state.collections.count
         }
 
         // Replace old collections of this type with new collections
-        self.state.cellData.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
-        self.state.cellData.insert(contentsOf: collections, at: startIndex)
+        self.state.collections.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
+        self.state.collections.insert(contentsOf: collections, at: startIndex)
 
         return true
     }

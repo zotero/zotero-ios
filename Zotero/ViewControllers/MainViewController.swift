@@ -122,12 +122,13 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
         let store = CollectionsStore(library: library, dbStorage: self.controllers.dbStorage)
         let view = CollectionsView(store: store, rowSelected: self.showItems)
+                        .environment(\.dbStorage, self.controllers.dbStorage)
 
         self.showItems(in: Collection(custom: .all), library: library)
 
         navigationController.pushViewController(UIHostingController(rootView: view), animated: true)
         navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in
-            self.reloadPrimaryColumnFraction(with: store.state.cellData, animated: true)
+            self.reloadPrimaryColumnFraction(with: store.state.collections, animated: true)
         })
     }
 
@@ -234,6 +235,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let collectionsStore = CollectionsStore(library: self.defaultLibrary,
                                                 dbStorage: self.controllers.dbStorage)
         let collectionsView = CollectionsView(store: collectionsStore, rowSelected: self.showItems)
+                                .environment(\.dbStorage, self.controllers.dbStorage)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
@@ -249,7 +251,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let detailController = UINavigationController(rootViewController: UIHostingController.withBetterSheetSupport(rootView: itemsView))
 
         self.viewControllers = [masterController, detailController]
-        self.reloadPrimaryColumnFraction(with: collectionsStore.state.cellData, animated: false)
+        self.reloadPrimaryColumnFraction(with: collectionsStore.state.collections, animated: false)
     }
 }
 

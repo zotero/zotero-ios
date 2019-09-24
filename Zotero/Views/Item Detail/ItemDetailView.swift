@@ -12,7 +12,10 @@ import BetterSheet
 
 struct ItemDetailView: View {
     @ObservedObject private(set) var store: ItemDetailStore
+
     @Environment(\.editMode) private var editMode: Binding<EditMode>
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
+    
     private var isEditing: Bool {
         return self.editMode?.wrappedValue.isEditing ?? false
     }
@@ -100,7 +103,7 @@ struct ItemDetailView: View {
                content: {
                    TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
                                                        selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
-                                                       dbStorage: self.store.dbStorage),
+                                                       dbStorage: self.dbStorage),
                                  saveAction: self.store.setTags)
                })
         .betterSheet(item: self.$store.state.unknownAttachment,

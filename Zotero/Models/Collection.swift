@@ -46,7 +46,7 @@ struct Collection: Identifiable, Equatable {
     let key: String
     let name: String
     let level: Int
-    
+
     var iconName: String {
         switch self.type {
         case .collection:
