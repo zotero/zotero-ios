@@ -7,10 +7,16 @@
 //
 
 import UIKit
+import SafariServices
 import SwiftUI
 
 import BetterSheet
 import RxSwift
+
+#if PDFENABLED
+import PSPDFKit
+import PSPDFKitUI
+#endif
 
 fileprivate enum PrimaryColumnState {
     case minimum
@@ -53,6 +59,23 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.preferredDisplayMode = .allVisible
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
+
+        NotificationCenter.default.rx.notification(.presentPdf)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                        if let url = notification.object as? URL {
+                                            self?.presentPdf(with: url)
+                                        }
+                                     })
+                                     .disposed(by: self.disposeBag)
+         NotificationCenter.default.rx.notification(.presentWeb)
+                                      .observeOn(MainScheduler.instance)
+                                      .subscribe(onNext: { [weak self] notification in
+                                         if let url = notification.object as? URL {
+                                            self?.presentWeb(with: url)
+                                         }
+                                      })
+                                      .disposed(by: self.disposeBag)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -80,6 +103,20 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     // MARK: - Actions
+
+    private func presentPdf(with url: URL) {
+        #if PDFENABLED
+        let controller = PSPDFViewController(document: PSPDFDocument(url: url))
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        self.present(navigationController, animated: true, completion: nil)
+        #endif
+    }
+
+    private func presentWeb(with url: URL) {
+        let controller = SFSafariViewController(url: url)
+        self.present(controller, animated: true, completion: nil)
+    }
 
     private func showCollections(in library: Library) {
         guard let navigationController = self.viewControllers.first as? UINavigationController else { return }

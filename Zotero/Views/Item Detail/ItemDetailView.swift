@@ -103,20 +103,6 @@ struct ItemDetailView: View {
                                                        dbStorage: self.store.dbStorage),
                                  saveAction: self.store.setTags)
                })
-        .betterSheet(item: self.$store.state.pdfAttachment,
-               onDismiss: {
-                   self.store.state.pdfAttachment = nil
-               },
-               content: { url in
-                   PdfReaderView(url: url)
-               })
-        .betterSheet(item: self.$store.state.webAttachment,
-               onDismiss: {
-                   self.store.state.webAttachment = nil
-               },
-               content: { url in
-                   SafariView(url: url)
-               })
         .betterSheet(item: self.$store.state.unknownAttachment,
                onDismiss: {
                    self.store.state.unknownAttachment = nil

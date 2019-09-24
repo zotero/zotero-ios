@@ -13,6 +13,11 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
+extension Notification.Name {
+    static let presentPdf = Notification.Name(rawValue: "org.zotero.PresentPdfAttachment")
+    static let presentWeb = Notification.Name(rawValue: "org.zotero.PresentWebAttachment")
+}
+
 class ItemDetailStore: ObservableObject {
     enum Error: Swift.Error, Equatable {
         case typeNotSupported, libraryNotAssigned,
@@ -277,13 +282,7 @@ class ItemDetailStore: ObservableObject {
         var presentedNote: Note?
 
         var showTagPicker: Bool
-        var webAttachment: URL?
-        var pdfAttachment: URL?
         var unknownAttachment: URL?
-
-        var isAnyAttachmentOpened: Bool {
-            return self.webAttachment != nil || self.pdfAttachment != nil || self.unknownAttachment != nil
-        }
 
         fileprivate var library: SyncController.Library {
             switch self.libraryId {
@@ -544,7 +543,7 @@ class ItemDetailStore: ObservableObject {
     func openAttachment(_ attachment: State.Attachment) {
         switch attachment.type {
         case .url(let url):
-            self.state.webAttachment = url
+            NotificationCenter.default.post(name: .presentWeb, object: url)
         case .file(let file, _, let isCached):
             if isCached {
                 self.openFile(file)
@@ -579,9 +578,7 @@ class ItemDetailStore: ObservableObject {
             self.state.downloadProgress[key] = nil
             if let (index, attachment) = self.state.data.attachments.enumerated().first(where: { $1.key == key }) {
                 self.state.data.attachments[index] = attachment.changed(isLocal: true)
-                if !self.state.isAnyAttachmentOpened {
-                    self.openAttachment(attachment)
-                }
+                self.openAttachment(attachment)
             }
         }
     }
@@ -590,7 +587,7 @@ class ItemDetailStore: ObservableObject {
         switch file.ext {
         case "pdf":
             #if PDFENABLED
-            self.state.pdfAttachment = file.createUrl()
+            NotificationCenter.default.post(name: .presentPdf, object: file.createUrl())
             #endif
         default:
             self.state.unknownAttachment = file.createUrl()
