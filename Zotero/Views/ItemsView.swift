@@ -11,14 +11,14 @@ import SwiftUI
 import RealmSwift
 
 struct ItemsView: View {
-    @ObservedObject private(set) var store: NewItemsStore
+    @ObservedObject private(set) var store: ItemsStore
 
     var body: some View {
         List {
             self.store.state.sections.flatMap {
                 ForEach($0, id: \.self) { section in
-                    self.store.state.items(for: section).flatMap { section in
-                        ItemSectionView(results: section,
+                    self.store.state.items(for: section).flatMap { items in
+                        ItemSectionView(results: items,
                                         libraryId: self.store.state.library.identifier)
                     }
                 }
@@ -60,7 +60,7 @@ fileprivate struct ItemSectionView: View {
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemsView(store: NewItemsStore(type: .all,
+        ItemsView(store: ItemsStore(type: .all,
                                        library: Library(identifier: .custom(.myLibrary), name: "My library",
                                                         metadataEditable: true, filesEditable: true),
                                        dbStorage: Controllers().dbStorage))

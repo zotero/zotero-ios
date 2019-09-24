@@ -150,8 +150,8 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         }
     }
 
-    private func itemsStore(for collection: Collection, library: Library) -> NewItemsStore {
-        let type: NewItemsStore.State.ItemType
+    private func itemsStore(for collection: Collection, library: Library) -> ItemsStore {
+        let type: ItemsStore.State.ItemType
 
         switch collection.type {
         case .collection:
@@ -169,7 +169,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
             }
         }
 
-        return NewItemsStore(type: type, library: library, dbStorage: self.controllers.dbStorage)
+        return ItemsStore(type: type, library: library, dbStorage: self.controllers.dbStorage)
     }
 
     // MARK: - Dynamic primary column

@@ -22,7 +22,7 @@ struct MainView: View {
         NavigationView {
             CollectionsView(store: CollectionsStore(library: self.defaultLibrary,
                                                     dbStorage: self.dbStorage)) { _, _ in }
-            ItemsView(store: NewItemsStore(type: .all,
+            ItemsView(store: ItemsStore(type: .all,
                                            library: self.defaultLibrary,
                                            dbStorage: self.dbStorage))
         }
