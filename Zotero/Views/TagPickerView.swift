@@ -13,31 +13,29 @@ struct TagPickerView: View {
     let saveAction: ([Tag]) -> Void
 
     var body: some View {
-        GeometryReader { proxy in
-            VStack(spacing: 0) {
-                List(selection: self.$store.state.selectedTags) {
-                    ForEach(self.store.state.tags) { tag in
-                        TagView(color: .init(hex: tag.color), name: tag.name)
-                    }
-                    // SWIFTUI BUG: - selection doesn't show up when deletion is not addeds
-                    .onDelete(perform: { _ in })
+        VStack(spacing: 0) {
+            List(selection: self.$store.state.selectedTags) {
+                ForEach(self.store.state.tags) { tag in
+                    TagView(color: .init(hex: tag.color), name: tag.name)
                 }
-
-                Button(action: {
-                    let tags = self.store.state.selectedTags.compactMap { id in
-                        self.store.state.tags.first(where: { $0.id == id })
-                    }.sorted(by: { $0.name < $1.name })
-                    self.saveAction(tags)
-                }) {
-                    Text("Save")
-                        .foregroundColor(.white)
-                        .font(.callout)
-                        .fontWeight(.bold)
-                }
-                .padding(.vertical)
-                .frame(width: proxy.size.height)
-                .background(Color.blue)
+                // SWIFTUI BUG: - selection doesn't show up when deletion is not addeds
+                .onDelete(perform: { _ in })
             }
+
+            Button(action: {
+                let tags = self.store.state.selectedTags.compactMap { id in
+                    self.store.state.tags.first(where: { $0.id == id })
+                }.sorted(by: { $0.name < $1.name })
+                self.saveAction(tags)
+            }) {
+                Text("Save")
+                    .foregroundColor(.white)
+                    .font(.callout)
+                    .fontWeight(.bold)
+            }
+            .padding(.vertical)
+            .frame(maxWidth: .infinity)
+            .background(Color.blue)
         }
         .environment(\.editMode, .constant(.active))
         .onAppear(perform: self.store.load)
