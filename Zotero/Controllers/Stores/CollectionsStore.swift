@@ -113,9 +113,6 @@ class CollectionsStore: ObservableObject {
                                collections: [],
                                error: .dataLoading)
         }
-
-        NotificationCenter.default.post(name: .splitViewDetailChanged,
-                                        object: (self.state.selectedCollection, library))
     }
     
 //    private func editCollection(at index: Int) {
@@ -135,6 +132,11 @@ class CollectionsStore: ObservableObject {
 //        }
 //    }
 //
+
+    func didAppear() {
+        NotificationCenter.default.post(name: .splitViewDetailChanged,
+                                        object: (self.state.selectedCollection, self.state.library))
+    }
 
     func deleteCollection(with key: String) {
         let libraryId = self.state.library.identifier

@@ -115,6 +115,7 @@ fileprivate struct CollectionRowButton: View {
         .listRowBackground((self.collection == self.store.state.selectedCollection) ?
                                 Color.gray.opacity(0.4) :
                                 Color.white)
+        .onAppear(perform: self.store.didAppear)
     }
 
     private func inset(for level: Int) -> CGFloat {
