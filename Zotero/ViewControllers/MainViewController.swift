@@ -23,6 +23,10 @@ fileprivate enum PrimaryColumnState {
     case dynamic(CGFloat)
 }
 
+extension Notification.Name {
+    static let splitViewDetailChanged = Notification.Name("org.zotero.SplitViewDetailChanged")
+}
+
 class MainViewController: UISplitViewController, ConflictPresenter {
     // Constants
     private static let minPrimaryColumnWidth: CGFloat = 300
@@ -76,6 +80,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                          }
                                       })
                                       .disposed(by: self.disposeBag)
+        NotificationCenter.default.rx.notification(.splitViewDetailChanged)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                        if let (collection, library) = notification.object as? (Collection, Library) {
+                                            self?.showItems(in: collection, library: library)
+                                        }
+                                     })
+                                     .disposed(by: self.disposeBag)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -116,20 +128,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private func presentWeb(with url: URL) {
         let controller = SFSafariViewController(url: url)
         self.present(controller, animated: true, completion: nil)
-    }
-
-    private func showCollections(in library: Library) {
-        guard let navigationController = self.viewControllers.first as? UINavigationController else { return }
-        let store = CollectionsStore(library: library, dbStorage: self.controllers.dbStorage)
-        let view = CollectionsView(store: store, rowSelected: self.showItems)
-                        .environment(\.dbStorage, self.controllers.dbStorage)
-
-        self.showItems(in: Collection(custom: .all), library: library)
-
-        navigationController.pushViewController(UIHostingController(rootView: view), animated: true)
-        navigationController.transitionCoordinator?.animate(alongsideTransition: nil, completion: { _ in
-            self.reloadPrimaryColumnFraction(with: store.state.collections, animated: true)
-        })
     }
 
     private func showItems(in collection: Collection, library: Library) {
@@ -230,12 +228,12 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // MARK: - Setups
 
     private func setupControllers() {
-        let librariesView = LibrariesView(store: LibrariesStore(dbStorage: self.controllers.dbStorage),
-                                          librarySelected: self.showCollections)
+        let librariesView = LibrariesView(store: LibrariesStore(dbStorage: self.controllers.dbStorage))
+                                    .environment(\.dbStorage, self.controllers.dbStorage)
         let collectionsStore = CollectionsStore(library: self.defaultLibrary,
                                                 dbStorage: self.controllers.dbStorage)
-        let collectionsView = CollectionsView(store: collectionsStore, rowSelected: self.showItems)
-                                .environment(\.dbStorage, self.controllers.dbStorage)
+        let collectionsView = CollectionsView(store: collectionsStore)
+                                    .environment(\.dbStorage, self.controllers.dbStorage)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
@@ -243,10 +241,10 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
         let itemsView = ItemsView(store: self.itemsStore(for: self.defaultCollection,
                                                          library: self.defaultLibrary))
-                            .environment(\.dbStorage, self.controllers.dbStorage)
-                            .environment(\.apiClient, self.controllers.apiClient)
-                            .environment(\.fileStorage, self.controllers.fileStorage)
-                            .environment(\.schemaController, self.controllers.schemaController)
+                                .environment(\.dbStorage, self.controllers.dbStorage)
+                                .environment(\.apiClient, self.controllers.apiClient)
+                                .environment(\.fileStorage, self.controllers.fileStorage)
+                                .environment(\.schemaController, self.controllers.schemaController)
 
         let detailController = UINavigationController(rootViewController: UIHostingController.withBetterSheetSupport(rootView: itemsView))
 

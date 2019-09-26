@@ -21,7 +21,7 @@ struct MainView: View {
     var body: some View {
         NavigationView {
             CollectionsView(store: CollectionsStore(library: self.defaultLibrary,
-                                                    dbStorage: self.dbStorage)) { _, _ in }
+                                                    dbStorage: self.dbStorage))
             ItemsView(store: ItemsStore(type: .all,
                                            library: self.defaultLibrary,
                                            dbStorage: self.dbStorage))

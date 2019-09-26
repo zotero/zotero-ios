@@ -40,7 +40,7 @@ class CollectionsStore: ObservableObject {
 
         let library: Library
 
-        var selectedCollection: Collection?
+        var selectedCollection: Collection
         fileprivate(set) var collections: [Collection]
         fileprivate(set) var error: Error?
         fileprivate var collectionToken: NotificationToken?
@@ -52,6 +52,11 @@ class CollectionsStore: ObservableObject {
     var state: State {
         willSet {
             self.objectWillChange.send()
+
+            if self.state.selectedCollection.key != newValue.selectedCollection.key {
+                NotificationCenter.default.post(name: .splitViewDetailChanged,
+                                                object: (newValue.selectedCollection, self.state.library))
+            }
         }
     }
     // SWIFTUI BUG: should be defined by default, but bugged in current version
@@ -76,7 +81,7 @@ class CollectionsStore: ObservableObject {
                                   at: 1)
 
             self.state = State(library: library,
-                               selectedCollection: allCollections.first,
+                               selectedCollection: allCollections[0],
                                collections: allCollections)
 
             let collectionToken = collections.observe({ [weak self] changes in
@@ -103,8 +108,14 @@ class CollectionsStore: ObservableObject {
             self.state.searchToken = searchToken
         } catch let error {
             DDLogError("CollectionsStore: can't load collections: \(error)")
-            self.state = State(library: library, collections: [], error: .dataLoading)
+            self.state = State(library: library,
+                               selectedCollection: Collection(custom: .all),
+                               collections: [],
+                               error: .dataLoading)
         }
+
+        NotificationCenter.default.post(name: .splitViewDetailChanged,
+                                        object: (self.state.selectedCollection, library))
     }
     
 //    private func editCollection(at index: Int) {

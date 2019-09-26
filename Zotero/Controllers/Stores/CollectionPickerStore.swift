@@ -6,10 +6,57 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import Foundation
 
 import CocoaLumberjack
 import RealmSwift
+import RxSwift
+
+class NewCollectionPickerStore: ObservableObject {
+    enum Error: Swift.Error, Equatable {
+        case dataLoading
+    }
+
+    struct State {
+        let library: Library
+
+        fileprivate(set) var collections: [Collection]
+        fileprivate(set) var error: Error?
+        fileprivate var token: NotificationToken?
+    }
+
+    var state: State {
+        willSet {
+            self.objectWillChange.send()
+        }
+    }
+    // SWIFTUI BUG: should be defined by default, but bugged in current version
+    let objectWillChange: ObservableObjectPublisher
+
+    init(library: Library, dbStorage: DbStorage) {
+        self.objectWillChange = ObservableObjectPublisher()
+
+        do {
+            let collectionsRequest = ReadCollectionsDbRequest(libraryId: library.identifier)
+            let results = try dbStorage.createCoordinator().perform(request: collectionsRequest)
+            let collections = CollectionTreeBuilder.collections(from: results)
+            self.state = State(library: library, collections: collections)
+
+            self.state.token = results.observe({ changes in
+                switch changes {
+                case .update(let results, _, _, _):
+                    self.state.collections = CollectionTreeBuilder.collections(from: results)
+                case .initial: break
+                case .error: break
+                }
+            })
+        } catch let error {
+            DDLogError("CollectionsStore: can't load collections: \(error)")
+            self.state = State(library: library, collections: [], error: .dataLoading)
+        }
+    }
+}
 
 class CollectionPickerStore: OldStore {
     typealias Action = StoreAction

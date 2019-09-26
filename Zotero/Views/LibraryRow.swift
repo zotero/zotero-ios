@@ -19,9 +19,6 @@ struct LibraryRow: View {
             Text(self.title)
                 .foregroundColor(.black)
                 .lineLimit(1)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
         }
     }
 }

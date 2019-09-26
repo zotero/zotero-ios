@@ -9,16 +9,18 @@
 import SwiftUI
 
 struct CollectionRow: View {
-    private static let levelOffset: CGFloat = 20.0
+    static let levelOffset: CGFloat = 20.0
     let data: Collection
 
     var body: some View {
         HStack {
             Image(self.data.iconName)
+                .renderingMode(.template)
+                .foregroundColor(.blue)
             Text(self.data.name)
+                .foregroundColor(.black)
                 .lineLimit(1)
         }
-        .padding(.leading, CGFloat(self.data.level) * CollectionRow.levelOffset)
     }
 }
 

@@ -12,6 +12,11 @@ struct CollectionEditView: View {
     @ObservedObject private(set) var store: NewCollectionEditStore
 
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
+
+    private var title: Text {
+        return Text(self.store.state.key == nil ? "Create collection" : "Edit collection")
+    }
 
     var body: some View {
         Form {
@@ -20,7 +25,7 @@ struct CollectionEditView: View {
             }
 
             Section {
-                NavigationLink(destination: Text("Test")) {
+                NavigationLink(destination: self.createPickerView()) {
                     HStack {
                         Image(self.store.state.parent == nil ?
                                 "icon_cell_library" :
@@ -63,7 +68,7 @@ struct CollectionEditView: View {
                 }
             }
         )
-        .navigationBarTitle("", displayMode: .inline)
+        .navigationBarTitle(self.title, displayMode: .inline)
         .alert(item: self.$store.state.error) { error -> Alert in
             return Alert(title: Text("Error"), message: Text(self.message(for: error)))
         }
@@ -77,6 +82,12 @@ struct CollectionEditView: View {
         case .saveFailed:
             return "Could not save collection '\(self.store.state.name)'. Try again."
         }
+    }
+
+    private func createPickerView() -> CollectionPickerView {
+        CollectionPickerView(collection: self.$store.state.parent,
+                             store: NewCollectionPickerStore(library: self.store.state.library,
+                                                             dbStorage: self.dbStorage))
     }
 }
 

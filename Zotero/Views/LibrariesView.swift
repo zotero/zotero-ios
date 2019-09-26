@@ -11,7 +11,7 @@ import SwiftUI
 struct LibrariesView: View {
     @ObservedObject private(set) var store: LibrariesStore
 
-    let librarySelected: (Library) -> Void
+    @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
         List {
@@ -19,9 +19,7 @@ struct LibrariesView: View {
                 self.store.state.customLibraries.flatMap { libraries in
                     Section {
                         ForEach(libraries) { library in
-                            Button(action: {
-                                self.librarySelected(Library(customLibrary: library))
-                            }) {
+                            NavigationLink(destination: self.collectionsView(for: Library(customLibrary: library))) {
                                 LibraryRow(title: library.type.libraryName)
                             }
                         }
@@ -33,9 +31,7 @@ struct LibrariesView: View {
                 self.store.state.groupLibraries.flatMap { libraries in
                     Section {
                         ForEach(libraries) { library in
-                            Button(action: {
-                                self.librarySelected(Library(group: library))
-                            }) {
+                            NavigationLink(destination: self.collectionsView(for: Library(group: library))) {
                                 LibraryRow(title: library.name)
                             }
                         }
@@ -45,12 +41,16 @@ struct LibrariesView: View {
         }
         .listStyle(GroupedListStyle())
     }
+
+    private func collectionsView(for library: Library) -> CollectionsView {
+        CollectionsView(store: CollectionsStore(library: library, dbStorage: self.dbStorage))
+    }
 }
 
 struct LibrariesView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            LibrariesView(store: LibrariesStore(dbStorage: Controllers().dbStorage)) { _ in }
+            LibrariesView(store: LibrariesStore(dbStorage: Controllers().dbStorage))
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

@@ -15,48 +15,13 @@ struct CollectionsView: View {
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
-    let rowSelected: (Collection, Library) -> Void
-
     var body: some View {
         List {
             ForEach(self.store.state.collections) { collection in
-                Button(action: {
-                    self.store.state.selectedCollection = collection
-                    self.rowSelected(collection, self.store.state.library)
-                }) {
-                    CollectionRow(data: collection)
-                        .contextMenu(
-                            collection.type.isCustom ?
-                                nil :
-                                ContextMenu {
-                                    Button(action: {
-                                        self.store.state.editingType = .edit(collection)
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "pencil.circle")
-                                            Text("Edit")
-                                        }
-                                    }
-                                    Button(action: { self.store.deleteCollection(with: collection.key) }) {
-                                        HStack {
-                                            Image(systemName: "minus.circle")
-                                            Text("Delete")
-                                        }
-                                    }
-                                    Button(action: {
-                                        self.store.state.editingType = .addSubcollection(collection)
-                                    }) {
-                                        HStack {
-                                            Image(systemName: "plus.circle")
-                                            Text("New subcollection")
-                                        }
-                                    }
-                                }
-                        )
-                }
-                .listRowBackground((collection == self.store.state.selectedCollection) ? Color.gray.opacity(0.4) : Color.white)
+                CollectionRowButton(store: self.store, collection: collection)
             }
         }
+        .listStyle(PlainListStyle())
         .navigationBarTitle(Text(self.store.state.library.name), displayMode: .inline)
         .navigationBarItems(trailing: Button(action: { self.store.state.editingType = .add }, label: { Image(systemName: "plus") }))
         .sheet(item: self.$store.state.editingType, onDismiss: { self.store.state.editingType = nil }) { type in
@@ -67,7 +32,7 @@ struct CollectionsView: View {
         }
     }
 
-    private func createEditView(with type: CollectionsStore.State.EditingType) -> CollectionEditView? {
+    private func createEditView(with type: CollectionsStore.State.EditingType) -> some View {
         let key: String?
         let name: String
         let parent: Collection?
@@ -100,6 +65,60 @@ struct CollectionsView: View {
         }
 
         return CollectionEditView(store: store)
+                    .environment(\.dbStorage, self.dbStorage)
+    }
+}
+
+fileprivate struct CollectionRowButton: View {
+    @ObservedObject private(set) var store: CollectionsStore
+
+    let collection: Collection
+
+    var body: some View {
+        Button(action: { self.store.state.selectedCollection = self.collection }) {
+            CollectionRow(data: self.collection)
+                .contextMenu(
+                    self.collection.type.isCustom ?
+                        nil :
+                        ContextMenu {
+                            Button(action: {
+                                self.store.state.editingType = .edit(self.collection)
+                            }) {
+                                HStack {
+                                    Text("Edit")
+                                    Image(systemName: "pencil")
+                                }
+                            }
+                            Button(action: {
+                                self.store.state.editingType = .addSubcollection(self.collection)
+                            }) {
+                                HStack {
+                                    Text("New subcollection")
+                                    Image(systemName: "plus")
+                                }
+                            }
+                            Divider()
+                            Button(action: { self.store.deleteCollection(with: self.collection.key) }) {
+                                HStack {
+                                    Text("Delete")
+                                    Image(systemName: "minus")
+                                }
+                                .foregroundColor(.red)
+                            }
+                        }
+                )
+        }
+        .listRowInsets(EdgeInsets(top: 0,
+                                  leading: self.inset(for: self.collection.level),
+                                  bottom: 0,
+                                  trailing: 0))
+        .listRowBackground((self.collection == self.store.state.selectedCollection) ?
+                                Color.gray.opacity(0.4) :
+                                Color.white)
+    }
+
+    private func inset(for level: Int) -> CGFloat {
+        return CollectionRow.levelOffset + (CGFloat(level) * CollectionRow.levelOffset)
     }
 }
 
@@ -110,7 +129,7 @@ struct CollectionsView_Previews: PreviewProvider {
         let store = CollectionsStore(library: Library(identifier: .custom(.myLibrary), name: "My library",
                                                       metadataEditable: true, filesEditable: true),
                                      dbStorage: Controllers().dbStorage)
-        return CollectionsView(store: store, rowSelected: { _, _ in })
+        return CollectionsView(store: store)
     }
 }
 
