@@ -26,7 +26,6 @@ struct ItemDetailView: View {
                                 editingEnabled: self.isEditing)
 
             FieldsSection(type: self.store.state.data.localizedType,
-                          visibleFields: self.store.state.data.visibleFields,
                           fields: self.$store.state.data.fields,
                           creators: self.$store.state.data.creators,
                           abstract: self.$store.state.data.abstract,
@@ -130,8 +129,7 @@ fileprivate extension EditMode {
 
 fileprivate struct FieldsSection: View {
     let type: String
-    let visibleFields: [String]
-    @Binding var fields: [String: ItemDetailStore.State.Field]
+    @Binding var fields: [ItemDetailStore.State.Field]
     @Binding var creators: [ItemDetailStore.State.Creator]
     @Binding var abstract: String?
     let isEditing: Bool
@@ -142,30 +140,29 @@ fileprivate struct FieldsSection: View {
 
     var body: some View {
         Section {
-            ItemDetailFieldView(title: "Item Type", value: .constant(self.type), editingEnabled: false)
+            ItemDetailInputView(title: "Item Type", value: .constant(self.type), editingEnabled: false)
 
-            ForEach(self.creators) { creator in
+            ForEach(self.creators.indices, id: \.self) { index in
                 // SWIFTUI BUG: - create a bindable instance of creator somehow, when using
                 // ForEach(0..<self.creators.count) we get a crash after onDelete because
                 // the index gets out of sync with the array
-                ItemDetailCreatorView(creator: .constant(creator),
+                ItemDetailCreatorView(creator: self.$creators[index],
                                       editingEnabled: self.isEditing)
-            }.onDelete(perform: self.deleteCreators)
-             .onMove(perform: self.moveCreators)
+            }
+            .onDelete(perform: self.deleteCreators)
+            .onMove(perform: self.moveCreators)
+
             if self.isEditing {
                 ItemDetailAddView(title: "Add author", action: self.addCreator)
             }
 
-            ForEach(self.visibleFields, id: \.self) { key in
-                Binding(self.$fields[key]).flatMap {
-                    ItemDetailFieldView(title: $0.wrappedValue.name,
-                                        value: $0.value,
-                                        editingEnabled: self.isEditing)
-                }
+            ForEach(self.fields.indices, id: \.self) { field in
+                ItemDetailFieldView(field: self.$fields[field],
+                                    editingEnabled: self.isEditing)
             }
 
             if self.isEditing || !(self.abstract?.isEmpty ?? true) {
-                Binding(self.$abstract).flatMap { ItemDetailAbstractView(abstract: $0, isEditing: self.isEditing) }
+                Binding(self.$abstract).flatMap { ItemDetailAbstractView(abstract: $0, editingEnabled: self.isEditing) }
             }
         }
     }

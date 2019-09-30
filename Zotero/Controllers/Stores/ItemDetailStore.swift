@@ -57,15 +57,6 @@ class ItemDetailStore: ObservableObject {
             var changed: Bool
 
             var id: String { return self.key }
-
-            // TODO: - remove after swiftui refactoring
-            func changed(value: String) -> Field {
-                return Field(key: self.key, name: self.name, value: value, isTitle: self.isTitle, changed: true)
-            }
-
-            func changed(name: String) -> Field {
-                return Field(key: self.key, name: name, value: self.value, isTitle: self.isTitle, changed: self.changed)
-            }
         }
 
         struct Attachment: Identifiable, Equatable {
@@ -241,15 +232,14 @@ class ItemDetailStore: ObservableObject {
             var type: String
             var localizedType: String
             var creators: [Creator]
-            var fields: [String: Field]
-            var visibleFields: [String]
+            var fields: [Field]
             var abstract: String?
             var notes: [Note]
             var attachments: [Attachment]
             var tags: [Tag]
 
             fileprivate func allFields(schemaController: SchemaController) -> [Field] {
-                var allFields = Array(self.fields.values)
+                var allFields = self.fields
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(State.Field(key: titleKey,
                                                       name: "",
@@ -322,8 +312,7 @@ class ItemDetailStore: ObservableObject {
                       type: type,
                       data: Data(title: "", type: "",
                                  localizedType: "", creators: [],
-                                 fields: [:], visibleFields: [],
-                                 abstract: nil, notes: [],
+                                 fields: [], abstract: nil, notes: [],
                                  attachments: [], tags: []),
                       error: error)
         }
@@ -381,19 +370,17 @@ class ItemDetailStore: ObservableObject {
 
             let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
             let titleKey = schemaController.titleKey(for: itemType)
-            var fields: [String: State.Field] = [:]
-            for key in fieldKeys {
-                guard key != FieldKeys.abstract && key != titleKey else { continue }
+            let fields = fieldKeys.compactMap({ key -> State.Field? in
+                guard key != FieldKeys.abstract && key != titleKey else { return nil }
                 let name = schemaController.localized(field: key) ?? ""
-                fields[key] = State.Field(key: key, name: name, value: "", isTitle: false, changed: false)
-            }
+                return State.Field(key: key, name: name, value: "", isTitle: false, changed: false)
+            })
 
             return State.Data(title: "",
                                    type: itemType,
                                    localizedType: localizedType,
                                    creators: [],
                                    fields: fields,
-                                   visibleFields: fieldKeys,
                                    abstract: (hasAbstract ? "" : nil),
                                    notes: [],
                                    attachments: [],
@@ -407,7 +394,7 @@ class ItemDetailStore: ObservableObject {
 
             let titleKey = schemaController.titleKey(for: item.rawType) ?? ""
             var abstract: String?
-            var fieldValues: [String: String] = [:]
+            var values: [String: String] = [:]
 
             item.fields.forEach { field in
                 switch field.key {
@@ -415,26 +402,15 @@ class ItemDetailStore: ObservableObject {
                 case FieldKeys.abstract:
                     abstract = field.value
                 default:
-                    fieldValues[field.key] = field.value
+                    values[field.key] = field.value
                 }
             }
 
-            // Preview has editing disabled by default, so we'll see only fields with some filled-in values
-            var visibleFields: [String] = fieldKeys
-            var fields: [String: State.Field] = [:]
-
-            for key in fieldKeys {
-                let value = fieldValues[key] ?? ""
-                if value.isEmpty {
-                    if let index = visibleFields.firstIndex(of: key) {
-                        visibleFields.remove(at: index)
-                    }
-                }
-
-                guard key != titleKey && key != FieldKeys.abstract else { continue }
-
+            let fields = fieldKeys.compactMap { key -> State.Field? in
+                guard key != FieldKeys.abstract && key != titleKey else { return nil }
                 let name = schemaController.localized(field: key) ?? ""
-                fields[key] = State.Field(key: key, name: name, value: value, isTitle: false, changed: false)
+                let value = values[key] ?? ""
+                return State.Field(key: key, name: name, value: value, isTitle: false, changed: false)
             }
 
             let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> State.Creator? in
@@ -457,7 +433,6 @@ class ItemDetailStore: ObservableObject {
                                    localizedType: localizedType,
                                    creators: Array(creators),
                                    fields: fields,
-                                   visibleFields: visibleFields,
                                    abstract: abstract,
                                    notes: Array(notes),
                                    attachments: Array(attachments),
@@ -595,15 +570,13 @@ class ItemDetailStore: ObservableObject {
     }
 
     func startEditing() {
-        self.state.snapshot = state.data
-        // We need to change visibleFields from fields that only have some filled-in content to all fields
-        self.state.data.visibleFields = self.schemaController.fields(for: state.data.type)?.map({ $0.field }) ?? []
+        self.state.snapshot = self.state.data
     }
 
     func cancelChanges() {
         guard let snapshot = self.state.snapshot else { return }
         self.state.data = snapshot
-        self.state.snapshot = nil
+//        self.state.snapshot = nil
     }
 
     func saveChanges() {
@@ -632,10 +605,7 @@ class ItemDetailStore: ObservableObject {
                 newType = .preview(item)
             }
 
-            let titleKey = self.schemaController.titleKey(for: self.state.data.type) ?? ""
-            let fieldKeys = self.schemaController.fields(for: self.state.data.type)?.map { $0.field } ?? []
             self.state.snapshot = nil
-            self.state.data.visibleFields = self.nonEmptyFieldKeys(for: state.data.fields, titleKey: titleKey, allFieldKeys: fieldKeys)
             if let type = newType {
                 self.state.type = type
             }
@@ -643,17 +613,6 @@ class ItemDetailStore: ObservableObject {
             DDLogError("ItemDetailStore: can't store changes - \(error)")
             self.state.error = (error as? Error) ?? .cantStoreChanges
         }
-    }
-
-    private func nonEmptyFieldKeys(for fields: [String: State.Field], titleKey: String, allFieldKeys: [String]) -> [String] {
-        var visibleKeys = allFieldKeys
-        for key in allFieldKeys {
-            let value = fields[key]?.value ?? ""
-            if value.isEmpty, let index = visibleKeys.firstIndex(of: key) {
-                visibleKeys.remove(at: index)
-            }
-        }
-        return visibleKeys
     }
 
     private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: State.Data) throws -> RItem {

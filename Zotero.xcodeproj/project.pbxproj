@@ -39,7 +39,7 @@
 		B312AD1F22428F1400EDD5A4 /* CollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312AD1522428F1400EDD5A4 /* CollectionCell.swift */; };
 		B312AD2022428F1400EDD5A4 /* TextFieldCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B312AD1622428F1400EDD5A4 /* TextFieldCell.xib */; };
 		B312AD2122428F1400EDD5A4 /* LibraryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312AD1722428F1400EDD5A4 /* LibraryCell.swift */; };
-		B31682E223153193009351C0 /* ItemDetailFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31682E123153193009351C0 /* ItemDetailFieldView.swift */; };
+		B31682E223153193009351C0 /* ItemDetailInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31682E123153193009351C0 /* ItemDetailInputView.swift */; };
 		B31BD20E2224352D00FA8249 /* RCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31BD20D2224352C00FA8249 /* RCreator.swift */; };
 		B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
 		B32CD32F221C58DF003F8073 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B32CD309221C58DE003F8073 /* Assets.xcassets */; };
@@ -104,6 +104,7 @@
 		B372765A23268FC800E2C522 /* ReadTagsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372765923268FC800E2C522 /* ReadTagsDbRequest.swift */; };
 		B372765E2326951A00E2C522 /* TagPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372765D2326951A00E2C522 /* TagPickerView.swift */; };
 		B373569823226B6400AF96E2 /* ItemDetailAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B373569723226B6400AF96E2 /* ItemDetailAddView.swift */; };
+		B3752760234246C800E4775B /* ItemDetailFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B375275F234246C800E4775B /* ItemDetailFieldView.swift */; };
 		B37F4C0D23166ADF00425E72 /* ItemDetailTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F4C0C23166ADF00425E72 /* ItemDetailTitleView.swift */; };
 		B38160EA2252319300A2B7A5 /* DeleteAllDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */; };
 		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
@@ -274,7 +275,7 @@
 		B312AD1522428F1400EDD5A4 /* CollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionCell.swift; sourceTree = "<group>"; };
 		B312AD1622428F1400EDD5A4 /* TextFieldCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TextFieldCell.xib; sourceTree = "<group>"; };
 		B312AD1722428F1400EDD5A4 /* LibraryCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryCell.swift; sourceTree = "<group>"; };
-		B31682E123153193009351C0 /* ItemDetailFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldView.swift; sourceTree = "<group>"; };
+		B31682E123153193009351C0 /* ItemDetailInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailInputView.swift; sourceTree = "<group>"; };
 		B31BD20D2224352C00FA8249 /* RCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCreator.swift; sourceTree = "<group>"; };
 		B323932A2208E0CF00B161B8 /* VersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionsRequest.swift; sourceTree = "<group>"; };
 		B32CD309221C58DE003F8073 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -339,6 +340,7 @@
 		B372765923268FC800E2C522 /* ReadTagsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadTagsDbRequest.swift; sourceTree = "<group>"; };
 		B372765D2326951A00E2C522 /* TagPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerView.swift; sourceTree = "<group>"; };
 		B373569723226B6400AF96E2 /* ItemDetailAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailAddView.swift; sourceTree = "<group>"; };
+		B375275F234246C800E4775B /* ItemDetailFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldView.swift; sourceTree = "<group>"; };
 		B37F4C0C23166ADF00425E72 /* ItemDetailTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTitleView.swift; sourceTree = "<group>"; };
 		B38160E92252319300A2B7A5 /* DeleteAllDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAllDbRequest.swift; sourceTree = "<group>"; };
 		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
@@ -869,7 +871,8 @@
 			isa = PBXGroup;
 			children = (
 				B3F1649C231523D900706251 /* ItemDetailView.swift */,
-				B31682E123153193009351C0 /* ItemDetailFieldView.swift */,
+				B31682E123153193009351C0 /* ItemDetailInputView.swift */,
+				B375275F234246C800E4775B /* ItemDetailFieldView.swift */,
 				B37F4C0C23166ADF00425E72 /* ItemDetailTitleView.swift */,
 				B3E14B9C23167C3D00E31ABD /* ItemDetailAbstractView.swift */,
 				B3E14B9E2316857C00E31ABD /* ItemDetailSectionView.swift */,
@@ -1319,6 +1322,7 @@
 				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
+				B3752760234246C800E4775B /* ItemDetailFieldView.swift in Sources */,
 				B3B5514F22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B3E86D502314085E00DAA6D8 /* MainView.swift in Sources */,
@@ -1347,7 +1351,7 @@
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,
 				B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */,
 				B30F6690220CC02D009E7A8F /* RCollection.swift in Sources */,
-				B31682E223153193009351C0 /* ItemDetailFieldView.swift in Sources */,
+				B31682E223153193009351C0 /* ItemDetailInputView.swift in Sources */,
 				B38C9695223FFB2900343F8F /* StoreUserDbRequest.swift in Sources */,
 				B3E14BA12316925800E31ABD /* ItemDetailNoteView.swift in Sources */,
 				B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */,
