@@ -15,103 +15,82 @@ struct ItemDetailView: View {
 
     @Environment(\.editMode) private var editMode: Binding<EditMode>
     @Environment(\.dbStorage) private var dbStorage: DbStorage
-    
-    private var isEditing: Bool {
-        return self.editMode?.wrappedValue.isEditing ?? false
-    }
 
     var body: some View {
-        List {
-            ItemDetailTitleView(title: self.$store.state.data.title,
-                                editingEnabled: self.isEditing)
-
-            FieldsSection(type: self.store.state.data.localizedType,
-                          fields: self.$store.state.data.fields,
-                          creators: self.$store.state.data.creators,
-                          abstract: self.$store.state.data.abstract,
-                          isEditing: self.isEditing,
-                          deleteCreators: self.store.deleteCreators,
-                          moveCreators: self.store.moveCreators,
-                          addCreator: self.store.addCreator)
-
-            if !self.store.state.data.notes.isEmpty || self.isEditing {
-                NotesSection(notes: self.store.state.data.notes,
-                             isEditing: self.isEditing,
-                             deleteAction: self.store.deleteNotes,
-                             addAction: self.store.addNote,
-                             editAction: self.store.editNote)
-            }
-
-            if !self.store.state.data.tags.isEmpty || self.isEditing {
-                TagsSection(tags: self.store.state.data.tags,
-                            isEditing: self.isEditing,
-                            addAction: {
-                                self.store.state.showTagPicker = true
-                            },
-                            deleteAction: self.store.deleteTags)
-            }
-
-            if !self.store.state.data.attachments.isEmpty || self.isEditing {
-                AttachmentsSection(attachments: self.store.state.data.attachments,
-                                   downloadProgress: self.store.state.downloadProgress,
-                                   downloadError: self.store.state.downloadError,
-                                   isEditing: self.isEditing,
-                                   tapAction: { attachment in
-                                       if !self.isEditing {
-                                          self.store.openAttachment(attachment)
-                                       }
-                                   },
-                                   deleteAction: self.store.deleteAttachments)
+        Group {
+            if self.editMode?.wrappedValue.isEditing == true {
+                ItemDetailEditingView()
+                    .environmentObject(self.store)
+                    .transition(.slide)
+                    .navigationBarItems(trailing: self.editNavbarItems)
+                    .navigationBarBackButtonHidden(true)
+                    .betterSheet(isPresented: self.$store.state.showTagPicker,
+                                 onDismiss: {
+                                    self.store.state.showTagPicker = false
+                                 },
+                                 content: {
+                                    TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
+                                                                        selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
+                                                                        dbStorage: self.dbStorage),
+                                                  saveAction: self.store.setTags)
+                                 })
+            } else {
+                ItemDetailPreviewView()
+                    .environmentObject(self.store)
+                    .transition(.slide)
+                    .navigationBarItems(trailing: self.previewNavbarItems)
+                    .navigationBarBackButtonHidden(false)
+                    // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
+                    .betterSheet(item: self.$store.state.presentedNote,
+                                 onDismiss: {
+                                    self.store.state.presentedNote = nil
+                                 },
+                                 content: { note in
+                                    NoteEditingView(note: note, saveAction: self.store.saveNote)
+                                 })
+                    .betterSheet(item: self.$store.state.unknownAttachment,
+                                 onDismiss: {
+                                     self.store.state.unknownAttachment = nil
+                                 },
+                                 content: { url in
+                                     ActivityView(activityItems: [url], applicationActivities: nil)
+                                 })
             }
         }
-        .navigationBarItems(trailing:
-            HStack {
-                if self.isEditing {
-                    Button(action: {
-                        self.store.cancelChanges()
-                        self.editMode?.wrappedValue = .inactive
-                    }) {
-                        Text("Cancel")
-                    }
+    }
+
+    private var previewNavbarItems: some View {
+        HStack {
+            Button(action: {
+                withAnimation {
+                    self.store.startEditing()
+                    self.editMode?.animation().wrappedValue = .active
                 }
-                Button(action: {
-                    if self.isEditing {
-                        self.store.saveChanges()
-                    } else {
-                        self.store.startEditing()
-                    }
-                    self.editMode?.wrappedValue.toggle()
-                }) {
-                    Text(self.isEditing ? "Done" : "Edit")
-                }
+            }) {
+                Text("Edit")
             }
-        )
-        .navigationBarBackButtonHidden(self.isEditing)
-        // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
-        .betterSheet(item: self.$store.state.presentedNote,
-               onDismiss: {
-                   self.store.state.presentedNote = nil
-               },
-               content: { note in
-                   NoteEditingView(note: note, saveAction: self.store.saveNote)
-               })
-        .betterSheet(isPresented: self.$store.state.showTagPicker,
-               onDismiss: {
-                   self.store.state.showTagPicker = false
-               },
-               content: {
-                   TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
-                                                       selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
-                                                       dbStorage: self.dbStorage),
-                                 saveAction: self.store.setTags)
-               })
-        .betterSheet(item: self.$store.state.unknownAttachment,
-               onDismiss: {
-                   self.store.state.unknownAttachment = nil
-               },
-               content: { url in
-                   ActivityView(activityItems: [url], applicationActivities: nil)
-               })
+        }
+    }
+
+    private var editNavbarItems: some View {
+        HStack {
+            Button(action: {
+                withAnimation {
+                    self.store.cancelChanges()
+                    self.editMode?.animation().wrappedValue = .inactive
+                }
+            }) {
+                Text("Cancel")
+            }
+            Button(action: {
+                withAnimation {
+                    self.store.saveChanges()
+                    self.editMode?.animation().wrappedValue = .inactive
+                }
+            }) {
+                Text("Done")
+            }
+        }
     }
 }
 
@@ -124,146 +103,6 @@ extension URL: Identifiable {
 fileprivate extension EditMode {
     mutating func toggle() {
         self = self == .active ? .inactive : .active
-    }
-}
-
-fileprivate struct FieldsSection: View {
-    let type: String
-    @Binding var fields: [ItemDetailStore.State.Field]
-    @Binding var creators: [ItemDetailStore.State.Creator]
-    @Binding var abstract: String?
-    let isEditing: Bool
-
-    let deleteCreators: (IndexSet) -> Void
-    let moveCreators: (IndexSet, Int) -> Void
-    let addCreator: () -> Void
-
-    var body: some View {
-        Section {
-            ItemDetailInputView(title: "Item Type", value: .constant(self.type), editingEnabled: false)
-
-            ForEach(self.creators.indices, id: \.self) { index in
-                // SWIFTUI BUG: - create a bindable instance of creator somehow, when using
-                // ForEach(0..<self.creators.count) we get a crash after onDelete because
-                // the index gets out of sync with the array
-                ItemDetailCreatorView(creator: self.$creators[index],
-                                      editingEnabled: self.isEditing)
-            }
-            .onDelete(perform: self.deleteCreators)
-            .onMove(perform: self.moveCreators)
-
-            if self.isEditing {
-                ItemDetailAddView(title: "Add author", action: self.addCreator)
-            }
-
-            ForEach(self.fields.indices, id: \.self) { field in
-                ItemDetailFieldView(field: self.$fields[field],
-                                    editingEnabled: self.isEditing)
-            }
-
-            if self.isEditing || !(self.abstract?.isEmpty ?? true) {
-                Binding(self.$abstract).flatMap { ItemDetailAbstractView(abstract: $0, editingEnabled: self.isEditing) }
-            }
-        }
-    }
-}
-
-fileprivate struct NotesSection: View {
-    let notes: [ItemDetailStore.State.Note]
-    let isEditing: Bool
-
-    let deleteAction: (IndexSet) -> Void
-    let addAction: () -> Void
-    let editAction: (ItemDetailStore.State.Note) -> Void
-
-    var body: some View {
-        Section {
-            ItemDetailSectionView(title: "Notes")
-            ForEach(self.notes) { note in
-                // SWIFTUI BUG: - Button action in cell not called in EditMode.active
-                Button(action: {
-                    self.editAction(note)
-                }) {
-                    ItemDetailNoteView(text: note.title)
-                }.onTapGesture {
-                    self.editAction(note)
-                }
-            }.onDelete(perform: self.deleteAction)
-            if self.isEditing {
-                ItemDetailAddView(title: "Add note", action: self.addAction)
-            }
-        }
-    }
-}
-
-fileprivate struct TagsSection: View {
-    let tags: [Tag]
-    let isEditing: Bool
-
-    let addAction: () -> Void
-    let deleteAction: (IndexSet) -> Void
-
-    var body: some View {
-        Section {
-            ItemDetailSectionView(title: "Tags")
-            ForEach(self.tags) { tag in
-                TagView(color: .init(hex: tag.color), name: tag.name)
-            }.onDelete(perform: self.deleteAction)
-            if self.isEditing {
-                ItemDetailAddView(title: "Add tag", action: self.addAction)
-            }
-        }
-    }
-}
-
-fileprivate struct AttachmentsSection: View {
-    let attachments: [ItemDetailStore.State.Attachment]
-    let downloadProgress: [String: Double]
-    let downloadError: [String: Error]
-    let isEditing: Bool
-
-    let tapAction: (ItemDetailStore.State.Attachment) -> Void
-    let deleteAction: (IndexSet) -> Void
-
-    var body: some View {
-        Section {
-            ItemDetailSectionView(title: "Attachments")
-            ForEach(self.attachments) { attachment in
-                // SWIFTUI BUG: - Button action in cell not called in EditMode.active
-                Button(action: {
-                    self.tapAction(attachment)
-                }) {
-                    ItemDetailAttachmentView(title: attachment.title,
-                                             rightAccessory: self.accessory(for: attachment,
-                                                                            progress: self.downloadProgress[attachment.key],
-                                                                            error: self.downloadError[attachment.key]),
-                                             progress: self.downloadProgress[attachment.key])
-                }.onTapGesture {
-                    self.tapAction(attachment)
-                }
-            }.onDelete(perform: self.deleteAction)
-            if self.isEditing {
-                ItemDetailAddView(title: "Add attachment", action: {})
-            }
-        }
-    }
-
-    private func accessory(for attachment: ItemDetailStore.State.Attachment,
-                           progress: Double?, error: Error?) -> AccessoryView.Accessory {
-        if error != nil {
-            return .error
-        }
-
-        if progress != nil {
-            return .progress
-        }
-
-        switch attachment.type {
-        case .file(_, _, let isLocal):
-            return isLocal ? .disclosureIndicator : .downloadIcon
-        case .url:
-            return .disclosureIndicator
-        }
     }
 }
 

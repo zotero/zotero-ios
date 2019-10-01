@@ -9,32 +9,12 @@
 import SwiftUI
 
 struct ItemDetailCreatorView: View {
-    @Binding var creator: ItemDetailStore.State.Creator
-    let editingEnabled: Bool
+    let creator: ItemDetailStore.State.Creator
 
     var body: some View {
         HStack {
-            ItemDetailFieldTitleView(title: self.creator.localizedType)
-            if !self.editingEnabled {
-                Text(self.creator.name)
-            } else {
-                if self.creator.namePresentation == .full {
-                    TextField("Full name", text: self.$creator.fullName)
-                } else if self.creator.namePresentation == .separate {
-                    TextField("Last name", text: self.$creator.lastName)
-                    Text(", ")
-                    TextField("First name", text: self.$creator.firstName)
-                }
-                Spacer()
-                // SWIFTUI BUG: - Button action in cell not called in EditMode.active
-                Button(action: {
-                    self.creator.namePresentation.toggle()
-                }) {
-                    Text(self.creator.namePresentation == .full ? "Split name" : "Merge name").foregroundColor(.blue)
-                }.onTapGesture {
-                    self.creator.namePresentation.toggle()
-                }
-            }
+            ItemDetailMetadataTitleView(title: self.creator.localizedType)
+            Text(self.creator.name)
         }
     }
 }
@@ -42,22 +22,18 @@ struct ItemDetailCreatorView: View {
 struct ItemDetailCreatorView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            ItemDetailCreatorView(creator: .constant(.init(firstName: "", lastName: "",
-                                                           fullName: "First Last", type: "author",
-                                                           localizedType: "Author")),
-                                  editingEnabled: false)
-            ItemDetailCreatorView(creator: .constant(.init(firstName: "First", lastName: "Last",
-                                                           fullName: "", type: "author",
-                                                           localizedType: "Author")),
-                                  editingEnabled: false)
-            ItemDetailCreatorView(creator: .constant(.init(firstName: "", lastName: "",
-                                                           fullName: "First Last", type: "author",
-                                                           localizedType: "Author")),
-                                  editingEnabled: true)
-            ItemDetailCreatorView(creator: .constant(.init(firstName: "First", lastName: "Last",
-                                                           fullName: "", type: "author",
-                                                           localizedType: "Author")),
-                                  editingEnabled: true)
+            ItemDetailCreatorView(creator: .init(firstName: "", lastName: "",
+                                                 fullName: "First Last", type: "author",
+                                                 localizedType: "Author"))
+            ItemDetailCreatorView(creator: .init(firstName: "First", lastName: "Last",
+                                                 fullName: "", type: "author",
+                                                 localizedType: "Author"))
+            ItemDetailCreatorView(creator: .init(firstName: "", lastName: "",
+                                                 fullName: "First Last", type: "author",
+                                                 localizedType: "Author"))
+            ItemDetailCreatorView(creator: .init(firstName: "First", lastName: "Last",
+                                                 fullName: "", type: "author",
+                                                 localizedType: "Author"))
         }
     }
 }
