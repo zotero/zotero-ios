@@ -8,8 +8,6 @@
 
 import SwiftUI
 
-import BetterSheet
-
 struct ItemDetailView: View {
     @ObservedObject private(set) var store: ItemDetailStore
 

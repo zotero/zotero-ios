@@ -270,6 +270,7 @@ class ItemDetailStore: ObservableObject {
         var downloadError: [String: ItemDetailStore.Error]
         var error: Error?
         var presentedNote: Note?
+        var metadataTitleMaxWidth: CGFloat
 
         var showTagPicker: Bool
         var unknownAttachment: URL?
@@ -290,6 +291,7 @@ class ItemDetailStore: ObservableObject {
             self.downloadProgress = [:]
             self.downloadError = [:]
             self.showTagPicker = false
+            self.metadataTitleMaxWidth = 0
             self.error = error
 
             switch type {

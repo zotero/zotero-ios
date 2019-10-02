@@ -13,7 +13,8 @@ struct ItemDetailEditMetadataSectionView: View {
 
     var body: some View {
         Section {
-            ItemDetailMetadataView(title: "Item Type", value: self.store.state.data.localizedType)
+            ItemDetailMetadataView(title: "Item Type",
+                                   value: self.store.state.data.localizedType)
 
             ForEach(self.store.state.data.creators.indices, id:\.self) { index in
                 ItemDetailEditCreatorView(creator: self.$store.state.data.creators[index])

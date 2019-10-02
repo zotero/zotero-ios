@@ -22,6 +22,7 @@ struct ItemDetailEditMetadataView: View {
 
 struct ItemDetailEditMetadataView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetailEditMetadataView(title: "Title", value: .constant("Value"))
+        ItemDetailEditMetadataView(title: "Title",
+                                   value: .constant("Value"))
     }
 }

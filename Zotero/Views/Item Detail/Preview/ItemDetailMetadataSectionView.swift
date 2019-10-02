@@ -13,7 +13,8 @@ struct ItemDetailMetadataSectionView: View {
 
     var body: some View {
         Section {
-            ItemDetailMetadataView(title: "Item Type", value: self.store.state.data.localizedType)
+            ItemDetailMetadataView(title: "Item Type",
+                                   value: self.store.state.data.localizedType)
 
             ForEach(self.store.state.data.creators) { creator in
                 ItemDetailCreatorView(creator: creator)
@@ -21,7 +22,8 @@ struct ItemDetailMetadataSectionView: View {
 
             ForEach(self.store.state.data.fields) { field in
                 if !field.value.isEmpty {
-                    ItemDetailMetadataView(title: field.name, value: field.value)
+                    ItemDetailMetadataView(title: field.name,
+                                           value: field.value)
                 }
             }
 
