@@ -894,14 +894,10 @@
 			path = API;
 			sourceTree = "<group>";
 		};
-		B3E14BA32316926100E31ABD /* Item Detail */ = {
+		B387A4D82344AEF300E31B07 /* Editing */ = {
 			isa = PBXGroup;
 			children = (
-				B339F0D52343AE0E00055345 /* ItemDetailAbstractView.swift */,
 				B339F0DC2343AE0E00055345 /* ItemDetailAddView.swift */,
-				B339F0E12343AE0E00055345 /* ItemDetailAttachmentSectionView.swift */,
-				B339F0E32343AE0E00055345 /* ItemDetailAttachmentView.swift */,
-				B339F0DD2343AE0E00055345 /* ItemDetailCreatorView.swift */,
 				B339F0FA2343B23E00055345 /* ItemDetailEditAbstractView.swift */,
 				B339F1022343B75C00055345 /* ItemDetailEditAttachmentSectionView.swift */,
 				B339F0FC2343B47B00055345 /* ItemDetailEditCreatorView.swift */,
@@ -911,6 +907,17 @@
 				B339F0FE2343B6C300055345 /* ItemDetailEditNoteSectionView.swift */,
 				B339F1002343B75100055345 /* ItemDetailEditTagSectionView.swift */,
 				B339F0E42343AE0E00055345 /* ItemDetailEditTitleView.swift */,
+			);
+			path = Editing;
+			sourceTree = "<group>";
+		};
+		B387A4D92344AEFA00E31B07 /* Preview */ = {
+			isa = PBXGroup;
+			children = (
+				B339F0D52343AE0E00055345 /* ItemDetailAbstractView.swift */,
+				B339F0E12343AE0E00055345 /* ItemDetailAttachmentSectionView.swift */,
+				B339F0E32343AE0E00055345 /* ItemDetailAttachmentView.swift */,
+				B339F0DD2343AE0E00055345 /* ItemDetailCreatorView.swift */,
 				B339F0D62343AE0E00055345 /* ItemDetailMetadataSectionView.swift */,
 				B339F0DA2343AE0E00055345 /* ItemDetailMetadataTitleView.swift */,
 				B339F0DE2343AE0E00055345 /* ItemDetailMetadataView.swift */,
@@ -920,6 +927,15 @@
 				B339F0D42343AE0E00055345 /* ItemDetailSectionView.swift */,
 				B339F0E52343AE0F00055345 /* ItemDetailTagSectionView.swift */,
 				B339F0E22343AE0E00055345 /* ItemDetailTitleView.swift */,
+			);
+			path = Preview;
+			sourceTree = "<group>";
+		};
+		B3E14BA32316926100E31ABD /* Item Detail */ = {
+			isa = PBXGroup;
+			children = (
+				B387A4D92344AEFA00E31B07 /* Preview */,
+				B387A4D82344AEF300E31B07 /* Editing */,
 				B339F0DB2343AE0E00055345 /* ItemDetailView.swift */,
 			);
 			path = "Item Detail";

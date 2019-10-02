@@ -20,76 +20,59 @@ struct ItemDetailView: View {
         Group {
             if self.editMode?.wrappedValue.isEditing == true {
                 ItemDetailEditingView()
+                    .onAppear {
+                        self.store.startEditing()
+                    }
+                    .onDisappear {
+                        self.store.saveChanges()
+                    }
                     .environmentObject(self.store)
-                    .transition(.slide)
-                    .navigationBarItems(trailing: self.editNavbarItems)
-                    .navigationBarBackButtonHidden(true)
-                    .betterSheet(isPresented: self.$store.state.showTagPicker,
-                                 onDismiss: {
-                                    self.store.state.showTagPicker = false
-                                 },
-                                 content: {
-                                    TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
-                                                                        selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
-                                                                        dbStorage: self.dbStorage),
-                                                  saveAction: self.store.setTags)
-                                 })
             } else {
                 ItemDetailPreviewView()
                     .environmentObject(self.store)
-                    .transition(.slide)
-                    .navigationBarItems(trailing: self.previewNavbarItems)
-                    .navigationBarBackButtonHidden(false)
-                    // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
-                    .betterSheet(item: self.$store.state.presentedNote,
-                                 onDismiss: {
-                                    self.store.state.presentedNote = nil
-                                 },
-                                 content: { note in
-                                    NoteEditingView(note: note, saveAction: self.store.saveNote)
-                                 })
-                    .betterSheet(item: self.$store.state.unknownAttachment,
-                                 onDismiss: {
-                                     self.store.state.unknownAttachment = nil
-                                 },
-                                 content: { url in
-                                     ActivityView(activityItems: [url], applicationActivities: nil)
-                                 })
             }
         }
+        .navigationBarBackButtonHidden(self.editMode?.wrappedValue.isEditing == true)
+        .navigationBarItems(trailing: self.trailingNavbarItems)
+        // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
+        .betterSheet(item: self.$store.state.presentedNote,
+                     onDismiss: {
+                        self.store.state.presentedNote = nil
+                     },
+                     content: { note in
+                        NoteEditingView(note: note, saveAction: self.store.saveNote)
+                     })
+        .betterSheet(item: self.$store.state.unknownAttachment,
+                     onDismiss: {
+                         self.store.state.unknownAttachment = nil
+                     },
+                     content: { url in
+                         ActivityView(activityItems: [url], applicationActivities: nil)
+                     })
+         .betterSheet(isPresented: self.$store.state.showTagPicker,
+                      onDismiss: {
+                         self.store.state.showTagPicker = false
+                      },
+                      content: {
+                         TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
+                                                             selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
+                                                             dbStorage: self.dbStorage),
+                                       saveAction: self.store.setTags)
+                      })
     }
 
-    private var previewNavbarItems: some View {
+    private var trailingNavbarItems: some View {
         HStack {
-            Button(action: {
-                withAnimation {
-                    self.store.startEditing()
-                    self.editMode?.animation().wrappedValue = .active
-                }
-            }) {
-                Text("Edit")
-            }
-        }
-    }
-
-    private var editNavbarItems: some View {
-        HStack {
-            Button(action: {
-                withAnimation {
+            if self.editMode?.wrappedValue.isEditing == true {
+                Button(action: {
                     self.store.cancelChanges()
                     self.editMode?.animation().wrappedValue = .inactive
+                }) {
+                    Text("Cancel")
                 }
-            }) {
-                Text("Cancel")
             }
-            Button(action: {
-                withAnimation {
-                    self.store.saveChanges()
-                    self.editMode?.animation().wrappedValue = .inactive
-                }
-            }) {
-                Text("Done")
-            }
+
+            EditButton()
         }
     }
 }

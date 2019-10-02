@@ -26,7 +26,7 @@ struct ItemDetailMetadataSectionView: View {
             }
 
             self.store.state.data.abstract.flatMap {
-                ItemDetailAbstractView(abstract: $0)
+                $0.isEmpty ? nil : ItemDetailAbstractView(abstract: $0)
             }
         }
     }

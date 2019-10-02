@@ -14,20 +14,10 @@ struct ItemDetailEditingView: View {
     var body: some View {
         List {
             ItemDetailEditTitleView(title: self.$store.state.data.title)
-
             ItemDetailEditMetadataSectionView()
-
-            if !self.store.state.data.notes.isEmpty {
-                ItemDetailEditNoteSectionView()
-            }
-
-            if !self.store.state.data.tags.isEmpty {
-                ItemDetailEditTagSectionView()
-            }
-
-            if !self.store.state.data.attachments.isEmpty {
-                ItemDetailEditAttachmentSectionView()
-            }
+            ItemDetailEditNoteSectionView()
+            ItemDetailEditTagSectionView()
+            ItemDetailEditAttachmentSectionView()
         }
     }
 }
