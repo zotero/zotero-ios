@@ -15,7 +15,9 @@ struct NoteEditingView: View {
     var body: some View {
         NavigationView {
             Text(self.note.text)
-        }.navigationBarItems(trailing: Button(action: self.saveAction, label: { Text("Save") }))
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationBarItems(trailing: Button(action: self.saveAction, label: { Text("Save") }))
     }
 }
 

@@ -15,11 +15,8 @@ struct CreateItemDbRequest: DbResponseRequest {
 
     let libraryId: LibraryIdentifier
     let collectionKey: String?
-    let type: String
-    let fields: [ItemDetailStore.State.Field]
-    let notes: [ItemDetailStore.State.Note]
-    let attachments: [ItemDetailStore.State.Attachment]
-    let tags: [Tag]
+    let data: ItemDetailStore.State.Data
+    let schemaController: SchemaController
 
     var needsWrite: Bool {
         return true
@@ -29,7 +26,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         // Create main item
         let item = RItem()
         item.key = KeyGenerator.newKey
-        item.rawType = self.type
+        item.rawType = self.data.type
         item.syncState = .synced
         item.dateAdded = Date()
         item.dateModified = Date()
@@ -57,18 +54,18 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Create fields
 
-        for field in self.fields {
+        for field in self.data.allFields(schemaController: self.schemaController) {
             let rField = RItemField()
             rField.key = field.key
             rField.item = item
             rField.value = field.value
-            rField.changed = field.changed
+            rField.changed = true
             database.add(rField)
         }
 
         // Create notes
 
-        for note in self.notes {
+        for note in self.data.notes {
             let rNote = try CreateNoteDbRequest(note: note).process(in: database)
             rNote.parent = item
             rNote.libraryObject = item.libraryObject
@@ -77,7 +74,7 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Create attachments
 
-        for attachment in self.attachments {
+        for attachment in self.data.attachments {
             let rAttachment = try CreateAttachmentDbRequest(attachment: attachment).process(in: database)
             rAttachment.libraryObject = item.libraryObject
             rAttachment.parent = item
@@ -86,16 +83,31 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Create tags
 
-        self.tags.forEach { tag in
+        self.data.tags.forEach { tag in
             if let rTag = database.objects(RTag.self).filter(Predicates.name(tag.name, in: self.libraryId)).first {
                 rTag.items.append(item)
             }
         }
-        if !self.tags.isEmpty {
+        if !self.data.tags.isEmpty {
             changes.insert(.tags)
         }
 
-        // TODO: - Add creators
+        // Create creators
+
+        self.data.creators.enumerated().forEach { (offset, creator) in
+            let rCreator = RCreator()
+            rCreator.rawType = creator.type
+            rCreator.firstName = creator.firstName
+            rCreator.lastName = creator.lastName
+            rCreator.name = creator.name
+            rCreator.orderId = offset
+            rCreator.item = item
+            database.add(rCreator)
+        }
+
+        if !self.data.creators.isEmpty {
+            changes.insert(.creators)
+        }
 
         // Update changed fields
         item.changedFields = changes

@@ -39,22 +39,22 @@ class ItemDetailStore: ObservableObject {
                     return nil
                 }
             }
+
+            var isCreation: Bool {
+                switch self {
+                case .preview:
+                    return false
+                case .creation:
+                    return true
+                }
+            }
         }
 
         struct Field: Identifiable, Equatable {
             let key: String
-            var name: String {
-                didSet {
-                    self.changed = true
-                }
-            }
-            var value: String {
-                didSet {
-                    self.changed = true
-                }
-            }
+            var name: String
+            var value: String
             let isTitle: Bool
-            var changed: Bool
 
             var id: String { return self.key }
         }
@@ -80,17 +80,15 @@ class ItemDetailStore: ObservableObject {
             let title: String
             let type: ContentType
             let libraryId: LibraryIdentifier
-            let changed: Bool
 
             var id: String { return self.key }
 
             init(key: String, title: String, type: ContentType,
-                 libraryId: LibraryIdentifier, changed: Bool) {
+                 libraryId: LibraryIdentifier) {
                 self.key = key
                 self.title = title
                 self.type = type
                 self.libraryId = libraryId
-                self.changed = changed
             }
 
             init?(item: RItem, type: ContentType) {
@@ -103,16 +101,16 @@ class ItemDetailStore: ObservableObject {
                 self.key = item.key
                 self.title = item.title
                 self.type = type
-                self.changed = false
             }
 
             func changed(isLocal: Bool) -> Attachment {
                 switch type {
                 case .url: return self
                 case .file(let file, let filename, _):
-                    return Attachment(key: self.key, title: self.title,
+                    return Attachment(key: self.key,
+                                      title: self.title,
                                       type: .file(file: file, filename: filename, isLocal: isLocal),
-                                      libraryId: self.libraryId, changed: self.changed)
+                                      libraryId: self.libraryId)
                 }
             }
         }
@@ -121,15 +119,13 @@ class ItemDetailStore: ObservableObject {
             let key: String
             let title: String
             let text: String
-            let changed: Bool
 
             var id: String { return self.key }
 
-            init(key: String, text: String, changed: Bool = true) {
+            init(key: String, text: String) {
                 self.key = key
                 self.title = text.strippedHtml ?? text
                 self.text = text
-                self.changed = changed
             }
 
             init?(item: RItem) {
@@ -141,7 +137,6 @@ class ItemDetailStore: ObservableObject {
                 self.key = item.key
                 self.title = item.title
                 self.text = item.fields.filter(Predicates.key(FieldKeys.note)).first?.value ?? ""
-                self.changed = false
             }
         }
 
@@ -159,7 +154,11 @@ class ItemDetailStore: ObservableObject {
             var fullName: String
             var firstName: String
             var lastName: String
-            var namePresentation: NamePresentation
+            var namePresentation: NamePresentation {
+                willSet {
+                    self.change(namePresentation: newValue)
+                }
+            }
 
             var name: String {
                 if !self.fullName.isEmpty {
@@ -238,21 +237,19 @@ class ItemDetailStore: ObservableObject {
             var attachments: [Attachment]
             var tags: [Tag]
 
-            fileprivate func allFields(schemaController: SchemaController) -> [Field] {
+            func allFields(schemaController: SchemaController) -> [Field] {
                 var allFields = self.fields
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(State.Field(key: titleKey,
-                                                      name: "",
-                                                      value: self.title,
-                                                      isTitle: true,
-                                                      changed: !self.title.isEmpty))
+                                                 name: "",
+                                                 value: self.title,
+                                                 isTitle: true))
                 }
                 if let abstract = self.abstract {
                     allFields.append(State.Field(key: FieldKeys.abstract,
-                                                      name: "",
-                                                      value: abstract,
-                                                      isTitle: false,
-                                                      changed: !abstract.isEmpty))
+                                                 name: "",
+                                                 value: abstract,
+                                                 isTitle: false))
                 }
                 return allFields
             }
@@ -297,12 +294,14 @@ class ItemDetailStore: ObservableObject {
             switch type {
             case .preview(let item):
                 self.libraryId = item.libraryObject?.identifier ?? .custom(.myLibrary)
+                self.snapshot = nil
                 // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
                 self.metadataEditable = item.group?.canEditMetadata ?? true
                 // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
                 self.filesEditable = item.group?.canEditFiles ?? true
             case .creation(let libraryId, _, let filesEditable):
                 self.libraryId = libraryId
+                self.snapshot = data
                 // Since we're in creation mode editing must have beeen enabled
                 self.metadataEditable = true
                 self.filesEditable = filesEditable
@@ -375,7 +374,7 @@ class ItemDetailStore: ObservableObject {
             let fields = fieldKeys.compactMap({ key -> State.Field? in
                 guard key != FieldKeys.abstract && key != titleKey else { return nil }
                 let name = schemaController.localized(field: key) ?? ""
-                return State.Field(key: key, name: name, value: "", isTitle: false, changed: false)
+                return State.Field(key: key, name: name, value: "", isTitle: false)
             })
 
             return State.Data(title: "",
@@ -412,7 +411,7 @@ class ItemDetailStore: ObservableObject {
                 guard key != FieldKeys.abstract && key != titleKey else { return nil }
                 let name = schemaController.localized(field: key) ?? ""
                 let value = values[key] ?? ""
-                return State.Field(key: key, name: name, value: value, isTitle: false, changed: false)
+                return State.Field(key: key, name: name, value: value, isTitle: false)
             }
 
             let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> State.Creator? in
@@ -578,7 +577,7 @@ class ItemDetailStore: ObservableObject {
     func cancelChanges() {
         guard let snapshot = self.state.snapshot else { return }
         self.state.data = snapshot
-//        self.state.snapshot = nil
+        self.state.snapshot = nil
     }
 
     func saveChanges() {
@@ -600,7 +599,9 @@ class ItemDetailStore: ObservableObject {
         do {
             switch self.state.type {
             case .preview(let item):
-                try self.updateItem(key: item.key, libraryId: self.state.libraryId, data: self.state.data)
+                if let snapshot = self.state.snapshot {
+                    try self.updateItem(key: item.key, libraryId: self.state.libraryId, data: self.state.data, snapshot: snapshot)
+                }
 
             case .creation(_, let collectionKey, _):
                 let item = try self.createItem(with: self.state.libraryId, collectionKey: collectionKey, data: self.state.data)
@@ -620,22 +621,17 @@ class ItemDetailStore: ObservableObject {
     private func createItem(with libraryId: LibraryIdentifier, collectionKey: String?, data: State.Data) throws -> RItem {
         let request = CreateItemDbRequest(libraryId: libraryId,
                                           collectionKey: collectionKey,
-                                          type: data.type,
-                                          fields: data.allFields(schemaController: self.schemaController),
-                                          notes: data.notes,
-                                          attachments: data.attachments,
-                                          tags: data.tags)
+                                          data: data,
+                                          schemaController: self.schemaController)
         return try self.dbStorage.createCoordinator().perform(request: request)
     }
 
-    private func updateItem(key: String, libraryId: LibraryIdentifier, data: State.Data) throws {
+    private func updateItem(key: String, libraryId: LibraryIdentifier, data: State.Data, snapshot: State.Data) throws {
         let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
                                                       itemKey: key,
-                                                      type: data.type,
-                                                      fields: data.allFields(schemaController: self.schemaController),
-                                                      notes: data.notes,
-                                                      attachments: data.attachments,
-                                                      tags: data.tags)
+                                                      data: data,
+                                                      snapshot: snapshot,
+                                                      schemaController: self.schemaController)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -643,8 +639,6 @@ class ItemDetailStore: ObservableObject {
     /// - parameter attachments: Attachments which will be copied if needed
     private func copyAttachmentFilesIfNeeded(for attachments: [State.Attachment]) {
         for attachment in attachments {
-            guard attachment.changed else { continue }
-
             switch attachment.type {
             case .url: continue
             case .file(let originalFile, _, _):
@@ -653,7 +647,7 @@ class ItemDetailStore: ObservableObject {
                 // Make sure that the file was not already moved to our internal location before
                 guard originalFile.createUrl() != newFile.createUrl() else { continue }
 
-                // We can just try to copy the file here, if it doesn't work the user will be notified during sync
+                // We can just "try?" to copy the file here, if it doesn't work the user will be notified during sync
                 // process and can try to remove/re-add the attachment
                 try? self.fileStorage.copy(from: originalFile, to: newFile)
             }

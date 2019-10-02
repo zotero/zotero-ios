@@ -11,6 +11,7 @@ import SwiftUI
 struct ItemDetailView: View {
     @ObservedObject private(set) var store: ItemDetailStore
 
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @Environment(\.editMode) private var editMode: Binding<EditMode>
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
@@ -64,7 +65,11 @@ struct ItemDetailView: View {
             if self.editMode?.wrappedValue.isEditing == true {
                 Button(action: {
                     self.store.cancelChanges()
-                    self.editMode?.animation().wrappedValue = .inactive
+                    if self.store.state.type.isCreation {
+                        self.presentationMode.wrappedValue.dismiss()
+                    } else {
+                        self.editMode?.animation().wrappedValue = .inactive
+                    }
                 }) {
                     Text("Cancel")
                 }
