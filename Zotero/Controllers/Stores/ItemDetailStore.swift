@@ -81,6 +81,20 @@ class ItemDetailStore: ObservableObject {
             let type: ContentType
             let libraryId: LibraryIdentifier
 
+            var iconName: String {
+                switch self.type {
+                case .file(let file, _, _):
+                    switch file.ext {
+                    case "pdf":
+                        return "pdf"
+                    default:
+                        return "document"
+                    }
+                case .url:
+                    return "web-page"
+                }
+            }
+
             var id: String { return self.key }
 
             init(key: String, title: String, type: ContentType,

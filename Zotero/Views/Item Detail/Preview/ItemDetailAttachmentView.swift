@@ -9,13 +9,17 @@
 import SwiftUI
 
 struct ItemDetailAttachmentView: View {
+    let iconName: String
     let title: String
     let rightAccessory: AccessoryView.Accessory?
     let progress: Double?
 
     var body: some View {
         HStack {
-            Image("icon_cell_attachment")
+            Image(self.iconName)
+                .renderingMode(.original)
+                .resizable()
+                .frame(width: 18, height: 18)
 
             Text(self.title)
 
@@ -63,8 +67,15 @@ struct AccessoryView: View {
 
 struct ItemDetailAttachmentView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetailAttachmentView(title: "Some pdf name.pdf",
-                                 rightAccessory: .progress,
-                                 progress: 0.4)
+        List {
+            ItemDetailAttachmentView(iconName: "pdf",
+                                     title: "Some pdf name.pdf",
+                                     rightAccessory: .progress,
+                                     progress: 0.4)
+            ItemDetailAttachmentView(iconName: "web-page",
+                                     title: "Website link",
+                                     rightAccessory: .disclosureIndicator,
+                                     progress: 0.4)
+        }
     }
 }

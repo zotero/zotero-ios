@@ -15,7 +15,8 @@ struct ItemDetailEditAttachmentSectionView: View {
         Section {
             ItemDetailSectionView(title: "Attachments")
             ForEach(self.store.state.data.attachments) { attachment in
-                ItemDetailAttachmentView(title: attachment.title,
+                ItemDetailAttachmentView(iconName: attachment.iconName,
+                                         title: attachment.title,
                                          rightAccessory: .disclosureIndicator,
                                          progress: nil)
             }

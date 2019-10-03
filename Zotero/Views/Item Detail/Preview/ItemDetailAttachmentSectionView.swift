@@ -18,7 +18,8 @@ struct ItemDetailAttachmentSectionView: View {
                 Button(action: {
                     self.store.openAttachment(attachment)
                 }) {
-                    ItemDetailAttachmentView(title: attachment.title,
+                    ItemDetailAttachmentView(iconName: attachment.iconName,
+                                             title: attachment.title,
                                              rightAccessory: self.accessory(for: attachment,
                                                                             progress: self.store.state.downloadProgress[attachment.key],
                                                                             error: self.store.state.downloadError[attachment.key]),

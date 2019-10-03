@@ -13,7 +13,10 @@ struct ItemDetailNoteView: View {
 
     var body: some View {
         HStack {
-            Image("icon_cell_note")
+            Image("note")
+                .renderingMode(.original)
+                .resizable()
+                .frame(width: 18, height: 18)
             Text(self.text)
         }
     }
