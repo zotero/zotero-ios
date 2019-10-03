@@ -15,7 +15,8 @@ struct ItemRow: View {
         HStack {
             Image(self.item.iconName)
                 .padding(.vertical, 8)
-                .padding(.trailing, 14)
+                .padding(.horizontal, 15)
+                .frame(width: 45)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(self.item.title.isEmpty ? " " : self.item.title)
@@ -150,9 +151,22 @@ struct ItemCell_Previews: PreviewProvider {
         let item = RItem()
         item.title = "Bitcoin: A Peer-to-Peer Electronics Cash System"
         item.rawType = "artwork"
-        item.creatorSummary = "Rentka"
-        item.parsedDate = "2014"
+        item.creatorSummary = "Author"
+        let item2 = RItem()
+        item2.title = "Some audio recording"
+        item2.rawType = "audioRecording"
+        item2.creatorSummary = "Author"
+        item2.parsedDate = "2018"
+        let item3 = RItem()
+        item3.title = "Some thesis"
+        item3.rawType = "thesis"
+        item3.creatorSummary = "Author"
+        item3.parsedDate = "2019"
 
-        return List { ItemRow(item: item) }
+        return List {
+            ItemRow(item: item)
+            ItemRow(item: item2)
+            ItemRow(item: item3)
+        }
     }
 }
