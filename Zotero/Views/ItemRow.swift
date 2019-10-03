@@ -14,8 +14,6 @@ struct ItemRow: View {
     var body: some View {
         HStack {
             Image(self.item.iconName)
-                .renderingMode(.template)
-                .foregroundColor(.blue)
                 .padding(.vertical, 8)
                 .padding(.trailing, 14)
 
@@ -29,12 +27,12 @@ struct ItemRow: View {
                         .foregroundColor(.gray)
                     Spacer()
                     if self.item.hasAttachment {
-                        Image(systemName: "paperclip")
+                        Image("indicator_attachment")
                     }
                     if self.item.hasNote {
-                        Image(systemName: "doc.text")
+                        Image("indicator_note")
                     }
-                    TagCirclesView(colors: self.item.tagHexColors, height: 18)
+                    TagCirclesView(colors: self.item.tagHexColors, height: 16)
                 }
             }
         }
@@ -45,79 +43,80 @@ extension RItem {
     fileprivate var iconName: String {
         switch self.rawType {
         case "artwork":
-            return "icon_item_type_artwork"
+            return "artwork"
         case "attachment":
-            return "icon_item_type_attachment"
+            // TODO: - choose attachment
+            return "attachment"
         case "audioRecording":
-            return "icon_item_type_audio-recording"
+            return "audio-recording"
         case "book":
-            return "icon_item_type_book"
+            return "book"
         case "bookSection":
-            return "icon_item_type_book-section"
+            return "book-section"
         case "bill":
-            return "icon_item_type_bill"
+            return "bill"
         case "blogPost":
-            return "icon_item_type_blog-post"
+            return "blog-post"
         case "case":
-            return "icon_item_type_case"
+            return "case"
         case "computerProgram":
-            return "icon_item_type_computer-program"
+            return "computer-program"
         case "conferencePaper":
-            return "icon_item_type_conference-paper"
+            return "conference-paper"
         case "dictionaryEntry":
-            return "icon_item_type_dictionary-entry"
+            return "dictionary-entry"
         case "document":
-            return "icon_item_type_document"
+            return "document"
         case "email":
-            return "icon_item_type_e-mail"
+            return "email"
         case "encyclopediaArticle":
-            return "icon_item_type_encyclopedia-article"
+            return "encyclopedia-article"
         case "film":
-            return "icon_item_type_film"
+            return "film"
         case "forumPost":
-            return "icon_item_type_forum-post"
+            return "forum-post"
         case "hearing":
-            return "icon_item_type_hearing"
+            return "hearing"
         case "instantMessage":
-            return "icon_item_type_instant-message"
+            return "instant-message"
         case "interview":
-            return "icon_item_type_interview"
+            return "interview"
         case "journalArticle":
-            return "icon_item_type_journal-article"
+            return "journal-article"
         case "letter":
-            return "icon_item_type_letter"
+            return "letter"
         case "magazineArticle":
-            return "icon_item_type_magazine-article"
+            return "magazine-article"
         case "map":
-            return "icon_item_type_map"
+            return "map"
         case "manuscript":
-            return "icon_item_type_manuscript"
+            return "manuscript"
         case "note":
-            return "icon_item_type_note"
+            return "note"
         case "newspaperArticle":
-            return "icon_item_type_newspaper-article"
+            return "newspaper-article"
         case "patent":
-            return "icon_item_type_patent"
+            return "patent"
         case "podcast":
-            return "icon_item_type_podcast"
+            return "podcast"
         case "presentation":
-            return "icon_item_type_presentation"
+            return "presentation"
         case "radioBroadcast":
-            return "icon_item_type_radio-broadcast"
+            return "radio-broadcast"
         case "report":
-            return "icon_item_type_report"
+            return "report"
         case "statute":
-            return "icon_item_type_statute"
+            return "statute"
         case "thesis":
-            return "icon_item_type_thesis"
+            return "thesis"
         case "tvBroadcast":
-            return "icon_item_type_tv-broadcast"
+            return "tv-broadcast"
         case "videoRecording":
-            return "icon_item_type_video-recording"
+            return "video-recording"
         case "webpage":
-            return "icon_item_type_web-page"
+            return "web-page"
         default:
-            return "icon_item_type_unknown"
+            return "unknown"
         }
     }
 
