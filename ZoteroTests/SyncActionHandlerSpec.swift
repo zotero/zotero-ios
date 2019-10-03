@@ -94,17 +94,28 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: StoreCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
                                                                            name: "New name", parentKey: nil))
-                let fields = [ItemDetailStore.State.Field(key: "title", name: "",
-                                                               value: "New title", isTitle: true, changed: true),
-                              ItemDetailStore.State.Field(key: FieldKeys.abstract, name: "",
-                                                               value: "New abstract", isTitle: false, changed: true)]
-                try! coordinator.perform(request: StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
-                                                                                  itemKey: "AAAAAAAA",
-                                                                                  type: nil,
-                                                                                  fields: fields,
-                                                                                  notes: [],
-                                                                                  attachments: [],
-                                                                                  tags: []))
+                let changeRequest = StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
+                                                                    itemKey: "AAAAAAAA",
+                                                                    data: .init(title: "New title",
+                                                                                type: "type",
+                                                                                localizedType: "Type",
+                                                                                creators: [],
+                                                                                fields: [],
+                                                                                abstract: "New abstract",
+                                                                                notes: [],
+                                                                                attachments: [],
+                                                                                tags: []),
+                                                                    snapshot: .init(title: "Title",
+                                                                                    type: "type",
+                                                                                    localizedType: "Type",
+                                                                                    creators: [],
+                                                                                    fields: [],
+                                                                                    abstract: "Abstract",
+                                                                                    notes: [],
+                                                                                    attachments: [],
+                                                                                    tags: []),
+                                                                    schemaController: SyncActionHandlerSpec.schemaController)
+                try! coordinator.perform(request: changeRequest)
 
                 let realm = SyncActionHandlerSpec.realm
                 realm.refresh()
@@ -199,16 +210,28 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Change some objects so that they are updated locally
                 try! coordinator.perform(request: StoreCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
                                                                            name: "New name", parentKey: nil))
-                let fields = [ItemDetailStore.State.Field(key: "title", name: "",
-                                                               value: "New title", isTitle: true, changed: true),
-                              ItemDetailStore.State.Field(key: FieldKeys.abstract, name: "",
-                                                               value: "New abstract", isTitle: false, changed: true)]
-                try! coordinator.perform(request: StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
-                                                                                  itemKey: "AAAAAAAA", type: nil,
-                                                                                  fields: fields,
-                                                                                  notes: [],
-                                                                                  attachments: [],
-                                                                                  tags: []))
+                let changeRequest = StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
+                                                                    itemKey: "AAAAAAAA",
+                                                                    data: .init(title: "New title",
+                                                                                type: "type",
+                                                                                localizedType: "Type",
+                                                                                creators: [],
+                                                                                fields: [],
+                                                                                abstract: "New abstract",
+                                                                                notes: [],
+                                                                                attachments: [],
+                                                                                tags: []),
+                                                                    snapshot: .init(title: "Title",
+                                                                                    type: "type",
+                                                                                    localizedType: "Type",
+                                                                                    creators: [],
+                                                                                    fields: [],
+                                                                                    abstract: "Abstract",
+                                                                                    notes: [],
+                                                                                    attachments: [],
+                                                                                    tags: []),
+                                                                    schemaController: SyncActionHandlerSpec.schemaController)
+                try! coordinator.perform(request: changeRequest)
 
                 let realm = SyncActionHandlerSpec.realm
                 realm.refresh()
