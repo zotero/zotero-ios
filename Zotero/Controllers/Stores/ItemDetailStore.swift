@@ -131,8 +131,8 @@ class ItemDetailStore: ObservableObject {
 
         struct Note: Identifiable, Equatable {
             let key: String
-            let title: String
-            let text: String
+            var title: String
+            var text: String
 
             var id: String { return self.key }
 
@@ -511,10 +511,21 @@ class ItemDetailStore: ObservableObject {
         guard let note = self.state.presentedNote else { return }
         if let index = self.state.data.notes.firstIndex(where: { $0.key == note.key }) {
             self.state.data.notes[index] = note
+            // we edit notes outside of editing mode, so we need to save the change immediately
+            self.saveNoteChanges(note)
         } else {
             self.state.data.notes.append(note)
         }
-        self.state.presentedNote = nil
+    }
+
+    private func saveNoteChanges(_ note: State.Note) {
+        do {
+            let request = StoreNoteDbRequest(note: note, libraryId: self.state.libraryId)
+            try self.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            DDLogError("ItemDetailStore: can't store note - \(error)")
+            self.state.error = .cantStoreChanges
+        }
     }
 
     func setTags(_ tags: [Tag]) {

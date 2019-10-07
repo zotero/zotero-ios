@@ -33,13 +33,14 @@ struct ItemDetailView: View {
         }
         .navigationBarBackButtonHidden(self.editMode?.wrappedValue.isEditing == true)
         .navigationBarItems(trailing: self.trailingNavbarItems)
-        // SWIFTUI BUG: - somehow assign binding note to NoteEditingView
         .betterSheet(item: self.$store.state.presentedNote,
                      onDismiss: {
                         self.store.state.presentedNote = nil
                      },
                      content: { note in
-                        NoteEditingView(note: note, saveAction: self.store.saveNote)
+                        Binding(self.$store.state.presentedNote).flatMap { note in
+                            NoteEditorView(note: note, saveAction: self.store.saveNote)
+                        }
                      })
         .betterSheet(item: self.$store.state.unknownAttachment,
                      onDismiss: {
