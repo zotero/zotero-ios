@@ -605,12 +605,12 @@ class ItemDetailStore: ObservableObject {
         self.state.snapshot = nil
     }
 
-    func saveChanges() {
-        if self.state.snapshot != self.state.data {
+    @discardableResult func saveChanges() -> Bool {
+        let didChange = self.state.snapshot != self.state.data
+        if didChange {
             self._saveChanges()
-        } else {
-            self.state.snapshot = nil
         }
+        return didChange
     }
 
     private func _saveChanges() {

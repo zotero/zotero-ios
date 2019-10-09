@@ -23,6 +23,8 @@ struct CreateItemDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> RItem {
+        let titleKey = self.schemaController.titleKey(for: self.data.type)
+        
         // Create main item
         let item = RItem()
         item.key = KeyGenerator.newKey
@@ -61,6 +63,10 @@ struct CreateItemDbRequest: DbResponseRequest {
             rField.value = field.value
             rField.changed = true
             database.add(rField)
+            
+            if field.key == titleKey {
+                item.title = field.value
+            }
         }
 
         // Create notes

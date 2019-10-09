@@ -50,17 +50,31 @@ class ItemsStore: ObservableObject {
         fileprivate var results: Results<RItem>?
         fileprivate(set) var error: Error?
         fileprivate var itemsToken: NotificationToken?
+        var sortType: ItemsSortType {
+            willSet {
+                if let results = self.results {
+                    self.sections = ItemsStore.sections(from: results, sortType: newValue)
+                }
+            }
+        }
+        var selectedItems: Set<String> = []
+        var menuActionSheetPresented: Bool = false
+        var showingCreation: Bool = false {
+            willSet {
+                self.menuActionSheetPresented = false
+            }
+        }
 
         func items(for section: String) -> Results<RItem>? {
             if section == "-" {
-                return self.results?.filter("title == ''")
+                return self.results?.filter("title == ''").sorted(by: self.sortType.descriptors)
             } else {
-                return self.results?.filter("title BEGINSWITH[c] %@", section)
+                return self.results?.filter("title BEGINSWITH[c] %@", section).sorted(by: self.sortType.descriptors)
             }
         }
     }
 
-    private(set) var state: State {
+    var state: State {
         willSet {
             self.objectWillChange.send()
         }
@@ -75,19 +89,22 @@ class ItemsStore: ObservableObject {
 
         do {
             let items = try dbStorage.createCoordinator().perform(request: ItemsStore.request(for: type, libraryId: library.identifier))
+            let sortType = ItemsSortType(field: .title, ascending: true)
 
             self.state = State(type: type,
                                library: library,
-                               sections: ItemsStore.sections(from: items),
-                               results: items)
+                               sections: ItemsStore.sections(from: items, sortType: sortType),
+                               results: items,
+                               sortType: sortType)
 
             let token = items.observe { [weak self] changes in
                 switch changes {
                 case .error: break
                 case .initial: break
                 case .update(let results, _, _, _):
-                    self?.state.results = results
-                    self?.state.sections = ItemsStore.sections(from: results)
+                    guard let `self` = self else { return }
+                    self.state.results = results
+                    self.state.sections = ItemsStore.sections(from: results, sortType: self.state.sortType)
                 }
             }
             self.state.itemsToken = token
@@ -95,7 +112,8 @@ class ItemsStore: ObservableObject {
             DDLogError("ItemStore: can't load items - \(error)")
             self.state = State(type: type,
                                library: library,
-                               error: .dataLoading)
+                               error: .dataLoading,
+                               sortType: ItemsSortType(field: .title, ascending: true))
         }
     }
 
@@ -119,7 +137,19 @@ class ItemsStore: ObservableObject {
         return request
     }
 
-    private class func sections(from results: Results<RItem>) -> [String] {
-        return Set(results.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "-" })).sorted()
+    private class func sections(from results: Results<RItem>, sortType: ItemsSortType) -> [String] {
+        let sortedResults = results.sorted(by: sortType.descriptors)
+
+        switch sortType.field {
+        case .title:
+            return Set(sortedResults.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "-" }))
+                        .sorted(by: {
+                            comparator(for: sortType, left: $0, right: $1)
+                        })
+        }
+    }
+
+    private class func comparator(for sortType: ItemsSortType, left: String, right: String) -> Bool {
+        return sortType.ascending ? left < right : left > right
     }
 }

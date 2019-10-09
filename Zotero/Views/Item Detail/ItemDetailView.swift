@@ -19,18 +19,18 @@ struct ItemDetailView: View {
         Group {
             if self.editMode?.wrappedValue.isEditing == true {
                 ItemDetailEditingView()
-                    .onAppear {
-                        self.store.startEditing()
-                    }
-                    .onDisappear {
-                        self.store.saveChanges()
-                    }
                     .environmentObject(self.store)
             } else {
                 ItemDetailPreviewView()
                     .environmentObject(self.store)
             }
         }
+        .onAppear(perform: {
+            if self.store.state.type.isCreation {
+                self.store.startEditing()
+                self.editMode?.wrappedValue = .active
+            }
+        })
         .navigationBarBackButtonHidden(self.editMode?.wrappedValue.isEditing == true)
         .navigationBarItems(trailing: self.trailingNavbarItems)
         .betterSheet(item: self.$store.state.presentedNote,
@@ -76,7 +76,18 @@ struct ItemDetailView: View {
                 }
             }
 
-            EditButton()
+            Button(action: {
+                if self.editMode?.wrappedValue.isEditing == true {
+                    if self.store.saveChanges() {
+                        self.editMode?.wrappedValue = .inactive
+                    }
+                } else {
+                    self.store.startEditing()
+                    self.editMode?.wrappedValue = .active
+                }
+            }) {
+                Text(self.editMode?.wrappedValue.isEditing == true ? "Save" : "Edit")
+            }
         }
     }
 }
