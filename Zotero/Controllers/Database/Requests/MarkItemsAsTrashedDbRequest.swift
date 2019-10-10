@@ -1,5 +1,5 @@
 //
-//  MarkItemtAsTrashedDbRequest.swift
+//  MarkItemsAsTrashedDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 08/08/2019.
@@ -10,8 +10,8 @@ import Foundation
 
 import RealmSwift
 
-struct MarkItemtAsTrashedDbRequest: DbRequest {
-    let key: String
+struct MarkItemsAsTrashedDbRequest: DbRequest {
+    let keys: [String]
     let libraryId: LibraryIdentifier
     let trashed: Bool
 
@@ -20,10 +20,10 @@ struct MarkItemtAsTrashedDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let object = database.objects(RItem.self).filter(Predicates.key(self.key, in: self.libraryId)).first else {
-            throw DbError.objectNotFound
+        let items = database.objects(RItem.self).filter(Predicates.keys(self.keys, in: self.libraryId))
+        items.forEach { item in
+            item.trash = self.trashed
+            item.changedFields.insert(.trash)
         }
-        object.trash = self.trashed
-        object.changedFields.insert(.trash)
     }
 }

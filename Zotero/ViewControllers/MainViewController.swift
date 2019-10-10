@@ -64,30 +64,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
         self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
 
-        NotificationCenter.default.rx.notification(.presentPdf)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                        if let url = notification.object as? URL {
-                                            self?.presentPdf(with: url)
-                                        }
-                                     })
-                                     .disposed(by: self.disposeBag)
-         NotificationCenter.default.rx.notification(.presentWeb)
-                                      .observeOn(MainScheduler.instance)
-                                      .subscribe(onNext: { [weak self] notification in
-                                         if let url = notification.object as? URL {
-                                            self?.presentWeb(with: url)
-                                         }
-                                      })
-                                      .disposed(by: self.disposeBag)
-        NotificationCenter.default.rx.notification(.splitViewDetailChanged)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                        if let (collection, library) = notification.object as? (Collection, Library) {
-                                            self?.showItems(in: collection, library: library)
-                                        }
-                                     })
-                                     .disposed(by: self.disposeBag)
+        self.setupNotificationObservers()
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -115,6 +92,25 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     // MARK: - Actions
+
+    private func showDuplicateCreation(for key: String, library: Library, collectionKey: String?) {
+        do {
+            let request = ReadItemDbRequest(libraryId: library.identifier, key: key)
+            let item = try self.controllers.dbStorage.createCoordinator().perform(request: request)
+
+            let store = ItemDetailStore(type: .duplication(item, collectionKey: collectionKey),
+                                        apiClient: self.controllers.apiClient,
+                                        fileStorage: self.controllers.fileStorage,
+                                        dbStorage: self.controllers.dbStorage,
+                                        schemaController: self.controllers.schemaController)
+            let view = ItemDetailView(store: store)
+                            .environment(\.dbStorage, self.controllers.dbStorage)
+            (self.viewControllers.last as? UINavigationController)?.pushViewController(UIHostingController.withBetterSheetSupport(rootView: view),
+                                                                                        animated: true)
+        } catch let error {
+            // TODO: - show some error
+        }
+    }
 
     private func presentPdf(with url: URL) {
         #if PDFENABLED
@@ -250,6 +246,44 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
         self.viewControllers = [masterController, detailController]
         self.reloadPrimaryColumnFraction(with: collectionsStore.state.collections, animated: false)
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.rx.notification(.presentPdf)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                        if let url = notification.object as? URL {
+                                            self?.presentPdf(with: url)
+                                        }
+                                     })
+                                     .disposed(by: self.disposeBag)
+
+         NotificationCenter.default.rx.notification(.presentWeb)
+                                      .observeOn(MainScheduler.instance)
+                                      .subscribe(onNext: { [weak self] notification in
+                                         if let url = notification.object as? URL {
+                                            self?.presentWeb(with: url)
+                                         }
+                                      })
+                                      .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx.notification(.splitViewDetailChanged)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                        if let (collection, library) = notification.object as? (Collection, Library) {
+                                            self?.showItems(in: collection, library: library)
+                                        }
+                                     })
+                                     .disposed(by: self.disposeBag)
+
+         NotificationCenter.default.rx.notification(.showDuplicateCreation)
+                                      .observeOn(MainScheduler.instance)
+                                      .subscribe(onNext: { [weak self] notification in
+                                          if let (key, library, collectionKey) = notification.object as? (String, Library, String?) {
+                                              self?.showDuplicateCreation(for: key, library: library, collectionKey: collectionKey)
+                                          }
+                                      })
+                                      .disposed(by: self.disposeBag)
     }
 }
 

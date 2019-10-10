@@ -10,6 +10,10 @@ import SwiftUI
 
 import RealmSwift
 
+extension Notification.Name {
+    static let showDuplicateCreation = Notification.Name(rawValue: "org.zotero.ShowDuplicateCreation")
+}
+
 struct ItemsView: View {
     @ObservedObject private(set) var store: ItemsStore
     
@@ -153,42 +157,72 @@ fileprivate struct Toolbar: View {
     @EnvironmentObject private(set) var store: ItemsStore
     
     var body: some View {
+        Group {
+            if self.store.state.type.isTrash {
+                self.trashActions
+            } else {
+                self.mainActions
+            }
+        }
+        .padding(.vertical)
+        .padding(.bottom, 20)
+        .background(Color.gray.opacity(0.05))
+    }
+
+    private var mainActions: some View {
         HStack {
             Spacer()
-            
+
             Button(action: {
-                
+
             }) {
                 Image(systemName: "folder.badge.plus")
                     .imageScale(.large)
             }
             .disabled(self.store.state.selectedItems.isEmpty)
-            
+
             Spacer()
-            
-            Button(action: {
-                
-            }) {
+
+            Button(action: self.store.trashSelectedItems) {
                 Image(systemName: "trash")
-                .imageScale(.large)
+                    .imageScale(.large)
             }
             .disabled(self.store.state.selectedItems.isEmpty)
-            
+
             Spacer()
-            
+
             Button(action: {
-                
+                let key = self.store.state.selectedItems.first ?? ""
+                NotificationCenter.default.post(name: .showDuplicateCreation,
+                                                object: (key, self.store.state.library, self.store.state.type.collectionKey))
             }) {
                 Image(systemName: "square.on.square")
-                .imageScale(.large)
+                    .imageScale(.large)
             }
             .disabled(self.store.state.selectedItems.count != 1)
-            
+
             Spacer()
         }
-        .padding(.vertical)
-        .padding(.bottom, 20)
-        .background(Color.gray.opacity(0.05))
+    }
+
+    private var trashActions: some View {
+        HStack {
+            Spacer()
+
+            Button(action: self.store.restoreSelectedItems) {
+                Image("restore_trash")
+            }
+            .disabled(self.store.state.selectedItems.isEmpty)
+
+            Spacer()
+
+            Button(action: self.store.deleteSelectedItems) {
+                Image("empty_trash")
+            }
+            .disabled(self.store.state.selectedItems.isEmpty)
+
+            Spacer()
+        }
     }
 }
 

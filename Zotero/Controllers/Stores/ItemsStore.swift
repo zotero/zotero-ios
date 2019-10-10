@@ -117,6 +117,37 @@ class ItemsStore: ObservableObject {
         }
     }
 
+    func trashSelectedItems() {
+        self.setTrashedToSelectedItems(trashed: true)
+    }
+
+    func restoreSelectedItems() {
+        self.setTrashedToSelectedItems(trashed: false)
+    }
+
+    func deleteSelectedItems() {
+        do {
+            let request = DeleteObjectsDbRequest<RItem>(keys: Array(self.state.selectedItems),
+                                                        libraryId: self.state.library.identifier)
+            try self.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            DDLogError("ItemsStore: can't delete items - \(error)")
+            self.state.error = .deletion
+        }
+    }
+
+    private func setTrashedToSelectedItems(trashed: Bool) {
+        do {
+            let request = MarkItemsAsTrashedDbRequest(keys: Array(self.state.selectedItems),
+                                                      libraryId: self.state.library.identifier,
+                                                      trashed: trashed)
+            try self.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            DDLogError("ItemsStore: can't trash items - \(error)")
+            self.state.error = .deletion
+        }
+    }
+
     private class func request(for type: State.ItemType, libraryId: LibraryIdentifier) -> ReadItemsDbRequest {
         let request: ReadItemsDbRequest
         switch type {

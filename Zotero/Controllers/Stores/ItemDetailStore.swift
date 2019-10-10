@@ -29,22 +29,14 @@ class ItemDetailStore: ObservableObject {
     struct State {
         enum DetailType {
             case creation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
+            case duplication(RItem, collectionKey: String?)
             case preview(RItem)
-
-            var item: RItem? {
-                switch self {
-                case .preview(let item):
-                    return item
-                case .creation:
-                    return nil
-                }
-            }
 
             var isCreation: Bool {
                 switch self {
                 case .preview:
                     return false
-                case .creation:
+                case .creation, .duplication:
                     return true
                 }
             }
@@ -306,7 +298,7 @@ class ItemDetailStore: ObservableObject {
             self.error = error
 
             switch type {
-            case .preview(let item):
+            case .preview(let item), .duplication(let item, _):
                 self.libraryId = item.libraryObject?.identifier ?? .custom(.myLibrary)
                 self.snapshot = nil
                 // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
@@ -370,9 +362,9 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
-    private static func createData(from type: State.DetailType,
-                                   schemaController: SchemaController,
-                                   fileStorage: FileStorage) throws -> State.Data {
+    static func createData(from type: State.DetailType,
+                           schemaController: SchemaController,
+                           fileStorage: FileStorage) throws -> State.Data {
         switch type {
         case .creation:
             guard let itemType = schemaController.itemTypes.sorted().first,
@@ -392,16 +384,16 @@ class ItemDetailStore: ObservableObject {
             })
 
             return State.Data(title: "",
-                                   type: itemType,
-                                   localizedType: localizedType,
-                                   creators: [],
-                                   fields: fields,
-                                   abstract: (hasAbstract ? "" : nil),
-                                   notes: [],
-                                   attachments: [],
-                                   tags: [])
+                              type: itemType,
+                              localizedType: localizedType,
+                              creators: [],
+                              fields: fields,
+                              abstract: (hasAbstract ? "" : nil),
+                              notes: [],
+                              attachments: [],
+                              tags: [])
 
-        case .preview(let item):
+        case .preview(let item), .duplication(let item, _):
             guard let fieldKeys = schemaController.fields(for: item.rawType)?.map({ $0.field }),
                   let localizedType = schemaController.localized(itemType: item.rawType) else {
                 throw Error.typeNotSupported
@@ -444,14 +436,14 @@ class ItemDetailStore: ObservableObject {
             let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
 
             return State.Data(title: item.title,
-                                   type: item.rawType,
-                                   localizedType: localizedType,
-                                   creators: Array(creators),
-                                   fields: fields,
-                                   abstract: abstract,
-                                   notes: Array(notes),
-                                   attachments: Array(attachments),
-                                   tags: Array(tags))
+                              type: item.rawType,
+                              localizedType: localizedType,
+                              creators: Array(creators),
+                              fields: fields,
+                              abstract: abstract,
+                              notes: Array(notes),
+                              attachments: Array(attachments),
+                              tags: Array(tags))
         }
     }
 
@@ -628,7 +620,7 @@ class ItemDetailStore: ObservableObject {
                     try self.updateItem(key: item.key, libraryId: self.state.libraryId, data: self.state.data, snapshot: snapshot)
                 }
 
-            case .creation(_, let collectionKey, _):
+            case .creation(_, let collectionKey, _), .duplication(_, let collectionKey):
                 let item = try self.createItem(with: self.state.libraryId, collectionKey: collectionKey, data: self.state.data)
                 newType = .preview(item)
             }
