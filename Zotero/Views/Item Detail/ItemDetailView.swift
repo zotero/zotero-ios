@@ -89,6 +89,9 @@ struct ItemDetailView: View {
                 Text(self.editMode?.wrappedValue.isEditing == true ? "Save" : "Edit")
             }
         }
+        // SWIFTUI BUG: - when changing between 1 and 2 buttons, the frame keeps the wider widht of 2 buttons and the single button is
+        // centered to the middle, by setting a big frame we create the same width for both states and align them to the right
+        .frame(width: 100, alignment: .trailing)
     }
 }
 
