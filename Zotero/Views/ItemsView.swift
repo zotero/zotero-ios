@@ -39,7 +39,7 @@ struct ItemsView: View {
                     }
                 }
             }
-            
+
             if self.editMode?.wrappedValue.isEditing == true {
                 Toolbar().environmentObject(self.store)
             }
@@ -49,8 +49,26 @@ struct ItemsView: View {
         .navigationBarTitle(self.navigationBarTitle, displayMode: .inline)
         .navigationBarItems(trailing: self.trailingItems)
         .edgesIgnoringSafeArea(.bottom)
+        .betterSheet(isPresented: self.$store.state.collectionPickerPresented,
+                     onDismiss: { self.store.state.collectionPickerPresented = false }) {
+            NavigationView {
+                CollectionsPickerView(store: NewCollectionPickerStore(library: self.store.state.library,
+                                                                      dbStorage: self.dbStorage),
+                                      selectedKeys: { keys in
+                    self.store.assignSelectedItems(to: keys)
+                })
+            }
+            .navigationViewStyle(StackNavigationViewStyle())
+        }
+        .betterSheet(isPresented: self.$store.state.sortTypePickerPresented,
+                     onDismiss: { self.store.state.sortTypePickerPresented = false }) {
+            NavigationView {
+                ItemSortTypePickerView(sortBy: self.$store.state.sortType.field)
+            }
+            .navigationViewStyle(StackNavigationViewStyle())
+        }
     }
-    
+
     private var navigationBarTitle: Text {
         if self.editMode?.wrappedValue.isEditing == true {
             switch self.store.state.selectedItems.count {
@@ -84,10 +102,10 @@ struct ItemsView: View {
             }
         }
     }
-    
+
     private var itemCreationView: some View {
         ItemDetailView(store: ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
-                                                              collectionKey: nil,
+                                                              collectionKey: self.store.state.type.collectionKey,
                                                               filesEditable: self.store.state.library.filesEditable),
                                               apiClient: self.apiClient,
                                               fileStorage: self.fileStorage,
@@ -98,9 +116,9 @@ struct ItemsView: View {
 
 fileprivate struct ActionSheetOverlay: View {
     @EnvironmentObject private(set) var store: ItemsStore
-    
+
     @Environment(\.editMode) private var editMode: Binding<EditMode>
-    
+
     var body: some View {
         Group {
             if self.store.state.menuActionSheetPresented {
@@ -119,14 +137,22 @@ fileprivate struct ActionSheetOverlay: View {
                         }) {
                             Text("Select Items")
                         }
+
                         Divider()
-                        Button(action: {}) {
-                            Text("Sort By: \(self.sortByTitle)")
+
+                        Button(action: {
+                            self.store.state.sortTypePickerPresented = true
+                            self.store.state.menuActionSheetPresented = false
+                        }) {
+                            Text("Sort By: \(self.store.state.sortType.field.title)")
                         }
+
                         Button(action: { self.store.state.sortType.ascending.toggle() }) {
                             Text("Sort Order: \(self.sortOrderTitle)")
                         }
+
                         Divider()
+                        
                         Button(action: { self.store.state.showingCreation = true }) {
                             Text("New Item")
                         }
@@ -140,14 +166,7 @@ fileprivate struct ActionSheetOverlay: View {
             }
         }
     }
-    
-    private var sortByTitle: String {
-        switch self.store.state.sortType.field {
-        case .title:
-            return "Title"
-        }
-    }
-    
+
     private var sortOrderTitle: String {
         return self.store.state.sortType.ascending ? "Ascending" : "Descending"
     }
@@ -155,7 +174,7 @@ fileprivate struct ActionSheetOverlay: View {
 
 fileprivate struct Toolbar: View {
     @EnvironmentObject private(set) var store: ItemsStore
-    
+
     var body: some View {
         Group {
             if self.store.state.type.isTrash {
@@ -174,7 +193,7 @@ fileprivate struct Toolbar: View {
             Spacer()
 
             Button(action: {
-
+                self.store.state.collectionPickerPresented = true
             }) {
                 Image(systemName: "folder.badge.plus")
                     .imageScale(.large)

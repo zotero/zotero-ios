@@ -24,6 +24,7 @@ class NewCollectionPickerStore: ObservableObject {
         fileprivate(set) var collections: [Collection]
         fileprivate(set) var error: Error?
         fileprivate var token: NotificationToken?
+        var selected: Set<String> = []
     }
 
     var state: State {

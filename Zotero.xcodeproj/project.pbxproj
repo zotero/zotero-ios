@@ -157,6 +157,9 @@
 		B38C96A6223FFB2900343F8F /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */; };
 		B38C96A7223FFB2900343F8F /* ReadUserDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */; };
 		B38C96A9223FFB5600343F8F /* StoreCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */; };
+		B38E042B2350A52200D063AE /* CollectionsPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38E042A2350A52200D063AE /* CollectionsPickerView.swift */; };
+		B38E042D2350C41900D063AE /* AssignItemsToCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38E042C2350C41900D063AE /* AssignItemsToCollectionsDbRequest.swift */; };
+		B38E042F2350CC5400D063AE /* ItemSortTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */; };
 		B38F5F8A2333C9F1002EF78B /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F5F892333C9F1002EF78B /* Library.swift */; };
 		B3924C4B2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3924C4A2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift */; };
 		B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
@@ -412,6 +415,9 @@
 		B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemsDbRequest.swift; sourceTree = "<group>"; };
 		B38C9690223FFB2800343F8F /* ReadUserDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadUserDbRequest.swift; sourceTree = "<group>"; };
 		B38C96A8223FFB5600343F8F /* StoreCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B38E042A2350A52200D063AE /* CollectionsPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsPickerView.swift; sourceTree = "<group>"; };
+		B38E042C2350C41900D063AE /* AssignItemsToCollectionsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignItemsToCollectionsDbRequest.swift; sourceTree = "<group>"; };
+		B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSortTypePickerView.swift; sourceTree = "<group>"; };
 		B38F5F892333C9F1002EF78B /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		B3924C4A2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreItemDetailChangesDbRequest.swift; sourceTree = "<group>"; };
 		B39372972229420A008B2A96 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
@@ -668,7 +674,9 @@
 				B3AC620E233287530091DD74 /* LibraryRow.swift */,
 				B39F2FB3233A4D650027EFC3 /* CollectionEditView.swift */,
 				B39F2FB5233A80810027EFC3 /* CollectionPickerView.swift */,
+				B38E042A2350A52200D063AE /* CollectionsPickerView.swift */,
 				B31CB7B3234B4D8200FB12A0 /* NoteEditorView.swift */,
+				B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -888,6 +896,7 @@
 				B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */,
 				B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */,
 				B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */,
+				B38E042C2350C41900D063AE /* AssignItemsToCollectionsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1292,6 +1301,7 @@
 				B38C96A3223FFB2900343F8F /* UpdateVersionsDbRequest.swift in Sources */,
 				B335E2D622D7436B009F9061 /* Observable+Completable.swift in Sources */,
 				B36795E222075710003D0471 /* Controllers.swift in Sources */,
+				B38E042D2350C41900D063AE /* AssignItemsToCollectionsDbRequest.swift in Sources */,
 				B36989EF22FC5B9400264856 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B339F0F62343AE0F00055345 /* ItemDetailEditTitleView.swift in Sources */,
 				B3E8ABFF2344B6C300CCED64 /* PreferenceKeys.swift in Sources */,
@@ -1384,6 +1394,7 @@
 				B3BA36FC22242672006220E4 /* RTag.swift in Sources */,
 				B3B3B40C225B3D7200E28C34 /* SchemaResponse.swift in Sources */,
 				B3B3B410225B5B3D00E28C34 /* SchemaRequest.swift in Sources */,
+				B38E042F2350CC5400D063AE /* ItemSortTypePickerView.swift in Sources */,
 				B346E47622CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B3AC620F233287530091DD74 /* LibraryRow.swift in Sources */,
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
@@ -1404,6 +1415,7 @@
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */,
+				B38E042B2350A52200D063AE /* CollectionsPickerView.swift in Sources */,
 				B339F0FD2343B47B00055345 /* ItemDetailEditCreatorView.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
 				B339F0FB2343B23E00055345 /* ItemDetailEditAbstractView.swift in Sources */,

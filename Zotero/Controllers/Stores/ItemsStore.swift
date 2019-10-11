@@ -15,7 +15,7 @@ import RxSwift
 
 class ItemsStore: ObservableObject {
     enum Error: Swift.Error, Equatable {
-        case dataLoading, deletion
+        case dataLoading, deletion, collectionAssignment
     }
 
     struct State {
@@ -58,19 +58,29 @@ class ItemsStore: ObservableObject {
             }
         }
         var selectedItems: Set<String> = []
+        var sortTypePickerPresented: Bool = false
         var menuActionSheetPresented: Bool = false
         var showingCreation: Bool = false {
             willSet {
                 self.menuActionSheetPresented = false
             }
         }
+        var collectionPickerPresented: Bool = false
 
         func items(for section: String) -> Results<RItem>? {
-            if section == "-" {
-                return self.results?.filter("title == ''").sorted(by: self.sortType.descriptors)
-            } else {
-                return self.results?.filter("title BEGINSWITH[c] %@", section).sorted(by: self.sortType.descriptors)
+            var results: Results<RItem>? = self.results
+
+            switch self.sortType.field {
+            case .title:
+                if section == "-" {
+                    results = results?.filter("title == ''")
+                } else {
+                    results = results?.filter("title BEGINSWITH[c] %@", section)
+                }
+            default: break
             }
+            return results?.sorted(by: self.sortType.descriptors)
+
         }
     }
 
@@ -114,6 +124,18 @@ class ItemsStore: ObservableObject {
                                library: library,
                                error: .dataLoading,
                                sortType: ItemsSortType(field: .title, ascending: true))
+        }
+    }
+
+    func assignSelectedItems(to collectionKeys: Set<String>) {
+        do {
+            let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
+                                                            itemKeys: self.state.selectedItems,
+                                                            libraryId: self.state.library.identifier)
+            try self.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            DDLogError("ItemsStore: can't assign collections to items - \(error)")
+            self.state.error = .collectionAssignment
         }
     }
 
@@ -177,6 +199,8 @@ class ItemsStore: ObservableObject {
                         .sorted(by: {
                             comparator(for: sortType, left: $0, right: $1)
                         })
+        default:
+            return [""]
         }
     }
 
