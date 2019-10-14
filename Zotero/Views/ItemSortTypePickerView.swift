@@ -11,7 +11,10 @@ import SwiftUI
 struct ItemSortTypePickerView: View {
     @Binding var sortBy: ItemsSortType.Field
 
-    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
+        // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() didn't work when presented from UIViewController, so I pass a closure
+        // This view is presented by UIKit, because modals in SwiftUI are currently buggy
+//    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
+    let closeAction: () -> Void
 
     var body: some View {
         List {
@@ -20,12 +23,12 @@ struct ItemSortTypePickerView: View {
                             isSelected: (self.sortBy == sortType))
                     .onTapGesture {
                         self.sortBy = sortType
-                        self.presentationMode.wrappedValue.dismiss()
+                        self.closeAction()
                     }
             }
         }
         .navigationBarTitle(Text("Sort By"), displayMode: .inline)
-        .navigationBarItems(leading: Button(action: { self.presentationMode.wrappedValue.dismiss() },
+        .navigationBarItems(leading: Button(action: self.closeAction,
                                             label: { Text("Cancel") }))
     }
 }
@@ -48,6 +51,6 @@ fileprivate struct SortTypeRow: View {
 
 struct ItemSortTypePickerView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemSortTypePickerView(sortBy: .constant(.title))
+        ItemSortTypePickerView(sortBy: .constant(.title), closeAction: {})
     }
 }

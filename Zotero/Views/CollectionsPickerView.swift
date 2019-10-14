@@ -12,7 +12,10 @@ struct CollectionsPickerView: View {
     @ObservedObject private(set) var store: NewCollectionPickerStore
     private(set) var selectedKeys: (Set<String>) -> Void
 
-    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
+    // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() didn't work when presented from UIViewController, so I pass a closure
+    // This view is presented by UIKit, because modals in SwiftUI are currently buggy
+//    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
+    let closeAction: () -> Void
 
     var body: some View {
         List(selection: self.$store.state.selected) {
@@ -25,16 +28,17 @@ struct CollectionsPickerView: View {
             }
         }
         .navigationBarTitle(Text(self.navBarTitle), displayMode: .inline)
-        .navigationBarItems(leading: Button(action: { self.presentationMode.wrappedValue.dismiss() },
-                                            label: { Text("Cancel") }))
-        .navigationBarItems(trailing:
-            Button(action: {
-//                       self.selectedKeys(self.store.state.selected)
-                       self.presentationMode.wrappedValue.dismiss()
-                   },
-                   label: {
-                       Text("Save")
-                   })
+        .navigationBarItems(leading:
+                                Button(action: self.closeAction,
+                                       label: { Text("Cancel") })
+                            , trailing:
+                                Button(action: {
+                                    self.selectedKeys(self.store.state.selected)
+                                    self.closeAction()
+                                },
+                                label: {
+                                    Text("Save")
+                                })
         )
         .environment(\.editMode, .constant(.active))
     }
@@ -61,6 +65,8 @@ struct CollectionsPickerView_Previews: PreviewProvider {
                                                                              name: "My Library",
                                                                              metadataEditable: true,
                                                                              filesEditable: true),
-                                                              dbStorage: Controllers().dbStorage), selectedKeys: { _ in })
+                                                              dbStorage: Controllers().dbStorage),
+                              selectedKeys: { _ in },
+                              closeAction: {})
     }
 }

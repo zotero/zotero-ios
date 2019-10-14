@@ -93,6 +93,28 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Actions
 
+    private func presentSortTypePicker(field: Binding<ItemsSortType.Field>) {
+        let view = ItemSortTypePickerView(sortBy: field,
+                                          closeAction: { [weak self] in
+                                              self?.dismiss(animated: true, completion: nil)
+                                          })
+        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        navigationController.isModalInPresentation = true
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
+    private func presentCollectionsPicker(in library: Library, block: @escaping (Set<String>) -> Void) {
+        let view = CollectionsPickerView(store: NewCollectionPickerStore(library: library,
+                                                                         dbStorage: self.controllers.dbStorage),
+                                         selectedKeys: block,
+                                         closeAction: { [weak self] in
+                                             self?.dismiss(animated: true, completion: nil)
+                                         })
+        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        navigationController.isModalInPresentation = true
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
     private func showDuplicateCreation(for key: String, library: Library, collectionKey: String?) {
         do {
             let request = ReadItemDbRequest(libraryId: library.identifier, key: key)
@@ -284,6 +306,24 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                           }
                                       })
                                       .disposed(by: self.disposeBag)
+
+          NotificationCenter.default.rx.notification(.presentCollectionsPicker)
+                                       .observeOn(MainScheduler.instance)
+                                       .subscribe(onNext: { [weak self] notification in
+                                           if let (library, block) = notification.object as? (Library, (Set<String>) -> Void) {
+                                               self?.presentCollectionsPicker(in: library, block: block)
+                                           }
+                                       })
+                                       .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx.notification(.presentSortTypePicker)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let binding = notification.object as? Binding<ItemsSortType.Field> {
+                                             self?.presentSortTypePicker(field: binding)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
     }
 }
 

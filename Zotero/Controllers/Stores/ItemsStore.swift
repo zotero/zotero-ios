@@ -58,14 +58,12 @@ class ItemsStore: ObservableObject {
             }
         }
         var selectedItems: Set<String> = []
-        var sortTypePickerPresented: Bool = false
         var menuActionSheetPresented: Bool = false
         var showingCreation: Bool = false {
             willSet {
                 self.menuActionSheetPresented = false
             }
         }
-        var collectionPickerPresented: Bool = false
 
         func items(for section: String) -> Results<RItem>? {
             var results: Results<RItem>? = self.results
@@ -80,7 +78,6 @@ class ItemsStore: ObservableObject {
             default: break
             }
             return results?.sorted(by: self.sortType.descriptors)
-
         }
     }
 

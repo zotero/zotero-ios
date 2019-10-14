@@ -12,6 +12,8 @@ import RealmSwift
 
 extension Notification.Name {
     static let showDuplicateCreation = Notification.Name(rawValue: "org.zotero.ShowDuplicateCreation")
+    static let presentCollectionsPicker = Notification.Name(rawValue: "org.zotero.PresentCollectionsPicker")
+    static let presentSortTypePicker = Notification.Name(rawValue: "org.zotero.PresentSortTypePicker")
 }
 
 struct ItemsView: View {
@@ -49,24 +51,6 @@ struct ItemsView: View {
         .navigationBarTitle(self.navigationBarTitle, displayMode: .inline)
         .navigationBarItems(trailing: self.trailingItems)
         .edgesIgnoringSafeArea(.bottom)
-        .betterSheet(isPresented: self.$store.state.collectionPickerPresented,
-                     onDismiss: { self.store.state.collectionPickerPresented = false }) {
-            NavigationView {
-                CollectionsPickerView(store: NewCollectionPickerStore(library: self.store.state.library,
-                                                                      dbStorage: self.dbStorage),
-                                      selectedKeys: { keys in
-                    self.store.assignSelectedItems(to: keys)
-                })
-            }
-            .navigationViewStyle(StackNavigationViewStyle())
-        }
-        .betterSheet(isPresented: self.$store.state.sortTypePickerPresented,
-                     onDismiss: { self.store.state.sortTypePickerPresented = false }) {
-            NavigationView {
-                ItemSortTypePickerView(sortBy: self.$store.state.sortType.field)
-            }
-            .navigationViewStyle(StackNavigationViewStyle())
-        }
     }
 
     private var navigationBarTitle: Text {
@@ -141,7 +125,7 @@ fileprivate struct ActionSheetOverlay: View {
                         Divider()
 
                         Button(action: {
-                            self.store.state.sortTypePickerPresented = true
+                            NotificationCenter.default.post(name: .presentSortTypePicker, object: self.$store.state.sortType.field)
                             self.store.state.menuActionSheetPresented = false
                         }) {
                             Text("Sort By: \(self.store.state.sortType.field.title)")
@@ -193,7 +177,7 @@ fileprivate struct Toolbar: View {
             Spacer()
 
             Button(action: {
-                self.store.state.collectionPickerPresented = true
+                NotificationCenter.default.post(name: .presentCollectionsPicker, object: (self.store.state.library, self.store.assignSelectedItems))
             }) {
                 Image(systemName: "folder.badge.plus")
                     .imageScale(.large)
