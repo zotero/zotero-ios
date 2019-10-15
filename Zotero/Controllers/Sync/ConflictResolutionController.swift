@@ -21,19 +21,45 @@ protocol ConflictPresenter: UIViewController {
     func present(controller: UIAlertController)
 }
 
+enum DebugPermissionResponse {
+    case allowed, cancelSync, skipAction
+}
+
+protocol DebugPermissionReceiver {
+    func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void)
+}
+
 extension ConflictPresenter {
     func present(controller: UIAlertController) {
         self.present(controller, animated: true, completion: nil)
     }
 }
 
-class ConflictResolutionController: ConflictReceiver {
+class ConflictResolutionController: ConflictReceiver, DebugPermissionReceiver {
     private let presenter: ConflictPresenter
-
-    private var completionBlock: ((SyncController.Action?) -> Void)?
 
     init(presenter: ConflictPresenter) {
         self.presenter = presenter
+    }
+
+    func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            self?._askForPermission(message: message, completed: completed)
+        }
+    }
+
+    private func _askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void) {
+        let alert = UIAlertController(title: "Confirm action", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Allow", style: .default, handler: { _ in
+            completed(.allowed)
+        }))
+        alert.addAction(UIAlertAction(title: "Skip", style: .default, handler: { _ in
+            completed(.skipAction)
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel sync", style: .destructive, handler: { _ in
+            completed(.cancelSync)
+        }))
+        self.presenter.present(controller: alert)
     }
 
     func resolve(conflict: Conflict, completed: @escaping (SyncController.Action?) -> Void) {
@@ -43,40 +69,39 @@ class ConflictResolutionController: ConflictReceiver {
     }
 
     private func _resolve(conflict: Conflict, completed: @escaping (SyncController.Action?) -> Void) {
-        self.completionBlock = completed
-        let alertData = self.createAlert(for: conflict)
+        let (title, message, actions) = self.createAlert(for: conflict, completed: completed)
 
-        let alert = UIAlertController(title: alertData.title, message: alertData.message, preferredStyle: .alert)
-        alertData.actions.forEach { action in
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        actions.forEach { action in
             alert.addAction(action)
         }
         self.presenter.present(controller: alert)
     }
 
-    private func createAlert(for conflict: Conflict) -> (title: String, message: String, actions: [UIAlertAction]) {
+    private func createAlert(for conflict: Conflict,
+                             completed: @escaping (SyncController.Action?) -> Void) -> (title: String, message: String, actions: [UIAlertAction]) {
         switch conflict {
         case .groupRemoved(let groupId, let groupName):
-            let actions = [UIAlertAction(title: "Remove", style: .destructive, handler: { [weak self] _ in
-                               self?.finish(with: .deleteGroup(groupId))
+            let actions = [UIAlertAction(title: "Remove", style: .destructive, handler: { _ in
+                               completed(.deleteGroup(groupId))
                            }),
-                           UIAlertAction(title: "Keep", style: .default, handler: { [weak self] _ in
-                               self?.finish(with: .markGroupAsLocalOnly(groupId))
+                           UIAlertAction(title: "Keep", style: .default, handler: { _ in
+                               completed(.markGroupAsLocalOnly(groupId))
                            })]
-            return ("Warning", "Group '\(groupName)' is no longer accessible. What would you like to do?", actions)
+            return ("Warning",
+                    "Group '\(groupName)' is no longer accessible. What would you like to do?",
+                    actions)
 
         case .groupWriteDenied(let groupId, let groupName):
-            let actions = [UIAlertAction(title: "Revert to original", style: .cancel, handler: { [weak self] _ in
-                               self?.finish(with: .revertLibraryToOriginal(.group(groupId)))
+            let actions = [UIAlertAction(title: "Revert to original", style: .cancel, handler: { _ in
+                               completed(.revertLibraryToOriginal(.group(groupId)))
                            }),
-                           UIAlertAction(title: "Keep changes", style: .default, handler: { [weak self] _ in
-                               self?.finish(with: .markChangesAsResolved(.group(groupId)))
+                           UIAlertAction(title: "Keep changes", style: .default, handler: { _ in
+                               completed(.markChangesAsResolved(.group(groupId)))
                            })]
-            return ("Warning", "You can't write to group '\(groupName)' anymore. What would you like to do?", actions)
+            return ("Warning",
+                    "You can't write to group '\(groupName)' anymore. What would you like to do?",
+                    actions)
         }
-    }
-
-    private func finish(with action: SyncController.Action?) {
-        self.completionBlock?(action)
-        self.completionBlock = nil
     }
 }

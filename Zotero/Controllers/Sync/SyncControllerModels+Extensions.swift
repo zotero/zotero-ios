@@ -89,6 +89,48 @@ extension SyncController.Action {
             return false
         }
     }
+
+    var requiresDebugPermissionPrompt: Bool {
+        switch self {
+        case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
+            return true
+        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+             .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema,
+             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+            return false
+        }
+    }
+
+    var debugPermissionMessage: String {
+        switch self {
+        case .submitDeleteBatch(let batch):
+            return "Delete \(batch.keys.count) \(batch.object) in \(batch.library.debugName)\n\(batch.keys)"
+        case .submitWriteBatch(let batch):
+            return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.library.debugName)\n\(batch.parameters)"
+        case .uploadAttachment(let upload):
+            return "Upload \(upload.filename).\(upload.extension) in \(upload.library.debugName)\n\(upload.file.createUrl().absoluteString)"
+        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+             .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema,
+             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+            return "Unknown action"
+        }
+    }
+}
+
+extension SyncController.Library {
+    var debugName: String {
+        switch self {
+        case .group(let groupId):
+            return "Group (\(groupId))"
+        case .user(_, let type):
+            switch type {
+            case .myLibrary:
+                return "My Library"
+            }
+        }
+    }
 }
 
 extension SyncError: Equatable {

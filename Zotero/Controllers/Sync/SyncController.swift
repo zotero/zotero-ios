@@ -194,7 +194,10 @@ final class SyncController: SynchronizationController {
     private var conflictRetries: Int
     private var timerDisposeBag: DisposeBag
     private var accessPermissions: AccessPermissions?
-    private var conflictReceiver: ConflictReceiver?
+    private var conflictReceiver: (ConflictReceiver & DebugPermissionReceiver)?
+
+    @UserDefault(key: "AskForSyncPermission", defaultValue: false)
+    private var askForSyncPermission: Bool
 
     var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
@@ -230,7 +233,7 @@ final class SyncController: SynchronizationController {
             guard let `self` = self, let action = self.processingAction else { return }
             // ConflictReceiver was nil and we are waiting for CR action. Which means it was ignored previously and
             // we need to restart it.
-            if action.requiresConflictReceiver {
+            if action.requiresConflictReceiver || (self.askForSyncPermission && action.requiresDebugPermissionPrompt) {
                 self.process(action: action)
             }
         }
@@ -419,7 +422,11 @@ final class SyncController: SynchronizationController {
         }
 
         self.processingAction = action
-        self.process(action: action)
+        if self.askForSyncPermission && action.requiresDebugPermissionPrompt {
+            self.askForUserPermission(action: action)
+        } else {
+            self.process(action: action)
+        }
     }
 
     // MARK: - Action processing
@@ -496,6 +503,25 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// This is used only for debugging purposes. Conflict receiver is used to ask for user permission whether current action can be performed.
+    private func askForUserPermission(action: Action) {
+        // If conflict receiver isn't yet assigned, we just wait for it and process current action when it's assigned
+        // It's assigned either after login or shortly after app is launched, so we should never stay stuck on this.
+        guard let receiver = self.conflictReceiver else { return }
+        receiver.askForPermission(message: action.debugPermissionMessage) { response in
+            switch response {
+            case .allowed:
+                self.process(action: action)
+            case .cancelSync:
+                self.cancel()
+            case .skipAction:
+                self.performOnAccessQueue(flags: .barrier) { [weak self] in
+                    self?.processNextAction()
+                }
+            }
+        }
+    }
+
     private func processKeyCheckAction() {
         self.handler.loadPermissions().flatMap { (response, needsSchemaUpdate) -> Single<(AccessPermissions, Bool)> in
                                           let permissions = AccessPermissions(user: response.user,
@@ -504,7 +530,7 @@ final class SyncController: SynchronizationController {
                                           return Single.just((permissions, needsSchemaUpdate))
                                       }
                                       .subscribe(onSuccess: { [weak self] (permissions, needsSchemaUpdate) in
-                                          self?.performOnAccessQueue {
+                                          self?.performOnAccessQueue(flags: .barrier) {
                                               self?.accessPermissions = permissions
                                               if needsSchemaUpdate {
                                                   self?.enqueue(actions: [.updateSchema], at: 0)
