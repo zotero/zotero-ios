@@ -95,6 +95,16 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Actions
 
+    private func presentSettings() {
+        let view = SettingsView(closeAction: { [weak self] in
+            self?.dismiss(animated: true, completion: nil)
+        })
+            .environmentObject(SettingsStore())
+        let controller = UIHostingController(rootView: view)
+        controller.isModalInPresentation = true
+        self.present(controller, animated: true, completion: nil)
+    }
+
     private func presentFilePicker() {
         let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
         let controller = UIDocumentPickerViewController(documentTypes: documentTypes, in: .import)
@@ -342,6 +352,13 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                              self?.filesPickedAction = action
                                              self?.presentFilePicker()
                                          }
+                                     })
+                                     .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx.notification(.presentSettings)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         self?.presentSettings()
                                      })
                                      .disposed(by: self.disposeBag)
     }

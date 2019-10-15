@@ -8,6 +8,10 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let presentSettings = Notification.Name(rawValue: "org.zotero.PresentSettings")
+}
+
 struct LibrariesView: View {
     @ObservedObject private(set) var store: LibrariesStore
 
@@ -40,6 +44,10 @@ struct LibrariesView: View {
             }
         }
         .listStyle(GroupedListStyle())
+        .navigationBarItems(trailing:
+            Button(action: { NotificationCenter.default.post(name: .presentSettings, object: nil) },
+                   label: { Image(systemName: "person.circle").imageScale(.large) })
+        )
     }
 
     private func collectionsView(for library: Library) -> CollectionsView {

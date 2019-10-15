@@ -84,6 +84,14 @@
 		B339F0FF2343B6C300055345 /* ItemDetailEditNoteSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B339F0FE2343B6C300055345 /* ItemDetailEditNoteSectionView.swift */; };
 		B339F1012343B75100055345 /* ItemDetailEditTagSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B339F1002343B75100055345 /* ItemDetailEditTagSectionView.swift */; };
 		B339F1032343B75C00055345 /* ItemDetailEditAttachmentSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B339F1022343B75C00055345 /* ItemDetailEditAttachmentSectionView.swift */; };
+		B33A56B023561F5600C33F28 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56AF23561F5600C33F28 /* SettingsView.swift */; };
+		B33A56B223561F9200C33F28 /* SettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56B123561F9200C33F28 /* SettingsListView.swift */; };
+		B33A56B42356240600C33F28 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56B32356240600C33F28 /* GeneralSettingsView.swift */; };
+		B33A56B62356240F00C33F28 /* SyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56B52356240F00C33F28 /* SyncSettingsView.swift */; };
+		B33A56B82356241800C33F28 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56B72356241700C33F28 /* ProfileView.swift */; };
+		B33A56BC2356314400C33F28 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56BB2356314400C33F28 /* SettingsStore.swift */; };
+		B33A56BE2356329C00C33F28 /* UserDefault+PropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56BD2356329C00C33F28 /* UserDefault+PropertyWrapper.swift */; };
+		B33A56C02356336400C33F28 /* SettingsToggleRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56BF2356336400C33F28 /* SettingsToggleRow.swift */; };
 		B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */; };
 		B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
 		B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
@@ -342,6 +350,14 @@
 		B339F0FE2343B6C300055345 /* ItemDetailEditNoteSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailEditNoteSectionView.swift; sourceTree = "<group>"; };
 		B339F1002343B75100055345 /* ItemDetailEditTagSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailEditTagSectionView.swift; sourceTree = "<group>"; };
 		B339F1022343B75C00055345 /* ItemDetailEditAttachmentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailEditAttachmentSectionView.swift; sourceTree = "<group>"; };
+		B33A56AF23561F5600C33F28 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B33A56B123561F9200C33F28 /* SettingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsListView.swift; sourceTree = "<group>"; };
+		B33A56B32356240600C33F28 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		B33A56B52356240F00C33F28 /* SyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsView.swift; sourceTree = "<group>"; };
+		B33A56B72356241700C33F28 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		B33A56BB2356314400C33F28 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		B33A56BD2356329C00C33F28 /* UserDefault+PropertyWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefault+PropertyWrapper.swift"; sourceTree = "<group>"; };
+		B33A56BF2356336400C33F28 /* SettingsToggleRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsToggleRow.swift; sourceTree = "<group>"; };
 		B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+Utils.swift"; sourceTree = "<group>"; };
 		B33FBA5F220B2AAD005906C4 /* SyncController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionHandler.swift; sourceTree = "<group>"; };
@@ -642,6 +658,7 @@
 				B3C62EC72211E5C0000FFBFF /* ItemsStore.swift */,
 				B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */,
 				B372765723268CDD00E2C522 /* TagPickerStore.swift */,
+				B33A56BB2356314400C33F28 /* SettingsStore.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -651,6 +668,7 @@
 			children = (
 				B37D57922215838800B6CF5F /* Cells */,
 				B3E14BA32316926100E31ABD /* Item Detail */,
+				B33A56AE23561F2000C33F28 /* Settings */,
 				B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */,
 				B34FD9E0230C31A2008338FD /* CollectionsView.swift */,
 				B34111DA230C4EAE0021B2FA /* CollectionRow.swift */,
@@ -717,6 +735,7 @@
 				B36D2BCA232FD5B70056F022 /* Color+Extension.swift */,
 				B36D2BCE232FE86C0056F022 /* Controllers+EnvironmentValues.swift */,
 				B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */,
+				B33A56BD2356329C00C33F28 /* UserDefault+PropertyWrapper.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -748,6 +767,19 @@
 				B32CD309221C58DE003F8073 /* Assets.xcassets */,
 			);
 			path = Assets;
+			sourceTree = "<group>";
+		};
+		B33A56AE23561F2000C33F28 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				B33A56AF23561F5600C33F28 /* SettingsView.swift */,
+				B33A56B123561F9200C33F28 /* SettingsListView.swift */,
+				B33A56B32356240600C33F28 /* GeneralSettingsView.swift */,
+				B33A56B52356240F00C33F28 /* SyncSettingsView.swift */,
+				B33A56B72356241700C33F28 /* ProfileView.swift */,
+				B33A56BF2356336400C33F28 /* SettingsToggleRow.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		B33FBA5E220B2AAD005906C4 /* Sync */ = {
@@ -1270,6 +1302,7 @@
 				B3B5514D22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B339F0E82343AE0F00055345 /* ItemDetailMetadataSectionView.swift in Sources */,
 				B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */,
+				B33A56B023561F5600C33F28 /* SettingsView.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
 				B363034A224B7D7F009F839F /* LibraryObject.swift in Sources */,
 				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
@@ -1306,6 +1339,7 @@
 				B339F0F62343AE0F00055345 /* ItemDetailEditTitleView.swift in Sources */,
 				B3E8ABFF2344B6C300CCED64 /* PreferenceKeys.swift in Sources */,
 				B3E4713C2241206A006E3B20 /* CollectionPickerStore.swift in Sources */,
+				B33A56BE2356329C00C33F28 /* UserDefault+PropertyWrapper.swift in Sources */,
 				B30D59B42207271E00884C4A /* Threading+Extras.swift in Sources */,
 				B385E2B52208755500DFE361 /* RUser.swift in Sources */,
 				B38C9692223FFB2900343F8F /* StoreCollectionsDbRequest.swift in Sources */,
@@ -1354,6 +1388,7 @@
 				B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */,
 				B3A6ABB6231ECA4500425A49 /* ClosureTextField.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
+				B33A56B62356240F00C33F28 /* SyncSettingsView.swift in Sources */,
 				B38C9694223FFB2900343F8F /* ReadCollectionsDbRequest.swift in Sources */,
 				B38C969A223FFB2900343F8F /* MarkForResyncDbAction.swift in Sources */,
 				B339F1032343B75C00055345 /* ItemDetailEditAttachmentSectionView.swift in Sources */,
@@ -1373,6 +1408,7 @@
 				B3AC620D233282A60091DD74 /* LibrariesView.swift in Sources */,
 				B353370822CCB620005648CB /* KeyedResponse.swift in Sources */,
 				B363034C224B8285009F839F /* Predicates.swift in Sources */,
+				B33A56B223561F9200C33F28 /* SettingsListView.swift in Sources */,
 				B33744FD232BEAD70082760A /* ActivityView.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B30D59B622072DF300884C4A /* AppStore.swift in Sources */,
@@ -1392,7 +1428,9 @@
 				B38C969B223FFB2900343F8F /* ResolveReferenceDbRequest.swift in Sources */,
 				B36D2BCD232FD6E30056F022 /* TagCirclesView.swift in Sources */,
 				B3BA36FC22242672006220E4 /* RTag.swift in Sources */,
+				B33A56B82356241800C33F28 /* ProfileView.swift in Sources */,
 				B3B3B40C225B3D7200E28C34 /* SchemaResponse.swift in Sources */,
+				B33A56C02356336400C33F28 /* SettingsToggleRow.swift in Sources */,
 				B3B3B410225B5B3D00E28C34 /* SchemaRequest.swift in Sources */,
 				B38E042F2350CC5400D063AE /* ItemSortTypePickerView.swift in Sources */,
 				B346E47622CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
@@ -1418,6 +1456,7 @@
 				B38E042B2350A52200D063AE /* CollectionsPickerView.swift in Sources */,
 				B339F0FD2343B47B00055345 /* ItemDetailEditCreatorView.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
+				B33A56B42356240600C33F28 /* GeneralSettingsView.swift in Sources */,
 				B339F0FB2343B23E00055345 /* ItemDetailEditAbstractView.swift in Sources */,
 				B3B5514F22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
@@ -1438,6 +1477,7 @@
 				B38C9699223FFB2900343F8F /* ReadAnyChangedObjectsDbRequest.swift in Sources */,
 				B3487303221DBD1500244CCC /* String+Extensions.swift in Sources */,
 				B30D59B12206FF1F00884C4A /* OldStore.swift in Sources */,
+				B33A56BC2356314400C33F28 /* SettingsStore.swift in Sources */,
 				B339F0F52343AE0F00055345 /* ItemDetailAttachmentView.swift in Sources */,
 				B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */,
 				B3D9CC2522FAE294009CEE36 /* CreateNoteDbRequest.swift in Sources */,
