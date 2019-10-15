@@ -471,6 +471,20 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
+    func addAttachments(from urls: [URL]) {
+        let attachments = urls.map({ Files.file(from: $0) })
+                              .map({
+                                  State.Attachment(key: KeyGenerator.newKey,
+                                                   title: $0.name,
+                                                   type: .file(file: $0, filename: $0.name, isLocal: true),
+                                                   libraryId: self.state.libraryId)
+                              })
+        attachments.forEach { attachment in
+            let index = self.state.data.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+            self.state.data.attachments.insert(attachment, at: index)
+        }
+    }
+
     func addCreator() {
         // Check whether there already is an empty/new creator, add only if there is none
         guard self.state.data.creators.reversed().first(where: { $0.isEmpty }) == nil,

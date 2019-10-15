@@ -50,7 +50,7 @@ struct ItemsView: View {
         .overlay(ActionSheetOverlay().environmentObject(self.store))
         .navigationBarTitle(self.navigationBarTitle, displayMode: .inline)
         .navigationBarItems(trailing: self.trailingItems)
-        .edgesIgnoringSafeArea(.bottom)
+        .edgesIgnoringSafeArea(self.editMode?.wrappedValue.isEditing == true ? .bottom : Edge.Set(rawValue: 0))
     }
 
     private var navigationBarTitle: Text {

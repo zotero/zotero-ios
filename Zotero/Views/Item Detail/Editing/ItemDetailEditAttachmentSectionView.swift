@@ -8,6 +8,10 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let presentFilePicker = Notification.Name(rawValue: "org.zotero.PresentFilePicker")
+}
+
 struct ItemDetailEditAttachmentSectionView: View {
     @EnvironmentObject var store: ItemDetailStore
 
@@ -21,7 +25,9 @@ struct ItemDetailEditAttachmentSectionView: View {
                                          progress: nil)
             }
             .onDelete(perform: self.store.deleteAttachments)
-            ItemDetailAddView(title: "Add attachment", action: {})
+            ItemDetailAddView(title: "Add attachment", action: {
+                NotificationCenter.default.post(name: .presentFilePicker, object: self.store.addAttachments)
+            })
         }
     }
 }

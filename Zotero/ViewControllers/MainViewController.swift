@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import MobileCoreServices
 import UIKit
 import SafariServices
 import SwiftUI
@@ -44,6 +45,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private var maxSize: CGFloat {
         return max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
     }
+    private var filesPickedAction: (([URL]) -> Void)?
 
     // MARK: - Lifecycle
 
@@ -92,6 +94,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     // MARK: - Actions
+
+    private func presentFilePicker() {
+        let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
+        let controller = UIDocumentPickerViewController(documentTypes: documentTypes, in: .import)
+        controller.delegate = self
+        controller.popoverPresentationController?.sourceView = view
+        self.present(controller, animated: true, completion: nil)
+    }
 
     private func presentSortTypePicker(field: Binding<ItemsSortType.Field>) {
         let view = ItemSortTypePickerView(sortBy: field,
@@ -280,14 +290,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                      })
                                      .disposed(by: self.disposeBag)
 
-         NotificationCenter.default.rx.notification(.presentWeb)
-                                      .observeOn(MainScheduler.instance)
-                                      .subscribe(onNext: { [weak self] notification in
-                                         if let url = notification.object as? URL {
-                                            self?.presentWeb(with: url)
-                                         }
-                                      })
-                                      .disposed(by: self.disposeBag)
+        NotificationCenter.default.rx.notification(.presentWeb)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                        if let url = notification.object as? URL {
+                                           self?.presentWeb(with: url)
+                                        }
+                                     })
+                                     .disposed(by: self.disposeBag)
 
         NotificationCenter.default.rx.notification(.splitViewDetailChanged)
                                      .observeOn(MainScheduler.instance)
@@ -298,29 +308,39 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                      })
                                      .disposed(by: self.disposeBag)
 
-         NotificationCenter.default.rx.notification(.showDuplicateCreation)
-                                      .observeOn(MainScheduler.instance)
-                                      .subscribe(onNext: { [weak self] notification in
-                                          if let (key, library, collectionKey) = notification.object as? (String, Library, String?) {
-                                              self?.showDuplicateCreation(for: key, library: library, collectionKey: collectionKey)
-                                          }
-                                      })
-                                      .disposed(by: self.disposeBag)
+        NotificationCenter.default.rx.notification(.showDuplicateCreation)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let (key, library, collectionKey) = notification.object as? (String, Library, String?) {
+                                             self?.showDuplicateCreation(for: key, library: library, collectionKey: collectionKey)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
 
-          NotificationCenter.default.rx.notification(.presentCollectionsPicker)
-                                       .observeOn(MainScheduler.instance)
-                                       .subscribe(onNext: { [weak self] notification in
-                                           if let (library, block) = notification.object as? (Library, (Set<String>) -> Void) {
-                                               self?.presentCollectionsPicker(in: library, block: block)
-                                           }
-                                       })
-                                       .disposed(by: self.disposeBag)
+        NotificationCenter.default.rx.notification(.presentCollectionsPicker)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let (library, block) = notification.object as? (Library, (Set<String>) -> Void) {
+                                             self?.presentCollectionsPicker(in: library, block: block)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
 
         NotificationCenter.default.rx.notification(.presentSortTypePicker)
                                      .observeOn(MainScheduler.instance)
                                      .subscribe(onNext: { [weak self] notification in
                                          if let binding = notification.object as? Binding<ItemsSortType.Field> {
                                              self?.presentSortTypePicker(field: binding)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx.notification(.presentFilePicker)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let action = notification.object as? (([URL]) -> Void) {
+                                             self?.filesPickedAction = action
+                                             self?.presentFilePicker()
                                          }
                                      })
                                      .disposed(by: self.disposeBag)
@@ -332,5 +352,17 @@ extension MainViewController: UISplitViewControllerDelegate {
                              collapseSecondary secondaryViewController: UIViewController,
                              onto primaryViewController: UIViewController) -> Bool {
         return true
+    }
+}
+
+extension MainViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        self.filesPickedAction?(urls)
+        self.filesPickedAction = nil
+    }
+
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        self.dismiss(animated: true, completion: nil)
+        self.filesPickedAction = nil
     }
 }
