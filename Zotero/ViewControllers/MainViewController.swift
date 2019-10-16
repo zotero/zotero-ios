@@ -124,12 +124,11 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func presentCollectionsPicker(in library: Library, block: @escaping (Set<String>) -> Void) {
-        let view = CollectionsPickerView(store: NewCollectionPickerStore(library: library,
-                                                                         dbStorage: self.controllers.dbStorage),
-                                         selectedKeys: block,
+        let view = CollectionsPickerView(selectedKeys: block,
                                          closeAction: { [weak self] in
                                              self?.dismiss(animated: true, completion: nil)
                                          })
+                            .environmentObject(CollectionPickerStore(library: library, dbStorage: self.controllers.dbStorage))
         let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
         navigationController.isModalInPresentation = true
         self.present(navigationController, animated: true, completion: nil)
@@ -145,8 +144,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                         fileStorage: self.controllers.fileStorage,
                                         dbStorage: self.controllers.dbStorage,
                                         schemaController: self.controllers.schemaController)
-            let view = ItemDetailView(store: store)
+            let view = ItemDetailView()
                             .environment(\.dbStorage, self.controllers.dbStorage)
+                            .environmentObject(store)
             (self.viewControllers.last as? UINavigationController)?.pushViewController(UIHostingController.withBetterSheetSupport(rootView: view),
                                                                                         animated: true)
         } catch let error {
@@ -169,11 +169,12 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func showItems(in collection: Collection, library: Library) {
-        let view = ItemsView(store: self.itemsStore(for: collection, library: library))
+        let view = ItemsView()
                         .environment(\.dbStorage, self.controllers.dbStorage)
                         .environment(\.apiClient, self.controllers.apiClient)
                         .environment(\.fileStorage, self.controllers.fileStorage)
                         .environment(\.schemaController, self.controllers.schemaController)
+                        .environmentObject(self.itemsStore(for: collection, library: library))
         self.showSecondaryController(UIHostingController.withBetterSheetSupport(rootView: view))
     }
 
@@ -266,23 +267,26 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // MARK: - Setups
 
     private func setupControllers() {
-        let librariesView = LibrariesView(store: LibrariesStore(dbStorage: self.controllers.dbStorage))
-                                    .environment(\.dbStorage, self.controllers.dbStorage)
+        let librariesView = LibrariesView()
+                                .environment(\.dbStorage, self.controllers.dbStorage)
+                                .environmentObject(LibrariesStore(dbStorage: self.controllers.dbStorage))
         let collectionsStore = CollectionsStore(library: self.defaultLibrary,
                                                 dbStorage: self.controllers.dbStorage)
-        let collectionsView = CollectionsView(store: collectionsStore)
+        let collectionsView = CollectionsView()
                                     .environment(\.dbStorage, self.controllers.dbStorage)
+                                    .environmentObject(collectionsStore)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
                                             UIHostingController(rootView: collectionsView)]
 
-        let itemsView = ItemsView(store: self.itemsStore(for: self.defaultCollection,
-                                                         library: self.defaultLibrary))
-                                .environment(\.dbStorage, self.controllers.dbStorage)
-                                .environment(\.apiClient, self.controllers.apiClient)
-                                .environment(\.fileStorage, self.controllers.fileStorage)
-                                .environment(\.schemaController, self.controllers.schemaController)
+        let itemsView = ItemsView()
+                            .environment(\.dbStorage, self.controllers.dbStorage)
+                            .environment(\.apiClient, self.controllers.apiClient)
+                            .environment(\.fileStorage, self.controllers.fileStorage)
+                            .environment(\.schemaController, self.controllers.schemaController)
+                            .environmentObject(self.itemsStore(for: self.defaultCollection,
+                                                               library: self.defaultLibrary))
 
         let detailController = UINavigationController(rootViewController: UIHostingController.withBetterSheetSupport(rootView: itemsView))
 

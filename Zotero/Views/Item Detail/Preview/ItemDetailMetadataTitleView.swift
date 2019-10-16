@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ItemDetailMetadataTitleView: View {
-    @EnvironmentObject var store: ItemDetailStore
+    @EnvironmentObject private(set) var store: ItemDetailStore
 
     let title: String
 

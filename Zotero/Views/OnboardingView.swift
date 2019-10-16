@@ -19,7 +19,7 @@ struct OnboardingView: View {
         NavigationView {
             GeometryReader { proxy in
                 HStack(spacing: self.spacing) {
-                    NavigationLink(destination: LoginView(store: self.loginStore)) {
+                    NavigationLink(destination: LoginView().environmentObject(self.loginStore)) {
                         OnboardingButton(title: "Sign in",
                                          width: (proxy.size.width - self.spacing) / 2.0,
                                          isLoading: false)

@@ -9,23 +9,23 @@
 import SwiftUI
 
 struct MainView: View {
-    private var defaultLibrary: Library {
-        return Library(identifier: .custom(.myLibrary),
-                       name: RCustomLibraryType.myLibrary.libraryName,
-                       metadataEditable: true,
-                       filesEditable: true)
-    }
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
         NavigationView {
-            CollectionsView(store: CollectionsStore(library: self.defaultLibrary,
-                                                    dbStorage: self.dbStorage))
-            ItemsView(store: ItemsStore(type: .all,
-                                           library: self.defaultLibrary,
-                                           dbStorage: self.dbStorage))
+            CollectionsView()
+                .environmentObject(CollectionsStore(library: self.defaultLibrary, dbStorage: self.dbStorage))
+            ItemsView()
+                .environmentObject(ItemsStore(type: .all, library: self.defaultLibrary, dbStorage: self.dbStorage))
         }
+    }
+
+    private var defaultLibrary: Library {
+        return Library(identifier: .custom(.myLibrary),
+                       name: RCustomLibraryType.myLibrary.libraryName,
+                       metadataEditable: true,
+                       filesEditable: true)
     }
 }
 

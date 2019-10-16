@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ItemDetailNoteSectionView: View {
-    @EnvironmentObject var store: ItemDetailStore
+    @EnvironmentObject private(set) var store: ItemDetailStore
 
     var body: some View {
         Section {

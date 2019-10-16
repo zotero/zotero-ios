@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct TagPickerView: View {
-    @ObservedObject private(set) var store: TagPickerStore
+    @EnvironmentObject private(set) var store: TagPickerStore
     let saveAction: ([Tag]) -> Void
 
     var body: some View {
@@ -18,8 +18,6 @@ struct TagPickerView: View {
                 ForEach(self.store.state.tags) { tag in
                     TagView(color: .init(hex: tag.color), name: tag.name)
                 }
-                // SWIFTUI BUG: - selection doesn't show up when deletion is not addeds
-                .onDelete(perform: { _ in })
             }
 
             Button(action: {
@@ -44,9 +42,9 @@ struct TagPickerView: View {
 
 struct TagPickerView_Previews: PreviewProvider {
     static var previews: some View {
-        TagPickerView(store: .init(libraryId: .custom(.myLibrary),
-                                   selectedTags: [],
-                                   dbStorage: Controllers().dbStorage),
-                      saveAction: { _ in })
+        TagPickerView(saveAction: { _ in })
+            .environmentObject(TagPickerStore(libraryId: .custom(.myLibrary),
+                                              selectedTags: [],
+                                              dbStorage: Controllers().dbStorage))
     }
 }

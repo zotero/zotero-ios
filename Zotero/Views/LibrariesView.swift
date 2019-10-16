@@ -13,7 +13,7 @@ extension Notification.Name {
 }
 
 struct LibrariesView: View {
-    @ObservedObject private(set) var store: LibrariesStore
+    @EnvironmentObject private(set) var store: LibrariesStore
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
@@ -50,15 +50,16 @@ struct LibrariesView: View {
         )
     }
 
-    private func collectionsView(for library: Library) -> CollectionsView {
-        CollectionsView(store: CollectionsStore(library: library, dbStorage: self.dbStorage))
+    private func collectionsView(for library: Library) -> some View {
+        CollectionsView().environmentObject(CollectionsStore(library: library, dbStorage: self.dbStorage))
     }
 }
 
 struct LibrariesView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            LibrariesView(store: LibrariesStore(dbStorage: Controllers().dbStorage))
+            LibrariesView()
+                .environmentObject(LibrariesStore(dbStorage: Controllers().dbStorage))
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

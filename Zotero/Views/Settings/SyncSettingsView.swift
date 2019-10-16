@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct SyncSettingsView: View {
-    @EnvironmentObject var store: SettingsStore
+    @EnvironmentObject private(set) var store: SettingsStore
 
     var body: some View {
         Form {

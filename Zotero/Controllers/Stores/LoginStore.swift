@@ -46,14 +46,8 @@ class LoginStore: ObservableObject {
     private let secureStorage: SecureStorage
     private let dbStorage: DbStorage
     private let disposeBag: DisposeBag
-    // SWIFTUI BUG: should be defined by default, but bugged in current version
-    let objectWillChange: ObservableObjectPublisher
 
-    var state: State {
-        willSet {
-            self.objectWillChange.send()
-        }
-    }
+    @Published var state: State
 
     init(apiClient: ApiClient, secureStorage: SecureStorage, dbStorage: DbStorage) {
         self.apiClient = apiClient
@@ -62,7 +56,6 @@ class LoginStore: ObservableObject {
         self.disposeBag = DisposeBag()
         self.state = State(username: "", password: "",
                            isLoading: false, error: nil)
-        self.objectWillChange = ObservableObjectPublisher()
     }
 
     private func isValid(username: String, password: String) -> Bool {

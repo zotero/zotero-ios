@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ItemDetailView: View {
-    @ObservedObject private(set) var store: ItemDetailStore
+    @EnvironmentObject private(set) var store: ItemDetailStore
 
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @Environment(\.editMode) private var editMode: Binding<EditMode>
@@ -19,10 +19,8 @@ struct ItemDetailView: View {
         Group {
             if self.editMode?.wrappedValue.isEditing == true {
                 ItemDetailEditingView()
-                    .environmentObject(self.store)
             } else {
                 ItemDetailPreviewView()
-                    .environmentObject(self.store)
             }
         }
         .onAppear(perform: {
@@ -54,10 +52,10 @@ struct ItemDetailView: View {
                          self.store.state.showTagPicker = false
                       },
                       content: {
-                         TagPickerView(store: TagPickerStore(libraryId: self.store.state.libraryId,
-                                                             selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
-                                                             dbStorage: self.dbStorage),
-                                       saveAction: self.store.setTags)
+                         TagPickerView(saveAction: self.store.setTags)
+                            .environmentObject(TagPickerStore(libraryId: self.store.state.libraryId,
+                                                              selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
+                                                              dbStorage: self.dbStorage))
                       })
     }
 
@@ -120,7 +118,9 @@ struct ItemDetailView_Previews: PreviewProvider {
                                     dbStorage: controllers.dbStorage,
                                     schemaController: controllers.schemaController)
 
-        return ItemDetailView(store: store).environment(\.editMode, .constant(.active))
+        return ItemDetailView()
+                    .environment(\.editMode, .constant(.active))
+                    .environmentObject(store)
     }
 }
 

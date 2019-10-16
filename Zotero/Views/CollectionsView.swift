@@ -11,14 +11,14 @@ import SwiftUI
 import RealmSwift
 
 struct CollectionsView: View {
-    @ObservedObject private(set) var store: CollectionsStore
+    @EnvironmentObject private(set) var store: CollectionsStore
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
         List {
             ForEach(self.store.state.collections) { collection in
-                CollectionRowButton(store: self.store, collection: collection)
+                CollectionRowButton(collection: collection)
             }
         }
         .listStyle(PlainListStyle())
@@ -55,7 +55,7 @@ struct CollectionsView: View {
             parent = rCollection?.parent.flatMap { Collection(object: $0, level: 0) }
         }
 
-        let store = NewCollectionEditStore(library: self.store.state.library,
+        let store = CollectionEditStore(library: self.store.state.library,
                                            key: key,
                                            name: name,
                                            parent: parent,
@@ -64,13 +64,14 @@ struct CollectionsView: View {
             self.store.state.editingType = nil
         }
 
-        return CollectionEditView(store: store)
+        return CollectionEditView()
                     .environment(\.dbStorage, self.dbStorage)
+                    .environmentObject(store)
     }
 }
 
 fileprivate struct CollectionRowButton: View {
-    @ObservedObject private(set) var store: CollectionsStore
+    @EnvironmentObject private(set) var store: CollectionsStore
 
     let collection: Collection
 
@@ -130,7 +131,8 @@ struct CollectionsView_Previews: PreviewProvider {
         let store = CollectionsStore(library: Library(identifier: .custom(.myLibrary), name: "My library",
                                                       metadataEditable: true, filesEditable: true),
                                      dbStorage: Controllers().dbStorage)
-        return CollectionsView(store: store)
+        return CollectionsView()
+                    .environmentObject(store)
     }
 }
 

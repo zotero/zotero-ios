@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionsPickerView: View {
-    @ObservedObject private(set) var store: NewCollectionPickerStore
+    @EnvironmentObject private(set) var store: CollectionPickerStore
     private(set) var selectedKeys: (Set<String>) -> Void
 
     // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() didn't work when presented from UIViewController, so I pass a closure
@@ -61,12 +61,11 @@ struct CollectionsPickerView: View {
 
 struct CollectionsPickerView_Previews: PreviewProvider {
     static var previews: some View {
-        CollectionsPickerView(store: NewCollectionPickerStore(library: .init(identifier: .custom(.myLibrary),
-                                                                             name: "My Library",
-                                                                             metadataEditable: true,
-                                                                             filesEditable: true),
-                                                              dbStorage: Controllers().dbStorage),
-                              selectedKeys: { _ in },
-                              closeAction: {})
+        CollectionsPickerView(selectedKeys: { _ in }, closeAction: {})
+                .environmentObject(CollectionPickerStore(library: .init(identifier: .custom(.myLibrary),
+                                                                           name: "My Library",
+                                                                           metadataEditable: true,
+                                                                           filesEditable: true),
+                                                            dbStorage: Controllers().dbStorage))
     }
 }

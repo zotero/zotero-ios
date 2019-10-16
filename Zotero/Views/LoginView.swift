@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @ObservedObject private(set) var store: LoginStore
+    @EnvironmentObject private(set) var store: LoginStore
 
     var body: some View {
         GeometryReader { proxy in
@@ -50,6 +50,7 @@ struct LoginView_Previews: PreviewProvider {
                                secureStorage: controllers.secureStorage,
                                dbStorage: controllers.dbStorage)
         store.state.isLoading = true
-        return LoginView(store: store)
+        return LoginView()
+                    .environmentObject(store)
     }
 }

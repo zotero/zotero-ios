@@ -15,16 +15,9 @@ class SettingsStore: ObservableObject {
         var askForSyncPermission: Bool
     }
 
-    var state: State {
-        willSet {
-            self.objectWillChange.send()
-        }
-    }
-    // SWIFTUI BUG: should be defined by default, but bugged in current version
-    let objectWillChange: ObservableObjectPublisher
+    @Published var state: State
 
     init() {
-        self.objectWillChange = ObservableObjectPublisher()
         self.state = State()
     }
 }

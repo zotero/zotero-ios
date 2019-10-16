@@ -81,17 +81,10 @@ class ItemsStore: ObservableObject {
         }
     }
 
-    var state: State {
-        willSet {
-            self.objectWillChange.send()
-        }
-    }
-    // SWIFTUI BUG: should be defined by default, but bugged in current version
-    let objectWillChange: ObservableObjectPublisher
+    @Published var state: State
     private let dbStorage: DbStorage
 
     init(type: State.ItemType, library: Library, dbStorage: DbStorage) {
-        self.objectWillChange = ObservableObjectPublisher()
         self.dbStorage = dbStorage
 
         do {

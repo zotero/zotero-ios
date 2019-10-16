@@ -9,10 +9,11 @@
 import SwiftUI
 
 struct CollectionPickerView: View {
-    @Binding var collection: Collection?
-    @ObservedObject private(set) var store: NewCollectionPickerStore
+    @EnvironmentObject private(set) var store: CollectionPickerStore
 
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+
+    @Binding var collection: Collection?
 
     var body: some View {
         List {
@@ -58,11 +59,11 @@ struct CollectionPickerView: View {
 
 struct CollectionPickerView_Previews: PreviewProvider {
     static var previews: some View {
-        CollectionPickerView(collection: .constant(nil),
-                             store: NewCollectionPickerStore(library: .init(identifier: .custom(.myLibrary),
-                                                                            name: "My Library",
-                                                                            metadataEditable: true,
-                                                                            filesEditable: true),
-                                                             dbStorage: Controllers().dbStorage))
+        CollectionPickerView(collection: .constant(nil))
+                .environmentObject(CollectionPickerStore(library: .init(identifier: .custom(.myLibrary),
+                                                                           name: "My Library",
+                                                                           metadataEditable: true,
+                                                                           filesEditable: true),
+                                                            dbStorage: Controllers().dbStorage))
     }
 }

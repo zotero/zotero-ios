@@ -17,8 +17,8 @@ extension Notification.Name {
 }
 
 struct ItemsView: View {
-    @ObservedObject private(set) var store: ItemsStore
-    
+    @EnvironmentObject private(set) var store: ItemsStore
+
     @Environment(\.editMode) private var editMode: Binding<EditMode>
     @Environment(\.dbStorage) private var dbStorage: DbStorage
     @Environment(\.apiClient) private var apiClient: ApiClient
@@ -43,11 +43,11 @@ struct ItemsView: View {
             }
 
             if self.editMode?.wrappedValue.isEditing == true {
-                Toolbar().environmentObject(self.store)
+                Toolbar()
             }
         }
         .onAppear(perform: { self.store.state.showingCreation = false })
-        .overlay(ActionSheetOverlay().environmentObject(self.store))
+        .overlay(ActionSheetOverlay())
         .navigationBarTitle(self.navigationBarTitle, displayMode: .inline)
         .navigationBarItems(trailing: self.trailingItems)
         .edgesIgnoringSafeArea(self.editMode?.wrappedValue.isEditing == true ? .bottom : Edge.Set(rawValue: 0))
@@ -88,13 +88,15 @@ struct ItemsView: View {
     }
 
     private var itemCreationView: some View {
-        ItemDetailView(store: ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
-                                                              collectionKey: self.store.state.type.collectionKey,
-                                                              filesEditable: self.store.state.library.filesEditable),
-                                              apiClient: self.apiClient,
-                                              fileStorage: self.fileStorage,
-                                              dbStorage: self.dbStorage,
-                                              schemaController: self.schemaController))
+        let store = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
+                                                    collectionKey: self.store.state.type.collectionKey,
+                                                    filesEditable: self.store.state.library.filesEditable),
+                                    apiClient: self.apiClient,
+                                    fileStorage: self.fileStorage,
+                                    dbStorage: self.dbStorage,
+                                    schemaController: self.schemaController)
+        return ItemDetailView()
+                    .environmentObject(store)
     }
 }
 
@@ -241,7 +243,7 @@ fileprivate struct ItemSectionView: View {
     var body: some View {
         Section {
             ForEach(self.results, id: \.key) { item in
-                NavigationLink(destination: ItemDetailView(store: self.detailStore(for: item))) {
+                NavigationLink(destination: ItemDetailView().environmentObject(self.detailStore(for: item))) {
                     ItemRow(item: item)
                 }
             }
@@ -261,10 +263,11 @@ fileprivate struct ItemSectionView: View {
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemsView(store: ItemsStore(type: .all,
-                                       library: Library(identifier: .custom(.myLibrary), name: "My library",
-                                                        metadataEditable: true, filesEditable: true),
-                                       dbStorage: Controllers().dbStorage))
+        let store = ItemsStore(type: .all,
+                               library: Library(identifier: .custom(.myLibrary), name: "My library",
+                                                metadataEditable: true, filesEditable: true),
+                               dbStorage: Controllers().dbStorage)
+        return ItemsView().environmentObject(store)
     }
 }
 

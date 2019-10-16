@@ -330,14 +330,8 @@ class ItemDetailStore: ObservableObject {
     private let dbStorage: DbStorage
     private let schemaController: SchemaController
     private let disposeBag: DisposeBag
-    // SWIFTUI BUG: should be defined by default, but bugged in current version
-    let objectWillChange: ObservableObjectPublisher
 
-    var state: State {
-        willSet {
-            self.objectWillChange.send()
-        }
-    }
+    @Published var state: State
 
     init(type: State.DetailType,
          apiClient: ApiClient, fileStorage: FileStorage,
@@ -347,7 +341,6 @@ class ItemDetailStore: ObservableObject {
         self.dbStorage = dbStorage
         self.schemaController = schemaController
         self.disposeBag = DisposeBag()
-        self.objectWillChange = ObservableObjectPublisher()
 
         do {
             let data = try ItemDetailStore.createData(from: type,
@@ -621,7 +614,7 @@ class ItemDetailStore: ObservableObject {
 
     private func _saveChanges() {
         // TODO: - move to background thread if possible
-        // SWIFTUI BUG: - sync store with environmentt .editMode so that we can switch edit mode when background task finished
+        // SWIFTUI BUG: - sync store with environment .editMode so that we can switch edit mode when background task finished
 
         self.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
 

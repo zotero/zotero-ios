@@ -49,23 +49,19 @@ class CollectionsStore: ObservableObject {
         var editingType: EditingType?
     }
     
-    var state: State {
-        willSet {
-            self.objectWillChange.send()
-
-            if self.state.selectedCollection.key != newValue.selectedCollection.key {
+    @Published var state: State {
+        didSet {
+            if self.state.selectedCollection.id != oldValue.selectedCollection.id {
                 NotificationCenter.default.post(name: .splitViewDetailChanged,
-                                                object: (newValue.selectedCollection, self.state.library))
+                                                object: (self.state.selectedCollection, self.state.library))
             }
         }
     }
-    // SWIFTUI BUG: should be defined by default, but bugged in current version
-    let objectWillChange: ObservableObjectPublisher
+
     private let dbStorage: DbStorage
-    
+
     init(library: Library, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.objectWillChange = ObservableObjectPublisher()
 
         do {
             let collectionsRequest = ReadCollectionsDbRequest(libraryId: library.identifier)

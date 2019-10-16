@@ -26,18 +26,11 @@ class LibrariesStore: ObservableObject {
         fileprivate var groupsToken: NotificationToken?
     }
 
-    var state: State {
-        willSet {
-            self.objectWillChange.send()
-        }
-    }
-    // SWIFTUI BUG: should be defined by default, but bugged in current version
-    let objectWillChange: ObservableObjectPublisher
+    @Published var state: State
     private let dbStorage: DbStorage
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.objectWillChange = ObservableObjectPublisher()
 
         do {
             let libraries = try self.dbStorage.createCoordinator().perform(request: ReadAllCustomLibrariesDbRequest())

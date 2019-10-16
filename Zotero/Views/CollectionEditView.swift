@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionEditView: View {
-    @ObservedObject private(set) var store: NewCollectionEditStore
+    @EnvironmentObject private(set) var store: CollectionEditStore
 
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @Environment(\.dbStorage) private var dbStorage: DbStorage
@@ -50,24 +50,7 @@ struct CollectionEditView: View {
                 }
             }
         }
-        .navigationBarItems(leading:
-            Button(action: {
-                self.presentationMode.wrappedValue.dismiss()
-            }, label: {
-                Text("Cancel")
-            })
-        )
-        .navigationBarItems(trailing:
-            Group {
-                if self.store.state.loading {
-                    ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
-                } else {
-                    Button(action: self.store.save, label: {
-                        Text("Save")
-                    })
-                }
-            }
-        )
+        .navigationBarItems(leading: self.leadingItems, trailing: self.trailingItems)
         .navigationBarTitle(self.title, displayMode: .inline)
         .alert(item: self.$store.state.error) { error -> Alert in
             return Alert(title: Text("Error"), message: Text(self.message(for: error)))
@@ -75,7 +58,27 @@ struct CollectionEditView: View {
         .disabled(self.store.state.loading)
     }
 
-    private func message(for error: NewCollectionEditStore.Error) -> String {
+    private var leadingItems: some View {
+        Button(action: {
+            self.presentationMode.wrappedValue.dismiss()
+        }, label: {
+            Text("Cancel")
+        })
+    }
+
+    private var trailingItems: some View {
+        Group {
+            if self.store.state.loading {
+                ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+            } else {
+                Button(action: self.store.save, label: {
+                    Text("Save")
+                })
+            }
+        }
+    }
+
+    private func message(for error: CollectionEditStore.Error) -> String {
         switch error {
         case .emptyName:
             return "You have to fill the name"
@@ -84,19 +87,19 @@ struct CollectionEditView: View {
         }
     }
 
-    private func createPickerView() -> CollectionPickerView {
-        CollectionPickerView(collection: self.$store.state.parent,
-                             store: NewCollectionPickerStore(library: self.store.state.library,
-                                                             dbStorage: self.dbStorage))
+    private func createPickerView() -> some View {
+        CollectionPickerView(collection: self.$store.state.parent)
+                .environmentObject(CollectionPickerStore(library: self.store.state.library, dbStorage: self.dbStorage))
     }
 }
 
 struct CollectionEditView_Previews: PreviewProvider {
     static var previews: some View {
-        CollectionEditView(store: NewCollectionEditStore(library: .init(identifier: .custom(.myLibrary),
-                                                                        name: "My Librrary",
-                                                                        metadataEditable: true,
-                                                                        filesEditable: true),
-                                                         dbStorage: Controllers().dbStorage))
+        CollectionEditView()
+            .environmentObject(CollectionEditStore(library: .init(identifier: .custom(.myLibrary),
+                                                                     name: "My Librrary",
+                                                                     metadataEditable: true,
+                                                                     filesEditable: true),
+                                                      dbStorage: Controllers().dbStorage))
     }
 }

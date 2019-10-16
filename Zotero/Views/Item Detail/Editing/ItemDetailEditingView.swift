@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ItemDetailEditingView: View {
-    @EnvironmentObject var store: ItemDetailStore
+    @EnvironmentObject private(set) var store: ItemDetailStore
 
     var body: some View {
         List {
