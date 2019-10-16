@@ -82,8 +82,8 @@ class LoginStore: ObservableObject {
                       .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                       .flatMap { (response, _) -> Single<(Int, String)> in
                           do {
-                              let request = StoreUserDbRequest(loginResponse: response)
-                              try self.dbStorage.createCoordinator().perform(request: request)
+                              try self.dbStorage.createCoordinator().perform(request: StoreUserDbRequest(loginResponse: response))
+                              try self.dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
                               return Single.just((response.userId, response.key))
                           } catch let error {
                               return Single.error(error)

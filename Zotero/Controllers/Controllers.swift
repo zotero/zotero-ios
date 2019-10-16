@@ -38,7 +38,6 @@ class Controllers {
             if let userId = ApiConstants.userId {
                 try Controllers.setupDebugDb(in: dbStorage, userId: userId)
             }
-            try dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
             self.dbStorage = dbStorage
         } catch let error {
             fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")
@@ -94,6 +93,7 @@ class Controllers {
 
         if needsUser {
             try coordinator.perform(request: StoreUserDbRequest(identifier: userId, name: "Tester"))
+            try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
         }
     }
 }

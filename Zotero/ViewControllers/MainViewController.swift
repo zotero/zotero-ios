@@ -96,10 +96,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // MARK: - Actions
 
     private func presentSettings() {
+        let store = SettingsStore(apiClient: self.controllers.apiClient,
+                                  secureStorage: self.controllers.secureStorage,
+                                  dbStorage: self.controllers.dbStorage)
         let view = SettingsView(closeAction: { [weak self] in
             self?.dismiss(animated: true, completion: nil)
         })
-            .environmentObject(SettingsStore())
+        .environmentObject(store)
+
         let controller = UIHostingController(rootView: view)
         controller.isModalInPresentation = true
         self.present(controller, animated: true, completion: nil)

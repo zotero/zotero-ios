@@ -24,7 +24,10 @@ struct SyncSettingsView: View {
 
 struct SyncSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        SyncSettingsView()
-            .environmentObject(SettingsStore())
+        let controllers = Controllers()
+        return SyncSettingsView()
+                    .environmentObject(SettingsStore(apiClient: controllers.apiClient,
+                                                     secureStorage: controllers.secureStorage,
+                                                     dbStorage: controllers.dbStorage))
     }
 }

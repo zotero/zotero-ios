@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct ProfileView: View {
+    @EnvironmentObject private(set) var store: SettingsStore
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
@@ -18,9 +19,7 @@ struct ProfileView: View {
             }
 
             Section {
-                Button(action: {
-
-                }) {
+                Button(action: self.store.logout) {
                     Text("Log out")
                         .foregroundColor(.red)
                 }
