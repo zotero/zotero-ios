@@ -11,8 +11,11 @@ import SwiftUI
 struct CollectionEditView: View {
     @EnvironmentObject private(set) var store: CollectionEditStore
 
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @Environment(\.dbStorage) private var dbStorage: DbStorage
+
+//    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    // SWIFTUI BUG: - can't dismiss with presentationMode when presented from UIKit
+    let closeAction: () -> Void
 
     private var title: Text {
         return Text(self.store.state.key == nil ? "Create collection" : "Edit collection")
@@ -60,7 +63,8 @@ struct CollectionEditView: View {
 
     private var leadingItems: some View {
         Button(action: {
-            self.presentationMode.wrappedValue.dismiss()
+//            self.presentationMode.wrappedValue.dismiss()
+            self.closeAction()
         }, label: {
             Text("Cancel")
         })
@@ -95,7 +99,7 @@ struct CollectionEditView: View {
 
 struct CollectionEditView_Previews: PreviewProvider {
     static var previews: some View {
-        CollectionEditView()
+        CollectionEditView(closeAction: {})
             .environmentObject(CollectionEditStore(library: .init(identifier: .custom(.myLibrary),
                                                                      name: "My Librrary",
                                                                      metadataEditable: true,

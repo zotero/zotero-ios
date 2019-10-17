@@ -95,6 +95,12 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Actions
 
+    private func showCollections(for library: Library) {
+        let store = CollectionsStore(library: library, dbStorage: self.controllers.dbStorage)
+        let controller = CollectionsViewController(store: store, dbStorage: self.controllers.dbStorage)
+        (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
+    }
+
     private func presentSettings() {
         let store = SettingsStore(apiClient: self.controllers.apiClient,
                                   secureStorage: self.controllers.secureStorage,
@@ -252,7 +258,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         var maxWidth: CGFloat = 0
 
         collections.forEach { data in
-            let width = (CGFloat(data.level) * CollectionCell.levelOffset) +
+            let width = (CGFloat(data.level) * CollectionRow.levelOffset) +
                         (CGFloat(data.name.count) * MainViewController.averageCharacterWidth)
             if width > maxWidth {
                 maxCollection = data
@@ -263,7 +269,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         guard let collection = maxCollection else { return 0 }
 
         let titleSize = collection.name.size(withAttributes:[.font: UIFont.systemFont(ofSize: 18.0)])
-        let actualWidth = titleSize.width + (CGFloat(collection.level) * CollectionCell.levelOffset) + (2 * CollectionCell.baseOffset)
+        let actualWidth = titleSize.width + (CGFloat(collection.level) * CollectionRow.levelOffset) + (2 * CollectionRow.levelOffset)
 
         return min(1.0, (actualWidth / self.maxSize))
     }
@@ -271,18 +277,22 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     // MARK: - Setups
 
     private func setupControllers() {
-        let librariesView = LibrariesView()
+        let librariesView = LibrariesView(pushCollectionsView: { [weak self] library in
+            self?.showCollections(for: library)
+        })
                                 .environment(\.dbStorage, self.controllers.dbStorage)
                                 .environmentObject(LibrariesStore(dbStorage: self.controllers.dbStorage))
         let collectionsStore = CollectionsStore(library: self.defaultLibrary,
                                                 dbStorage: self.controllers.dbStorage)
-        let collectionsView = CollectionsView()
-                                    .environment(\.dbStorage, self.controllers.dbStorage)
-                                    .environmentObject(collectionsStore)
+//        let collectionsView = CollectionsView()
+//                                    .environment(\.dbStorage, self.controllers.dbStorage)
+//                                    .environmentObject(collectionsStore)
+        let collectionsController = CollectionsViewController(store: collectionsStore, dbStorage: self.controllers.dbStorage)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
-                                            UIHostingController(rootView: collectionsView)]
+                                            collectionsController]
+//                                            UIHostingController(rootView: collectionsView)]
 
         let itemsView = ItemsView()
                             .environment(\.dbStorage, self.controllers.dbStorage)

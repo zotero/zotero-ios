@@ -64,7 +64,7 @@ struct CollectionsView: View {
             self.store.state.editingType = nil
         }
 
-        return CollectionEditView()
+        return CollectionEditView(closeAction: {})
                     .environment(\.dbStorage, self.dbStorage)
                     .environmentObject(store)
     }

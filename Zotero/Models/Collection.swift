@@ -10,9 +10,9 @@ import Foundation
 
 import RealmSwift
 
-struct Collection: Identifiable, Equatable {
+struct Collection: Identifiable, Equatable, Hashable {
     
-    enum CollectionType: Equatable {
+    enum CollectionType: Equatable, Hashable {
         case collection
         case search
         case custom(CustomType)
@@ -25,7 +25,7 @@ struct Collection: Identifiable, Equatable {
         }
     }
 
-    enum CustomType: Equatable {
+    enum CustomType: Equatable, Hashable {
         case all, trash, publications
     }
     

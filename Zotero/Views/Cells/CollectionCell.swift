@@ -7,29 +7,39 @@
 //
 
 import UIKit
-
-protocol CollectionCellModel {
-    var name: String { get }
-    var level: Int { get }
-    var icon: UIImage? { get }
-}
+import SwiftUI
 
 class CollectionCell: UITableViewCell {
-    // Outlets
-    @IBOutlet private weak var iconView: UIImageView!
-    @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
-    // Constants
-    static let baseOffset: CGFloat = 20.0
-    static let levelOffset: CGFloat = 20.0
+    private static let imageWidth: CGFloat = 36
 
-    func setup(with model: CollectionCellModel) {
-        self.iconView.image = model.icon
-        self.titleLabel.text = model.name
-        let offset = CollectionCell.baseOffset + (CGFloat(model.level) * CollectionCell.levelOffset)
-        self.leftConstraint.constant = offset
+    func set(collection: Collection) {
+        self.contentView.subviews.last?.removeFromSuperview()
+        self.setupCollectionRow(with: collection)
+        self.setupSeparatorInset(with: collection.level)
+    }
 
-        let separatorInset = offset + self.iconView.frame.width + 8
-        self.separatorInset = UIEdgeInsets(top: 0, left: separatorInset, bottom: 0, right: 0)
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+//        self.contentView.subviews.last?.backgroundColor = selected ? UIColor.lightGray.withAlphaComponent(0.3) : .white
+    }
+
+    private func setupCollectionRow(with collection: Collection) {
+        guard let view = UIHostingController(rootView: CollectionRow(data: collection)).view else { return }
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+
+        self.contentView.addSubview(view)
+
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: self.contentView.topAnchor),
+            view.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor),
+            view.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor)
+        ])
+    }
+
+    private func setupSeparatorInset(with level: Int) {
+        let leftInset = CollectionRow.levelOffset + CollectionCell.imageWidth + (CGFloat(level) * CollectionRow.levelOffset)
+        self.separatorInset = UIEdgeInsets(top: 0, left: leftInset, bottom: 0, right: 0)
     }
 }

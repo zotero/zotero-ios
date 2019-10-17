@@ -13,14 +13,26 @@ struct CollectionRow: View {
     let data: Collection
 
     var body: some View {
-        HStack {
-            Image(self.data.iconName)
-                .renderingMode(.template)
-                .foregroundColor(.blue)
-            Text(self.data.name)
-                .foregroundColor(.black)
-                .lineLimit(1)
+        GeometryReader { proxy in
+            HStack {
+                Image(self.data.iconName)
+                    .renderingMode(.template)
+                    .foregroundColor(.blue)
+                Text(self.data.name)
+                    .foregroundColor(.black)
+                    .lineLimit(1)
+            }
+            .frame(width: proxy.size.width, alignment: .leading)
+            .padding(.vertical, 10)
+            .padding(.leading, self.inset(for: self.data.level))
         }
+    }
+
+    private func inset(for level: Int) -> CGFloat {
+        // When this view is embedded in UIHostingController and used in UITableViewCell, the padding is actually just 10, so we multiply it by 2
+        // to get the same offset as separator
+        let offset = CollectionRow.levelOffset * 2
+        return offset + (CGFloat(level) * offset)
     }
 }
 
@@ -28,7 +40,7 @@ struct CollectionRow: View {
 
 struct CollectionRow_Previews: PreviewProvider {
     static var previews: some View {
-        List {
+        Group {
             CollectionRow(data: Collection(custom: .all))
             CollectionRow(data: Collection(custom: .publications))
             CollectionRow(data: Collection(custom: .trash))
