@@ -113,6 +113,19 @@ class CollectionsViewController: UIViewController {
                     .environmentObject(store)
     }
 
+    private func createContextMenu(for collection: Collection) -> UIMenu {
+        let edit = UIAction(title: "Edit", image: UIImage(systemName: "pencil")) { action in
+            self.presentEditView(with: .edit(collection))
+        }
+        let subcollection = UIAction(title: "New subcollection", image: UIImage(systemName: "folder.badge.plus")) { action in
+            self.presentEditView(with: .addSubcollection(collection))
+        }
+        let delete = UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { action in
+            self.store.deleteCollection(with: collection.key)
+        }
+        return UIMenu(title: "", children: [edit, subcollection, delete])
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -160,6 +173,13 @@ extension CollectionsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let collection = self.dataSource.itemIdentifier(for: indexPath) {
             self.store.state.selectedCollection = collection
+        }
+    }
+
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
+            guard let collection = self?.dataSource.itemIdentifier(for: indexPath) else { return nil }
+            return self?.createContextMenu(for: collection)
         }
     }
 }
