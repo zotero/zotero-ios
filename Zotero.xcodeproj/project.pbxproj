@@ -169,7 +169,6 @@
 		B38E042F2350CC5400D063AE /* ItemSortTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */; };
 		B38F5F8A2333C9F1002EF78B /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F5F892333C9F1002EF78B /* Library.swift */; };
 		B39135722358495300F866E3 /* CollectionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39135712358495300F866E3 /* CollectionsViewController.swift */; };
-		B391357423587ECC00F866E3 /* CollectionCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B391357323587ECC00F866E3 /* CollectionCell.xib */; };
 		B3924C4B2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3924C4A2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift */; };
 		B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
 		B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */; };
@@ -430,7 +429,6 @@
 		B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSortTypePickerView.swift; sourceTree = "<group>"; };
 		B38F5F892333C9F1002EF78B /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		B39135712358495300F866E3 /* CollectionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsViewController.swift; sourceTree = "<group>"; };
-		B391357323587ECC00F866E3 /* CollectionCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionCell.xib; sourceTree = "<group>"; };
 		B3924C4A2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreItemDetailChangesDbRequest.swift; sourceTree = "<group>"; };
 		B39372972229420A008B2A96 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
@@ -804,7 +802,6 @@
 			isa = PBXGroup;
 			children = (
 				B312AD1522428F1400EDD5A4 /* CollectionCell.swift */,
-				B391357323587ECC00F866E3 /* CollectionCell.xib */,
 				B312AD1722428F1400EDD5A4 /* LibraryCell.swift */,
 				B312AD1322428F1400EDD5A4 /* LibraryCell.xib */,
 				B312AD1422428F1400EDD5A4 /* TextFieldCell.swift */,
@@ -1129,7 +1126,6 @@
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B36171CE2270B81200246E45 /* PickerViewController.xib in Resources */,
 				B312AD1D22428F1400EDD5A4 /* LibraryCell.xib in Resources */,
-				B391357423587ECC00F866E3 /* CollectionCell.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -18,11 +18,6 @@ class CollectionCell: UITableViewCell {
         self.setupSeparatorInset(with: collection.level)
     }
 
-    override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
-//        self.contentView.subviews.last?.backgroundColor = selected ? UIColor.lightGray.withAlphaComponent(0.3) : .white
-    }
-
     private func setupCollectionRow(with collection: Collection) {
         guard let view = UIHostingController(rootView: CollectionRow(data: collection)).view else { return }
         view.translatesAutoresizingMaskIntoConstraints = false
