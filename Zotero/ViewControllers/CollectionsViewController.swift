@@ -132,6 +132,7 @@ class CollectionsViewController: UIViewController {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
+        tableView.dropDelegate = self
         tableView.rowHeight = 44
 
         self.view.addSubview(tableView)
@@ -180,6 +181,51 @@ extension CollectionsViewController: UITableViewDelegate {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
             guard let collection = self?.dataSource.itemIdentifier(for: indexPath) else { return nil }
             return self?.createContextMenu(for: collection)
+        }
+    }
+}
+
+extension CollectionsViewController: UITableViewDropDelegate {
+    func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
+        guard let indexPath = coordinator.destinationIndexPath else { return }
+        let collection = self.store.state.collections[indexPath.row]
+
+        switch coordinator.proposal.operation {
+        case .copy:
+            self.loadKeys(from: coordinator.items) { [weak self] keys in
+                self?.store.assignItems(keys: keys, to: collection.key)
+            }
+        default: break
+        }
+    }
+
+    func tableView(_ tableView: UITableView,
+                   dropSessionDidUpdate session: UIDropSession,
+                   withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+        guard session.localDragSession != nil,
+              let indexPath = destinationIndexPath else { return UITableViewDropProposal(operation: .forbidden) }
+        let collection = self.store.state.collections[indexPath.row]
+        guard collection.type.isCollection else { return UITableViewDropProposal(operation: .forbidden) }
+        return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
+    }
+
+    private func loadKeys(from items: [UITableViewDropItem], completed: @escaping ([String]) -> Void) {
+        var keys: [String] = []
+
+        let group = DispatchGroup()
+
+        items.forEach { item in
+            group.enter()
+            item.dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
+                if let key = nsString as? String {
+                    keys.append(key)
+                }
+                group.leave()
+            }
+        }
+
+        group.notify(queue: .main) {
+            completed(keys)
         }
     }
 }

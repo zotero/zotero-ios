@@ -23,6 +23,13 @@ struct Collection: Identifiable, Equatable, Hashable {
             default: return false
             }
         }
+
+        var isCollection: Bool {
+            switch self {
+            case .collection: return true
+            default: return false
+            }
+        }
     }
 
     enum CustomType: Equatable, Hashable {

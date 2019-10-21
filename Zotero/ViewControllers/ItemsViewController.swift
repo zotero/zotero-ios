@@ -172,6 +172,7 @@ class ItemsViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.dragDelegate = self
         tableView.rowHeight = 58
         tableView.allowsMultipleSelectionDuringEditing = true
 
@@ -209,7 +210,7 @@ class ItemsViewController: UIViewController {
     }
 }
 
-extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
+extension ItemsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
@@ -239,11 +240,21 @@ extension ItemsViewController: UITableViewDelegate, UITableViewDataSource {
             self.showItemDetail(for: item)
         }
     }
+}
 
+extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         if tableView.isEditing,
            let item = self.store.state.results?[indexPath.row] {
             self.store.state.selectedItems.remove(item.key)
         }
+    }
+}
+
+extension ItemsViewController: UITableViewDragDelegate {
+    func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        guard let item = self.store.state.results?[indexPath.row] else { return [] }
+        let provider = NSItemProvider(object: item.key as NSString)
+        return [UIDragItem(itemProvider: provider)]
     }
 }

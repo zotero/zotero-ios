@@ -17,6 +17,7 @@ class CollectionsStore: ObservableObject {
     enum Error: Swift.Error, Equatable {
         case dataLoading
         case collectionNotFound
+        case collectionAssignment
         case deletion
     }
     
@@ -132,6 +133,18 @@ class CollectionsStore: ObservableObject {
     func didAppear() {
         NotificationCenter.default.post(name: .splitViewDetailChanged,
                                         object: (self.state.selectedCollection, self.state.library))
+    }
+
+    func assignItems(keys: [String], to collectionKey: String) {
+        do {
+            let request = AssignItemsToCollectionsDbRequest(collectionKeys: Set([collectionKey]),
+                                                            itemKeys: Set(keys),
+                                                            libraryId: self.state.library.identifier)
+            try self.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            DDLogError("CollectionsStore: can't assign collections to items - \(error)")
+            self.state.error = .collectionAssignment
+        }
     }
 
     func deleteCollection(with key: String) {
