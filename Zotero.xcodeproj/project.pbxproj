@@ -46,6 +46,8 @@
 		B32CD32F221C58DF003F8073 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B32CD309221C58DE003F8073 /* Assets.xcassets */; };
 		B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */; };
 		B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD362221C73A1003F8073 /* UIView+Nibname.swift */; };
+		B32D47432358AE1B00DD38BB /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32D47422358AE1B00DD38BB /* ItemCell.swift */; };
+		B32D47452358AF4000DD38BB /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32D47442358AF4000DD38BB /* ItemsViewController.swift */; };
 		B330F108234F80B600D561DC /* ReadItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330F107234F80B600D561DC /* ReadItemDbRequest.swift */; };
 		B3310C562264D06C00E45CD1 /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3310C552264D06C00E45CD1 /* FieldKeys.swift */; };
 		B3341F6D22CA314900580FE8 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */; };
@@ -186,6 +188,7 @@
 		B3AC6209233231AF0091DD74 /* OnboardingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC6208233231AF0091DD74 /* OnboardingButton.swift */; };
 		B3AC620D233282A60091DD74 /* LibrariesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620C233282A60091DD74 /* LibrariesView.swift */; };
 		B3AC620F233287530091DD74 /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620E233287530091DD74 /* LibraryRow.swift */; };
+		B3AD920C235DE76400FDB388 /* ItemsActionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */; };
 		B3B262B32331250100552E63 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B22331250100552E63 /* OnboardingView.swift */; };
 		B3B262B52331257200552E63 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B42331257200552E63 /* LoginView.swift */; };
 		B3B262B72331257A00552E63 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B62331257A00552E63 /* RegisterView.swift */; };
@@ -306,6 +309,8 @@
 		B32CD309221C58DE003F8073 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailStore.swift; sourceTree = "<group>"; };
 		B32CD362221C73A1003F8073 /* UIView+Nibname.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Nibname.swift"; sourceTree = "<group>"; };
+		B32D47422358AE1B00DD38BB /* ItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
+		B32D47442358AF4000DD38BB /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B330F107234F80B600D561DC /* ReadItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemDbRequest.swift; sourceTree = "<group>"; };
 		B3310C552264D06C00E45CD1 /* FieldKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldKeys.swift; sourceTree = "<group>"; };
 		B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolutionController.swift; sourceTree = "<group>"; };
@@ -446,6 +451,7 @@
 		B3AC6208233231AF0091DD74 /* OnboardingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingButton.swift; sourceTree = "<group>"; };
 		B3AC620C233282A60091DD74 /* LibrariesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesView.swift; sourceTree = "<group>"; };
 		B3AC620E233287530091DD74 /* LibraryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
+		B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsActionSheetView.swift; sourceTree = "<group>"; };
 		B3B262B22331250100552E63 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B3B262B42331257200552E63 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B3B262B62331257A00552E63 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
@@ -683,6 +689,7 @@
 				B38E042A2350A52200D063AE /* CollectionsPickerView.swift */,
 				B31CB7B3234B4D8200FB12A0 /* NoteEditorView.swift */,
 				B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */,
+				B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -696,6 +703,7 @@
 				B36171CC2270B81200246E45 /* PickerViewController.xib */,
 				B31CB7B5234B4D9600FB12A0 /* NoteEditorViewController.swift */,
 				B39135712358495300F866E3 /* CollectionsViewController.swift */,
+				B32D47442358AF4000DD38BB /* ItemsViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -802,6 +810,7 @@
 			isa = PBXGroup;
 			children = (
 				B312AD1522428F1400EDD5A4 /* CollectionCell.swift */,
+				B32D47422358AE1B00DD38BB /* ItemCell.swift */,
 				B312AD1722428F1400EDD5A4 /* LibraryCell.swift */,
 				B312AD1322428F1400EDD5A4 /* LibraryCell.xib */,
 				B312AD1422428F1400EDD5A4 /* TextFieldCell.swift */,
@@ -1279,6 +1288,7 @@
 				B3C62EC82211E5C0000FFBFF /* ItemsStore.swift in Sources */,
 				B3B5514D22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B339F0E82343AE0F00055345 /* ItemDetailMetadataSectionView.swift in Sources */,
+				B32D47432358AE1B00DD38BB /* ItemCell.swift in Sources */,
 				B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */,
 				B33A56B023561F5600C33F28 /* SettingsView.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
@@ -1296,6 +1306,7 @@
 				B339F0E72343AE0F00055345 /* ItemDetailAbstractView.swift in Sources */,
 				B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */,
 				B312AD1F22428F1400EDD5A4 /* CollectionCell.swift in Sources */,
+				B3AD920C235DE76400FDB388 /* ItemsActionSheetView.swift in Sources */,
 				B38C96A6223FFB2900343F8F /* StoreItemsDbRequest.swift in Sources */,
 				B36171CD2270B81200246E45 /* PickerViewController.swift in Sources */,
 				B312AD2122428F1400EDD5A4 /* LibraryCell.swift in Sources */,
@@ -1407,6 +1418,7 @@
 				B33A56B82356241800C33F28 /* ProfileView.swift in Sources */,
 				B3B3B40C225B3D7200E28C34 /* SchemaResponse.swift in Sources */,
 				B33A56C02356336400C33F28 /* SettingsToggleRow.swift in Sources */,
+				B32D47452358AF4000DD38BB /* ItemsViewController.swift in Sources */,
 				B3B3B410225B5B3D00E28C34 /* SchemaRequest.swift in Sources */,
 				B38E042F2350CC5400D063AE /* ItemSortTypePickerView.swift in Sources */,
 				B346E47622CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,

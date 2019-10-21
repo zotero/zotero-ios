@@ -46,39 +46,20 @@ class ItemsStore: ObservableObject {
         let type: ItemType
         let library: Library
 
-        fileprivate(set) var sections: [String]?
-        fileprivate var results: Results<RItem>?
-        fileprivate(set) var error: Error?
-        fileprivate var itemsToken: NotificationToken?
+        fileprivate(set) var results: Results<RItem>? {
+            didSet {
+                self.resultsDidChange?()
+            }
+        }
+        var error: Error?
         var sortType: ItemsSortType {
             willSet {
-                if let results = self.results {
-                    self.sections = ItemsStore.sections(from: results, sortType: newValue)
-                }
+                self.results = self.results?.sorted(by: newValue.descriptors)
             }
         }
         var selectedItems: Set<String> = []
-        var menuActionSheetPresented: Bool = false
-        var showingCreation: Bool = false {
-            willSet {
-                self.menuActionSheetPresented = false
-            }
-        }
-
-        func items(for section: String) -> Results<RItem>? {
-            var results: Results<RItem>? = self.results
-
-            switch self.sortType.field {
-            case .title:
-                if section == "-" {
-                    results = results?.filter("title == ''")
-                } else {
-                    results = results?.filter("title BEGINSWITH[c] %@", section)
-                }
-            default: break
-            }
-            return results?.sorted(by: self.sortType.descriptors)
-        }
+        var showingCreation: Bool = false
+        var resultsDidChange: (() -> Void)?
     }
 
     @Published var state: State
@@ -88,26 +69,15 @@ class ItemsStore: ObservableObject {
         self.dbStorage = dbStorage
 
         do {
-            let items = try dbStorage.createCoordinator().perform(request: ItemsStore.request(for: type, libraryId: library.identifier))
             let sortType = ItemsSortType(field: .title, ascending: true)
+            let items = try dbStorage.createCoordinator()
+                                     .perform(request: ItemsStore.request(for: type, libraryId: library.identifier))
+                                     .sorted(by: sortType.descriptors)
 
             self.state = State(type: type,
                                library: library,
-                               sections: ItemsStore.sections(from: items, sortType: sortType),
                                results: items,
                                sortType: sortType)
-
-            let token = items.observe { [weak self] changes in
-                switch changes {
-                case .error: break
-                case .initial: break
-                case .update(let results, _, _, _):
-                    guard let `self` = self else { return }
-                    self.state.results = results
-                    self.state.sections = ItemsStore.sections(from: results, sortType: self.state.sortType)
-                }
-            }
-            self.state.itemsToken = token
         } catch let error {
             DDLogError("ItemStore: can't load items - \(error)")
             self.state = State(type: type,
@@ -178,23 +148,5 @@ class ItemsStore: ObservableObject {
                                          collectionKey: key, parentKey: "", trash: false)
         }
         return request
-    }
-
-    private class func sections(from results: Results<RItem>, sortType: ItemsSortType) -> [String] {
-        let sortedResults = results.sorted(by: sortType.descriptors)
-
-        switch sortType.field {
-        case .title:
-            return Set(sortedResults.map({ $0.title.first.flatMap(String.init)?.uppercased() ?? "-" }))
-                        .sorted(by: {
-                            comparator(for: sortType, left: $0, right: $1)
-                        })
-        default:
-            return [""]
-        }
-    }
-
-    private class func comparator(for sortType: ItemsSortType, left: String, right: String) -> Bool {
-        return sortType.ascending ? left < right : left > right
     }
 }

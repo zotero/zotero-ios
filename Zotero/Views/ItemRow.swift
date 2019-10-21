@@ -37,6 +37,8 @@ struct ItemRow: View {
                 }
             }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 }
 

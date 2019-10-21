@@ -179,13 +179,16 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func showItems(in collection: Collection, library: Library) {
-        let view = ItemsView()
-                        .environment(\.dbStorage, self.controllers.dbStorage)
-                        .environment(\.apiClient, self.controllers.apiClient)
-                        .environment(\.fileStorage, self.controllers.fileStorage)
-                        .environment(\.schemaController, self.controllers.schemaController)
-                        .environmentObject(self.itemsStore(for: collection, library: library))
-        self.showSecondaryController(UIHostingController.withBetterSheetSupport(rootView: view))
+//        let view = ItemsView()
+//                        .environment(\.dbStorage, self.controllers.dbStorage)
+//                        .environment(\.apiClient, self.controllers.apiClient)
+//                        .environment(\.fileStorage, self.controllers.fileStorage)
+//                        .environment(\.schemaController, self.controllers.schemaController)
+//                        .environmentObject(self.itemsStore(for: collection, library: library))
+//        let controller = UIHostingController.withBetterSheetSupport(rootView: view)
+        let controller = ItemsViewController(store: self.itemsStore(for: collection, library: library),
+                                             controllers: self.controllers)
+        self.showSecondaryController(controller)
     }
 
     private func showSecondaryController(_ controller: UIViewController) {
@@ -294,15 +297,18 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                             collectionsController]
 //                                            UIHostingController(rootView: collectionsView)]
 
-        let itemsView = ItemsView()
-                            .environment(\.dbStorage, self.controllers.dbStorage)
-                            .environment(\.apiClient, self.controllers.apiClient)
-                            .environment(\.fileStorage, self.controllers.fileStorage)
-                            .environment(\.schemaController, self.controllers.schemaController)
-                            .environmentObject(self.itemsStore(for: self.defaultCollection,
-                                                               library: self.defaultLibrary))
+//        let itemsView = ItemsView()
+//                            .environment(\.dbStorage, self.controllers.dbStorage)
+//                            .environment(\.apiClient, self.controllers.apiClient)
+//                            .environment(\.fileStorage, self.controllers.fileStorage)
+//                            .environment(\.schemaController, self.controllers.schemaController)
+//                            .environmentObject(self.itemsStore(for: self.defaultCollection,
+//                                                               library: self.defaultLibrary))
+//        let controller = UIHostingController.withBetterSheetSupport(rootView: itemsView)
+        let controller = ItemsViewController(store: self.itemsStore(for: self.defaultCollection, library: self.defaultLibrary),
+                                             controllers: self.controllers)
 
-        let detailController = UINavigationController(rootViewController: UIHostingController.withBetterSheetSupport(rootView: itemsView))
+        let detailController = UINavigationController(rootViewController: controller)
 
         self.viewControllers = [masterController, detailController]
         self.reloadPrimaryColumnFraction(with: collectionsStore.state.collections, animated: false)

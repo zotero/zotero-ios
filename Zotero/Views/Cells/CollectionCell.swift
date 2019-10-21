@@ -14,11 +14,11 @@ class CollectionCell: UITableViewCell {
 
     func set(collection: Collection) {
         self.contentView.subviews.last?.removeFromSuperview()
-        self.setupCollectionRow(with: collection)
+        self.setupView(with: collection)
         self.setupSeparatorInset(with: collection.level)
     }
 
-    private func setupCollectionRow(with collection: Collection) {
+    private func setupView(with collection: Collection) {
         guard let view = UIHostingController(rootView: CollectionRow(data: collection)).view else { return }
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .clear

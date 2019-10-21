@@ -31,23 +31,23 @@ struct ItemsView: View {
                            isActive: self.$store.state.showingCreation,
                            label: { EmptyView() })
 
-            List(selection: self.$store.state.selectedItems) {
-                self.store.state.sections.flatMap {
-                    ForEach($0, id: \.self) { section in
-                        self.store.state.items(for: section).flatMap { items in
-                            ItemSectionView(results: items,
-                                            libraryId: self.store.state.library.identifier)
-                        }
-                    }
-                }
-            }
+//            List(selection: self.$store.state.selectedItems) {
+//                self.store.state.sections.flatMap {
+//                    ForEach($0, id: \.self) { section in
+//                        self.store.state.items(for: section).flatMap { items in
+//                            ItemSectionView(results: items,
+//                                            libraryId: self.store.state.library.identifier)
+//                        }
+//                    }
+//                }
+//            }
 
             if self.editMode?.wrappedValue.isEditing == true {
                 Toolbar()
             }
         }
         .onAppear(perform: { self.store.state.showingCreation = false })
-        .overlay(ActionSheetOverlay())
+        .overlay(ItemsActionSheetView())
         .navigationBarTitle(self.navigationBarTitle, displayMode: .inline)
         .navigationBarItems(trailing: self.trailingItems)
         .edgesIgnoringSafeArea(self.editMode?.wrappedValue.isEditing == true ? .bottom : Edge.Set(rawValue: 0))
@@ -78,7 +78,7 @@ struct ItemsView: View {
             } else {
                 Button(action: {
                     withAnimation {
-                        self.store.state.menuActionSheetPresented = true
+//                        self.store.state.menuActionSheetPresented = true
                     }
                 }) {
                     Image(systemName: "ellipsis")
@@ -97,64 +97,6 @@ struct ItemsView: View {
                                     schemaController: self.schemaController)
         return ItemDetailView()
                     .environmentObject(store)
-    }
-}
-
-fileprivate struct ActionSheetOverlay: View {
-    @EnvironmentObject private(set) var store: ItemsStore
-
-    @Environment(\.editMode) private var editMode: Binding<EditMode>
-
-    var body: some View {
-        Group {
-            if self.store.state.menuActionSheetPresented {
-                ZStack(alignment: .topTrailing) {
-                    Color.black.opacity(0.1)
-                        .onTapGesture {
-                            withAnimation {
-                                self.store.state.menuActionSheetPresented = false
-                            }
-                        }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Button(action: {
-                            self.editMode?.animation().wrappedValue = .active
-                            self.store.state.menuActionSheetPresented = false
-                        }) {
-                            Text("Select Items")
-                        }
-
-                        Divider()
-
-                        Button(action: {
-                            NotificationCenter.default.post(name: .presentSortTypePicker, object: self.$store.state.sortType.field)
-                            self.store.state.menuActionSheetPresented = false
-                        }) {
-                            Text("Sort By: \(self.store.state.sortType.field.title)")
-                        }
-
-                        Button(action: { self.store.state.sortType.ascending.toggle() }) {
-                            Text("Sort Order: \(self.sortOrderTitle)")
-                        }
-
-                        Divider()
-                        
-                        Button(action: { self.store.state.showingCreation = true }) {
-                            Text("New Item")
-                        }
-                    }
-                    .padding()
-                    .frame(width: 260, alignment: .trailing)
-                    .background(Color.white)
-                }
-            } else {
-                EmptyView()
-            }
-        }
-    }
-
-    private var sortOrderTitle: String {
-        return self.store.state.sortType.ascending ? "Ascending" : "Descending"
     }
 }
 
