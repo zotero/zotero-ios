@@ -26,6 +26,7 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
             collections.forEach { collection in
                 if !item.collections.contains(collection) {
                     item.collections.append(collection)
+                    item.changedFields.insert(.collections)
                 }
             }
         }
