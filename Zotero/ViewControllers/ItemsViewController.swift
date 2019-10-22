@@ -15,12 +15,13 @@ import RealmSwift
 
 class ItemsViewController: UIViewController {
     private static let cellId = "ItemCell"
+    private static let barButtonItemEmptyTag = 1
+    private static let barButtonItemSingleTag = 2
 
     private let store: ItemsStore
     private let controllers: Controllers
 
     private weak var tableView: UITableView!
-    private weak var duplicateItem: UIBarButtonItem!
 
     private var storeSubscriber: AnyCancellable?
     private var resultsToken: NotificationToken?
@@ -41,19 +42,19 @@ class ItemsViewController: UIViewController {
         self.setupTableView()
         self.setupToolbar()
         self.updateNavigationBarItems()
+        self.startObservingItemChanges()
 
-        self.store.state.resultsDidChange = { [weak self] in
-            if let results = self?.store.state.results {
-                self?.startObserving(results: results)
-            }
-        }
         self.storeSubscriber = self.store.$state.receive(on: DispatchQueue.main)
                                                 .sink(receiveValue: { [weak self] state in
-                                                    self?.duplicateItem.isEnabled = state.selectedItems.count == 1
+                                                    self?.updateToolbarItems()
                                                 })
     }
 
     // MARK: - Actions
+
+    @objc private func removeSelectedFromCollection() {
+        self.store.removeSelectedItemsFromCollection()
+    }
 
     @objc private func showCollectionPicker() {
         NotificationCenter.default.post(name: .presentCollectionsPicker, object: (self.store.state.library, self.store.assignSelectedItems))
@@ -107,6 +108,18 @@ class ItemsViewController: UIViewController {
 
         let controller = UIHostingController(rootView: view)
         self.navigationController?.pushViewController(controller, animated: true)
+    }
+
+    private func startObservingItemChanges() {
+        let startObserving: () -> Void = { [weak self] in
+            if let results = self?.store.state.results {
+                self?.startObserving(results: results)
+            }
+        }
+        // Set for observation changes
+        self.store.state.resultsDidChange = startObserving
+        // Start initial observing
+        startObserving()
     }
 
     private func startObserving(results: Results<RItem>) {
@@ -165,6 +178,18 @@ class ItemsViewController: UIViewController {
         self.navigationItem.rightBarButtonItem = trailingitem
     }
 
+    private func updateToolbarItems() {
+        self.toolbarItems?.forEach({ item in
+            switch item.tag {
+            case ItemsViewController.barButtonItemEmptyTag:
+                item.isEnabled = !self.store.state.selectedItems.isEmpty
+            case ItemsViewController.barButtonItemSingleTag:
+                item.isEnabled = self.store.state.selectedItems.count == 1
+            default: break
+            }
+        })
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -191,22 +216,39 @@ class ItemsViewController: UIViewController {
     }
 
     private func setupToolbar() {
-        let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"),
-                                         style: .plain,
-                                         target: self,
-                                         action: #selector(ItemsViewController.showCollectionPicker))
-         let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"),
-                                         style: .plain,
-                                         target: self,
-                                         action: #selector(ItemsViewController.trashSelected))
-         let duplicateItem = UIBarButtonItem(image: UIImage(systemName: "square.on.square"),
-                                             style: .plain,
-                                             target: self,
-                                             action: #selector(ItemsViewController.duplicateSelected))
+       let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"),
+                                        style: .plain,
+                                        target: self,
+                                        action: #selector(ItemsViewController.showCollectionPicker))
+        pickerItem.tag = ItemsViewController.barButtonItemEmptyTag
+
+        let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"),
+                                        style: .plain,
+                                        target: self,
+                                        action: #selector(ItemsViewController.trashSelected))
+        trashItem.tag = ItemsViewController.barButtonItemEmptyTag
+
+        let duplicateItem = UIBarButtonItem(image: UIImage(systemName: "square.on.square"),
+                                            style: .plain,
+                                            target: self,
+                                            action: #selector(ItemsViewController.duplicateSelected))
+        duplicateItem.tag = ItemsViewController.barButtonItemSingleTag
+
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
 
-        self.toolbarItems = [spacer, pickerItem, spacer, trashItem, spacer, duplicateItem, spacer]
-        self.duplicateItem = duplicateItem
+        var items = [spacer, pickerItem, spacer, trashItem, spacer, duplicateItem, spacer]
+
+        if self.store.state.type.collectionKey != nil {
+            let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"),
+                                             style: .plain,
+                                             target: self,
+                                             action: #selector(ItemsViewController.removeSelectedFromCollection))
+            removeItem.tag = ItemsViewController.barButtonItemEmptyTag
+
+            items.insert(contentsOf: [spacer, removeItem], at: 2)
+        }
+
+        self.toolbarItems = items
     }
 }
 

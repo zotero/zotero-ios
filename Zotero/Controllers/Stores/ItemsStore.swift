@@ -87,6 +87,19 @@ class ItemsStore: ObservableObject {
         }
     }
 
+    func removeSelectedItemsFromCollection() {
+        guard let collectionKey = self.state.type.collectionKey else { return }
+        do {
+            let request = DeleteItemsFromCollectionDbRequest(collectionKey: collectionKey,
+                                                            itemKeys: self.state.selectedItems,
+                                                            libraryId: self.state.library.identifier)
+            try self.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            DDLogError("ItemsStore: can't delete items from collection - \(error)")
+            self.state.error = .collectionAssignment
+        }
+    }
+
     func assignSelectedItems(to collectionKeys: Set<String>) {
         do {
             let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
