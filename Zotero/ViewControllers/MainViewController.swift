@@ -194,7 +194,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private func showSecondaryController(_ controller: UIViewController) {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
-            (self.viewControllers.last as? UINavigationController)?.setViewControllers([controller], animated: false)
+            let navigationController = self.viewControllers.last as? UINavigationController
+            navigationController?.setToolbarHidden(true, animated: false)
+            navigationController?.setViewControllers([controller], animated: false)
         case .phone:
             (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
         default: break
