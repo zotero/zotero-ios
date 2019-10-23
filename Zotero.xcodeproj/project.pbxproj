@@ -226,6 +226,8 @@
 		B3E4713E22412693006E3B20 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4713D22412693006E3B20 /* Collection.swift */; };
 		B3E47157224127AC006E3B20 /* ProgressNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47143224127AB006E3B20 /* ProgressNavigationViewController.swift */; };
 		B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47155224127AC006E3B20 /* MainViewController.swift */; };
+		B3E489F0236057A200AF402E /* ItemTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E489EF236057A200AF402E /* ItemTypePickerView.swift */; };
+		B3E489F22360610500AF402E /* ItemTypePickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E489F12360610500AF402E /* ItemTypePickerStore.swift */; };
 		B3E86D502314085E00DAA6D8 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E86D4F2314085E00DAA6D8 /* MainView.swift */; };
 		B3E8ABFF2344B6C300CCED64 /* PreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */; };
 		B3EAB8DE23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */; };
@@ -491,6 +493,8 @@
 		B3E4713D22412693006E3B20 /* Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collection.swift; sourceTree = "<group>"; };
 		B3E47143224127AB006E3B20 /* ProgressNavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressNavigationViewController.swift; sourceTree = "<group>"; };
 		B3E47155224127AC006E3B20 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
+		B3E489EF236057A200AF402E /* ItemTypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypePickerView.swift; sourceTree = "<group>"; };
+		B3E489F12360610500AF402E /* ItemTypePickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypePickerStore.swift; sourceTree = "<group>"; };
 		B3E86D4F2314085E00DAA6D8 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceKeys.swift; sourceTree = "<group>"; };
 		B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkCollectionAndItemsAsDeletedDbRequest.swift; sourceTree = "<group>"; };
@@ -657,6 +661,7 @@
 				B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */,
 				B372765723268CDD00E2C522 /* TagPickerStore.swift */,
 				B33A56BB2356314400C33F28 /* SettingsStore.swift */,
+				B3E489F12360610500AF402E /* ItemTypePickerStore.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -694,6 +699,7 @@
 				B31CB7B3234B4D8200FB12A0 /* NoteEditorView.swift */,
 				B38E042E2350CC5400D063AE /* ItemSortTypePickerView.swift */,
 				B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */,
+				B3E489EF236057A200AF402E /* ItemTypePickerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1427,6 +1433,7 @@
 				B3B3B40C225B3D7200E28C34 /* SchemaResponse.swift in Sources */,
 				B33A56C02356336400C33F28 /* SettingsToggleRow.swift in Sources */,
 				B32D47452358AF4000DD38BB /* ItemsViewController.swift in Sources */,
+				B3E489F0236057A200AF402E /* ItemTypePickerView.swift in Sources */,
 				B3B3B410225B5B3D00E28C34 /* SchemaRequest.swift in Sources */,
 				B38E042F2350CC5400D063AE /* ItemSortTypePickerView.swift in Sources */,
 				B346E47622CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
@@ -1458,6 +1465,7 @@
 				B3487301221D73CA00244CCC /* FileRequest.swift in Sources */,
 				B3E86D502314085E00DAA6D8 /* MainView.swift in Sources */,
 				B339F0F72343AE0F00055345 /* ItemDetailTagSectionView.swift in Sources */,
+				B3E489F22360610500AF402E /* ItemTypePickerStore.swift in Sources */,
 				B3FFDEDF22805C9D0009EBBE /* ReadSearchDbRequest.swift in Sources */,
 				B31CB7B6234B4D9600FB12A0 /* NoteEditorViewController.swift in Sources */,
 				B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */,

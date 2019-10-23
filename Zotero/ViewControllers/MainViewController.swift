@@ -95,6 +95,17 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Actions
 
+    private func presentTypePicker(for type: String, saveAction: @escaping (String) -> Void) {
+        let view = ItemTypePickerView(saveAction: saveAction) { [weak self] in
+            self?.dismiss(animated: true, completion: nil)
+        }
+        .environmentObject(ItemTypePickerStore(selected: type, schemaController: self.controllers.schemaController))
+
+        let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        controller.isModalInPresentation = true
+        self.present(controller, animated: true, completion: nil)
+    }
+
     private func presentNote(_ note: Binding<ItemDetailStore.State.Note>, saveAction: @escaping () -> Void) {
         let view = NoteEditorView(note: note, saveAction: saveAction)
         let controller = UIHostingController(rootView: view)
@@ -395,14 +406,23 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                      })
                                      .disposed(by: self.disposeBag)
 
-         NotificationCenter.default.rx.notification(.presentNote)
-                                      .observeOn(MainScheduler.instance)
-                                      .subscribe(onNext: { [weak self] notification in
-                                          if let (note, block) = notification.object as? (Binding<ItemDetailStore.State.Note>, () -> Void) {
-                                              self?.presentNote(note, saveAction: block)
-                                          }
-                                      })
-                                      .disposed(by: self.disposeBag)
+        NotificationCenter.default.rx.notification(.presentNote)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let (note, block) = notification.object as? (Binding<ItemDetailStore.State.Note>, () -> Void) {
+                                             self?.presentNote(note, saveAction: block)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx.notification(.presentTypePicker)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let (selected, block) = notification.object as? (String, (String) -> Void) {
+                                             self?.presentTypePicker(for: selected, saveAction: block)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
     }
 }
 

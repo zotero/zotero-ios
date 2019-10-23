@@ -465,6 +465,32 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
+    func changeType(to newType: String) {
+        guard let fieldKeys = self.schemaController.fields(for: newType)?.map({ $0.field }),
+              let localizedType = self.schemaController.localized(itemType: newType) else {
+            self.state.error = .typeNotSupported
+            return
+        }
+
+        let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
+        let titleKey = self.schemaController.titleKey(for: newType)
+        let fields = fieldKeys.compactMap({ key -> State.Field? in
+            guard key != FieldKeys.abstract && key != titleKey else { return nil }
+
+            if let index = self.state.data.fields.firstIndex(where: { $0.key == key }) {
+                return self.state.data.fields[index]
+            } else {
+                let name = self.schemaController.localized(field: key) ?? ""
+                return State.Field(key: key, name: name, value: "", isTitle: false)
+            }
+        })
+
+        self.state.data.type = newType
+        self.state.data.localizedType = localizedType
+        self.state.data.fields = fields
+        self.state.data.abstract = hasAbstract ? (self.state.data.abstract ?? "") : nil
+    }
+
     func addAttachments(from urls: [URL]) {
         let attachments = urls.map({ Files.file(from: $0) })
                               .map({

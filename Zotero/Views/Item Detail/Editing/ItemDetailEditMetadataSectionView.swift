@@ -8,6 +8,10 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let presentTypePicker = Notification.Name(rawValue: "org.zotero.PresentItemTypePicker")
+}
+
 struct ItemDetailEditMetadataSectionView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
@@ -15,6 +19,9 @@ struct ItemDetailEditMetadataSectionView: View {
         Section {
             ItemDetailMetadataView(title: "Item Type",
                                    value: self.store.state.data.localizedType)
+            .onTapGesture {
+                NotificationCenter.default.post(name: .presentTypePicker, object: (self.store.state.data.type, self.store.changeType))
+            }
 
             ForEach(self.store.state.data.creators.indices, id:\.self) { index in
                 ItemDetailEditCreatorView(creator: self.$store.state.data.creators[index])
