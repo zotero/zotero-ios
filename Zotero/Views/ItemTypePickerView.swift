@@ -42,8 +42,8 @@ struct ItemTypePickerView: View {
 
     private var trailingItems: some View {
         Button(action: {
-            self.saveAction(self.store.state.selectedType)
             self.closeAction()
+            self.saveAction(self.store.state.selectedType)
         }) {
             Text("Save")
         }
