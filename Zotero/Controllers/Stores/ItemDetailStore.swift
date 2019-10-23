@@ -272,7 +272,7 @@ class ItemDetailStore: ObservableObject {
         var downloadProgress: [String: Double]
         var downloadError: [String: ItemDetailStore.Error]
         var error: Error?
-        var presentedNote: Note?
+        var presentedNote: Note
         var metadataTitleMaxWidth: CGFloat
 
         var showTagPicker: Bool
@@ -296,6 +296,7 @@ class ItemDetailStore: ObservableObject {
             self.showTagPicker = false
             self.metadataTitleMaxWidth = 0
             self.error = error
+            self.presentedNote = Note(key: KeyGenerator.newKey, text: "")
 
             switch type {
             case .preview(let item), .duplication(let item, _):
@@ -502,12 +503,8 @@ class ItemDetailStore: ObservableObject {
         self.state.data.notes.remove(atOffsets: offsets)
     }
 
-    func editNote(_ note: State.Note) {
-        self.state.presentedNote = note
-    }
-
     func saveNote() {
-        guard let note = self.state.presentedNote else { return }
+        let note = self.state.presentedNote
         if let index = self.state.data.notes.firstIndex(where: { $0.key == note.key }) {
             self.state.data.notes[index] = note
             // we edit notes outside of editing mode, so we need to save the change immediately

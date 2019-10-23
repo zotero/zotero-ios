@@ -18,7 +18,10 @@ struct ItemDetailEditNoteSectionView: View {
                 ItemDetailNoteView(text: note.title)
             }
             .onDelete(perform: self.store.deleteNotes)
-            ItemDetailAddView(title: "Add note", action: self.store.addNote)
+            ItemDetailAddView(title: "Add note", action: {
+                self.store.addNote()
+                NotificationCenter.default.post(name: .presentNote, object: (self.$store.state.presentedNote, self.store.saveNote))
+            })
         }
     }
 }

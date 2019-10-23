@@ -16,6 +16,7 @@
 		B307E55B22D49A1F00592B3C /* test_collection.json in Resources */ = {isa = PBXBuildFile; fileRef = B307E55922D49A1F00592B3C /* test_collection.json */; };
 		B307E55E22D4A87B00592B3C /* SyncActionHandlerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionHandlerSpec.swift */; };
 		B308FE25235F37E300A1A59D /* DeleteItemsFromCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B308FE24235F37E300A1A59D /* DeleteItemsFromCollectionDbRequest.swift */; };
+		B308FEF3235F495000A1A59D /* tinymce in Resources */ = {isa = PBXBuildFile; fileRef = B308FEF2235F495000A1A59D /* tinymce */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
@@ -274,6 +275,7 @@
 		B307E55922D49A1F00592B3C /* test_collection.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_collection.json; sourceTree = "<group>"; };
 		B307E55D22D4A87B00592B3C /* SyncActionHandlerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionHandlerSpec.swift; sourceTree = "<group>"; };
 		B308FE24235F37E300A1A59D /* DeleteItemsFromCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteItemsFromCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B308FEF2235F495000A1A59D /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -756,6 +758,7 @@
 		B32CD308221C58DE003F8073 /* Assets */ = {
 			isa = PBXGroup;
 			children = (
+				B308FEF2235F495000A1A59D /* tinymce */,
 				B3B3B409225B387800E28C34 /* schema.json */,
 				B32CD309221C58DE003F8073 /* Assets.xcassets */,
 			);
@@ -1131,6 +1134,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B308FEF3235F495000A1A59D /* tinymce in Resources */,
 				B32CD32F221C58DF003F8073 /* Assets.xcassets in Resources */,
 				B3B3B40A225B387800E28C34 /* schema.json in Resources */,
 				B312AD2022428F1400EDD5A4 /* TextFieldCell.xib in Resources */,

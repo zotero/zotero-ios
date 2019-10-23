@@ -31,15 +31,6 @@ struct ItemDetailView: View {
         })
         .navigationBarBackButtonHidden(self.editMode?.wrappedValue.isEditing == true)
         .navigationBarItems(trailing: self.trailingNavbarItems)
-        .betterSheet(item: self.$store.state.presentedNote,
-                     onDismiss: {
-                        self.store.state.presentedNote = nil
-                     },
-                     content: { note in
-                        Binding(self.$store.state.presentedNote).flatMap { note in
-                            NoteEditorView(note: note, saveAction: self.store.saveNote)
-                        }
-                     })
         .betterSheet(item: self.$store.state.unknownAttachment,
                      onDismiss: {
                          self.store.state.unknownAttachment = nil

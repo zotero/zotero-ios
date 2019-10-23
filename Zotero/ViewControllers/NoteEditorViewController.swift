@@ -6,6 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import SafariServices
 import UIKit
 import WebKit
 
@@ -14,6 +15,7 @@ class NoteEditorViewController: UIViewController {
     let saveAction: (String) -> Void
 
     private weak var webView: WKWebView!
+    private weak var activityIndicator: UIActivityIndicatorView!
 
     init(text: String, saveAction: @escaping (String) -> Void) {
         self.text = text
@@ -35,34 +37,21 @@ class NoteEditorViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func loadEditor() {
-        let html =
-        """
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-          <script src='https://cdn.tiny.cloud/1/no-api-key/tinymce/5/tinymce.min.js' referrerpolicy="origin"></script>
-          <script>
-          tinymce.init({
-            selector: '#mytextarea',
-            plugins: ['autoresize'],
-            menubar: false,
-            mobile: {
-              theme: 'silver'
-            }
-          });
-          </script>
-        </head>
+    private func showWebView()  {
+        UIView.animate(withDuration: 0.1, animations: {
+            self.webView.alpha = 1
+            self.activityIndicator.alpha =  0
+        }) { _ in
+            self.activityIndicator.stopAnimating()
+            self.activityIndicator.isHidden = true
+        }
+    }
 
-        <body width=320>
-          <form method="post">
-            <textarea id="mytextarea" name="mytextarea">\(self.text)</textarea>
-          </form>
-        </body>
-        </html>
-        """
-        self.webView.loadHTMLString(html, baseURL: nil)
+    private func loadEditor() {
+        guard let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "tinymce"),
+              var data = try? String(contentsOf: url, encoding: .utf8) else { return }
+        data = data.replacingOccurrences(of: "#initialnote", with: self.text)
+        self.webView.loadHTMLString(data, baseURL: url)
     }
 
     @objc private func cancel() {
@@ -70,7 +59,7 @@ class NoteEditorViewController: UIViewController {
     }
 
     @objc private func save() {
-        self.webView.evaluateJavaScript("tinymce.get(\"mytextarea\").getContent()") { [weak self] result, error in
+        self.webView.evaluateJavaScript("tinymce.get(\"tinymce\").getContent()") { [weak self] result, error in
             guard let `self` = self else { return }
             let newText = (result as? String) ?? ""
             self.saveAction(newText)
@@ -90,14 +79,55 @@ class NoteEditorViewController: UIViewController {
     private func setupWebView() {
         let webView = WKWebView()
         webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.navigationDelegate = self
+        webView.alpha = 0
 
         self.view.addSubview(webView)
-        webView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
-        webView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
-        webView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor).isActive = true
-        webView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+
+        NSLayoutConstraint.activate([
+            webView.leftAnchor.constraint(equalTo: self.view.leftAnchor),
+            webView.rightAnchor.constraint(equalTo: self.view.rightAnchor),
+            webView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        let activityIndicator = UIActivityIndicatorView(style: .medium)
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+
+        self.view.addSubview(activityIndicator)
+
+        NSLayoutConstraint.activate([
+            activityIndicator.centerYAnchor.constraint(equalTo: self.view.centerYAnchor),
+            activityIndicator.centerXAnchor.constraint(equalTo: self.view.centerXAnchor)
+        ])
+
+        activityIndicator.startAnimating()
 
         self.webView = webView
+        self.activityIndicator = activityIndicator
     }
 
+}
+
+extension NoteEditorViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.cancel)
+            return
+        }
+
+        // Allow initial load
+        guard url.scheme == "http" || url.scheme == "https" else {
+            decisionHandler(.allow)
+            return
+        }
+
+        // Show other links in SFSafariView
+        decisionHandler(.cancel)
+        self.present(SFSafariViewController(url: url), animated: true, completion: nil)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        self.showWebView()
+    }
 }

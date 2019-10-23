@@ -95,6 +95,13 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Actions
 
+    private func presentNote(_ note: Binding<ItemDetailStore.State.Note>, saveAction: @escaping () -> Void) {
+        let view = NoteEditorView(note: note, saveAction: saveAction)
+        let controller = UIHostingController(rootView: view)
+        controller.isModalInPresentation = true
+        self.present(controller, animated: true, completion: nil)
+    }
+
     private func showCollections(for library: Library) {
         let store = CollectionsStore(library: library, dbStorage: self.controllers.dbStorage)
         let controller = CollectionsViewController(store: store, dbStorage: self.controllers.dbStorage)
@@ -387,6 +394,15 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                          self?.presentSettings()
                                      })
                                      .disposed(by: self.disposeBag)
+
+         NotificationCenter.default.rx.notification(.presentNote)
+                                      .observeOn(MainScheduler.instance)
+                                      .subscribe(onNext: { [weak self] notification in
+                                          if let (note, block) = notification.object as? (Binding<ItemDetailStore.State.Note>, () -> Void) {
+                                              self?.presentNote(note, saveAction: block)
+                                          }
+                                      })
+                                      .disposed(by: self.disposeBag)
     }
 }
 

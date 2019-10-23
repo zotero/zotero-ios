@@ -8,6 +8,10 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let presentNote = Notification.Name(rawValue: "org.zotero.PresentNotification")
+}
+
 struct ItemDetailNoteSectionView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
@@ -17,6 +21,7 @@ struct ItemDetailNoteSectionView: View {
             ForEach(self.store.state.data.notes) { note in
                 Button(action: {
                     self.store.state.presentedNote = note
+                    NotificationCenter.default.post(name: .presentNote, object: (self.$store.state.presentedNote, self.store.saveNote))
                 }) {
                     ItemDetailNoteView(text: note.title)
                 }
