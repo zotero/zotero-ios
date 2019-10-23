@@ -19,6 +19,7 @@ struct ItemDetailEditMetadataSectionView: View {
             ForEach(self.store.state.data.creators.indices, id:\.self) { index in
                 ItemDetailEditCreatorView(creator: self.$store.state.data.creators[index])
             }
+            .onMove(perform: self.store.moveCreators)
 
             ForEach(self.store.state.data.fields.indices, id: \.self) { index in
                 ItemDetailEditMetadataView(title: self.store.state.data.fields[index].name,
