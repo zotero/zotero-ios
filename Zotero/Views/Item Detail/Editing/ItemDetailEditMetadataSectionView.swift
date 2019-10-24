@@ -23,16 +23,16 @@ struct ItemDetailEditMetadataSectionView: View {
                 NotificationCenter.default.post(name: .presentTypePicker, object: (self.store.state.data.type, self.store.changeType))
             }
 
-            ForEach(self.store.state.data.creators) { creator in
-                ItemDetailEditCreatorView(creator: self.binding(from: creator))
+            ForEach(self.store.state.data.creatorIds, id: \.self) { creatorId in
+                ItemDetailEditCreatorView(creator: self.binding(from: creatorId))
             }
             .onDelete(perform: self.store.deleteCreators)
             .onMove(perform: self.store.moveCreators)
             ItemDetailAddView(title: "Add creator", action: self.store.addCreator)
 
-            ForEach(self.store.state.data.fields) { field in
-                ItemDetailEditMetadataView(title: field.name,
-                                           value: self.binding(from: field))
+            ForEach(self.store.state.data.fieldIds, id: \.self) { fieldId in
+                ItemDetailEditMetadataView(title: self.store.state.data.fields[fieldId]?.name ?? "",
+                                           value: self.binding(from: fieldId))
             }
 
             Binding(self.$store.state.data.abstract).flatMap {
@@ -41,23 +41,19 @@ struct ItemDetailEditMetadataSectionView: View {
         }
     }
 
-    private func binding(from creator: ItemDetailStore.State.Creator) -> Binding<ItemDetailStore.State.Creator> {
+    private func binding(from creatorId: UUID) -> Binding<ItemDetailStore.State.Creator> {
         return Binding(get: {
-            return self.store.state.data.creators.first(where: { $0.id == creator.id }) ?? ItemDetailStore.State.Creator(type: "", localizedType: "")
+            return self.store.state.data.creators[creatorId] ?? ItemDetailStore.State.Creator(type: "", localizedType: "")
         }, set: { newValue in
-            if let index = self.store.state.data.creators.firstIndex(where: { $0.id == creator.id }) {
-                self.store.state.data.creators[index] = newValue
-            }
+            self.store.state.data.creators[newValue.id] = newValue
         })
     }
 
-    private func binding(from field: ItemDetailStore.State.Field) -> Binding<String> {
+    private func binding(from fieldId: String) -> Binding<String> {
         return Binding(get: {
-            return self.store.state.data.fields.first(where: { $0.id == field.id })?.value ?? ""
+            return self.store.state.data.fields[fieldId]?.value ?? ""
         }, set: { newValue in
-            if let index = self.store.state.data.fields.firstIndex(where: { $0.id == field.id }) {
-                self.store.state.data.fields[index].value = newValue
-            }
+            self.store.state.data.fields[fieldId]?.value = newValue
         })
     }
 }

@@ -184,9 +184,10 @@ class ItemDetailStore: ObservableObject {
                 return self.fullName.isEmpty && self.firstName.isEmpty && self.lastName.isEmpty
             }
 
-            var id: UUID { return UUID() }
+            let id: UUID
 
             init(firstName: String, lastName: String, fullName: String, type: String, localizedType: String) {
+                self.id = UUID()
                 self.type = type
                 self.localizedType = localizedType
                 self.fullName = fullName
@@ -196,6 +197,7 @@ class ItemDetailStore: ObservableObject {
             }
 
             init(type: String, localizedType: String) {
+                self.id = UUID()
                 self.type = type
                 self.localizedType = localizedType
                 self.fullName = ""
@@ -236,15 +238,17 @@ class ItemDetailStore: ObservableObject {
             var title: String
             var type: String
             var localizedType: String
-            var creators: [Creator]
-            var fields: [Field]
+            var creators: [UUID: Creator]
+            var creatorIds: [UUID]
+            var fields: [String: Field]
+            var fieldIds: [String]
             var abstract: String?
             var notes: [Note]
             var attachments: [Attachment]
             var tags: [Tag]
 
             func allFields(schemaController: SchemaController) -> [Field] {
-                var allFields = self.fields
+                var allFields = Array(self.fields.values)
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(State.Field(key: titleKey,
                                                  name: "",
@@ -318,9 +322,10 @@ class ItemDetailStore: ObservableObject {
         init(userId: Int, type: DetailType, error: Error) {
             self.init(userId: userId,
                       type: type,
-                      data: Data(title: "", type: "",
-                                 localizedType: "", creators: [],
-                                 fields: [], abstract: nil, notes: [],
+                      data: Data(title: "", type: "", localizedType: "",
+                                 creators: [:], creatorIds: [],
+                                 fields: [:], fieldIds: [],
+                                 abstract: nil, notes: [],
                                  attachments: [], tags: []),
                       error: error)
         }
@@ -356,50 +361,65 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
+    private static func fieldData(for itemType: String, schemaController: SchemaController,
+                                  getExistingData: ((String) -> (String?, String?))? = nil) throws -> ([String], [String: State.Field], Bool) {
+        guard var fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }) else {
+            throw Error.typeNotSupported
+        }
+        let abstractIndex = fieldKeys.firstIndex(of: FieldKeys.abstract)
+
+        // Remove title and abstract keys, those 2 are used separately in Data struct
+        if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
+            fieldKeys.remove(at: index)
+        }
+        if let index = abstractIndex {
+            fieldKeys.remove(at: index)
+        }
+
+        var fields: [String: State.Field] = [:]
+        for key in fieldKeys {
+            let (existingName, existingValue) = (getExistingData?(key) ?? (nil, nil))
+            let name = existingName ?? schemaController.localized(field: key) ?? ""
+            let value = existingValue ?? ""
+            fields[key] = State.Field(key: key, name: name, value: value, isTitle: false)
+        }
+
+        return (fieldKeys, fields, (abstractIndex != nil))
+    }
+
     static func createData(from type: State.DetailType,
                            schemaController: SchemaController,
                            fileStorage: FileStorage) throws -> State.Data {
         switch type {
         case .creation:
             guard let itemType = schemaController.itemTypes.sorted().first,
-                  let fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }),
                   let localizedType = schemaController.localized(itemType: itemType) else {
                 throw Error.typeNotSupported
             }
-
-            // Creation has editing enabled by default, so we'll see all available fields
-
-            let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
-            let titleKey = schemaController.titleKey(for: itemType)
-            let fields = fieldKeys.compactMap({ key -> State.Field? in
-                guard key != FieldKeys.abstract && key != titleKey else { return nil }
-                let name = schemaController.localized(field: key) ?? ""
-                return State.Field(key: key, name: name, value: "", isTitle: false)
-            })
+            let (fieldIds, fields, hasAbstract) = try ItemDetailStore.fieldData(for: itemType, schemaController: schemaController)
 
             return State.Data(title: "",
                               type: itemType,
                               localizedType: localizedType,
-                              creators: [],
+                              creators: [:],
+                              creatorIds: [],
                               fields: fields,
+                              fieldIds: fieldIds,
                               abstract: (hasAbstract ? "" : nil),
                               notes: [],
                               attachments: [],
                               tags: [])
 
         case .preview(let item), .duplication(let item, _):
-            guard let fieldKeys = schemaController.fields(for: item.rawType)?.map({ $0.field }),
-                  let localizedType = schemaController.localized(itemType: item.rawType) else {
+            guard let localizedType = schemaController.localized(itemType: item.rawType) else {
                 throw Error.typeNotSupported
             }
 
-            let titleKey = schemaController.titleKey(for: item.rawType) ?? ""
             var abstract: String?
             var values: [String: String] = [:]
 
             item.fields.forEach { field in
                 switch field.key {
-                case titleKey: break
                 case FieldKeys.abstract:
                     abstract = field.value
                 default:
@@ -407,18 +427,26 @@ class ItemDetailStore: ObservableObject {
                 }
             }
 
-            let fields = fieldKeys.compactMap { key -> State.Field? in
-                guard key != FieldKeys.abstract && key != titleKey else { return nil }
-                let name = schemaController.localized(field: key) ?? ""
-                let value = values[key] ?? ""
-                return State.Field(key: key, name: name, value: value, isTitle: false)
+            let (fieldIds, fields, _) = try ItemDetailStore.fieldData(for: item.rawType,
+                                                                      schemaController: schemaController,
+                                                                      getExistingData: { key -> (String?, String?) in
+                return (nil, values[key])
+            })
+
+            var creatorIds: [UUID] = []
+            var creators: [UUID: State.Creator] = [:]
+            for creator in item.creators.sorted(byKeyPath: "orderId") {
+                guard let localizedType = schemaController.localized(creator: creator.rawType) else { continue }
+
+                let creator = State.Creator(firstName: creator.firstName,
+                                            lastName: creator.lastName,
+                                            fullName: creator.name,
+                                            type: creator.rawType,
+                                            localizedType: localizedType)
+                creatorIds.append(creator.id)
+                creators[creator.id] = creator
             }
 
-            let creators = item.creators.sorted(byKeyPath: "orderId").compactMap { creator -> State.Creator? in
-                guard let localizedType = schemaController.localized(creator: creator.rawType) else { return nil }
-                return State.Creator(firstName: creator.firstName, lastName: creator.lastName,
-                                          fullName: creator.name, type: creator.rawType, localizedType: localizedType)
-            }
             let notes = item.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                      .sorted(byKeyPath: "title")
                                      .compactMap(State.Note.init)
@@ -432,8 +460,10 @@ class ItemDetailStore: ObservableObject {
             return State.Data(title: item.title,
                               type: item.rawType,
                               localizedType: localizedType,
-                              creators: Array(creators),
+                              creators: creators,
+                              creatorIds: creatorIds,
                               fields: fields,
+                              fieldIds: fieldIds,
                               abstract: abstract,
                               notes: Array(notes),
                               attachments: Array(attachments),
@@ -466,29 +496,26 @@ class ItemDetailStore: ObservableObject {
     }
 
     func changeType(to newType: String) {
-        guard let fieldKeys = self.schemaController.fields(for: newType)?.map({ $0.field }),
-              let localizedType = self.schemaController.localized(itemType: newType) else {
-            self.state.error = .typeNotSupported
-            return
-        }
-
-        let hasAbstract = fieldKeys.contains(where: { $0 == FieldKeys.abstract })
-        let titleKey = self.schemaController.titleKey(for: newType)
-        let fields = fieldKeys.compactMap({ key -> State.Field? in
-            guard key != FieldKeys.abstract && key != titleKey else { return nil }
-
-            if let index = self.state.data.fields.firstIndex(where: { $0.key == key }) {
-                return self.state.data.fields[index]
-            } else {
-                let name = self.schemaController.localized(field: key) ?? ""
-                return State.Field(key: key, name: name, value: "", isTitle: false)
+        do {
+            guard let localizedType = self.schemaController.localized(itemType: newType) else {
+                throw Error.typeNotSupported
             }
-        })
 
-        self.state.data.type = newType
-        self.state.data.localizedType = localizedType
-        self.state.data.fields = fields
-        self.state.data.abstract = hasAbstract ? (self.state.data.abstract ?? "") : nil
+            let (fieldIds, fields, hasAbstract) = try ItemDetailStore.fieldData(for: newType,
+                                                                                schemaController: schemaController,
+                                                                                getExistingData: { key -> (String?, String?) in
+                let field = self.state.data.fields[key]
+                return (field?.name, field?.value)
+            })
+
+            self.state.data.type = newType
+            self.state.data.localizedType = localizedType
+            self.state.data.fields = fields
+            self.state.data.fieldIds = fieldIds
+            self.state.data.abstract = hasAbstract ? (self.state.data.abstract ?? "") : nil
+        } catch let error {
+            self.state.error = (error as? Error) ?? .typeNotSupported
+        }
     }
 
     func addAttachments(from urls: [URL]) {
@@ -507,18 +534,23 @@ class ItemDetailStore: ObservableObject {
 
     func addCreator() {
         // Check whether there already is an empty/new creator, add only if there is none
-        guard self.state.data.creators.reversed().first(where: { $0.isEmpty }) == nil,
+        guard self.state.data.creators.values.first(where: { $0.isEmpty }) == nil,
               let schema = self.schemaController.creators(for: self.state.data.type)?.first(where: { $0.primary }),
               let localized = self.schemaController.localized(creator: schema.creatorType) else { return }
-        self.state.data.creators.append(.init(type: schema.creatorType, localizedType: localized))
+
+        let creator = State.Creator(type: schema.creatorType, localizedType: localized)
+        self.state.data.creatorIds.append(creator.id)
+        self.state.data.creators[creator.id] = creator
     }
 
     func deleteCreators(at offsets: IndexSet) {
-        self.state.data.creators.remove(atOffsets: offsets)
+        let keys = offsets.map({ self.state.data.creatorIds[$0] })
+        self.state.data.creatorIds.remove(atOffsets: offsets)
+        keys.forEach({ self.state.data.creators[$0] = nil })
     }
 
     func moveCreators(from offsets: IndexSet, to index: Int) {
-        self.state.data.creators.move(fromOffsets: offsets, toOffset: index)
+        self.state.data.creatorIds.move(fromOffsets: offsets, toOffset: index)
     }
 
     func addNote() {

@@ -173,7 +173,9 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         if self.data.creators != self.snapshot.creators {
             database.delete(item.creators)
 
-            self.data.creators.enumerated().forEach { (offset, creator) in
+            for (offset, creatorId) in self.data.creatorIds.enumerated() {
+                guard let creator = self.data.creators[creatorId] else { continue }
+
                 let rCreator = RCreator()
                 rCreator.rawType = creator.type
                 rCreator.firstName = creator.firstName

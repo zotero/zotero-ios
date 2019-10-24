@@ -16,14 +16,17 @@ struct ItemDetailMetadataSectionView: View {
             ItemDetailMetadataView(title: "Item Type",
                                    value: self.store.state.data.localizedType)
 
-            ForEach(self.store.state.data.creators) { creator in
-                ItemDetailCreatorView(creator: creator)
+            ForEach(self.store.state.data.creatorIds, id: \.self) { creatorId in
+                self.store.state.data.creators[creatorId].flatMap { ItemDetailCreatorView(creator: $0) }
             }
 
-            ForEach(self.store.state.data.fields) { field in
-                if !field.value.isEmpty {
-                    ItemDetailMetadataView(title: field.name,
-                                           value: field.value)
+            ForEach(self.store.state.data.fieldIds, id: \.self) { fieldId in
+                self.store.state.data.fields[fieldId].flatMap { field -> ItemDetailMetadataView? in
+                    if !field.value.isEmpty {
+                        return ItemDetailMetadataView(title: field.name,
+                                                      value: field.value)
+                    }
+                    return nil
                 }
             }
 
