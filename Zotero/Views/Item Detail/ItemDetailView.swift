@@ -16,7 +16,7 @@ struct ItemDetailView: View {
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
-        Group {
+        List {
             if self.editMode?.wrappedValue.isEditing == true {
                 ItemDetailEditingView()
             } else {
@@ -58,7 +58,7 @@ struct ItemDetailView: View {
                     if self.store.state.type.isCreation {
                         self.presentationMode.wrappedValue.dismiss()
                     } else {
-                        self.editMode?.animation().wrappedValue = .inactive
+                        self.editMode?.wrappedValue = .inactive
                     }
                 }) {
                     Text("Cancel")

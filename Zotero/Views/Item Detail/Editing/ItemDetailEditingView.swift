@@ -12,7 +12,7 @@ struct ItemDetailEditingView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
     var body: some View {
-        List {
+        Group {
             ItemDetailEditTitleView(title: self.$store.state.data.title)
             ItemDetailEditMetadataSectionView()
             ItemDetailEditNoteSectionView()
