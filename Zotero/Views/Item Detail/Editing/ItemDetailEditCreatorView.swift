@@ -8,12 +8,23 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let presentCreatorPicker = Notification.Name(rawValue: "org.zotero.PresentCreatorTypePicker")
+}
+
 struct ItemDetailEditCreatorView: View {
     @Binding var creator: ItemDetailStore.State.Creator
+
+    @EnvironmentObject private var store: ItemDetailStore
+
+    @Environment(\.schemaController) private var schemaController: SchemaController
 
     var body: some View {
         HStack {
             ItemDetailMetadataTitleView(title: self.creator.localizedType)
+            .onTapGesture {
+                NotificationCenter.default.post(name: .presentCreatorPicker, object: (self.store.state.data.type, self.creator.type, self.set))
+            }
             if self.creator.namePresentation == .full {
                 TextField("Full name", text: self.$creator.fullName)
             } else if self.creator.namePresentation == .separate {
@@ -32,10 +43,25 @@ struct ItemDetailEditCreatorView: View {
             }
         }
     }
+
+    private func set(type: String) {
+        guard let localized = self.schemaController.localized(creator: type) else { return }
+        self.creator.type = type
+        self.creator.localizedType = localized
+    }
 }
 
 struct ItemDetailEditCreatorView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetailEditCreatorView(creator: .constant(.init(type: "test", localizedType: "Test")))
+        let controllers = Controllers()
+        controllers.schemaController.reloadSchemaIfNeeded()
+        let store = ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
+                                                    collectionKey: nil, filesEditable: true),
+                                    apiClient: controllers.apiClient,
+                                    fileStorage: controllers.fileStorage,
+                                    dbStorage: controllers.dbStorage,
+                                    schemaController: controllers.schemaController)
+        return ItemDetailEditCreatorView(creator: .constant(.init(type: "test", localizedType: "Test")))
+                    .environmentObject(store)
     }
 }

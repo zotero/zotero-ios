@@ -91,11 +91,7 @@ class ItemsViewController: UIViewController {
                                     fileStorage: self.controllers.fileStorage,
                                     dbStorage: self.controllers.dbStorage,
                                     schemaController: self.controllers.schemaController)
-        let view = ItemDetailView().environmentObject(store)
-
-        let controller = UIHostingController(rootView: view)
-        controller.navigationItem.setHidesBackButton(true, animated: false)
-        self.navigationController?.pushViewController(controller, animated: true)
+        self.showItemView(with: store, hidesBackButton: true)
     }
 
     private func showItemDetail(for item: RItem) {
@@ -104,9 +100,18 @@ class ItemsViewController: UIViewController {
                                     fileStorage: self.controllers.fileStorage,
                                     dbStorage: self.controllers.dbStorage,
                                     schemaController: self.controllers.schemaController)
-        let view = ItemDetailView().environmentObject(store)
+        self.showItemView(with: store)
+    }
 
+    private func showItemView(with store: ItemDetailStore, hidesBackButton: Bool = false) {
+        let view = ItemDetailView()
+                        .environment(\.dbStorage, self.controllers.dbStorage)
+                        .environment(\.schemaController, self.controllers.schemaController)
+                        .environmentObject(store)
         let controller = UIHostingController(rootView: view)
+        if hidesBackButton {
+            controller.navigationItem.setHidesBackButton(true, animated: false)
+        }
         self.navigationController?.pushViewController(controller, animated: true)
     }
 

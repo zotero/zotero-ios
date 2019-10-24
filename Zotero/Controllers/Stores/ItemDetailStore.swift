@@ -155,8 +155,8 @@ class ItemDetailStore: ObservableObject {
                 }
             }
 
-            let type: String
-            let localizedType: String
+            var type: String
+            var localizedType: String
             var fullName: String
             var firstName: String
             var lastName: String

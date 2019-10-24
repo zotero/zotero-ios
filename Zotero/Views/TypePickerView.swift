@@ -1,5 +1,5 @@
 //
-//  ItemTypePickerView.swift
+//  TypePickerView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 23/10/2019.
@@ -8,26 +8,19 @@
 
 import SwiftUI
 
-struct ItemTypePickerView: View {
-    @EnvironmentObject private var store: ItemTypePickerStore
+struct TypePickerView<Store: ObservableObject&TypePickerStore>: View {
+    @EnvironmentObject private var store: Store
 
     let saveAction: (String) -> Void
     let closeAction: () -> Void
 
     var body: some View {
         List {
-            ForEach(self.store.state.data) { type in
+            ForEach(self.store.state.data) { data in
                 Button(action: {
-                    self.store.state.selectedType = type.key
+                    self.store.state.selectedRow = data.key
                 }) {
-                    HStack {
-                        Text(type.name)
-                        if self.store.state.selectedType == type.key {
-                            Spacer()
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
-                        }
-                    }
+                    TypePickerRow(text: data.value, isSelected: self.store.state.selectedRow == data.key)
                 }
             }
         }
@@ -43,15 +36,16 @@ struct ItemTypePickerView: View {
     private var trailingItems: some View {
         Button(action: {
             self.closeAction()
-            self.saveAction(self.store.state.selectedType)
+            self.saveAction(self.store.state.selectedRow)
         }) {
             Text("Save")
         }
     }
 }
 
-struct ItemTypePickerView_Previews: PreviewProvider {
+struct TypePickerView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemTypePickerView(saveAction: { _ in }, closeAction: {})
+        TypePickerView<ItemTypePickerStore>(saveAction: { _ in }, closeAction: {})
+            .environmentObject(ItemTypePickerStore(selected: "", schemaController: Controllers().schemaController))
     }
 }

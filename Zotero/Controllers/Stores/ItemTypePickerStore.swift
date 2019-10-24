@@ -9,26 +9,14 @@
 import Combine
 import Foundation
 
-class ItemTypePickerStore: ObservableObject {
-    struct State {
-        struct ItemType: Identifiable {
-            let key: String
-            let name: String
-
-            var id: String { return self.key }
-        }
-
-        var data: [ItemType]
-        var selectedType: String
-    }
-
-    @Published var state: State
+class ItemTypePickerStore: ObservableObject, TypePickerStore {
+    @Published var state: TypePickerState
 
     init(selected: String , schemaController: SchemaController) {
-        let types: [State.ItemType] = schemaController.itemTypes.compactMap { type in
+        let types: [TypePickerData] = schemaController.itemTypes.compactMap { type in
             guard let name = schemaController.localized(itemType: type) else { return nil }
-            return State.ItemType(key: type, name: name)
+            return TypePickerData(key: type, value: name)
         }
-        self.state = State(data: types, selectedType: selected)
+        self.state = TypePickerState(data: types, selectedRow: selected)
     }
 }

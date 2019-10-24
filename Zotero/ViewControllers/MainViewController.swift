@@ -95,11 +95,23 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Actions
 
-    private func presentTypePicker(for type: String, saveAction: @escaping (String) -> Void) {
-        let view = ItemTypePickerView(saveAction: saveAction) { [weak self] in
+    private func presentCreatorTypePicker(for itemType: String, creatorType: String, saveAction: @escaping (String) -> Void) {
+        let store = CreatorTypePickerStore(itemType: itemType, selected: creatorType, schemaController: self.controllers.schemaController)
+        self.presentTypePicker(for: creatorType, store: store, saveAction: saveAction)
+    }
+
+    private func presentItemTypePicker(for type: String, saveAction: @escaping (String) -> Void) {
+        let store = ItemTypePickerStore(selected: type, schemaController: self.controllers.schemaController)
+        self.presentTypePicker(for: type, store: store, saveAction: saveAction)
+    }
+
+    private func presentTypePicker<Store: ObservableObject&TypePickerStore>(for type: String,
+                                                                            store: Store,
+                                                                            saveAction: @escaping (String) -> Void) {
+        let view = TypePickerView<Store>(saveAction: saveAction) { [weak self] in
             self?.dismiss(animated: true, completion: nil)
         }
-        .environmentObject(ItemTypePickerStore(selected: type, schemaController: self.controllers.schemaController))
+        .environmentObject(store)
 
         let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
         controller.isModalInPresentation = true
@@ -174,6 +186,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                         schemaController: self.controllers.schemaController)
             let view = ItemDetailView()
                             .environment(\.dbStorage, self.controllers.dbStorage)
+                            .environment(\.schemaController, self.controllers.schemaController)
                             .environmentObject(store)
             (self.viewControllers.last as? UINavigationController)?.pushViewController(UIHostingController.withBetterSheetSupport(rootView: view),
                                                                                         animated: true)
@@ -419,7 +432,16 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                      .observeOn(MainScheduler.instance)
                                      .subscribe(onNext: { [weak self] notification in
                                          if let (selected, block) = notification.object as? (String, (String) -> Void) {
-                                             self?.presentTypePicker(for: selected, saveAction: block)
+                                             self?.presentItemTypePicker(for: selected, saveAction: block)
+                                         }
+                                     })
+                                     .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx.notification(.presentCreatorPicker)
+                                     .observeOn(MainScheduler.instance)
+                                     .subscribe(onNext: { [weak self] notification in
+                                         if let (itemType, selected, block) = notification.object as? (String, String, (String) -> Void) {
+                                             self?.presentCreatorTypePicker(for: itemType, creatorType: selected, saveAction: block)
                                          }
                                      })
                                      .disposed(by: self.disposeBag)
