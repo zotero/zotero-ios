@@ -61,7 +61,7 @@ struct ItemDetailEditCreatorView_Previews: PreviewProvider {
                                     fileStorage: controllers.fileStorage,
                                     dbStorage: controllers.dbStorage,
                                     schemaController: controllers.schemaController)
-        return ItemDetailEditCreatorView(creator: .constant(.init(type: "test", localizedType: "Test")))
+        return ItemDetailEditCreatorView(creator: .constant(.init(type: "test", primary: false, localizedType: "Test")))
                     .environmentObject(store)
     }
 }

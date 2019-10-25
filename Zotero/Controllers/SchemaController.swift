@@ -16,6 +16,7 @@ protocol SchemaDataSource: class {
 
     func fields(for type: String) -> [FieldSchema]?
     func creators(for type: String) -> [CreatorSchema]?
+    func creatorIsPrimary(_ creatorType: String, itemType: String) -> Bool
     func titleKey(for type: String) -> String?
     func localized(itemType: String) -> String?
     func localized(field: String) -> String?
@@ -175,6 +176,10 @@ extension SchemaController: SchemaDataSource {
 
     func creators(for type: String) -> [CreatorSchema]? {
         return self.itemSchemas[type]?.creatorTypes
+    }
+
+    func creatorIsPrimary(_ creatorType: String, itemType: String) -> Bool {
+        return self.creators(for: itemType)?.first(where: { $0.creatorType == creatorType })?.primary ?? false
     }
 
     func localized(itemType: String) -> String? {

@@ -23,16 +23,16 @@ struct ItemDetailCreatorView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ItemDetailCreatorView(creator: .init(firstName: "", lastName: "",
-                                                 fullName: "First Last", type: "author",
+                                                 fullName: "First Last", type: "author", primary: true,
                                                  localizedType: "Author"))
             ItemDetailCreatorView(creator: .init(firstName: "First", lastName: "Last",
-                                                 fullName: "", type: "author",
+                                                 fullName: "", type: "author", primary: true,
                                                  localizedType: "Author"))
             ItemDetailCreatorView(creator: .init(firstName: "", lastName: "",
-                                                 fullName: "First Last", type: "author",
+                                                 fullName: "First Last", type: "author", primary: true,
                                                  localizedType: "Author"))
             ItemDetailCreatorView(creator: .init(firstName: "First", lastName: "Last",
-                                                 fullName: "", type: "author",
+                                                 fullName: "", type: "author", primary: true,
                                                  localizedType: "Author"))
         }
     }

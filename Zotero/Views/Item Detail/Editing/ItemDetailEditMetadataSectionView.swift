@@ -43,7 +43,7 @@ struct ItemDetailEditMetadataSectionView: View {
 
     private func binding(from creatorId: UUID) -> Binding<ItemDetailStore.State.Creator> {
         return Binding(get: {
-            return self.store.state.data.creators[creatorId] ?? ItemDetailStore.State.Creator(type: "", localizedType: "")
+            return self.store.state.data.creators[creatorId] ?? ItemDetailStore.State.Creator(type: "", primary: false, localizedType: "")
         }, set: { newValue in
             self.store.state.data.creators[newValue.id] = newValue
         })

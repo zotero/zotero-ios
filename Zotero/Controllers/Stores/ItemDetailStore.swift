@@ -162,6 +162,7 @@ class ItemDetailStore: ObservableObject {
             }
 
             var type: String
+            let primary: Bool
             var localizedType: String
             var fullName: String
             var firstName: String
@@ -192,9 +193,10 @@ class ItemDetailStore: ObservableObject {
 
             let id: UUID
 
-            init(firstName: String, lastName: String, fullName: String, type: String, localizedType: String) {
+            init(firstName: String, lastName: String, fullName: String, type: String, primary: Bool, localizedType: String) {
                 self.id = UUID()
                 self.type = type
+                self.primary = primary
                 self.localizedType = localizedType
                 self.fullName = fullName
                 self.firstName = firstName
@@ -202,9 +204,10 @@ class ItemDetailStore: ObservableObject {
                 self.namePresentation = fullName.isEmpty ? .separate : .full
             }
 
-            init(type: String, localizedType: String) {
+            init(type: String, primary: Bool, localizedType: String) {
                 self.id = UUID()
                 self.type = type
+                self.primary = primary
                 self.localizedType = localizedType
                 self.fullName = ""
                 self.firstName = ""
@@ -462,6 +465,7 @@ class ItemDetailStore: ObservableObject {
                                             lastName: creator.lastName,
                                             fullName: creator.name,
                                             type: creator.rawType,
+                                            primary: schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType),
                                             localizedType: localizedType)
                 creatorIds.append(creator.id)
                 creators[creator.id] = creator
@@ -527,42 +531,76 @@ class ItemDetailStore: ObservableObject {
 
     func changeType(to newType: String) {
         do {
-            guard let localizedType = self.schemaController.localized(itemType: newType) else {
-                throw Error.typeNotSupported
-            }
-
-            let (fieldIds, fields, hasAbstract) = try ItemDetailStore.fieldData(for: newType,
-                                                                                schemaController: schemaController,
-                                                                                getExistingData: { key, baseField -> (String?, String?) in
-                if let field = self.state.data.fields[key] {
-                    return (field.name, field.value)
-                } else if let base = baseField, let field = self.state.data.fields.values.first(where: { $0.baseField == base }) {
-                    // We don't return existing name, because fields that are matching just by baseField will most likely have different names
-                    return (nil, field.value)
-                }
-                return (nil, nil)
-            })
-
-            let newFieldNames = Set(fields.values.map({ $0.name }))
-            let oldFieldNames = Set(self.state.data.fields.values.filter({ !$0.value.isEmpty }).map({ $0.name }))
-            let droppedNames = oldFieldNames.subtracting(newFieldNames).sorted()
-
-            var data = self.state.data
-            data.type = newType
-            data.localizedType = localizedType
-            data.fields = fields
-            data.fieldIds = fieldIds
-            data.abstract = hasAbstract ? (self.state.data.abstract ?? "") : nil
-
-            if droppedNames.isEmpty {
-                self.state.data = data
-            } else {
-                self.state.promptSnapshot = data
-                self.state.error = .droppedFields(droppedNames)
-            }
+            let data = try self.data(for: newType, from: self.state.data)
+            try self.set(data: data)
         } catch let error {
             self.state.error = (error as? Error) ?? .typeNotSupported
         }
+    }
+
+    private func set(data: State.Data) throws {
+        let newFieldNames = Set(data.fields.values.map({ $0.name }))
+        let oldFieldNames = Set(self.state.data.fields.values.filter({ !$0.value.isEmpty }).map({ $0.name }))
+        let droppedNames = oldFieldNames.subtracting(newFieldNames).sorted()
+
+        guard droppedNames.isEmpty else {
+            self.state.promptSnapshot = data
+            throw ItemDetailStore.Error.droppedFields(droppedNames)
+        }
+
+        self.state.data = data
+    }
+
+    private func data(for type: String, from originalData: State.Data) throws -> State.Data {
+        guard let localizedType = self.schemaController.localized(itemType: type) else {
+            throw Error.typeNotSupported
+        }
+
+        let (fieldIds, fields, hasAbstract) = try ItemDetailStore.fieldData(for: type,
+                                                                            schemaController: self.schemaController,
+                                                                            getExistingData: { key, baseField -> (String?, String?) in
+            if let field = originalData.fields[key] {
+                return (field.name, field.value)
+            } else if let base = baseField, let field = originalData.fields.values.first(where: { $0.baseField == base }) {
+                // We don't return existing name, because fields that are matching just by baseField will most likely have different names
+                return (nil, field.value)
+            }
+            return (nil, nil)
+        })
+
+        var data = originalData
+        data.type = type
+        data.localizedType = localizedType
+        data.fields = fields
+        data.fieldIds = fieldIds
+        data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
+        data.creators = try self.creators(for: type, from: originalData.creators)
+        data.creatorIds = originalData.creatorIds
+
+        return data
+    }
+
+    private func creators(for type: String, from originalData: [UUID: State.Creator]) throws -> [UUID: State.Creator] {
+        guard let schemas = self.schemaController.creators(for: type),
+              let primary = schemas.first(where: { $0.primary }) else { throw Error.typeNotSupported }
+
+        var creators = originalData
+        for (key, originalCreator) in originalData {
+            guard !schemas.contains(where: { $0.creatorType == originalCreator.type }) else { continue }
+
+            var creator = originalCreator
+
+            if originalCreator.primary {
+                creator.type = primary.creatorType
+            } else {
+                creator.type = "contributor"
+            }
+            creator.localizedType = self.schemaController.localized(creator: creator.type) ?? ""
+
+            creators[key] = creator
+        }
+
+        return creators
     }
 
     func addAttachments(from urls: [URL]) {
@@ -585,7 +623,7 @@ class ItemDetailStore: ObservableObject {
               let schema = self.schemaController.creators(for: self.state.data.type)?.first(where: { $0.primary }),
               let localized = self.schemaController.localized(creator: schema.creatorType) else { return }
 
-        let creator = State.Creator(type: schema.creatorType, localizedType: localized)
+        let creator = State.Creator(type: schema.creatorType, primary: schema.primary, localizedType: localized)
         self.state.data.creatorIds.append(creator.id)
         self.state.data.creators[creator.id] = creator
     }
