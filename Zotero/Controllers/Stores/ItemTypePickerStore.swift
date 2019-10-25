@@ -16,7 +16,7 @@ class ItemTypePickerStore: ObservableObject, TypePickerStore {
         let types: [TypePickerData] = schemaController.itemTypes.compactMap { type in
             guard let name = schemaController.localized(itemType: type) else { return nil }
             return TypePickerData(key: type, value: name)
-        }
+        }.sorted(by: { $0.value < $1.value })
         self.state = TypePickerState(data: types, selectedRow: selected)
     }
 }
