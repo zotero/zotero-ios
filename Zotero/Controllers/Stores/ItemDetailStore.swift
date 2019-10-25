@@ -44,6 +44,7 @@ class ItemDetailStore: ObservableObject {
 
         struct Field: Identifiable, Equatable {
             let key: String
+            let baseField: String?
             var name: String
             var value: String
             let isTitle: Bool
@@ -251,12 +252,14 @@ class ItemDetailStore: ObservableObject {
                 var allFields = Array(self.fields.values)
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(State.Field(key: titleKey,
+                                                 baseField: "",
                                                  name: "",
                                                  value: self.title,
                                                  isTitle: true))
                 }
                 if let abstract = self.abstract {
                     allFields.append(State.Field(key: FieldKeys.abstract,
+                                                 baseField: "",
                                                  name: "",
                                                  value: abstract,
                                                  isTitle: false))
@@ -362,26 +365,37 @@ class ItemDetailStore: ObservableObject {
     }
 
     private static func fieldData(for itemType: String, schemaController: SchemaController,
-                                  getExistingData: ((String) -> (String?, String?))? = nil) throws -> ([String], [String: State.Field], Bool) {
-        guard var fieldKeys = schemaController.fields(for: itemType)?.map({ $0.field }) else {
+                                  getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: State.Field], Bool) {
+        guard var fieldSchemas = schemaController.fields(for: itemType) else {
             throw Error.typeNotSupported
         }
+
+        var fieldKeys = fieldSchemas.map({ $0.field })
         let abstractIndex = fieldKeys.firstIndex(of: FieldKeys.abstract)
 
         // Remove title and abstract keys, those 2 are used separately in Data struct
-        if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
-            fieldKeys.remove(at: index)
-        }
         if let index = abstractIndex {
             fieldKeys.remove(at: index)
+            fieldSchemas.remove(at: index)
+        }
+        if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
+            fieldKeys.remove(at: index)
+            fieldSchemas.remove(at: index)
         }
 
         var fields: [String: State.Field] = [:]
-        for key in fieldKeys {
-            let (existingName, existingValue) = (getExistingData?(key) ?? (nil, nil))
+        for (offset, key) in fieldKeys.enumerated() {
+            let baseField = fieldSchemas[offset].baseField
+            let (existingName, existingValue) = (getExistingData?(key, baseField) ?? (nil, nil))
+
             let name = existingName ?? schemaController.localized(field: key) ?? ""
             let value = existingValue ?? ""
-            fields[key] = State.Field(key: key, name: name, value: value, isTitle: false)
+
+            fields[key] = State.Field(key: key,
+                                      baseField: baseField,
+                                      name: name,
+                                      value: value,
+                                      isTitle: false)
         }
 
         return (fieldKeys, fields, (abstractIndex != nil))
@@ -429,7 +443,7 @@ class ItemDetailStore: ObservableObject {
 
             let (fieldIds, fields, _) = try ItemDetailStore.fieldData(for: item.rawType,
                                                                       schemaController: schemaController,
-                                                                      getExistingData: { key -> (String?, String?) in
+                                                                      getExistingData: { key, _ -> (String?, String?) in
                 return (nil, values[key])
             })
 
@@ -503,9 +517,14 @@ class ItemDetailStore: ObservableObject {
 
             let (fieldIds, fields, hasAbstract) = try ItemDetailStore.fieldData(for: newType,
                                                                                 schemaController: schemaController,
-                                                                                getExistingData: { key -> (String?, String?) in
-                let field = self.state.data.fields[key]
-                return (field?.name, field?.value)
+                                                                                getExistingData: { key, baseField -> (String?, String?) in
+                if let field = self.state.data.fields[key] {
+                    return (field.name, field.value)
+                } else if let base = baseField, let field = self.state.data.fields.values.first(where: { $0.baseField == base }) {
+                    // We don't return existing name, because fields that are matching just by baseField will most likely have different names
+                    return (nil, field.value)
+                }
+                return (nil, nil)
             })
 
             self.state.data.type = newType
