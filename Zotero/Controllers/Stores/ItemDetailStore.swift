@@ -19,11 +19,16 @@ extension Notification.Name {
 }
 
 class ItemDetailStore: ObservableObject {
-    enum Error: Swift.Error, Equatable {
+    enum Error: Swift.Error, Equatable, Identifiable, Hashable {
         case typeNotSupported, libraryNotAssigned,
              contentTypeUnknown, userMissing, downloadError, unknown,
              cantStoreChanges
         case fileNotCopied(String)
+        case droppedFields([String])
+
+        var id: Int {
+            return self.hashValue
+        }
     }
 
     struct State {
@@ -276,6 +281,7 @@ class ItemDetailStore: ObservableObject {
         var type: DetailType
         var data: Data
         var snapshot: Data?
+        var promptSnapshot: Data?
         var downloadProgress: [String: Double]
         var downloadError: [String: ItemDetailStore.Error]
         var error: Error?
@@ -509,6 +515,16 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
+    func acceptPromptSnapshot() {
+        guard let snapshot = self.state.promptSnapshot else { return }
+        self.state.promptSnapshot = nil
+        self.state.data = snapshot
+    }
+
+    func cancelPromptSnapshot() {
+        self.state.promptSnapshot = nil
+    }
+
     func changeType(to newType: String) {
         do {
             guard let localizedType = self.schemaController.localized(itemType: newType) else {
@@ -527,11 +543,23 @@ class ItemDetailStore: ObservableObject {
                 return (nil, nil)
             })
 
-            self.state.data.type = newType
-            self.state.data.localizedType = localizedType
-            self.state.data.fields = fields
-            self.state.data.fieldIds = fieldIds
-            self.state.data.abstract = hasAbstract ? (self.state.data.abstract ?? "") : nil
+            let newFieldNames = Set(fields.values.map({ $0.name }))
+            let oldFieldNames = Set(self.state.data.fields.values.filter({ !$0.value.isEmpty }).map({ $0.name }))
+            let droppedNames = oldFieldNames.subtracting(newFieldNames).sorted()
+
+            var data = self.state.data
+            data.type = newType
+            data.localizedType = localizedType
+            data.fields = fields
+            data.fieldIds = fieldIds
+            data.abstract = hasAbstract ? (self.state.data.abstract ?? "") : nil
+
+            if droppedNames.isEmpty {
+                self.state.data = data
+            } else {
+                self.state.promptSnapshot = data
+                self.state.error = .droppedFields(droppedNames)
+            }
         } catch let error {
             self.state.error = (error as? Error) ?? .typeNotSupported
         }

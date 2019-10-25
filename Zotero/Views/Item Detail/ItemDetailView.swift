@@ -48,6 +48,28 @@ struct ItemDetailView: View {
                                                               selectedTags: Set(self.store.state.data.tags.map({ $0.id })),
                                                               dbStorage: self.dbStorage))
                       })
+            .alert(item: self.$store.state.error) { error -> Alert in
+                switch error {
+                case .droppedFields(let names):
+                    return Alert(title: Text("Change Item Type"),
+                                 message: Text(self.changeItemTypeMessage(for: names)),
+                                 primaryButton: .default(Text("Ok"), action: self.store.acceptPromptSnapshot),
+                                 secondaryButton: .cancel(self.store.cancelPromptSnapshot))
+                default:
+                    return Alert(title: Text("Error"), message: Text("Unknown error"), dismissButton: .cancel())
+                }
+        }
+    }
+
+    private func changeItemTypeMessage(for names: [String]) -> String {
+        let formattedNames = names.map({ "- \($0)\n" }).joined()
+        return """
+               Are you sure you want to change the item type?
+
+               The following fields will be lost:
+
+               \(formattedNames)
+               """
     }
 
     private var trailingNavbarItems: some View {
