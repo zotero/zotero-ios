@@ -87,7 +87,7 @@ class ItemsStore: ObservableObject {
         }
     }
 
-    func removeSelectedItemsFromCollection() {
+    @objc func removeSelectedItemsFromCollection() {
         guard let collectionKey = self.state.type.collectionKey else { return }
         do {
             let request = DeleteItemsFromCollectionDbRequest(collectionKey: collectionKey,
@@ -112,15 +112,15 @@ class ItemsStore: ObservableObject {
         }
     }
 
-    func trashSelectedItems() {
+    @objc func trashSelectedItems() {
         self.setTrashedToSelectedItems(trashed: true)
     }
 
-    func restoreSelectedItems() {
+    @objc func restoreSelectedItems() {
         self.setTrashedToSelectedItems(trashed: false)
     }
 
-    func deleteSelectedItems() {
+    @objc func deleteSelectedItems() {
         do {
             let request = DeleteObjectsDbRequest<RItem>(keys: Array(self.state.selectedItems),
                                                         libraryId: self.state.library.identifier)

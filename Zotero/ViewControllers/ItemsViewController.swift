@@ -52,16 +52,8 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func removeSelectedFromCollection() {
-        self.store.removeSelectedItemsFromCollection()
-    }
-
     @objc private func showCollectionPicker() {
         NotificationCenter.default.post(name: .presentCollectionsPicker, object: (self.store.state.library, self.store.assignSelectedItems))
-    }
-
-    @objc private func trashSelected() {
-        self.store.trashSelectedItems()
     }
 
     @objc private func duplicateSelected() {
@@ -221,7 +213,11 @@ class ItemsViewController: UIViewController {
     }
 
     private func setupToolbar() {
-       let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"),
+        self.toolbarItems = self.store.state.type.isTrash ? self.createTrashToolbarItems() : self.createNormalToolbarItems()
+    }
+
+    private func createNormalToolbarItems() -> [UIBarButtonItem] {
+        let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"),
                                         style: .plain,
                                         target: self,
                                         action: #selector(ItemsViewController.showCollectionPicker))
@@ -229,8 +225,8 @@ class ItemsViewController: UIViewController {
 
         let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"),
                                         style: .plain,
-                                        target: self,
-                                        action: #selector(ItemsViewController.trashSelected))
+                                        target: self.store,
+                                        action: #selector(ItemsStore.trashSelectedItems))
         trashItem.tag = ItemsViewController.barButtonItemEmptyTag
 
         let duplicateItem = UIBarButtonItem(image: UIImage(systemName: "square.on.square"),
@@ -246,14 +242,31 @@ class ItemsViewController: UIViewController {
         if self.store.state.type.collectionKey != nil {
             let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"),
                                              style: .plain,
-                                             target: self,
-                                             action: #selector(ItemsViewController.removeSelectedFromCollection))
+                                             target: self.store,
+                                             action: #selector(ItemsStore.removeSelectedItemsFromCollection))
             removeItem.tag = ItemsViewController.barButtonItemEmptyTag
 
             items.insert(contentsOf: [spacer, removeItem], at: 2)
         }
 
-        self.toolbarItems = items
+        return items
+    }
+
+    private func createTrashToolbarItems() -> [UIBarButtonItem] {
+        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let trashItem = UIBarButtonItem(image: UIImage(named: "restore_trash"),
+                                        style: .plain,
+                                        target: self.store,
+                                        action: #selector(ItemsStore.restoreSelectedItems))
+        trashItem.tag = ItemsViewController.barButtonItemEmptyTag
+
+        let emptyItem = UIBarButtonItem(image: UIImage(named: "empty_trash"),
+                                        style: .plain,
+                                        target: self.store,
+                                        action: #selector(ItemsStore.deleteSelectedItems))
+        emptyItem.tag = ItemsViewController.barButtonItemEmptyTag
+
+        return [spacer, trashItem, spacer, emptyItem, spacer]
     }
 }
 
