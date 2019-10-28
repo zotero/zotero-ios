@@ -42,6 +42,7 @@ struct CollectionPickerView: View {
                             Image(systemName: "checkmark")
                         }
                     }
+                    .padding(.trailing, 20)
                 }
                 .listRowInsets(EdgeInsets(top: 0,
                                           leading: self.inset(for: collection.level),
