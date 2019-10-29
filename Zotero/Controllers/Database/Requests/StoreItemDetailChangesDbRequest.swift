@@ -105,7 +105,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 noteField.value = note.text
                 noteField.changed = true
             } else {
-                let childItem = try CreateNoteDbRequest(note: note).process(in: database)
+                let childItem = try CreateNoteDbRequest(note: note, libraryId: nil).process(in: database)
                 childItem.parent = item
                 childItem.libraryObject = item.libraryObject
                 childItem.changedFields.insert(.parent)

@@ -72,7 +72,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         // Create notes
 
         for note in self.data.notes {
-            let rNote = try CreateNoteDbRequest(note: note).process(in: database)
+            let rNote = try CreateNoteDbRequest(note: note, libraryId: nil).process(in: database)
             rNote.parent = item
             rNote.libraryObject = item.libraryObject
             rNote.changedFields.insert(.parent)

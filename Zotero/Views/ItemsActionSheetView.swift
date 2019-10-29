@@ -13,6 +13,8 @@ struct ItemsActionSheetView: View {
 
     var startEditing: (() -> Void)?
     var showItemCreation: (() -> Void)?
+    var showNoteCreation: (() -> Void)?
+    var showAttachmentPicker: (() -> Void)?
     var dismiss: (() -> Void)?
 
     var body: some View {
@@ -23,7 +25,7 @@ struct ItemsActionSheetView: View {
                         self.dismiss?()
                     }
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 18) {
                     Button(action: {
                         self.startEditing?()
                         self.dismiss?()
@@ -51,6 +53,20 @@ struct ItemsActionSheetView: View {
                         self.showItemCreation?()
                     }) {
                         Text("New Item")
+                    }
+
+                    Button(action: {
+                        self.dismiss?()
+                        self.showNoteCreation?()
+                    }) {
+                        Text("New Standalone Note")
+                    }
+
+                    Button(action: {
+                        self.dismiss?()
+                        self.showAttachmentPicker?()
+                    }) {
+                        Text("Upload File")
                     }
                 }
                 .padding()

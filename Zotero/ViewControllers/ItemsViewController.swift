@@ -52,6 +52,51 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
+    private func showNoteEditing(for note: ItemDetailStore.State.Note) {
+        self.presentNoteEditor(with: note.text) { [weak self] text in
+            var newNote = note
+            newNote.title = text.strippedHtml ?? ""
+            newNote.text = text
+            self?.saveChanges(for: newNote)
+        }
+    }
+
+    private func saveChanges(for note: ItemDetailStore.State.Note) {
+        do {
+            let request = StoreNoteDbRequest(note: note, libraryId: self.store.state.library.identifier)
+            try self.controllers.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            // TODO: - show error
+        }
+    }
+
+    private func showNoteCreation() {
+        self.presentNoteEditor(with: "") { [weak self] text in
+            self?.saveNewNote(with: text)
+        }
+    }
+
+    private func saveNewNote(with text: String) {
+        do {
+            let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
+            let request = CreateNoteDbRequest(note: note, libraryId: self.store.state.library.identifier)
+            _ = try self.controllers.dbStorage.createCoordinator().perform(request: request)
+        } catch let error {
+            // TODO: - Show error
+        }
+    }
+
+    private func presentNoteEditor(with text: String, save: @escaping (String) -> Void) {
+        let controller = NoteEditorViewController(text: text, saveAction: save)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.isModalInPresentation = true
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
+    private func showAttachmentPicker() {
+
+    }
+
     @objc private func showCollectionPicker() {
         NotificationCenter.default.post(name: .presentCollectionsPicker, object: (self.store.state.library, self.store.assignSelectedItems))
     }
@@ -87,12 +132,20 @@ class ItemsViewController: UIViewController {
     }
 
     private func showItemDetail(for item: RItem) {
-        let store = ItemDetailStore(type: .preview(item),
-                                    apiClient: self.controllers.apiClient,
-                                    fileStorage: self.controllers.fileStorage,
-                                    dbStorage: self.controllers.dbStorage,
-                                    schemaController: self.controllers.schemaController)
-        self.showItemView(with: store)
+        switch item.rawType {
+        case ItemTypes.note:
+            if let note = ItemDetailStore.State.Note(item: item) {
+                self.showNoteEditing(for: note)
+            }
+
+        default:
+            let store = ItemDetailStore(type: .preview(item),
+                                        apiClient: self.controllers.apiClient,
+                                        fileStorage: self.controllers.fileStorage,
+                                        dbStorage: self.controllers.dbStorage,
+                                        schemaController: self.controllers.schemaController)
+            self.showItemView(with: store)
+        }
     }
 
     private func showItemView(with store: ItemDetailStore, hidesBackButton: Bool = false) {
@@ -148,6 +201,12 @@ class ItemsViewController: UIViewController {
         }
         view.showItemCreation = { [weak self] in
             self?.showItemCreation()
+        }
+        view.showNoteCreation = { [weak self] in
+            self?.showNoteCreation()
+        }
+        view.showAttachmentPicker = { [weak self] in
+            self?.showAttachmentPicker()
         }
 
         let controller = UIHostingController(rootView: view.environmentObject(self.store))

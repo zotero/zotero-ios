@@ -14,6 +14,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
     typealias Response = RItem
 
     let note: ItemDetailStore.State.Note
+    let libraryId: LibraryIdentifier?
 
     var needsWrite: Bool { return true }
 
@@ -26,6 +27,18 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.changedFields = [.type, .fields]
         item.dateAdded = Date()
         item.dateModified = Date()
+
+        if let libraryId = libraryId {
+            switch libraryId {
+            case .custom(let type):
+                let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
+                item.customLibrary = library
+            case .group(let identifier):
+                let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
+                item.group = group
+            }
+        }
+
         database.add(item)
 
         let noteField = RItemField()
