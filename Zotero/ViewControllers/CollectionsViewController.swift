@@ -41,10 +41,21 @@ class CollectionsViewController: UIViewController {
         self.setupTableView()
         self.setupDataSource()
 
+        self.updateDataSource(with: self.store.state)
+
         self.storeSubscriber = self.store.$state.receive(on: DispatchQueue.main)
+                                                // Group updates by 1ms, added mainly because of CollectionsStore.replaceCollections where we perform
+                                                // deletion and insertion on collections array, which if not debounced creates 2 fast delete/add
+                                                // animations and it looks weird to the user, now the update acts as 1 and there is nothing to animate
+                                                .debounce(for: .milliseconds(1), scheduler: RunLoop.main)
                                                 .sink(receiveValue: { [weak self] state in
                                                     self?.updateDataSource(with: state)
                                                 })
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.store.didAppear()
     }
 
     override func viewDidAppear(_ animated: Bool) {

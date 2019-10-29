@@ -111,24 +111,6 @@ class CollectionsStore: ObservableObject {
                                error: .dataLoading)
         }
     }
-    
-//    private func editCollection(at index: Int) {
-//        let data = self.state.value.collectionCellData[index]
-//        do {
-//            let request = ReadCollectionDbRequest(libraryId: self.state.value.libraryId, key: data.key)
-//            let collection = try self.dbStorage.createCoordinator().perform(request: request)
-//            self.updater.updateState { state in
-//                state.collectionToEdit = collection
-//                state.changes.insert(.editing)
-//            }
-//        } catch let error {
-//            DDLogError("CollectionsStore: can't load collection - \(error)")
-//            self.updater.updateState { state in
-//                state.error = .collectionNotFound
-//            }
-//        }
-//    }
-//
 
     func didAppear() {
         NotificationCenter.default.post(name: .splitViewDetailChanged,
