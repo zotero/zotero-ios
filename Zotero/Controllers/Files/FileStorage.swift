@@ -30,6 +30,27 @@ protocol FileStorage {
     func createDictionaries(for file: File) throws
 }
 
+extension FileStorage {
+    /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)
+    /// - parameter attachments: Attachments which will be copied if needed
+    func copyAttachmentFilesIfNeeded(for attachments: [ItemDetailStore.State.Attachment]) throws {
+        for attachment in attachments {
+            switch attachment.type {
+            case .url: continue
+            case .file(let originalFile, _, _):
+                let newFile = Files.objectFile(for: .item, libraryId: attachment.libraryId,
+                                               key: attachment.key, ext: originalFile.ext)
+                // Make sure that the file was not already moved to our internal location before
+                guard originalFile.createUrl() != newFile.createUrl() else { continue }
+
+                // We can just "try?" to copy the file here, if it doesn't work the user will be notified during sync
+                // process and can try to remove/re-add the attachment
+                try self.copy(from: originalFile, to: newFile)
+            }
+        }
+    }
+}
+
 class FileStorageController: FileStorage {
     private let fileManager: FileManager = .default
 

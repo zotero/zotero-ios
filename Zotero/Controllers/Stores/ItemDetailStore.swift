@@ -474,11 +474,20 @@ class ItemDetailStore: ObservableObject {
             let notes = item.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                      .sorted(byKeyPath: "title")
                                      .compactMap(State.Note.init)
-            let attachments = item.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
-                                           .sorted(byKeyPath: "title")
-                                           .compactMap({ item -> State.Attachment? in
-                                               return attachmentType(for: item, fileStorage: fileStorage).flatMap({ State.Attachment(item: item, type: $0) })
-                                           })
+            let attachments: [State.Attachment]
+            if item.rawType == ItemTypes.attachment {
+                let attachment = attachmentType(for: item, fileStorage: fileStorage).flatMap({ State.Attachment(item: item, type: $0) })
+                attachments = attachment.flatMap { [$0] } ?? []
+            } else {
+                let mappedAttachments = item.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
+                                                     .sorted(byKeyPath: "title")
+                                                     .compactMap({ item -> State.Attachment? in
+                                                         return attachmentType(for: item, fileStorage: fileStorage)
+                                                                            .flatMap({ State.Attachment(item: item, type: $0) })
+                                                     })
+                attachments = Array(mappedAttachments)
+            }
+
             let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
 
             return State.Data(title: item.title,
@@ -490,7 +499,7 @@ class ItemDetailStore: ObservableObject {
                               fieldIds: fieldIds,
                               abstract: abstract,
                               notes: Array(notes),
-                              attachments: Array(attachments),
+                              attachments: attachments,
                               tags: Array(tags))
         }
     }
@@ -756,11 +765,11 @@ class ItemDetailStore: ObservableObject {
         // TODO: - move to background thread if possible
         // SWIFTUI BUG: - sync store with environment .editMode so that we can switch edit mode when background task finished
 
-        self.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
-
         var newType: State.DetailType?
 
         do {
+            try self.fileStorage.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
+
             switch self.state.type {
             case .preview(let item):
                 if let snapshot = self.state.snapshot {
@@ -797,24 +806,5 @@ class ItemDetailStore: ObservableObject {
                                                       snapshot: snapshot,
                                                       schemaController: self.schemaController)
         try self.dbStorage.createCoordinator().perform(request: request)
-    }
-
-    /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)
-    /// - parameter attachments: Attachments which will be copied if needed
-    private func copyAttachmentFilesIfNeeded(for attachments: [State.Attachment]) {
-        for attachment in attachments {
-            switch attachment.type {
-            case .url: continue
-            case .file(let originalFile, _, _):
-                let newFile = Files.objectFile(for: .item, libraryId: attachment.libraryId,
-                                               key: attachment.key, ext: originalFile.ext)
-                // Make sure that the file was not already moved to our internal location before
-                guard originalFile.createUrl() != newFile.createUrl() else { continue }
-
-                // We can just "try?" to copy the file here, if it doesn't work the user will be notified during sync
-                // process and can try to remove/re-add the attachment
-                try? self.fileStorage.copy(from: originalFile, to: newFile)
-            }
-        }
     }
 }

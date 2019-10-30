@@ -57,33 +57,12 @@ class ItemsViewController: UIViewController {
             var newNote = note
             newNote.title = text.strippedHtml ?? ""
             newNote.text = text
-            self?.saveChanges(for: newNote)
-        }
-    }
-
-    private func saveChanges(for note: ItemDetailStore.State.Note) {
-        do {
-            let request = StoreNoteDbRequest(note: note, libraryId: self.store.state.library.identifier)
-            try self.controllers.dbStorage.createCoordinator().perform(request: request)
-        } catch let error {
-            // TODO: - show error
+            self?.store.saveChanges(for: newNote)
         }
     }
 
     private func showNoteCreation() {
-        self.presentNoteEditor(with: "") { [weak self] text in
-            self?.saveNewNote(with: text)
-        }
-    }
-
-    private func saveNewNote(with text: String) {
-        do {
-            let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
-            let request = CreateNoteDbRequest(note: note, libraryId: self.store.state.library.identifier)
-            _ = try self.controllers.dbStorage.createCoordinator().perform(request: request)
-        } catch let error {
-            // TODO: - Show error
-        }
+        self.presentNoteEditor(with: "", save: self.store.saveNewNote)
     }
 
     private func presentNoteEditor(with text: String, save: @escaping (String) -> Void) {
@@ -94,7 +73,7 @@ class ItemsViewController: UIViewController {
     }
 
     private func showAttachmentPicker() {
-
+        NotificationCenter.default.post(name: .presentFilePicker, object: self.store.addAttachments)
     }
 
     @objc private func showCollectionPicker() {

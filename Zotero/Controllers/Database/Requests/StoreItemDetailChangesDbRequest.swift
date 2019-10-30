@@ -136,7 +136,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 titleField.value = attachment.title
                 titleField.changed = true
             } else {
-                let childItem = try CreateAttachmentDbRequest(attachment: attachment).process(in: database)
+                let childItem = try CreateAttachmentDbRequest(attachment: attachment, libraryId: nil).process(in: database)
                 childItem.libraryObject = item.libraryObject
                 childItem.parent = item
                 childItem.changedFields.insert(.parent)

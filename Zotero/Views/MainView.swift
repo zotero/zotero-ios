@@ -11,13 +11,14 @@ import SwiftUI
 struct MainView: View {
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
+    @Environment(\.fileStorage) private var fileStorage: FileStorage
 
     var body: some View {
         NavigationView {
             CollectionsView()
                 .environmentObject(CollectionsStore(library: self.defaultLibrary, dbStorage: self.dbStorage))
             ItemsView()
-                .environmentObject(ItemsStore(type: .all, library: self.defaultLibrary, dbStorage: self.dbStorage))
+                .environmentObject(ItemsStore(type: .all, library: self.defaultLibrary, dbStorage: self.dbStorage, fileStorage: self.fileStorage))
         }
     }
 

@@ -205,10 +205,12 @@ fileprivate struct ItemSectionView: View {
 
 struct ItemsView_Previews: PreviewProvider {
     static var previews: some View {
+        let controllers = Controllers()
         let store = ItemsStore(type: .all,
                                library: Library(identifier: .custom(.myLibrary), name: "My library",
                                                 metadataEditable: true, filesEditable: true),
-                               dbStorage: Controllers().dbStorage)
+                               dbStorage: controllers.dbStorage,
+                               fileStorage: controllers.fileStorage)
         return ItemsView().environmentObject(store)
     }
 }

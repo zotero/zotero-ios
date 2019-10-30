@@ -81,7 +81,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         // Create attachments
 
         for attachment in self.data.attachments {
-            let rAttachment = try CreateAttachmentDbRequest(attachment: attachment).process(in: database)
+            let rAttachment = try CreateAttachmentDbRequest(attachment: attachment, libraryId: nil).process(in: database)
             rAttachment.libraryObject = item.libraryObject
             rAttachment.parent = item
             rAttachment.changedFields.insert(.parent)

@@ -28,7 +28,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.dateAdded = Date()
         item.dateModified = Date()
 
-        if let libraryId = libraryId {
+        if let libraryId = self.libraryId {
             switch libraryId {
             case .custom(let type):
                 let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)

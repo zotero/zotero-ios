@@ -14,6 +14,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     typealias Response = RItem
 
     let attachment: ItemDetailStore.State.Attachment
+    let libraryId: LibraryIdentifier?
 
     var needsWrite: Bool { return true }
 
@@ -30,6 +31,18 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.attachmentNeedsSync = true
         item.dateAdded = Date()
         item.dateModified = Date()
+
+        if let libraryId = self.libraryId {
+            switch libraryId {
+            case .custom(let type):
+                let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
+                item.customLibrary = library
+            case .group(let identifier):
+                let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
+                item.group = group
+            }
+        }
+
         database.add(item)
 
         for fieldKey in attachmentKeys {

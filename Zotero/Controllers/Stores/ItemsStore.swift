@@ -64,9 +64,11 @@ class ItemsStore: ObservableObject {
 
     @Published var state: State
     private let dbStorage: DbStorage
+    private let fileStorage: FileStorage
 
-    init(type: State.ItemType, library: Library, dbStorage: DbStorage) {
+    init(type: State.ItemType, library: Library, dbStorage: DbStorage, fileStorage: FileStorage) {
         self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
 
         do {
             let sortType = ItemsSortType(field: .title, ascending: true)
@@ -84,6 +86,56 @@ class ItemsStore: ObservableObject {
                                library: library,
                                error: .dataLoading,
                                sortType: ItemsSortType(field: .title, ascending: true))
+        }
+    }
+
+    func addAttachments(from urls: [URL]) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let `self` = self else { return }
+
+            let attachments = urls.map({ Files.file(from: $0) })
+                                  .map({
+                                    ItemDetailStore.State.Attachment(key: KeyGenerator.newKey,
+                                                                     title: $0.name,
+                                                                     type: .file(file: $0, filename: $0.name, isLocal: true),
+                                                                     libraryId: self.state.library.identifier)
+                                  })
+
+            do {
+                try self.fileStorage.copyAttachmentFilesIfNeeded(for: attachments)
+
+                for attachment in attachments {
+                    let request = CreateAttachmentDbRequest(attachment: attachment, libraryId: self.state.library.identifier)
+                    _ = try self.dbStorage.createCoordinator().perform(request: request)
+                }
+            } catch let error {
+                // TODO: - Show error
+            }
+        }
+    }
+
+    func saveNewNote(with text: String) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let `self` = self else { return }
+            do {
+                let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
+                let request = CreateNoteDbRequest(note: note, libraryId: self.state.library.identifier)
+                _ = try self.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                // TODO: - Show error
+            }
+        }
+    }
+
+    func saveChanges(for note: ItemDetailStore.State.Note) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let `self` = self else { return }
+            do {
+                let request = StoreNoteDbRequest(note: note, libraryId: self.state.library.identifier)
+                try self.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                // TODO: - show error
+            }
         }
     }
 

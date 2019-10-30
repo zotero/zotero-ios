@@ -48,8 +48,11 @@ extension RItem {
         case "artwork":
             return "artwork"
         case "attachment":
-            // TODO: - choose attachment
-            return "attachment"
+            let contentType = self.fields.filter(Predicates.key(FieldKeys.contentType)).first?.value ?? ""
+            if contentType.contains("pdf") {
+                return "pdf"
+            }
+            return "document"
         case "audioRecording":
             return "audio-recording"
         case "book":
