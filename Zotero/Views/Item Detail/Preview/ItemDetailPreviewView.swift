@@ -12,7 +12,7 @@ struct ItemDetailPreviewView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
     var body: some View {
-        Group {
+        List {
             ItemDetailTitleView(title: self.store.state.data.title)
 
             ItemDetailMetadataSectionView()

@@ -13,14 +13,12 @@ struct ItemDetailEditTagSectionView: View {
 
     var body: some View {
         Section {
-            Section {
-                ItemDetailSectionView(title: "Tags")
-                ForEach(self.store.state.data.tags) { tag in
-                    TagView(color: Color(hex: tag.color), name: tag.name)
-                }
-                .onDelete(perform: self.store.deleteTags)
-                ItemDetailAddView(title: "Add tag", action: { self.store.state.showTagPicker = true })
+            ItemDetailSectionView(title: "Tags")
+            ForEach(self.store.state.data.tags) { tag in
+                TagView(color: Color(hex: tag.color), name: tag.name)
             }
+            .onDelete(perform: self.store.deleteTags)
+            ItemDetailAddView(title: "Add tag", action: { self.store.state.showTagPicker = true })
         }
     }
 }

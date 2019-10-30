@@ -16,7 +16,7 @@ struct ItemDetailView: View {
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {
-        List {
+        Group {
             if self.editMode?.wrappedValue.isEditing == true {
                 ItemDetailEditingView()
             } else {
@@ -73,42 +73,36 @@ struct ItemDetailView: View {
     }
 
     private var trailingNavbarItems: some View {
-        Group {
-            if self.store.state.data.type == ItemTypes.attachment {
-                EmptyView()
-            } else {
-                HStack {
-                    if self.editMode?.wrappedValue.isEditing == true {
-                        Button(action: {
-                            self.store.cancelChanges()
-                            if self.store.state.type.isCreation {
-                                self.presentationMode.wrappedValue.dismiss()
-                            } else {
-                                self.editMode?.wrappedValue = .inactive
-                            }
-                        }) {
-                            Text("Cancel")
-                        }
+        HStack {
+            if self.editMode?.wrappedValue.isEditing == true {
+                Button(action: {
+                    self.store.cancelChanges()
+                    if self.store.state.type.isCreation {
+                        self.presentationMode.wrappedValue.dismiss()
+                    } else {
+                        self.editMode?.wrappedValue = .inactive
                     }
-
-                    Button(action: {
-                        if self.editMode?.wrappedValue.isEditing == true {
-                            if self.store.saveChanges() {
-                                self.editMode?.wrappedValue = .inactive
-                            }
-                        } else {
-                            self.store.startEditing()
-                            self.editMode?.wrappedValue = .active
-                        }
-                    }) {
-                        Text(self.editMode?.wrappedValue.isEditing == true ? "Save" : "Edit")
-                    }
+                }) {
+                    Text("Cancel")
                 }
-                // SWIFTUI BUG: - when changing between 1 and 2 buttons, the frame keeps the wider widht of 2 buttons and the single button is
-                // centered to the middle, by setting a big frame we create the same width for both states and align them to the right
-                .frame(width: 100, alignment: .trailing)
+            }
+
+            Button(action: {
+                if self.editMode?.wrappedValue.isEditing == true {
+                    if self.store.saveChanges() {
+                        self.editMode?.wrappedValue = .inactive
+                    }
+                } else {
+                    self.store.startEditing()
+                    self.editMode?.wrappedValue = .active
+                }
+            }) {
+                Text(self.editMode?.wrappedValue.isEditing == true ? "Save" : "Edit")
             }
         }
+        // SWIFTUI BUG: - when changing between 1 and 2 buttons, the frame keeps the wider widht of 2 buttons and the single button is
+        // centered to the middle, by setting a big frame we create the same width for both states and align them to the right
+        .frame(width: 100, alignment: .trailing)
     }
 }
 

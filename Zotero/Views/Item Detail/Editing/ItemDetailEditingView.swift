@@ -12,12 +12,14 @@ struct ItemDetailEditingView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
     var body: some View {
-        Group {
+        List {
             ItemDetailEditTitleView(title: self.$store.state.data.title)
             ItemDetailEditMetadataSectionView()
             ItemDetailEditNoteSectionView()
             ItemDetailEditTagSectionView()
-            ItemDetailEditAttachmentSectionView()
+            if self.store.state.data.type != ItemTypes.attachment {
+                ItemDetailEditAttachmentSectionView()
+            }
         }
     }
 }

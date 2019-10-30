@@ -20,23 +20,27 @@ struct ItemDetailEditMetadataSectionView: View {
             ItemDetailMetadataView(title: "Item Type",
                                    value: self.store.state.data.localizedType)
             .onTapGesture {
-                NotificationCenter.default.post(name: .presentTypePicker, object: (self.store.state.data.type, self.store.changeType))
+                if self.store.state.data.type != ItemTypes.attachment {
+                    NotificationCenter.default.post(name: .presentTypePicker, object: (self.store.state.data.type, self.store.changeType))
+                }
             }
 
-            ForEach(self.store.state.data.creatorIds, id: \.self) { creatorId in
-                ItemDetailEditCreatorView(creator: self.binding(from: creatorId))
-            }
-            .onDelete(perform: self.store.deleteCreators)
-            .onMove(perform: self.store.moveCreators)
-            ItemDetailAddView(title: "Add creator", action: self.store.addCreator)
+            if self.store.state.data.type != ItemTypes.attachment {
+                ForEach(self.store.state.data.creatorIds, id: \.self) { creatorId in
+                    ItemDetailEditCreatorView(creator: self.binding(from: creatorId))
+                }
+                .onDelete(perform: self.store.deleteCreators)
+                .onMove(perform: self.store.moveCreators)
+                ItemDetailAddView(title: "Add creator", action: self.store.addCreator)
 
-            ForEach(self.store.state.data.fieldIds, id: \.self) { fieldId in
-                ItemDetailEditMetadataView(title: self.store.state.data.fields[fieldId]?.name ?? "",
-                                           value: self.binding(from: fieldId))
-            }
+                ForEach(self.store.state.data.fieldIds, id: \.self) { fieldId in
+                    ItemDetailEditMetadataView(title: self.store.state.data.fields[fieldId]?.name ?? "",
+                                               value: self.binding(from: fieldId))
+                }
 
-            Binding(self.$store.state.data.abstract).flatMap {
-                ItemDetailEditAbstractView(abstract: $0)
+                Binding(self.$store.state.data.abstract).flatMap {
+                    ItemDetailEditAbstractView(abstract: $0)
+                }
             }
         }
     }
