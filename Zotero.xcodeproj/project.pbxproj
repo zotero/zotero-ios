@@ -220,6 +220,7 @@
 		B3CFF1DD23620EC2003A52FA /* TypePickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CFF1DC23620EC2003A52FA /* TypePickerStore.swift */; };
 		B3CFF1DF2362118D003A52FA /* CreatorTypePickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CFF1DE2362118D003A52FA /* CreatorTypePickerStore.swift */; };
 		B3CFF1E12362189A003A52FA /* TypePickerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CFF1E02362189A003A52FA /* TypePickerRow.swift */; };
+		B3D12C67236B35330001A4F5 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D12C66236B35330001A4F5 /* Notifications.swift */; };
 		B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */; };
 		B3D9CC2522FAE294009CEE36 /* CreateNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */; };
 		B3D9CC2722FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */; };
@@ -490,6 +491,7 @@
 		B3CFF1DC23620EC2003A52FA /* TypePickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePickerStore.swift; sourceTree = "<group>"; };
 		B3CFF1DE2362118D003A52FA /* CreatorTypePickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorTypePickerStore.swift; sourceTree = "<group>"; };
 		B3CFF1E02362189A003A52FA /* TypePickerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePickerRow.swift; sourceTree = "<group>"; };
+		B3D12C66236B35330001A4F5 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypes.swift; sourceTree = "<group>"; };
 		B3D9CC2422FAE294009CEE36 /* CreateNoteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNoteDbRequest.swift; sourceTree = "<group>"; };
 		B3D9CC2622FAE9D5009CEE36 /* CreateAttachmentDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentDbRequest.swift; sourceTree = "<group>"; };
@@ -746,6 +748,7 @@
 				B36D2BCE232FE86C0056F022 /* Controllers+EnvironmentValues.swift */,
 				B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */,
 				B33A56BD2356329C00C33F28 /* UserDefault+PropertyWrapper.swift */,
+				B3D12C66236B35330001A4F5 /* Notifications.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -1506,6 +1509,7 @@
 				B3727652232669B400E2C522 /* TagView.swift in Sources */,
 				B30F668C220CB6CC009E7A8F /* Files.swift in Sources */,
 				B35E39D122772DA300A368C7 /* ResolveItemDbRequest.swift in Sources */,
+				B3D12C67236B35330001A4F5 /* Notifications.swift in Sources */,
 				B3310C562264D06C00E45CD1 /* FieldKeys.swift in Sources */,
 				B30F6688220CB274009E7A8F /* FileStorage.swift in Sources */,
 				B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */,

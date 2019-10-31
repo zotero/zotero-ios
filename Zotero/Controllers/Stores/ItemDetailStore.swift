@@ -13,10 +13,7 @@ import CocoaLumberjack
 import RealmSwift
 import RxSwift
 
-extension Notification.Name {
-    static let presentPdf = Notification.Name(rawValue: "org.zotero.PresentPdfAttachment")
-    static let presentWeb = Notification.Name(rawValue: "org.zotero.PresentWebAttachment")
-}
+
 
 class ItemDetailStore: ObservableObject {
     enum Error: Swift.Error, Equatable, Identifiable, Hashable {
@@ -291,9 +288,6 @@ class ItemDetailStore: ObservableObject {
         var presentedNote: Note
         var metadataTitleMaxWidth: CGFloat
 
-        var showTagPicker: Bool
-        var unknownAttachment: URL?
-
         fileprivate var library: SyncController.Library {
             switch self.libraryId {
             case .custom(let type):
@@ -309,7 +303,6 @@ class ItemDetailStore: ObservableObject {
             self.data = data
             self.downloadProgress = [:]
             self.downloadError = [:]
-            self.showTagPicker = false
             self.metadataTitleMaxWidth = 0
             self.error = error
             self.presentedNote = Note(key: KeyGenerator.newKey, text: "")
@@ -678,7 +671,6 @@ class ItemDetailStore: ObservableObject {
 
     func setTags(_ tags: [Tag]) {
         self.state.data.tags = tags
-        self.state.showTagPicker = false
     }
 
     func deleteTags(at offsets: IndexSet) {
@@ -739,7 +731,7 @@ class ItemDetailStore: ObservableObject {
             NotificationCenter.default.post(name: .presentPdf, object: file.createUrl())
             #endif
         default:
-            self.state.unknownAttachment = file.createUrl()
+            NotificationCenter.default.post(name: .presentUnknownAttachment, object: file.createUrl())
         }
     }
 

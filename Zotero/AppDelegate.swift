@@ -16,10 +16,6 @@ import SwiftUI
 import PSPDFKit
 #endif
 
-extension Notification.Name {
-    static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
-}
-
 class AppDelegate: UIResponder {
 
     private let disposeBag: DisposeBag = DisposeBag()

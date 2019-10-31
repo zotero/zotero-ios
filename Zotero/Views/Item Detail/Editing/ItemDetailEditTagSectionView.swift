@@ -18,7 +18,9 @@ struct ItemDetailEditTagSectionView: View {
                 TagView(color: Color(hex: tag.color), name: tag.name)
             }
             .onDelete(perform: self.store.deleteTags)
-            ItemDetailAddView(title: "Add tag", action: { self.store.state.showTagPicker = true })
+            ItemDetailAddView(title: "Add tag", action: {
+                NotificationCenter.default.post(name: .presentTagPicker, object: (Set(self.store.state.data.tags.map({ $0.id })), self.store.state.libraryId, self.store.setTags))
+            })
         }
     }
 }

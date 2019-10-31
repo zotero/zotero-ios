@@ -24,10 +24,6 @@ fileprivate enum PrimaryColumnState {
     case dynamic(CGFloat)
 }
 
-extension Notification.Name {
-    static let splitViewDetailChanged = Notification.Name("org.zotero.SplitViewDetailChanged")
-}
-
 class MainViewController: UISplitViewController, ConflictPresenter {
     // Constants
     private static let minPrimaryColumnWidth: CGFloat = 300
@@ -94,6 +90,28 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     // MARK: - Actions
+
+    private func presentUnknownAttachment(with url: URL) {
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        controller.modalPresentationStyle = .pageSheet
+        controller.popoverPresentationController?.sourceView = self.view
+        controller.popoverPresentationController?.sourceRect = CGRect(x: (self.view.frame.width / 3.0),
+                                                                      y: (self.view.frame.height * 2.0 / 3.0),
+                                                                      width: (self.view.frame.width / 3),
+                                                                      height: (self.view.frame.height / 3))
+        self.present(controller, animated: true, completion: nil)
+    }
+
+    private func presentTagPicker(with selectedIds: Set<String>, libraryId: LibraryIdentifier, saveAction: @escaping ([Tag]) -> Void) {
+        let view = TagPickerView(saveAction: saveAction) { [weak self] in
+            self?.dismiss(animated: true, completion: nil)
+        }
+        .environmentObject(TagPickerStore(libraryId: libraryId, selectedTags: selectedIds, dbStorage: self.controllers.dbStorage))
+
+        let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        controller.isModalInPresentation = true
+        self.present(controller, animated: true, completion: nil)
+    }
 
     private func presentCreatorTypePicker(for itemType: String, creatorType: String, saveAction: @escaping (String) -> Void) {
         let store = CreatorTypePickerStore(itemType: itemType, selected: creatorType, schemaController: self.controllers.schemaController)
@@ -348,101 +366,77 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func setupNotificationObservers() {
-        NotificationCenter.default.rx.notification(.presentPdf)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                        if let url = notification.object as? URL {
-                                            self?.presentPdf(with: url)
-                                        }
-                                     })
-                                     .disposed(by: self.disposeBag)
+        let notifications: [Notification.Name] = [.presentPdf, .presentWeb, .splitViewDetailChanged, .showDuplicateCreation,
+                                                  .presentCollectionsPicker, .presentSortTypePicker, .presentFilePicker,
+                                                  .presentSettings, .presentNote, .presentTypePicker, .presentCreatorPicker,
+                                                  .presentTagPicker, .presentUnknownAttachment]
 
-        NotificationCenter.default.rx.notification(.presentWeb)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                        if let url = notification.object as? URL {
-                                           self?.presentWeb(with: url)
-                                        }
-                                     })
-                                     .disposed(by: self.disposeBag)
+        notifications.forEach { name in
+            self.setup(notification: name) { [weak self] notification in
+                switch name {
+                case .presentPdf:
+                    if let url = notification.object as? URL {
+                        self?.presentPdf(with: url)
+                    }
+                case .presentWeb:
+                    if let url = notification.object as? URL {
+                       self?.presentWeb(with: url)
+                    }
+                case .splitViewDetailChanged:
+                    if let (collection, library) = notification.object as? (Collection, Library) {
+                        self?.showItems(in: collection, library: library)
+                    }
+                case .showDuplicateCreation:
+                    if let (key, library, collectionKey) = notification.object as? (String, Library, String?) {
+                        self?.showDuplicateCreation(for: key, library: library, collectionKey: collectionKey)
+                    }
+                case .presentCollectionsPicker:
+                    if let (library, block) = notification.object as? (Library, (Set<String>) -> Void) {
+                        self?.presentCollectionsPicker(in: library, block: block)
+                    }
+                case .presentSortTypePicker:
+                    if let binding = notification.object as? Binding<ItemsSortType.Field> {
+                        self?.presentSortTypePicker(field: binding)
+                    }
+                case .presentFilePicker:
+                    if let action = notification.object as? (([URL]) -> Void) {
+                        self?.filesPickedAction = action
+                        self?.presentFilePicker()
+                    }
+                case .presentSettings:
+                    self?.presentSettings()
+                case .presentNote:
+                    if let (note, block) = notification.object as? (Binding<ItemDetailStore.State.Note>, () -> Void) {
+                        self?.presentNote(note, saveAction: block)
+                    }
+                case .presentTypePicker:
+                    if let (selected, block) = notification.object as? (String, (String) -> Void) {
+                        self?.presentItemTypePicker(for: selected, saveAction: block)
+                    }
+                case .presentCreatorPicker:
+                    if let (itemType, selected, block) = notification.object as? (String, String, (String) -> Void) {
+                        self?.presentCreatorTypePicker(for: itemType, creatorType: selected, saveAction: block)
+                    }
+                case .presentTagPicker:
+                    if let (tags, libraryId, block) = notification.object as? (Set<String>, LibraryIdentifier, ([Tag]) -> Void) {
+                       self?.presentTagPicker(with: tags, libraryId: libraryId, saveAction: block)
+                    }
+                case .presentUnknownAttachment:
+                    if let url = notification.object as? URL {
+                        self?.presentUnknownAttachment(with: url)
+                    }
 
-        NotificationCenter.default.rx.notification(.splitViewDetailChanged)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                        if let (collection, library) = notification.object as? (Collection, Library) {
-                                            self?.showItems(in: collection, library: library)
-                                        }
-                                     })
-                                     .disposed(by: self.disposeBag)
+                default: break
+                }
+            }
+        }
+    }
 
-        NotificationCenter.default.rx.notification(.showDuplicateCreation)
+    private func setup(notification: Notification.Name, received: @escaping (Notification) -> Void) {
+        NotificationCenter.default.rx.notification(notification)
                                      .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let (key, library, collectionKey) = notification.object as? (String, Library, String?) {
-                                             self?.showDuplicateCreation(for: key, library: library, collectionKey: collectionKey)
-                                         }
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentCollectionsPicker)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let (library, block) = notification.object as? (Library, (Set<String>) -> Void) {
-                                             self?.presentCollectionsPicker(in: library, block: block)
-                                         }
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentSortTypePicker)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let binding = notification.object as? Binding<ItemsSortType.Field> {
-                                             self?.presentSortTypePicker(field: binding)
-                                         }
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentFilePicker)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let action = notification.object as? (([URL]) -> Void) {
-                                             self?.filesPickedAction = action
-                                             self?.presentFilePicker()
-                                         }
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentSettings)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         self?.presentSettings()
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentNote)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let (note, block) = notification.object as? (Binding<ItemDetailStore.State.Note>, () -> Void) {
-                                             self?.presentNote(note, saveAction: block)
-                                         }
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentTypePicker)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let (selected, block) = notification.object as? (String, (String) -> Void) {
-                                             self?.presentItemTypePicker(for: selected, saveAction: block)
-                                         }
-                                     })
-                                     .disposed(by: self.disposeBag)
-
-        NotificationCenter.default.rx.notification(.presentCreatorPicker)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         if let (itemType, selected, block) = notification.object as? (String, String, (String) -> Void) {
-                                             self?.presentCreatorTypePicker(for: itemType, creatorType: selected, saveAction: block)
-                                         }
+                                     .subscribe(onNext: { notification in
+                                         received(notification)
                                      })
                                      .disposed(by: self.disposeBag)
     }

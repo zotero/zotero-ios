@@ -10,39 +10,43 @@ import SwiftUI
 
 struct TagPickerView: View {
     @EnvironmentObject private(set) var store: TagPickerStore
+
     let saveAction: ([Tag]) -> Void
+    let dismiss: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            List(selection: self.$store.state.selectedTags) {
-                ForEach(self.store.state.tags) { tag in
-                    TagView(color: .init(hex: tag.color), name: tag.name)
-                }
+        List(selection: self.$store.state.selectedTags) {
+            ForEach(self.store.state.tags) { tag in
+                TagView(color: .init(hex: tag.color), name: tag.name)
             }
-
-            Button(action: {
-                let tags = self.store.state.selectedTags.compactMap { id in
-                    self.store.state.tags.first(where: { $0.id == id })
-                }.sorted(by: { $0.name < $1.name })
-                self.saveAction(tags)
-            }) {
-                Text("Save")
-                    .foregroundColor(.white)
-                    .font(.callout)
-                    .fontWeight(.bold)
-            }
-            .padding(.vertical)
-            .frame(maxWidth: .infinity)
-            .background(Color.blue)
         }
+        .navigationBarItems(leading: self.leadingBarItems, trailing: self.trailingBarItems)
         .environment(\.editMode, .constant(.active))
         .onAppear(perform: self.store.load)
+    }
+
+    private var leadingBarItems: some View {
+        return Button(action: self.dismiss) {
+            return Text("Cancel")
+        }
+    }
+
+    private var trailingBarItems: some View {
+        return Button(action: {
+            let tags = self.store.state.selectedTags.compactMap { id in
+                self.store.state.tags.first(where: { $0.id == id })
+            }.sorted(by: { $0.name < $1.name })
+            self.saveAction(tags)
+            self.dismiss()
+        }) {
+            return Text("Save")
+        }
     }
 }
 
 struct TagPickerView_Previews: PreviewProvider {
     static var previews: some View {
-        TagPickerView(saveAction: { _ in })
+        TagPickerView(saveAction: { _ in }, dismiss: {})
             .environmentObject(TagPickerStore(libraryId: .custom(.myLibrary),
                                               selectedTags: [],
                                               dbStorage: Controllers().dbStorage))

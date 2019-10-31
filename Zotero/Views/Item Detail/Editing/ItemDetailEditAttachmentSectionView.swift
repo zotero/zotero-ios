@@ -8,10 +8,6 @@
 
 import SwiftUI
 
-extension Notification.Name {
-    static let presentFilePicker = Notification.Name(rawValue: "org.zotero.PresentFilePicker")
-}
-
 struct ItemDetailEditAttachmentSectionView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 

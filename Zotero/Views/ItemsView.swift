@@ -10,12 +10,6 @@ import SwiftUI
 
 import RealmSwift
 
-extension Notification.Name {
-    static let showDuplicateCreation = Notification.Name(rawValue: "org.zotero.ShowDuplicateCreation")
-    static let presentCollectionsPicker = Notification.Name(rawValue: "org.zotero.PresentCollectionsPicker")
-    static let presentSortTypePicker = Notification.Name(rawValue: "org.zotero.PresentSortTypePicker")
-}
-
 struct ItemsView: View {
     @EnvironmentObject private(set) var store: ItemsStore
 

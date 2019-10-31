@@ -8,10 +8,6 @@
 
 import SwiftUI
 
-extension Notification.Name {
-    static let presentSettings = Notification.Name(rawValue: "org.zotero.PresentSettings")
-}
-
 struct LibrariesView: View {
     @EnvironmentObject private(set) var store: LibrariesStore
 

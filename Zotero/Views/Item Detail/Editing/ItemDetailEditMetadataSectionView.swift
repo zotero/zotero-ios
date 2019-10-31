@@ -8,10 +8,6 @@
 
 import SwiftUI
 
-extension Notification.Name {
-    static let presentTypePicker = Notification.Name(rawValue: "org.zotero.PresentItemTypePicker")
-}
-
 struct ItemDetailEditMetadataSectionView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 

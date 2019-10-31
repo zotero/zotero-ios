@@ -8,10 +8,6 @@
 
 import SwiftUI
 
-extension Notification.Name {
-    static let presentCreatorPicker = Notification.Name(rawValue: "org.zotero.PresentCreatorTypePicker")
-}
-
 struct ItemDetailEditCreatorView: View {
     @Binding var creator: ItemDetailStore.State.Creator
 
@@ -23,7 +19,7 @@ struct ItemDetailEditCreatorView: View {
         HStack {
             ItemDetailMetadataTitleView(title: self.creator.localizedType)
             .onTapGesture {
-                NotificationCenter.default.post(name: .presentCreatorPicker, object: (self.store.state.data.type, self.creator.type, self.set))
+                NotificationCenter.default.post(name: .presentCreatorPicker, object: (self.store.state.data.type, self.store.state.libraryId, self.creator.type, self.set))
             }
             if self.creator.namePresentation == .full {
                 TextField("Full name", text: self.$creator.fullName)
