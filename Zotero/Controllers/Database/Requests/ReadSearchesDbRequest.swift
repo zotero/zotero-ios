@@ -18,9 +18,8 @@ struct ReadSearchesDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> Results<RSearch> {
-        let syncPredicate = Predicates.notSyncState(.dirty, in: self.libraryId)
-        let deletedPredicate = Predicates.deleted(false)
-        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [syncPredicate, deletedPredicate])
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.notSyncState(.dirty, in: self.libraryId),
+                                                                            .deleted(false)])
         return database.objects(RSearch.self).filter(predicate)
                                              .sorted(byKeyPath: "name")
     }

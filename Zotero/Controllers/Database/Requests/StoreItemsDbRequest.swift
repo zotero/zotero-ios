@@ -43,8 +43,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
-        let predicate = Predicates.key(data.key, in: libraryId)
-        if let existing = database.objects(RItem.self).filter(predicate).first {
+        if let existing = database.objects(RItem.self).filter(.key(data.key, in: libraryId)).first {
             item = existing
         } else {
             item = RItem()
@@ -132,9 +131,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
         guard let key = key else { return }
 
         let parent: RItem
-        let predicate = Predicates.key(key, in: libraryId)
 
-        if let existing = database.objects(RItem.self).filter(predicate).first {
+        if let existing = database.objects(RItem.self).filter(.key(key, in: libraryId)).first {
             parent = existing
         } else {
             parent = RItem()
@@ -153,8 +151,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         guard !keys.isEmpty else { return }
 
         var remainingCollections = keys
-        let predicate = Predicates.keys(keys, in: libraryId)
-        let existingCollections = database.objects(RCollection.self).filter(predicate)
+        let existingCollections = database.objects(RCollection.self).filter(.keys(keys, in: libraryId))
 
         for collection in existingCollections {
             item.collections.append(collection)
@@ -186,8 +183,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         for object in tags.enumerated() {
             guard !existingIndices.contains(object.offset) else { continue }
             let tag: RTag
-            let predicate = Predicates.name(object.element.tag, in: libraryId)
-            if let existing = database.objects(RTag.self).filter(predicate).first {
+            if let existing = database.objects(RTag.self).filter(.name(object.element.tag, in: libraryId)).first {
                 tag = existing
             } else {
                 tag = RTag()

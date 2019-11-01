@@ -23,8 +23,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     let schemaController: SchemaController
 
     func process(in database: Realm) throws {
-        let predicate = Predicates.key(self.itemKey, in: self.libraryId)
-        guard let item = database.objects(RItem.self).filter(predicate).first else { return }
+        guard let item = database.objects(RItem.self).filter(.key(self.itemKey, in: self.libraryId)).first else { return }
 
         let allFields = self.data.allFields(schemaController: self.schemaController)
 
@@ -40,7 +39,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
             // Remove fields that don't exist in this new type
             let fieldKeys = allFields.map({ $0.key })
-            let toRemove = item.fields.filter(Predicates.key(notIn: fieldKeys))
+            let toRemove = item.fields.filter(.key(notIn: fieldKeys))
             database.delete(toRemove)
 
             fieldsDidChange = !toRemove.isEmpty
@@ -56,7 +55,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             // or type didn't change and we're updating only changed fields
             guard typeChanged || (field.value != snapshotFields[offset].value) else { continue }
 
-            if let existing = item.fields.filter(Predicates.key(field.key)).first {
+            if let existing = item.fields.filter(.key(field.key)).first {
                 if field.value != existing.value {
                     existing.value = field.value
                     existing.changed = true
@@ -87,8 +86,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         // Update notes
 
         let noteKeys = self.data.notes.map({ $0.key })
-        let notesToRemove = item.children.filter(Predicates.item(type: ItemTypes.note))
-                                         .filter(Predicates.key(notIn: noteKeys))
+        let notesToRemove = item.children.filter(.item(type: ItemTypes.note))
+                                         .filter(.key(notIn: noteKeys))
         notesToRemove.forEach {
             $0.trash = true
             $0.changedFields.insert(.trash)
@@ -97,8 +96,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         for note in self.data.notes {
             guard note.text != self.snapshot.notes.first(where: { $0.key == note.key })?.text else { continue }
 
-            if let childItem = item.children.filter(Predicates.key(note.key)).first,
-               let noteField = childItem.fields.filter(Predicates.key(FieldKeys.note)).first {
+            if let childItem = item.children.filter(.key(note.key)).first,
+               let noteField = childItem.fields.filter(.key(FieldKeys.note)).first {
                 guard noteField.value != note.text else { continue }
                 childItem.title = note.title
                 childItem.changedFields.insert(.fields)
@@ -115,8 +114,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         // Update attachments
 
         let attachmentKeys = self.data.attachments.map({ $0.key })
-        let attachmentsToRemove = item.children.filter(Predicates.item(type: ItemTypes.attachment))
-                                               .filter(Predicates.key(notIn: attachmentKeys))
+        let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
+                                               .filter(.key(notIn: attachmentKeys))
         attachmentsToRemove.forEach {
             $0.trash = true
             $0.changedFields.insert(.trash)
@@ -128,8 +127,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             // and create a new attachment
             guard attachment.title != self.snapshot.attachments.first(where: { $0.key == attachment.key })?.title else { continue }
 
-            if let childItem = item.children.filter(Predicates.key(attachment.key)).first,
-               let titleField = childItem.fields.filter(Predicates.key(FieldKeys.title)).first {
+            if let childItem = item.children.filter(.key(attachment.key)).first,
+               let titleField = childItem.fields.filter(.key(FieldKeys.title)).first {
                 guard titleField.value != attachment.title else { continue }
                 childItem.title = attachment.title
                 childItem.changedFields.insert(.fields)
@@ -148,7 +147,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         var tagsDidChange = false
 
         let tagNames = self.data.tags.map({ $0.name })
-        let tagsToRemove = item.tags.filter(Predicates.name(notIn: tagNames))
+        let tagsToRemove = item.tags.filter(.name(notIn: tagNames))
         tagsToRemove.forEach { tag in
             if let index = tag.items.index(of: item) {
                 tag.items.remove(at: index)
@@ -157,7 +156,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         }
 
         self.data.tags.forEach { tag in
-            if let rTag = database.objects(RTag.self).filter(Predicates.name(tag.name, in: self.libraryId))
+            if let rTag = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId))
                                                      .filter("not (any items.key = %@)", self.itemKey).first {
                 rTag.items.append(item)
                 tagsDidChange = true

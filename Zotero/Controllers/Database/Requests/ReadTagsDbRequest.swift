@@ -18,7 +18,7 @@ struct ReadTagsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> [Tag] {
-        return database.objects(RTag.self).filter(Predicates.library(with: self.libraryId))
+        return database.objects(RTag.self).filter(.library(with: self.libraryId))
                                           .sorted(byKeyPath: "name")
                                           .map(Tag.init)
     }

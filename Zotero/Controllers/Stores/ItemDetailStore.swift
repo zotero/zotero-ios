@@ -145,7 +145,7 @@ class ItemDetailStore: ObservableObject {
 
                 self.key = item.key
                 self.title = item.title
-                self.text = item.fields.filter(Predicates.key(FieldKeys.note)).first?.value ?? ""
+                self.text = item.fields.filter(.key(FieldKeys.note)).first?.value ?? ""
             }
         }
 
@@ -464,7 +464,7 @@ class ItemDetailStore: ObservableObject {
                 creators[creator.id] = creator
             }
 
-            let notes = item.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
+            let notes = item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                      .sorted(byKeyPath: "title")
                                      .compactMap(State.Note.init)
             let attachments: [State.Attachment]
@@ -472,7 +472,7 @@ class ItemDetailStore: ObservableObject {
                 let attachment = attachmentType(for: item, fileStorage: fileStorage).flatMap({ State.Attachment(item: item, type: $0) })
                 attachments = attachment.flatMap { [$0] } ?? []
             } else {
-                let mappedAttachments = item.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
+                let mappedAttachments = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
                                                      .sorted(byKeyPath: "title")
                                                      .compactMap({ item -> State.Attachment? in
                                                          return attachmentType(for: item, fileStorage: fileStorage)
@@ -498,11 +498,11 @@ class ItemDetailStore: ObservableObject {
     }
 
     private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> State.Attachment.ContentType? {
-        let contentType = item.fields.filter(Predicates.key(FieldKeys.contentType)).first?.value ?? ""
+        let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value ?? ""
         if !contentType.isEmpty { // File attachment
             if let ext = contentType.extensionFromMimeType,
                let libraryId = item.libraryObject?.identifier {
-                let filename = item.fields.filter(Predicates.key(FieldKeys.filename)).first?.value ?? (item.title + "." + ext)
+                let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.title + "." + ext)
                 let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: ext)
                 let isLocal = fileStorage.has(file)
                 return .file(file: file, filename: filename, isLocal: isLocal)

@@ -19,6 +19,6 @@ struct MarkObjectsAsDeletedDbRequest<Obj: DeletableObject>: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        database.objects(Obj.self).filter(Predicates.keys(self.keys, in: self.libraryId)).forEach { $0.deleted = true }
+        database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId)).forEach { $0.deleted = true }
     }
 }

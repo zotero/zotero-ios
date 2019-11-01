@@ -17,13 +17,13 @@ struct MarkAllLibraryObjectChangesAsSyncedDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         // Delete all locally deleted objects
-        let deletedPredicate = Predicates.deleted(true, in: self.libraryId)
+        let deletedPredicate = NSPredicate.deleted(true, in: self.libraryId)
         self.deleteObjects(of: RItem.self, with: deletedPredicate, database: database)
         self.deleteObjects(of: RCollection.self, with: deletedPredicate, database: database)
         self.deleteObjects(of: RSearch.self, with: deletedPredicate, database: database)
 
         // Mark all local changes as synced
-        let changedPredicate = Predicates.changesWithoutDeletions(in: self.libraryId)
+        let changedPredicate = NSPredicate.changesWithoutDeletions(in: self.libraryId)
         database.objects(RCollection.self).filter(changedPredicate).forEach({ $0.resetChanges() })
         database.objects(RItem.self).filter(changedPredicate).forEach({ $0.resetChanges() })
         database.objects(RSearch.self).filter(changedPredicate).forEach({ $0.resetChanges() })

@@ -24,9 +24,8 @@ struct StoreCollectionsDbRequest: DbRequest {
     private func store(data: CollectionResponse, to database: Realm) throws {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
-        let predicate = Predicates.key(data.key, in: libraryId)
         let collection: RCollection
-        if let existing = database.objects(RCollection.self).filter(predicate).first {
+        if let existing = database.objects(RCollection.self).filter(.key(data.key, in: libraryId)).first {
             collection = existing
         } else {
             collection = RCollection()
@@ -75,9 +74,8 @@ struct StoreCollectionsDbRequest: DbRequest {
 
         guard let key = data.parentCollection else { return }
 
-        let predicate = Predicates.key(key, in: libraryId)
         let parent: RCollection
-        if let existing = database.objects(RCollection.self).filter(predicate).first {
+        if let existing = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first {
             parent = existing
         } else {
             parent = RCollection()

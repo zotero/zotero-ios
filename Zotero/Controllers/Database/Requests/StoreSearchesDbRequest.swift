@@ -24,8 +24,7 @@ struct StoreSearchesDbRequest: DbRequest {
     private func store(data: SearchResponse, to database: Realm) throws {
         guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
         let search: RSearch
-        let predicate = Predicates.key(data.key, in: libraryId)
-        if let existing = database.objects(RSearch.self).filter(predicate).first {
+        if let existing = database.objects(RSearch.self).filter(.key(data.key, in: libraryId)).first {
             search = existing
         } else {
             search = RSearch()

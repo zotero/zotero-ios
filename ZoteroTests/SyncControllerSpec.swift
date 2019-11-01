@@ -872,19 +872,19 @@ class SyncControllerSpec: QuickSpec {
                             expect(versions?.trash).to(equal(3))
 
                             let collection = realm.objects(RCollection.self)
-                                .filter(Predicates.key("AAAAAAAA", in: .group(groupId))).first
+                                .filter(.key("AAAAAAAA", in: .group(groupId))).first
                             expect(collection).toNot(beNil())
                             let item = realm.objects(RItem.self)
-                                .filter(Predicates.key("AAAAAAAA", in: .group(groupId))).first
+                                .filter(.key("AAAAAAAA", in: .group(groupId))).first
                             expect(item).toNot(beNil())
                             let item2 = realm.objects(RItem.self)
-                                .filter(Predicates.key("BBBBBBBB", in: .group(groupId))).first
+                                .filter(.key("BBBBBBBB", in: .group(groupId))).first
                             expect(item2).toNot(beNil())
                             let search = realm.objects(RSearch.self)
-                                .filter(Predicates.key("AAAAAAAA", in: .group(groupId))).first
+                                .filter(.key("AAAAAAAA", in: .group(groupId))).first
                             expect(search).toNot(beNil())
                             let tag = realm.objects(RTag.self)
-                                .filter(Predicates.name("A", in: .group(groupId))).first
+                                .filter(.name("A", in: .group(groupId))).first
                             expect(tag).toNot(beNil())
 
                             doneAction()
@@ -910,8 +910,7 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(item)
                     }
 
-                    let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
-                    let toBeDeletedItem = realm.objects(RItem.self).filter(predicate).first
+                    let toBeDeletedItem = realm.objects(RItem.self).filter(.key(itemToDelete, in: .custom(.myLibrary))).first
                     expect(toBeDeletedItem).toNot(beNil())
 
                     objects.forEach { object in
@@ -938,8 +937,7 @@ class SyncControllerSpec: QuickSpec {
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
-                            let predicate = Predicates.key(itemToDelete, in: .custom(.myLibrary))
-                            let deletedItem = realm.objects(RItem.self).filter(predicate).first
+                            let deletedItem = realm.objects(RItem.self).filter(.key(itemToDelete, in: .custom(.myLibrary))).first
                             expect(deletedItem).to(beNil())
 
                             doneAction()
@@ -1069,8 +1067,7 @@ class SyncControllerSpec: QuickSpec {
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
-                            let predicate = Predicates.key(itemKey, in: .custom(.myLibrary))
-                            let item = realm.objects(RItem.self).filter(predicate).first
+                            let item = realm.objects(RItem.self).filter(.key(itemKey, in: .custom(.myLibrary))).first
                             expect(item).toNot(beNil())
                             expect(item?.syncState).to(equal(.synced))
                             expect(item?.collections.count).to(equal(1))
@@ -1113,8 +1110,7 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(item)
                     }
 
-                    let predicate = Predicates.key(unsyncedItemKey, in: .custom(.myLibrary))
-                    let unsynced = realm.objects(RItem.self).filter(predicate).first
+                    let unsynced = realm.objects(RItem.self).filter(.key(unsyncedItemKey, in: .custom(.myLibrary))).first
                     expect(unsynced).toNot(beNil())
                     expect(unsynced?.syncState).to(equal(.dirty))
 
@@ -1172,13 +1168,11 @@ class SyncControllerSpec: QuickSpec {
                                 fail("Sync aborted")
                             }
 
-                            let newPred = Predicates.key(responseItemKey, in: .custom(.myLibrary))
-                            let newItem = realm.objects(RItem.self).filter(newPred).first
+                            let newItem = realm.objects(RItem.self).filter(.key(responseItemKey, in: .custom(.myLibrary))).first
                             expect(newItem).toNot(beNil())
                             expect(newItem?.title).to(equal("A"))
 
-                            let oldPred = Predicates.key(unsyncedItemKey, in: .custom(.myLibrary))
-                            let oldItem = realm.objects(RItem.self).filter(oldPred).first
+                            let oldItem = realm.objects(RItem.self).filter(.key(unsyncedItemKey, in: .custom(.myLibrary))).first
                             expect(oldItem).toNot(beNil())
                             expect(oldItem?.title).to(equal("B"))
                             expect(oldItem?.syncState).to(equal(.synced))
@@ -1240,14 +1234,12 @@ class SyncControllerSpec: QuickSpec {
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
-                            let correctPred = Predicates.key(correctKey, in: .custom(.myLibrary))
-                            let correctItem = realm.objects(RItem.self).filter(correctPred).first
+                            let correctItem = realm.objects(RItem.self).filter(.key(correctKey, in: .custom(.myLibrary))).first
                             expect(correctItem).toNot(beNil())
                             expect(correctItem?.syncState).to(equal(.synced))
                             expect(correctItem?.syncRetries).to(equal(0))
 
-                            let incorrectPred = Predicates.key(incorrectKey, in: .custom(.myLibrary))
-                            let incorrectItem = realm.objects(RItem.self).filter(incorrectPred).first
+                            let incorrectItem = realm.objects(RItem.self).filter(.key(incorrectKey, in: .custom(.myLibrary))).first
                             expect(incorrectItem).toNot(beNil())
                             expect(incorrectItem?.syncState).to(equal(.dirty))
                             expect(incorrectItem?.syncRetries).to(equal(1))
@@ -1835,13 +1827,11 @@ class SyncControllerSpec: QuickSpec {
                             expect(versions?.collections).to(equal(newVersion))
                             expect(versions?.items).to(equal(newVersion))
 
-                            let collectionPred = Predicates.key(collectionKey, in: .custom(.myLibrary))
-                            let collection = realm.objects(RCollection.self).filter(collectionPred).first
+                            let collection = realm.objects(RCollection.self).filter(.key(collectionKey, in: .custom(.myLibrary))).first
                             expect(collection?.version).to(equal(newVersion))
                             expect(collection?.rawChangedFields).to(equal(0))
 
-                            let itemPred = Predicates.key(itemKey, in: .custom(.myLibrary))
-                            let item = realm.objects(RItem.self).filter(itemPred).first
+                            let item = realm.objects(RItem.self).filter(.key(itemKey, in: .custom(.myLibrary))).first
                             expect(item?.version).to(equal(newVersion))
                             expect(item?.rawChangedFields).to(equal(0))
                             item?.fields.forEach({ field in

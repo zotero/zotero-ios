@@ -20,8 +20,8 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        let collections = database.objects(RCollection.self).filter(Predicates.keys(self.collectionKeys, in: self.libraryId))
-        let items = database.objects(RItem.self).filter(Predicates.keys(self.itemKeys, in: self.libraryId))
+        let collections = database.objects(RCollection.self).filter(.keys(self.collectionKeys, in: self.libraryId))
+        let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
         items.forEach { item in
             collections.forEach { collection in
                 if !item.collections.contains(collection) {

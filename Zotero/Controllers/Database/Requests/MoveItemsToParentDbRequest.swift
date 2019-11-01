@@ -20,12 +20,12 @@ struct MoveItemsToParentDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let parent = database.objects(RItem.self).filter(Predicates.key(self.parentKey, in: self.libraryId)).first else {
+        guard let parent = database.objects(RItem.self).filter(.key(self.parentKey, in: self.libraryId)).first else {
             return
         }
 
         database.objects(RItem.self)
-                .filter(Predicates.keys(self.itemKeys, in: self.libraryId))
+                .filter(.keys(self.itemKeys, in: self.libraryId))
                 .forEach { item in
                     item.parent = parent
                     item.changedFields.insert(.parent)

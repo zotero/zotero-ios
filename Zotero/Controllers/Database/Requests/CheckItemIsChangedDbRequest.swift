@@ -20,7 +20,7 @@ struct CheckItemIsChangedDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> Bool {
         guard let item = database.objects(RItem.self)
-                                 .filter(Predicates.key(self.key, in: self.libraryId))
+                                 .filter(.key(self.key, in: self.libraryId))
                                  .first else {
             throw DbError.objectNotFound
         }

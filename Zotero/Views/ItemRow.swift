@@ -48,7 +48,7 @@ extension RItem {
         case "artwork":
             return "artwork"
         case "attachment":
-            let contentType = self.fields.filter(Predicates.key(FieldKeys.contentType)).first?.value ?? ""
+            let contentType = self.fields.filter(.key(FieldKeys.contentType)).first?.value ?? ""
             if contentType.contains("pdf") {
                 return "pdf"
             }
@@ -139,11 +139,11 @@ extension RItem {
     }
 
     fileprivate var hasAttachment: Bool {
-        return self.children.filter(Predicates.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
+        return self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
     }
 
     fileprivate var hasNote: Bool {
-        return self.children.filter(Predicates.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
+        return self.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
     }
 
     fileprivate var tagHexColors: [String] {

@@ -18,7 +18,7 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let attachment = database.objects(RItem.self)
-                                       .filter(Predicates.key(self.key, in: self.libraryId)).first else { return }
+                                       .filter(.key(self.key, in: self.libraryId)).first else { return }
         attachment.attachmentNeedsSync = false
     }
 }

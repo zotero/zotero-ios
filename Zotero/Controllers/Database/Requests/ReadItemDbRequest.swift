@@ -19,7 +19,7 @@ struct ReadItemDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> RItem {
-        guard let item = database.objects(RItem.self).filter(Predicates.key(self.key, in: self.libraryId)).first else {
+        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else {
             throw DbError.objectNotFound
         }
         return item

@@ -27,8 +27,7 @@ struct StoreSettingsDbRequest: DbRequest {
         
         colors.value.forEach { tagColor in
             let tag: RTag
-            let predicate = Predicates.name(tagColor.name, in: self.libraryId)
-            if let existing = allTags.filter(predicate).first {
+            if let existing = allTags.filter(.name(tagColor.name, in: self.libraryId)).first {
                 tag = existing
             } else {
                 tag = RTag()

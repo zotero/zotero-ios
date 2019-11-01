@@ -113,7 +113,7 @@ class ItemsStore: ObservableObject {
         if self.state.unfilteredResults == nil {
             self.state.unfilteredResults = self.state.results
         }
-        self.state.results = self.state.unfilteredResults?.filter(Predicates.itemSearch(for: text))
+        self.state.results = self.state.unfilteredResults?.filter(.itemSearch(for: text))
     }
 
     private func removeResultsFilters() {

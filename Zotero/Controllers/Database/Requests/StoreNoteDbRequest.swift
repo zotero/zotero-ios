@@ -19,8 +19,8 @@ struct StoreNoteDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(Predicates.key(self.note.key, in: self.libraryId)).first,
-              let field = item.fields.filter(Predicates.key(FieldKeys.note)).first else {
+        guard let item = database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first,
+              let field = item.fields.filter(.key(FieldKeys.note)).first else {
             throw DbError.objectNotFound
         }
 

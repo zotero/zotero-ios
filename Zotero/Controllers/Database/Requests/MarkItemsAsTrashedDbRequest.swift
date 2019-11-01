@@ -20,7 +20,7 @@ struct MarkItemsAsTrashedDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        let items = database.objects(RItem.self).filter(Predicates.keys(self.keys, in: self.libraryId))
+        let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
         items.forEach { item in
             item.trash = self.trashed
             item.changedFields.insert(.trash)

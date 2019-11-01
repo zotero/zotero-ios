@@ -20,6 +20,6 @@ struct ReadAnyChangedObjectsInLibraryDbRequest<Obj: UpdatableObject>: DbResponse
     }
 
     func process(in database: Realm) throws -> Results<Obj> {
-        return database.objects(Obj.self).filter(Predicates.changesOrDeletions(in: self.libraryId))
+        return database.objects(Obj.self).filter(.changesOrDeletions(in: self.libraryId))
     }
 }

@@ -21,10 +21,10 @@ struct DeleteItemsFromCollectionDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let collection = database.objects(RCollection.self)
-                                       .filter(Predicates.key(self.collectionKey, in: self.libraryId)).first else {
+                                       .filter(.key(self.collectionKey, in: self.libraryId)).first else {
             return
         }
-        let items = database.objects(RItem.self).filter(Predicates.keys(self.itemKeys, in: self.libraryId))
+        let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
 
         items.forEach { item in
             if let index = item.collections.index(of: collection) {

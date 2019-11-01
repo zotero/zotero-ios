@@ -48,7 +48,7 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         if let key = self.collectionKey,
            let collection = database.objects(RCollection.self)
-                                    .filter(Predicates.key(key, in: self.libraryId))
+                                    .filter(.key(key, in: self.libraryId))
                                     .first {
             item.collections.append(collection)
             changes.insert(.collections)
@@ -90,7 +90,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         // Create tags
 
         self.data.tags.forEach { tag in
-            if let rTag = database.objects(RTag.self).filter(Predicates.name(tag.name, in: self.libraryId)).first {
+            if let rTag = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId)).first {
                 rTag.items.append(item)
             }
         }

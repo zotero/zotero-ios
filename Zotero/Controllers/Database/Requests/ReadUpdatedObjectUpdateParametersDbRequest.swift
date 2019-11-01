@@ -20,8 +20,9 @@ struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        let predicate = Predicates.changesWithoutDeletions(in: self.libraryId)
-        return database.objects(RSearch.self).filter(predicate).compactMap({ $0.updateParameters })
+        return database.objects(RSearch.self)
+                       .filter(.changesWithoutDeletions(in: self.libraryId))
+                       .compactMap({ $0.updateParameters })
     }
 }
 
@@ -35,8 +36,7 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> ([[String: Any]], Bool) {
-        let predicate = Predicates.itemChangesWithoutDeletions(in: self.libraryId)
-        let items =  database.objects(RItem.self).filter(predicate)
+        let items =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
                                                  .sorted(byKeyPath: "parent.rawChangedFields", ascending: false) // parents first, children later
 
         var hasUpload = false
@@ -63,8 +63,7 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        let predicate = Predicates.changesWithoutDeletions(in: self.libraryId)
-        let objects = database.objects(RCollection.self).filter(predicate)
+        let objects = database.objects(RCollection.self).filter(.changesWithoutDeletions(in: self.libraryId))
 
         if objects.count == 1 {
             return objects[0].updateParameters.flatMap({ [$0] }) ?? []

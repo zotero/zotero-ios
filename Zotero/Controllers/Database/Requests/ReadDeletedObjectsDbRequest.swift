@@ -20,6 +20,6 @@ struct ReadDeletedObjectsDbRequest<Obj: DeletableObject>: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> Results<Obj> {
-        return database.objects(Obj.self).filter(Predicates.deleted(true, in: self.libraryId))
+        return database.objects(Obj.self).filter(.deleted(true, in: self.libraryId))
     }
 }

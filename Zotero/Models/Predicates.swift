@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Predicates {
+extension NSPredicate {
 
     static func key(_ key: String) -> NSPredicate {
         return NSPredicate(format: "key = %@", key)
@@ -30,6 +30,10 @@ struct Predicates {
         return NSPredicate(format: "name = %@", name)
     }
 
+    static func name(in names: [String]) -> NSPredicate {
+        return NSPredicate(format: "name in %@", names)
+    }
+
     static func name(notIn names: [String]) -> NSPredicate {
         return NSPredicate(format: "not name in %@", names)
     }
@@ -44,26 +48,22 @@ struct Predicates {
     }
 
     static func key(_ key: String, in libraryId: LibraryIdentifier) -> NSPredicate {
-        let keyPredicate = Predicates.key(key)
-        let libraryPredicate = Predicates.library(with: libraryId)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(key), .library(with: libraryId)])
     }
 
     static func keys(_ keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
-        let keyPredicate = Predicates.key(in: keys)
-        let libraryPredicate = Predicates.library(with: libraryId)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
+                                                                   .library(with: libraryId)])
     }
 
     static func keys(_ keys: Set<String>, in libraryId: LibraryIdentifier) -> NSPredicate {
-        let keyPredicate = Predicates.key(in: keys)
-        let libraryPredicate = Predicates.library(with: libraryId)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [keyPredicate, libraryPredicate])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
+                                                                   .library(with: libraryId)])
     }
 
     static func name(_ name: String, in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.name(name),
-                                                                   Predicates.library(with: libraryId)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.name(name),
+                                                                   .library(with: libraryId)])
     }
 
     static var changed: NSPredicate {
@@ -79,32 +79,27 @@ struct Predicates {
     }
 
     static var changedOrDeleted: NSPredicate {
-        return NSCompoundPredicate(orPredicateWithSubpredicates: [Predicates.changed, Predicates.deleted(true)])
+        return NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .deleted(true)])
     }
 
     static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
-        let changePredicate = Predicates.changed
-        let libraryPredicate = Predicates.library(with: libraryId)
-        let deletedPredicate = Predicates.deleted(false)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changed,
+                                                                   .library(with: libraryId),
+                                                                   .deleted(false)])
     }
 
     static func itemChangesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
-        let fieldChangePredicate = Predicates.changed
-        let attachmentChangePredicate = Predicates.attachmentChanged
-        let changePredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [fieldChangePredicate, attachmentChangePredicate])
-        let libraryPredicate = Predicates.library(with: libraryId)
-        let deletedPredicate = Predicates.deleted(false)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate, libraryPredicate, deletedPredicate])
+        let changePredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .attachmentChanged])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [changePredicate,
+                                                                   .library(with: libraryId),
+                                                                   .deleted(false)])
 
     }
 
     static func changesOrDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
-        let changePredicate = Predicates.changed
-        let deletedPredicate = Predicates.deleted(true)
-        let changesPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [changePredicate, deletedPredicate])
-        let libraryPredicate = Predicates.library(with: libraryId)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [changesPredicate, libraryPredicate])
+        let changesPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .deleted(true)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [changesPredicate,
+                                                                   .library(with: libraryId)])
     }
 
     static func syncState(_ syncState: ObjectSyncState) -> NSPredicate {
@@ -116,8 +111,8 @@ struct Predicates {
     }
 
     static func notSyncState(_ syncState: ObjectSyncState, in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notSyncState(syncState),
-                                                                   Predicates.library(with: libraryId)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.notSyncState(syncState),
+                                                                   .library(with: libraryId)])
     }
 
     static func deleted(_ deleted: Bool) -> NSPredicate {
@@ -125,15 +120,12 @@ struct Predicates {
     }
 
     static func deleted(_ deleted: Bool, in libraryId: LibraryIdentifier) -> NSPredicate {
-        let deletedPredicate = Predicates.deleted(deleted)
-        let libraryPredicate = Predicates.library(with: libraryId)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, deletedPredicate])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.library(with: libraryId),
+                                                                   .deleted(deleted)])
     }
 
     static func items(type: String, notSyncState syncState: ObjectSyncState, trash: Bool? = nil) -> NSPredicate {
-        let typePredicate = Predicates.item(type: type)
-        let syncPredicate = Predicates.notSyncState(syncState)
-        var predicates: [NSPredicate] = [typePredicate, syncPredicate]
+        var predicates: [NSPredicate] = [.item(type: type), .notSyncState(syncState)]
         if let trash = trash {
             let trashPredicate = NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
             predicates.append(trashPredicate)
@@ -150,10 +142,10 @@ struct Predicates {
     }
 
     static func itemsNotChangedAndNeedUpload(in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [Predicates.notChanged,
-                                                                   Predicates.attachmentNeedsUpload,
-                                                                   Predicates.item(type: ItemTypes.attachment),
-                                                                   Predicates.library(with: libraryId)])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.notChanged,
+                                                                   .attachmentNeedsUpload,
+                                                                   .item(type: ItemTypes.attachment),
+                                                                   .library(with: libraryId)])
     }
 
     static func itemSearch(for text: String) -> NSPredicate {

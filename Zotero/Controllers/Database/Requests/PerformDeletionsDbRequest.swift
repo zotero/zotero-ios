@@ -49,8 +49,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteItems(with keys: [String], database: Realm) -> [String] {
-        let predicate = Predicates.keys(keys, in: self.libraryId)
-        let objects = database.objects(RItem.self).filter(predicate)
+        let objects = database.objects(RItem.self).filter(.keys(keys, in: self.libraryId))
 
         var conflicts: [String] = []
 
@@ -70,8 +69,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteCollections(with keys: [String], database: Realm) {
-        let predicate = Predicates.keys(keys, in: self.libraryId)
-        let objects = database.objects(RCollection.self).filter(predicate)
+        let objects = database.objects(RCollection.self).filter(.keys(keys, in: self.libraryId))
 
         for object in objects {
             // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
@@ -88,8 +86,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteSearches(with keys: [String], database: Realm) {
-        let predicate = Predicates.keys(keys, in: self.libraryId)
-        let objects = database.objects(RSearch.self).filter(predicate)
+        let objects = database.objects(RSearch.self).filter(.keys(keys, in: self.libraryId))
 
         for object in objects {
             // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
@@ -106,9 +103,8 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteTags(with names: [String], database: Realm) {
-        let libraryPredicate = Predicates.library(with: self.libraryId)
-        let tagNamePredicate = NSPredicate(format: "name IN %@", names)
-        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [tagNamePredicate, libraryPredicate])
+        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.name(in: names),
+                                                                               .library(with: self.libraryId)])
         let tags = database.objects(RTag.self).filter(tagPredicate)
         for object in tags {
             // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it

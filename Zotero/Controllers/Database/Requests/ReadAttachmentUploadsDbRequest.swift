@@ -18,7 +18,7 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> [SyncController.AttachmentUpload] {
-        let items = database.objects(RItem.self).filter(Predicates.itemsNotChangedAndNeedUpload(in: self.library.libraryId))
+        let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.library.libraryId))
         let uploads = items.compactMap({ item -> SyncController.AttachmentUpload? in
             guard let contentType = item.fields.filter("key = %@", FieldKeys.contentType).first?.value,
                   let ext = contentType.extensionFromMimeType,

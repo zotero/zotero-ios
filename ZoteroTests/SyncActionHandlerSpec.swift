@@ -120,13 +120,13 @@ class SyncActionHandlerSpec: QuickSpec {
                 let realm = SyncActionHandlerSpec.realm
                 realm.refresh()
 
-                let item = realm.objects(RItem.self).filter(Predicates.key("AAAAAAAA")).first
+                let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                 expect(item?.rawType).to(equal("thesis"))
                 expect(item?.title).to(equal("New title"))
                 expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("New abstract"))
                 expect(item?.isChanged).to(beTrue())
 
-                let collection = realm.objects(RCollection.self).filter(Predicates.key("BBBBBBBB")).first
+                let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                 expect(collection?.name).to(equal("New name"))
                 expect(collection?.parent).to(beNil())
 
@@ -141,7 +141,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
                                              realm.refresh()
 
-                                             let item = realm.objects(RItem.self).filter(Predicates.key("AAAAAAAA")).first
+                                             let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("thesis"))
                                              expect(item?.title).to(equal("Bachelor thesis"))
                                              expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("Some note"))
@@ -166,7 +166,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
                                              realm.refresh()
 
-                                             let collection = realm.objects(RCollection.self).filter(Predicates.key("BBBBBBBB")).first
+                                             let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                                              expect(collection?.name).to(equal("Bachelor sources"))
                                              expect(collection?.parent).to(beNil())
 
@@ -236,14 +236,14 @@ class SyncActionHandlerSpec: QuickSpec {
                 let realm = SyncActionHandlerSpec.realm
                 realm.refresh()
 
-                let item = realm.objects(RItem.self).filter(Predicates.key("AAAAAAAA")).first
+                let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                 expect(item?.rawType).to(equal("thesis"))
                 expect(item?.title).to(equal("New title"))
                 expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("New abstract"))
                 expect(item?.rawChangedFields).toNot(equal(0))
                 expect(item?.isChanged).to(beTrue())
 
-                let collection = realm.objects(RCollection.self).filter(Predicates.key("BBBBBBBB")).first
+                let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                 expect(collection?.name).to(equal("New name"))
                 expect(collection?.parent).to(beNil())
                 expect(collection?.rawChangedFields).toNot(equal(0))
@@ -255,7 +255,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
                                              realm.refresh()
 
-                                             let item = realm.objects(RItem.self).filter(Predicates.key("AAAAAAAA")).first
+                                             let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("thesis"))
                                              expect(item?.title).to(equal("New title"))
                                              expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("New abstract"))
@@ -276,7 +276,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
                                              realm.refresh()
 
-                                             let collection = realm.objects(RCollection.self).filter(Predicates.key("BBBBBBBB")).first
+                                             let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                                              expect(collection?.name).to(equal("New name"))
                                              expect(collection?.parent).to(beNil())
                                              expect(collection?.rawChangedFields).to(equal(0))
@@ -493,7 +493,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
                                              realm.refresh()
 
-                                             let item = realm.objects(RItem.self).filter(Predicates.key(key)).first
+                                             let item = realm.objects(RItem.self).filter(.key(key)).first
                                              expect(item?.attachmentNeedsSync).to(beFalse())
 
                                              doneAction()
