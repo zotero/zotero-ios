@@ -145,7 +145,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     private func showCollections(for library: Library) {
         let store = CollectionsStore(library: library, dbStorage: self.controllers.dbStorage)
-        let controller = CollectionsViewController(store: store, dbStorage: self.controllers.dbStorage)
+        let controller = CollectionsViewController(store: store,
+                                                   dbStorage: self.controllers.dbStorage,
+                                                   dragDropController: self.controllers.dragDropController)
         (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
     }
 
@@ -341,7 +343,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 //        let collectionsView = CollectionsView()
 //                                    .environment(\.dbStorage, self.controllers.dbStorage)
 //                                    .environmentObject(collectionsStore)
-        let collectionsController = CollectionsViewController(store: collectionsStore, dbStorage: self.controllers.dbStorage)
+        let collectionsController = CollectionsViewController(store: collectionsStore,
+                                                              dbStorage: self.controllers.dbStorage,
+                                                              dragDropController: self.controllers.dragDropController)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),

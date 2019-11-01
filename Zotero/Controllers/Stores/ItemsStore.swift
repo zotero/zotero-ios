@@ -15,7 +15,7 @@ import RxSwift
 
 class ItemsStore: ObservableObject {
     enum Error: Swift.Error, Equatable {
-        case dataLoading, deletion, collectionAssignment
+        case dataLoading, deletion, collectionAssignment, itemMove, noteSaving, attachmentAdding
     }
 
     struct State {
@@ -91,6 +91,16 @@ class ItemsStore: ObservableObject {
         }
     }
 
+    // MARK: - Actions
+
+    func moveItems(with keys: [String], to key: String) {
+        let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: self.state.library.identifier)
+        self.perform(request: request) { [weak self] error in
+            DDLogError("ItemsStore: can't move items to parent: \(error)")
+            self?.state.error = .itemMove
+        }
+    }
+
     func search(for text: String) {
         if text.isEmpty {
             self.removeResultsFilters()
@@ -133,58 +143,49 @@ class ItemsStore: ObservableObject {
                     _ = try self.dbStorage.createCoordinator().perform(request: request)
                 }
             } catch let error {
-                // TODO: - Show error
+                DispatchQueue.main.async { [weak self] in
+                    DDLogError("ItemsStore: can't add attachment: \(error)")
+                    self?.state.error = .attachmentAdding
+                }
             }
         }
     }
 
     func saveNewNote(with text: String) {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let `self` = self else { return }
-            do {
-                let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
-                let request = CreateNoteDbRequest(note: note, libraryId: self.state.library.identifier)
-                _ = try self.dbStorage.createCoordinator().perform(request: request)
-            } catch let error {
-                // TODO: - Show error
-            }
+        let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
+        let request = CreateNoteDbRequest(note: note, libraryId: self.state.library.identifier)
+        self.perform(request: request) { [weak self] error in
+            DDLogError("ItemsStore: can't save new note: \(error)")
+            self?.state.error = .noteSaving
         }
     }
 
     func saveChanges(for note: ItemDetailStore.State.Note) {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let `self` = self else { return }
-            do {
-                let request = StoreNoteDbRequest(note: note, libraryId: self.state.library.identifier)
-                try self.dbStorage.createCoordinator().perform(request: request)
-            } catch let error {
-                // TODO: - show error
-            }
+        let request = StoreNoteDbRequest(note: note, libraryId: self.state.library.identifier)
+        self.perform(request: request) { [weak self] error in
+            DDLogError("ItemsStore: can't save note: \(error)")
+            self?.state.error = .noteSaving
         }
     }
 
     @objc func removeSelectedItemsFromCollection() {
         guard let collectionKey = self.state.type.collectionKey else { return }
-        do {
-            let request = DeleteItemsFromCollectionDbRequest(collectionKey: collectionKey,
-                                                            itemKeys: self.state.selectedItems,
-                                                            libraryId: self.state.library.identifier)
-            try self.dbStorage.createCoordinator().perform(request: request)
-        } catch let error {
-            DDLogError("ItemsStore: can't delete items from collection - \(error)")
-            self.state.error = .collectionAssignment
+        let request = DeleteItemsFromCollectionDbRequest(collectionKey: collectionKey,
+                                                        itemKeys: self.state.selectedItems,
+                                                        libraryId: self.state.library.identifier)
+        self.perform(request: request) { [weak self] error in
+            DDLogError("ItemsStore: can't assign collections to items - \(error)")
+            self?.state.error = .collectionAssignment
         }
     }
 
     func assignSelectedItems(to collectionKeys: Set<String>) {
-        do {
-            let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
-                                                            itemKeys: self.state.selectedItems,
-                                                            libraryId: self.state.library.identifier)
-            try self.dbStorage.createCoordinator().perform(request: request)
-        } catch let error {
+        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
+                                                        itemKeys: self.state.selectedItems,
+                                                        libraryId: self.state.library.identifier)
+        self.perform(request: request) { [weak self] error in
             DDLogError("ItemsStore: can't assign collections to items - \(error)")
-            self.state.error = .collectionAssignment
+            self?.state.error = .collectionAssignment
         }
     }
 
@@ -197,25 +198,47 @@ class ItemsStore: ObservableObject {
     }
 
     @objc func deleteSelectedItems() {
-        do {
-            let request = DeleteObjectsDbRequest<RItem>(keys: Array(self.state.selectedItems),
-                                                        libraryId: self.state.library.identifier)
-            try self.dbStorage.createCoordinator().perform(request: request)
-        } catch let error {
+        let request = DeleteObjectsDbRequest<RItem>(keys: Array(self.state.selectedItems),
+                                                    libraryId: self.state.library.identifier)
+        self.perform(request: request) { [weak self] error in
             DDLogError("ItemsStore: can't delete items - \(error)")
-            self.state.error = .deletion
+            self?.state.error = .deletion
         }
     }
 
     private func setTrashedToSelectedItems(trashed: Bool) {
-        do {
-            let request = MarkItemsAsTrashedDbRequest(keys: Array(self.state.selectedItems),
-                                                      libraryId: self.state.library.identifier,
-                                                      trashed: trashed)
-            try self.dbStorage.createCoordinator().perform(request: request)
-        } catch let error {
+        let request = MarkItemsAsTrashedDbRequest(keys: Array(self.state.selectedItems),
+                                                  libraryId: self.state.library.identifier,
+                                                  trashed: trashed)
+        self.perform(request: request) { [weak self] error in
             DDLogError("ItemsStore: can't trash items - \(error)")
-            self.state.error = .deletion
+            self?.state.error = .deletion
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func perform<Request: DbResponseRequest>(request: Request, errorAction: @escaping (Swift.Error) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                _ = try self?.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                DispatchQueue.main.async {
+                    errorAction(error)
+                }
+            }
+        }
+    }
+
+    private func perform<Request: DbRequest>(request: Request, errorAction: @escaping (Swift.Error) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try self?.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                DispatchQueue.main.async {
+                    errorAction(error)
+                }
+            }
         }
     }
 

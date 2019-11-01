@@ -247,6 +247,7 @@ class ItemsViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.dragDelegate = self
+        tableView.dropDelegate = self
         tableView.rowHeight = 58
         tableView.allowsMultipleSelectionDuringEditing = true
 
@@ -381,7 +382,44 @@ extension ItemsViewController: UITableViewDelegate {
 extension ItemsViewController: UITableViewDragDelegate {
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
         guard let item = self.store.state.results?[indexPath.row] else { return [] }
-        let provider = NSItemProvider(object: item.key as NSString)
-        return [UIDragItem(itemProvider: provider)]
+        return [self.controllers.dragDropController.dragItem(from: item)]
+    }
+}
+
+extension ItemsViewController: UITableViewDropDelegate {
+    func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
+        guard let indexPath = coordinator.destinationIndexPath,
+            let key = self.store.state.results?[indexPath.row].key else { return }
+
+        switch coordinator.proposal.operation {
+        case .move:
+            self.controllers.dragDropController.itemKeys(from: coordinator.items) { [weak self] keys in
+                self?.store.moveItems(with: keys, to: key)
+            }
+        default: break
+        }
+    }
+
+    func tableView(_ tableView: UITableView,
+                   dropSessionDidUpdate session: UIDropSession,
+                   withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+        // Allow only local drag session
+        guard session.localDragSession != nil else {
+            return UITableViewDropProposal(operation: .forbidden)
+        }
+
+        // Allow dropping only to non-standalone items
+        if let item = destinationIndexPath.flatMap({ self.store.state.results?[$0.row] }),
+           (item.rawType == ItemTypes.note || item.rawType == ItemTypes.attachment) {
+           return UITableViewDropProposal(operation: .forbidden)
+        }
+
+        // Allow drops of only standalone items
+        if session.items.compactMap({ self.controllers.dragDropController.item(from: $0) })
+                        .contains(where: { $0.rawType != ItemTypes.attachment && $0.rawType != ItemTypes.note }) {
+            return UITableViewDropProposal(operation: .forbidden)
+        }
+
+        return UITableViewDropProposal(operation: .move, intent: .insertIntoDestinationIndexPath)
     }
 }

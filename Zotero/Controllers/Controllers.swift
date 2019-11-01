@@ -18,10 +18,12 @@ class Controllers {
     let dbStorage: DbStorage
     let fileStorage: FileStorage
     let schemaController: SchemaController
+    let dragDropController: DragDropController
 
     var userControllers: UserControllers?
 
     init() {
+        let dragDropController = DragDropController()
         let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
         let authToken = ApiConstants.authToken ?? secureStorage.apiToken
@@ -47,6 +49,7 @@ class Controllers {
         self.secureStorage = secureStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.dragDropController = dragDropController
 
         // Not logged in, don't setup user controllers
         if authToken == nil { return }

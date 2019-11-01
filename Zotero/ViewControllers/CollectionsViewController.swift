@@ -15,6 +15,7 @@ class CollectionsViewController: UIViewController {
 
     private let store: CollectionsStore
     private let dbStorage: DbStorage
+    private let dragDropController: DragDropController
 
     private weak var tableView: UITableView!
 
@@ -22,9 +23,10 @@ class CollectionsViewController: UIViewController {
     private var storeSubscriber: AnyCancellable?
     private var didAppear: Bool = false
 
-    init(store: CollectionsStore, dbStorage: DbStorage) {
+    init(store: CollectionsStore, dbStorage: DbStorage, dragDropController: DragDropController) {
         self.store = store
         self.dbStorage = dbStorage
+        self.dragDropController = dragDropController
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -199,12 +201,12 @@ extension CollectionsViewController: UITableViewDelegate {
 extension CollectionsViewController: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
         guard let indexPath = coordinator.destinationIndexPath else { return }
-        let collection = self.store.state.collections[indexPath.row]
+        let key = self.store.state.collections[indexPath.row].key
 
         switch coordinator.proposal.operation {
         case .copy:
-            self.loadKeys(from: coordinator.items) { [weak self] keys in
-                self?.store.assignItems(keys: keys, to: collection.key)
+            self.dragDropController.itemKeys(from: coordinator.items) { [weak self] keys in
+                self?.store.assignItems(keys: keys, to: key)
             }
         default: break
         }
@@ -213,42 +215,15 @@ extension CollectionsViewController: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView,
                    dropSessionDidUpdate session: UIDropSession,
                    withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
-        guard session.localDragSession != nil,
-              let indexPath = destinationIndexPath else { return UITableViewDropProposal(operation: .forbidden) }
-        let collection = self.store.state.collections[indexPath.row]
-        guard collection.type.isCollection else { return UITableViewDropProposal(operation: .forbidden) }
+        // Allow only local drag session
+        guard session.localDragSession != nil else { return UITableViewDropProposal(operation: .forbidden) }
+
+        // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
+        if let collection = destinationIndexPath.flatMap({ self.store.state.collections[$0.row] }),
+           !collection.type.isCollection {
+            return UITableViewDropProposal(operation: .forbidden)
+        }
+
         return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
-    }
-
-    private func loadKeys(from items: [UITableViewDropItem], completed: @escaping ([String]) -> Void) {
-        var keys: [String] = []
-
-        let group = DispatchGroup()
-
-        items.forEach { item in
-            group.enter()
-            item.dragItem.itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
-                if let key = nsString as? String {
-                    keys.append(key)
-                }
-                group.leave()
-            }
-        }
-
-        group.notify(queue: .main) {
-            completed(keys)
-        }
-    }
-}
-
-struct CollectionsVewControllerRepresentable: UIViewControllerRepresentable {
-    let store: CollectionsStore
-    let dbStorage: DbStorage
-
-    func makeUIViewController(context: Context) -> CollectionsViewController {
-        return CollectionsViewController(store: self.store, dbStorage: self.dbStorage)
-    }
-
-    func updateUIViewController(_ uiViewController: CollectionsViewController, context: Context) {
     }
 }
