@@ -11,7 +11,6 @@ import UIKit
 import SafariServices
 import SwiftUI
 
-import BetterSheet
 import RxSwift
 
 #if PDFENABLED
@@ -208,7 +207,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                             .environment(\.dbStorage, self.controllers.dbStorage)
                             .environment(\.schemaController, self.controllers.schemaController)
                             .environmentObject(store)
-            (self.viewControllers.last as? UINavigationController)?.pushViewController(UIHostingController.withBetterSheetSupport(rootView: view),
+            (self.viewControllers.last as? UINavigationController)?.pushViewController(UIHostingController(rootView: view),
                                                                                         animated: true)
         } catch let error {
             // TODO: - show some error
@@ -236,7 +235,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 //                        .environment(\.fileStorage, self.controllers.fileStorage)
 //                        .environment(\.schemaController, self.controllers.schemaController)
 //                        .environmentObject(self.itemsStore(for: collection, library: library))
-//        let controller = UIHostingController.withBetterSheetSupport(rootView: view)
+//        let controller = UIHostingController(rootView: view)
         let controller = ItemsViewController(store: self.itemsStore(for: collection, library: library),
                                              controllers: self.controllers)
         self.showSecondaryController(controller)
@@ -359,7 +358,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 //                            .environment(\.schemaController, self.controllers.schemaController)
 //                            .environmentObject(self.itemsStore(for: self.defaultCollection,
 //                                                               library: self.defaultLibrary))
-//        let controller = UIHostingController.withBetterSheetSupport(rootView: itemsView)
+//        let controller = UIHostingController(rootView: itemsView)
         let controller = ItemsViewController(store: self.itemsStore(for: self.defaultCollection, library: self.defaultLibrary),
                                              controllers: self.controllers)
 
