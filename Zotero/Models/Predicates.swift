@@ -155,4 +155,21 @@ struct Predicates {
                                                                    Predicates.item(type: ItemTypes.attachment),
                                                                    Predicates.library(with: libraryId)])
     }
+
+    static func itemSearch(for text: String) -> NSPredicate {
+        let titlePredicate = NSPredicate(format: "title contains[c] %@", text)
+
+        let creatorFullNamePredicate = NSPredicate(format: "ANY creators.name contains[c] %@", text)
+        let creatorFirstNamePredicate = NSPredicate(format: "ANY creators.firstName contains[c] %@", text)
+        let creatorLastNamePredicate = NSPredicate(format: "ANY creators.lastName contains[c] %@", text)
+        let creatorPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [creatorFullNamePredicate,
+                                                                                  creatorFirstNamePredicate,
+                                                                                  creatorLastNamePredicate])
+
+        let tagPredicate = NSPredicate(format: "ANY tags.name contains[c] %@", text)
+
+        return NSCompoundPredicate(orPredicateWithSubpredicates: [titlePredicate,
+                                                                  creatorPredicate,
+                                                                  tagPredicate])
+    }
 }

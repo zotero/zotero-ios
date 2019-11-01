@@ -113,8 +113,7 @@ class ItemsStore: ObservableObject {
         if self.state.unfilteredResults == nil {
             self.state.unfilteredResults = self.state.results
         }
-        // TODO: - add appropriate filtering to Predicates, apply predicate filter here
-        self.state.results = self.state.unfilteredResults?.filter("title contains[c] %@", text)
+        self.state.results = self.state.unfilteredResults?.filter(Predicates.itemSearch(for: text))
     }
 
     private func removeResultsFilters() {
