@@ -51,10 +51,12 @@ class ItemsStore: ObservableObject {
                 self.resultsDidChange?()
             }
         }
+        fileprivate var unfilteredResults: Results<RItem>?
         var error: Error?
         var sortType: ItemsSortType {
             willSet {
                 self.results = self.results?.sorted(by: newValue.descriptors)
+                self.unfilteredResults = self.unfilteredResults?.sorted(by: newValue.descriptors)
             }
         }
         var selectedItems: Set<String> = []
@@ -87,6 +89,28 @@ class ItemsStore: ObservableObject {
                                error: .dataLoading,
                                sortType: ItemsSortType(field: .title, ascending: true))
         }
+    }
+
+    func search(for text: String) {
+        if text.isEmpty {
+            self.removeResultsFilters()
+        } else {
+            self.filterResults(with: text)
+        }
+    }
+
+    private func filterResults(with text: String) {
+        if self.state.unfilteredResults == nil {
+            self.state.unfilteredResults = self.state.results
+        }
+        // TODO: - add appropriate filtering to Predicates, apply predicate filter here
+        self.state.results = self.state.unfilteredResults?.filter("title contains[c] %@", text)
+    }
+
+    private func removeResultsFilters() {
+        guard self.state.unfilteredResults != nil else { return }
+        self.state.results = self.state.unfilteredResults
+        self.state.unfilteredResults = nil
     }
 
     func addAttachments(from urls: [URL]) {

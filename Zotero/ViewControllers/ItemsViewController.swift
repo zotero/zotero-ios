@@ -12,6 +12,7 @@ import SwiftUI
 
 import CocoaLumberjack
 import RealmSwift
+import RxSwift
 
 class ItemsViewController: UIViewController {
     private static let cellId = "ItemCell"
@@ -20,6 +21,7 @@ class ItemsViewController: UIViewController {
 
     private let store: ItemsStore
     private let controllers: Controllers
+    private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
 
@@ -29,6 +31,7 @@ class ItemsViewController: UIViewController {
     init(store: ItemsStore, controllers: Controllers) {
         self.store = store
         self.controllers = controllers
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -39,6 +42,8 @@ class ItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.definesPresentationContext = true
+
         self.setupTableView()
         self.setupToolbar()
         self.updateNavigationBarItems()
@@ -48,6 +53,15 @@ class ItemsViewController: UIViewController {
                                                 .sink(receiveValue: { [weak self] state in
                                                     self?.updateToolbarItems()
                                                 })
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        // Set the search controller here so that it doesn't appear initially
+        if self.navigationItem.searchController == nil {
+            self.setupSearchController()
+        }
     }
 
     // MARK: - Actions
@@ -305,6 +319,21 @@ class ItemsViewController: UIViewController {
         emptyItem.tag = ItemsViewController.barButtonItemEmptyTag
 
         return [spacer, trashItem, spacer, emptyItem, spacer]
+    }
+
+    private func setupSearchController() {
+        let controller = UISearchController(searchResultsController: nil)
+        controller.searchBar.placeholder = "Search Items"
+        controller.obscuresBackgroundDuringPresentation = false
+        self.navigationItem.searchController = controller
+
+
+        controller.searchBar.rx.text.observeOn(MainScheduler.instance)
+                                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                                    .subscribe(onNext: { [weak self] text in
+                                        self?.store.search(for: (text ?? ""))
+                                    })
+                                    .disposed(by: self.disposeBag)
     }
 }
 

@@ -107,6 +107,12 @@ class AppDelegate: UIResponder {
         dynamicLogLevel = .error
         #endif
     }
+
+    private func setupNavigationBarAppearance() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    }
 }
 
 extension AppDelegate: UIApplicationDelegate {
@@ -117,6 +123,7 @@ extension AppDelegate: UIApplicationDelegate {
             PSPDFKit.setLicenseKey(key)
         }
         #endif
+        self.setupNavigationBarAppearance()
         self.setupLogs()
         self.controllers = Controllers()
         self.setupObservers()
