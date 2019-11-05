@@ -66,6 +66,8 @@ struct CreateItemDbRequest: DbResponseRequest {
             
             if field.key == titleKey {
                 item.title = field.value
+            } else if field.key == FieldKeys.note {
+                item.setDateFieldMetadata(field.value)
             }
         }
 
@@ -112,6 +114,7 @@ struct CreateItemDbRequest: DbResponseRequest {
             rCreator.item = item
             database.add(rCreator)
         }
+        item.updateCreators()
 
         if !self.data.creators.isEmpty {
             changes.insert(.creators)

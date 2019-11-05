@@ -55,26 +55,28 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             // or type didn't change and we're updating only changed fields
             guard typeChanged || (field.value != snapshotFields[offset].value) else { continue }
 
+            var fieldToChange: RItemField?
+
             if let existing = item.fields.filter(.key(field.key)).first {
-                if field.value != existing.value {
-                    existing.value = field.value
-                    existing.changed = true
-
-                    if field.isTitle {
-                        item.title = field.value
-                    }
-
-                    fieldsDidChange = true
-                }
+                fieldToChange = (field.value != existing.value) ? existing : nil
             } else {
                 let rField = RItemField()
                 rField.key = field.key
-                rField.value = field.value
-                rField.changed = true
                 rField.item = item
                 database.add(rField)
+                fieldToChange = rField
+            }
 
-                item.title = field.value
+            if let rField = fieldToChange {
+                rField.value = field.value
+                rField.changed = true
+
+                if field.isTitle {
+                    item.title = field.value
+                } else if field.key == FieldKeys.note {
+                    item.setDateFieldMetadata(field.value)
+                }
+
                 fieldsDidChange = true
             }
         }
@@ -185,6 +187,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 database.add(rCreator)
             }
 
+            item.updateCreators()
             item.changedFields.insert(.creators)
         }
     }

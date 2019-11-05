@@ -63,7 +63,6 @@ struct StoreItemsDbRequest: DbResponseRequest {
         item.key = data.key
         item.rawType = data.rawType
         item.creatorSummary = data.creatorSummary ?? ""
-        item.parsedDate = data.parsedDate ?? ""
         item.version = data.version
         item.trash = data.isTrash
         item.dateModified = data.dateModified
@@ -102,12 +101,15 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 field.item = item
                 database.add(field)
             }
+
             if key == titleKey || (item.rawType == ItemTypes.note && key == FieldKeys.note) {
                 var title = value
                 if key == FieldKeys.note {
                     title = title.strippedHtml ?? title
                 }
                 item.title = title
+            } else if key == FieldKeys.date {
+                item.setDateFieldMetadata(value)
             }
         }
     }
@@ -212,6 +214,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
             creator.orderId = object.offset
             creator.item = item
         }
+
+        item.updateCreators()
     }
 
     private func syncRelations(data: ItemResponse, item: RItem, database: Realm) {

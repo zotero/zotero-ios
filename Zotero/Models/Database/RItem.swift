@@ -36,8 +36,21 @@ class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
     @objc dynamic var title: String = ""
-    @objc dynamic var creatorSummary: String = ""
-    @objc dynamic var parsedDate: String = ""
+    /// Summary of creators collected from linked RCreators
+    @objc dynamic var creatorSummary: String? = nil
+    /// Indicates whether this instance has nonempty creatorSummary, helper variable, used in sorting so that we can show items with summaries
+    /// first and sort them in any order we want (asd/desc) and all other items later
+    @objc dynamic var hasCreatorSummary: Bool = false
+    /// Date that was parsed from "date" field
+    @objc dynamic var parsedDate: Date? = nil
+    /// Indicates whether this instance has nonempty parsedDate, helper variable, used in sorting so that we can show items with dates
+    /// first and sort them in any order we want (asd/desc) and all other items later
+    @objc dynamic var hasParsedDate: Bool = false
+    /// Year that was parsed from "date" field
+    @objc dynamic var parsedYear: String? = nil
+    /// Indicates whether this instance has nonempty parsedYear, helper variable, used in sorting so that we can show items with years
+    /// first and sort them in any order we want (asd/desc) and all other items later
+    @objc dynamic var hasParsedYear: Bool = false
     @objc dynamic var trash: Bool = false
     @objc dynamic var version: Int = 0
     /// Indicates whether attachemnt (file) needs to be uploaded to backend
@@ -87,6 +100,42 @@ class RItem: Object {
 
     override class func indexedProperties() -> [String] {
         return ["version", "key"]
+    }
+
+    func setDateFieldMetadata(_ date: String) {
+        let data = self.parseDate(from: date)
+        self.parsedYear = data?.0
+        self.hasParsedYear = self.parsedYear != nil
+        self.parsedDate = data?.1
+        self.hasParsedDate = self.parsedDate != nil
+    }
+
+    private func parseDate(from dateString: String) -> (String, Date)? {
+        guard let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
+                                .matches(in: dateString, range: NSRange(location: 0, length: dateString.count))
+                                .compactMap({ $0.date }),
+              let date = dates.first else {
+            return nil
+        }
+        let year = Calendar.current.component(.year, from: date)
+        return ("\(year)", date)
+    }
+
+    func updateCreators() {
+        let creators = self.creators.filter("primary = false")
+        switch creators.count {
+        case 0:
+            self.creatorSummary = nil
+        case 1:
+            self.creatorSummary = self.creators.first?.summaryName ?? ""
+        case 2:
+            let sorted = creators.sorted(byKeyPath: "orderId")
+            self.creatorSummary = "\(sorted.first?.summaryName ?? "") and \(sorted.last?.summaryName ?? "")"
+        default:
+            let first = creators.sorted(byKeyPath: "orderId").first?.summaryName ?? ""
+            self.creatorSummary = "\(first) et al."
+        }
+        self.hasCreatorSummary = self.creatorSummary != nil
     }
 }
 

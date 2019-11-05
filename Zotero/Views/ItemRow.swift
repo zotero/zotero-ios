@@ -127,15 +127,15 @@ extension RItem {
     }
 
     fileprivate var subtitle: String? {
-        if self.creatorSummary.isEmpty && self.parsedDate.isEmpty { return nil }
-
-        var subtitle = "(\(self.creatorSummary)"
-        if !self.parsedDate.isEmpty {
-            if subtitle.count > 1 {
-                subtitle += ", "
-            }
+        guard self.creatorSummary != nil || self.parsedYear != nil else { return nil }
+        var result = self.creatorSummary ?? ""
+        if !result.isEmpty {
+            result += " "
         }
-        return subtitle + "\(self.parsedDate))"
+        if let year = self.parsedYear {
+            result += "(\(year))"
+        }
+        return result
     }
 
     fileprivate var hasAttachment: Bool {
@@ -161,12 +161,12 @@ struct ItemCell_Previews: PreviewProvider {
         item2.title = "Some audio recording"
         item2.rawType = "audioRecording"
         item2.creatorSummary = "Author"
-        item2.parsedDate = "2018"
+        item2.parsedYear = "2018"
         let item3 = RItem()
         item3.title = "Some thesis"
         item3.rawType = "thesis"
         item3.creatorSummary = "Author"
-        item3.parsedDate = "2019"
+        item3.parsedYear = "2019"
 
         return List {
             ItemRow(item: item)
