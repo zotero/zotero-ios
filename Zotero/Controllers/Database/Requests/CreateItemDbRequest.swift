@@ -56,7 +56,7 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Create fields
 
-        for field in self.data.allFields(schemaController: self.schemaController) {
+        for field in self.data.databaseFields(schemaController: self.schemaController) {
             let rField = RItemField()
             rField.key = field.key
             rField.item = item

@@ -25,7 +25,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.itemKey, in: self.libraryId)).first else { return }
 
-        let allFields = self.data.allFields(schemaController: self.schemaController)
+        let allFields = self.data.databaseFields(schemaController: self.schemaController)
 
         var fieldsDidChange = false
         var typeChanged = false
@@ -48,7 +48,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
         // Update fields
 
-        let snapshotFields = self.snapshot.allFields(schemaController: self.schemaController)
+        let snapshotFields = self.snapshot.databaseFields(schemaController: self.schemaController)
 
         for (offset, field) in allFields.enumerated() {
             // Either type changed and we're updating all fields (so that we create missing fields for this new type)

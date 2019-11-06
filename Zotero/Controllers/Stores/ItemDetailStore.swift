@@ -253,8 +253,9 @@ class ItemDetailStore: ObservableObject {
             var attachments: [Attachment]
             var tags: [Tag]
 
-            func allFields(schemaController: SchemaController) -> [Field] {
+            func databaseFields(schemaController: SchemaController) -> [Field] {
                 var allFields = Array(self.fields.values)
+
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(State.Field(key: titleKey,
                                                  baseField: "",
@@ -262,6 +263,7 @@ class ItemDetailStore: ObservableObject {
                                                  value: self.title,
                                                  isTitle: true))
                 }
+
                 if let abstract = self.abstract {
                     allFields.append(State.Field(key: FieldKeys.abstract,
                                                  baseField: "",
@@ -269,6 +271,8 @@ class ItemDetailStore: ObservableObject {
                                                  value: abstract,
                                                  isTitle: false))
                 }
+
+
                 return allFields
             }
         }
@@ -762,6 +766,8 @@ class ItemDetailStore: ObservableObject {
         do {
             try self.fileStorage.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
 
+            self.updateDateFieldIfNeeded()
+
             switch self.state.type {
             case .preview(let item):
                 if let snapshot = self.state.snapshot {
@@ -780,6 +786,32 @@ class ItemDetailStore: ObservableObject {
         } catch let error {
             DDLogError("ItemDetailStore: can't store changes - \(error)")
             self.state.error = (error as? Error) ?? .cantStoreChanges
+        }
+    }
+
+    private func updateDateFieldIfNeeded() {
+        guard var field = self.state.data.fields[FieldKeys.date] else { return }
+
+        let date: Date?
+
+        // TODO: - check for current localization
+        switch field.value.lowercased() {
+        case "tomorrow":
+            date = Calendar.current.date(byAdding: .day, value: 1, to: Date())
+        case "today":
+            date = Date()
+        case "yesterday":
+            date = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        default:
+            date = nil
+        }
+
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+
+            field.value = formatter.string(from: date)
+            self.state.data.fields[FieldKeys.date] = field
         }
     }
 
