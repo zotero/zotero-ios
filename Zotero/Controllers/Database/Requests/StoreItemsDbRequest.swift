@@ -83,31 +83,40 @@ struct StoreItemsDbRequest: DbResponseRequest {
         try self.syncTags(data.tags, libraryId: libraryId, item: item, database: database)
         self.syncCreators(data: data, item: item, database: database)
         self.syncRelations(data: data, item: item, database: database)
+
+        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
+        item.updateDerivedTitles()
     }
 
     private func syncFields(data: ItemResponse, item: RItem, database: Realm, schemaController: SchemaController) {
-        let titleKey = schemaController.titleKey(for: item.rawType)
         let allFieldKeys = Array(data.fields.keys)
+
         let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
         database.delete(toRemove)
+
         allFieldKeys.forEach { key in
             let value = data.fields[key] ?? ""
+            var field: RItemField
+
             if let existing = item.fields.filter("key = %@", key).first {
                 existing.value = value
+                field = existing
             } else {
-                let field = RItemField()
+                field = RItemField()
                 field.key = key
+                field.baseKey = self.schemaController.baseKey(for: data.rawType, field: key)
                 field.value = value
                 field.item = item
                 database.add(field)
             }
 
-            if key == titleKey || (item.rawType == ItemTypes.note && key == FieldKeys.note) {
+            if (field.key == FieldKeys.title || field.baseKey == FieldKeys.title) ||
+               (key == FieldKeys.note && item.rawType == ItemTypes.note) {
                 var title = value
                 if key == FieldKeys.note {
                     title = title.strippedHtml ?? title
                 }
-                item.title = title
+                item.baseTitle = title
             } else if key == FieldKeys.date {
                 item.setDateFieldMetadata(value)
             }
@@ -210,9 +219,10 @@ struct StoreItemsDbRequest: DbResponseRequest {
             creator.firstName = firstName
             creator.lastName = lastName
             creator.name = name
-            database.add(creator)
             creator.orderId = object.offset
+            creator.primary = self.schemaController.creatorIsPrimary(creator.rawType, itemType: item.rawType)
             creator.item = item
+            database.add(creator)
         }
 
         item.updateCreators()

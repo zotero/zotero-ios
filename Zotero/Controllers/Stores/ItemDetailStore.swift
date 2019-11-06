@@ -108,7 +108,7 @@ class ItemDetailStore: ObservableObject {
 
                 self.libraryId = libraryId
                 self.key = item.key
-                self.title = item.title
+                self.title = item.displayTitle
                 self.type = type
             }
 
@@ -144,7 +144,7 @@ class ItemDetailStore: ObservableObject {
                 }
 
                 self.key = item.key
-                self.title = item.title
+                self.title = item.displayTitle
                 self.text = item.fields.filter(.key(FieldKeys.note)).first?.value ?? ""
             }
         }
@@ -159,7 +159,7 @@ class ItemDetailStore: ObservableObject {
             }
 
             var type: String
-            let primary: Bool
+            var primary: Bool
             var localizedType: String
             var fullName: String
             var firstName: String
@@ -258,7 +258,7 @@ class ItemDetailStore: ObservableObject {
 
                 if let titleKey = schemaController.titleKey(for: self.type) {
                     allFields.append(State.Field(key: titleKey,
-                                                 baseField: "",
+                                                 baseField: (titleKey != FieldKeys.title ? FieldKeys.title : nil),
                                                  name: "",
                                                  value: self.title,
                                                  isTitle: true))
@@ -266,7 +266,7 @@ class ItemDetailStore: ObservableObject {
 
                 if let abstract = self.abstract {
                     allFields.append(State.Field(key: FieldKeys.abstract,
-                                                 baseField: "",
+                                                 baseField: nil,
                                                  name: "",
                                                  value: abstract,
                                                  isTitle: false))
@@ -469,7 +469,7 @@ class ItemDetailStore: ObservableObject {
             }
 
             let notes = item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
-                                     .sorted(byKeyPath: "title")
+                                     .sorted(byKeyPath: "displayTitle")
                                      .compactMap(State.Note.init)
             let attachments: [State.Attachment]
             if item.rawType == ItemTypes.attachment {
@@ -477,7 +477,7 @@ class ItemDetailStore: ObservableObject {
                 attachments = attachment.flatMap { [$0] } ?? []
             } else {
                 let mappedAttachments = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
-                                                     .sorted(byKeyPath: "title")
+                                                     .sorted(byKeyPath: "displayTitle")
                                                      .compactMap({ item -> State.Attachment? in
                                                          return attachmentType(for: item, fileStorage: fileStorage)
                                                                             .flatMap({ State.Attachment(item: item, type: $0) })
@@ -487,7 +487,7 @@ class ItemDetailStore: ObservableObject {
 
             let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
 
-            return State.Data(title: item.title,
+            return State.Data(title: item.baseTitle,
                               type: item.rawType,
                               localizedType: localizedType,
                               creators: creators,
@@ -506,7 +506,7 @@ class ItemDetailStore: ObservableObject {
         if !contentType.isEmpty { // File attachment
             if let ext = contentType.extensionFromMimeType,
                let libraryId = item.libraryObject?.identifier {
-                let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.title + "." + ext)
+                let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + ext)
                 let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: ext)
                 let isLocal = fileStorage.has(file)
                 return .file(file: file, filename: filename, isLocal: isLocal)
@@ -790,7 +790,7 @@ class ItemDetailStore: ObservableObject {
     }
 
     private func updateDateFieldIfNeeded() {
-        guard var field = self.state.data.fields[FieldKeys.date] else { return }
+        guard var field = self.state.data.fields.values.first(where: { $0.baseField == FieldKeys.date }) else { return }
 
         let date: Date?
 
@@ -811,7 +811,7 @@ class ItemDetailStore: ObservableObject {
             formatter.dateFormat = "yyyy-MM-dd"
 
             field.value = formatter.string(from: date)
-            self.state.data.fields[FieldKeys.date] = field
+            self.state.data.fields[field.key] = field
         }
     }
 

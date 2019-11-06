@@ -46,6 +46,29 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             typeChanged = true
         }
 
+        // Update creators
+
+        if self.data.creators != self.snapshot.creators {
+            database.delete(item.creators)
+
+            for (offset, creatorId) in self.data.creatorIds.enumerated() {
+                guard let creator = self.data.creators[creatorId] else { continue }
+
+                let rCreator = RCreator()
+                rCreator.rawType = creator.type
+                rCreator.firstName = creator.firstName
+                rCreator.lastName = creator.lastName
+                rCreator.name = creator.fullName
+                rCreator.orderId = offset
+                rCreator.primary = creator.primary
+                rCreator.item = item
+                database.add(rCreator)
+            }
+
+            item.updateCreators()
+            item.changedFields.insert(.creators)
+        }
+
         // Update fields
 
         let snapshotFields = self.snapshot.databaseFields(schemaController: self.schemaController)
@@ -62,6 +85,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             } else {
                 let rField = RItemField()
                 rField.key = field.key
+                rField.baseKey = field.baseField
                 rField.item = item
                 database.add(rField)
                 fieldToChange = rField
@@ -72,7 +96,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 rField.changed = true
 
                 if field.isTitle {
-                    item.title = field.value
+                    item.baseTitle = field.value
                 } else if field.key == FieldKeys.note {
                     item.setDateFieldMetadata(field.value)
                 }
@@ -101,7 +125,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             if let childItem = item.children.filter(.key(note.key)).first,
                let noteField = childItem.fields.filter(.key(FieldKeys.note)).first {
                 guard noteField.value != note.text else { continue }
-                childItem.title = note.title
+                childItem.setTitle(note.title)
                 childItem.changedFields.insert(.fields)
                 noteField.value = note.text
                 noteField.changed = true
@@ -132,7 +156,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             if let childItem = item.children.filter(.key(attachment.key)).first,
                let titleField = childItem.fields.filter(.key(FieldKeys.title)).first {
                 guard titleField.value != attachment.title else { continue }
-                childItem.title = attachment.title
+                childItem.setTitle(attachment.title)
                 childItem.changedFields.insert(.fields)
                 titleField.value = attachment.title
                 titleField.changed = true
@@ -169,26 +193,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             item.changedFields.insert(.tags)
         }
 
-        // Update creators
-
-        if self.data.creators != self.snapshot.creators {
-            database.delete(item.creators)
-
-            for (offset, creatorId) in self.data.creatorIds.enumerated() {
-                guard let creator = self.data.creators[creatorId] else { continue }
-
-                let rCreator = RCreator()
-                rCreator.rawType = creator.type
-                rCreator.firstName = creator.firstName
-                rCreator.lastName = creator.lastName
-                rCreator.name = creator.fullName
-                rCreator.orderId = offset
-                rCreator.item = item
-                database.add(rCreator)
-            }
-
-            item.updateCreators()
-            item.changedFields.insert(.creators)
-        }
+        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
+        item.updateDerivedTitles()
     }
 }

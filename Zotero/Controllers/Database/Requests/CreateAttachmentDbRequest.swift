@@ -25,7 +25,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.key = self.attachment.key
         item.rawType = ItemTypes.attachment
         item.syncState = .synced
-        item.title = self.attachment.title
+        item.setTitle(self.attachment.title)
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         item.changedFields = [.type, .fields, .tags]
         item.attachmentNeedsSync = true
@@ -48,6 +48,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         for fieldKey in attachmentKeys {
             let field = RItemField()
             field.key = fieldKey
+            field.baseKey = nil
 
             switch self.attachment.type {
             case .file(let file, let filename, _):

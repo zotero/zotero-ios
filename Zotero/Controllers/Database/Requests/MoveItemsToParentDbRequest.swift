@@ -32,7 +32,7 @@ struct MoveItemsToParentDbRequest: DbRequest {
                 }
 
         // Update the parent item, so that it's updated in the item list to show attachment/note marker
-        let title = parent.title
-        parent.title = title
+        let title = parent.baseTitle
+        parent.baseTitle = title
     }
 }

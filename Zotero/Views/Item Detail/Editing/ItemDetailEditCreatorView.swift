@@ -19,7 +19,7 @@ struct ItemDetailEditCreatorView: View {
         HStack {
             ItemDetailMetadataTitleView(title: self.creator.localizedType)
             .onTapGesture {
-                NotificationCenter.default.post(name: .presentCreatorPicker, object: (self.store.state.data.type, self.store.state.libraryId, self.creator.type, self.set))
+                NotificationCenter.default.post(name: .presentCreatorPicker, object: (self.store.state.data.type, self.creator.type, self.set))
             }
             if self.creator.namePresentation == .full {
                 TextField("Full name", text: self.$creator.fullName)
@@ -44,6 +44,7 @@ struct ItemDetailEditCreatorView: View {
         guard let localized = self.schemaController.localized(creator: type) else { return }
         self.creator.type = type
         self.creator.localizedType = localized
+        self.creator.primary = self.schemaController.creatorIsPrimary(type, itemType: self.store.state.data.type)
     }
 }
 

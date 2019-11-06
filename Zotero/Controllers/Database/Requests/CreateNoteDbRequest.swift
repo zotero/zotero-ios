@@ -23,7 +23,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.key = KeyGenerator.newKey
         item.rawType = ItemTypes.note
         item.syncState = .synced
-        item.title = self.note.title
+        item.setTitle(self.note.title)
         item.changedFields = [.type, .fields]
         item.dateAdded = Date()
         item.dateModified = Date()
@@ -43,6 +43,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
 
         let noteField = RItemField()
         noteField.key = FieldKeys.note
+        noteField.baseKey = nil
         noteField.value = self.note.text
         noteField.changed = true
         noteField.item = item

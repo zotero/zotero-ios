@@ -19,7 +19,7 @@ struct ItemRow: View {
                 .frame(width: 45)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(self.item.title.isEmpty ? " " : self.item.title)
+                Text(self.item.displayTitle.isEmpty ? " " : self.item.displayTitle)
                     .font(.headline)
                     .fontWeight(.regular)
 
@@ -151,19 +151,19 @@ extension RItem {
     }
 }
 
-struct ItemCell_Previews: PreviewProvider {
+struct ItemRow_Previews: PreviewProvider {
     static var previews: some View {
         let item = RItem()
-        item.title = "Bitcoin: A Peer-to-Peer Electronics Cash System"
+        item.displayTitle = "Bitcoin: A Peer-to-Peer Electronics Cash System"
         item.rawType = "artwork"
         item.creatorSummary = "Author"
         let item2 = RItem()
-        item2.title = "Some audio recording"
+        item2.displayTitle = "Some audio recording"
         item2.rawType = "audioRecording"
         item2.creatorSummary = "Author"
         item2.parsedYear = "2018"
         let item3 = RItem()
-        item3.title = "Some thesis"
+        item3.displayTitle = "Some thesis"
         item3.rawType = "thesis"
         item3.creatorSummary = "Author"
         item3.parsedYear = "2019"

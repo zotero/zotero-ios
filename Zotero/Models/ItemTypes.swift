@@ -11,4 +11,7 @@ import Foundation
 struct ItemTypes {
     static let note = "note"
     static let attachment = "attachment"
+    static let `case` = "case"
+    static let letter = "letter"
+    static let interview = "interview"
 }

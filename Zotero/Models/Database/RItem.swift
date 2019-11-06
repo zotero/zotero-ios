@@ -35,7 +35,9 @@ extension RItemChanges {
 class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
-    @objc dynamic var title: String = ""
+    @objc dynamic var baseTitle: String = ""
+    @objc dynamic var displayTitle: String = ""
+    @objc dynamic var sortTitle: String = ""
     /// Summary of creators collected from linked RCreators
     @objc dynamic var creatorSummary: String? = nil
     /// Indicates whether this instance has nonempty creatorSummary, helper variable, used in sorting so that we can show items with summaries
@@ -102,6 +104,26 @@ class RItem: Object {
         return ["version", "key"]
     }
 
+    func setTitle(_ title: String) {
+        self.baseTitle = title
+        self.updateDerivedTitles()
+    }
+
+    func updateDerivedTitles() {
+        let displayTitle = ItemTitleFormatter.displayTitle(for: self)
+        if self.displayTitle != displayTitle {
+            self.displayTitle = displayTitle
+        }
+        self.updateSortTitle()
+    }
+
+    private func updateSortTitle() {
+        let newTitle = self.displayTitle.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\""))
+        if newTitle != self.sortTitle {
+            self.sortTitle = newTitle
+        }
+    }
+
     func setDateFieldMetadata(_ date: String) {
         let data = self.parseDate(from: date)
         self.parsedYear = data?.0
@@ -111,36 +133,20 @@ class RItem: Object {
     }
 
     private func parseDate(from dateString: String) -> (String, Date)? {
-        guard let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
-                                .matches(in: dateString, range: NSRange(location: 0, length: dateString.count))
-                                .compactMap({ $0.date }),
-              let date = dates.first else {
-            return nil
-        }
+        guard let date = dateString.parsedDate else { return nil }
         let year = Calendar.current.component(.year, from: date)
         return ("\(year)", date)
     }
 
     func updateCreators() {
-        let creators = self.creators.filter("primary = false")
-        switch creators.count {
-        case 0:
-            self.creatorSummary = nil
-        case 1:
-            self.creatorSummary = self.creators.first?.summaryName ?? ""
-        case 2:
-            let sorted = creators.sorted(byKeyPath: "orderId")
-            self.creatorSummary = "\(sorted.first?.summaryName ?? "") and \(sorted.last?.summaryName ?? "")"
-        default:
-            let first = creators.sorted(byKeyPath: "orderId").first?.summaryName ?? ""
-            self.creatorSummary = "\(first) et al."
-        }
+        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))
         self.hasCreatorSummary = self.creatorSummary != nil
     }
 }
 
 class RItemField: Object {
     @objc dynamic var key: String = ""
+    @objc dynamic var baseKey: String?
     @objc dynamic var value: String = ""
     @objc dynamic var item: RItem?
     @objc dynamic var changed: Bool = false

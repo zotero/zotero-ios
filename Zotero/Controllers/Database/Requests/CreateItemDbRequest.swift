@@ -23,8 +23,6 @@ struct CreateItemDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> RItem {
-        let titleKey = self.schemaController.titleKey(for: self.data.type)
-        
         // Create main item
         let item = RItem()
         item.key = KeyGenerator.newKey
@@ -54,18 +52,40 @@ struct CreateItemDbRequest: DbResponseRequest {
             changes.insert(.collections)
         }
 
+        // Create creators
+
+        for (offset, creatorId) in self.data.creatorIds.enumerated() {
+            guard let creator = self.data.creators[creatorId] else { continue }
+
+            let rCreator = RCreator()
+            rCreator.rawType = creator.type
+            rCreator.firstName = creator.firstName
+            rCreator.lastName = creator.lastName
+            rCreator.name = creator.name
+            rCreator.orderId = offset
+            rCreator.primary = creator.primary
+            rCreator.item = item
+            database.add(rCreator)
+        }
+        item.updateCreators()
+
+        if !self.data.creators.isEmpty {
+            changes.insert(.creators)
+        }
+
         // Create fields
 
         for field in self.data.databaseFields(schemaController: self.schemaController) {
             let rField = RItemField()
             rField.key = field.key
+            rField.baseKey = field.baseField
             rField.item = item
             rField.value = field.value
             rField.changed = true
             database.add(rField)
             
-            if field.key == titleKey {
-                item.title = field.value
+            if field.key == FieldKeys.title || field.baseField == FieldKeys.title {
+                item.baseTitle = field.value
             } else if field.key == FieldKeys.note {
                 item.setDateFieldMetadata(field.value)
             }
@@ -100,26 +120,8 @@ struct CreateItemDbRequest: DbResponseRequest {
             changes.insert(.tags)
         }
 
-        // Create creators
-
-        for (offset, creatorId) in self.data.creatorIds.enumerated() {
-            guard let creator = self.data.creators[creatorId] else { continue }
-
-            let rCreator = RCreator()
-            rCreator.rawType = creator.type
-            rCreator.firstName = creator.firstName
-            rCreator.lastName = creator.lastName
-            rCreator.name = creator.name
-            rCreator.orderId = offset
-            rCreator.item = item
-            database.add(rCreator)
-        }
-        item.updateCreators()
-
-        if !self.data.creators.isEmpty {
-            changes.insert(.creators)
-        }
-
+        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
+        item.updateDerivedTitles()
         // Update changed fields
         item.changedFields = changes
 

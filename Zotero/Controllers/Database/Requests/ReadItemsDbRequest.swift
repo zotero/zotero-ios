@@ -39,7 +39,5 @@ struct ReadItemsDbRequest: DbResponseRequest {
         let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         return database.objects(RItem.self)
                        .filter(finalPredicate)
-                       .sorted(by: [SortDescriptor(keyPath: "title"),
-                                    SortDescriptor(keyPath: "key")])
     }
 }

@@ -50,36 +50,36 @@ extension ItemsSortType: SortType {
     var descriptors: [SortDescriptor] {
         switch self.field {
         case .title:
-            return [SortDescriptor(keyPath: "title", ascending: self.ascending)]
+            return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending)]
         case .creator:
             return [SortDescriptor(keyPath: "hasCreatorSummary", ascending: false),
                     SortDescriptor(keyPath: "creatorSummary", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .date:
             return [SortDescriptor(keyPath: "hasParsedDate", ascending: false),
                     SortDescriptor(keyPath: "parsedDate", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .dateAdded:
             return [SortDescriptor(keyPath: "dateAdded", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .dateModified:
             return [SortDescriptor(keyPath: "dateModified", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .itemType:
             return [SortDescriptor(keyPath: "rawType", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .publicationTitle:
             // TODO: - add appropriate descriptor
-            return [SortDescriptor(keyPath: "title", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+            return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending),
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .publisher:
             // TODO: - add appropriate descriptor
-            return [SortDescriptor(keyPath: "title", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+            return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending),
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .year:
             return [SortDescriptor(keyPath: "hasParsedYear", ascending: false),
                     SortDescriptor(keyPath: "parsedYear", ascending: self.ascending),
-                    SortDescriptor(keyPath: "title", ascending: true)]
+                    SortDescriptor(keyPath: "sortTitle", ascending: true)]
         }
     }
 }
