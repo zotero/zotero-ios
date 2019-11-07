@@ -673,7 +673,7 @@ class SyncControllerSpec: QuickSpec {
 
                             let item = realm.objects(RItem.self).filter("key = %@", "AAAAAAAA").first
                             expect(item).toNot(beNil())
-                            expect(item?.title).to(equal("A"))
+                            expect(item?.baseTitle).to(equal("A"))
                             expect(item?.version).to(equal(3))
                             expect(item?.trash).to(beFalse())
                             expect(item?.syncState).to(equal(.synced))
@@ -688,7 +688,7 @@ class SyncControllerSpec: QuickSpec {
 
                             let item2 = realm.objects(RItem.self).filter("key = %@", "BBBBBBBB").first
                             expect(item2).toNot(beNil())
-                            expect(item2?.title).to(equal("This is a note"))
+                            expect(item2?.baseTitle).to(equal("This is a note"))
                             expect(item2?.version).to(equal(4))
                             expect(item2?.trash).to(beTrue())
                             expect(item2?.syncState).to(equal(.synced))
@@ -905,7 +905,7 @@ class SyncControllerSpec: QuickSpec {
                         let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
                         let item = RItem()
                         item.key = itemToDelete
-                        item.title = "Delete me"
+                        item.baseTitle = "Delete me"
                         item.customLibrary = myLibrary
                         realm.add(item)
                     }
@@ -1170,11 +1170,11 @@ class SyncControllerSpec: QuickSpec {
 
                             let newItem = realm.objects(RItem.self).filter(.key(responseItemKey, in: .custom(.myLibrary))).first
                             expect(newItem).toNot(beNil())
-                            expect(newItem?.title).to(equal("A"))
+                            expect(newItem?.baseTitle).to(equal("A"))
 
                             let oldItem = realm.objects(RItem.self).filter(.key(unsyncedItemKey, in: .custom(.myLibrary))).first
                             expect(oldItem).toNot(beNil())
-                            expect(oldItem?.title).to(equal("B"))
+                            expect(oldItem?.baseTitle).to(equal("B"))
                             expect(oldItem?.syncState).to(equal(.synced))
 
                             doneAction()
@@ -1474,14 +1474,14 @@ class SyncControllerSpec: QuickSpec {
 
                         let item1 = RItem()
                         item1.key = "BBBBBBBB"
-                        item1.title = "B"
+                        item1.baseTitle = "B"
                         item1.customLibrary = library
                         item1.collections.append(collection)
                         realm.add(item1)
 
                         let item2 = RItem()
                         item2.key = "CCCCCCCC"
-                        item2.title = "C"
+                        item2.baseTitle = "C"
                         item2.customLibrary = library
                         item2.collections.append(collection)
                         realm.add(item2)
@@ -1586,14 +1586,14 @@ class SyncControllerSpec: QuickSpec {
 
                         let item1 = RItem()
                         item1.key = "BBBBBBBB"
-                        item1.title = "B"
+                        item1.baseTitle = "B"
                         item1.customLibrary = library
                         item1.collections.append(collection)
                         realm.add(item1)
 
                         let item2 = RItem()
                         item2.key = deletedItemKey
-                        item2.title = "C"
+                        item2.baseTitle = "C"
                         item2.deleted = true
                         item2.customLibrary = library
                         item2.collections.append(collection)
@@ -2150,7 +2150,7 @@ class SyncControllerSpec: QuickSpec {
 
                         let item = RItem()
                         item.key = itemKey
-                        item.title = "Deleted item"
+                        item.baseTitle = "Deleted item"
                         item.deleted = true
                         item.customLibrary = library
                         item.collections.append(collection)

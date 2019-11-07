@@ -114,6 +114,8 @@
 		B34BA700221EDF8F0019A974 /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */; };
 		B34BA702221EE0F60019A974 /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA701221EE0F60019A974 /* DeletionsResponse.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
+		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
+		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
 		B34FD9E1230C31A2008338FD /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34FD9E0230C31A2008338FD /* CollectionsView.swift */; };
 		B353370822CCB620005648CB /* KeyedResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370722CCB620005648CB /* KeyedResponse.swift */; };
 		B353370A22CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
@@ -389,6 +391,8 @@
 		B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsRequest.swift; sourceTree = "<group>"; };
 		B34BA701221EE0F60019A974 /* DeletionsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionsResponse.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
+		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
+		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
 		B34FD9E0230C31A2008338FD /* CollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsView.swift; sourceTree = "<group>"; };
 		B353370722CCB620005648CB /* KeyedResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedResponse.swift; sourceTree = "<group>"; };
 		B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnyChangedObjectsInLibraryDbRequest.swift; sourceTree = "<group>"; };
@@ -633,6 +637,8 @@
 				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
 				B307E55D22D4A87B00592B3C /* SyncActionHandlerSpec.swift */,
 				B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */,
+				B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */,
+				B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -1554,7 +1560,9 @@
 			files = (
 				B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */,
 				B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */,
+				B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */,
 				B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */,
+				B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionHandlerSpec.swift in Sources */,
 				B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */,
 			);

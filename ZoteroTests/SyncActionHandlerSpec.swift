@@ -97,20 +97,24 @@ class SyncActionHandlerSpec: QuickSpec {
                 let changeRequest = StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
                                                                     itemKey: "AAAAAAAA",
                                                                     data: .init(title: "New title",
-                                                                                type: "type",
-                                                                                localizedType: "Type",
-                                                                                creators: [],
-                                                                                fields: [],
+                                                                                type: "magazineArticle",
+                                                                                localizedType: "Magazine Article",
+                                                                                creators: [:],
+                                                                                creatorIds: [],
+                                                                                fields: [:],
+                                                                                fieldIds: [],
                                                                                 abstract: "New abstract",
                                                                                 notes: [],
                                                                                 attachments: [],
                                                                                 tags: []),
-                                                                    snapshot: .init(title: "Title",
-                                                                                    type: "type",
-                                                                                    localizedType: "Type",
-                                                                                    creators: [],
-                                                                                    fields: [],
-                                                                                    abstract: "Abstract",
+                                                                    snapshot: .init(title: "Bachelor thesis",
+                                                                                    type: "thesis",
+                                                                                    localizedType: "Thesis",
+                                                                                    creators: [:],
+                                                                                    creatorIds: [],
+                                                                                    fields: [:],
+                                                                                    fieldIds: [],
+                                                                                    abstract: "Some note",
                                                                                     notes: [],
                                                                                     attachments: [],
                                                                                     tags: []),
@@ -121,8 +125,8 @@ class SyncActionHandlerSpec: QuickSpec {
                 realm.refresh()
 
                 let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
-                expect(item?.rawType).to(equal("thesis"))
-                expect(item?.title).to(equal("New title"))
+                expect(item?.rawType).to(equal("magazineArticle"))
+                expect(item?.baseTitle).to(equal("New title"))
                 expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("New abstract"))
                 expect(item?.isChanged).to(beTrue())
 
@@ -143,7 +147,7 @@ class SyncActionHandlerSpec: QuickSpec {
 
                                              let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("thesis"))
-                                             expect(item?.title).to(equal("Bachelor thesis"))
+                                             expect(item?.baseTitle).to(equal("Bachelor thesis"))
                                              expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("Some note"))
                                              expect(item?.rawChangedFields).to(equal(0))
 
@@ -213,20 +217,24 @@ class SyncActionHandlerSpec: QuickSpec {
                 let changeRequest = StoreItemDetailChangesDbRequest(libraryId: .custom(.myLibrary),
                                                                     itemKey: "AAAAAAAA",
                                                                     data: .init(title: "New title",
-                                                                                type: "type",
-                                                                                localizedType: "Type",
-                                                                                creators: [],
-                                                                                fields: [],
+                                                                                type: "magazineArticle",
+                                                                                localizedType: "Magazine Article",
+                                                                                creators: [:],
+                                                                                creatorIds: [],
+                                                                                fields: [:],
+                                                                                fieldIds: [],
                                                                                 abstract: "New abstract",
                                                                                 notes: [],
                                                                                 attachments: [],
                                                                                 tags: []),
                                                                     snapshot: .init(title: "Title",
-                                                                                    type: "type",
-                                                                                    localizedType: "Type",
-                                                                                    creators: [],
-                                                                                    fields: [],
-                                                                                    abstract: "Abstract",
+                                                                                    type: "thesis",
+                                                                                    localizedType: "Thesis",
+                                                                                    creators: [:],
+                                                                                    creatorIds: [],
+                                                                                    fields: [:],
+                                                                                    fieldIds: [],
+                                                                                    abstract: "Some note",
                                                                                     notes: [],
                                                                                     attachments: [],
                                                                                     tags: []),
@@ -237,8 +245,8 @@ class SyncActionHandlerSpec: QuickSpec {
                 realm.refresh()
 
                 let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
-                expect(item?.rawType).to(equal("thesis"))
-                expect(item?.title).to(equal("New title"))
+                expect(item?.rawType).to(equal("magazineArticle"))
+                expect(item?.baseTitle).to(equal("New title"))
                 expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("New abstract"))
                 expect(item?.rawChangedFields).toNot(equal(0))
                 expect(item?.isChanged).to(beTrue())
@@ -256,8 +264,8 @@ class SyncActionHandlerSpec: QuickSpec {
                                              realm.refresh()
 
                                              let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
-                                             expect(item?.rawType).to(equal("thesis"))
-                                             expect(item?.title).to(equal("New title"))
+                                             expect(item?.rawType).to(equal("magazineArticle"))
+                                             expect(item?.baseTitle).to(equal("New title"))
                                              expect(item?.fields.filter("key =  %@", FieldKeys.abstract).first?.value).to(equal("New abstract"))
                                              expect(item?.rawChangedFields).to(equal(0))
 
