@@ -130,7 +130,9 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 noteField.value = note.text
                 noteField.changed = true
             } else {
-                let childItem = try CreateNoteDbRequest(note: note, libraryId: nil).process(in: database)
+                let childItem = try CreateNoteDbRequest(note: note,
+                                                        localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
+                                                        libraryId: nil).process(in: database)
                 childItem.parent = item
                 childItem.libraryObject = item.libraryObject
                 childItem.changedFields.insert(.parent)
@@ -161,7 +163,9 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 titleField.value = attachment.title
                 titleField.changed = true
             } else {
-                let childItem = try CreateAttachmentDbRequest(attachment: attachment, libraryId: nil).process(in: database)
+                let childItem = try CreateAttachmentDbRequest(attachment: attachment,
+                                                              localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                                                              libraryId: nil).process(in: database)
                 childItem.libraryObject = item.libraryObject
                 childItem.parent = item
                 childItem.changedFields.insert(.parent)

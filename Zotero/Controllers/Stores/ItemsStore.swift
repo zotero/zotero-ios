@@ -67,10 +67,12 @@ class ItemsStore: ObservableObject {
     @Published var state: State
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
+    private let schemaController: SchemaController
 
-    init(type: State.ItemType, library: Library, dbStorage: DbStorage, fileStorage: FileStorage) {
+    init(type: State.ItemType, library: Library, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
+        self.schemaController = schemaController
 
         do {
             let sortType = ItemsSortType(field: .title, ascending: true)
@@ -138,7 +140,9 @@ class ItemsStore: ObservableObject {
                 try self.fileStorage.copyAttachmentFilesIfNeeded(for: attachments)
 
                 for attachment in attachments {
-                    let request = CreateAttachmentDbRequest(attachment: attachment, libraryId: self.state.library.identifier)
+                    let request = CreateAttachmentDbRequest(attachment: attachment,
+                                                            localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                                                            libraryId: self.state.library.identifier)
                     _ = try self.dbStorage.createCoordinator().perform(request: request)
                 }
             } catch let error {
@@ -152,7 +156,9 @@ class ItemsStore: ObservableObject {
 
     func saveNewNote(with text: String) {
         let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
-        let request = CreateNoteDbRequest(note: note, libraryId: self.state.library.identifier)
+        let request = CreateNoteDbRequest(note: note,
+                                          localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
+                                          libraryId: self.state.library.identifier)
         self.perform(request: request) { [weak self] error in
             DDLogError("ItemsStore: can't save new note: \(error)")
             self?.state.error = .noteSaving

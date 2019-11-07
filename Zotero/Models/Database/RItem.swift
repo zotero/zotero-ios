@@ -35,6 +35,8 @@ extension RItemChanges {
 class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
+    /// Localized type based on current localization of device, used for sorting
+    @objc dynamic var localizedType: String = ""
     @objc dynamic var baseTitle: String = ""
     @objc dynamic var displayTitle: String = ""
     @objc dynamic var sortTitle: String = ""

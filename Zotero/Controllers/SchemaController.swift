@@ -19,6 +19,7 @@ protocol SchemaDataSource: class {
     func baseKey(for type: String, field: String) -> String?
     func creators(for type: String) -> [CreatorSchema]?
     func creatorIsPrimary(_ creatorType: String, itemType: String) -> Bool
+    func locale(for localeId: String) -> SchemaLocale?
     func localized(itemType: String) -> String?
     func localized(field: String) -> String?
     func localized(creator: String) -> String?
@@ -146,18 +147,9 @@ class SchemaController {
         return nil
     }
 
-    private var locale: SchemaLocale? {
+    private var currentLocale: SchemaLocale? {
         let localeId = Locale.autoupdatingCurrent.identifier
-
-        if let locale = self.locales[localeId] {
-            return locale
-        }
-
-        if let locale = self.locales.first(where: { $0.key.contains(localeId) })?.value {
-            return locale
-        }
-
-        return self.locales["en-US"]
+        return self.locale(for: localeId)
     }
 }
 
@@ -187,15 +179,27 @@ extension SchemaController: SchemaDataSource {
         return self.creators(for: itemType)?.first(where: { $0.creatorType == creatorType })?.primary ?? false
     }
 
+    func locale(for localeId: String) -> SchemaLocale? {
+        if let locale = self.locales[localeId] {
+            return locale
+        }
+
+        if let locale = self.locales.first(where: { $0.key.contains(localeId) })?.value {
+            return locale
+        }
+
+        return self.locales["en-US"]
+    }
+
     func localized(itemType: String) -> String? {
-        return self.locale?.itemTypes[itemType]
+        return self.currentLocale?.itemTypes[itemType]
     }
 
     func localized(field: String) -> String? {
-        return self.locale?.fields[field]
+        return self.currentLocale?.fields[field]
     }
 
     func localized(creator: String) -> String? {
-        return self.locale?.creatorTypes[creator]
+        return self.currentLocale?.creatorTypes[creator]
     }
 }

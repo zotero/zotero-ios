@@ -19,6 +19,7 @@ class Controllers {
     let fileStorage: FileStorage
     let schemaController: SchemaController
     let dragDropController: DragDropController
+    let itemLocaleController: RItemLocaleController
 
     var userControllers: UserControllers?
 
@@ -41,6 +42,7 @@ class Controllers {
                 try Controllers.setupDebugDb(in: dbStorage, userId: userId)
             }
             self.dbStorage = dbStorage
+            self.itemLocaleController = RItemLocaleController(schemaController: schemaController, dbStorage: dbStorage)
         } catch let error {
             fatalError("Controllers: Could not initialize My Library - \(error.localizedDescription)")
         }

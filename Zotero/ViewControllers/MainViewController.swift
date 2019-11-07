@@ -272,7 +272,11 @@ class MainViewController: UISplitViewController, ConflictPresenter {
             }
         }
 
-        return ItemsStore(type: type, library: library, dbStorage: self.controllers.dbStorage, fileStorage: self.controllers.fileStorage)
+        return ItemsStore(type: type,
+                          library: library,
+                          dbStorage: self.controllers.dbStorage,
+                          fileStorage: self.controllers.fileStorage,
+                          schemaController: self.controllers.schemaController)
     }
 
     // MARK: - Dynamic primary column

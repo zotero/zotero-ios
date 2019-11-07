@@ -204,7 +204,8 @@ struct ItemsView_Previews: PreviewProvider {
                                library: Library(identifier: .custom(.myLibrary), name: "My library",
                                                 metadataEditable: true, filesEditable: true),
                                dbStorage: controllers.dbStorage,
-                               fileStorage: controllers.fileStorage)
+                               fileStorage: controllers.fileStorage,
+                               schemaController: controllers.schemaController)
         return ItemsView().environmentObject(store)
     }
 }

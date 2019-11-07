@@ -66,7 +66,7 @@ extension ItemsSortType: SortType {
             return [SortDescriptor(keyPath: "dateModified", ascending: self.ascending),
                     SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .itemType:
-            return [SortDescriptor(keyPath: "rawType", ascending: self.ascending),
+            return [SortDescriptor(keyPath: "localizedType", ascending: self.ascending),
                     SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .publicationTitle:
             // TODO: - add appropriate descriptor

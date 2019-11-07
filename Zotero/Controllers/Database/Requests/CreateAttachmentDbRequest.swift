@@ -14,6 +14,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     typealias Response = RItem
 
     let attachment: ItemDetailStore.State.Attachment
+    let localizedType: String
     let libraryId: LibraryIdentifier?
 
     var needsWrite: Bool { return true }
@@ -24,6 +25,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         let item = RItem()
         item.key = self.attachment.key
         item.rawType = ItemTypes.attachment
+        item.localizedType = self.localizedType
         item.syncState = .synced
         item.setTitle(self.attachment.title)
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed

@@ -62,6 +62,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
 
         item.key = data.key
         item.rawType = data.rawType
+        item.localizedType = self.schemaController.localized(itemType: data.rawType) ?? ""
         item.creatorSummary = data.creatorSummary ?? ""
         item.version = data.version
         item.trash = data.isTrash

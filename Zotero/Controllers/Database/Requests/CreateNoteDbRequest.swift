@@ -14,6 +14,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
     typealias Response = RItem
 
     let note: ItemDetailStore.State.Note
+    let localizedType: String
     let libraryId: LibraryIdentifier?
 
     var needsWrite: Bool { return true }
@@ -22,6 +23,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         let item = RItem()
         item.key = KeyGenerator.newKey
         item.rawType = ItemTypes.note
+        item.localizedType = self.localizedType
         item.syncState = .synced
         item.setTitle(self.note.title)
         item.changedFields = [.type, .fields]
