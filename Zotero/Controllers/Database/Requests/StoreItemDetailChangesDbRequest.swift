@@ -25,53 +25,73 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.itemKey, in: self.libraryId)).first else { return }
 
-        let allFields = self.data.databaseFields(schemaController: self.schemaController)
-
-        var fieldsDidChange = false
-        var typeChanged = false
-
-        // Update item type
-
-        if self.data.type != item.rawType {
-            // If type changed, we need to sync all fields, since different types can have different fields
+        let typeChanged = self.data.type != item.rawType
+        if typeChanged {
             item.rawType = self.data.type
             item.changedFields.insert(.type)
+        }
 
-            // Remove fields that don't exist in this new type
+        self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, database: database)
+        self.updateFields(with: self.data, snapshot: self.snapshot, item: item, typeChanged: typeChanged, database: database)
+        try self.updateNotes(with: self.data, snapshot: self.snapshot, item: item, database: database)
+        try self.updateAttachments(with: self.data, snapshot: self.snapshot, item: item, database: database)
+        self.updateTags(with: self.data, item: item, database: database)
+
+        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
+        item.updateDerivedTitles()
+    }
+
+    private func updateCreators(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data, item: RItem, database: Realm) {
+        guard data.creators != snapshot.creators else { return }
+
+        database.delete(item.creators)
+
+        for (offset, creatorId) in data.creatorIds.enumerated() {
+            guard let creator = data.creators[creatorId] else { continue }
+
+            let rCreator = RCreator()
+            rCreator.rawType = creator.type
+            rCreator.firstName = creator.firstName
+            rCreator.lastName = creator.lastName
+            rCreator.name = creator.fullName
+            rCreator.orderId = offset
+            rCreator.primary = creator.primary
+            rCreator.item = item
+            database.add(rCreator)
+        }
+
+        item.updateCreatorSummary()
+        item.changedFields.insert(.creators)
+    }
+
+    private func updateFields(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data,
+                              item: RItem, typeChanged: Bool, database: Realm) {
+        let allFields = self.data.databaseFields(schemaController: self.schemaController)
+        let snapshotFields = self.snapshot.databaseFields(schemaController: self.schemaController)
+
+        var fieldsDidChange = false
+
+        if typeChanged {
+            // If type changed, we need to sync all fields, since different types can have different fields
             let fieldKeys = allFields.map({ $0.key })
             let toRemove = item.fields.filter(.key(notIn: fieldKeys))
+
+            toRemove.forEach { field in
+                if field.key == FieldKeys.date {
+                    item.setDateFieldMetadata(nil)
+                } else if field.key == FieldKeys.publisher || field.baseKey == FieldKeys.publisher {
+                    item.publisher = nil
+                    item.hasPublisher = false
+                } else if field.key == FieldKeys.publicationTitle || field.baseKey == FieldKeys.publicationTitle {
+                    item.publicationTitle = nil
+                    item.hasPublicationTitle = false
+                }
+            }
+
             database.delete(toRemove)
 
             fieldsDidChange = !toRemove.isEmpty
-            typeChanged = true
         }
-
-        // Update creators
-
-        if self.data.creators != self.snapshot.creators {
-            database.delete(item.creators)
-
-            for (offset, creatorId) in self.data.creatorIds.enumerated() {
-                guard let creator = self.data.creators[creatorId] else { continue }
-
-                let rCreator = RCreator()
-                rCreator.rawType = creator.type
-                rCreator.firstName = creator.firstName
-                rCreator.lastName = creator.lastName
-                rCreator.name = creator.fullName
-                rCreator.orderId = offset
-                rCreator.primary = creator.primary
-                rCreator.item = item
-                database.add(rCreator)
-            }
-
-            item.updateCreators()
-            item.changedFields.insert(.creators)
-        }
-
-        // Update fields
-
-        let snapshotFields = self.snapshot.databaseFields(schemaController: self.schemaController)
 
         for (offset, field) in allFields.enumerated() {
             // Either type changed and we're updating all fields (so that we create missing fields for this new type)
@@ -97,8 +117,14 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
                 if field.isTitle {
                     item.baseTitle = field.value
-                } else if field.key == FieldKeys.note {
+                } else if field.key == FieldKeys.date {
                     item.setDateFieldMetadata(field.value)
+                } else if field.key == FieldKeys.publisher || field.baseField == FieldKeys.publisher {
+                    item.publisher = field.value
+                    item.hasPublisher = !field.value.isEmpty
+                } else if field.key == FieldKeys.publicationTitle || field.baseField == FieldKeys.publicationTitle {
+                    item.publicationTitle = field.value
+                    item.hasPublicationTitle = !field.value.isEmpty
                 }
 
                 fieldsDidChange = true
@@ -108,10 +134,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         if fieldsDidChange {
             item.changedFields.insert(.fields)
         }
+    }
 
-        // Update notes
-
-        let noteKeys = self.data.notes.map({ $0.key })
+    private func updateNotes(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data, item: RItem, database: Realm) throws {
+        let noteKeys = data.notes.map({ $0.key })
         let notesToRemove = item.children.filter(.item(type: ItemTypes.note))
                                          .filter(.key(notIn: noteKeys))
         notesToRemove.forEach {
@@ -119,8 +145,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             $0.changedFields.insert(.trash)
         }
 
-        for note in self.data.notes {
-            guard note.text != self.snapshot.notes.first(where: { $0.key == note.key })?.text else { continue }
+        for note in data.notes {
+            guard note.text != snapshot.notes.first(where: { $0.key == note.key })?.text else { continue }
 
             if let childItem = item.children.filter(.key(note.key)).first,
                let noteField = childItem.fields.filter(.key(FieldKeys.note)).first {
@@ -138,10 +164,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 childItem.changedFields.insert(.parent)
             }
         }
+    }
 
-        // Update attachments
-
-        let attachmentKeys = self.data.attachments.map({ $0.key })
+    private func updateAttachments(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data, item: RItem, database: Realm) throws {
+        let attachmentKeys = data.attachments.map({ $0.key })
         let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
                                                .filter(.key(notIn: attachmentKeys))
         attachmentsToRemove.forEach {
@@ -150,10 +176,10 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             // TODO: - check if files need to be deleted
         }
 
-        for attachment in self.data.attachments {
+        for attachment in data.attachments {
             // Only title can change for attachment, if you want to change the file you have to delete the old
             // and create a new attachment
-            guard attachment.title != self.snapshot.attachments.first(where: { $0.key == attachment.key })?.title else { continue }
+            guard attachment.title != snapshot.attachments.first(where: { $0.key == attachment.key })?.title else { continue }
 
             if let childItem = item.children.filter(.key(attachment.key)).first,
                let titleField = childItem.fields.filter(.key(FieldKeys.title)).first {
@@ -171,12 +197,12 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 childItem.changedFields.insert(.parent)
             }
         }
+    }
 
-        // Update tags
-
+    private func updateTags(with data: ItemDetailStore.State.Data, item: RItem, database: Realm) {
         var tagsDidChange = false
 
-        let tagNames = self.data.tags.map({ $0.name })
+        let tagNames = data.tags.map({ $0.name })
         let tagsToRemove = item.tags.filter(.name(notIn: tagNames))
         tagsToRemove.forEach { tag in
             if let index = tag.items.index(of: item) {
@@ -185,7 +211,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             tagsDidChange = true
         }
 
-        self.data.tags.forEach { tag in
+        data.tags.forEach { tag in
             if let rTag = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId))
                                                      .filter("not (any items.key = %@)", self.itemKey).first {
                 rTag.items.append(item)
@@ -196,8 +222,5 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         if tagsDidChange {
             item.changedFields.insert(.tags)
         }
-
-        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
-        item.updateDerivedTitles()
     }
 }

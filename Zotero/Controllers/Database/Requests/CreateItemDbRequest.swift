@@ -68,7 +68,7 @@ struct CreateItemDbRequest: DbResponseRequest {
             rCreator.item = item
             database.add(rCreator)
         }
-        item.updateCreators()
+        item.updateCreatorSummary()
 
         if !self.data.creators.isEmpty {
             changes.insert(.creators)
@@ -87,8 +87,14 @@ struct CreateItemDbRequest: DbResponseRequest {
             
             if field.key == FieldKeys.title || field.baseField == FieldKeys.title {
                 item.baseTitle = field.value
-            } else if field.key == FieldKeys.note {
+            } else if field.key == FieldKeys.date {
                 item.setDateFieldMetadata(field.value)
+            } else if field.key == FieldKeys.publisher || field.baseField == FieldKeys.publisher {
+                item.publisher = field.value
+                item.hasPublisher = !field.value.isEmpty
+            } else if field.key == FieldKeys.publicationTitle || field.baseField == FieldKeys.publicationTitle {
+                item.publicationTitle = field.value
+                item.hasPublicationTitle = !field.value.isEmpty
             }
         }
 

@@ -69,12 +69,12 @@ extension ItemsSortType: SortType {
             return [SortDescriptor(keyPath: "localizedType", ascending: self.ascending),
                     SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .publicationTitle:
-            // TODO: - add appropriate descriptor
-            return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending),
+            return [SortDescriptor(keyPath: "hasPublicationTitle", ascending: false),
+                    SortDescriptor(keyPath: "publicationTitle", ascending: self.ascending),
                     SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .publisher:
-            // TODO: - add appropriate descriptor
-            return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending),
+            return [SortDescriptor(keyPath: "hasPublisher", ascending: false),
+                    SortDescriptor(keyPath: "publisher", ascending: self.ascending),
                     SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .year:
             return [SortDescriptor(keyPath: "hasParsedYear", ascending: false),

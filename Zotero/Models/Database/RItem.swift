@@ -71,6 +71,16 @@ class RItem: Object {
     /// Indicates whether this instance has nonempty parsedYear, helper variable, used in sorting so that we can show items with years
     /// first and sort them in any order we want (asd/desc) and all other items later
     @objc dynamic var hasParsedYear: Bool = false
+    /// Value taken from publisher field
+    @objc dynamic var publisher: String? = nil
+    /// Indicates whether this instance has nonempty publisher, helper variable, used in sorting so that we can show items with publishers
+    /// first and sort them in any order we want (asd/desc) and all other items later
+    @objc dynamic var hasPublisher: Bool = false
+    /// Value taken from publicationTitle field
+    @objc dynamic var publicationTitle: String? = nil
+    /// Indicates whether this instance has nonempty publicationTitle, helper variable, used in sorting so that we can show items with titles
+    /// first and sort them in any order we want (asd/desc) and all other items later
+    @objc dynamic var hasPublicationTitle: Bool = false
 
     // MARK: - Sync data
     /// Indicates whether the object is trashed locally and needs to be synced with backend
@@ -140,8 +150,8 @@ class RItem: Object {
         }
     }
 
-    func setDateFieldMetadata(_ date: String) {
-        let data = self.parseDate(from: date)
+    func setDateFieldMetadata(_ date: String?) {
+        let data = date.flatMap { self.parseDate(from: $0) }
         self.parsedYear = data?.0
         self.hasParsedYear = self.parsedYear != nil
         self.parsedDate = data?.1
@@ -154,7 +164,7 @@ class RItem: Object {
         return ("\(year)", date)
     }
 
-    func updateCreators() {
+    func updateCreatorSummary() {
         self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))
         self.hasCreatorSummary = self.creatorSummary != nil
     }

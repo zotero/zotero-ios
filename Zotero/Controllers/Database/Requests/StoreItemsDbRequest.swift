@@ -63,7 +63,6 @@ struct StoreItemsDbRequest: DbResponseRequest {
         item.key = data.key
         item.rawType = data.rawType
         item.localizedType = self.schemaController.localized(itemType: data.rawType) ?? ""
-        item.creatorSummary = data.creatorSummary ?? ""
         item.version = data.version
         item.trash = data.isTrash
         item.dateModified = data.dateModified
@@ -95,6 +94,10 @@ struct StoreItemsDbRequest: DbResponseRequest {
         let toRemove = item.fields.filter("NOT key IN %@", allFieldKeys)
         database.delete(toRemove)
 
+        var date: String?
+        var publisher: String?
+        var publicationTitle: String?
+
         allFieldKeys.forEach { key in
             let value = data.fields[key] ?? ""
             var field: RItemField
@@ -119,9 +122,19 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 }
                 item.baseTitle = title
             } else if key == FieldKeys.date {
-                item.setDateFieldMetadata(value)
+                date = field.value
+            } else if field.key == FieldKeys.publisher || field.baseKey == FieldKeys.publisher {
+                publisher = field.value
+            } else if field.key == FieldKeys.publicationTitle || field.baseKey == FieldKeys.publicationTitle {
+                publicationTitle = field.value
             }
         }
+
+        item.setDateFieldMetadata(date)
+        item.publisher = publisher
+        item.hasPublisher = publisher?.isEmpty == false
+        item.publicationTitle = publicationTitle
+        item.hasPublicationTitle = publicationTitle?.isEmpty == false
     }
 
     private func syncLibrary(identifier: LibraryIdentifier, libraryName: String, item: RItem, database: Realm) throws {
@@ -226,7 +239,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
             database.add(creator)
         }
 
-        item.updateCreators()
+        item.updateCreatorSummary()
     }
 
     private func syncRelations(data: ItemResponse, item: RItem, database: Realm) {
