@@ -28,10 +28,6 @@ class RCustomLibrary: Object {
     @objc dynamic var orderId: Int = 0
     @objc dynamic var versions: RVersions?
 
-    var type: RCustomLibraryType {
-        return RCustomLibraryType(rawValue: self.rawType) ?? .myLibrary
-    }
-
     let collections = LinkingObjects(fromType: RCollection.self, property: "customLibrary")
     let items = LinkingObjects(fromType: RItem.self, property: "customLibrary")
     let searches = LinkingObjects(fromType: RSearch.self, property: "customLibrary")
@@ -43,5 +39,9 @@ class RCustomLibrary: Object {
 
     override class func indexedProperties() -> [String] {
         return ["version"]
+    }
+
+    var type: RCustomLibraryType {
+        return RCustomLibraryType(rawValue: self.rawType) ?? .myLibrary
     }
 }

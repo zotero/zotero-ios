@@ -30,9 +30,20 @@ class RTag: Object {
     @objc dynamic var color: String = ""
     @objc dynamic var customLibrary: RCustomLibrary?
     @objc dynamic var group: RGroup?
+    let items: List<RItem> = List()
+
+    // MARK: - Sync data
+
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
-    let items: List<RItem> = List()
+
+    // MARK: - Object properties
+
+    override class func indexedProperties() -> [String] {
+        return ["name"]
+    }
+
+    // MARK: - Sync properties
 
     var libraryObject: LibraryObject? {
         get {
@@ -69,9 +80,5 @@ class RTag: Object {
         set {
             self.rawChangedFields = newValue.rawValue
         }
-    }
-
-    override class func indexedProperties() -> [String] {
-        return ["name"]
     }
 }

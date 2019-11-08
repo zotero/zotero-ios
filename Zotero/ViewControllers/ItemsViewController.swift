@@ -174,7 +174,7 @@ class ItemsViewController: UIViewController {
                 guard let `self` = self else { return }
                 self.tableView.performBatchUpdates({
                     self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
-                    self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
+                    self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
                     self.tableView.insertRows(at: insertions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
                 }, completion: nil)
             case .error(let error):

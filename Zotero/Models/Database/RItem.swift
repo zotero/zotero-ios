@@ -35,10 +35,26 @@ extension RItemChanges {
 class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
+    @objc dynamic var baseTitle: String = ""
+    @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
+    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
+    @objc dynamic var parent: RItem?
+    @objc dynamic var customLibrary: RCustomLibrary?
+    @objc dynamic var group: RGroup?
+    let collections: List<RCollection> = List()
+
+    let fields = LinkingObjects(fromType: RItemField.self, property: "item")
+    let children = LinkingObjects(fromType: RItem.self, property: "parent")
+    let tags = LinkingObjects(fromType: RTag.self, property: "items")
+    let creators = LinkingObjects(fromType: RCreator.self, property: "item")
+    let relations = LinkingObjects(fromType: RRelation.self, property: "item")
+
+    // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting
     @objc dynamic var localizedType: String = ""
-    @objc dynamic var baseTitle: String = ""
+    /// Title which is displayed in items list
     @objc dynamic var displayTitle: String = ""
+    /// Title by which the item list is sorted
     @objc dynamic var sortTitle: String = ""
     /// Summary of creators collected from linked RCreators
     @objc dynamic var creatorSummary: String? = nil
@@ -55,7 +71,11 @@ class RItem: Object {
     /// Indicates whether this instance has nonempty parsedYear, helper variable, used in sorting so that we can show items with years
     /// first and sort them in any order we want (asd/desc) and all other items later
     @objc dynamic var hasParsedYear: Bool = false
+
+    // MARK: - Sync data
+    /// Indicates whether the object is trashed locally and needs to be synced with backend
     @objc dynamic var trash: Bool = false
+    /// Indicates local version of object
     @objc dynamic var version: Int = 0
     /// Indicates whether attachemnt (file) needs to be uploaded to backend
     @objc dynamic var attachmentNeedsSync: Bool = false
@@ -69,18 +89,14 @@ class RItem: Object {
     @objc dynamic var rawChangedFields: Int16 = 0
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @objc dynamic var deleted: Bool = false
-    @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var parent: RItem?
-    @objc dynamic var customLibrary: RCustomLibrary?
-    @objc dynamic var group: RGroup?
-    let collections: List<RCollection> = List()
 
-    let fields = LinkingObjects(fromType: RItemField.self, property: "item")
-    let children = LinkingObjects(fromType: RItem.self, property: "parent")
-    let tags = LinkingObjects(fromType: RTag.self, property: "items")
-    let creators = LinkingObjects(fromType: RCreator.self, property: "item")
-    let relations = LinkingObjects(fromType: RRelation.self, property: "item")
+    // MARK: - Object properties
+
+    override class func indexedProperties() -> [String] {
+        return ["version", "key"]
+    }
+
+    // MARK: - Sync properties
 
     var syncState: ObjectSyncState {
         get {
@@ -102,9 +118,7 @@ class RItem: Object {
         }
     }
 
-    override class func indexedProperties() -> [String] {
-        return ["version", "key"]
-    }
+    // MARK: - Helpers
 
     func setTitle(_ title: String) {
         self.baseTitle = title

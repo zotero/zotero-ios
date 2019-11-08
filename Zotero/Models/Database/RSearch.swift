@@ -29,6 +29,14 @@ extension RSearchChanges {
 class RSearch: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
+    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
+    @objc dynamic var customLibrary: RCustomLibrary?
+    @objc dynamic var group: RGroup?
+
+    let conditions = LinkingObjects(fromType: RCondition.self, property: "search")
+
+    // MARK: - Sync data
+    /// Indicates local version of object
     @objc dynamic var version: Int = 0
     /// State which indicates whether object is synced with backend data, see ObjectSyncState for more info
     @objc dynamic var rawSyncState: Int = 0
@@ -40,10 +48,14 @@ class RSearch: Object {
     @objc dynamic var rawChangedFields: Int16 = 0
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @objc dynamic var deleted: Bool = false
-    @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var customLibrary: RCustomLibrary?
-    @objc dynamic var group: RGroup?
-    let conditions = LinkingObjects(fromType: RCondition.self, property: "search")
+
+    // MARK: - Object properties
+
+    override class func indexedProperties() -> [String] {
+        return ["version", "key"]
+    }
+
+    // MARK: - Sync properties
 
     var changedFields: RSearchChanges {
         get {
@@ -63,10 +75,6 @@ class RSearch: Object {
         set {
             self.rawSyncState = newValue.rawValue
         }
-    }
-
-    override class func indexedProperties() -> [String] {
-        return ["version", "key"]
     }
 }
 
