@@ -139,11 +139,15 @@ extension RItem {
     }
 
     fileprivate var hasAttachment: Bool {
-        return self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).count > 0
+        return self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty))
+                            .filter(.isTrash(false))
+                            .count > 0
     }
 
     fileprivate var hasNote: Bool {
-        return self.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty)).count > 0
+        return self.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty))
+                            .filter(.isTrash(false))
+                            .count > 0
     }
 
     fileprivate var tagHexColors: [String] {
