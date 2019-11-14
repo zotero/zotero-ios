@@ -24,7 +24,8 @@ protocol FileStorage {
     func read(_ file: File) throws -> Data
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws
     func remove(_ file: File) throws
-    func copy(from url: File, to file: File) throws
+    func copy(from fromFile: File, to toFile: File) throws
+    func move(from fromFile: File, to toFile: File) throws
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
     func createDictionaries(for file: File) throws
@@ -43,8 +44,6 @@ extension FileStorage {
                 // Make sure that the file was not already moved to our internal location before
                 guard originalFile.createUrl() != newFile.createUrl() else { continue }
 
-                // We can just "try?" to copy the file here, if it doesn't work the user will be notified during sync
-                // process and can try to remove/re-add the attachment
                 try self.copy(from: originalFile, to: newFile)
             }
         }
@@ -70,6 +69,10 @@ class FileStorageController: FileStorage {
 
     func copy(from fromFile: File, to toFile: File) throws {
         try self.fileManager.copyItem(at: fromFile.createUrl(), to: toFile.createUrl())
+    }
+
+    func move(from fromFile: File, to toFile: File) throws {
+        try self.fileManager.moveItem(at: fromFile.createUrl(), to: toFile.createUrl())
     }
 
     func has(_ file: File) -> Bool {

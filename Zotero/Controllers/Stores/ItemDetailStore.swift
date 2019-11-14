@@ -20,7 +20,7 @@ class ItemDetailStore: ObservableObject {
         case typeNotSupported, libraryNotAssigned,
              contentTypeUnknown, userMissing, downloadError, unknown,
              cantStoreChanges
-        case fileNotCopied(String)
+        case fileNotCopied(Int)
         case droppedFields([String])
 
         var id: Int {
@@ -610,16 +610,33 @@ class ItemDetailStore: ObservableObject {
     }
 
     func addAttachments(from urls: [URL]) {
-        let attachments = urls.map({ Files.file(from: $0) })
-                              .map({
-                                  State.Attachment(key: KeyGenerator.newKey,
-                                                   title: $0.name,
-                                                   type: .file(file: $0, filename: $0.name, isLocal: true),
-                                                   libraryId: self.state.libraryId)
-                              })
-        attachments.forEach { attachment in
-            let index = self.state.data.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
-            self.state.data.attachments.insert(attachment, at: index)
+        var errors = 0
+
+        for url in urls {
+            let originalFile = Files.file(from: url)
+            let key = KeyGenerator.newKey
+            let file = Files.objectFile(for: .item,
+                                        libraryId: self.state.libraryId,
+                                        key: key,
+                                        ext: originalFile.ext)
+            let attachment = State.Attachment(key: key,
+                                              title: originalFile.name,
+                                              type: .file(file: file, filename: originalFile.name, isLocal: true),
+                                              libraryId: self.state.libraryId)
+
+            do {
+                try self.fileStorage.move(from: originalFile, to: file)
+
+                let index = self.state.data.attachments.index(of: attachment, sortedBy: { $0.title.caseInsensitiveCompare($1.title) == .orderedAscending })
+                self.state.data.attachments.insert(attachment, at: index)
+            } catch let error {
+                DDLogError("ItemDertailStore: can't copy attachment - \(error)")
+                errors += 1
+            }
+        }
+
+        if errors > 0 {
+            self.state.error = .fileNotCopied(errors)
         }
     }
 

@@ -38,10 +38,21 @@ struct ItemDetailView: View {
                              message: Text(self.changeItemTypeMessage(for: names)),
                              primaryButton: .default(Text("Ok"), action: self.store.acceptPromptSnapshot),
                              secondaryButton: .cancel(self.store.cancelPromptSnapshot))
+            case .fileNotCopied(let count):
+            return Alert(title: Text("Error"),
+                         message: Text(self.fileCopyMessage(count: count)),
+                         dismissButton: .cancel(Text("Ok")))
             default:
                 return Alert(title: Text("Error"), message: Text("Unknown error"), dismissButton: .cancel())
             }
         }
+    }
+
+    private func fileCopyMessage(count: Int) -> String {
+        if count == 1 {
+            return "Could not create attachment"
+        }
+        return "Could not create \(count) attachments"
     }
 
     private func changeItemTypeMessage(for names: [String]) -> String {

@@ -124,11 +124,14 @@ extension NSPredicate {
                                                                    .deleted(deleted)])
     }
 
+    static func isTrash(_ trash: Bool) -> NSPredicate {
+        return NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
+    }
+
     static func items(type: String, notSyncState syncState: ObjectSyncState, trash: Bool? = nil) -> NSPredicate {
         var predicates: [NSPredicate] = [.item(type: type), .notSyncState(syncState)]
         if let trash = trash {
-            let trashPredicate = NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
-            predicates.append(trashPredicate)
+            predicates.append(.isTrash(trash))
         }
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
