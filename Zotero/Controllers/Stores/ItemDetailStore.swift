@@ -8,12 +8,11 @@
 
 import Combine
 import Foundation
+import UIKit
 
 import CocoaLumberjack
 import RealmSwift
 import RxSwift
-
-
 
 class ItemDetailStore: ObservableObject {
     enum Error: Swift.Error, Equatable, Identifiable, Hashable {
@@ -253,6 +252,9 @@ class ItemDetailStore: ObservableObject {
             var attachments: [Attachment]
             var tags: [Tag]
 
+            var maxFieldTitleWidth: CGFloat = 0
+            var maxNonemptyFieldTitleWidth: CGFloat = 0
+
             func databaseFields(schemaController: SchemaController) -> [Field] {
                 var allFields = Array(self.fields.values)
 
@@ -274,6 +276,24 @@ class ItemDetailStore: ObservableObject {
 
 
                 return allFields
+            }
+
+            mutating func recalculateMaxTitleWidth() {
+                var maxTitle = ""
+                var maxNonEmptyTitle = ""
+
+                self.fields.values.forEach { field in
+                    if field.name.count > maxTitle.count {
+                        maxTitle = field.name
+                    }
+
+                    if !field.value.isEmpty && field.name.count > maxNonEmptyTitle.count {
+                        maxNonEmptyTitle = field.name
+                    }
+                }
+
+                self.maxFieldTitleWidth = ceil(maxTitle.size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width)
+                self.maxNonemptyFieldTitleWidth = ceil(maxNonEmptyTitle.size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width)
             }
         }
 
@@ -358,9 +378,10 @@ class ItemDetailStore: ObservableObject {
         self.disposeBag = DisposeBag()
 
         do {
-            let data = try ItemDetailStore.createData(from: type,
+            var data = try ItemDetailStore.createData(from: type,
                                                       schemaController: schemaController,
                                                       fileStorage: fileStorage)
+            data.recalculateMaxTitleWidth()
             let userId = try dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
             self.state = State(userId: userId, type: type, data: data)
         } catch let error {
@@ -582,6 +603,7 @@ class ItemDetailStore: ObservableObject {
         data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
         data.creators = try self.creators(for: type, from: originalData.creators)
         data.creatorIds = originalData.creatorIds
+        data.recalculateMaxTitleWidth()
 
         return data
     }

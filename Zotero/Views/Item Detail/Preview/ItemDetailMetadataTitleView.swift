@@ -11,6 +11,8 @@ import SwiftUI
 struct ItemDetailMetadataTitleView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
+    @Environment(\.editMode) private var editMode: Binding<EditMode>
+
     let title: String
 
     var body: some View {
@@ -18,6 +20,7 @@ struct ItemDetailMetadataTitleView: View {
             .foregroundColor(.gray)
             .font(.headline)
             .fontWeight(.regular)
+            .frame(width: self.maxWidth, alignment: .leading)
 //            .background(ItemDetailMetadataTitleGeometry())
 //            .frame(width: self.store.state.metadataTitleMaxWidth, alignment: .leading)
 //            .onPreferenceChange(MetadataTitleWidthPreferenceKey.self, perform: {
@@ -26,6 +29,14 @@ struct ItemDetailMetadataTitleView: View {
 //                    self.store.state.metadataTitleMaxWidth = ceil($0-40)
 //                }
 //            })
+    }
+
+    private var maxWidth: CGFloat {
+        // SWIFTUI BUG: - if I change the width based on editing value, the app crashes with
+        // precondition failure: attribute failed to set an initial value: 98
+        return self.store.state.data.maxFieldTitleWidth
+//        return self.editMode?.wrappedValue.isEditing == true ? self.store.state.data.maxFieldTitleWidth :
+//                                                               self.store.state.data.maxNonemptyFieldTitleWidth
     }
 }
 
