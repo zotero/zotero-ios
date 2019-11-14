@@ -11,6 +11,14 @@ import SwiftUI
 struct ItemDetailMetadataSectionView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
+    private static let dateFormatter: DateFormatter = createDateFormatter()
+
+    private static func createDateFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d/yyyy, h:mm:ss a"
+        return formatter
+    }
+
     var body: some View {
         Section {
             ItemDetailMetadataView(title: "Item Type",
@@ -29,6 +37,11 @@ struct ItemDetailMetadataSectionView: View {
                     return nil
                 }
             }
+
+            ItemDetailMetadataView(title: "Date Added",
+                                   value: ItemDetailMetadataSectionView.dateFormatter.string(from: self.store.state.data.dateAdded))
+            ItemDetailMetadataView(title: "Date Modified",
+                                   value: ItemDetailMetadataSectionView.dateFormatter.string(from: self.store.state.data.dateModified))
 
             self.store.state.data.abstract.flatMap {
                 $0.isEmpty ? nil : ItemDetailAbstractView(abstract: $0)

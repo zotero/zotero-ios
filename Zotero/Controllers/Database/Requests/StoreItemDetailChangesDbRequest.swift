@@ -30,6 +30,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             item.rawType = self.data.type
             item.changedFields.insert(.type)
         }
+        item.dateModified = self.data.dateModified
 
         self.updateCreators(with: self.data, snapshot: self.snapshot, item: item, database: database)
         self.updateFields(with: self.data, snapshot: self.snapshot, item: item, typeChanged: typeChanged, database: database)

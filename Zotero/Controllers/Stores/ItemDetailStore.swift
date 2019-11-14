@@ -252,6 +252,9 @@ class ItemDetailStore: ObservableObject {
             var attachments: [Attachment]
             var tags: [Tag]
 
+            var dateModified: Date
+            let dateAdded: Date
+
             var maxFieldTitleWidth: CGFloat = 0
             var maxNonemptyFieldTitleWidth: CGFloat = 0
 
@@ -289,6 +292,17 @@ class ItemDetailStore: ObservableObject {
 
                     if !field.value.isEmpty && field.name.count > maxNonEmptyTitle.count {
                         maxNonEmptyTitle = field.name
+                    }
+                }
+
+                // TODO: - localize
+                let extraFields = ["Item Type", "Date Modified", "Date Added", "Abstract"] + self.creators.values.map({ $0.localizedType })
+                extraFields.forEach { name in
+                    if name.count > maxTitle.count {
+                        maxTitle = name
+                    }
+                    if name.count > maxNonEmptyTitle.count {
+                        maxNonEmptyTitle = name
                     }
                 }
 
@@ -355,7 +369,8 @@ class ItemDetailStore: ObservableObject {
                                  creators: [:], creatorIds: [],
                                  fields: [:], fieldIds: [],
                                  abstract: nil, notes: [],
-                                 attachments: [], tags: []),
+                                 attachments: [], tags: [],
+                                 dateModified: Date(), dateAdded: Date()),
                       error: error)
         }
     }
@@ -438,6 +453,7 @@ class ItemDetailStore: ObservableObject {
                 throw Error.typeNotSupported
             }
             let (fieldIds, fields, hasAbstract) = try ItemDetailStore.fieldData(for: itemType, schemaController: schemaController)
+            let date = Date()
 
             return State.Data(title: "",
                               type: itemType,
@@ -449,7 +465,9 @@ class ItemDetailStore: ObservableObject {
                               abstract: (hasAbstract ? "" : nil),
                               notes: [],
                               attachments: [],
-                              tags: [])
+                              tags: [],
+                              dateModified: date,
+                              dateAdded: date)
 
         case .preview(let item), .duplication(let item, _):
             guard let localizedType = schemaController.localized(itemType: item.rawType) else {
@@ -518,7 +536,9 @@ class ItemDetailStore: ObservableObject {
                               abstract: abstract,
                               notes: Array(notes),
                               attachments: attachments,
-                              tags: Array(tags))
+                              tags: Array(tags),
+                              dateModified: item.dateModified,
+                              dateAdded: item.dateAdded)
         }
     }
 
@@ -802,10 +822,13 @@ class ItemDetailStore: ObservableObject {
 
         var newType: State.DetailType?
 
+        let originalModifiedDate = self.state.data.dateModified
+
         do {
             try self.fileStorage.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
 
             self.updateDateFieldIfNeeded()
+            self.state.data.dateModified = Date()
 
             switch self.state.type {
             case .preview(let item):
@@ -824,6 +847,7 @@ class ItemDetailStore: ObservableObject {
             }
         } catch let error {
             DDLogError("ItemDetailStore: can't store changes - \(error)")
+            self.state.data.dateModified = originalModifiedDate
             self.state.error = (error as? Error) ?? .cantStoreChanges
         }
     }

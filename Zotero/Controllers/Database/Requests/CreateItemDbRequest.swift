@@ -29,8 +29,8 @@ struct CreateItemDbRequest: DbResponseRequest {
         item.rawType = self.data.type
         item.localizedType = self.schemaController.localized(itemType: self.data.type) ?? ""
         item.syncState = .synced
-        item.dateAdded = Date()
-        item.dateModified = Date()
+        item.dateAdded = self.data.dateAdded
+        item.dateModified = self.data.dateModified
         database.add(item)
 
         // Assign library object
