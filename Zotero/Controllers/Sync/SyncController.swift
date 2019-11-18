@@ -196,9 +196,6 @@ final class SyncController: SynchronizationController {
     private var accessPermissions: AccessPermissions?
     private var conflictReceiver: (ConflictReceiver & DebugPermissionReceiver)?
 
-    @UserDefault(key: "AskForSyncPermission", defaultValue: false)
-    private var askForSyncPermission: Bool
-
     var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
     }
@@ -233,7 +230,7 @@ final class SyncController: SynchronizationController {
             guard let `self` = self, let action = self.processingAction else { return }
             // ConflictReceiver was nil and we are waiting for CR action. Which means it was ignored previously and
             // we need to restart it.
-            if action.requiresConflictReceiver || (self.askForSyncPermission && action.requiresDebugPermissionPrompt) {
+            if action.requiresConflictReceiver || (Defaults.shared.askForSyncPermission && action.requiresDebugPermissionPrompt) {
                 self.process(action: action)
             }
         }
@@ -422,7 +419,7 @@ final class SyncController: SynchronizationController {
         }
 
         self.processingAction = action
-        if self.askForSyncPermission && action.requiresDebugPermissionPrompt {
+        if Defaults.shared.askForSyncPermission && action.requiresDebugPermissionPrompt {
             self.askForUserPermission(action: action)
         } else {
             self.process(action: action)
@@ -523,13 +520,14 @@ final class SyncController: SynchronizationController {
     }
 
     private func processKeyCheckAction() {
-        self.handler.loadPermissions().flatMap { (response, needsSchemaUpdate) -> Single<(AccessPermissions, Bool)> in
+        self.handler.loadPermissions().flatMap { (response, needsSchemaUpdate) -> Single<(AccessPermissions, String, Bool)> in
                                           let permissions = AccessPermissions(user: response.user,
                                                                               groupDefault: response.defaultGroup,
                                                                               groups: response.groups)
-                                          return Single.just((permissions, needsSchemaUpdate))
+                                          return Single.just((permissions, response.username, needsSchemaUpdate))
                                       }
-                                      .subscribe(onSuccess: { [weak self] (permissions, needsSchemaUpdate) in
+                                      .subscribe(onSuccess: { [weak self] permissions, username, needsSchemaUpdate in
+                                          Defaults.shared.username = username
                                           self?.performOnAccessQueue(flags: .barrier) {
                                               self?.accessPermissions = permissions
                                               if needsSchemaUpdate {

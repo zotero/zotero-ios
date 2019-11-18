@@ -11,8 +11,15 @@ import Foundation
 
 class SettingsStore: ObservableObject {
     struct State {
-        @UserDefault(key: "AskForSyncPermission", defaultValue: false)
-        var askForSyncPermission: Bool
+        var askForSyncPermission: Bool {
+            didSet {
+                Defaults.shared.askForSyncPermission = self.askForSyncPermission
+            }
+        }
+
+        init() {
+            self.askForSyncPermission = Defaults.shared.askForSyncPermission
+        }
     }
 
     @Published var state: State
@@ -30,6 +37,7 @@ class SettingsStore: ObservableObject {
 
     func logout() {
         do {
+            Defaults.shared.reset()
             try self.dbStorage.createCoordinator().perform(request: DeleteAllDbRequest())
             self.secureStorage.apiToken = nil
             self.apiClient.set(authToken: nil)

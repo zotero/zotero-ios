@@ -13,6 +13,7 @@ enum KeyResponseError: Error {
 }
 
 struct KeyResponse {
+    let username: String
     let user: SyncController.AccessPermissions.Permissions
     let defaultGroup: SyncController.AccessPermissions.Permissions
     let groups: [Int: SyncController.AccessPermissions.Permissions]
@@ -20,6 +21,8 @@ struct KeyResponse {
     init(response: Any) throws {
         guard let data = response as? [String: Any],
               let accessData = data["access"] as? [String: Any] else { throw KeyResponseError.accessDataMissing }
+
+        self.username = (data["username"] as? String) ?? ""
 
         let libraryData = accessData["user"] as? [String: Any]
         self.user = SyncController.AccessPermissions.Permissions(data: libraryData)
@@ -51,6 +54,7 @@ struct KeyResponse {
         self.user = SyncController.AccessPermissions.Permissions(data: nil)
         self.defaultGroup = SyncController.AccessPermissions.Permissions(data: nil)
         self.groups = [:]
+        self.username = ""
     }
 }
 

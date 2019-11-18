@@ -82,6 +82,7 @@ class LoginStore: ObservableObject {
                       .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                       .flatMap { (response, _) -> Single<(Int, String)> in
                           do {
+                              Defaults.shared.username = response.name
                               try self.dbStorage.createCoordinator().perform(request: StoreUserDbRequest(loginResponse: response))
                               try self.dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
                               return Single.just((response.userId, response.key))

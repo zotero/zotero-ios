@@ -28,7 +28,8 @@ struct ProfileView: View {
     }
 
     private var username: String {
-        return (try? self.dbStorage.createCoordinator().perform(request: ReadUserDbRequest()))?.name ?? "Missing username"
+        let username = Defaults.shared.username
+        return username.isEmpty ? "Missing username" : username
     }
 }
 

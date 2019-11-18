@@ -243,6 +243,7 @@
 		B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E47155224127AC006E3B20 /* MainViewController.swift */; };
 		B3E489F0236057A200AF402E /* TypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E489EF236057A200AF402E /* TypePickerView.swift */; };
 		B3E489F22360610500AF402E /* ItemTypePickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E489F12360610500AF402E /* ItemTypePickerStore.swift */; };
+		B3E8506D2382FC470077839E /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8506C2382FC470077839E /* Defaults.swift */; };
 		B3E86D502314085E00DAA6D8 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E86D4F2314085E00DAA6D8 /* MainView.swift */; };
 		B3E8ABFF2344B6C300CCED64 /* PreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */; };
 		B3EAB8DE23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */; };
@@ -526,6 +527,7 @@
 		B3E47155224127AC006E3B20 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3E489EF236057A200AF402E /* TypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePickerView.swift; sourceTree = "<group>"; };
 		B3E489F12360610500AF402E /* ItemTypePickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTypePickerStore.swift; sourceTree = "<group>"; };
+		B3E8506C2382FC470077839E /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		B3E86D4F2314085E00DAA6D8 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceKeys.swift; sourceTree = "<group>"; };
 		B3EAB8DD23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkCollectionAndItemsAsDeletedDbRequest.swift; sourceTree = "<group>"; };
@@ -906,6 +908,7 @@
 				B38F5F892333C9F1002EF78B /* Library.swift */,
 				B3F3D92A234E271500F641EA /* SortType.swift */,
 				B3F3D92C234E294400F641EA /* ItemsSortType.swift */,
+				B3E8506C2382FC470077839E /* Defaults.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1515,6 +1518,7 @@
 				B30D59B822073C8F00884C4A /* UIColor+Custom.swift in Sources */,
 				B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3D9CC2322FAD849009CEE36 /* ItemTypes.swift in Sources */,
+				B3E8506D2382FC470077839E /* Defaults.swift in Sources */,
 				B38E042B2350A52200D063AE /* CollectionsPickerView.swift in Sources */,
 				B339F0FD2343B47B00055345 /* ItemDetailEditCreatorView.swift in Sources */,
 				B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */,
@@ -1748,8 +1752,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -1762,6 +1767,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Michal Rentka";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -1776,8 +1782,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -1790,6 +1797,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Michal Rentka";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1951,8 +1959,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -1965,6 +1974,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Michal Rentka";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
