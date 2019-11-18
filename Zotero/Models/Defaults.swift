@@ -17,8 +17,12 @@ class Defaults {
     @UserDefault(key: "username", defaultValue: "")
     var username: String
 
+    @UserDefault(key: "userid", defaultValue: 0)
+    var userId: Int
+
     func reset() {
         self.askForSyncPermission = false
         self.username = ""
+        self.userId = 0
     }
 }

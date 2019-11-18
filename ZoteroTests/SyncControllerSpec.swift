@@ -51,13 +51,11 @@ class SyncControllerSpec: QuickSpec {
             OHHTTPStubs.removeAllStubs()
             self.controller = nil
 
+            Defaults.shared.userId = SyncControllerSpec.userId
+
             let realm = SyncControllerSpec.realm
             try! realm.write {
                 realm.deleteAll()
-
-                let user = RUser()
-                user.identifier = SyncControllerSpec.userId
-                realm.add(user)
 
                 let myLibrary = RCustomLibrary()
                 myLibrary.rawType = RCustomLibraryType.myLibrary.rawValue

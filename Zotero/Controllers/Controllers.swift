@@ -65,7 +65,7 @@ class Controllers {
             if let id = ApiConstants.userId {
                 userId = id
             } else {
-                userId = try dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
+                userId = Defaults.shared.userId
             }
             self.userControllers = UserControllers(userId: userId, controllers: self)
         } catch let error {
@@ -84,9 +84,7 @@ class Controllers {
         var needsWipe = false
 
         do {
-            let user = try coordinator.perform(request: ReadUserDbRequest())
-
-            if user.identifier == userId { return }
+            if Defaults.shared.userId == userId { return }
 
             // User found, but different
             needsUser = true
@@ -101,7 +99,8 @@ class Controllers {
         }
 
         if needsUser {
-            try coordinator.perform(request: StoreUserDbRequest(identifier: userId, name: "Tester"))
+            Defaults.shared.userId = userId
+            Defaults.shared.username = "Tester"
             try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
         }
     }

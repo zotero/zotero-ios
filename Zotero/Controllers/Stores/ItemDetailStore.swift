@@ -397,7 +397,7 @@ class ItemDetailStore: ObservableObject {
                                                       schemaController: schemaController,
                                                       fileStorage: fileStorage)
             data.recalculateMaxTitleWidth()
-            let userId = try dbStorage.createCoordinator().perform(request: ReadUserDbRequest()).identifier
+            let userId = Defaults.shared.userId
             self.state = State(userId: userId, type: type, data: data)
         } catch let error {
             self.state = State(userId: 0,
