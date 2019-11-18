@@ -8,6 +8,7 @@ target 'Zotero' do
     pod 'RealmSwift', '3.20.0'
     pod 'RxAlamofire', '5.1.0'
     pod 'RxSwift', '5.0.1'
+    pod 'RxSwiftExt', '5.1.1'
     pod 'RxCocoa', '5.0.1'
     pod 'CocoaLumberjack/Core', '3.6.0'
     pod 'CocoaLumberjack/Swift', '3.6.0'

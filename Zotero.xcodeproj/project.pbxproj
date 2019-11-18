@@ -141,6 +141,9 @@
 		B36D2BCD232FD6E30056F022 /* TagCirclesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36D2BCC232FD6E30056F022 /* TagCirclesView.swift */; };
 		B36D2BCF232FE86C0056F022 /* Controllers+EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36D2BCE232FE86C0056F022 /* Controllers+EnvironmentValues.swift */; };
 		B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */; };
+		B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B37147402382B51000AC8758 /* CrashReporter.framework */; };
+		B37147472382B59F00AC8758 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37147462382B59F00AC8758 /* CrashReporter.swift */; };
+		B37147492382C01F00AC8758 /* CrashUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37147482382C01F00AC8758 /* CrashUploadRequest.swift */; };
 		B3727652232669B400E2C522 /* TagView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3727651232669B400E2C522 /* TagView.swift */; };
 		B3727654232689CA00E2C522 /* CollectionTreeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3727653232689CA00E2C522 /* CollectionTreeBuilder.swift */; };
 		B372765623268BBA00E2C522 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372765523268BBA00E2C522 /* Tag.swift */; };
@@ -420,6 +423,10 @@
 		B36D2BCC232FD6E30056F022 /* TagCirclesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagCirclesView.swift; sourceTree = "<group>"; };
 		B36D2BCE232FE86C0056F022 /* Controllers+EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Controllers+EnvironmentValues.swift"; sourceTree = "<group>"; };
 		B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
+		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
+		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
+		B37147462382B59F00AC8758 /* CrashReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
+		B37147482382C01F00AC8758 /* CrashUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashUploadRequest.swift; sourceTree = "<group>"; };
 		B3727651232669B400E2C522 /* TagView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagView.swift; sourceTree = "<group>"; };
 		B3727653232689CA00E2C522 /* CollectionTreeBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionTreeBuilder.swift; sourceTree = "<group>"; };
 		B372765523268BBA00E2C522 /* Tag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
@@ -547,6 +554,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */,
+				B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -572,6 +580,7 @@
 		9A5CCE075B69890E36482447 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B37147402382B51000AC8758 /* CrashReporter.framework */,
 				FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */,
 				15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */,
 				5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */,
@@ -627,6 +636,7 @@
 				B3DD9CE92256340400DE6BAA /* licenses.plist */,
 				B39B18E7223947050019F467 /* main.swift */,
 				B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */,
+				B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */,
 			);
 			path = Zotero;
 			sourceTree = "<group>";
@@ -676,6 +686,7 @@
 				B33920D22373497C00FDD3C2 /* ItemTitleFormatter.swift */,
 				B33920DA23734C3E00FDD3C2 /* CreatorSummaryFormatter.swift */,
 				B34F9FA623746E22004ED34C /* RItemLocaleController.swift */,
+				B37147462382B59F00AC8758 /* CrashReporter.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -847,6 +858,7 @@
 				B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */,
 				B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */,
 				B3B5514A22E1B0A3001E23CB /* RegisterUploadRequest.swift */,
+				B37147482382C01F00AC8758 /* CrashUploadRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1129,7 +1141,7 @@
 				TargetAttributes = {
 					B30D59542206F60400884C4A = {
 						CreatedOnToolsVersion = 10.1;
-						LastSwiftMigration = 1020;
+						LastSwiftMigration = 1120;
 						SystemCapabilities = {
 							com.apple.Keychain = {
 								enabled = 0;
@@ -1341,6 +1353,7 @@
 				B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */,
 				B33A56B023561F5600C33F28 /* SettingsView.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
+				B37147472382B59F00AC8758 /* CrashReporter.swift in Sources */,
 				B363034A224B7D7F009F839F /* LibraryObject.swift in Sources */,
 				B38C96A0223FFB2900343F8F /* StoreSettingsDbRequest.swift in Sources */,
 				B3FFDEE322807CB70009EBBE /* SubmitDeletionsRequest.swift in Sources */,
@@ -1406,6 +1419,7 @@
 				B3E4713E22412693006E3B20 /* Collection.swift in Sources */,
 				B3CFF1DF2362118D003A52FA /* CreatorTypePickerStore.swift in Sources */,
 				B30DF3F92209A282000B6DE2 /* RCustomLibrary.swift in Sources */,
+				B37147492382C01F00AC8758 /* CrashUploadRequest.swift in Sources */,
 				B38C9696223FFB2900343F8F /* ReadItemsDbRequest.swift in Sources */,
 				B3FFDEDD228031F60009EBBE /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B36D2BC9232FCA1E0056F022 /* ItemRow.swift in Sources */,
@@ -1732,9 +1746,14 @@
 			baseConfigurationReference = B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1743,6 +1762,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1753,9 +1774,14 @@
 			baseConfigurationReference = 8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1765,6 +1791,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
+				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1922,9 +1949,14 @@
 			baseConfigurationReference = A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1934,6 +1966,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED";
+				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

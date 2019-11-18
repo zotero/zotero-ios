@@ -123,11 +123,16 @@ extension AppDelegate: UIApplicationDelegate {
             PSPDFKit.setLicenseKey(key)
         }
         #endif
-        self.setupNavigationBarAppearance()
+
         self.setupLogs()
         self.controllers = Controllers()
+        self.controllers.crashReporter.start()
+        self.controllers.crashReporter.processPendingReports()
+
         self.setupObservers()
         self.setupStore()
+
+        self.setupNavigationBarAppearance()
 
         return true
     }
@@ -146,6 +151,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        self.controllers.crashReporter.processPendingReports()
         self.controllers.schemaController.reloadSchemaIfNeeded()
         self.controllers.userControllers?.syncScheduler.requestFullSync()
     }

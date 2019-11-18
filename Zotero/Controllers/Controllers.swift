@@ -20,17 +20,18 @@ class Controllers {
     let schemaController: SchemaController
     let dragDropController: DragDropController
     let itemLocaleController: RItemLocaleController
+    let crashReporter: CrashReporter
 
     var userControllers: UserControllers?
 
     init() {
-        let dragDropController = DragDropController()
         let fileStorage = FileStorageController()
         let secureStorage = KeychainSecureStorage()
         let authToken = ApiConstants.authToken ?? secureStorage.apiToken
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
                                         headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: authToken)
+        let crashReporter = CrashReporter(apiClient: apiClient)
         let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
 
         do {
@@ -38,9 +39,11 @@ class Controllers {
             DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
             try fileStorage.createDictionaries(for: file)
             let dbStorage = RealmDbStorage(url: file.createUrl())
+
             if let userId = ApiConstants.userId {
                 try Controllers.setupDebugDb(in: dbStorage, userId: userId)
             }
+
             self.dbStorage = dbStorage
             self.itemLocaleController = RItemLocaleController(schemaController: schemaController, dbStorage: dbStorage)
         } catch let error {
@@ -51,7 +54,8 @@ class Controllers {
         self.secureStorage = secureStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
-        self.dragDropController = dragDropController
+        self.dragDropController = DragDropController()
+        self.crashReporter = crashReporter
 
         // Not logged in, don't setup user controllers
         if authToken == nil { return }
