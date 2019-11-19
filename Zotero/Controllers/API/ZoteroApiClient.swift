@@ -16,9 +16,6 @@ import RxSwift
 struct ApiConstants {
     static let baseUrlString: String = "https://api.zotero.org/"
     static let version: Int = 3
-
-    static let userId: Int? = 5487222//113123
-    static let authToken: String? = "EG4p735j5tUhixLCtTg37WAs"//"jVvCcLimmkx4SeUD3ET4Xplf"
 }
 
 enum ZoteroApiError: Error {

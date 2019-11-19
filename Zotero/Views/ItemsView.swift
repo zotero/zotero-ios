@@ -195,19 +195,15 @@ fileprivate struct ItemSectionView: View {
     }
 }
 
-#if DEBUG
-
-struct ItemsView_Previews: PreviewProvider {
-    static var previews: some View {
-        let controllers = Controllers()
-        let store = ItemsStore(type: .all,
-                               library: Library(identifier: .custom(.myLibrary), name: "My library",
-                                                metadataEditable: true, filesEditable: true),
-                               dbStorage: controllers.dbStorage,
-                               fileStorage: controllers.fileStorage,
-                               schemaController: controllers.schemaController)
-        return ItemsView().environmentObject(store)
-    }
-}
-
-#endif
+//struct ItemsView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        let controllers = Controllers()
+//        let store = ItemsStore(type: .all,
+//                               library: Library(identifier: .custom(.myLibrary), name: "My library",
+//                                                metadataEditable: true, filesEditable: true),
+//                               dbStorage: controllers.dbStorage,
+//                               fileStorage: controllers.fileStorage,
+//                               schemaController: controllers.schemaController)
+//        return ItemsView().environmentObject(store)
+//    }
+//}

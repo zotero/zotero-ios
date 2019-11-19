@@ -49,6 +49,6 @@ struct TagPickerView_Previews: PreviewProvider {
         TagPickerView(saveAction: { _ in }, dismiss: {})
             .environmentObject(TagPickerStore(libraryId: .custom(.myLibrary),
                                               selectedTags: [],
-                                              dbStorage: Controllers().dbStorage))
+                                              dbStorage: Controllers().userControllers!.dbStorage))
     }
 }

@@ -2556,6 +2556,8 @@ fileprivate class TestFileStorage: FileStorage {
     }
 
     func createDictionaries(for file: File) throws {}
+
+    func move(from fromFile: File, to toFile: File) throws {}
 }
 
 extension InputStream {

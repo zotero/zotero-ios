@@ -11,9 +11,7 @@ import SwiftUI
 struct OnboardingView: View {
     private let spacing: CGFloat = 20
 
-    @Environment(\.dbStorage) private var dbStorage: DbStorage
     @Environment(\.apiClient) private var apiClient: ApiClient
-    @Environment(\.secureStorage) private var secureStorage: SecureStorage
 
     var body: some View {
         NavigationView {
@@ -38,9 +36,7 @@ struct OnboardingView: View {
     }
 
     private var loginStore: LoginStore {
-        return LoginStore(apiClient: self.apiClient,
-                          secureStorage: self.secureStorage,
-                          dbStorage: self.dbStorage)
+        return LoginStore(apiClient: self.apiClient)
     }
 }
 

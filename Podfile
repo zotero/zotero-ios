@@ -4,8 +4,8 @@ target 'Zotero' do
     use_frameworks!
 
     pod 'Alamofire', '4.8.0'
-    pod 'KeychainSwift', '17.0.0'
-    pod 'RealmSwift', '3.20.0'
+    pod 'KeychainSwift', '18.0.0'
+    pod 'RealmSwift', '4.1.1'
     pod 'RxAlamofire', '5.1.0'
     pod 'RxSwift', '5.0.1'
     pod 'RxSwiftExt', '5.1.1'

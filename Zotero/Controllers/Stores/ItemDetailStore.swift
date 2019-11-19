@@ -311,7 +311,6 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        let userId: Int
         let libraryId: LibraryIdentifier
         let metadataEditable: Bool
         let filesEditable: Bool
@@ -329,14 +328,13 @@ class ItemDetailStore: ObservableObject {
         fileprivate var library: SyncController.Library {
             switch self.libraryId {
             case .custom(let type):
-                return .user(self.userId, type)
+                return .user(Defaults.shared.userId, type)
             case .group(let id):
                 return .group(id)
             }
         }
 
-        init(userId: Int, type: DetailType, data: Data, error: Error? = nil) {
-            self.userId = userId
+        init(type: DetailType, data: Data, error: Error? = nil) {
             self.type = type
             self.data = data
             self.downloadProgress = [:]
@@ -362,9 +360,8 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        init(userId: Int, type: DetailType, error: Error) {
-            self.init(userId: userId,
-                      type: type,
+        init(type: DetailType, error: Error) {
+            self.init(type: type,
                       data: Data(title: "", type: "", localizedType: "",
                                  creators: [:], creatorIds: [],
                                  fields: [:], fieldIds: [],
@@ -397,11 +394,9 @@ class ItemDetailStore: ObservableObject {
                                                       schemaController: schemaController,
                                                       fileStorage: fileStorage)
             data.recalculateMaxTitleWidth()
-            let userId = Defaults.shared.userId
-            self.state = State(userId: userId, type: type, data: data)
+            self.state = State(type: type, data: data)
         } catch let error {
-            self.state = State(userId: 0,
-                               type: type,
+            self.state = State(type: type,
                                error: (error as? Error) ?? .typeNotSupported)
         }
     }

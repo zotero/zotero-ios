@@ -104,6 +104,6 @@ struct CollectionEditView_Previews: PreviewProvider {
                                                                      name: "My Librrary",
                                                                      metadataEditable: true,
                                                                      filesEditable: true),
-                                                      dbStorage: Controllers().dbStorage))
+                                                   dbStorage: Controllers().userControllers!.dbStorage))
     }
 }

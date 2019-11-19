@@ -57,7 +57,7 @@ struct LibrariesView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             LibrariesView(pushCollectionsView: { _ in })
-                .environmentObject(LibrariesStore(dbStorage: Controllers().dbStorage))
+                .environmentObject(LibrariesStore(dbStorage: Controllers().userControllers!.dbStorage))
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

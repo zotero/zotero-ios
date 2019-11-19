@@ -6,10 +6,10 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import UIKit
 
 import CocoaLumberjack
-import RxSwift
 import SwiftUI
 
 #if PDFENABLED
@@ -17,36 +17,23 @@ import PSPDFKit
 #endif
 
 class AppDelegate: UIResponder {
-
-    private let disposeBag: DisposeBag = DisposeBag()
-
     var window: UIWindow?
     var controllers: Controllers!
-    private var store: AppStore!
-    private var didPresentInitialScreen = false
+    private var sessionCancellable: AnyCancellable?
 
     // MARK: - Actions
 
-    private func update(to state: AppState) {
-        switch state {
-        case .onboarding:
+    private func showMainScreen(isLogged: Bool, animated: Bool) {
+        if !isLogged {
             let view = OnboardingView()
-                            .environment(\.dbStorage, self.controllers.dbStorage)
                             .environment(\.apiClient, self.controllers.apiClient)
-                            .environment(\.secureStorage, self.controllers.secureStorage)
-            self.show(viewController: UIHostingController(rootView: view), animated: true)
-        case .main:
+            self.show(viewController: UIHostingController(rootView: view), animated: animated)
+        } else {
             let controller = MainViewController(controllers: self.controllers)
-            self.show(viewController: controller)
+            self.show(viewController: controller, animated: animated)
 
             self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)
-            if self.didPresentInitialScreen {
-                // request will be sent in didBecomeActive, this should be called only after login
-                self.controllers.userControllers?.syncScheduler.requestFullSync()
-            }
         }
-
-        self.didPresentInitialScreen = true
     }
 
     private func show(viewController: UIViewController?, animated: Bool = false) {
@@ -65,34 +52,15 @@ class AppDelegate: UIResponder {
         }
     }
 
-    private func sessionChanged(to userId: Int?) {
-        // This needs to be called before store change, because we need to have userControllers instance initialized
-        // so that we can assign presenting controller for conflicts in store update(to:).
-        self.controllers.sessionChanged(userId: userId)
-        self.store.handle(action: .change((userId != nil) ? .main : .onboarding))
-    }
-
     // MARK: - Setups
 
-    private func setupStore() {
-        self.store = AppStore(apiClient: self.controllers.apiClient,
-                              secureStorage: self.controllers.secureStorage)
-        self.store.state.asObservable()
-                        .observeOn(MainScheduler.instance)
-                        .subscribe(onNext: { [weak self] state in
-                            self?.update(to: state)
-                        })
-                        .disposed(by: self.disposeBag)
-
-    }
-
     private func setupObservers() {
-        NotificationCenter.default.rx.notification(.sessionChanged)
-                                     .observeOn(MainScheduler.instance)
-                                     .subscribe(onNext: { [weak self] notification in
-                                         self?.sessionChanged(to: (notification.object as? Int))
-                                     })
-                                     .disposed(by: self.disposeBag)
+        self.sessionCancellable = self.controllers.sessionController.$isLoggedIn
+                                                                    .receive(on: DispatchQueue.main)
+                                                                    .dropFirst()
+                                                                    .sink { [weak self] isLoggedIn in
+                                                                        self?.showMainScreen(isLogged: isLoggedIn, animated: true)
+                                                                    }
     }
 
     private func setupLogs() {
@@ -129,16 +97,17 @@ extension AppDelegate: UIApplicationDelegate {
         self.controllers.crashReporter.start()
         self.controllers.crashReporter.processPendingReports()
 
-        self.setupObservers()
-        self.setupStore()
-
         self.setupNavigationBarAppearance()
+
+        self.setupObservers()
+
+        self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
 
         return true
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
-        self.controllers.itemLocaleController.storeLocale()
+        self.controllers.userControllers?.itemLocaleController.storeLocale()
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
@@ -147,7 +116,7 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
-        self.controllers.itemLocaleController.loadLocale()
+        self.controllers.userControllers?.itemLocaleController.loadLocale()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {

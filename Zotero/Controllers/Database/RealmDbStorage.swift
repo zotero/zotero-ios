@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RealmSwift
 
 enum RealmDbError: Error {
@@ -30,6 +31,23 @@ class RealmDbStorage {
         })
 //        config.deleteRealmIfMigrationNeeded = true
         self.init(config: config)
+    }
+
+    func clear() {
+        guard let realmUrl = Realm.Configuration.defaultConfiguration.fileURL else { return }
+
+        let realmUrls = [realmUrl,
+                         realmUrl.appendingPathExtension("lock"),
+                         realmUrl.appendingPathExtension("note"),
+                         realmUrl.appendingPathExtension("management")]
+
+        for url in realmUrls {
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch let error {
+                DDLogError("RealmDbStorage: couldn't delete file at '\(url.absoluteString)' - \(error)")
+            }
+        }
     }
 }
 

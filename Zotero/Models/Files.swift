@@ -44,10 +44,10 @@ struct Files {
                         name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension.lowercased())
     }
 
-    static var dbFile: File {
+    static func dbFile(for userId: Int) -> File {
         return FileData(rootPath: Files.documentsRootPath,
-                        relativeComponents: [],
-                        name: "maindb", ext: "realm")
+                        relativeComponents: ["database"],
+                        name: "maindb_\(userId)", ext: "realm")
     }
 }
 

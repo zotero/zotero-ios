@@ -114,17 +114,21 @@ class ItemsViewController: UIViewController {
     }
 
     private func showItemCreation() {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
         let store = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
                                                     collectionKey: self.store.state.type.collectionKey,
                                                     filesEditable: self.store.state.library.filesEditable),
                                     apiClient: self.controllers.apiClient,
                                     fileStorage: self.controllers.fileStorage,
-                                    dbStorage: self.controllers.dbStorage,
+                                    dbStorage: dbStorage,
                                     schemaController: self.controllers.schemaController)
         self.showItemView(with: store, hidesBackButton: true)
     }
 
     private func showItemDetail(for item: RItem) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
         switch item.rawType {
         case ItemTypes.note:
             if let note = ItemDetailStore.State.Note(item: item) {
@@ -135,15 +139,17 @@ class ItemsViewController: UIViewController {
             let store = ItemDetailStore(type: .preview(item),
                                         apiClient: self.controllers.apiClient,
                                         fileStorage: self.controllers.fileStorage,
-                                        dbStorage: self.controllers.dbStorage,
+                                        dbStorage: dbStorage,
                                         schemaController: self.controllers.schemaController)
             self.showItemView(with: store)
         }
     }
 
     private func showItemView(with store: ItemDetailStore, hidesBackButton: Bool = false) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
         let view = ItemDetailView()
-                        .environment(\.dbStorage, self.controllers.dbStorage)
+                        .environment(\.dbStorage, dbStorage)
                         .environment(\.schemaController, self.controllers.schemaController)
                         .environmentObject(store)
         let controller = UIHostingController(rootView: view)

@@ -38,4 +38,5 @@ protocol DbCoordinator {
 
 protocol DbStorage: class {
     func createCoordinator() throws -> DbCoordinator
+    func clear()
 }

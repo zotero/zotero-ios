@@ -112,8 +112,6 @@ fileprivate extension EditMode {
     }
 }
 
-#if DEBUG
-
 struct ItemDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
@@ -122,7 +120,7 @@ struct ItemDetailView_Previews: PreviewProvider {
                                                     collectionKey: nil, filesEditable: true),
                                     apiClient: controllers.apiClient,
                                     fileStorage: controllers.fileStorage,
-                                    dbStorage: controllers.dbStorage,
+                                    dbStorage: controllers.userControllers!.dbStorage,
                                     schemaController: controllers.schemaController)
 
         return ItemDetailView()
@@ -130,5 +128,3 @@ struct ItemDetailView_Previews: PreviewProvider {
                     .environmentObject(store)
     }
 }
-
-#endif

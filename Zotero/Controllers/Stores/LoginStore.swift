@@ -43,16 +43,12 @@ class LoginStore: ObservableObject {
     }
 
     private let apiClient: ApiClient
-    private let secureStorage: SecureStorage
-    private let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
     @Published var state: State
 
-    init(apiClient: ApiClient, secureStorage: SecureStorage, dbStorage: DbStorage) {
+    init(apiClient: ApiClient) {
         self.apiClient = apiClient
-        self.secureStorage = secureStorage
-        self.dbStorage = dbStorage
         self.disposeBag = DisposeBag()
         self.state = State(username: "", password: "",
                            isLoading: false, error: nil)
@@ -80,22 +76,12 @@ class LoginStore: ObservableObject {
         let request = LoginRequest(username: self.state.username, password: self.state.password)
         self.apiClient.send(request: request)
                       .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                      .flatMap { (response, _) -> Single<(Int, String)> in
-                          Defaults.shared.username = response.name
-                          Defaults.shared.userId = response.userId
-
-                          do {
-                              try self.dbStorage.createCoordinator().perform(request: InitializeCustomLibrariesDbRequest())
-                              return Single.just((response.userId, response.key))
-                          } catch let error {
-                              return Single.error(error)
-                          }
+                      .flatMap { (response, _) -> Single<(Int, String, String)> in
+                          return Single.just((response.userId, response.name, response.key))
                       }
                       .observeOn(MainScheduler.instance)
-                      .subscribe(onSuccess: { (userId, token) in
-                          self.secureStorage.apiToken = token
-                          self.apiClient.set(authToken: token)
-                          NotificationCenter.default.post(name: .sessionChanged, object: userId)
+                      .subscribe(onSuccess: { (userId, username, token) in
+                          NotificationCenter.default.post(name: .sessionChanged, object: (userId, username, token))
                       }, onError: { error in
                           DDLogError("LoginStore: could not log in - \(error)")
                           self.state.error = .loginFailed

@@ -59,7 +59,7 @@ struct ItemDetailMetadataTitleView_Previews: PreviewProvider {
                                                     filesEditable: true),
                                     apiClient: controllers.apiClient,
                                     fileStorage: controllers.fileStorage,
-                                    dbStorage: controllers.dbStorage,
+                                    dbStorage: controllers.userControllers!.dbStorage,
                                     schemaController: controllers.schemaController)
 
         return List {

@@ -124,16 +124,12 @@ fileprivate struct CollectionRowButton: View {
     }
 }
 
-#if DEBUG
-
-struct CollectionsView_Previews: PreviewProvider {
-    static var previews: some View {
-        let store = CollectionsStore(library: Library(identifier: .custom(.myLibrary), name: "My library",
-                                                      metadataEditable: true, filesEditable: true),
-                                     dbStorage: Controllers().dbStorage)
-        return CollectionsView()
-                    .environmentObject(store)
-    }
-}
-
-#endif
+//struct CollectionsView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        let store = CollectionsStore(library: Library(identifier: .custom(.myLibrary), name: "My library",
+//                                                      metadataEditable: true, filesEditable: true),
+//                                     dbStorage: Controllers().dbStorage)
+//        return CollectionsView()
+//                    .environmentObject(store)
+//    }
+//}
