@@ -155,7 +155,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func presentSettings() {
-        let store = SettingsStore()
+        let store = SettingsStore(sessionController: self.controllers.sessionController)
         let view = SettingsView(closeAction: { [weak self] in
             self?.dismiss(animated: true, completion: nil)
         })

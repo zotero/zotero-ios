@@ -46,7 +46,7 @@ struct LoginView: View {
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let store = LoginStore(apiClient: controllers.apiClient)
+        let store = LoginStore(apiClient: controllers.apiClient, sessionController: controllers.sessionController)
         store.state.isLoading = true
         return LoginView().environmentObject(store)
     }

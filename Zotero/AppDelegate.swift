@@ -27,6 +27,7 @@ class AppDelegate: UIResponder {
         if !isLogged {
             let view = OnboardingView()
                             .environment(\.apiClient, self.controllers.apiClient)
+                            .environment(\.sessionController, self.controllers.sessionController)
             self.show(viewController: UIHostingController(rootView: view), animated: animated)
         } else {
             let controller = MainViewController(controllers: self.controllers)

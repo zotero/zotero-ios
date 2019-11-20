@@ -39,8 +39,4 @@ extension Notification.Name {
     static let splitViewDetailChanged = Notification.Name("org.zotero.SplitViewDetailChanged")
 
     static let showDuplicateCreation = Notification.Name(rawValue: "org.zotero.ShowDuplicateCreation")
-
-    // MARK: - Session management
-
-    static let sessionChanged = Notification.Name(rawValue: "org.zotero.SessionChangedNotification")
 }

@@ -43,33 +43,36 @@ class LoginStore: ObservableObject {
     }
 
     private let apiClient: ApiClient
+    private let sessionController: SessionController
     private let disposeBag: DisposeBag
 
     @Published var state: State
 
-    init(apiClient: ApiClient) {
+    init(apiClient: ApiClient, sessionController: SessionController) {
         self.apiClient = apiClient
+        self.sessionController = sessionController
         self.disposeBag = DisposeBag()
         self.state = State(username: "", password: "",
                            isLoading: false, error: nil)
     }
 
-    private func isValid(username: String, password: String) -> Bool {
+    private func isValid(username: String, password: String) -> Error? {
         if username.isEmpty {
-            self.state.error = .invalidUsername
-            return false
+            return .invalidUsername
         }
 
         if password.isEmpty {
-            self.state.error = .invalidPassword
-            return false
+            return .invalidPassword
         }
 
-        return true
+        return nil
     }
 
     func login() {
-        guard self.isValid(username: self.state.username, password: self.state.password) else { return }
+        if let error = self.isValid(username: self.state.username, password: self.state.password) {
+            self.state.error = error
+            return
+        }
 
         self.state.isLoading = true
 
@@ -80,12 +83,12 @@ class LoginStore: ObservableObject {
                           return Single.just((response.userId, response.name, response.key))
                       }
                       .observeOn(MainScheduler.instance)
-                      .subscribe(onSuccess: { (userId, username, token) in
-                          NotificationCenter.default.post(name: .sessionChanged, object: (userId, username, token))
-                      }, onError: { error in
+                      .subscribe(onSuccess: { [weak self] (userId, username, token) in
+                          self?.sessionController.register(userId: userId, username: username, apiToken: token)
+                      }, onError: { [weak self] error in
                           DDLogError("LoginStore: could not log in - \(error)")
-                          self.state.error = .loginFailed
-                          self.state.isLoading = false
+                          self?.state.error = .loginFailed
+                          self?.state.isLoading = false
                       })
                       .disposed(by: self.disposeBag)
     }

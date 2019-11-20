@@ -12,6 +12,7 @@ struct OnboardingView: View {
     private let spacing: CGFloat = 20
 
     @Environment(\.apiClient) private var apiClient: ApiClient
+    @Environment(\.sessionController) private var sessionController: SessionController
 
     var body: some View {
         NavigationView {
@@ -36,7 +37,7 @@ struct OnboardingView: View {
     }
 
     private var loginStore: LoginStore {
-        return LoginStore(apiClient: self.apiClient)
+        return LoginStore(apiClient: self.apiClient, sessionController: self.sessionController)
     }
 }
 

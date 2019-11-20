@@ -24,6 +24,6 @@ struct SyncSettingsView: View {
 
 struct SyncSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        return SyncSettingsView().environmentObject(SettingsStore())
+        return SyncSettingsView().environmentObject(SettingsStore(sessionController: Controllers().sessionController))
     }
 }

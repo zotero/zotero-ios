@@ -24,11 +24,14 @@ class SettingsStore: ObservableObject {
 
     @Published var state: State
 
-    init() {
+    private let sessionController: SessionController
+
+    init(sessionController: SessionController) {
         self.state = State()
+        self.sessionController = sessionController
     }
 
     func logout() {
-        NotificationCenter.default.post(name: .sessionChanged, object: nil)
+        self.sessionController.reset()
     }
 }

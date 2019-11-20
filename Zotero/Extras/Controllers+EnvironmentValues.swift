@@ -43,6 +43,12 @@ struct SecureStorageEnvironmentKey: EnvironmentKey {
     }
 }
 
+struct SessionControllerEnvironmentKey: EnvironmentKey {
+    static var defaultValue: SessionController {
+        return SessionController(secureStorage: KeychainSecureStorage())
+    }
+}
+
 extension EnvironmentValues {
     var dbStorage: DbStorage {
         get { self[DbStorageEnvironmentKey.self] }
@@ -67,5 +73,10 @@ extension EnvironmentValues {
     var secureStorage: SecureStorage {
         get { self[SecureStorageEnvironmentKey.self] }
         set { self[SecureStorageEnvironmentKey.self] = newValue }
+    }
+
+    var sessionController: SessionController {
+        get { self[SessionControllerEnvironmentKey.self] }
+        set { self[SessionControllerEnvironmentKey.self] = newValue }
     }
 }
