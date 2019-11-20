@@ -52,6 +52,7 @@
 		B32D47452358AF4000DD38BB /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32D47442358AF4000DD38BB /* ItemsViewController.swift */; };
 		B330F108234F80B600D561DC /* ReadItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330F107234F80B600D561DC /* ReadItemDbRequest.swift */; };
 		B3310C562264D06C00E45CD1 /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3310C552264D06C00E45CD1 /* FieldKeys.swift */; };
+		B332B342238597F90010DC86 /* TextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B332B341238597F90010DC86 /* TextView.swift */; };
 		B3341F6D22CA314900580FE8 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */; };
 		B3341F6F22CA580E00580FE8 /* DeleteGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */; };
 		B335E2D622D7436B009F9061 /* Observable+Completable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B335E2D522D7436B009F9061 /* Observable+Completable.swift */; };
@@ -330,6 +331,7 @@
 		B32D47442358AF4000DD38BB /* ItemsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B330F107234F80B600D561DC /* ReadItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadItemDbRequest.swift; sourceTree = "<group>"; };
 		B3310C552264D06C00E45CD1 /* FieldKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldKeys.swift; sourceTree = "<group>"; };
+		B332B341238597F90010DC86 /* TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextView.swift; sourceTree = "<group>"; };
 		B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolutionController.swift; sourceTree = "<group>"; };
 		B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteGroupDbRequest.swift; sourceTree = "<group>"; };
 		B335E2D522D7436B009F9061 /* Observable+Completable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Observable+Completable.swift"; sourceTree = "<group>"; };
@@ -738,6 +740,7 @@
 				B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */,
 				B3E489EF236057A200AF402E /* TypePickerView.swift */,
 				B3CFF1E02362189A003A52FA /* TypePickerRow.swift */,
+				B332B341238597F90010DC86 /* TextView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1447,6 +1450,7 @@
 				B3FD6B35220D814F008D9D74 /* LinksResponse.swift in Sources */,
 				B3E47169224127AC006E3B20 /* MainViewController.swift in Sources */,
 				B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */,
+				B332B342238597F90010DC86 /* TextView.swift in Sources */,
 				B34F9FA92374755E004ED34C /* UpdateItemLocaleDbRequest.swift in Sources */,
 				B3045F5D22C0F5090032C8C8 /* KeyRequest.swift in Sources */,
 				B31CB7B8234B7A3100FB12A0 /* StoreNoteDbRequest.swift in Sources */,

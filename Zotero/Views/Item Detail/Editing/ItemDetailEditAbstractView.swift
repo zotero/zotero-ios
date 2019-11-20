@@ -14,7 +14,7 @@ struct ItemDetailEditAbstractView: View {
     var body: some View {
         VStack(alignment: .leading) {
             ItemDetailMetadataTitleView(title: "Abstract")
-            TextField("Abstract", text: self.$abstract)
+            TextView(text: self.$abstract).frame(height: 160)
         }
     }
 }
