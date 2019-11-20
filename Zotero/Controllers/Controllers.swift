@@ -56,6 +56,9 @@ class Controllers {
 
     private func update(sessionData: SessionData?) {
         self.apiClient.set(authToken: sessionData?.apiToken)
+
+        // Cancel ongoing sync in case of log out
+        self.userControllers?.syncScheduler.cancelSync()
         self.userControllers = sessionData.flatMap { UserControllers(userId: $0.userId, controllers: self) }
         // Full syncs are enqueued after login or when the app becomes active. So here this needs to be called only after successful login
         // (it gets called in AppDelegate after becoming active). If we called it in UserControllers.performInitialActions()
