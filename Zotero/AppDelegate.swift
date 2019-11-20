@@ -38,19 +38,13 @@ class AppDelegate: UIResponder {
     }
 
     private func show(viewController: UIViewController?, animated: Bool = false) {
-        let frame = UIScreen.main.bounds
-        self.window = UIWindow(frame: frame)
-        self.window?.makeKeyAndVisible()
+        guard let window = self.window else { return }
 
-        if !animated {
-            self.window?.rootViewController = viewController
-            return
-        }
+        window.rootViewController = viewController
 
-        viewController?.view.frame = frame
-        UIView.animate(withDuration: 0.2) {
-            self.window?.rootViewController = viewController
-        }
+        guard animated else { return }
+
+        UIView.transition(with: window, duration: 0.2, options: .transitionCrossDissolve, animations: {}, completion: { _ in })
     }
 
     // MARK: - Setups
@@ -98,9 +92,11 @@ extension AppDelegate: UIApplicationDelegate {
         self.controllers.crashReporter.start()
         self.controllers.crashReporter.processPendingReports()
 
-        self.setupNavigationBarAppearance()
-
         self.setupObservers()
+
+        self.window = UIWindow(frame: UIScreen.main.bounds)
+        self.window?.makeKeyAndVisible()
+        self.setupNavigationBarAppearance()
 
         self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
 
