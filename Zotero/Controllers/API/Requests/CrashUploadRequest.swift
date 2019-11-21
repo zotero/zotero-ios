@@ -8,12 +8,24 @@
 
 import Foundation
 
-struct CrashUploadRequest: ApiUploadRequest {
-    let url: URL = URL(string: "")!
+struct CrashUploadRequest: ApiRequest {
+    var endpoint: ApiEndpoint {
+        return .other(URL(string: "")!)
+    }
 
-    var httpMethod: ApiHttpMethod { return .post }
+    var httpMethod: ApiHttpMethod {
+        return .post
+    }
 
     var headers: [String : String]? {
         return nil
+    }
+
+    var parameters: [String : Any]? {
+        return nil
+    }
+
+    var encoding: ApiParameterEncoding {
+        return .url
     }
 }

@@ -73,13 +73,13 @@ class ZoteroApiClient: ApiClient {
                               .asSingle()
     }
 
-    func send(dataRequest: ApiRequest) -> Single<(Data, [AnyHashable : Any])> {
-        let convertible = Convertible(request: dataRequest, baseUrl: self.url,
+    func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)> {
+        let convertible = Convertible(request: request, baseUrl: self.url,
                                       token: self.token, headers: self.defaultHeaders)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseDataWithResponseError()
-                              .log(request: dataRequest, convertible: convertible)
+                              .log(request: request, convertible: convertible)
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
                                   return Observable.just((data, response.allHeaderFields))
@@ -98,29 +98,33 @@ class ZoteroApiClient: ApiClient {
                               }
     }
 
-    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
+    func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
         return Single.create { [weak self] subscriber in
-                                     guard let `self` = self else {
-                                         subscriber(.error(ZoteroApiError.expired))
-                                         return Disposables.create()
-                                     }
+            guard let `self` = self else {
+                subscriber(.error(ZoteroApiError.expired))
+                return Disposables.create()
+            }
 
-                                     let method = HTTPMethod(rawValue: request.httpMethod.rawValue)!
-                                     self.manager.upload(multipartFormData: multipartFormData,
-                                                         to: request.url,
-                                                         method: method,
-                                                         headers: request.headers,
-                                                         encodingCompletion: { result in
-                                         switch result {
-                                         case .success(let request, _, _):
-                                             subscriber(.success(request))
-                                         case .failure(let error):
-                                             subscriber(.error(error))
-                                         }
-                                     })
 
-                                     return Disposables.create()
-                                 }
+            let convertible = Convertible(request: request, baseUrl: self.url,
+                                          token: self.token, headers: self.defaultHeaders)
+
+            let method = HTTPMethod(rawValue: request.httpMethod.rawValue)!
+            self.manager.upload(multipartFormData: multipartFormData,
+                                to: convertible,
+                                method: method,
+                                headers: request.headers,
+                                encodingCompletion: { result in
+                switch result {
+                case .success(let request, _, _):
+                    subscriber(.success(request))
+                case .failure(let error):
+                    subscriber(.error(error))
+                }
+            })
+
+            return Disposables.create()
+        }
     }
 }
 
@@ -133,7 +137,12 @@ struct Convertible {
     private let headers: [String: String]
 
     init(request: ApiRequest, baseUrl: URL, token: String?, headers: [String: String]) {
-        self.url = baseUrl.appendingPathComponent(request.path)
+        switch request.endpoint {
+        case .zotero(let path):
+            self.url = baseUrl.appendingPathComponent(path)
+        case .other(let url):
+            self.url = url
+        }
         self.token = token
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
@@ -160,6 +169,12 @@ extension Convertible: URLRequestConvertible {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         return try self.encoding.encode(request as URLRequestConvertible, with: self.parameters)
+    }
+}
+
+extension Convertible: URLConvertible {
+    func asURL() throws -> URL {
+        return self.url
     }
 }
 

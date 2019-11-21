@@ -13,8 +13,8 @@ struct FileRequest: ApiDownloadRequest {
     let key: String
     let destination: File
 
-    var path: String {
-        return "\(self.library.apiPath)/items/\(self.key)/file"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "\(self.library.apiPath)/items/\(self.key)/file")
     }
 
     var httpMethod: ApiHttpMethod {

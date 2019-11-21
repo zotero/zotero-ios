@@ -8,10 +8,24 @@
 
 import Foundation
 
-struct AttachmentUploadRequest: ApiUploadRequest {
+struct AttachmentUploadRequest: ApiRequest {
     let url: URL
 
-    var httpMethod: ApiHttpMethod { return .post }
+    var endpoint: ApiEndpoint {
+        return .other(self.url)
+    }
+
+    var httpMethod: ApiHttpMethod {
+        return .post
+    }
+
+    var parameters: [String : Any]? {
+        return nil
+    }
+
+    var encoding: ApiParameterEncoding {
+        return .url
+    }
 
     var headers: [String : String]? {
         return ["If-None-Match": "*"]

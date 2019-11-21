@@ -16,8 +16,8 @@ struct AuthorizeUploadRequest: ApiRequest {
     let md5: String
     let mtime: Int
 
-    var path: String {
-        return "\(self.libraryType.apiPath)/items/\(self.key)/file"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "\(self.libraryType.apiPath)/items/\(self.key)/file")
     }
 
     var httpMethod: ApiHttpMethod {

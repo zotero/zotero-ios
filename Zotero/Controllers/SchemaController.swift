@@ -73,7 +73,7 @@ class SchemaController {
 
     func createFetchSchemaCompletable() -> Completable {
         let etag = self.userDefaults.string(forKey: self.defaultsEtagKey)
-        return self.apiClient.send(dataRequest: SchemaRequest(etag: etag))
+        return self.apiClient.send(request: SchemaRequest(etag: etag))
                              .do(onSuccess: { [weak self] (data, headers) in
                                  guard let `self` = self else { return }
                                  self.reloadSchema(from: data)

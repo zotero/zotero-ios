@@ -14,8 +14,8 @@ struct UpdatesRequest: ApiRequest {
     let params: [[String: Any]]
     let version: Int
 
-    var path: String {
-        return "\(self.libraryType.apiPath)/\(self.objectType.apiPath)"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "\(self.libraryType.apiPath)/\(self.objectType.apiPath)")
     }
 
     var httpMethod: ApiHttpMethod {

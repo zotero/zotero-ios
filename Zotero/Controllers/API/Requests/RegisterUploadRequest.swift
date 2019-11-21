@@ -13,8 +13,8 @@ struct RegisterUploadRequest: ApiRequest {
     let key: String
     let uploadKey: String
 
-    var path: String {
-        return "\(self.libraryType.apiPath)/items/\(self.key)/file"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "\(self.libraryType.apiPath)/items/\(self.key)/file")
     }
 
     var httpMethod: ApiHttpMethod {

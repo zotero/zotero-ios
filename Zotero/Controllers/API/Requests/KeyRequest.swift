@@ -9,8 +9,8 @@
 import Foundation
 
 struct KeyRequest: ApiRequest {
-    var path: String {
-        return "keys/current"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "keys/current")
     }
 
     var httpMethod: ApiHttpMethod {

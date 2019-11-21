@@ -28,8 +28,13 @@ enum ApiHttpMethod: String {
     case connect = "CONNECT"
 }
 
+enum ApiEndpoint {
+    case zotero(path: String)
+    case other(URL)
+}
+
 protocol ApiRequest {
-    var path: String { get }
+    var endpoint: ApiEndpoint { get }
     var httpMethod: ApiHttpMethod { get }
     var parameters: [String: Any]? { get }
     var encoding: ApiParameterEncoding { get }
@@ -44,19 +49,13 @@ protocol ApiDownloadRequest: ApiRequest {
     var downloadUrl: URL { get }
 }
 
-protocol ApiUploadRequest {
-    var url: URL { get }
-    var httpMethod: ApiHttpMethod { get }
-    var headers: [String: String]? { get }
-}
-
 typealias RequestCompletion<Response> = (Swift.Result<Response, Error>) -> Void
 typealias ResponseHeaders = [AnyHashable: Any]
 
 protocol ApiClient: class {
     func set(authToken: String?)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
-    func send(dataRequest: ApiRequest) -> Single<(Data, ResponseHeaders)>
+    func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)>
     func download(request: ApiDownloadRequest) -> Observable<RxProgress>
-    func upload(request: ApiUploadRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
+    func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
 }

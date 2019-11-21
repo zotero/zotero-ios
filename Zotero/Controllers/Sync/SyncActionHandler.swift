@@ -214,7 +214,7 @@ class SyncActionHandlerController {
 
 extension SyncActionHandlerController: SyncActionHandler {
     func loadPermissions() -> Single<(KeyResponse, Bool)> {
-        return self.apiClient.send(dataRequest: KeyRequest())
+        return self.apiClient.send(request: KeyRequest())
                              .flatMap { (response, headers) in
                                  do {
                                      // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
@@ -280,7 +280,7 @@ extension SyncActionHandlerController: SyncActionHandler {
         let request = VersionsRequest<Int>(libraryType: library, objectType: .group, version: nil)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
-                             .flatMap { (response, headers) in
+                             .flatMap { (response: [Int: Int], headers) in
                                  let newVersion = SyncActionHandlerController.lastVersion(from: headers)
                                  let request =  SyncGroupVersionsDbRequest(versions: response, syncAll: syncAll)
                                  do {
@@ -300,7 +300,7 @@ extension SyncActionHandlerController: SyncActionHandler {
         let request = VersionsRequest<String>(libraryType: library, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
-                             .flatMap { (response, headers) -> Single<(Int, [Any])> in
+                             .flatMap { (response: [String: Int], headers) -> Single<(Int, [Any])> in
                                   let newVersion = SyncActionHandlerController.lastVersion(from: headers)
 
                                   if let current = currentVersion, newVersion != current {
@@ -334,7 +334,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                               version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])> {
         let keysString = keys.map({ "\($0)" }).joined(separator: ",")
         let request = ObjectsRequest(libraryType: library, objectType: object, keys: keysString)
-        return self.apiClient.send(dataRequest: request)
+        return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap({ [weak self] (response, headers) -> Single<([String], [Error], [StoreItemsError])> in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
@@ -448,7 +448,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                               current currentVersion: Int?) -> Single<[String]> {
         return self.apiClient.send(request: DeletionsRequest(libraryType: library, version: sinceVersion))
                              .observeOn(self.scheduler)
-                             .flatMap { [weak self] (response, headers) in
+                             .flatMap { [weak self] (response: DeletionsResponse, headers) in
                                  let newVersion = SyncActionHandlerController.lastVersion(from: headers)
 
                                  if let version = currentVersion, version != newVersion {
@@ -473,7 +473,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                              since version: Int?) -> Single<(Bool, Int)> {
         return self.apiClient.send(request: SettingsRequest(libraryType: library, version: version))
                              .observeOn(self.scheduler)
-                             .flatMap({ [weak self] (response, headers) in
+                             .flatMap({ [weak self] (response: SettingsResponse, headers) in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
 
                                  let newVersion = SyncActionHandlerController.lastVersion(from: headers)
@@ -497,7 +497,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
                       parameters: [[String : Any]]) -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters, version: version)
-        return self.apiClient.send(dataRequest: request)
+        return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap({ (response, headers) -> Single<UpdatesResponse> in
                                  do {
@@ -602,7 +602,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                 let request = AuthorizeUploadRequest(libraryType: library, key: key,
                                                                      filename: filename, filesize: filesize,
                                                                      md5: md5, mtime: mtime)
-                                return self.apiClient.send(dataRequest: request)
+                                return self.apiClient.send(request: request)
                                                      .flatMap({ (data, _) -> Single<AuthorizeUploadResponse> in
                                                         do {
                                                             let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
@@ -650,7 +650,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      let request = RegisterUploadRequest(libraryType: library,
                                                                          key: key,
                                                                          uploadKey: uploadKey)
-                                     return self.apiClient.send(dataRequest: request).flatMap({ Single.just(.success($0)) })
+                                     return self.apiClient.send(request: request).flatMap({ Single.just(.success($0)) })
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }
@@ -697,7 +697,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int> {
         let request = SubmitDeletionsRequest(libraryType: library, objectType: object, keys: keys, version: version)
-        return self.apiClient.send(dataRequest: request)
+        return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap({ response -> Single<Int> in
                                 let newVersion = SyncActionHandlerController.lastVersion(from: response.1)

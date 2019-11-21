@@ -11,8 +11,8 @@ import Foundation
 struct SchemaRequest: ApiRequest {
     let etag: String?
 
-    var path: String {
-        return "schema"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "schema")
     }
 
     var httpMethod: ApiHttpMethod {
