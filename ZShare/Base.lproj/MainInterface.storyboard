@@ -22,6 +22,9 @@
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kAJ-Rn-Mki">
+                                <rect key="frame" x="40" y="478.5" width="334" height="2"/>
+                            </progressView>
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -29,11 +32,15 @@
                             <constraint firstItem="1Xd-am-t49" firstAttribute="trailing" secondItem="qXm-aQ-UuS" secondAttribute="trailing" constant="20" id="182-aS-9Bm"/>
                             <constraint firstItem="qXm-aQ-UuS" firstAttribute="leading" secondItem="1Xd-am-t49" secondAttribute="leading" constant="20" id="CRE-2d-aIy"/>
                             <constraint firstItem="qXm-aQ-UuS" firstAttribute="centerY" secondItem="wbc-yd-nQP" secondAttribute="centerY" id="JL6-pK-Ni9"/>
+                            <constraint firstItem="kAJ-Rn-Mki" firstAttribute="leading" secondItem="wbc-yd-nQP" secondAttribute="leadingMargin" constant="20" id="QBe-Yq-zmG"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="kAJ-Rn-Mki" secondAttribute="trailing" constant="20" id="QaF-lh-8D4"/>
+                            <constraint firstItem="kAJ-Rn-Mki" firstAttribute="top" secondItem="qXm-aQ-UuS" secondAttribute="bottom" constant="20" id="vZH-7W-dIC"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="1Xd-am-t49"/>
                     </view>
                     <connections>
                         <outlet property="label" destination="qXm-aQ-UuS" id="aPM-MB-Kch"/>
+                        <outlet property="progressBar" destination="kAJ-Rn-Mki" id="deB-Nx-XPx"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="CEy-Cv-SGf" userLabel="First Responder" sceneMemberID="firstResponder"/>

@@ -10,14 +10,20 @@ import MobileCoreServices
 import Social
 import UIKit
 
+import RxSwift
+
 class ShareViewController: UIViewController {
     @IBOutlet private weak var label: UILabel!
+    @IBOutlet private weak var progressBar: UIProgressView!
 
     private let apiClient: ApiClient
+    private let disposeBag: DisposeBag
 
     required init?(coder: NSCoder) {
         self.apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
                                          headers: ["Zotero-API-Version": ApiConstants.version.description])
+        self.disposeBag = DisposeBag()
+
         super.init(coder: coder)
     }
 
@@ -25,7 +31,23 @@ class ShareViewController: UIViewController {
         super.viewDidLoad()
 
         self.loadWebData { [weak self] url, title in
-            self?.label.text = "\(title) - \(url)"
+            guard let `self` = self,
+                  let url = URL(string: url) else { return }
+
+            self.label.text = "\(title) - \(url.absoluteString)"
+
+            let file = Files.sharedItem(key: KeyGenerator.newKey, ext: "pdf")
+            let request = FileDownloadRequest(url: url, downloadUrl: file.createUrl())
+            self.apiClient.download(request: request)
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] progress in
+                              self?.progressBar.progress = progress.completed
+                          }, onError: { error in
+                              // TODO: - Show error
+                          }, onCompleted: {
+                              self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+                          })
+                          .disposed(by: self.disposeBag)
         }
     }
 
@@ -41,7 +63,7 @@ class ShareViewController: UIViewController {
             guard let scriptData = item as? [String: Any],
                   let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else { return }
             let title = (data["title"] as? String) ?? ""
-            let url = (data["url"] as? String) ?? ""
+            let url = "https://bitcoin.org/bitcoin.pdf"//(data["url"] as? String) ?? ""
 
             DispatchQueue.main.async {
                 completion(url, title)

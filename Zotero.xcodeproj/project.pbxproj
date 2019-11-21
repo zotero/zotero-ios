@@ -42,7 +42,14 @@
 		B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
 		B311B3302386B16700BCF592 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
 		B311B3312386B19700BCF592 /* ObservableRequestExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E6CB8225DE84B0001B93A /* ObservableRequestExtensions.swift */; };
-		B311B3362386B30A00BCF592 /* RemoteDownloadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3352386B30A00BCF592 /* RemoteDownloadRequest.swift */; };
+		B311B3362386B30A00BCF592 /* FileDownloadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */; };
+		B311B33B2386E72300BCF592 /* Files+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B33A2386E72300BCF592 /* Files+Extras.swift */; };
+		B311B33E2386E77000BCF592 /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6689220CB413009E7A8F /* FileManager+Utils.swift */; };
+		B311B3412386E81B00BCF592 /* Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668B220CB6CC009E7A8F /* Files.swift */; };
+		B311B3432386EFB600BCF592 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3422386EFB600BCF592 /* File.swift */; };
+		B311B3442386EFBF00BCF592 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3422386EFB600BCF592 /* File.swift */; };
+		B311B3462386F03900BCF592 /* CoordinatedFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3452386F03900BCF592 /* CoordinatedFileStorage.swift */; };
+		B311B3472386F2CE00BCF592 /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920D4237349C400FDD3C2 /* KeyGenerator.swift */; };
 		B312AD1D22428F1400EDD5A4 /* LibraryCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B312AD1322428F1400EDD5A4 /* LibraryCell.xib */; };
 		B312AD1E22428F1400EDD5A4 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312AD1422428F1400EDD5A4 /* TextFieldCell.swift */; };
 		B312AD1F22428F1400EDD5A4 /* CollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312AD1522428F1400EDD5A4 /* CollectionCell.swift */; };
@@ -351,7 +358,10 @@
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B311B32C2386A75500BCF592 /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
-		B311B3352386B30A00BCF592 /* RemoteDownloadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteDownloadRequest.swift; sourceTree = "<group>"; };
+		B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadRequest.swift; sourceTree = "<group>"; };
+		B311B33A2386E72300BCF592 /* Files+Extras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Files+Extras.swift"; sourceTree = "<group>"; };
+		B311B3422386EFB600BCF592 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		B311B3452386F03900BCF592 /* CoordinatedFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinatedFileStorage.swift; sourceTree = "<group>"; };
 		B312AD1322428F1400EDD5A4 /* LibraryCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LibraryCell.xib; sourceTree = "<group>"; };
 		B312AD1422428F1400EDD5A4 /* TextFieldCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
 		B312AD1522428F1400EDD5A4 /* CollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionCell.swift; sourceTree = "<group>"; };
@@ -848,6 +858,7 @@
 			isa = PBXGroup;
 			children = (
 				B30F6687220CB274009E7A8F /* FileStorage.swift */,
+				B311B3452386F03900BCF592 /* CoordinatedFileStorage.swift */,
 			);
 			path = Files;
 			sourceTree = "<group>";
@@ -856,9 +867,9 @@
 			isa = PBXGroup;
 			children = (
 				B311B3342386B2FE00BCF592 /* ApiRequests */,
-				B311B32C2386A75500BCF592 /* ExtensionScript.js */,
 				B311B31E2386A39800BCF592 /* ShareViewController.swift */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
+				B311B32C2386A75500BCF592 /* ExtensionScript.js */,
 				B311B3232386A39800BCF592 /* Info.plist */,
 			);
 			path = ZShare;
@@ -867,7 +878,7 @@
 		B311B3342386B2FE00BCF592 /* ApiRequests */ = {
 			isa = PBXGroup;
 			children = (
-				B311B3352386B30A00BCF592 /* RemoteDownloadRequest.swift */,
+				B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */,
 			);
 			path = ApiRequests;
 			sourceTree = "<group>";
@@ -957,7 +968,9 @@
 			children = (
 				B385E2BF2208920A00DFE361 /* API */,
 				B385E2B32208754700DFE361 /* Database */,
+				B311B3422386EFB600BCF592 /* File.swift */,
 				B30F668B220CB6CC009E7A8F /* Files.swift */,
+				B311B33A2386E72300BCF592 /* Files+Extras.swift */,
 				B3FFDEDA228031AA0009EBBE /* DeletableObject.swift */,
 				B30F6684220CA148009E7A8F /* SyncableObject.swift */,
 				B3AB3C132237BF0100581248 /* UpdatableObject.swift */,
@@ -1558,6 +1571,7 @@
 				B339F0EC2343AE0F00055345 /* ItemDetailMetadataTitleView.swift in Sources */,
 				B3EAB8DE23030D2800C2C75B /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B38C9673223FDC0000343F8F /* CollectionEditStore.swift in Sources */,
+				B311B3462386F03900BCF592 /* CoordinatedFileStorage.swift in Sources */,
 				B36795ED22077CCD003D0471 /* LoginRequest.swift in Sources */,
 				B3F3D92D234E294400F641EA /* ItemsSortType.swift in Sources */,
 				B339F0F22343AE0F00055345 /* ItemDetailEditingView.swift in Sources */,
@@ -1583,6 +1597,7 @@
 				B332B342238597F90010DC86 /* TextView.swift in Sources */,
 				B34F9FA92374755E004ED34C /* UpdateItemLocaleDbRequest.swift in Sources */,
 				B3045F5D22C0F5090032C8C8 /* KeyRequest.swift in Sources */,
+				B311B3432386EFB600BCF592 /* File.swift in Sources */,
 				B31CB7B8234B7A3100FB12A0 /* StoreNoteDbRequest.swift in Sources */,
 				B3AC620D233282A60091DD74 /* LibrariesView.swift in Sources */,
 				B353370822CCB620005648CB /* KeyedResponse.swift in Sources */,
@@ -1618,6 +1633,7 @@
 				B3FD6B31220D80EB008D9D74 /* CollectionResponse.swift in Sources */,
 				B3FD6B3F220D9084008D9D74 /* RVersions.swift in Sources */,
 				B39372982229420A008B2A96 /* SyncProgressHandler.swift in Sources */,
+				B311B33B2386E72300BCF592 /* Files+Extras.swift in Sources */,
 				B339F0E62343AE0F00055345 /* ItemDetailSectionView.swift in Sources */,
 				B3045F5F22C0F52C0032C8C8 /* KeyResponse.swift in Sources */,
 				B36795E022074AC9003D0471 /* ZoteroApiClient.swift in Sources */,
@@ -1721,10 +1737,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				B311B3302386B16700BCF592 /* ArrayEncoding.swift in Sources */,
-				B311B3362386B30A00BCF592 /* RemoteDownloadRequest.swift in Sources */,
+				B311B33E2386E77000BCF592 /* FileManager+Utils.swift in Sources */,
+				B311B3412386E81B00BCF592 /* Files.swift in Sources */,
+				B311B3362386B30A00BCF592 /* FileDownloadRequest.swift in Sources */,
 				B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */,
 				B311B3312386B19700BCF592 /* ObservableRequestExtensions.swift in Sources */,
 				B311B31F2386A39800BCF592 /* ShareViewController.swift in Sources */,
+				B311B3472386F2CE00BCF592 /* KeyGenerator.swift in Sources */,
+				B311B3442386EFBF00BCF592 /* File.swift in Sources */,
 				B311B32E2386B15900BCF592 /* ApiClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
