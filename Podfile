@@ -27,4 +27,7 @@ target 'Zotero' do
         # Pods for testing
     end
 
+    target 'ZShare' do
+      inherit! :search_paths
+    end
 end
