@@ -14,8 +14,8 @@ struct SettingsRequest: ApiResponseRequest {
     let libraryType: SyncController.Library
     let version: Int?
 
-    var path: String {
-        return "\(self.libraryType.apiPath)/settings"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "\(self.libraryType.apiPath)/settings")
     }
 
     var httpMethod: ApiHttpMethod {

@@ -13,11 +13,11 @@ struct ObjectsRequest: ApiRequest {
     let objectType: SyncController.Object
     let keys: String
 
-    var path: String {
+    var endpoint: ApiEndpoint {
         if self.objectType == .group {
-            return "groups/\(self.keys)"
+            return .zotero(path: "groups/\(self.keys)")
         }
-        return "\(self.libraryType.apiPath)/\(self.objectType.apiPath)"
+        return .zotero(path: "\(self.libraryType.apiPath)/\(self.objectType.apiPath)")
     }
 
     var httpMethod: ApiHttpMethod {

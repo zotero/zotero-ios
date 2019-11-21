@@ -11,8 +11,8 @@ import Foundation
 struct LoginRequest: ApiResponseRequest {
     typealias Response = LoginResponse
 
-    var path: String {
-        return "keys"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "keys")
     }
 
     var httpMethod: ApiHttpMethod {

@@ -14,8 +14,8 @@ struct DeletionsRequest: ApiResponseRequest {
     let libraryType: SyncController.Library
     let version: Int
 
-    var path: String {
-        return "\(self.libraryType.apiPath)/deleted"
+    var endpoint: ApiEndpoint {
+        return .zotero(path: "\(self.libraryType.apiPath)/deleted")
     }
 
     var httpMethod: ApiHttpMethod {
