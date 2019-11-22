@@ -62,6 +62,10 @@
 		B31CB7B6234B4D9600FB12A0 /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B5234B4D9600FB12A0 /* NoteEditorViewController.swift */; };
 		B31CB7B8234B7A3100FB12A0 /* StoreNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B7234B7A3100FB12A0 /* StoreNoteDbRequest.swift */; };
 		B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
+		B326A074238833F000249D15 /* Convertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A073238833F000249D15 /* Convertible.swift */; };
+		B326A0752388343300249D15 /* Convertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A073238833F000249D15 /* Convertible.swift */; };
+		B326A0772388360700249D15 /* BackgroundApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A0762388360700249D15 /* BackgroundApiClient.swift */; };
+		B326A0792388361900249D15 /* ZoteroBackgroundApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A0782388361900249D15 /* ZoteroBackgroundApiClient.swift */; };
 		B32CD32F221C58DF003F8073 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B32CD309221C58DE003F8073 /* Assets.xcassets */; };
 		B32CD35B221C5A78003F8073 /* ItemDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */; };
 		B32CD363221C73A1003F8073 /* UIView+Nibname.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32CD362221C73A1003F8073 /* UIView+Nibname.swift */; };
@@ -374,6 +378,9 @@
 		B31CB7B5234B4D9600FB12A0 /* NoteEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorViewController.swift; sourceTree = "<group>"; };
 		B31CB7B7234B7A3100FB12A0 /* StoreNoteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreNoteDbRequest.swift; sourceTree = "<group>"; };
 		B323932A2208E0CF00B161B8 /* VersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionsRequest.swift; sourceTree = "<group>"; };
+		B326A073238833F000249D15 /* Convertible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Convertible.swift; sourceTree = "<group>"; };
+		B326A0762388360700249D15 /* BackgroundApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundApiClient.swift; sourceTree = "<group>"; };
+		B326A0782388361900249D15 /* ZoteroBackgroundApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroBackgroundApiClient.swift; sourceTree = "<group>"; };
 		B32CD309221C58DE003F8073 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B32CD35A221C5A78003F8073 /* ItemDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailStore.swift; sourceTree = "<group>"; };
 		B32CD362221C73A1003F8073 /* UIView+Nibname.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Nibname.swift"; sourceTree = "<group>"; };
@@ -851,6 +858,8 @@
 				B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */,
 				B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */,
 				B30E6CB8225DE84B0001B93A /* ObservableRequestExtensions.swift */,
+				B326A0762388360700249D15 /* BackgroundApiClient.swift */,
+				B326A0782388361900249D15 /* ZoteroBackgroundApiClient.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -988,6 +997,7 @@
 				B3F3D92A234E271500F641EA /* SortType.swift */,
 				B3F3D92C234E294400F641EA /* ItemsSortType.swift */,
 				B3E8506C2382FC470077839E /* Defaults.swift */,
+				B326A073238833F000249D15 /* Convertible.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1541,12 +1551,14 @@
 				B3924C4B2249552D009FD068 /* StoreItemDetailChangesDbRequest.swift in Sources */,
 				B38C96A4223FFB2900343F8F /* PerformDeletionsDbRequest.swift in Sources */,
 				B315D3A6236C433C00CA1056 /* DragDropController.swift in Sources */,
+				B326A074238833F000249D15 /* Convertible.swift in Sources */,
 				B372765823268CDD00E2C522 /* TagPickerStore.swift in Sources */,
 				B3727654232689CA00E2C522 /* CollectionTreeBuilder.swift in Sources */,
 				B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */,
 				B339F0F92343B05600055345 /* ItemDetailEditMetadataSectionView.swift in Sources */,
 				B339F0EB2343AE0F00055345 /* ItemDetailNoteSectionView.swift in Sources */,
 				B30F6692220CC033009E7A8F /* RItem.swift in Sources */,
+				B326A0772388360700249D15 /* BackgroundApiClient.swift in Sources */,
 				B34F9FA723746E22004ED34C /* RItemLocaleController.swift in Sources */,
 				B330F108234F80B600D561DC /* ReadItemDbRequest.swift in Sources */,
 				B3E4713E22412693006E3B20 /* Collection.swift in Sources */,
@@ -1698,6 +1710,7 @@
 				B36E58862282D70B0014AC6C /* DeleteObjectsDbRequest.swift in Sources */,
 				B339F0EE2343AE0F00055345 /* ItemDetailAddView.swift in Sources */,
 				B39F2FB6233A80810027EFC3 /* CollectionPickerView.swift in Sources */,
+				B326A0792388361900249D15 /* ZoteroBackgroundApiClient.swift in Sources */,
 				B337AB6722E0CAD90092AC22 /* AuthorizeUploadResponse.swift in Sources */,
 				B38C96A9223FFB5600343F8F /* StoreCollectionDbRequest.swift in Sources */,
 				B339F0D323439F4D00055345 /* ProgressView.swift in Sources */,
@@ -1748,6 +1761,7 @@
 				B311B3472386F2CE00BCF592 /* KeyGenerator.swift in Sources */,
 				B311B3442386EFBF00BCF592 /* File.swift in Sources */,
 				B311B32E2386B15900BCF592 /* ApiClient.swift in Sources */,
+				B326A0752388343300249D15 /* Convertible.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

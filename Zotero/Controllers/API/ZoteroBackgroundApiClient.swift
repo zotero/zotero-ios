@@ -1,8 +1,8 @@
 //
-//  ZoteroApiClient.swift
+//  ZoteroBackgroundApiClient.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 03/02/2019.
+//  Created by Michal Rentka on 22/11/2019.
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
@@ -13,32 +13,20 @@ import CocoaLumberjack
 import RxAlamofire
 import RxSwift
 
-struct ApiConstants {
-    static let baseUrlString: String = "https://api.zotero.org/"
-    static let version: Int = 3
-}
-
-enum ZoteroApiError: Error {
-    case unknown
-    case expired
-    case unknownItemType(String)
-    case jsonDecoding(Error)
-}
-
-class ZoteroApiClient: ApiClient {
+class ZoteroBackgroundApiClient: BackgroundApiClient {
     private let url: URL
     private let manager: SessionManager
 
     private var token: String?
 
-    init(baseUrl: String, headers: [String: String]? = nil) {
+    init(baseUrl: String, identifier: String, headers: [String: String]? = nil) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
 
         self.url = url
 
-        let configuration = URLSessionConfiguration.default
+        let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
         configuration.httpAdditionalHeaders = headers
         configuration.sharedContainerIdentifier = "group.org.zotero.ios.Zotero"
 
@@ -47,38 +35,6 @@ class ZoteroApiClient: ApiClient {
 
     func set(authToken: String?) {
         self.token = authToken
-    }
-
-    func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-        return self.manager.rx.request(urlRequest: convertible)
-                              .validate()
-                              .responseDataWithResponseError()
-                              .log(request: request, convertible: convertible)
-                              .retryIfNeeded()
-                              .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
-                                  do {
-                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self,
-                                                                                     from: data)
-                                      return Observable.just((decodedResponse, response.allHeaderFields))
-                                  } catch let error {
-                                      return Observable.error(error)
-                                  }
-                              }
-                              .asSingle()
-    }
-
-    func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)> {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-        return self.manager.rx.request(urlRequest: convertible)
-                              .validate()
-                              .responseDataWithResponseError()
-                              .log(request: request, convertible: convertible)
-                              .retryIfNeeded()
-                              .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
-                                  return Observable.just((data, response.allHeaderFields))
-                              }
-                              .asSingle()
     }
 
     func download(request: ApiDownloadRequest) -> Observable<RxProgress> {
