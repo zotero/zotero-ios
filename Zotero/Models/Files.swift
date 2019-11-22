@@ -10,7 +10,7 @@ import Foundation
 
 struct Files {
     static var appGroupPath: String = {
-        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "org.zotero.ios.Zotero")?.path ?? Files.documentsRootPath
+        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.org.zotero.ios.Zotero")?.path ?? Files.documentsRootPath
     }()
 
     static var documentsRootPath: String = {
