@@ -540,6 +540,7 @@
 		B3B5514A22E1B0A3001E23CB /* RegisterUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUploadRequest.swift; sourceTree = "<group>"; };
 		B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAttachmentUploadsDbRequest.swift; sourceTree = "<group>"; };
 		B3B5514E22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkAttachmentUploadedDbRequest.swift; sourceTree = "<group>"; };
+		B3B8166723880DC900529605 /* ZShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZShare.entitlements; sourceTree = "<group>"; };
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
@@ -866,6 +867,7 @@
 		B311B31D2386A39800BCF592 /* ZShare */ = {
 			isa = PBXGroup;
 			children = (
+				B3B8166723880DC900529605 /* ZShare.entitlements */,
 				B311B3342386B2FE00BCF592 /* ApiRequests */,
 				B311B31E2386A39800BCF592 /* ShareViewController.swift */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
@@ -2057,6 +2059,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3A209F5A017E002C874ACECE /* Pods-ZShare.debug.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZShare/Info.plist;
@@ -2078,6 +2081,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0CF6A9D22C7893D6D8FEB78C /* Pods-ZShare.debug pdf.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZShare/Info.plist;
@@ -2099,6 +2103,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 32FA43D1B9537A16F460F453 /* Pods-ZShare.release.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZShare/Info.plist;
