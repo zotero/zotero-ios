@@ -27,7 +27,6 @@ enum ZoteroApiError: Error {
 
 class ZoteroApiClient: ApiClient {
     private let url: URL
-    private let defaultHeaders: [String: String]
     private let manager: SessionManager
 
     private var token: String?
@@ -39,14 +38,10 @@ class ZoteroApiClient: ApiClient {
 
         self.url = url
 
-        var allHeaders = SessionManager.defaultHTTPHeaders
-        if let headers = headers {
-            headers.forEach { data in
-                allHeaders[data.key] = data.value
-            }
-        }
-        self.defaultHeaders = allHeaders
-        self.manager = SessionManager()
+        let configuration = URLSessionConfiguration.default
+        configuration.httpAdditionalHeaders = headers
+
+        self.manager = SessionManager(configuration: configuration)
     }
 
     func set(authToken: String?) {
@@ -54,8 +49,7 @@ class ZoteroApiClient: ApiClient {
     }
 
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)> {
-        let convertible = Convertible(request: request, baseUrl: self.url,
-                                      token: self.token, headers: self.defaultHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseDataWithResponseError()
@@ -74,8 +68,7 @@ class ZoteroApiClient: ApiClient {
     }
 
     func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)> {
-        let convertible = Convertible(request: request, baseUrl: self.url,
-                                      token: self.token, headers: self.defaultHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseDataWithResponseError()
@@ -88,8 +81,7 @@ class ZoteroApiClient: ApiClient {
     }
 
     func download(request: ApiDownloadRequest) -> Observable<RxProgress> {
-        let convertible = Convertible(request: request, baseUrl: self.url,
-                                      token: self.token, headers: self.defaultHeaders)
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.DownloadOptions) in
                                   return (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile])
                               }
@@ -106,8 +98,7 @@ class ZoteroApiClient: ApiClient {
             }
 
 
-            let convertible = Convertible(request: request, baseUrl: self.url,
-                                          token: self.token, headers: self.defaultHeaders)
+            let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
 
             let method = HTTPMethod(rawValue: request.httpMethod.rawValue)!
             self.manager.upload(multipartFormData: multipartFormData,
@@ -136,7 +127,7 @@ struct Convertible {
     private let parameters: [String: Any]?
     private let headers: [String: String]
 
-    init(request: ApiRequest, baseUrl: URL, token: String?, headers: [String: String]) {
+    init(request: ApiRequest, baseUrl: URL, token: String?) {
         switch request.endpoint {
         case .zotero(let path):
             self.url = baseUrl.appendingPathComponent(path)
@@ -147,16 +138,7 @@ struct Convertible {
         self.httpMethod = request.httpMethod
         self.encoding = request.encoding.alamoEncoding
         self.parameters = request.parameters
-        self.headers = Convertible.merge(dictionary: headers, with: request.headers)
-    }
-
-    private static func merge(dictionary lDict: [String: String], with rDict: [String: String]?) -> [String: String] {
-        guard let newDict = rDict else { return lDict }
-        var dictionary = lDict
-        newDict.forEach { data in
-            dictionary[data.key] = data.value
-        }
-        return dictionary
+        self.headers = request.headers ?? [:]
     }
 }
 
