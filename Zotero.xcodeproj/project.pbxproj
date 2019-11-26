@@ -62,6 +62,73 @@
 		B31CB7B6234B4D9600FB12A0 /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B5234B4D9600FB12A0 /* NoteEditorViewController.swift */; };
 		B31CB7B8234B7A3100FB12A0 /* StoreNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B7234B7A3100FB12A0 /* StoreNoteDbRequest.swift */; };
 		B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
+		B3266179238D24610050335F /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
+		B326617A238D24640050335F /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
+		B326617B238D24690050335F /* SyncControllerModels+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA63220B2AFD005906C4 /* SyncControllerModels+Extensions.swift */; };
+		B326617C238D24740050335F /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
+		B326617D238D24760050335F /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */; };
+		B326617E238D248F0050335F /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39372972229420A008B2A96 /* SyncProgressHandler.swift */; };
+		B326617F238D24AB0050335F /* Files+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B33A2386E72300BCF592 /* Files+Extras.swift */; };
+		B3266180238D24FC0050335F /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968F223FFB2800343F8F /* StoreItemsDbRequest.swift */; };
+		B3266181238D25100050335F /* KeyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3045F5E22C0F52C0032C8C8 /* KeyResponse.swift */; };
+		B3266182238D251D0050335F /* UpdateVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968C223FFB2800343F8F /* UpdateVersionsDbRequest.swift */; };
+		B3266183238D25250050335F /* ItemResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3A220D8879008D9D74 /* ItemResponse.swift */; };
+		B3266184238D254B0050335F /* Predicates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B363034B224B8285009F839F /* Predicates.swift */; };
+		B3266185238D25B50050335F /* LibraryResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B32220D8130008D9D74 /* LibraryResponse.swift */; };
+		B3266186238D25C20050335F /* SchemaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B40D225B4A8600E28C34 /* SchemaController.swift */; };
+		B3266187238D25F20050335F /* SchemaResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B40B225B3D7200E28C34 /* SchemaResponse.swift */; };
+		B3266188238D261A0050335F /* LinksResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B34220D814F008D9D74 /* LinksResponse.swift */; };
+		B3266189238D26240050335F /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
+		B326618A238D26290050335F /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
+		B326618B238D26580050335F /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920D5237349C400FDD3C2 /* Formatter.swift */; };
+		B326618C238D265E0050335F /* SchemaRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B40F225B5B3D00E28C34 /* SchemaRequest.swift */; };
+		B326618D238D26870050335F /* UpdatableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB3C132237BF0100581248 /* UpdatableObject.swift */; };
+		B326618E238D26940050335F /* FileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6687220CB274009E7A8F /* FileStorage.swift */; };
+		B326618F238D27500050335F /* KeyedResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370722CCB620005648CB /* KeyedResponse.swift */; };
+		B3266190238D27550050335F /* KeyRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3045F5C22C0F5090032C8C8 /* KeyRequest.swift */; };
+		B3266191238D275B0050335F /* ReadLibrariesDataDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9685223FFB2800343F8F /* ReadLibrariesDataDbRequest.swift */; };
+		B3266192238D27610050335F /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
+		B3266193238D276C0050335F /* ObjectsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668D220CBB37009E7A8F /* ObjectsRequest.swift */; };
+		B3266194238D27990050335F /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E8506C2382FC470077839E /* Defaults.swift */; };
+		B3266195238D27A10050335F /* ReadDeletedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FFDEE02280666E0009EBBE /* ReadDeletedObjectsDbRequest.swift */; };
+		B3266196238D27A70050335F /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9681223FFB2800343F8F /* ReadUpdatedObjectUpdateParametersDbRequest.swift */; };
+		B3266197238D27AD0050335F /* SyncVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968A223FFB2800343F8F /* SyncVersionsDbRequest.swift */; };
+		B3266198238D27B70050335F /* GroupResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F42209A07D000B6DE2 /* GroupResponse.swift */; };
+		B3266199238D27BF0050335F /* StoreGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9686223FFB2800343F8F /* StoreGroupDbRequest.swift */; };
+		B326619A238D27CA0050335F /* StoreCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */; };
+		B326619B238D27E80050335F /* CollectionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B30220D80EB008D9D74 /* CollectionResponse.swift */; };
+		B326619C238D27ED0050335F /* DeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA6FF221EDF8F0019A974 /* DeletionsRequest.swift */; };
+		B326619D238D27F20050335F /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
+		B326619E238D27F90050335F /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
+		B326619F238D27FD0050335F /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
+		B32661A0238D287C0050335F /* UserDefault+PropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A56BD2356329C00C33F28 /* UserDefault+PropertyWrapper.swift */; };
+		B32661A1238D349B0050335F /* DeletableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FFDEDA228031AA0009EBBE /* DeletableObject.swift */; };
+		B32661A2238D34AD0050335F /* Array+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5C220AFAB5005906C4 /* Array+Utils.swift */; };
+		B32661A3238D34BB0050335F /* DeletionsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34BA701221EE0F60019A974 /* DeletionsResponse.swift */; };
+		B32661A4238D35130050335F /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
+		B32661A5238D351A0050335F /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9687223FFB2800343F8F /* StoreSearchesDbRequest.swift */; };
+		B32661A6238D353E0050335F /* MarkForResyncDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9683223FFB2800343F8F /* MarkForResyncDbAction.swift */; };
+		B32661A7238D35570050335F /* PerformDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C968D223FFB2800343F8F /* PerformDeletionsDbRequest.swift */; };
+		B32661A8238D35940050335F /* StoreSettingsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9689223FFB2800343F8F /* StoreSettingsDbRequest.swift */; };
+		B32661A9238D359B0050335F /* UpdatesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D912236B4FA0071A763 /* UpdatesResponse.swift */; };
+		B32661AA238D35A50050335F /* CheckItemIsChangedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */; };
+		B32661AB238D35AF0050335F /* AuthorizeUploadResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */; };
+		B32661AC238D382E0050335F /* MarkObjectsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9688223FFB2800343F8F /* MarkObjectsAsSyncedDbRequest.swift */; };
+		B32661AD238D38340050335F /* AuthorizeUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */; };
+		B32661AE238D383E0050335F /* RegisterUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B5514A22E1B0A3001E23CB /* RegisterUploadRequest.swift */; };
+		B32661AF238D384A0050335F /* SubmitDeletionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FFDEE222807CB70009EBBE /* SubmitDeletionsRequest.swift */; };
+		B32661B0238D38530050335F /* DeleteGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3341F6E22CA580E00580FE8 /* DeleteGroupDbRequest.swift */; };
+		B32661B1238D385A0050335F /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B346E47522CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift */; };
+		B32661B2238D38610050335F /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B346E47322CB5F0C00256AC2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */; };
+		B32661B3238D386C0050335F /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
+		B32661B4238D38710050335F /* ReadAttachmentUploadsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B5514C22E2014D001E23CB /* ReadAttachmentUploadsDbRequest.swift */; };
+		B32661B5238D38B00050335F /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E58852282D70B0014AC6C /* DeleteObjectsDbRequest.swift */; };
+		B32661B6238D38B80050335F /* MarkAttachmentUploadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B5514E22E20DA2001E23CB /* MarkAttachmentUploadedDbRequest.swift */; };
+		B32661B7238D38C50050335F /* AttachmentUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */; };
+		B32661B9238D7D670050335F /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32661B8238D7D670050335F /* AppGroup.swift */; };
+		B32661BA238D7D760050335F /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32661B8238D7D670050335F /* AppGroup.swift */; };
+		B32661BB238D80BA0050335F /* DelayIntervals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */; };
+		B32661BC238D8FA10050335F /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F5F892333C9F1002EF78B /* Library.swift */; };
 		B326A074238833F000249D15 /* Convertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A073238833F000249D15 /* Convertible.swift */; };
 		B326A0752388343300249D15 /* Convertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A073238833F000249D15 /* Convertible.swift */; };
 		B326A0772388360700249D15 /* BackgroundApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B326A0762388360700249D15 /* BackgroundApiClient.swift */; };
@@ -175,6 +242,23 @@
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
 		B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C02208921200DFE361 /* LoginResponse.swift */; };
+		B387FF83238C3B8000D85097 /* ExtensionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B387FF82238C3B8000D85097 /* ExtensionStore.swift */; };
+		B387FF84238C3CA700D85097 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4713D22412693006E3B20 /* Collection.swift */; };
+		B387FF85238C47D600D85097 /* RCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668F220CC02D009E7A8F /* RCollection.swift */; };
+		B387FF86238C47E200D85097 /* RItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6691220CC033009E7A8F /* RItem.swift */; };
+		B387FF87238C47E400D85097 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
+		B387FF88238C47E900D85097 /* RCustomLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DF3F82209A282000B6DE2 /* RCustomLibrary.swift */; };
+		B387FF89238C47EF00D85097 /* RVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FD6B3E220D9084008D9D74 /* RVersions.swift */; };
+		B387FF8A238C47F100D85097 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
+		B387FF8B238C47F400D85097 /* RCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31BD20D2224352C00FA8249 /* RCreator.swift */; };
+		B387FF8C238C485000D85097 /* RGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6F652224A90CC001722B4 /* RGroup.swift */; };
+		B387FF8D238C489300D85097 /* CreatorSummaryFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920DA23734C3E00FDD3C2 /* CreatorSummaryFormatter.swift */; };
+		B387FF8E238C489B00D85097 /* ItemTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920D22373497C00FDD3C2 /* ItemTitleFormatter.swift */; };
+		B387FF8F238C48B100D85097 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487302221DBD1500244CCC /* String+Extensions.swift */; };
+		B387FF90238C490100D85097 /* ItemTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D9CC2222FAD849009CEE36 /* ItemTypes.swift */; };
+		B387FF91238C490700D85097 /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3310C552264D06C00E45CD1 /* FieldKeys.swift */; };
+		B387FF92238C57B900D85097 /* LibraryObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3630349224B7D7F009F839F /* LibraryObject.swift */; };
+		B387FF93238C57BF00D85097 /* SyncableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6684220CA148009E7A8F /* SyncableObject.swift */; };
 		B38C9673223FDC0000343F8F /* CollectionEditStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C9672223FDC0000343F8F /* CollectionEditStore.swift */; };
 		B38C9691223FFB2900343F8F /* ReadCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967A223FFB2700343F8F /* ReadCollectionDbRequest.swift */; };
 		B38C9692223FFB2900343F8F /* StoreCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */; };
@@ -378,6 +462,7 @@
 		B31CB7B5234B4D9600FB12A0 /* NoteEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorViewController.swift; sourceTree = "<group>"; };
 		B31CB7B7234B7A3100FB12A0 /* StoreNoteDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreNoteDbRequest.swift; sourceTree = "<group>"; };
 		B323932A2208E0CF00B161B8 /* VersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionsRequest.swift; sourceTree = "<group>"; };
+		B32661B8238D7D670050335F /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		B326A073238833F000249D15 /* Convertible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Convertible.swift; sourceTree = "<group>"; };
 		B326A0762388360700249D15 /* BackgroundApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundApiClient.swift; sourceTree = "<group>"; };
 		B326A0782388361900249D15 /* ZoteroBackgroundApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroBackgroundApiClient.swift; sourceTree = "<group>"; };
@@ -491,6 +576,7 @@
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
 		B385E2C02208921200DFE361 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
+		B387FF82238C3B8000D85097 /* ExtensionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionStore.swift; sourceTree = "<group>"; };
 		B38C9672223FDC0000343F8F /* CollectionEditStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditStore.swift; sourceTree = "<group>"; };
 		B38C967A223FFB2700343F8F /* ReadCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadCollectionDbRequest.swift; sourceTree = "<group>"; };
 		B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreCollectionsDbRequest.swift; sourceTree = "<group>"; };
@@ -876,10 +962,11 @@
 		B311B31D2386A39800BCF592 /* ZShare */ = {
 			isa = PBXGroup;
 			children = (
-				B3B8166723880DC900529605 /* ZShare.entitlements */,
 				B311B3342386B2FE00BCF592 /* ApiRequests */,
+				B387FF82238C3B8000D85097 /* ExtensionStore.swift */,
 				B311B31E2386A39800BCF592 /* ShareViewController.swift */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
+				B3B8166723880DC900529605 /* ZShare.entitlements */,
 				B311B32C2386A75500BCF592 /* ExtensionScript.js */,
 				B311B3232386A39800BCF592 /* Info.plist */,
 			);
@@ -998,6 +1085,7 @@
 				B3F3D92C234E294400F641EA /* ItemsSortType.swift */,
 				B3E8506C2382FC470077839E /* Defaults.swift */,
 				B326A073238833F000249D15 /* Convertible.swift */,
+				B32661B8238D7D670050335F /* AppGroup.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1602,6 +1690,7 @@
 				B308FE25235F37E300A1A59D /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B3AC6209233231AF0091DD74 /* OnboardingButton.swift in Sources */,
 				B3B5514B22E1B0A3001E23CB /* RegisterUploadRequest.swift in Sources */,
+				B32661B9238D7D670050335F /* AppGroup.swift in Sources */,
 				B3FD6B3B220D8879008D9D74 /* ItemResponse.swift in Sources */,
 				B339F0ED2343AE0F00055345 /* ItemDetailView.swift in Sources */,
 				B33744FB232BDAE40082760A /* SafariView.swift in Sources */,
@@ -1751,17 +1840,100 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B387FF87238C47E400D85097 /* RSearch.swift in Sources */,
+				B326619C238D27ED0050335F /* DeletionsRequest.swift in Sources */,
+				B3266194238D27990050335F /* Defaults.swift in Sources */,
+				B3266190238D27550050335F /* KeyRequest.swift in Sources */,
+				B326618E238D26940050335F /* FileStorage.swift in Sources */,
+				B387FF86238C47E200D85097 /* RItem.swift in Sources */,
 				B311B3302386B16700BCF592 /* ArrayEncoding.swift in Sources */,
+				B326617D238D24760050335F /* ConflictResolutionController.swift in Sources */,
+				B387FF89238C47EF00D85097 /* RVersions.swift in Sources */,
+				B32661AE238D383E0050335F /* RegisterUploadRequest.swift in Sources */,
+				B387FF8F238C48B100D85097 /* String+Extensions.swift in Sources */,
+				B326617B238D24690050335F /* SyncControllerModels+Extensions.swift in Sources */,
 				B311B33E2386E77000BCF592 /* FileManager+Utils.swift in Sources */,
+				B32661BC238D8FA10050335F /* Library.swift in Sources */,
+				B32661B2238D38610050335F /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
+				B326618C238D265E0050335F /* SchemaRequest.swift in Sources */,
 				B311B3412386E81B00BCF592 /* Files.swift in Sources */,
+				B326619F238D27FD0050335F /* UpdatesRequest.swift in Sources */,
+				B3266182238D251D0050335F /* UpdateVersionsDbRequest.swift in Sources */,
+				B32661AA238D35A50050335F /* CheckItemIsChangedDbRequest.swift in Sources */,
+				B32661A3238D34BB0050335F /* DeletionsResponse.swift in Sources */,
+				B387FF8E238C489B00D85097 /* ItemTitleFormatter.swift in Sources */,
+				B326619B238D27E80050335F /* CollectionResponse.swift in Sources */,
+				B3266197238D27AD0050335F /* SyncVersionsDbRequest.swift in Sources */,
+				B32661A2238D34AD0050335F /* Array+Utils.swift in Sources */,
 				B311B3362386B30A00BCF592 /* FileDownloadRequest.swift in Sources */,
+				B32661A4238D35130050335F /* SearchesResponse.swift in Sources */,
+				B326617C238D24740050335F /* SyncScheduler.swift in Sources */,
+				B326618F238D27500050335F /* KeyedResponse.swift in Sources */,
+				B387FF8C238C485000D85097 /* RGroup.swift in Sources */,
+				B387FF85238C47D600D85097 /* RCollection.swift in Sources */,
+				B3266184238D254B0050335F /* Predicates.swift in Sources */,
 				B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */,
+				B32661AB238D35AF0050335F /* AuthorizeUploadResponse.swift in Sources */,
+				B387FF90238C490100D85097 /* ItemTypes.swift in Sources */,
+				B32661A1238D349B0050335F /* DeletableObject.swift in Sources */,
+				B32661B5238D38B00050335F /* DeleteObjectsDbRequest.swift in Sources */,
+				B326617F238D24AB0050335F /* Files+Extras.swift in Sources */,
+				B326618B238D26580050335F /* Formatter.swift in Sources */,
+				B32661BB238D80BA0050335F /* DelayIntervals.swift in Sources */,
+				B326617A238D24640050335F /* SyncActionHandler.swift in Sources */,
+				B3266179238D24610050335F /* SyncController.swift in Sources */,
+				B326617E238D248F0050335F /* SyncProgressHandler.swift in Sources */,
+				B387FF92238C57B900D85097 /* LibraryObject.swift in Sources */,
+				B32661B1238D385A0050335F /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
+				B387FF8A238C47F100D85097 /* RTag.swift in Sources */,
+				B32661AF238D384A0050335F /* SubmitDeletionsRequest.swift in Sources */,
+				B3266180238D24FC0050335F /* StoreItemsDbRequest.swift in Sources */,
+				B3266192238D27610050335F /* VersionsRequest.swift in Sources */,
+				B32661B0238D38530050335F /* DeleteGroupDbRequest.swift in Sources */,
+				B32661A6238D353E0050335F /* MarkForResyncDbAction.swift in Sources */,
+				B387FF83238C3B8000D85097 /* ExtensionStore.swift in Sources */,
+				B387FF84238C3CA700D85097 /* Collection.swift in Sources */,
+				B326618A238D26290050335F /* RealmDbStorage.swift in Sources */,
 				B311B3312386B19700BCF592 /* ObservableRequestExtensions.swift in Sources */,
+				B3266185238D25B50050335F /* LibraryResponse.swift in Sources */,
+				B32661B3238D386C0050335F /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B311B31F2386A39800BCF592 /* ShareViewController.swift in Sources */,
+				B387FF88238C47E900D85097 /* RCustomLibrary.swift in Sources */,
+				B3266183238D25250050335F /* ItemResponse.swift in Sources */,
+				B3266199238D27BF0050335F /* StoreGroupDbRequest.swift in Sources */,
+				B3266181238D25100050335F /* KeyResponse.swift in Sources */,
+				B32661B4238D38710050335F /* ReadAttachmentUploadsDbRequest.swift in Sources */,
+				B3266198238D27B70050335F /* GroupResponse.swift in Sources */,
+				B326619D238D27F20050335F /* SettingsResponse.swift in Sources */,
+				B3266191238D275B0050335F /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B311B3472386F2CE00BCF592 /* KeyGenerator.swift in Sources */,
+				B32661A7238D35570050335F /* PerformDeletionsDbRequest.swift in Sources */,
+				B32661A5238D351A0050335F /* StoreSearchesDbRequest.swift in Sources */,
+				B32661BA238D7D760050335F /* AppGroup.swift in Sources */,
+				B387FF91238C490700D85097 /* FieldKeys.swift in Sources */,
+				B326619A238D27CA0050335F /* StoreCollectionsDbRequest.swift in Sources */,
 				B311B3442386EFBF00BCF592 /* File.swift in Sources */,
+				B32661A8238D35940050335F /* StoreSettingsDbRequest.swift in Sources */,
+				B387FF93238C57BF00D85097 /* SyncableObject.swift in Sources */,
+				B387FF8D238C489300D85097 /* CreatorSummaryFormatter.swift in Sources */,
+				B3266189238D26240050335F /* DbStorage.swift in Sources */,
+				B32661AD238D38340050335F /* AuthorizeUploadRequest.swift in Sources */,
+				B3266188238D261A0050335F /* LinksResponse.swift in Sources */,
+				B326619E238D27F90050335F /* SettingsRequest.swift in Sources */,
+				B3266195238D27A10050335F /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B311B32E2386B15900BCF592 /* ApiClient.swift in Sources */,
+				B3266196238D27A70050335F /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */,
+				B32661AC238D382E0050335F /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B326A0752388343300249D15 /* Convertible.swift in Sources */,
+				B32661A9238D359B0050335F /* UpdatesResponse.swift in Sources */,
+				B3266186238D25C20050335F /* SchemaController.swift in Sources */,
+				B3266193238D276C0050335F /* ObjectsRequest.swift in Sources */,
+				B32661B7238D38C50050335F /* AttachmentUploadRequest.swift in Sources */,
+				B32661B6238D38B80050335F /* MarkAttachmentUploadedDbRequest.swift in Sources */,
+				B326618D238D26870050335F /* UpdatableObject.swift in Sources */,
+				B387FF8B238C47F400D85097 /* RCreator.swift in Sources */,
+				B3266187238D25F20050335F /* SchemaResponse.swift in Sources */,
+				B32661A0238D287C0050335F /* UserDefault+PropertyWrapper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

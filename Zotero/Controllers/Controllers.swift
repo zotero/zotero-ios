@@ -32,7 +32,7 @@ class Controllers {
                                         headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let crashReporter = CrashReporter(apiClient: apiClient)
-        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
+        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
 
         self.sessionController = sessionController
         self.apiClient = apiClient

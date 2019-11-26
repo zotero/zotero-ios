@@ -40,7 +40,7 @@ class ZoteroApiClient: ApiClient {
 
         let configuration = URLSessionConfiguration.default
         configuration.httpAdditionalHeaders = headers
-        configuration.sharedContainerIdentifier = "group.org.zotero.ios.Zotero"
+        configuration.sharedContainerIdentifier = AppGroup.identifier
 
         self.manager = SessionManager(configuration: configuration)
     }

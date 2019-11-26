@@ -33,7 +33,7 @@ struct FileStorageEnvironmentKey: EnvironmentKey {
 struct SchemaControllerEnvironmentKey: EnvironmentKey {
     static var defaultValue: SchemaController {
         return SchemaController(apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
-                                userDefaults: UserDefaults.standard)
+                                userDefaults: UserDefaults.zotero)
     }
 }
 

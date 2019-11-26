@@ -8,6 +8,12 @@
 
 import Foundation
 
+extension UserDefaults {
+    static var zotero: UserDefaults {
+        return UserDefaults(suiteName: AppGroup.identifier) ?? UserDefaults.standard
+    }
+}
+
 @propertyWrapper
 struct UserDefault<T> {
     let key: String
@@ -15,11 +21,11 @@ struct UserDefault<T> {
 
     var wrappedValue: T {
         get {
-            return UserDefaults.standard.object(forKey: self.key) as? T ?? self.defaultValue
+            return UserDefaults.zotero.object(forKey: self.key) as? T ?? self.defaultValue
         }
 
         set {
-            UserDefaults.standard.set(newValue, forKey: self.key)
+            UserDefaults.zotero.set(newValue, forKey: self.key)
         }
     }
 }

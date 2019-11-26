@@ -28,7 +28,7 @@ class ZoteroBackgroundApiClient: BackgroundApiClient {
 
         let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
         configuration.httpAdditionalHeaders = headers
-        configuration.sharedContainerIdentifier = "group.org.zotero.ios.Zotero"
+        configuration.sharedContainerIdentifier = AppGroup.identifier
 
         self.manager = SessionManager(configuration: configuration)
     }
