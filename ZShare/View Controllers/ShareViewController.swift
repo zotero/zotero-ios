@@ -8,7 +8,10 @@
 
 import Combine
 import Social
+import SwiftUI
 import UIKit
+
+import CocoaLumberjack
 
 class ShareViewController: UIViewController {
     // Outlets
@@ -20,6 +23,7 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var toolbarLabel: UILabel!
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
     // Variables
+    private var dbStorage: DbStorage!
     private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
     // Constants
@@ -30,14 +34,39 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // Setup UI
         self.setupNavbar()
         self.setupPicker()
+        // Setup controllers
+        self.setupDbStorage()
         self.setupStore()
-
+        // Load initial data
+        self.store.loadCollections()
         self.store.loadDocument()
     }
 
     // MARK: - Actions
+
+    @IBAction private func showCollectionPicker() {
+        let store = AllCollectionPickerStore(dbStorage: self.dbStorage)
+        let view = AllCollectionPickerView { [weak self] collection, library in
+            self?.store.set(collection: collection, library: library)
+            self?.navigationController?.popViewController(animated: true)
+        }
+        .environmentObject(store)
+
+        let controller = UIHostingController(rootView: view)
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func done() {
+        // TODO: - start file upload
+        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
+    @objc private func cancel() {
+        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
 
     private func update(to state: ExtensionStore.State) {
         self.navigationItem.rightBarButtonItem?.isEnabled = state.downloadState == nil
@@ -115,27 +144,21 @@ class ShareViewController: UIViewController {
         }
     }
 
-    @objc private func done() {
-        // TODO: - start file upload
-        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-    }
-
-    @objc private func cancel() {
-        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-    }
-
     // MARK: - Setups
+
+    private func setupDbStorage() {
+        self.dbStorage = RealmDbStorage(url: Files.dbFile(for: Defaults.shared.userId).createUrl())
+    }
 
     private func setupStore() {
         guard let context = self.extensionContext else { return }
 
         let userId = Defaults.shared.userId
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, headers: ["Zotero-API-Version": ApiConstants.version.description])
-        let dbStorage = RealmDbStorage(url: Files.dbFile(for: userId).createUrl())
         let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
         let syncHandler = SyncActionHandlerController(userId: userId,
                                                       apiClient: apiClient,
-                                                      dbStorage: dbStorage,
+                                                      dbStorage: self.dbStorage,
                                                       fileStorage: FileStorageController(),
                                                       schemaController: schemaController,
                                                       syncDelayIntervals: DelayIntervals.sync)

@@ -35,7 +35,6 @@ class TagPickerStore: ObservableObject {
         do {
             let request = ReadTagsDbRequest(libraryId: self.state.libraryId)
             self.state.tags = try self.dbStorage.createCoordinator().perform(request: request)
-            NSLog("TAGS: \(self.state.tags)")
         } catch let error {
             DDLogError("TagPickerStore: can't load tag: \(error)")
             self.state.error = .loadingFailed

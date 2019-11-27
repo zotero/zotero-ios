@@ -120,4 +120,8 @@ class ExtensionStore {
             return Disposables.create()
         }
     }
+
+    func set(collection: Collection, library: Library) {
+        self.state.pickerState = .picked(library, (collection.type.isCustom ? nil : collection))
+    }
 }

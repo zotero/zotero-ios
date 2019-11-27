@@ -34,10 +34,8 @@
 		B30F668E220CBB37009E7A8F /* ObjectsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668D220CBB37009E7A8F /* ObjectsRequest.swift */; };
 		B30F6690220CC02D009E7A8F /* RCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668F220CC02D009E7A8F /* RCollection.swift */; };
 		B30F6692220CC033009E7A8F /* RItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6691220CC033009E7A8F /* RItem.swift */; };
-		B311B31F2386A39800BCF592 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B31E2386A39800BCF592 /* ShareViewController.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		B311B32D2386A75500BCF592 /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B311B32C2386A75500BCF592 /* ExtensionScript.js */; };
 		B311B32E2386B15900BCF592 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59BA2207451B00884C4A /* ApiClient.swift */; };
 		B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
 		B311B3302386B16700BCF592 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
@@ -242,7 +240,6 @@
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
 		B385E2C12208921200DFE361 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2C02208921200DFE361 /* LoginResponse.swift */; };
-		B387FF83238C3B8000D85097 /* ExtensionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B387FF82238C3B8000D85097 /* ExtensionStore.swift */; };
 		B387FF84238C3CA700D85097 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4713D22412693006E3B20 /* Collection.swift */; };
 		B387FF85238C47D600D85097 /* RCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668F220CC02D009E7A8F /* RCollection.swift */; };
 		B387FF86238C47E200D85097 /* RItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6691220CC033009E7A8F /* RItem.swift */; };
@@ -298,6 +295,19 @@
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
+		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
+		B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */; };
+		B3AB38A7238EC02D008A1ABB /* ExtensionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */; };
+		B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */; };
+		B3AB38AD238ECA11008A1ABB /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620E233287530091DD74 /* LibraryRow.swift */; };
+		B3AB38AE238ECA1B008A1ABB /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34111DA230C4EAE0021B2FA /* CollectionRow.swift */; };
+		B3AB38AF238ECB25008A1ABB /* ReadAllCustomLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967C223FFB2700343F8F /* ReadAllCustomLibrariesDbRequest.swift */; };
+		B3AB38B0238ECB2A008A1ABB /* ReadAllGroupsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6F654224A95BF001722B4 /* ReadAllGroupsDbRequest.swift */; };
+		B3AB38B1238ECBD5008A1ABB /* CollectionTreeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3727653232689CA00E2C522 /* CollectionTreeBuilder.swift */; };
+		B3AB38B2238ECC17008A1ABB /* ReadCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38C967D223FFB2800343F8F /* ReadCollectionsDbRequest.swift */; };
+		B3AB38B4238ECC93008A1ABB /* ActivityIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620623322C430091DD74 /* ActivityIndicatorView.swift */; };
+		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
+		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
 		B3AB3C142237BF0100581248 /* UpdatableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB3C132237BF0100581248 /* UpdatableObject.swift */; };
 		B3AC620723322C430091DD74 /* ActivityIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620623322C430091DD74 /* ActivityIndicatorView.swift */; };
 		B3AC6209233231AF0091DD74 /* OnboardingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC6208233231AF0091DD74 /* OnboardingButton.swift */; };
@@ -442,10 +452,8 @@
 		B30F668F220CC02D009E7A8F /* RCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCollection.swift; sourceTree = "<group>"; };
 		B30F6691220CC033009E7A8F /* RItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RItem.swift; sourceTree = "<group>"; };
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		B311B31E2386A39800BCF592 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B311B32C2386A75500BCF592 /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadRequest.swift; sourceTree = "<group>"; };
 		B311B33A2386E72300BCF592 /* Files+Extras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Files+Extras.swift"; sourceTree = "<group>"; };
 		B311B3422386EFB600BCF592 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
@@ -576,7 +584,6 @@
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
 		B385E2C02208921200DFE361 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
-		B387FF82238C3B8000D85097 /* ExtensionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionStore.swift; sourceTree = "<group>"; };
 		B38C9672223FDC0000343F8F /* CollectionEditStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditStore.swift; sourceTree = "<group>"; };
 		B38C967A223FFB2700343F8F /* ReadCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadCollectionDbRequest.swift; sourceTree = "<group>"; };
 		B38C967B223FFB2700343F8F /* StoreCollectionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreCollectionsDbRequest.swift; sourceTree = "<group>"; };
@@ -616,6 +623,12 @@
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
+		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerView.swift; sourceTree = "<group>"; };
+		B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionStore.swift; sourceTree = "<group>"; };
+		B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerStore.swift; sourceTree = "<group>"; };
+		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B3AB3C132237BF0100581248 /* UpdatableObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatableObject.swift; sourceTree = "<group>"; };
 		B3AC620623322C430091DD74 /* ActivityIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIndicatorView.swift; sourceTree = "<group>"; };
 		B3AC6208233231AF0091DD74 /* OnboardingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingButton.swift; sourceTree = "<group>"; };
@@ -962,12 +975,13 @@
 		B311B31D2386A39800BCF592 /* ZShare */ = {
 			isa = PBXGroup;
 			children = (
+				B3AB38B5238ED023008A1ABB /* Assets */,
 				B311B3342386B2FE00BCF592 /* ApiRequests */,
-				B387FF82238C3B8000D85097 /* ExtensionStore.swift */,
-				B311B31E2386A39800BCF592 /* ShareViewController.swift */,
+				B3AB38A3238EC02D008A1ABB /* Stores */,
+				B3AB389F238EC02D008A1ABB /* View Controllers */,
+				B3AB38A1238EC02D008A1ABB /* Views */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
 				B3B8166723880DC900529605 /* ZShare.entitlements */,
-				B311B32C2386A75500BCF592 /* ExtensionScript.js */,
 				B311B3232386A39800BCF592 /* Info.plist */,
 			);
 			path = ZShare;
@@ -1217,6 +1231,40 @@
 			path = Preview;
 			sourceTree = "<group>";
 		};
+		B3AB389F238EC02D008A1ABB /* View Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */,
+			);
+			path = "View Controllers";
+			sourceTree = "<group>";
+		};
+		B3AB38A1238EC02D008A1ABB /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B3AB38A3238EC02D008A1ABB /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */,
+				B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */,
+			);
+			path = Stores;
+			sourceTree = "<group>";
+		};
+		B3AB38B5238ED023008A1ABB /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				B3AB38B6238ED023008A1ABB /* Assets.xcassets */,
+				B3AB38B7238ED023008A1ABB /* ExtensionScript.js */,
+			);
+			path = Assets;
+			sourceTree = "<group>";
+		};
 		B3E14BA32316926100E31ABD /* Item Detail */ = {
 			isa = PBXGroup;
 			children = (
@@ -1423,8 +1471,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
-				B311B32D2386A75500BCF592 /* ExtensionScript.js in Resources */,
+				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1849,7 +1898,10 @@
 				B311B3302386B16700BCF592 /* ArrayEncoding.swift in Sources */,
 				B326617D238D24760050335F /* ConflictResolutionController.swift in Sources */,
 				B387FF89238C47EF00D85097 /* RVersions.swift in Sources */,
+				B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */,
+				B3AB38B4238ECC93008A1ABB /* ActivityIndicatorView.swift in Sources */,
 				B32661AE238D383E0050335F /* RegisterUploadRequest.swift in Sources */,
+				B3AB38A7238EC02D008A1ABB /* ExtensionStore.swift in Sources */,
 				B387FF8F238C48B100D85097 /* String+Extensions.swift in Sources */,
 				B326617B238D24690050335F /* SyncControllerModels+Extensions.swift in Sources */,
 				B311B33E2386E77000BCF592 /* FileManager+Utils.swift in Sources */,
@@ -1867,6 +1919,7 @@
 				B32661A2238D34AD0050335F /* Array+Utils.swift in Sources */,
 				B311B3362386B30A00BCF592 /* FileDownloadRequest.swift in Sources */,
 				B32661A4238D35130050335F /* SearchesResponse.swift in Sources */,
+				B3AB38AD238ECA11008A1ABB /* LibraryRow.swift in Sources */,
 				B326617C238D24740050335F /* SyncScheduler.swift in Sources */,
 				B326618F238D27500050335F /* KeyedResponse.swift in Sources */,
 				B387FF8C238C485000D85097 /* RGroup.swift in Sources */,
@@ -1875,6 +1928,7 @@
 				B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */,
 				B32661AB238D35AF0050335F /* AuthorizeUploadResponse.swift in Sources */,
 				B387FF90238C490100D85097 /* ItemTypes.swift in Sources */,
+				B3AB38AF238ECB25008A1ABB /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
 				B32661A1238D349B0050335F /* DeletableObject.swift in Sources */,
 				B32661B5238D38B00050335F /* DeleteObjectsDbRequest.swift in Sources */,
 				B326617F238D24AB0050335F /* Files+Extras.swift in Sources */,
@@ -1883,22 +1937,25 @@
 				B326617A238D24640050335F /* SyncActionHandler.swift in Sources */,
 				B3266179238D24610050335F /* SyncController.swift in Sources */,
 				B326617E238D248F0050335F /* SyncProgressHandler.swift in Sources */,
+				B3AB38B2238ECC17008A1ABB /* ReadCollectionsDbRequest.swift in Sources */,
 				B387FF92238C57B900D85097 /* LibraryObject.swift in Sources */,
 				B32661B1238D385A0050335F /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B387FF8A238C47F100D85097 /* RTag.swift in Sources */,
 				B32661AF238D384A0050335F /* SubmitDeletionsRequest.swift in Sources */,
 				B3266180238D24FC0050335F /* StoreItemsDbRequest.swift in Sources */,
 				B3266192238D27610050335F /* VersionsRequest.swift in Sources */,
+				B3AB38AE238ECA1B008A1ABB /* CollectionRow.swift in Sources */,
 				B32661B0238D38530050335F /* DeleteGroupDbRequest.swift in Sources */,
 				B32661A6238D353E0050335F /* MarkForResyncDbAction.swift in Sources */,
-				B387FF83238C3B8000D85097 /* ExtensionStore.swift in Sources */,
+				B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */,
 				B387FF84238C3CA700D85097 /* Collection.swift in Sources */,
 				B326618A238D26290050335F /* RealmDbStorage.swift in Sources */,
 				B311B3312386B19700BCF592 /* ObservableRequestExtensions.swift in Sources */,
+				B3AB38B1238ECBD5008A1ABB /* CollectionTreeBuilder.swift in Sources */,
 				B3266185238D25B50050335F /* LibraryResponse.swift in Sources */,
 				B32661B3238D386C0050335F /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
-				B311B31F2386A39800BCF592 /* ShareViewController.swift in Sources */,
 				B387FF88238C47E900D85097 /* RCustomLibrary.swift in Sources */,
+				B3AB38B0238ECB2A008A1ABB /* ReadAllGroupsDbRequest.swift in Sources */,
 				B3266183238D25250050335F /* ItemResponse.swift in Sources */,
 				B3266199238D27BF0050335F /* StoreGroupDbRequest.swift in Sources */,
 				B3266181238D25100050335F /* KeyResponse.swift in Sources */,
@@ -1907,6 +1964,7 @@
 				B326619D238D27F20050335F /* SettingsResponse.swift in Sources */,
 				B3266191238D275B0050335F /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B311B3472386F2CE00BCF592 /* KeyGenerator.swift in Sources */,
+				B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */,
 				B32661A7238D35570050335F /* PerformDeletionsDbRequest.swift in Sources */,
 				B32661A5238D351A0050335F /* StoreSearchesDbRequest.swift in Sources */,
 				B32661BA238D7D760050335F /* AppGroup.swift in Sources */,
