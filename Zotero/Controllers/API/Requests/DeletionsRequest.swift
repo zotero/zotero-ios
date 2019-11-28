@@ -11,11 +11,12 @@ import Foundation
 struct DeletionsRequest: ApiResponseRequest {
     typealias Response = DeletionsResponse
 
-    let libraryType: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let version: Int
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryType.apiPath)/deleted")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/deleted")
     }
 
     var httpMethod: ApiHttpMethod {

@@ -34,12 +34,12 @@ struct LibraryData {
 
     private static func updates(from chunkedParams: [SyncController.Object: [[[String: Any]]]],
                                 version: Int,
-                                library: SyncController.Library) -> [SyncController.WriteBatch] {
+                                libraryId: LibraryIdentifier) -> [SyncController.WriteBatch] {
         var batches: [SyncController.WriteBatch] = []
 
         let appendBatch: (SyncController.Object) -> Void = { object in
             if let params = chunkedParams[object] {
-                batches.append(contentsOf: params.map({ SyncController.WriteBatch(library: library, object: object,
+                batches.append(contentsOf: params.map({ SyncController.WriteBatch(libraryId: libraryId, object: object,
                                                                                   version: version, parameters: $0) }))
             }
         }
@@ -53,12 +53,12 @@ struct LibraryData {
 
     private static func deletions(from chunkedKeys: [SyncController.Object: [[String]]],
                                   version: Int,
-                                  library: SyncController.Library) -> [SyncController.DeleteBatch] {
+                                  libraryId: LibraryIdentifier) -> [SyncController.DeleteBatch] {
         var batches: [SyncController.DeleteBatch] = []
 
         let appendBatch: (SyncController.Object) -> Void = { object in
             if let keys = chunkedKeys[object] {
-                batches.append(contentsOf: keys.map({ SyncController.DeleteBatch(library: library, object: object,
+                batches.append(contentsOf: keys.map({ SyncController.DeleteBatch(libraryId: libraryId, object: object,
                                                                                  version: version, keys: $0) }))
 
             }
@@ -86,9 +86,9 @@ struct LibraryData {
         self.canEditFiles = true
         self.hasUpload = hasUpload
         self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion,
-                                           library: .user(userId, type))
+                                           libraryId: .custom(type))
         self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion,
-                                               library: .user(userId, type))
+                                               libraryId: .custom(type))
     }
 
     init(object: RGroup,
@@ -105,9 +105,9 @@ struct LibraryData {
         self.canEditFiles = object.canEditFiles
         self.hasUpload = hasUpload
         self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion,
-                                           library: .group(object.identifier))
+                                           libraryId: .group(object.identifier))
         self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion,
-                                               library: .group(object.identifier))
+                                               libraryId: .group(object.identifier))
     }
 
     // MARK: - Testing only
@@ -164,30 +164,30 @@ protocol SyncActionHandler: class {
     func loadPermissions() -> Single<(KeyResponse, Bool)> // Key response, Bool indicates whether schema needs an update
     func updateSchema() -> Completable
     func loadLibraryData(for type: SyncController.LibrarySyncType, fetchUpdates: Bool) -> Single<[LibraryData]>
-    func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
+    func synchronizeVersions(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncType: SyncController.SyncType) -> Single<(Int, [Any])>
-    func synchronizeGroupVersions(library: SyncController.Library,
+    func synchronizeGroupVersions(libraryId: LibraryIdentifier, userId: Int,
                                   syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])>
-    func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable
-    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
+    func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: SyncController.Object) -> Completable
+    func fetchAndStoreObjects(with keys: [Any], libraryId: LibraryIdentifier, object: SyncController.Object,
                               version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])>
-    func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable
-    func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Single<[String]>
-    func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
-                             since version: Int?) -> Single<(Bool, Int)>
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String: Any]]) -> Single<(Int, Error?)>
-    func uploadAttachment(for library: SyncController.Library, key: String, file: File,
+    func storeVersion(_ version: Int, for libraryId: LibraryIdentifier, type: UpdateVersionType) -> Completable
+    func synchronizeDeletions(for libraryId: LibraryIdentifier, userId: Int,
+                              since sinceVersion: Int, current currentVersion: Int?) -> Single<[String]>
+    func synchronizeSettings(for libraryId: LibraryIdentifier, userId: Int,
+                             current currentVersion: Int?, since version: Int?) -> Single<(Bool, Int)>
+    func submitUpdate(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
+                      since version: Int, parameters: [[String: Any]]) -> Single<(Int, Error?)>
+    func uploadAttachment(for libraryId: LibraryIdentifier, userId: Int, key: String, file: File,
                           filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>)
-    func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
+    func submitDeletion(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int>
     func deleteGroup(with groupId: Int) -> Completable
     func markGroupAsLocalOnly(with groupId: Int) -> Completable
-    func markChangesAsResolved(in library: SyncController.Library) -> Completable
-    func revertLibraryUpdates(in library: SyncController.Library) -> Single<[SyncController.Object: [String]]>
-    func loadUploadData(in library: SyncController.Library) -> Single<[SyncController.AttachmentUpload]>
+    func markChangesAsResolved(in libraryId: LibraryIdentifier) -> Completable
+    func revertLibraryUpdates(in libraryId: LibraryIdentifier) -> Single<[SyncController.Object: [String]]>
+    func loadUploadData(in libraryId: LibraryIdentifier) -> Single<[SyncController.AttachmentUpload]>
 }
 
 class SyncActionHandlerController {
@@ -251,18 +251,18 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.createSingleDbResponseRequest(request)
     }
 
-    func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
+    func synchronizeVersions(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
                              syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         switch object {
         case .collection:
-            return self.synchronizeVersions(for: RCollection.self, library: library, object: object,
+            return self.synchronizeVersions(for: RCollection.self, libraryId: libraryId, userId: userId, object: object,
                                             since: sinceVersion, current: currentVersion, syncType: syncType)
         case .item, .trash:
-            return self.synchronizeVersions(for: RItem.self, library: library, object: object,
+            return self.synchronizeVersions(for: RItem.self, libraryId: libraryId, userId: userId, object: object,
                                             since: sinceVersion, current: currentVersion, syncType: syncType)
         case .search:
-            return self.synchronizeVersions(for: RSearch.self, library: library, object: object,
+            return self.synchronizeVersions(for: RSearch.self, libraryId: libraryId, userId: userId, object: object,
                                             since: sinceVersion, current: currentVersion, syncType: syncType)
         case .group:
             DDLogError("SyncActionHandler synchronizeVersions(for:object:since:current:syncType:) " +
@@ -274,10 +274,10 @@ extension SyncActionHandlerController: SyncActionHandler {
         }
     }
 
-    func synchronizeGroupVersions(library: SyncController.Library,
+    func synchronizeGroupVersions(libraryId: LibraryIdentifier, userId: Int,
                                   syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])> {
         let syncAll = syncType == .all
-        let request = VersionsRequest<Int>(libraryType: library, objectType: .group, version: nil)
+        let request = VersionsRequest<Int>(libraryId: libraryId, userId: userId, objectType: .group, version: nil)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap { (response: [Int: Int], headers) in
@@ -292,12 +292,12 @@ extension SyncActionHandlerController: SyncActionHandler {
                              }
     }
 
-    private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, library: SyncController.Library,
+    private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, libraryId: LibraryIdentifier, userId: Int,
                                                           object: SyncController.Object, since sinceVersion: Int?,
                                                           current currentVersion: Int?,
                                                           syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         let forcedSinceVersion = syncType == .all ? nil : sinceVersion
-        let request = VersionsRequest<String>(libraryType: library, objectType: object, version: forcedSinceVersion)
+        let request = VersionsRequest<String>(libraryId: libraryId, userId: userId, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap { (response: [String: Int], headers) -> Single<(Int, [Any])> in
@@ -317,7 +317,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                   }
 
                                   let request = SyncVersionsDbRequest<Obj>(versions: response,
-                                                                           libraryId: library.libraryId,
+                                                                           libraryId: libraryId,
                                                                            isTrash: isTrash,
                                                                            syncType: syncType,
                                                                            delayIntervals: self.syncDelayIntervals)
@@ -330,10 +330,10 @@ extension SyncActionHandlerController: SyncActionHandler {
                              }
     }
 
-    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
+    func fetchAndStoreObjects(with keys: [Any], libraryId: LibraryIdentifier, object: SyncController.Object,
                               version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])> {
         let keysString = keys.map({ "\($0)" }).joined(separator: ",")
-        let request = ObjectsRequest(libraryType: library, objectType: object, keys: keysString)
+        let request = ObjectsRequest(libraryId: libraryId, userId: userId, objectType: object, keys: keysString)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap({ [weak self] (response, headers) -> Single<([String], [Error], [StoreItemsError])> in
@@ -347,7 +347,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  }
 
                                  do {
-                                     let decodingData = try self.syncToDb(data: response, library: library,
+                                     let decodingData = try self.syncToDb(data: response, libraryId: libraryId,
                                                                           object: object, userId: userId)
                                      return Single.just(decodingData)
                                  } catch let error {
@@ -356,7 +356,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
-    private func syncToDb(data: Data, library: SyncController.Library,
+    private func syncToDb(data: Data, libraryId: LibraryIdentifier,
                           object: SyncController.Object, userId: Int) throws -> ([String], [Error], [StoreItemsError]) {
         let coordinator = try self.dbStorage.createCoordinator()
 
@@ -371,7 +371,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualCodableJsonObjects(from: decoded.collections,
                                                    type: .collection,
-                                                   libraryId: library.libraryId)
+                                                   libraryId: libraryId)
 
             try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded.collections))
             return (decoded.collections.map({ $0.key }), decoded.errors, [])
@@ -382,7 +382,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             let parsedKeys = items.map({ $0.key })
 
             // Cache JSONs locally for later use (in CR)
-            self.storeIndividualItemJsonObjects(from: jsonObject, keys: parsedKeys, libraryId: library.libraryId)
+            self.storeIndividualItemJsonObjects(from: jsonObject, keys: parsedKeys, libraryId: libraryId)
 
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
             let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: items,
@@ -394,7 +394,7 @@ extension SyncActionHandlerController: SyncActionHandler {
             let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
             
             // Cache JSONs locally for later use (in CR)
-            self.storeIndividualCodableJsonObjects(from: decoded.searches, type: .search, libraryId: library.libraryId)
+            self.storeIndividualCodableJsonObjects(from: decoded.searches, type: .search, libraryId: libraryId)
 
             try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
             return (decoded.searches.map({ $0.key }), decoded.errors, [])
@@ -404,11 +404,11 @@ extension SyncActionHandlerController: SyncActionHandler {
         }
     }
 
-    func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable {
-        return self.createCompletableDbRequest(UpdateVersionsDbRequest(version: version, library: library, type: type))
+    func storeVersion(_ version: Int, for libraryId: LibraryIdentifier, type: UpdateVersionType) -> Completable {
+        return self.createCompletableDbRequest(UpdateVersionsDbRequest(version: version, libraryId: libraryId, type: type))
     }
 
-    func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable {
+    func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: SyncController.Object) -> Completable {
         guard !keys.isEmpty else { return Completable.empty() }
 
         return Completable.create(subscribe: { [weak self] subscriber -> Disposable in
@@ -423,13 +423,13 @@ extension SyncActionHandlerController: SyncActionHandler {
                     let request = try MarkGroupForResyncDbAction(identifiers: keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
                 case .collection:
-                    let request = try MarkForResyncDbAction<RCollection>(libraryId: library.libraryId, keys: keys)
+                    let request = try MarkForResyncDbAction<RCollection>(libraryId: libraryId, keys: keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
                 case .item, .trash:
-                    let request = try MarkForResyncDbAction<RItem>(libraryId: library.libraryId, keys: keys)
+                    let request = try MarkForResyncDbAction<RItem>(libraryId: libraryId, keys: keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
                 case .search:
-                    let request = try MarkForResyncDbAction<RSearch>(libraryId: library.libraryId, keys: keys)
+                    let request = try MarkForResyncDbAction<RSearch>(libraryId: libraryId, keys: keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
                 case .tag: // Tags are not synchronized, this should not be called
                     DDLogError("SyncActionHandler: markForResync tried to sync tags")
@@ -444,9 +444,9 @@ extension SyncActionHandlerController: SyncActionHandler {
         }).observeOn(self.scheduler)
     }
 
-    func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Single<[String]> {
-        return self.apiClient.send(request: DeletionsRequest(libraryType: library, version: sinceVersion))
+    func synchronizeDeletions(for libraryId: LibraryIdentifier, userId: Int,
+                              since sinceVersion: Int, current currentVersion: Int?) -> Single<[String]> {
+        return self.apiClient.send(request: DeletionsRequest(libraryId: libraryId, userId: userId, version: sinceVersion))
                              .observeOn(self.scheduler)
                              .flatMap { [weak self] (response: DeletionsResponse, headers) in
                                  let newVersion = SyncActionHandlerController.lastVersion(from: headers)
@@ -458,7 +458,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
 
                                  do {
-                                     let request = PerformDeletionsDbRequest(libraryId: library.libraryId,
+                                     let request = PerformDeletionsDbRequest(libraryId: libraryId,
                                                                              response: response,
                                                                              version: newVersion)
                                      let conflicts = try self.dbStorage.createCoordinator().perform(request: request)
@@ -469,9 +469,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                              }
     }
 
-    func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
-                             since version: Int?) -> Single<(Bool, Int)> {
-        return self.apiClient.send(request: SettingsRequest(libraryType: library, version: version))
+    func synchronizeSettings(for libraryId: LibraryIdentifier, userId: Int,
+                             current currentVersion: Int?, since version: Int?) -> Single<(Bool, Int)> {
+        return self.apiClient.send(request: SettingsRequest(libraryId: libraryId, userId: userId, version: version))
                              .observeOn(self.scheduler)
                              .flatMap({ [weak self] (response: SettingsResponse, headers) in
                                  guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
@@ -484,7 +484,7 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                  do {
                                      let request = StoreSettingsDbRequest(response: response,
-                                                                          libraryId: library.libraryId)
+                                                                          libraryId: libraryId)
                                      try self.dbStorage.createCoordinator().perform(request: request)
                                      let count = response.tagColors?.value.count ?? 0
                                      return Single.just(((count > 0), newVersion))
@@ -494,9 +494,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int,
-                      parameters: [[String : Any]]) -> Single<(Int, Error?)> {
-        let request = UpdatesRequest(libraryType: library, objectType: object, params: parameters, version: version)
+    func submitUpdate(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
+                      since version: Int, parameters: [[String : Any]]) -> Single<(Int, Error?)> {
+        let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: object, params: parameters, version: version)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap({ (response, headers) -> Single<UpdatesResponse> in
@@ -518,7 +518,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      let coordinator = try self.dbStorage.createCoordinator()
                                      switch object {
                                      case .collection:
-                                         let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: library.libraryId,
+                                         let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: libraryId,
                                                                                                  keys: syncedKeys,
                                                                                                  version: response.newVersion)
                                          try coordinator.perform(request: request)
@@ -526,14 +526,14 @@ extension SyncActionHandlerController: SyncActionHandler {
                                         // Cache JSONs locally for later use (in CR)
                                         self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects,
                                                                             keys: nil,
-                                                                            libraryId: library.libraryId)
+                                                                            libraryId: libraryId)
 
-                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: library.libraryId,
+                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: libraryId,
                                                                                           keys: syncedKeys,
                                                                                           version: response.newVersion)
                                         try coordinator.perform(request: request)
                                      case .search:
-                                        let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: library.libraryId,
+                                        let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: libraryId,
                                                                                             keys: syncedKeys,
                                                                                             version: response.newVersion)
                                         try coordinator.perform(request: request)
@@ -542,7 +542,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                      }
 
                                      let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,
-                                                                                 library: library,
+                                                                                 libraryId: libraryId,
                                                                                  type: .object(object))
                                      try coordinator.perform(request: updateVersion)
                                  } catch let error {
@@ -562,9 +562,8 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
-    func uploadAttachment(for library: SyncController.Library, key: String, file: File,
+    func uploadAttachment(for libraryId: LibraryIdentifier, userId: Int, key: String, file: File,
                           filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>) {
-        let libraryId = library.libraryId
         let dbCheck: Single<()> = Single.create { [weak self] subscriber -> Disposable in
                                       guard let `self` = self else {
                                           subscriber(.error(SyncActionHandlerError.expired))
@@ -599,7 +598,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                             }
                             .flatMap { [weak self] filesize -> Single<AuthorizeUploadResponse> in
                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-                                let request = AuthorizeUploadRequest(libraryType: library, key: key,
+                                let request = AuthorizeUploadRequest(libraryId: libraryId, userId: userId, key: key,
                                                                      filename: filename, filesize: filesize,
                                                                      md5: md5, mtime: mtime)
                                 return self.apiClient.send(request: request)
@@ -647,7 +646,8 @@ extension SyncActionHandlerController: SyncActionHandler {
 
                                  switch result {
                                  case .success(_, let uploadKey):
-                                     let request = RegisterUploadRequest(libraryType: library,
+                                     let request = RegisterUploadRequest(libraryId: libraryId,
+                                                                         userId: userId,
                                                                          key: key,
                                                                          uploadKey: uploadKey)
                                      return self.apiClient.send(request: request).flatMap({ Single.just(.success($0)) })
@@ -694,9 +694,9 @@ extension SyncActionHandlerController: SyncActionHandler {
         return (response, progress)
     }
 
-    func submitDeletion(for library: SyncController.Library, object: SyncController.Object,
+    func submitDeletion(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
                         since version: Int, keys: [String]) -> Single<Int> {
-        let request = SubmitDeletionsRequest(libraryType: library, objectType: object, keys: keys, version: version)
+        let request = SubmitDeletionsRequest(libraryId: libraryId, userId: userId, objectType: object, keys: keys, version: version)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
                              .flatMap({ response -> Single<Int> in
@@ -708,22 +708,22 @@ extension SyncActionHandlerController: SyncActionHandler {
                                     switch object {
                                     case .collection:
                                         let request = DeleteObjectsDbRequest<RCollection>(keys: keys,
-                                                                                          libraryId: library.libraryId)
+                                                                                          libraryId: libraryId)
                                         try coordinator.perform(request: request)
                                     case .item, .trash:
                                         let request = DeleteObjectsDbRequest<RItem>(keys: keys,
-                                                                                    libraryId: library.libraryId)
+                                                                                    libraryId: libraryId)
                                         try coordinator.perform(request: request)
                                     case .search:
                                         let request = DeleteObjectsDbRequest<RSearch>(keys: keys,
-                                                                                      libraryId: library.libraryId)
+                                                                                      libraryId: libraryId)
                                         try coordinator.perform(request: request)
                                     case .group, .tag:
                                         fatalError("SyncActionHandler: deleteObjects unsupported object")
                                     }
 
                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion,
-                                                                                library: library,
+                                                                                libraryId: libraryId,
                                                                                 type: .object(object))
                                     try coordinator.perform(request: updateVersion)
                                 } catch let error {
@@ -742,11 +742,11 @@ extension SyncActionHandlerController: SyncActionHandler {
         return self.createCompletableDbRequest(MarkGroupAsLocalOnlyDbRequest(groupId: groupId))
     }
 
-    func markChangesAsResolved(in library: SyncController.Library) -> Completable {
-        return self.createCompletableDbRequest(MarkAllLibraryObjectChangesAsSyncedDbRequest(libraryId: library.libraryId))
+    func markChangesAsResolved(in libraryId: LibraryIdentifier) -> Completable {
+        return self.createCompletableDbRequest(MarkAllLibraryObjectChangesAsSyncedDbRequest(libraryId: libraryId))
     }
 
-    func revertLibraryUpdates(in library: SyncController.Library) -> Single<[SyncController.Object : [String]]> {
+    func revertLibraryUpdates(in libraryId: LibraryIdentifier) -> Single<[SyncController.Object : [String]]> {
         return Single.create { [weak self] subscriber -> Disposable in
             guard let `self` = self else {
                 subscriber(.error(SyncActionHandlerError.expired))
@@ -755,7 +755,6 @@ extension SyncActionHandlerController: SyncActionHandler {
 
             do {
                 let coordinator = try self.dbStorage.createCoordinator()
-                let libraryId = library.libraryId
                 let jsonDecoder = JSONDecoder()
 
                 let collections = try self.loadCachedJsonsForChangedDecodableObjects(of: RCollection.self,
@@ -848,8 +847,8 @@ extension SyncActionHandlerController: SyncActionHandler {
         return (responses, failed)
     }
 
-    func loadUploadData(in library: SyncController.Library) -> Single<[SyncController.AttachmentUpload]> {
-        let request = ReadAttachmentUploadsDbRequest(library: library)
+    func loadUploadData(in libraryId: LibraryIdentifier) -> Single<[SyncController.AttachmentUpload]> {
+        let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId)
         return self.createSingleDbResponseRequest(request)
     }
 

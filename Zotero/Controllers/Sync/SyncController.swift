@@ -51,18 +51,13 @@ final class SyncController: SynchronizationController {
         case specific([LibraryIdentifier])    // Syncs only specific libraries
     }
 
-    enum Library: Equatable {
-        case user(Int, RCustomLibraryType)
-        case group(Int)
-    }
-
     enum Object: CaseIterable, Equatable {
         case group, collection, search, item, trash, tag
     }
 
     struct DownloadBatch: Equatable {
         static let maxCount = 50
-        let library: Library
+        let libraryId: LibraryIdentifier
         let object: Object
         let keys: [Any]
         let version: Int
@@ -77,13 +72,13 @@ final class SyncController: SynchronizationController {
 
     struct WriteBatch: Equatable {
         static let maxCount = 50
-        let library: Library
+        let libraryId: LibraryIdentifier
         let object: Object
         let version: Int
         let parameters: [[String: Any]]
 
         func copy(withVersion version: Int) -> WriteBatch {
-            return WriteBatch(library: self.library, object: self.object, version: version, parameters: self.parameters)
+            return WriteBatch(libraryId: self.libraryId, object: self.object, version: version, parameters: self.parameters)
         }
 
         // We don't really need equatability in this target, we need it for testing. Swift can't automatically
@@ -95,7 +90,7 @@ final class SyncController: SynchronizationController {
     }
 
     struct AttachmentUpload: Equatable {
-        let library: Library
+        let libraryId: LibraryIdentifier
         let key: String
         let filename: String
         let `extension`: String
@@ -103,19 +98,19 @@ final class SyncController: SynchronizationController {
         let mtime: Int
 
         var file: File {
-            return Files.objectFile(for: .item, libraryId: self.library.libraryId, key: self.key, ext: self.extension)
+            return Files.objectFile(for: .item, libraryId: self.libraryId, key: self.key, ext: self.extension)
         }
     }
 
     struct DeleteBatch: Equatable {
         static let maxCount = 50
-        let library: Library
+        let libraryId: LibraryIdentifier
         let object: Object
         let version: Int
         let keys: [String]
 
         func copy(withVersion version: Int) -> DeleteBatch {
-            return DeleteBatch(library: self.library, object: self.object, version: version, keys: self.keys)
+            return DeleteBatch(libraryId: self.libraryId, object: self.object, version: version, keys: self.keys)
         }
 
         // We don't really need equatability in this target, we need it for testing. Swift can't automatically
@@ -146,25 +141,25 @@ final class SyncController: SynchronizationController {
     enum Action: Equatable {
         case loadKeyPermissions                                // Checks current key for access permissions
         case updateSchema                                      // Updates currently cached schema
-        case syncVersions(Library, Object, Int?)               // Fetch versions from API, update DB based on response
+        case syncVersions(LibraryIdentifier, Object, Int?)     // Fetch versions from API, update DB based on response
         case createLibraryActions(LibrarySyncType,             // Loads required libraries, spawn actions for each
                                   CreateLibraryActionsOptions)
-        case createUploadActions(Library)
+        case createUploadActions(LibraryIdentifier)
         case syncBatchToDb(DownloadBatch)                      // Fetch data and store to db
-        case storeVersion(Int, Library, Object)                // Store new version for given library-object
-        case syncDeletions(Library, Int)                       // Synchronize deletions of objects in library
-        case syncSettings(Library, Int?)                       // Synchronize settings for library
-        case storeSettingsVersion(Int, Library)                // Store new version for settings in library
+        case storeVersion(Int, LibraryIdentifier, Object)      // Store new version for given library-object
+        case syncDeletions(LibraryIdentifier, Int)             // Synchronize deletions of objects in library
+        case syncSettings(LibraryIdentifier, Int?)             // Synchronize settings for library
+        case storeSettingsVersion(Int, LibraryIdentifier)      // Store new version for settings in library
         case submitWriteBatch(WriteBatch)                      // Submit local changes to backend
         case uploadAttachment(AttachmentUpload)                // Upload local attachment to backend
         case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
-        case resolveConflict(String, Library)                  // Handle conflict resolution
+        case resolveConflict(String, LibraryIdentifier)        // Handle conflict resolution
         case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely - (Id, Name)
         case resolveGroupMetadataWritePermission(Int, String)  // Resolve when group had metadata editing allowed,
                                                                // but it was disabled and we try to upload new data
-        case revertLibraryToOriginal(Library)                  // Revert all changes to original
+        case revertLibraryToOriginal(LibraryIdentifier)        // Revert all changes to original
                                                                // cached version of this group.
-        case markChangesAsResolved(Library)                    // Local changes couldn't be written remotely, but we
+        case markChangesAsResolved(LibraryIdentifier)          // Local changes couldn't be written remotely, but we
                                                                // want to keep them locally anyway
         case deleteGroup(Int)                                  // Removes group from db
         case markGroupAsLocalOnly(Int)                         // Marks group as local only (not synced with backend)
@@ -263,11 +258,11 @@ final class SyncController: SynchronizationController {
     private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
         switch libraries {
         case .all:
-            return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
+            return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
         case .specific(let identifiers):
             for identifier in identifiers {
                 if case .group = identifier {
-                    return [.loadKeyPermissions, .syncVersions(.user(self.userId, .myLibrary), .group, nil)]
+                    return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
                 }
             }
             return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
@@ -381,16 +376,16 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func removeAllActions(for library: Library) {
+    private func removeAllActions(for libraryId: LibraryIdentifier) {
         while !self.queue.isEmpty {
-            guard self.queue.first?.library == library else { break }
+            guard self.queue.first?.libraryId == libraryId else { break }
             self.queue.removeFirst()
         }
     }
 
-    private func removeAllDownloadActions(for library: Library) {
+    private func removeAllDownloadActions(for libraryId: LibraryIdentifier) {
         while !self.queue.isEmpty {
-            guard let action = self.queue.first, action.library == library else { break }
+            guard let action = self.queue.first, action.libraryId == libraryId else { break }
             switch action {
             case .resolveConflict, .submitDeleteBatch, .submitWriteBatch:
                 continue
@@ -414,7 +409,7 @@ final class SyncController: SynchronizationController {
         }
 
         // Library is changing, reset "lastReturnedVersion"
-        if self.lastReturnedVersion != nil && action.library != self.processingAction?.library {
+        if self.lastReturnedVersion != nil && action.libraryId != self.processingAction?.libraryId {
             self.lastReturnedVersion = nil
         }
 
@@ -438,26 +433,26 @@ final class SyncController: SynchronizationController {
             self.updateSchema()
         case .createLibraryActions(let libraries, let options):
             self.processCreateLibraryActions(for: libraries, options: options)
-        case .createUploadActions(let library):
-            self.processCreateUploadActions(for: library)
-        case .syncVersions(let library, let objectType, let version):
+        case .createUploadActions(let libraryId):
+            self.processCreateUploadActions(for: libraryId)
+        case .syncVersions(let libraryId, let objectType, let version):
             if objectType == .group {
                 self.progressHandler.reportGroupSync()
             } else {
-                self.progressHandler.reportVersionsSync(for: library, object: objectType)
+                self.progressHandler.reportVersionsSync(for: libraryId, object: objectType)
             }
-            self.processSyncVersions(library: library, object: objectType, since: version)
+            self.processSyncVersions(libraryId: libraryId, object: objectType, since: version)
         case .syncBatchToDb(let batch):
             self.processBatchSync(for: batch)
-        case .storeVersion(let version, let library, let object):
-            self.processStoreVersion(library: library, type: .object(object), version: version)
-        case .syncDeletions(let library, let version):
-            self.progressHandler.reportDeletions(for: library)
-            self.processDeletionsSync(library: library, since: version)
-        case .syncSettings(let library, let version):
-            self.processSettingsSync(for: library, since: version)
-        case .storeSettingsVersion(let version, let library):
-            self.processStoreVersion(library: library, type: .settings, version: version)
+        case .storeVersion(let version, let libraryId, let object):
+            self.processStoreVersion(libraryId: libraryId, type: .object(object), version: version)
+        case .syncDeletions(let libraryId, let version):
+            self.progressHandler.reportDeletions(for: libraryId)
+            self.processDeletionsSync(libraryId: libraryId, since: version)
+        case .syncSettings(let libraryId, let version):
+            self.processSettingsSync(for: libraryId, since: version)
+        case .storeSettingsVersion(let version, let libraryId):
+            self.processStoreVersion(libraryId: libraryId, type: .settings, version: version)
         case .submitWriteBatch(let batch):
             self.processSubmitUpdate(for: batch)
         case .uploadAttachment(let upload):
@@ -468,11 +463,11 @@ final class SyncController: SynchronizationController {
             self.deleteGroup(with: groupId)
         case .markGroupAsLocalOnly(let groupId):
             self.markGroupAsLocalOnly(with: groupId)
-        case .revertLibraryToOriginal(let library):
-            self.revertGroupData(in: library)
-        case .markChangesAsResolved(let library):
-            self.markChangesAsResolved(in: library)
-        case .resolveConflict(let key, let library):
+        case .revertLibraryToOriginal(let libraryId):
+            self.revertGroupData(in: libraryId)
+        case .markChangesAsResolved(let libraryId):
+            self.markChangesAsResolved(in: libraryId)
+        case .resolveConflict(let key, let libraryId):
             // TODO: - resolve conflict...
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.processNextAction()
@@ -598,17 +593,17 @@ final class SyncController: SynchronizationController {
                                       creationOptions: CreateLibraryActionsOptions) throws -> ([Action], Int?) {
         var allActions: [Action] = []
         for libraryData in data {
-            let library: Library
+            let libraryId: LibraryIdentifier
             switch libraryData.identifier {
             case .custom(let type):
-                library = .user(self.userId, type)
+                libraryId = .custom(type)
             case .group(let identifier):
-                library = .group(identifier)
+                libraryId = .group(identifier)
             }
 
             switch creationOptions {
             case .forceDownloads:
-                allActions.append(contentsOf: self.createDownloadActions(for: library,
+                allActions.append(contentsOf: self.createDownloadActions(for: libraryId,
                                                                          versions: libraryData.versions))
             case .onlyWrites, .automatic:
                 if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty || libraryData.hasUpload {
@@ -618,7 +613,7 @@ final class SyncController: SynchronizationController {
                         if libraryData.canEditMetadata {
                             allActions.append(contentsOf: self.createUpdateActions(updates: libraryData.updates,
                                                                                    deletions: libraryData.deletions,
-                                                                                   library: library))
+                                                                                   libraryId: libraryId))
                         } else {
                             allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
                         }
@@ -626,10 +621,10 @@ final class SyncController: SynchronizationController {
                         // We can always write to custom libraries
                         allActions.append(contentsOf: self.createUpdateActions(updates: libraryData.updates,
                                                                                deletions: libraryData.deletions,
-                                                                               library: library))
+                                                                               libraryId: libraryId))
                     }
                 } else if creationOptions == .automatic {
-                    allActions.append(contentsOf: self.createDownloadActions(for: library,
+                    allActions.append(contentsOf: self.createDownloadActions(for: libraryId,
                                                                              versions: libraryData.versions))
                 }
             }
@@ -640,7 +635,7 @@ final class SyncController: SynchronizationController {
         return (allActions, index)
     }
 
-    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], library: Library) -> [Action] {
+    private func createUpdateActions(updates: [WriteBatch], deletions: [DeleteBatch], libraryId: LibraryIdentifier) -> [Action] {
         var actions: [Action] = []
         if !updates.isEmpty {
             actions.append(contentsOf: updates.map({ .submitWriteBatch($0) }))
@@ -648,21 +643,21 @@ final class SyncController: SynchronizationController {
         if !deletions.isEmpty {
             actions.append(contentsOf: deletions.map({ .submitDeleteBatch($0) }))
         }
-        actions.append(.createUploadActions(library))
+        actions.append(.createUploadActions(libraryId))
         return actions
     }
 
-    private func createDownloadActions(for library: Library, versions: Versions) -> [Action] {
-        return [.syncSettings(library, versions.settings),
-                .syncVersions(library, .collection, versions.collections),
-                .syncVersions(library, .search, versions.searches),
-                .syncVersions(library, .item, versions.items),
-                .syncVersions(library, .trash, versions.trash),
-                .syncDeletions(library, versions.deletions)]
+    private func createDownloadActions(for libraryId: LibraryIdentifier, versions: Versions) -> [Action] {
+        return [.syncSettings(libraryId, versions.settings),
+                .syncVersions(libraryId, .collection, versions.collections),
+                .syncVersions(libraryId, .search, versions.searches),
+                .syncVersions(libraryId, .item, versions.items),
+                .syncVersions(libraryId, .trash, versions.trash),
+                .syncDeletions(libraryId, versions.deletions)]
     }
 
-    private func processCreateUploadActions(for library: Library) {
-        self.handler.loadUploadData(in: library)
+    private func processCreateUploadActions(for libraryId: LibraryIdentifier) {
+        self.handler.loadUploadData(in: libraryId)
                     .subscribe(onSuccess: { [weak self] uploads in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
                             self?.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
@@ -673,47 +668,47 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func processSyncVersions(library: Library, object: Object, since version: Int?) {
+    private func processSyncVersions(libraryId: LibraryIdentifier, object: Object, since version: Int?) {
+        let userId = self.userId
         switch object {
         case .group:
-            self.handler.synchronizeGroupVersions(library: library, syncType: self.type)
+            self.handler.synchronizeGroupVersions(libraryId: libraryId, userId: userId, syncType: self.type)
                         .subscribe(onSuccess: { [weak self] (version, toUpdate, toRemove) in
                             self?.progressHandler.reportObjectCount(for: .group, count: toUpdate.count)
-                            self?.createBatchedGroupActions(for: library, updateIds: toUpdate,
-                                                            deleteGroups: toRemove, currentVersion: version)
+                            self?.createBatchedGroupActions(updateIds: toUpdate, deleteGroups: toRemove, currentVersion: version)
                         }, onError: { [weak self] error in
-                            self?.finishFailedSyncVersionsAction(library: library, object: object, error: error)
+                            self?.finishFailedSyncVersionsAction(libraryId: libraryId, object: object, error: error)
                         })
                         .disposed(by: self.disposeBag)
         default:
-            self.handler.synchronizeVersions(for: library, object: object, since: version,
+            self.handler.synchronizeVersions(for: libraryId, userId: userId, object: object, since: version,
                                              current: self.lastReturnedVersion, syncType: self.type)
                         .subscribe(onSuccess: { [weak self] (version, toUpdate) in
                             self?.progressHandler.reportObjectCount(for: object, count: toUpdate.count)
-                            self?.createBatchedObjectActions(for: library, object: object,
+                            self?.createBatchedObjectActions(for: libraryId, object: object,
                                                              from: toUpdate, currentVersion: version)
                         }, onError: { [weak self] error in
-                            self?.finishFailedSyncVersionsAction(library: library, object: object, error: error)
+                            self?.finishFailedSyncVersionsAction(libraryId: libraryId, object: object, error: error)
                         })
                         .disposed(by: self.disposeBag)
         }
     }
 
-    private func finishFailedSyncVersionsAction(library: Library, object: Object, error: Error) {
+    private func finishFailedSyncVersionsAction(libraryId: LibraryIdentifier, object: Object, error: Error) {
         if let abortError = self.errorRequiresAbort(error) {
             self.abort(error: abortError)
             return
         }
 
         // 304 is not actually an error, so we need to check before next "if" so that we don't abort on 304 response
-        if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
+        if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
 
         if object == .group {
             self.abort(error: SyncError.groupSyncFailed(error))
             return
         }
 
-        if self.handleVersionMismatchIfNeeded(for: error, library: library) { return }
+        if self.handleVersionMismatchIfNeeded(for: error, libraryId: libraryId) { return }
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
@@ -722,13 +717,13 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createBatchedObjectActions(for library: Library, object: Object,
+    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: Object,
                                             from keys: [Any], currentVersion: Int) {
-        let batches = self.createBatchObjects(for: keys, library: library, object: object, version: currentVersion)
+        let batches = self.createBatchObjects(for: keys, libraryId: libraryId, object: object, version: currentVersion)
 
         var actions: [Action] = batches.map({ .syncBatchToDb($0) })
         if !actions.isEmpty {
-            actions.append(.storeVersion(currentVersion, library, object))
+            actions.append(.storeVersion(currentVersion, libraryId, object))
         }
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -737,8 +732,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createBatchedGroupActions(for library: Library, updateIds: [Int],
-                                           deleteGroups: [(Int, String)], currentVersion: Int) {
+    private func createBatchedGroupActions(updateIds: [Int], deleteGroups: [(Int, String)], currentVersion: Int) {
         var idsToBatch: [Int]
 
         switch self.libraryType {
@@ -757,7 +751,7 @@ final class SyncController: SynchronizationController {
             }
         }
 
-        let batches = idsToBatch.map({ DownloadBatch(library: .user(self.userId, .myLibrary), object: .group,
+        let batches = idsToBatch.map({ DownloadBatch(libraryId: .custom(.myLibrary), object: .group,
                                                      keys: [$0], version: currentVersion) })
         var actions: [Action] = deleteGroups.map({ .resolveDeletedGroup($0.0, $0.1) })
         actions.append(contentsOf: batches.map({ .syncBatchToDb($0) }))
@@ -768,7 +762,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createBatchObjects(for keys: [Any], library: Library,
+    private func createBatchObjects(for keys: [Any], libraryId: LibraryIdentifier,
                                     object: Object, version: Int) -> [DownloadBatch] {
         let maxBatchSize = DownloadBatch.maxCount
         var batchSize = 5
@@ -779,7 +773,7 @@ final class SyncController: SynchronizationController {
             let upperBound = min((keys.count - processed), batchSize) + processed
             let batchKeys = Array(keys[processed..<upperBound])
 
-            batches.append(DownloadBatch(library: library, object: object, keys: batchKeys, version: version))
+            batches.append(DownloadBatch(libraryId: libraryId, object: object, keys: batchKeys, version: version))
 
             processed += batchSize
             if batchSize < maxBatchSize {
@@ -791,19 +785,19 @@ final class SyncController: SynchronizationController {
     }
 
     private func processBatchSync(for batch: DownloadBatch) {
-        self.handler.fetchAndStoreObjects(with: batch.keys, library: batch.library,
+        self.handler.fetchAndStoreObjects(with: batch.keys, libraryId: batch.libraryId,
                                           object: batch.object, version: batch.version, userId: self.userId)
                     .subscribe(onSuccess: { [weak self] decodingData in
-                        self?.finishBatchSyncAction(for: batch.library, object: batch.object,
+                        self?.finishBatchSyncAction(for: batch.libraryId, object: batch.object,
                                                     allKeys: batch.keys, result: .success(decodingData))
                     }, onError: { [weak self] error in
-                        self?.finishBatchSyncAction(for: batch.library, object: batch.object,
+                        self?.finishBatchSyncAction(for: batch.libraryId, object: batch.object,
                                                     allKeys: batch.keys, result: .failure(error))
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishBatchSyncAction(for library: Library, object: Object, allKeys: [Any],
+    private func finishBatchSyncAction(for libraryId: LibraryIdentifier, object: Object, allKeys: [Any],
                                      result: Result<([String], [Error], [StoreItemsError])>) {
         switch result {
         case .success(let ids, let parseErrors, let itemConflicts):
@@ -846,7 +840,7 @@ final class SyncController: SynchronizationController {
             }
 
             if !failedKeys.isEmpty {
-                self.markForResync(keys: Array(failedKeys), library: library, object: object)
+                self.markForResync(keys: Array(failedKeys), libraryId: libraryId, object: object)
             }
 
         case .failure(let error):
@@ -861,12 +855,12 @@ final class SyncController: SynchronizationController {
             }
 
             // We failed to sync the whole batch, mark all for resync and continue with sync
-            self.markForResync(keys: allKeys, library: library, object: object)
+            self.markForResync(keys: allKeys, libraryId: libraryId, object: object)
         }
     }
 
-    private func processStoreVersion(library: Library, type: UpdateVersionType, version: Int) {
-        self.handler.storeVersion(version, for: library, type: type)
+    private func processStoreVersion(libraryId: LibraryIdentifier, type: UpdateVersionType, version: Int) {
+        self.handler.storeVersion(version, for: libraryId, type: type)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
@@ -875,8 +869,8 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func markForResync(keys: [Any], library: Library, object: Object) {
-        self.handler.markForResync(keys: keys, library: library, object: object)
+    private func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: Object) {
+        self.handler.markForResync(keys: keys, libraryId: libraryId, object: object)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
@@ -885,17 +879,17 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func processDeletionsSync(library: Library, since sinceVersion: Int) {
-        self.handler.synchronizeDeletions(for: library, since: sinceVersion, current: self.lastReturnedVersion)
+    private func processDeletionsSync(libraryId: LibraryIdentifier, since sinceVersion: Int) {
+        self.handler.synchronizeDeletions(for: libraryId, userId: self.userId, since: sinceVersion, current: self.lastReturnedVersion)
                     .subscribe(onSuccess: { [weak self] conflicts in
-                        self?.finishDeletionsSync(result: .success(conflicts), library: library)
+                        self?.finishDeletionsSync(result: .success(conflicts), libraryId: libraryId)
                     }, onError: { [weak self] error in
-                        self?.finishDeletionsSync(result: .failure(error), library: library)
+                        self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[String]>, library: Library) {
+    private func finishDeletionsSync(result: Result<[String]>, libraryId: LibraryIdentifier) {
         switch result {
         case .success(let conflicts):
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
@@ -915,7 +909,7 @@ final class SyncController: SynchronizationController {
                 return
             }
 
-            if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
+            if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
 
             self.performOnAccessQueue(flags: .barrier) { [weak self] in
                 self?.nonFatalErrors.append(error)
@@ -924,12 +918,12 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func processSettingsSync(for library: Library, since version: Int?) {
-        self.handler.synchronizeSettings(for: library, current: self.lastReturnedVersion, since: version)
+    private func processSettingsSync(for libraryId: LibraryIdentifier, since version: Int?) {
+        self.handler.synchronizeSettings(for: libraryId, userId: self.userId, current: self.lastReturnedVersion, since: version)
                     .subscribe(onSuccess: { [weak self] (hasNewSettings, version) in
                         self?.performOnAccessQueue(flags: .barrier) { [weak self] in
                             if hasNewSettings {
-                                self?.enqueue(actions: [.storeSettingsVersion(version, library)], at: 0)
+                                self?.enqueue(actions: [.storeSettingsVersion(version, libraryId)], at: 0)
                             } else {
                                 self?.processNextAction()
                             }
@@ -942,7 +936,7 @@ final class SyncController: SynchronizationController {
                             return
                         }
 
-                        if self.handleUnchangedFailureIfNeeded(for: error, library: library) { return }
+                        if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
 
                         self.performOnAccessQueue(flags: .barrier) { [weak self] in
                             self?.nonFatalErrors.append(error)
@@ -953,27 +947,27 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitUpdate(for batch: WriteBatch) {
-        self.handler.submitUpdate(for: batch.library, object: batch.object,
+        self.handler.submitUpdate(for: batch.libraryId, userId: self.userId, object: batch.object,
                                   since: batch.version, parameters: batch.parameters)
                     .subscribe(onSuccess: { [weak self] (version, error) in
                         self?.finishSubmission(error: error, newVersion: version,
-                                               library: batch.library, object: batch.object)
+                                               libraryId: batch.libraryId, object: batch.object)
                     }, onError: { [weak self] error in
                         self?.finishSubmission(error: error, newVersion: batch.version,
-                                               library: batch.library, object: batch.object)
+                                               libraryId: batch.libraryId, object: batch.object)
                     })
                     .disposed(by: self.disposeBag)
     }
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
-        let (response, progress) = self.handler.uploadAttachment(for: upload.library, key: upload.key, file: upload.file,
+        let (response, progress) = self.handler.uploadAttachment(for: upload.libraryId, userId: self.userId, key: upload.key, file: upload.file,
                                                                  filename: upload.filename, md5: upload.md5, mtime: upload.mtime)
         response.subscribe(onCompleted: { [weak self] in
                               self?.finishSubmission(error: nil, newVersion: nil,
-                                                     library: upload.library, object: .item)
+                                                     libraryId: upload.libraryId, object: .item)
                           }, onError: { [weak self] error in
                               self?.finishSubmission(error: error, newVersion: nil,
-                                                     library: upload.library, object: .item)
+                                                     libraryId: upload.libraryId, object: .item)
                           })
                           .disposed(by: self.disposeBag)
 
@@ -981,20 +975,20 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSubmitDeletion(for batch: DeleteBatch) {
-        self.handler.submitDeletion(for: batch.library, object: batch.object, since: batch.version, keys: batch.keys)
+        self.handler.submitDeletion(for: batch.libraryId, userId: self.userId, object: batch.object, since: batch.version, keys: batch.keys)
                     .subscribe(onSuccess: { [weak self] version in
                         self?.finishSubmission(error: nil, newVersion: version,
-                                               library: batch.library, object: batch.object)
+                                               libraryId: batch.libraryId, object: batch.object)
                     }, onError: { [weak self] error in
                         self?.finishSubmission(error: error, newVersion: batch.version,
-                                               library: batch.library, object: batch.object)
+                                               libraryId: batch.libraryId, object: batch.object)
                     })
                     .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int?, library: Library, object: Object) {
+    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: Object) {
         if let error = error {
-            if self.handleUpdatePreconditionFailureIfNeeded(for: error, library: library) {
+            if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
                 return
             }
 
@@ -1035,8 +1029,8 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func markChangesAsResolved(in library: Library) {
-        self.handler.markChangesAsResolved(in: library)
+    private func markChangesAsResolved(in libraryId: LibraryIdentifier) {
+        self.handler.markChangesAsResolved(in: libraryId)
                     .subscribe(onCompleted: { [weak self] in
                         self?.finishCompletableAction(error: nil)
                     }, onError: { [weak self] error in
@@ -1045,8 +1039,8 @@ final class SyncController: SynchronizationController {
                     .disposed(by: self.disposeBag)
     }
 
-    private func revertGroupData(in library: Library) {
-        self.handler.revertLibraryUpdates(in: library)
+    private func revertGroupData(in libraryId: LibraryIdentifier) {
+        self.handler.revertLibraryUpdates(in: libraryId)
                     .subscribe(onSuccess: { [weak self] failures in
                         // TODO: - report failures?
                         self?.finishCompletableAction(error: nil)
@@ -1132,7 +1126,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func handleVersionMismatchIfNeeded(for error: Error, library: Library) -> Bool {
+    private func handleVersionMismatchIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
         guard error.isMismatchError else { return false }
 
         // If the backend received higher version in response than from previous responses,
@@ -1141,13 +1135,13 @@ final class SyncController: SynchronizationController {
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
             self.nonFatalErrors.append(error)
-            self.removeAllActions(for: library)
+            self.removeAllActions(for: libraryId)
             self.processNextAction()
         }
         return true
     }
 
-    private func handleUpdatePreconditionFailureIfNeeded(for error: Error, library: Library) -> Bool {
+    private func handleUpdatePreconditionFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
         guard let type = error.preconditionFailureType else { return false }
 
         // Remote has newer version than local, we need to remove remaining write actions for this library from queue,
@@ -1163,12 +1157,12 @@ final class SyncController: SynchronizationController {
                 guard let `self` = self else { return }
 
                 let delay = self.conflictDelays[min(self.conflictRetries, (self.conflictDelays.count - 1))]
-                let actions: [Action] = [.createLibraryActions(.specific([library.libraryId]), .forceDownloads),
-                                         .createLibraryActions(.specific([library.libraryId]), .onlyWrites)]
+                let actions: [Action] = [.createLibraryActions(.specific([libraryId]), .forceDownloads),
+                                         .createLibraryActions(.specific([libraryId]), .onlyWrites)]
 
                 self.conflictRetries += 1
 
-                self.removeAllActions(for: library)
+                self.removeAllActions(for: libraryId)
                 self.enqueue(actions: actions, at: 0, delay: delay)
             }
         }
@@ -1176,14 +1170,14 @@ final class SyncController: SynchronizationController {
         return true
     }
 
-    private func handleUnchangedFailureIfNeeded(for error: Error, library: Library) -> Bool {
+    private func handleUnchangedFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
         guard error.isUnchangedError else { return false }
 
         // If data is unchanged, we can skip all download actions for this library
 
         self.performOnAccessQueue(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
-            self.removeAllDownloadActions(for: library)
+            self.removeAllDownloadActions(for: libraryId)
             self.processNextAction()
         }
         return true

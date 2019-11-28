@@ -53,8 +53,8 @@ final class SyncProgressHandler {
         self.libraryNames = data
     }
 
-    func reportVersionsSync(for library: SyncController.Library, object: SyncController.Object) {
-        guard object != .group, let name = self.libraryNames?[library.libraryId] else { return }
+    func reportVersionsSync(for libraryId: LibraryIdentifier, object: SyncController.Object) {
+        guard object != .group, let name = self.libraryNames?[libraryId] else { return }
         self.currentLibrary = name
         self.observable.accept(.library(name, object, nil))
     }
@@ -70,8 +70,8 @@ final class SyncProgressHandler {
         self.reportCurrentNumbers(for: object)
     }
 
-    func reportDeletions(for library: SyncController.Library) {
-        guard let name = self.libraryNames?[library.libraryId] else { return }
+    func reportDeletions(for libraryId: LibraryIdentifier) {
+        guard let name = self.libraryNames?[libraryId] else { return }
         self.observable.accept(.deletions(name))
     }
 

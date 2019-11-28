@@ -13,19 +13,19 @@ import RealmSwift
 struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
     typealias Response = [SyncController.AttachmentUpload]
 
-    let library: SyncController.Library
+    let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> [SyncController.AttachmentUpload] {
-        let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.library.libraryId))
+        let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.libraryId))
         let uploads = items.compactMap({ item -> SyncController.AttachmentUpload? in
             guard let contentType = item.fields.filter("key = %@", FieldKeys.contentType).first?.value,
                   let ext = contentType.extensionFromMimeType,
                   let md5 = item.fields.filter("key = %@", FieldKeys.md5).first?.value,
                   let mtime = (item.fields.filter("key = %@", FieldKeys.mtime).first?.value).flatMap(Int.init) else { return nil }
             let filename = item.fields.filter("key = %@", FieldKeys.filename).first?.value ?? ""
-            return SyncController.AttachmentUpload(library: self.library, key: item.key,
+            return SyncController.AttachmentUpload(libraryId: self.libraryId, key: item.key,
                                                    filename: filename, extension: ext,
                                                    md5: md5, mtime: mtime)
         })
