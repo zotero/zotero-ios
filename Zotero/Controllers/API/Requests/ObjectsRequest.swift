@@ -9,7 +9,8 @@
 import Foundation
 
 struct ObjectsRequest: ApiRequest {
-    let libraryType: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let objectType: SyncController.Object
     let keys: String
 
@@ -17,7 +18,7 @@ struct ObjectsRequest: ApiRequest {
         if self.objectType == .group {
             return .zotero(path: "groups/\(self.keys)")
         }
-        return .zotero(path: "\(self.libraryType.apiPath)/\(self.objectType.apiPath)")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/\(self.objectType.apiPath)")
     }
 
     var httpMethod: ApiHttpMethod {

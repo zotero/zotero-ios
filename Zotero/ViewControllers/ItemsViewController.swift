@@ -119,6 +119,7 @@ class ItemsViewController: UIViewController {
         let store = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
                                                     collectionKey: self.store.state.type.collectionKey,
                                                     filesEditable: self.store.state.library.filesEditable),
+                                    userId: Defaults.shared.userId,
                                     apiClient: self.controllers.apiClient,
                                     fileStorage: self.controllers.fileStorage,
                                     dbStorage: dbStorage,
@@ -137,6 +138,7 @@ class ItemsViewController: UIViewController {
 
         default:
             let store = ItemDetailStore(type: .preview(item),
+                                        userId: Defaults.shared.userId,
                                         apiClient: self.controllers.apiClient,
                                         fileStorage: self.controllers.fileStorage,
                                         dbStorage: dbStorage,

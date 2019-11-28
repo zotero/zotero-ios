@@ -205,6 +205,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
             let item = try dbStorage.createCoordinator().perform(request: request)
 
             let store = ItemDetailStore(type: .duplication(item, collectionKey: collectionKey),
+                                        userId: Defaults.shared.userId,
                                         apiClient: self.controllers.apiClient,
                                         fileStorage: self.controllers.fileStorage,
                                         dbStorage: dbStorage,

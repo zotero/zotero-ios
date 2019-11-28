@@ -312,6 +312,7 @@ class ItemDetailStore: ObservableObject {
         }
 
         let libraryId: LibraryIdentifier
+        let userId: Int
         let metadataEditable: Bool
         let filesEditable: Bool
 
@@ -325,16 +326,8 @@ class ItemDetailStore: ObservableObject {
         var presentedNote: Note
         var metadataTitleMaxWidth: CGFloat
 
-        fileprivate var library: SyncController.Library {
-            switch self.libraryId {
-            case .custom(let type):
-                return .user(Defaults.shared.userId, type)
-            case .group(let id):
-                return .group(id)
-            }
-        }
-
-        init(type: DetailType, data: Data, error: Error? = nil) {
+        init(type: DetailType, userId: Int, data: Data, error: Error? = nil) {
+            self.userId = userId
             self.type = type
             self.data = data
             self.downloadProgress = [:]
@@ -360,8 +353,9 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        init(type: DetailType, error: Error) {
+        init(type: DetailType, userId: Int, error: Error) {
             self.init(type: type,
+                      userId: userId,
                       data: Data(title: "", type: "", localizedType: "",
                                  creators: [:], creatorIds: [],
                                  fields: [:], fieldIds: [],
@@ -380,7 +374,7 @@ class ItemDetailStore: ObservableObject {
 
     @Published var state: State
 
-    init(type: State.DetailType,
+    init(type: State.DetailType, userId: Int,
          apiClient: ApiClient, fileStorage: FileStorage,
          dbStorage: DbStorage, schemaController: SchemaController) {
         self.apiClient = apiClient
@@ -394,9 +388,9 @@ class ItemDetailStore: ObservableObject {
                                                       schemaController: schemaController,
                                                       fileStorage: fileStorage)
             data.recalculateMaxTitleWidth()
-            self.state = State(type: type, data: data)
+            self.state = State(type: type, userId: userId, data: data)
         } catch let error {
-            self.state = State(type: type,
+            self.state = State(type: type, userId: userId,
                                error: (error as? Error) ?? .typeNotSupported)
         }
     }
@@ -753,7 +747,7 @@ class ItemDetailStore: ObservableObject {
     }
 
     private func cacheFile(_ file: File, key: String) {
-        let request = FileRequest(library: self.state.library, key: key, destination: file)
+        let request = FileRequest(libraryId: self.state.libraryId, userId: self.state.userId, key: key, destination: file)
         self.apiClient.download(request: request)
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in

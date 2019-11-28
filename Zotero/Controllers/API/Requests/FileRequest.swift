@@ -9,12 +9,13 @@
 import Foundation
 
 struct FileRequest: ApiDownloadRequest {
-    let library: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let key: String
     let destination: File
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.library.apiPath)/items/\(self.key)/file")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items/\(self.key)/file")
     }
 
     var httpMethod: ApiHttpMethod {

@@ -11,11 +11,12 @@ import Foundation
 struct SettingsRequest: ApiResponseRequest {
     typealias Response = SettingsResponse
 
-    let libraryType: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let version: Int?
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryType.apiPath)/settings")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/settings")
     }
 
     var httpMethod: ApiHttpMethod {

@@ -9,12 +9,13 @@
 import Foundation
 
 struct RegisterUploadRequest: ApiRequest {
-    let libraryType: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let key: String
     let uploadKey: String
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryType.apiPath)/items/\(self.key)/file")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items/\(self.key)/file")
     }
 
     var httpMethod: ApiHttpMethod {

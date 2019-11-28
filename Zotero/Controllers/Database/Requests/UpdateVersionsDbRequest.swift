@@ -22,12 +22,6 @@ struct UpdateVersionsDbRequest: DbRequest {
 
     var needsWrite: Bool { return true }
 
-    init(version: Int, library: SyncController.Library, type: UpdateVersionType) {
-        self.version = version
-        self.type = type
-        self.libraryId = library.libraryId
-    }
-
     func process(in database: Realm) throws {
         switch self.libraryId {
         case .custom(let type):

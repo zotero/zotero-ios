@@ -11,12 +11,13 @@ import Foundation
 struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
     typealias Response = [Key: Int]
 
-    let libraryType: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let objectType: SyncController.Object
     let version: Int?
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryType.apiPath)/\(self.objectType.apiPath)")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/\(self.objectType.apiPath)")
     }
 
     var httpMethod: ApiHttpMethod {

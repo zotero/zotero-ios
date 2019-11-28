@@ -9,7 +9,8 @@
 import Foundation
 
 struct AuthorizeUploadRequest: ApiRequest {
-    let libraryType: SyncController.Library
+    let libraryId: LibraryIdentifier
+    let userId: Int
     let key: String
     let filename: String
     let filesize: UInt64
@@ -17,7 +18,7 @@ struct AuthorizeUploadRequest: ApiRequest {
     let mtime: Int
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryType.apiPath)/items/\(self.key)/file")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items/\(self.key)/file")
     }
 
     var httpMethod: ApiHttpMethod {

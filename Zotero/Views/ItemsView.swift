@@ -85,6 +85,7 @@ struct ItemsView: View {
         let store = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
                                                     collectionKey: self.store.state.type.collectionKey,
                                                     filesEditable: self.store.state.library.filesEditable),
+                                    userId: Defaults.shared.userId,
                                     apiClient: self.apiClient,
                                     fileStorage: self.fileStorage,
                                     dbStorage: self.dbStorage,
@@ -188,6 +189,7 @@ fileprivate struct ItemSectionView: View {
 
     private func detailStore(for item: RItem) -> ItemDetailStore {
         return ItemDetailStore(type: .preview(item),
+                               userId: Defaults.shared.userId,
                                apiClient: self.apiClient,
                                fileStorage: self.fileStorage,
                                dbStorage: self.dbStorage,

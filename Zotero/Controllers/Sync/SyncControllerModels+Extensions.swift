@@ -8,22 +8,25 @@
 
 import Foundation
 
-extension SyncController.Library {
-    var apiPath: String {
+extension LibraryIdentifier {
+    func apiPath(userId: Int) -> String {
         switch self {
         case .group(let identifier):
             return "groups/\(identifier)"
-        case .user(let identifier, _):
-            return "users/\(identifier)"
+        case .custom:
+            return "users/\(userId)"
         }
     }
 
-    var libraryId: LibraryIdentifier {
+    var debugName: String {
         switch self {
-        case .group(let identifier):
-            return .group(identifier)
-        case .user(_, let type):
-            return .custom(type)
+        case .group(let groupId):
+            return "Group (\(groupId))"
+        case .custom(let type):
+            switch type {
+            case .myLibrary:
+                return "My Library"
+            }
         }
     }
 }
@@ -48,33 +51,33 @@ extension SyncController.Object {
 }
 
 extension SyncController.Action {
-    var library: SyncController.Library? {
+    var libraryId: LibraryIdentifier? {
         switch self {
         case .loadKeyPermissions, .updateSchema, .createLibraryActions:
             return nil
         case .syncBatchToDb(let batch):
-            return batch.library
+            return batch.libraryId
         case .submitWriteBatch(let batch):
-            return batch.library
+            return batch.libraryId
         case .submitDeleteBatch(let batch):
-            return batch.library
+            return batch.libraryId
         case .uploadAttachment(let upload):
-            return upload.library
+            return upload.libraryId
         case .resolveDeletedGroup(let groupId, _),
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
              .markGroupAsLocalOnly(let groupId):
             return .group(groupId)
-        case .syncVersions(let library, _, _),
-             .storeVersion(_, let library, _),
-             .syncDeletions(let library, _),
-             .syncSettings(let library, _),
-             .storeSettingsVersion(_, let library),
-             .resolveConflict(_, let library),
-             .markChangesAsResolved(let library),
-             .revertLibraryToOriginal(let library),
-             .createUploadActions(let library):
-            return library
+        case .syncVersions(let libraryId, _, _),
+             .storeVersion(_, let libraryId, _),
+             .syncDeletions(let libraryId, _),
+             .syncSettings(let libraryId, _),
+             .storeSettingsVersion(_, let libraryId),
+             .resolveConflict(_, let libraryId),
+             .markChangesAsResolved(let libraryId),
+             .revertLibraryToOriginal(let libraryId),
+             .createUploadActions(let libraryId):
+            return libraryId
         }
     }
 
@@ -105,30 +108,16 @@ extension SyncController.Action {
     var debugPermissionMessage: String {
         switch self {
         case .submitDeleteBatch(let batch):
-            return "Delete \(batch.keys.count) \(batch.object) in \(batch.library.debugName)\n\(batch.keys)"
+            return "Delete \(batch.keys.count) \(batch.object) in \(batch.libraryId.debugName)\n\(batch.keys)"
         case .submitWriteBatch(let batch):
-            return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.library.debugName)\n\(batch.parameters)"
+            return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
         case .uploadAttachment(let upload):
-            return "Upload \(upload.filename).\(upload.extension) in \(upload.library.debugName)\n\(upload.file.createUrl().absoluteString)"
+            return "Upload \(upload.filename).\(upload.extension) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
             return "Unknown action"
-        }
-    }
-}
-
-extension SyncController.Library {
-    var debugName: String {
-        switch self {
-        case .group(let groupId):
-            return "Group (\(groupId))"
-        case .user(_, let type):
-            switch type {
-            case .myLibrary:
-                return "My Library"
-            }
         }
     }
 }
