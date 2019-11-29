@@ -66,7 +66,8 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 case FieldKeys.md5:
                     field.value = md5(from: file.createUrl()) ?? ""
                 case FieldKeys.mtime:
-                    field.value = "0"
+                    let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
+                    field.value = "\(modificationTime)"
                 default:
                     continue
                 }

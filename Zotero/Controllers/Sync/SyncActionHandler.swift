@@ -624,9 +624,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                                             if let stringData = value.data(using: .utf8) {
                                                 data.append(stringData, withName: key)
                                             }
-                                            data.append(file.createUrl(), withName: "file",
-                                                        fileName: filename, mimeType: file.mimeType)
                                         })
+                                        data.append(file.createUrl(), withName: "file",
+                                                    fileName: filename, mimeType: file.mimeType)
                                     }.flatMap({ Single.just(.success(($0, response.uploadKey))) })
                                 }
                             }
@@ -690,6 +690,9 @@ extension SyncActionHandlerController: SyncActionHandler {
                                  }
                              })
                              .observeOn(self.scheduler)
+                             .do(onNext: { progress in
+                                DDLogInfo("--- Upload progress: \(progress.completed) ---")
+                             })
 
         return (response, progress)
     }
