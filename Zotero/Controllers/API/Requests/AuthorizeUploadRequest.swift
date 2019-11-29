@@ -33,7 +33,8 @@ struct AuthorizeUploadRequest: ApiRequest {
         return ["filename": self.filename,
                 "filesize": self.filesize,
                 "md5": self.md5,
-                "mtime": self.mtime]
+                "mtime": self.mtime,
+                "params": 1]
     }
 
     var headers: [String : String]? {

@@ -124,7 +124,13 @@ extension RItem: Updatable {
         }
         if changes.contains(.fields) {
             self.fields.filter("changed = true").forEach { field in
-                parameters[field.key] = field.value
+                if field.key == FieldKeys.md5 || field.key == FieldKeys.mtime {
+                    // Even though these field keys are set for the RItem object, we ignore them when submitting the attachment item itself,
+                    // but they are used in file upload
+                    parameters[field.key] = ""
+                } else {
+                    parameters[field.key] = field.value
+                }
             }
         }
         
