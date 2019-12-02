@@ -13,7 +13,7 @@ import RealmSwift
 struct CreateAttachmentDbRequest: DbResponseRequest {
     typealias Response = RItem
 
-    let attachment: ItemDetailStore.State.Attachment
+    let attachment: Attachment
     let localizedType: String
     let libraryId: LibraryIdentifier?
 

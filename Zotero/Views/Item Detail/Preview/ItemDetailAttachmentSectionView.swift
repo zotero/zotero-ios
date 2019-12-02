@@ -29,8 +29,7 @@ struct ItemDetailAttachmentSectionView: View {
         }
     }
 
-        private func accessory(for attachment: ItemDetailStore.State.Attachment,
-                               progress: Double?, error: Error?) -> AccessoryView.Accessory {
+        private func accessory(for attachment: Attachment, progress: Double?, error: Error?) -> AccessoryView.Accessory {
             if error != nil {
                 return .error
             }

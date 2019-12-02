@@ -596,21 +596,21 @@ extension SyncActionHandlerController: SyncActionHandler {
                                     return Single.just(size)
                                 }
                             }
-                            .flatMap { [weak self] filesize -> Single<AuthorizeUploadResponse> in
+                            .flatMap { [weak self] filesize -> Single<(Data, ResponseHeaders)> in
                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
                                 let request = AuthorizeUploadRequest(libraryId: libraryId, userId: userId, key: key,
                                                                      filename: filename, filesize: filesize,
                                                                      md5: md5, mtime: mtime)
                                 return self.apiClient.send(request: request)
-                                                     .flatMap({ (data, _) -> Single<AuthorizeUploadResponse> in
-                                                        do {
-                                                            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                                            let response = try AuthorizeUploadResponse(from: jsonObject)
-                                                            return Single.just(response)
-                                                        } catch {
-                                                            return Single.error(error)
-                                                        }
-                                                     })
+                            }
+                            .flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
+                               do {
+                                   let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+                                   let response = try AuthorizeUploadResponse(from: jsonObject)
+                                   return Single.just(response)
+                               } catch {
+                                   return Single.error(error)
+                               }
                             }
                             .flatMap { [weak self] response -> Single<Swift.Result<(UploadRequest, String), SyncActionHandlerError>> in
                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }

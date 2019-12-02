@@ -31,17 +31,12 @@ class ZoteroApiClient: ApiClient {
 
     private var token: String?
 
-    init(baseUrl: String, headers: [String: String]? = nil) {
+    init(baseUrl: String, configuration: URLSessionConfiguration) {
         guard let url = URL(string: baseUrl) else {
             fatalError("Incorrect base url provided for ZoteroApiClient")
         }
 
         self.url = url
-
-        let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = headers
-        configuration.sharedContainerIdentifier = AppGroup.identifier
-
         self.manager = SessionManager(configuration: configuration)
     }
 

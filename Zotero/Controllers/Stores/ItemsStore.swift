@@ -130,10 +130,10 @@ class ItemsStore: ObservableObject {
 
             let attachments = urls.map({ Files.file(from: $0) })
                                   .map({
-                                    ItemDetailStore.State.Attachment(key: KeyGenerator.newKey,
-                                                                     title: $0.name,
-                                                                     type: .file(file: $0, filename: $0.name, isLocal: true),
-                                                                     libraryId: self.state.library.identifier)
+                                      Attachment(key: KeyGenerator.newKey,
+                                                 title: $0.name,
+                                                 type: .file(file: $0, filename: $0.name, isLocal: true),
+                                                 libraryId: self.state.library.identifier)
                                   })
 
             do {

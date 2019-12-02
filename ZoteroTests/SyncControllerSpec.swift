@@ -23,7 +23,7 @@ class SyncControllerSpec: QuickSpec {
     fileprivate static let groupId = 10
     private static let userId = 100
     private static let conflictDelays = [0, 1, 2, 3]
-    private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString)
+    private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static var schemaController: SchemaController = {
         let controller = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
         controller.reloadSchemaIfNeeded()

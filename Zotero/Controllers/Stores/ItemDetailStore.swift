@@ -53,76 +53,6 @@ class ItemDetailStore: ObservableObject {
             var id: String { return self.key }
         }
 
-        struct Attachment: Identifiable, Equatable {
-            enum ContentType: Equatable {
-                case file(file: File, filename: String, isLocal: Bool)
-                case url(URL)
-
-                static func == (lhs: ContentType, rhs: ContentType) -> Bool {
-                    switch (lhs, rhs) {
-                    case (.url(let lUrl), .url(let rUrl)):
-                        return lUrl == rUrl
-                    case (.file(let lFile, _, _), .file(let rFile, _, _)):
-                        return lFile.createUrl() == rFile.createUrl()
-                    default:
-                        return false
-                    }
-                }
-            }
-
-            let key: String
-            let title: String
-            let type: ContentType
-            let libraryId: LibraryIdentifier
-
-            var iconName: String {
-                switch self.type {
-                case .file(let file, _, _):
-                    switch file.ext {
-                    case "pdf":
-                        return "pdf"
-                    default:
-                        return "document"
-                    }
-                case .url:
-                    return "web-page"
-                }
-            }
-
-            var id: String { return self.key }
-
-            init(key: String, title: String, type: ContentType,
-                 libraryId: LibraryIdentifier) {
-                self.key = key
-                self.title = title
-                self.type = type
-                self.libraryId = libraryId
-            }
-
-            init?(item: RItem, type: ContentType) {
-                guard let libraryId = item.libraryObject?.identifier else {
-                    DDLogError("Attachment: library not assigned to item (\(item.key))")
-                    return nil
-                }
-
-                self.libraryId = libraryId
-                self.key = item.key
-                self.title = item.displayTitle
-                self.type = type
-            }
-
-            func changed(isLocal: Bool) -> Attachment {
-                switch type {
-                case .url: return self
-                case .file(let file, let filename, _):
-                    return Attachment(key: self.key,
-                                      title: self.title,
-                                      type: .file(file: file, filename: filename, isLocal: isLocal),
-                                      libraryId: self.libraryId)
-                }
-            }
-        }
-
         struct Note: Identifiable, Equatable {
             let key: String
             var title: String
@@ -888,7 +818,7 @@ class ItemDetailStore: ObservableObject {
 extension FileStorage {
     /// Copy attachments from file picker url (external app sandboxes) to our internal url (our app sandbox)
     /// - parameter attachments: Attachments which will be copied if needed
-    func copyAttachmentFilesIfNeeded(for attachments: [ItemDetailStore.State.Attachment]) throws {
+    func copyAttachmentFilesIfNeeded(for attachments: [Attachment]) throws {
         for attachment in attachments {
             switch attachment.type {
             case .url: continue

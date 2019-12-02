@@ -9,7 +9,6 @@
 import Foundation
 
 extension NSPredicate {
-
     static func key(_ key: String) -> NSPredicate {
         return NSPredicate(format: "key = %@", key)
     }

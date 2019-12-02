@@ -22,14 +22,58 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var toolbarContainer: UIView!
     @IBOutlet private weak var toolbarLabel: UILabel!
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
+    @IBOutlet private weak var preparingContainer: UIView!
     // Variables
-    private var dbStorage: DbStorage!
-    private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
     // Constants
     private static let toolbarTitleIdx = 1
+    private let dbStorage: DbStorage
+    private let store: ExtensionStore
+
+    private static var dbStorage: DbStorage {
+        return RealmDbStorage(url: Files.dbFile(for: Defaults.shared.userId).createUrl())
+    }
+
+    private static func createStore() -> ExtensionStore {
+        let userId = Defaults.shared.userId
+        let headers = ["Zotero-API-Version": ApiConstants.version.description]
+
+        let configuration = URLSessionConfiguration.default
+        configuration.httpAdditionalHeaders = headers
+        configuration.sharedContainerIdentifier = AppGroup.identifier
+
+        let bgConfiguration = URLSessionConfiguration.background(withIdentifier: "org.zotero.ios.Zotero.ZShare")
+        bgConfiguration.httpAdditionalHeaders = headers
+        bgConfiguration.sharedContainerIdentifier = AppGroup.identifier
+
+        let fileStorage = FileStorageController()
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+        let bgApiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: bgConfiguration)
+        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
+        let syncHandler = SyncActionHandlerController(userId: userId,
+                                                      apiClient: apiClient,
+                                                      dbStorage: self.dbStorage,
+                                                      fileStorage: fileStorage,
+                                                      schemaController: schemaController,
+                                                      syncDelayIntervals: DelayIntervals.sync)
+        let syncController = SyncController(userId: userId, handler: syncHandler,
+                                            conflictDelays: DelayIntervals.conflict)
+
+        return ExtensionStore(apiClient: apiClient,
+                              backgroundApiClient: bgApiClient,
+                              dbStorage: dbStorage,
+                              schemaController: schemaController,
+                              fileStorage: fileStorage,
+                              syncController: syncController)
+    }
 
     // MARK: - Lifecycle
+
+    required init?(coder: NSCoder) {
+        self.dbStorage = ShareViewController.dbStorage
+        self.store = ShareViewController.createStore()
+        super.init(coder: coder)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,12 +81,20 @@ class ShareViewController: UIViewController {
         // Setup UI
         self.setupNavbar()
         self.setupPicker()
-        // Setup controllers
-        self.setupDbStorage()
-        self.setupStore()
+
+        // Setup observing
+        self.storeCancellable = self.store.$state.receive(on: DispatchQueue.main)
+                                                 .sink { [weak self] state in
+                                                     self?.update(to: state)
+                                                 }
+
         // Load initial data
-        self.store.loadCollections()
-        self.store.loadDocument()
+        if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
+            self.store.loadCollections()
+            self.store.loadDocument(with: extensionItem)
+        } else {
+            // TODO: - Show error about missing file
+        }
     }
 
     // MARK: - Actions
@@ -60,8 +112,7 @@ class ShareViewController: UIViewController {
     }
 
     @objc private func done() {
-        // TODO: - start file upload
-        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        self.store.upload()
     }
 
     @objc private func cancel() {
@@ -69,9 +120,49 @@ class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        self.navigationItem.rightBarButtonItem?.isEnabled = state.downloadState == nil
+        var rightButtonEnabled = state.downloadState == nil
+
+        if let state = state.uploadState {
+            switch state {
+            case .ready:
+                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+                return
+            case .preparing:
+                self.prepareForUpload()
+                rightButtonEnabled = false
+            case .error(let error):
+                self.hidePreparingIndicator()
+
+                switch error {
+                case .fileMissing:
+                    self.showError(message: "Could not find file to upload")
+                case .unknown:
+                    self.showError(message: "Unknown error. Can't upload file.")
+                case .expired: break
+                }
+            }
+        }
+
+        self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
         self.updateToolbar(to: state.downloadState)
         self.updatePicker(to: state.pickerState)
+    }
+
+    private func prepareForUpload() {
+        self.preparingContainer.isHidden = false
+        UIView.animate(withDuration: 0.2) {
+            self.preparingContainer.alpha = 1
+        }
+    }
+
+    private func hidePreparingIndicator() {
+        UIView.animate(withDuration: 0.2, animations: {
+            self.preparingContainer.alpha = 0
+        }, completion: { finished in
+            if finished {
+                self.preparingContainer.isHidden = true
+            }
+        })
     }
 
     private func updatePicker(to state: ExtensionStore.State.PickerState) {
@@ -144,34 +235,11 @@ class ShareViewController: UIViewController {
         }
     }
 
+    private func showError(message: String) {
+
+    }
+
     // MARK: - Setups
-
-    private func setupDbStorage() {
-        self.dbStorage = RealmDbStorage(url: Files.dbFile(for: Defaults.shared.userId).createUrl())
-    }
-
-    private func setupStore() {
-        guard let context = self.extensionContext else { return }
-
-        let userId = Defaults.shared.userId
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, headers: ["Zotero-API-Version": ApiConstants.version.description])
-        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
-        let syncHandler = SyncActionHandlerController(userId: userId,
-                                                      apiClient: apiClient,
-                                                      dbStorage: self.dbStorage,
-                                                      fileStorage: FileStorageController(),
-                                                      schemaController: schemaController,
-                                                      syncDelayIntervals: DelayIntervals.sync)
-        let syncController = SyncController(userId: userId, handler: syncHandler,
-                                            conflictDelays: DelayIntervals.conflict)
-
-        self.store = ExtensionStore(context: context, apiClient: apiClient, syncController: syncController)
-
-        self.storeCancellable = self.store.$state.receive(on: DispatchQueue.main)
-                                                 .sink { [weak self] state in
-                                                    self?.update(to: state)
-                                                 }
-    }
 
     private func setupPicker() {
         self.pickerContainer.layer.cornerRadius = 8

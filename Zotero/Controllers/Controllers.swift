@@ -26,10 +26,13 @@ class Controllers {
     private var sessionCancellable: AnyCancellable?
 
     init() {
+        let configuration = URLSessionConfiguration.default
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
+        configuration.sharedContainerIdentifier = AppGroup.identifier
+
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage)
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString,
-                                        headers: ["Zotero-API-Version": ApiConstants.version.description])
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let crashReporter = CrashReporter(apiClient: apiClient)
         let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)

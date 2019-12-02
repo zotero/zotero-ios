@@ -14,7 +14,7 @@ import Nimble
 import Quick
 
 class CodableModelSpec: QuickSpec {
-    private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString)
+    private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static var schemaController: SchemaController = {
         let controller = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.standard)
         controller.reloadSchemaIfNeeded()

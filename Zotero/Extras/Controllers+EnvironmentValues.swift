@@ -20,7 +20,7 @@ struct DbStorageEnvironmentKey: EnvironmentKey {
 
 struct ApiClientEnvironmentKey: EnvironmentKey {
     static var defaultValue: ApiClient {
-        return ZoteroApiClient(baseUrl: ApiConstants.baseUrlString)
+        return ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     }
 }
 
@@ -32,7 +32,7 @@ struct FileStorageEnvironmentKey: EnvironmentKey {
 
 struct SchemaControllerEnvironmentKey: EnvironmentKey {
     static var defaultValue: SchemaController {
-        return SchemaController(apiClient: ZoteroApiClient(baseUrl: ApiConstants.baseUrlString),
+        return SchemaController(apiClient: ApiClientEnvironmentKey.defaultValue,
                                 userDefaults: UserDefaults.zotero)
     }
 }
