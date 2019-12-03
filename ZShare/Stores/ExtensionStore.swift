@@ -66,6 +66,7 @@ class ExtensionStore {
 
     private static let defaultLibraryId: LibraryIdentifier = .custom(.myLibrary)
     private static let defaultExtension = "pdf"
+    private static let defaultMimetype = "application/pdf"
 
     private let syncController: SyncController
     private let apiClient: ApiClient
@@ -105,7 +106,7 @@ class ExtensionStore {
         let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
 
         self.prepareUpload(key: key, title: title, libraryId: libraryId, userId: userId, file: file)
-            .subscribe(onSuccess: { [weak self] response in
+            .subscribe(onSuccess: { [weak self] filename, response in
                 guard let `self` = self else { return }
 
                 switch response {
@@ -113,8 +114,15 @@ class ExtensionStore {
                     self.state.uploadState = .ready
 
                 case .new(let response):
-                    self.startBackgroundUpload(to: response.url, params: response.params, uploadKey: response.uploadKey)
-                    self.state.uploadState = .ready
+                    self.startBackgroundUpload(to: response.url,
+                                               filename: filename,
+                                               file: file,
+                                               params: response.params,
+                                               key: key,
+                                               uploadKey: response.uploadKey,
+                                               libraryId: libraryId,
+                                               userId: userId)
+//                    self.state.uploadState = .ready
                 }
             }, onError: { [weak self] error in
                 let error = (error as? UploadError) ?? .unknown
@@ -123,11 +131,48 @@ class ExtensionStore {
             .disposed(by: self.disposeBag)
     }
 
-    private func startBackgroundUpload(to url: URL, params: [String: String], uploadKey: String) {
-
+    private func startBackgroundUpload(to url: URL, filename: String, file: File, params: [String: String],
+                                       key: String, uploadKey: String, libraryId: LibraryIdentifier, userId: Int) {
+        let request = AttachmentUploadRequest(url: url)
+        self.backgroundApiClient.upload(request: request) { data in
+                                    params.forEach { (key, value) in
+                                        if let stringData = value.data(using: .utf8) {
+                                            data.append(stringData, withName: key)
+                                        }
+                                    }
+                                    data.append(file.createUrl(), withName: "file", fileName: filename, mimeType: ExtensionStore.defaultMimetype)
+                                }
+                                .flatMap { request -> Single<Data> in
+                                    return request.rx.data().asSingle()
+                                }
+                                .flatMap { _ -> Single<(Data, ResponseHeaders)> in
+                                    let request = RegisterUploadRequest(libraryId: libraryId,
+                                                                        userId: userId,
+                                                                        key: key,
+                                                                        uploadKey: uploadKey)
+                                    return self.apiClient.send(request: request)
+                                }
+                                .flatMap { _ -> Single<()> in
+                                    return self.markAttachmentUploaded(with: key, libraryId: libraryId)
+                                }
+                                .subscribe(onSuccess: nil, onError: { error in
+                                    NSLog("ERROR: \(error)")
+                                    NSLog("---")
+                                })
+                                .disposed(by: self.disposeBag)
     }
 
-    private func prepareUpload(key: String, title: String, libraryId: LibraryIdentifier, userId: Int, file: File) -> Single<AuthorizeUploadResponse> {
+    private func markAttachmentUploaded(with key: String, libraryId: LibraryIdentifier) -> Single<()> {
+        do {
+            let request = MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key)
+            try self.dbStorage.createCoordinator().perform(request: request)
+            return Single.just(())
+        } catch let error {
+            return Single.error(error)
+        }
+    }
+
+    private func prepareUpload(key: String, title: String, libraryId: LibraryIdentifier, userId: Int, file: File) -> Single<(String, AuthorizeUploadResponse)> {
         return self.moveTmpFile(with: key, to: file, libraryId: libraryId)
                     .do(onError: { [weak self] _ in
                         // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
@@ -149,16 +194,16 @@ class ExtensionStore {
                         let request = CreateItemRequest(libraryId: libraryId, key: key, userId: userId, parameters: item.updateParameters)
                         return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, item)) })
                     }
-                    .flatMap { [weak self] filesize, item -> Single<(Data, ResponseHeaders)> in
+                    .flatMap { [weak self] filesize, item -> Single<(String, Data, ResponseHeaders)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
                         let request = self.createAuthorizeRequest(from: item, libraryId: libraryId, userId: userId, filesize: filesize)
-                        return self.apiClient.send(request: request)
+                        return self.apiClient.send(request: request).flatMap({ Single.just((request.filename, $0.0, $0.1)) })
                     }
-                    .flatMap { data, _ -> Single<AuthorizeUploadResponse> in
+                    .flatMap { filename, data, _ -> Single<(String, AuthorizeUploadResponse)> in
                        do {
                            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
                            let response = try AuthorizeUploadResponse(from: jsonObject)
-                           return Single.just(response)
+                           return Single.just((filename, response))
                        } catch {
                            return Single.error(error)
                        }
@@ -261,7 +306,7 @@ class ExtensionStore {
                 }
 
                 let title = (data["title"] as? String) ?? ""
-                let url = URL(string: "https://bitcoin.org/bitcoin.pdf")!//(data["url"] as? String) ?? ""
+                let url = URL(string: "https://is.muni.cz/th/bykai/dp_adam.pdf")!//(data["url"] as? String) ?? ""
 
                 subscriber.onNext((title, url))
                 subscriber.onCompleted()
