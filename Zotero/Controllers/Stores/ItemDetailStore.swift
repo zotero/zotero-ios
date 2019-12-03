@@ -677,7 +677,7 @@ class ItemDetailStore: ObservableObject {
     }
 
     private func cacheFile(_ file: File, key: String) {
-        let request = FileRequest(libraryId: self.state.libraryId, userId: self.state.userId, key: key, destination: file)
+        let request = FileRequest(data: .internal(self.state.libraryId, self.state.userId, key), destination: file)
         self.apiClient.download(request: request)
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in

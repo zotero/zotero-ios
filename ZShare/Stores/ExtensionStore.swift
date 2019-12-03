@@ -116,9 +116,9 @@ class ExtensionStore {
                     self.startBackgroundUpload(to: response.url, params: response.params, uploadKey: response.uploadKey)
                     self.state.uploadState = .ready
                 }
-            }, onError: { error in
+            }, onError: { [weak self] error in
                 let error = (error as? UploadError) ?? .unknown
-                self.state.uploadState = .error(error)
+                self?.state.uploadState = .error(error)
             })
             .disposed(by: self.disposeBag)
     }
@@ -129,10 +129,20 @@ class ExtensionStore {
 
     private func prepareUpload(key: String, title: String, libraryId: LibraryIdentifier, userId: Int, file: File) -> Single<AuthorizeUploadResponse> {
         return self.moveTmpFile(with: key, to: file, libraryId: libraryId)
+                    .do(onError: { [weak self] _ in
+                        // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
+                        let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
+                        try? self?.fileStorage.remove(file)
+                    })
                     .flatMap { [weak self] filesize -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
                         return self.createAttachment(for: file, key: key, title: title, libraryId: libraryId)
                                    .flatMap({ Single.just((filesize, $0)) })
+                                   .do(onError: { [weak self] _ in
+                                       // If attachment item couldn't be created in DB, remove the moved file if possible,
+                                       // it won't be processed even from the main app
+                                       try? self?.fileStorage.remove(file)
+                                   })
                     }
                     .flatMap { [weak self] filesize, item -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
@@ -212,11 +222,12 @@ class ExtensionStore {
     }
 
     func loadDocument(with extensionItem: NSExtensionItem) {
+        let key = self.state.key
         self.loadWebData(extensionItem: extensionItem)
             .flatMap { [weak self] data -> Observable<(String, RxProgress)> in
                 guard let `self` = self else { return Observable.error(DownloadError.expired) }
-                let file = Files.shareExtensionTmpItem(key: self.state.key, ext: ExtensionStore.defaultExtension)
-                let request = FileDownloadRequest(url: data.1, downloadUrl: file.createUrl())
+                let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
+                let request = FileRequest(data: .external(data.1), destination: file)
                 return self.apiClient.download(request: request).flatMap({ Observable.just((data.0, $0)) })
             }
             .observeOn(MainScheduler.instance)

@@ -40,7 +40,6 @@
 		B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795DF22074AC9003D0471 /* ZoteroApiClient.swift */; };
 		B311B3302386B16700BCF592 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
 		B311B3312386B19700BCF592 /* ObservableRequestExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30E6CB8225DE84B0001B93A /* ObservableRequestExtensions.swift */; };
-		B311B3362386B30A00BCF592 /* FileDownloadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */; };
 		B311B33E2386E77000BCF592 /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F6689220CB413009E7A8F /* FileManager+Utils.swift */; };
 		B311B3412386E81B00BCF592 /* Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30F668B220CB6CC009E7A8F /* Files.swift */; };
 		B311B3432386EFB600BCF592 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311B3422386EFB600BCF592 /* File.swift */; };
@@ -333,6 +332,7 @@
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B3BD28A523967EF400175E34 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B4B6892384338400D4FD3F /* SessionController.swift */; };
+		B3BD28A62396911700175E34 /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487300221D73CA00244CCC /* FileRequest.swift */; };
 		B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
 		B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
 		B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
@@ -457,7 +457,6 @@
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadRequest.swift; sourceTree = "<group>"; };
 		B311B3422386EFB600BCF592 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		B311B3452386F03900BCF592 /* CoordinatedFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinatedFileStorage.swift; sourceTree = "<group>"; };
 		B312AD1322428F1400EDD5A4 /* LibraryCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LibraryCell.xib; sourceTree = "<group>"; };
@@ -991,7 +990,6 @@
 			isa = PBXGroup;
 			children = (
 				B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */,
-				B311B3352386B30A00BCF592 /* FileDownloadRequest.swift */,
 			);
 			path = ApiRequests;
 			sourceTree = "<group>";
@@ -1916,7 +1914,7 @@
 				B326619B238D27E80050335F /* CollectionResponse.swift in Sources */,
 				B3266197238D27AD0050335F /* SyncVersionsDbRequest.swift in Sources */,
 				B32661A2238D34AD0050335F /* Array+Utils.swift in Sources */,
-				B311B3362386B30A00BCF592 /* FileDownloadRequest.swift in Sources */,
+				B3BD28A62396911700175E34 /* FileRequest.swift in Sources */,
 				B32661A4238D35130050335F /* SearchesResponse.swift in Sources */,
 				B3AB38AD238ECA11008A1ABB /* LibraryRow.swift in Sources */,
 				B326617C238D24740050335F /* SyncScheduler.swift in Sources */,

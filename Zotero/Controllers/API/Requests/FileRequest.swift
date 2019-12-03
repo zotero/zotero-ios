@@ -9,13 +9,21 @@
 import Foundation
 
 struct FileRequest: ApiDownloadRequest {
-    let libraryId: LibraryIdentifier
-    let userId: Int
-    let key: String
+    enum EndpointData {
+        case `internal`(LibraryIdentifier, Int, String)
+        case external(URL)
+    }
+
+    let data: EndpointData
     let destination: File
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items/\(self.key)/file")
+        switch self.data {
+        case .external(let url):
+            return .other(url)
+        case .internal(let libraryId, let userId, let key):
+            return .zotero(path: "\(libraryId.apiPath(userId: userId))/items/\(key)/file")
+        }
     }
 
     var httpMethod: ApiHttpMethod {
