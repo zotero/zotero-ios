@@ -42,7 +42,7 @@ class AllCollectionPickerStore: ObservableObject {
             self.state.libraries = libraries
             self.state.collections = collections
         } catch let error {
-            NSLog("AllCollectionPickerStore: can't load data - \(error)")
+            // TODO: - Add logging
         }
     }
 }

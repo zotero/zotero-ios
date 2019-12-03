@@ -429,16 +429,16 @@ class ItemDetailStore: ObservableObject {
             let notes = item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                      .sorted(byKeyPath: "displayTitle")
                                      .compactMap(State.Note.init)
-            let attachments: [State.Attachment]
+            let attachments: [Attachment]
             if item.rawType == ItemTypes.attachment {
-                let attachment = attachmentType(for: item, fileStorage: fileStorage).flatMap({ State.Attachment(item: item, type: $0) })
+                let attachment = attachmentType(for: item, fileStorage: fileStorage).flatMap({ Attachment(item: item, type: $0) })
                 attachments = attachment.flatMap { [$0] } ?? []
             } else {
                 let mappedAttachments = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
                                                      .sorted(byKeyPath: "displayTitle")
-                                                     .compactMap({ item -> State.Attachment? in
+                                                     .compactMap({ item -> Attachment? in
                                                          return attachmentType(for: item, fileStorage: fileStorage)
-                                                                            .flatMap({ State.Attachment(item: item, type: $0) })
+                                                                            .flatMap({ Attachment(item: item, type: $0) })
                                                      })
                 attachments = Array(mappedAttachments)
             }
@@ -461,7 +461,7 @@ class ItemDetailStore: ObservableObject {
         }
     }
 
-    private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> State.Attachment.ContentType? {
+    private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> Attachment.ContentType? {
         let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value ?? ""
         if !contentType.isEmpty { // File attachment
             if let ext = contentType.extensionFromMimeType,
@@ -580,10 +580,10 @@ class ItemDetailStore: ObservableObject {
                                         libraryId: self.state.libraryId,
                                         key: key,
                                         ext: originalFile.ext)
-            let attachment = State.Attachment(key: key,
-                                              title: originalFile.name,
-                                              type: .file(file: file, filename: originalFile.name, isLocal: true),
-                                              libraryId: self.state.libraryId)
+            let attachment = Attachment(key: key,
+                                        title: originalFile.name,
+                                        type: .file(file: file, filename: originalFile.name, isLocal: true),
+                                        libraryId: self.state.libraryId)
 
             do {
                 try self.fileStorage.move(from: originalFile, to: file)
@@ -663,7 +663,7 @@ class ItemDetailStore: ObservableObject {
         self.state.data.attachments.remove(atOffsets: offsets)
     }
 
-    func openAttachment(_ attachment: State.Attachment) {
+    func openAttachment(_ attachment: Attachment) {
         switch attachment.type {
         case .url(let url):
             NotificationCenter.default.post(name: .presentWeb, object: url)

@@ -10,15 +10,15 @@ import Foundation
 
 struct CreateItemRequest: ApiRequest {
     let libraryId: LibraryIdentifier
+    let key: String
     let userId: Int
-    let version: Int
 
     var endpoint: ApiEndpoint {
-        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items")
+        return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items/\(self.key)")
     }
 
     var httpMethod: ApiHttpMethod {
-        return .post
+        return .put
     }
 
     var encoding: ApiParameterEncoding {
@@ -28,6 +28,6 @@ struct CreateItemRequest: ApiRequest {
     let parameters: [String : Any]?
 
     var headers: [String : String]? {
-        return ["If-Unmodified-Since-Version": self.version.description]
+        return ["If-Unmodified-Since-Version": "0"]
     }
 }

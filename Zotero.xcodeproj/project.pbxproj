@@ -331,6 +331,8 @@
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
+		B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
+		B3BD28A523967EF400175E34 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B4B6892384338400D4FD3F /* SessionController.swift */; };
 		B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
 		B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
 		B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
@@ -1932,6 +1934,7 @@
 				B32661BB238D80BA0050335F /* DelayIntervals.swift in Sources */,
 				B326617A238D24640050335F /* SyncActionHandler.swift in Sources */,
 				B3266179238D24610050335F /* SyncController.swift in Sources */,
+				B3BD28A523967EF400175E34 /* SessionController.swift in Sources */,
 				B326617E238D248F0050335F /* SyncProgressHandler.swift in Sources */,
 				B3AB38B2238ECC17008A1ABB /* ReadCollectionsDbRequest.swift in Sources */,
 				B387FF92238C57B900D85097 /* LibraryObject.swift in Sources */,
@@ -1976,6 +1979,7 @@
 				B387FF8D238C489300D85097 /* CreatorSummaryFormatter.swift in Sources */,
 				B3266189238D26240050335F /* DbStorage.swift in Sources */,
 				B32661AD238D38340050335F /* AuthorizeUploadRequest.swift in Sources */,
+				B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */,
 				B3266188238D261A0050335F /* LinksResponse.swift in Sources */,
 				B326619E238D27F90050335F /* SettingsRequest.swift in Sources */,
 				B3266195238D27A10050335F /* ReadDeletedObjectsDbRequest.swift in Sources */,

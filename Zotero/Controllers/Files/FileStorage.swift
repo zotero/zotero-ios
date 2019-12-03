@@ -27,9 +27,8 @@ class FileStorageController: FileStorage {
     }
 
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws {
-        let url = file.createUrl()
-        try self.fileManager.createMissingDirectories(for: url.deletingLastPathComponent())
-        try data.write(to: url, options: options)
+        try self.createDictionaries(for: file)
+        try data.write(to: file.createUrl(), options: options)
     }
 
     func remove(_ file: File) throws {
@@ -37,10 +36,12 @@ class FileStorageController: FileStorage {
     }
 
     func copy(from fromFile: File, to toFile: File) throws {
+        try self.createDictionaries(for: toFile)
         try self.fileManager.copyItem(at: fromFile.createUrl(), to: toFile.createUrl())
     }
 
     func move(from fromFile: File, to toFile: File) throws {
+        try self.createDictionaries(for: toFile)
         try self.fileManager.moveItem(at: fromFile.createUrl(), to: toFile.createUrl())
     }
 

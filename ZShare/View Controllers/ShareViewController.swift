@@ -23,36 +23,40 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var toolbarLabel: UILabel!
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
     @IBOutlet private weak var preparingContainer: UIView!
+    @IBOutlet private weak var notLoggedInOverlay: UIView!
     // Variables
     private var storeCancellable: AnyCancellable?
     // Constants
     private static let toolbarTitleIdx = 1
-    private let dbStorage: DbStorage
-    private let store: ExtensionStore
+    private let dbStorage: DbStorage?
+    private let store: ExtensionStore?
+    private let loggedIn: Bool
 
-    private static var dbStorage: DbStorage {
-        return RealmDbStorage(url: Files.dbFile(for: Defaults.shared.userId).createUrl())
+    private static func createDbStorage(for userId: Int) -> DbStorage {
+        return RealmDbStorage(url: Files.dbFile(for: userId).createUrl())
     }
 
-    private static func createStore() -> ExtensionStore {
-        let userId = Defaults.shared.userId
+    private static func createStore(for userId: Int, authToken: String, dbStorage: DbStorage) -> ExtensionStore {
         let headers = ["Zotero-API-Version": ApiConstants.version.description]
 
         let configuration = URLSessionConfiguration.default
         configuration.httpAdditionalHeaders = headers
         configuration.sharedContainerIdentifier = AppGroup.identifier
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+        apiClient.set(authToken: authToken)
 
         let bgConfiguration = URLSessionConfiguration.background(withIdentifier: "org.zotero.ios.Zotero.ZShare")
         bgConfiguration.httpAdditionalHeaders = headers
         bgConfiguration.sharedContainerIdentifier = AppGroup.identifier
+        let bgApiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: bgConfiguration)
+        bgApiClient.set(authToken: authToken)
 
         let fileStorage = FileStorageController()
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
-        let bgApiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: bgConfiguration)
         let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
+
         let syncHandler = SyncActionHandlerController(userId: userId,
                                                       apiClient: apiClient,
-                                                      dbStorage: self.dbStorage,
+                                                      dbStorage: dbStorage,
                                                       fileStorage: fileStorage,
                                                       schemaController: schemaController,
                                                       syncDelayIntervals: DelayIntervals.sync)
@@ -70,28 +74,45 @@ class ShareViewController: UIViewController {
     // MARK: - Lifecycle
 
     required init?(coder: NSCoder) {
-        self.dbStorage = ShareViewController.dbStorage
-        self.store = ShareViewController.createStore()
+        let secureStorage = KeychainSecureStorage()
+        let sessionController = SessionController(secureStorage: secureStorage)
+        let session = sessionController.sessionData
+
+        self.loggedIn = session != nil
+        let controllers = session.flatMap { session -> (DbStorage, ExtensionStore) in
+            let storage = ShareViewController.createDbStorage(for: session.userId)
+            return (storage, ShareViewController.createStore(for: session.userId, authToken: session.apiToken, dbStorage: storage))
+        }
+        self.dbStorage = controllers?.0
+        self.store = controllers?.1
+
         super.init(coder: coder)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Setup UI
         self.setupNavbar()
+
+        if !self.loggedIn {
+            self.setupNotLoggedInOverlay()
+            return
+        }
+
+        // Setup UI
         self.setupPicker()
+        self.setupPreparingIndicator()
 
         // Setup observing
-        self.storeCancellable = self.store.$state.receive(on: DispatchQueue.main)
-                                                 .sink { [weak self] state in
-                                                     self?.update(to: state)
-                                                 }
+        self.storeCancellable = self.store?.$state.receive(on: DispatchQueue.main)
+                                                  .sink { [weak self] state in
+                                                      self?.update(to: state)
+                                                  }
 
         // Load initial data
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
-            self.store.loadCollections()
-            self.store.loadDocument(with: extensionItem)
+            self.store?.loadCollections()
+            self.store?.loadDocument(with: extensionItem)
         } else {
             // TODO: - Show error about missing file
         }
@@ -100,9 +121,11 @@ class ShareViewController: UIViewController {
     // MARK: - Actions
 
     @IBAction private func showCollectionPicker() {
-        let store = AllCollectionPickerStore(dbStorage: self.dbStorage)
+        guard let dbStorage = self.dbStorage else { return }
+
+        let store = AllCollectionPickerStore(dbStorage: dbStorage)
         let view = AllCollectionPickerView { [weak self] collection, library in
-            self?.store.set(collection: collection, library: library)
+            self?.store?.set(collection: collection, library: library)
             self?.navigationController?.popViewController(animated: true)
         }
         .environmentObject(store)
@@ -112,7 +135,7 @@ class ShareViewController: UIViewController {
     }
 
     @objc private func done() {
-        self.store.upload()
+        self.store?.upload()
     }
 
     @objc private func cancel() {
@@ -251,8 +274,20 @@ class ShareViewController: UIViewController {
     private func setupNavbar() {
         let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
         self.navigationItem.leftBarButtonItem = cancel
-        let done = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.done))
-        done.isEnabled = false
-        self.navigationItem.rightBarButtonItem = done
+
+        if self.loggedIn {
+            let done = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.done))
+            done.isEnabled = false
+            self.navigationItem.rightBarButtonItem = done
+        }
+    }
+
+    private func setupPreparingIndicator() {
+        self.preparingContainer.layer.cornerRadius = 8
+        self.preparingContainer.layer.masksToBounds = true
+    }
+
+    private func setupNotLoggedInOverlay() {
+        self.notLoggedInOverlay.isHidden = false
     }
 }

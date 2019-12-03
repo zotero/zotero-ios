@@ -42,6 +42,7 @@ class ExtensionStore {
         }
 
         let key: String
+        var title: String?
         var pickerState: PickerState
         var downloadState: DownloadState?
         var uploadState: UploadState?
@@ -96,12 +97,14 @@ class ExtensionStore {
     }
 
     func upload() {
+        guard let title = self.state.title else { return }
+
         let key = self.state.key
         let libraryId = self.state.pickerState.library?.identifier ?? ExtensionStore.defaultLibraryId
         let userId = Defaults.shared.userId
         let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
 
-        self.prepareUpload(key: key, libraryId: libraryId, userId: userId, file: file)
+        self.prepareUpload(key: key, title: title, libraryId: libraryId, userId: userId, file: file)
             .subscribe(onSuccess: { [weak self] response in
                 guard let `self` = self else { return }
 
@@ -124,15 +127,16 @@ class ExtensionStore {
 
     }
 
-    private func prepareUpload(key: String, libraryId: LibraryIdentifier, userId: Int, file: File) -> Single<AuthorizeUploadResponse> {
+    private func prepareUpload(key: String, title: String, libraryId: LibraryIdentifier, userId: Int, file: File) -> Single<AuthorizeUploadResponse> {
         return self.moveTmpFile(with: key, to: file, libraryId: libraryId)
                     .flatMap { [weak self] filesize -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        return self.createAttachment(for: file, key: key, libraryId: libraryId).flatMap({ Single.just((filesize, $0)) })
+                        return self.createAttachment(for: file, key: key, title: title, libraryId: libraryId)
+                                   .flatMap({ Single.just((filesize, $0)) })
                     }
                     .flatMap { [weak self] filesize, item -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = CreateItemRequest(libraryId: libraryId, userId: userId, version: 0, parameters: item.updateParameters)
+                        let request = CreateItemRequest(libraryId: libraryId, key: key, userId: userId, parameters: item.updateParameters)
                         return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, item)) })
                     }
                     .flatMap { [weak self] filesize, item -> Single<(Data, ResponseHeaders)> in
@@ -160,9 +164,9 @@ class ExtensionStore {
                                       md5: md5, mtime: mtime)
     }
 
-    private func createAttachment(for file: File, key: String, libraryId: LibraryIdentifier) -> Single<RItem> {
+    private func createAttachment(for file: File, key: String, title: String, libraryId: LibraryIdentifier) -> Single<RItem> {
         let attachment = Attachment(key: key,
-                                    title: file.name,
+                                    title: title,
                                     type: .file(file: file, filename: file.name, isLocal: true),
                                     libraryId: libraryId)
         let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
@@ -209,14 +213,17 @@ class ExtensionStore {
 
     func loadDocument(with extensionItem: NSExtensionItem) {
         self.loadWebData(extensionItem: extensionItem)
-            .flatMap { [weak self] data -> Observable<RxProgress> in
+            .flatMap { [weak self] data -> Observable<(String, RxProgress)> in
                 guard let `self` = self else { return Observable.error(DownloadError.expired) }
                 let file = Files.shareExtensionTmpItem(key: self.state.key, ext: ExtensionStore.defaultExtension)
                 let request = FileDownloadRequest(url: data.1, downloadUrl: file.createUrl())
-                return self.apiClient.download(request: request)
+                return self.apiClient.download(request: request).flatMap({ Observable.just((data.0, $0)) })
             }
             .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] progress in
+            .subscribe(onNext: { [weak self] title, progress in
+                if self?.state.title == nil {
+                    self?.state.title = title
+                }
                 self?.state.downloadState = .progress(progress.completed)
             }, onError: { [weak self] error in
                 self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
