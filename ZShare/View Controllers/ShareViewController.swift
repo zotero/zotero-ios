@@ -37,19 +37,13 @@ class ShareViewController: UIViewController {
     }
 
     private static func createStore(for userId: Int, authToken: String, dbStorage: DbStorage) -> ExtensionStore {
-        let headers = ["Zotero-API-Version": ApiConstants.version.description]
-
         let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = headers
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
         configuration.sharedContainerIdentifier = AppGroup.identifier
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         apiClient.set(authToken: authToken)
 
-        let bgConfiguration = URLSessionConfiguration.background(withIdentifier: "org.zotero.ios.Zotero.ZShare")
-        bgConfiguration.httpAdditionalHeaders = headers
-        bgConfiguration.sharedContainerIdentifier = AppGroup.identifier
-        let bgApiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: bgConfiguration)
-        bgApiClient.set(authToken: authToken)
+        BackgroundApi.shared.client.set(authToken: authToken)
 
         let fileStorage = FileStorageController()
         let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
@@ -64,7 +58,7 @@ class ShareViewController: UIViewController {
                                             conflictDelays: DelayIntervals.conflict)
 
         return ExtensionStore(apiClient: apiClient,
-                              backgroundApiClient: bgApiClient,
+                              backgroundApi: BackgroundApi.shared,
                               dbStorage: dbStorage,
                               schemaController: schemaController,
                               fileStorage: fileStorage,

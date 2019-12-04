@@ -314,6 +314,7 @@
 		B3AC620D233282A60091DD74 /* LibrariesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620C233282A60091DD74 /* LibrariesView.swift */; };
 		B3AC620F233287530091DD74 /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AC620E233287530091DD74 /* LibraryRow.swift */; };
 		B3AD920C235DE76400FDB388 /* ItemsActionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */; };
+		B3AE2A772397B5CB00E6C461 /* BackgroundApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AE2A762397B5CB00E6C461 /* BackgroundApi.swift */; };
 		B3B262B32331250100552E63 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B22331250100552E63 /* OnboardingView.swift */; };
 		B3B262B52331257200552E63 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B42331257200552E63 /* LoginView.swift */; };
 		B3B262B72331257A00552E63 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B262B62331257A00552E63 /* RegisterView.swift */; };
@@ -636,6 +637,7 @@
 		B3AC620C233282A60091DD74 /* LibrariesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesView.swift; sourceTree = "<group>"; };
 		B3AC620E233287530091DD74 /* LibraryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
 		B3AD920B235DE76400FDB388 /* ItemsActionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsActionSheetView.swift; sourceTree = "<group>"; };
+		B3AE2A762397B5CB00E6C461 /* BackgroundApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundApi.swift; sourceTree = "<group>"; };
 		B3B262B22331250100552E63 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B3B262B42331257200552E63 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B3B262B62331257A00552E63 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
@@ -979,6 +981,7 @@
 				B3AB38A3238EC02D008A1ABB /* Stores */,
 				B3AB389F238EC02D008A1ABB /* View Controllers */,
 				B3AB38A1238EC02D008A1ABB /* Views */,
+				B3AE2A762397B5CB00E6C461 /* BackgroundApi.swift */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
 				B3B8166723880DC900529605 /* ZShare.entitlements */,
 				B311B3232386A39800BCF592 /* Info.plist */,
@@ -1913,6 +1916,7 @@
 				B387FF8E238C489B00D85097 /* ItemTitleFormatter.swift in Sources */,
 				B326619B238D27E80050335F /* CollectionResponse.swift in Sources */,
 				B3266197238D27AD0050335F /* SyncVersionsDbRequest.swift in Sources */,
+				B3AE2A772397B5CB00E6C461 /* BackgroundApi.swift in Sources */,
 				B32661A2238D34AD0050335F /* Array+Utils.swift in Sources */,
 				B3BD28A62396911700175E34 /* FileRequest.swift in Sources */,
 				B32661A4238D35130050335F /* SearchesResponse.swift in Sources */,
