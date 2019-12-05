@@ -9,6 +9,7 @@
 import Combine
 import Foundation
 import MobileCoreServices
+import WebKit
 
 import RxSwift
 import RxAlamofire
@@ -265,20 +266,24 @@ class ExtensionStore {
         }
     }
 
-    func loadDocument(with extensionItem: NSExtensionItem) {
+    func loadDocument(with extensionItem: NSExtensionItem, webView: WKWebView) {
         let key = self.state.key
         self.loadWebData(extensionItem: extensionItem)
-            .flatMap { [weak self] data -> Observable<(String, RxProgress)> in
+            .observeOn(MainScheduler.instance)
+            .do(onNext: { [weak self] title, _, _, _ in
+                self?.state.title = title
+            })
+            .flatMap({ [weak webView] title, url, html, cookies -> Observable<[URL]> in
+                guard let webView = webView else { return Observable.error(DownloadError.expired) }
+                return WebViewHandler(webView: webView).loadDocument(for: url, title: title, html: html, cookies: cookies).asObservable()
+            })
+            .flatMap { [weak self] data -> Observable<RxProgress> in
                 guard let `self` = self else { return Observable.error(DownloadError.expired) }
                 let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
-                let request = FileRequest(data: .external(data.1), destination: file)
-                return self.apiClient.download(request: request).flatMap({ Observable.just((data.0, $0)) })
+                let request = FileRequest(data: .external(data[0]), destination: file)
+                return self.apiClient.download(request: request)
             }
-            .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] title, progress in
-                if self?.state.title == nil {
-                    self?.state.title = title
-                }
+            .subscribe(onNext: { [weak self] progress in
                 self?.state.downloadState = .progress(progress.completed)
             }, onError: { [weak self] error in
                 self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
@@ -288,7 +293,7 @@ class ExtensionStore {
             .disposed(by: self.disposeBag)
     }
 
-    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL)> {
+    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String)> {
         let propertyList = kUTTypePropertyList as String
 
         guard let itemProvider = extensionItem.attachments?.first,
@@ -304,11 +309,15 @@ class ExtensionStore {
                     return
                 }
 
-                let title = (data["title"] as? String) ?? ""
-                let url = URL(string: "https://bitcoin.org/bitcoin.pdf")!//(data["url"] as? String) ?? ""
-
-                subscriber.onNext((title, url))
-                subscriber.onCompleted()
+                if let url = (data["url"] as? String).flatMap(URL.init),
+                   let title = data["title"] as? String,
+                   let html = data["html"] as? String,
+                   let cookies = data["cookies"] as? String {
+                    subscriber.onNext((title, url, html, cookies))
+                    subscriber.onCompleted()
+                } else {
+                    subscriber.onError(DownloadError.cantLoadWebData)
+                }
             })
 
             return Disposables.create()

@@ -10,6 +10,7 @@ import Combine
 import Social
 import SwiftUI
 import UIKit
+import WebKit
 
 import CocoaLumberjack
 
@@ -24,71 +25,26 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
     @IBOutlet private weak var preparingContainer: UIView!
     @IBOutlet private weak var notLoggedInOverlay: UIView!
+    @IBOutlet private weak var webView: WKWebView!
     // Variables
+    private var dbStorage: DbStorage!
+    private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
     // Constants
     private static let toolbarTitleIdx = 1
-    private let dbStorage: DbStorage?
-    private let store: ExtensionStore?
-    private let loggedIn: Bool
-
-    private static func createDbStorage(for userId: Int) -> DbStorage {
-        return RealmDbStorage(url: Files.dbFile(for: userId).createUrl())
-    }
-
-    private static func createStore(for userId: Int, authToken: String, dbStorage: DbStorage) -> ExtensionStore {
-        let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
-        configuration.sharedContainerIdentifier = AppGroup.identifier
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
-        apiClient.set(authToken: authToken)
-
-        BackgroundApi.shared.client.set(authToken: authToken)
-
-        let fileStorage = FileStorageController()
-        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
-
-        let syncHandler = SyncActionHandlerController(userId: userId,
-                                                      apiClient: apiClient,
-                                                      dbStorage: dbStorage,
-                                                      fileStorage: fileStorage,
-                                                      schemaController: schemaController,
-                                                      syncDelayIntervals: DelayIntervals.sync)
-        let syncController = SyncController(userId: userId, handler: syncHandler,
-                                            conflictDelays: DelayIntervals.conflict)
-
-        return ExtensionStore(apiClient: apiClient,
-                              backgroundApi: BackgroundApi.shared,
-                              dbStorage: dbStorage,
-                              schemaController: schemaController,
-                              fileStorage: fileStorage,
-                              syncController: syncController)
-    }
 
     // MARK: - Lifecycle
-
-    required init?(coder: NSCoder) {
-        let secureStorage = KeychainSecureStorage()
-        let sessionController = SessionController(secureStorage: secureStorage)
-        let session = sessionController.sessionData
-
-        self.loggedIn = session != nil
-        let controllers = session.flatMap { session -> (DbStorage, ExtensionStore) in
-            let storage = ShareViewController.createDbStorage(for: session.userId)
-            return (storage, ShareViewController.createStore(for: session.userId, authToken: session.apiToken, dbStorage: storage))
-        }
-        self.dbStorage = controllers?.0
-        self.store = controllers?.1
-
-        super.init(coder: coder)
-    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupNavbar()
+        let session = SessionController(secureStorage: KeychainSecureStorage()).sessionData
 
-        if !self.loggedIn {
+        self.setupNavbar(loggedIn: (session != nil))
+
+        if let session = session {
+            self.setupControllers(with: session)
+        } else {
             self.setupNotLoggedInOverlay()
             return
         }
@@ -106,7 +62,7 @@ class ShareViewController: UIViewController {
         // Load initial data
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
             self.store?.loadCollections()
-            self.store?.loadDocument(with: extensionItem)
+            self.store?.loadDocument(with: extensionItem, webView: self.webView)
         } else {
             // TODO: - Show error about missing file
         }
@@ -163,6 +119,7 @@ class ShareViewController: UIViewController {
         self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
         self.updateToolbar(to: state.downloadState)
         self.updatePicker(to: state.pickerState)
+        self.navigationItem.title = state.title
     }
 
     private func prepareForUpload() {
@@ -265,11 +222,11 @@ class ShareViewController: UIViewController {
         self.pickerContainer.layer.borderColor = UIColor.opaqueSeparator.cgColor
     }
 
-    private func setupNavbar() {
+    private func setupNavbar(loggedIn: Bool) {
         let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
         self.navigationItem.leftBarButtonItem = cancel
 
-        if self.loggedIn {
+        if loggedIn {
             let done = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.done))
             done.isEnabled = false
             self.navigationItem.rightBarButtonItem = done
@@ -283,5 +240,39 @@ class ShareViewController: UIViewController {
 
     private func setupNotLoggedInOverlay() {
         self.notLoggedInOverlay.isHidden = false
+    }
+
+    private func setupControllers(with session: SessionData) {
+        self.dbStorage = RealmDbStorage(url: Files.dbFile(for: session.userId).createUrl())
+        self.store = self.createStore(for: session.userId, authToken: session.apiToken, dbStorage: self.dbStorage)
+    }
+
+    private func createStore(for userId: Int, authToken: String, dbStorage: DbStorage) -> ExtensionStore {
+        let configuration = URLSessionConfiguration.default
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
+        configuration.sharedContainerIdentifier = AppGroup.identifier
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+        apiClient.set(authToken: authToken)
+
+        BackgroundApi.shared.client.set(authToken: authToken)
+
+        let fileStorage = FileStorageController()
+        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
+
+        let syncHandler = SyncActionHandlerController(userId: userId,
+                                                      apiClient: apiClient,
+                                                      dbStorage: dbStorage,
+                                                      fileStorage: fileStorage,
+                                                      schemaController: schemaController,
+                                                      syncDelayIntervals: DelayIntervals.sync)
+        let syncController = SyncController(userId: userId, handler: syncHandler,
+                                            conflictDelays: DelayIntervals.conflict)
+
+        return ExtensionStore(apiClient: apiClient,
+                              backgroundApi: BackgroundApi.shared,
+                              dbStorage: dbStorage,
+                              schemaController: schemaController,
+                              fileStorage: fileStorage,
+                              syncController: syncController)
     }
 }

@@ -3,7 +3,9 @@ var ExtensionScriptClass = function() {};
 ExtensionScriptClass.prototype = {
     run: function(arguments) {
        arguments.completionFunction({"title": document.title,
-                                     "url": document.URL});
+                                     "url": document.URL,
+                                     "html": document.documentElement.innerHTML,
+                                     "cookies": document.cookie});
     } 
 };
 

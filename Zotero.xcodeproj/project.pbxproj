@@ -201,6 +201,7 @@
 		B34FD9E1230C31A2008338FD /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34FD9E0230C31A2008338FD /* CollectionsView.swift */; };
 		B353370822CCB620005648CB /* KeyedResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370722CCB620005648CB /* KeyedResponse.swift */; };
 		B353370A22CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
+		B355B8FF239951E800E837B9 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
 		B3562481226758EE006D039F /* CreateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */; };
 		B35CF5DA22E5BE7A007ADAAA /* MD5+Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */; };
 		B35E39D122772DA300A368C7 /* ResolveItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */; };
@@ -236,6 +237,7 @@
 		B37F7ABA2395476F008A51B4 /* MD5+Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
+		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
 		B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */; };
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
@@ -549,6 +551,7 @@
 		B34FD9E0230C31A2008338FD /* CollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsView.swift; sourceTree = "<group>"; };
 		B353370722CCB620005648CB /* KeyedResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedResponse.swift; sourceTree = "<group>"; };
 		B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnyChangedObjectsInLibraryDbRequest.swift; sourceTree = "<group>"; };
+		B355B8FE239951E800E837B9 /* translation */ = {isa = PBXFileReference; lastKnownFileType = folder; path = translation; sourceTree = "<group>"; };
 		B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCollectionDbRequest.swift; sourceTree = "<group>"; };
 		B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MD5+Url.swift"; sourceTree = "<group>"; };
 		B35E39D022772DA300A368C7 /* ResolveItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveItemDbRequest.swift; sourceTree = "<group>"; };
@@ -582,6 +585,7 @@
 		B37F7AB7239541EB008A51B4 /* Attachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attachment.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
+		B3823B292399302100953F5D /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DelayIntervals.swift; sourceTree = "<group>"; };
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
@@ -1252,6 +1256,7 @@
 		B3AB38A3238EC02D008A1ABB /* Stores */ = {
 			isa = PBXGroup;
 			children = (
+				B3823B292399302100953F5D /* WebViewHandler.swift */,
 				B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */,
 				B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */,
 			);
@@ -1261,6 +1266,7 @@
 		B3AB38B5238ED023008A1ABB /* Assets */ = {
 			isa = PBXGroup;
 			children = (
+				B355B8FE239951E800E837B9 /* translation */,
 				B3AB38B6238ED023008A1ABB /* Assets.xcassets */,
 				B3AB38B7238ED023008A1ABB /* ExtensionScript.js */,
 			);
@@ -1475,6 +1481,7 @@
 			files = (
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
+				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1933,6 +1940,7 @@
 				B32661A1238D349B0050335F /* DeletableObject.swift in Sources */,
 				B32661B5238D38B00050335F /* DeleteObjectsDbRequest.swift in Sources */,
 				B326618B238D26580050335F /* Formatter.swift in Sources */,
+				B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */,
 				B32661BB238D80BA0050335F /* DelayIntervals.swift in Sources */,
 				B326617A238D24640050335F /* SyncActionHandler.swift in Sources */,
 				B3266179238D24610050335F /* SyncController.swift in Sources */,
