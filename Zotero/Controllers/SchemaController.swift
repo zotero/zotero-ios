@@ -184,11 +184,13 @@ extension SchemaController: SchemaDataSource {
             return locale
         }
 
-        if let locale = self.locales.first(where: { $0.key.contains(localeId) })?.value {
+        let languagePart = localeId.split(separator: "_").first.flatMap(String.init) ?? localeId
+
+        if let locale = self.locales.first(where: { $0.key.contains(languagePart) })?.value {
             return locale
         }
 
-        return self.locales["en-US"]
+        return self.locales["en_US"]
     }
 
     func localized(itemType: String) -> String? {
