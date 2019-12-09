@@ -1,0 +1,78 @@
+/*
+ Override selected, unfocused tree row highlight color, which is too similar to the alternating
+ row color by default
+*/
+#zotero-collections-tree treechildren::-moz-tree-row(selected),
+#zotero-items-tree treechildren::-moz-tree-row(selected) {
+	background-color: #D4D4D4;
+}
+
+#zotero-collections-tree treechildren::-moz-tree-row(selected, focus),
+#zotero-items-tree treechildren::-moz-tree-row(selected, focus) {
+	background-color: Highlight;
+}
+
+#zotero-collections-tree treechildren::-moz-tree-row {
+	height: 1.3em;
+}
+
+
+@media (min-resolution: 1.25dppx) {
+	#zotero-pane .toolbarbutton-icon {
+		width: 16px;
+	}
+	
+	#zotero-tb-sync > .toolbarbutton-icon {
+		width: 20px;
+	}
+}
+
+/* Dropmarker added automatically on Linux */
+.toolbarbutton-menu-dropmarker, #zotero-tb-search-menu-button {
+	list-style-image: none;
+}
+
+.zotero-tb-button:not([type=menu]) {
+	margin-right: 4px;
+}
+
+#zotero-tb-search-menu-button {
+	-moz-appearance: toolbarbutton-dropdown !important;
+	width: 12px;
+	height: 12px;
+}
+
+#zotero-tb-search-menu-button .button-menu-dropmarker {
+	display: none;
+}
+
+#zotero-tb-search .textbox-search-icon {
+	visibility: hidden;
+}
+
+/* Fixes tabs missing styling on (GTK 3.20) Ubuntu 16.10. See https://bugzilla.mozilla.org/show_bug.cgi?id=1306425 */
+tabpanels {
+	-moz-appearance: none;
+	border: 1px solid hsla(0, 0%, 0%, 0.2);
+	
+}
+tab {
+	-moz-appearance: none;
+	border-top: 1px solid hsla(0, 0%, 0%, 0.2);
+	border-right: 1px solid hsla(0, 0%, 0%, 0.2);
+	border-left: 1px solid hsla(0, 0%, 0%, 0.2);
+}
+/* Fixes misc Ubuntu 16.10 rendering issue fixes. */
+#zotero-prefs menulist dropmarker{
+	width: 30px;
+}
+#zotero-prefs .numberbox-input-box{
+	-moz-appearance: textfield;
+}
+
+#zotero-pane splitter {
+	border: 0;
+	width: 6px;
+	background-color: transparent;
+	background-image: none;
+}

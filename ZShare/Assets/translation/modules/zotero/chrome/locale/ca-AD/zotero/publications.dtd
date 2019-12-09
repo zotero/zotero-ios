@@ -1,0 +1,19 @@
+<!ENTITY zotero.publications.my_publications "Les meves publicacions">
+
+<!ENTITY zotero.publications.intro "Els elements que afegiu a «Les meves publicacions» es mostraran en la pàgina de perfil de zotero.org. Si trieu incloure els fitxers adjunts, es posaran disponibles sota la llicència que hi especifiqueu. Només afegiu-hi treballs que hàgiu creat, i només incloeu-hi fitxers que tingueu els drets de distribució i vulgueu compartir.">
+<!ENTITY zotero.publications.include.checkbox.files "Inclou els fitxers">
+<!ENTITY zotero.publications.include.checkbox.notes "Inclou les notes">
+<!ENTITY zotero.publications.include.adjustAtAnyTime "Podeu ajustar el que voleu mostrar en qualsevol moment des de la col·lecció «Les meves publicacions».">
+
+<!ENTITY zotero.publications.sharing.title "Trieu com podeu compartir el vostre treball">
+<!ENTITY zotero.publications.sharing.text "Podeu reservar-vos tots els drets del vostre treball, llicenciar-lo sota una llicència Creative Commons, o dedicar-lo al domini públic. En tots els casos el treball serà disponible públicament des de zotero.org.">
+<!ENTITY zotero.publications.sharing.prompt "Voldríeu permetre que altres comparteixin el vostre treball?">
+<!ENTITY zotero.publications.sharing.cc "Sí, i sota una llicència Creative Commons">
+<!ENTITY zotero.publications.sharing.cc0 "Sí, i posa el meu treball en domini públic">
+<!ENTITY zotero.publications.sharing.reserved "No, només publica el meu treball a zotero.org">
+
+<!ENTITY zotero.publications.chooseLicense.title "Trieu una llicència de Creative Commons">
+<!ENTITY zotero.publications.chooseLicense.text "Una llicència Creative Commons permet als altres copiar i redistribuir el vostre treball sempre que en proporcionin el reconeixement adequat, proporcionin un enllaç a la llicència i indiquin si s'han fet canvis. Es poden especificar condicions addicionals a continuació.">
+<!ENTITY zotero.publications.chooseLicense.adaptations.prompt "Voldríeu permetre que es comparteixin adaptacions del vostre treball?">
+<!ENTITY zotero.publications.chooseLicense.adaptations.sharealike "Sí, sempre que els altres també ho comparteixin així">
+<!ENTITY zotero.publications.chooseLicense.commercial.prompt "Voldríeu permetre'n usos comercials?">

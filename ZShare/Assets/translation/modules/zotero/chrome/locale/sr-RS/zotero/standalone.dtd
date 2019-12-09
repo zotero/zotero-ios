@@ -1,0 +1,101 @@
+<!ENTITY preferencesCmdMac.label "Поставке…">
+<!ENTITY preferencesCmdMac.commandkey ",">
+<!ENTITY servicesMenuMac.label "Сервиси">
+<!ENTITY hideThisAppCmdMac.label "Сакриј &brandShortName;">
+<!ENTITY hideThisAppCmdMac.commandkey "H">
+<!ENTITY hideOtherAppsCmdMac.label "Сакриј остале">
+<!ENTITY hideOtherAppsCmdMac.commandkey "H">
+<!ENTITY showAllAppsCmdMac.label "Прикажи све">
+<!ENTITY quitApplicationCmdMac.label "Напусти Зотеро">
+<!ENTITY quitApplicationCmdMac.key "Q">
+
+
+<!ENTITY fileMenu.label "Датотека">
+<!ENTITY fileMenu.accesskey "F">
+<!ENTITY saveCmd.label "Сачувај…">
+<!ENTITY saveCmd.key "S">
+<!ENTITY saveCmd.accesskey "A">
+<!ENTITY pageSetupCmd.label "Подешавање странице…">
+<!ENTITY pageSetupCmd.accesskey "U">
+<!ENTITY printCmd.label "Штампај…">
+<!ENTITY printCmd.key "P">
+<!ENTITY printCmd.accesskey "P">
+<!ENTITY closeCmd.label "Затвори">
+<!ENTITY closeCmd.key "W">
+<!ENTITY closeCmd.accesskey "C">
+<!ENTITY manageAttachments.label "Manage Attachments">
+<!ENTITY convertToStored.label "Convert Linked Files to Stored Files…">
+<!ENTITY importCmd.label "Увези…">
+<!ENTITY importCmd.key "I">
+<!ENTITY importFromClipboardCmd.label "Увези из оставе">
+<!ENTITY quitApplicationCmdWin.label "Изађи">
+<!ENTITY quitApplicationCmdWin.accesskey "x">
+<!ENTITY quitApplicationCmd.label "Напусти">
+<!ENTITY quitApplicationCmd.accesskey "Q">
+
+
+<!ENTITY copyCitationCmd.label "Копирај цитат">
+<!ENTITY copyBibliographyCmd.label "Копирај библиографију">
+
+<!ENTITY bidiSwitchPageDirectionItem.label "Промени смер странице">
+<!ENTITY bidiSwitchPageDirectionItem.accesskey "g">
+<!ENTITY bidiSwitchTextDirectionItem.label "Промени смер текста">
+<!ENTITY bidiSwitchTextDirectionItem.accesskey "w">
+<!ENTITY bidiSwitchTextDirectionItem.commandkey "X">
+
+
+<!ENTITY viewMenu.label "View">
+<!ENTITY layout.label "Layout">
+<!ENTITY standardView.label "Standard View">
+<!ENTITY stackedView.label "Stacked View">
+<!ENTITY collectionsPane.label "Collections Pane">
+<!ENTITY itemPane.label "Item Pane">
+<!ENTITY tagSelector.label "Tag Selector">
+<!ENTITY recursiveCollections.label "Show Items from Subcollections">
+<!ENTITY fontSize.label "Font Size">
+<!ENTITY noteFontSize.label "Note Font Size">
+
+
+<!ENTITY toolsMenu.label "Алати">
+<!ENTITY toolsMenu.accesskey "T">
+<!ENTITY installConnector.label "Инсталирај програм за повезивање са разгледачем">
+<!ENTITY installConnector.accesskey "C">
+<!ENTITY addons.label "Додаци">
+<!ENTITY developer.label "Developer">
+
+
+<!ENTITY minimizeWindow.key "m">
+<!ENTITY minimizeWindow.label "Умањи">
+<!ENTITY bringAllToFront.label "Постави све напред">
+<!ENTITY zoomWindow.label "Увећај">
+<!ENTITY windowMenu.label "Прозор">
+
+
+<!ENTITY helpMenu.label "Помоћ">
+<!ENTITY helpMenu.accesskey "H">
+
+
+<!ENTITY helpMenuWin.label "Помоћ">
+<!ENTITY helpMenuWin.accesskey "H">
+<!ENTITY helpMac.commandkey "?">
+<!ENTITY aboutProduct.label "О програму &brandShortName;">
+<!ENTITY aboutProduct.accesskey "A">
+<!ENTITY productHelp.label "Подршка и документација">
+<!ENTITY productHelp.accesskey "D">
+<!ENTITY helpTroubleshootingInfo.label "Подаци о проблемима">
+<!ENTITY helpTroubleshootingInfo.accesskey "T">
+<!ENTITY helpFeedbackPage.label "Форуми за дискусију">
+<!ENTITY helpFeedbackPage.accesskey "F">
+
+<!ENTITY helpReportErrors.label "Пријави грешке…">
+<!ENTITY helpReportErrors.accesskey "R">
+
+<!ENTITY debugOutputLogging.label "Дневник излаза са грешкама">
+<!ENTITY debugOutputLogging.accesskey "L">
+<!ENTITY debugOutputLogging.submit "Пошаљи излаз">
+<!ENTITY debugOutputLogging.view "Прикажи излаз">
+<!ENTITY debugOutputLogging.clear "Очисти излаз">
+<!ENTITY debugOutputLogging.restartWithLoggingEnabled "Поново покрени са дневником…">
+
+<!ENTITY helpCheckForUpdates.label "Потражи ажурирања…">
+<!ENTITY helpCheckForUpdates.accesskey "U">

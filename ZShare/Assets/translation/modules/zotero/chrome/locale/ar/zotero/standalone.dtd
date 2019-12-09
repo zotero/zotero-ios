@@ -1,0 +1,101 @@
+<!ENTITY preferencesCmdMac.label "التفضيلات...">
+<!ENTITY preferencesCmdMac.commandkey ",">
+<!ENTITY servicesMenuMac.label "خدمات">
+<!ENTITY hideThisAppCmdMac.label "إخفاء اسم العلامة التجارية القصيرة؛">
+<!ENTITY hideThisAppCmdMac.commandkey "ا">
+<!ENTITY hideOtherAppsCmdMac.label "اخفاء الأخرى">
+<!ENTITY hideOtherAppsCmdMac.commandkey "ا">
+<!ENTITY showAllAppsCmdMac.label "عرض الكل">
+<!ENTITY quitApplicationCmdMac.label "خروج من زوتيرو">
+<!ENTITY quitApplicationCmdMac.key "خ">
+
+
+<!ENTITY fileMenu.label "ملف">
+<!ENTITY fileMenu.accesskey "م">
+<!ENTITY saveCmd.label "حفظ...">
+<!ENTITY saveCmd.key "S">
+<!ENTITY saveCmd.accesskey "A">
+<!ENTITY pageSetupCmd.label "ضبط الصفحة...">
+<!ENTITY pageSetupCmd.accesskey "U">
+<!ENTITY printCmd.label "طباعة...">
+<!ENTITY printCmd.key "P">
+<!ENTITY printCmd.accesskey "P">
+<!ENTITY closeCmd.label "إغلاق">
+<!ENTITY closeCmd.key "W">
+<!ENTITY closeCmd.accesskey "ق">
+<!ENTITY manageAttachments.label "Manage Attachments">
+<!ENTITY convertToStored.label "Convert Linked Files to Stored Files…">
+<!ENTITY importCmd.label "استيراد...">
+<!ENTITY importCmd.key "I">
+<!ENTITY importFromClipboardCmd.label "استيراد من الحافظة">
+<!ENTITY quitApplicationCmdWin.label "خروج">
+<!ENTITY quitApplicationCmdWin.accesskey "خ">
+<!ENTITY quitApplicationCmd.label "إنهاء">
+<!ENTITY quitApplicationCmd.accesskey "ن">
+
+
+<!ENTITY copyCitationCmd.label "نسخ الاقتباس">
+<!ENTITY copyBibliographyCmd.label "نسخ قائمة المراجع">
+
+<!ENTITY bidiSwitchPageDirectionItem.label "تغيير اتجاه الصفحة">
+<!ENTITY bidiSwitchPageDirectionItem.accesskey "ه">
+<!ENTITY bidiSwitchTextDirectionItem.label "تغيير اتجاه النص">
+<!ENTITY bidiSwitchTextDirectionItem.accesskey "ج">
+<!ENTITY bidiSwitchTextDirectionItem.commandkey "X">
+
+
+<!ENTITY viewMenu.label "عرض">
+<!ENTITY layout.label "تخطيط">
+<!ENTITY standardView.label "عرض قياسي">
+<!ENTITY stackedView.label "عرض مرصوص">
+<!ENTITY collectionsPane.label "جزء مجموعة العناصر">
+<!ENTITY itemPane.label "جزء عنصر">
+<!ENTITY tagSelector.label "مختار الوسوم">
+<!ENTITY recursiveCollections.label "إظهار العناصر من المجموعات الفرعية">
+<!ENTITY fontSize.label "حجم الخط">
+<!ENTITY noteFontSize.label "حجم خط الملاحظات">
+
+
+<!ENTITY toolsMenu.label "أدوات">
+<!ENTITY toolsMenu.accesskey "T">
+<!ENTITY installConnector.label "ثبت موصل المتصفح">
+<!ENTITY installConnector.accesskey "C">
+<!ENTITY addons.label "ملحقات">
+<!ENTITY developer.label "المطور">
+
+
+<!ENTITY minimizeWindow.key "m">
+<!ENTITY minimizeWindow.label "تصغير">
+<!ENTITY bringAllToFront.label "أحضر الكل للأمام">
+<!ENTITY zoomWindow.label "تقريب">
+<!ENTITY windowMenu.label "نافذة">
+
+
+<!ENTITY helpMenu.label "مساعدة">
+<!ENTITY helpMenu.accesskey "م">
+
+
+<!ENTITY helpMenuWin.label "مساعدة">
+<!ENTITY helpMenuWin.accesskey "م">
+<!ENTITY helpMac.commandkey "؟">
+<!ENTITY aboutProduct.label "حول اسم العلامة التجارية القصير؛">
+<!ENTITY aboutProduct.accesskey "A">
+<!ENTITY productHelp.label "مساعدة ووثائق">
+<!ENTITY productHelp.accesskey "D">
+<!ENTITY helpTroubleshootingInfo.label "معلومات المساعدة والتنويه">
+<!ENTITY helpTroubleshootingInfo.accesskey "م">
+<!ENTITY helpFeedbackPage.label "منتديات المناقشة">
+<!ENTITY helpFeedbackPage.accesskey "F">
+
+<!ENTITY helpReportErrors.label "الإبلاغ عن أخطاء...">
+<!ENTITY helpReportErrors.accesskey "ب">
+
+<!ENTITY debugOutputLogging.label "سجل تصويب المخرجات">
+<!ENTITY debugOutputLogging.accesskey "L">
+<!ENTITY debugOutputLogging.submit "إرسال المخرجات">
+<!ENTITY debugOutputLogging.view "عرض المخرجات">
+<!ENTITY debugOutputLogging.clear "مسح المخرجات">
+<!ENTITY debugOutputLogging.restartWithLoggingEnabled "أعاده التشغيل مع تمكين التسجيل...">
+
+<!ENTITY helpCheckForUpdates.label "تحقق من التحديثات">
+<!ENTITY helpCheckForUpdates.accesskey "ت">

@@ -1,0 +1,246 @@
+/*
+    ***** BEGIN LICENSE BLOCK *****
+    
+    Copyright © 2011 Center for History and New Media
+                     George Mason University, Fairfax, Virginia, USA
+                     http://zotero.org
+    
+    This file is part of Zotero.
+    
+    Zotero is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    Zotero is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+    
+    You should have received a copy of the GNU Affero General Public License
+    along with Zotero.  If not, see <http://www.gnu.org/licenses/>.
+    
+    Parts of this code are derived from mozilla.org code.
+    
+    The Initial Developer of this Original Code is Netscape Communications Corporation.
+    Portions created by the Initial Developer are Copyright (C) 1998-1999
+    the Initial Developer. All Rights Reserved.
+    
+    ***** END LICENSE BLOCK *****
+*/
+
+#up {
+	list-style-image: url('chrome://zotero/skin/citation-up.png');
+}
+
+#up[disabled="true"] {
+	list-style-image: url('chrome://zotero/skin/citation-up-gray.png');
+}
+
+#down {
+	list-style-image: url('chrome://zotero/skin/citation-down.png');
+}
+
+#down[disabled="true"] {
+	list-style-image: url('chrome://zotero/skin/citation-down-gray.png');
+}
+
+
+#add {
+	list-style-image: url('chrome://zotero/skin/citation-add.png');
+}
+
+#add[disabled="true"] {
+	list-style-image: url('chrome://zotero/skin/citation-add-gray.png');
+}
+
+#remove {
+	list-style-image: url('chrome://zotero/skin/citation-delete.png');
+}
+
+#remove[disabled="true"] {
+	list-style-image: url('chrome://zotero/skin/citation-delete-gray.png');
+}
+
+#citation-buttons > toolbarbutton
+{
+	margin: 2px 0 2px 4px !important;
+	padding: 0 !important;
+}
+
+#citation-buttons > toolbarbutton > .toolbarbutton-text
+{
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+#prefix, #suffix {
+	width: 200px;
+}
+
+#tree-locator {
+	width: 60px;
+}
+
+#item-locator {
+	max-width:100px;
+}
+
+#editor {
+	margin-top: 10px;
+	max-height: 100px;
+}
+
+.quick-format-title {
+	margin: 0;
+	font-weight: bold;
+	overflow: hidden;
+}
+
+.quick-format-info {
+	margin: 0;
+	overflow: hidden;
+}
+.quick-format-info > label {
+	margin: 0;
+	padding: 0;
+}
+
+.quick-format-bubble {
+	border-radius: 8px;
+	background-color: #dee7f8;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #a8c0ec;
+	padding: 0 6px 0 6px;
+	margin: -1px 2px 0 2px;
+	display: inline-block;
+	white-space: nowrap;
+	line-height: normal;
+	-moz-user-select: all;
+}
+
+.quick-format-bubble:hover {
+	background-color: #bbcef1;
+	border-color: #6d95e0;
+}
+
+.quick-format-bubble[selected="true"] {
+	border-radius: 8px !important;
+	background-color: #598bec;
+	color: #fff;
+}
+
+#quick-format-search {
+	margin: 0;
+	padding: 0;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+#quick-format-iframe {
+	margin-left: 4px;
+	height: 9999px;
+}
+
+body {
+	margin: 0 2px 0 2px;
+	padding: 0;
+	font: -moz-field;
+	overflow: hidden;
+}
+
+#quick-format-spinner {
+	margin-top: 2px;
+	margin-right: 8px;
+}
+
+.quick-format-item {
+	font-size: 12px;
+	font: -moz-field;
+	-moz-user-focus: normal;
+	padding: 3px 5px 3px 10px;
+}
+
+.quick-format-item:not(:last-child), .quick-format-separator:not(:last-child) {
+	border-style: solid;
+	border-width: 0 0 1px 0;
+	border-color: #BBB;
+}
+
+.quick-format-separator {
+	font-size: 12px;
+	font: -moz-field;
+	-moz-user-focus: ignore;
+	color: gray;
+}
+
+richlistitem[selected="true"] {
+	background: Highlight;
+	color: HighlightText;
+}
+
+#quick-format-reference-panel {
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: white;
+	opacity: 0.9;
+	-moz-user-focus: ignore;
+}
+
+#quick-format-reference-list {
+	margin: 0;
+	padding: 0;
+	-moz-user-focus: ignore;
+}
+
+#zotero-icon {
+	list-style-image: url("chrome://zotero/skin/zotero-new-z-16px.png");
+	background-color: #fff;
+	padding: 0;
+	margin: 0;
+}
+
+#zotero-icon .toolbarbutton-text {
+	display: none;
+}
+
+#zotero-icon .toolbarbutton-icon {
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	margin: 0;
+}
+
+#citation-properties #suppress-author {
+	-moz-user-focus: normal;
+}
+
+#citation-properties-title {
+	padding-left: 0;
+	padding-right: 0;
+	margin-left: 0;
+	margin-right: 0;
+	max-width: 300px;
+	font-weight: bold;
+}
+
+#citation-properties-info > label {
+	padding-left: 0;
+	padding-right: 0;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+#citation-properties-info {
+	margin-bottom: 3px;
+}
+
+panel button .button-text {
+	margin: 0 !important;
+}
+
+#quick-format-dialog {
+	width: 600px;
+}

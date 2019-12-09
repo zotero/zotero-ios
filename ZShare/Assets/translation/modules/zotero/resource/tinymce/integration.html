@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<style>
+html, body {
+	height: 100%;
+	margin: 0;
+}
+
+#tinymce_parent {
+	display: block;
+	height: 100%;
+	min-height: 130px;
+}
+
+#noScriptWarning {
+	padding: 10px 8px 4px;
+	font-family: sans-serif;
+	font-size: 12px;
+}
+</style>
+
+<script type="text/javascript" src="tinymce.min.js"></script>
+<script type="text/javascript" src="locale.js"></script>
+<script type="text/javascript">
+	tinyMCE.init({
+		content_css: "css/integration-content.css",
+		
+		toolbar: "bold italic underline | sub sup | removeformat",
+		toolbar_items_size: 'small',
+		menubar: false,
+		resize: false,
+		statusbar: false,
+		
+		init_instance_callback: function (ed) {
+			setLocale(ed);
+			zoteroInit(ed);
+		}
+	});
+	tinyMCE.execCommand("mceAddEditor", true, "tinymce");
+</script>
+</head>
+<body>
+<div id="tinymce"></div>
+</body>
+</html>

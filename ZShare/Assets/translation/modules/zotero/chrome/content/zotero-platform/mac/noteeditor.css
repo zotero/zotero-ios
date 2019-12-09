@@ -1,0 +1,8 @@
+row > label:first-child
+{
+	color: #7f7f7f;
+}
+
+textbox[type="styled"] {
+	border-style: none;
+}

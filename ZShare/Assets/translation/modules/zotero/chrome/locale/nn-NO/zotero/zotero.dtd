@@ -1,0 +1,324 @@
+<!ENTITY zotero.general.yes "Ja">
+<!ENTITY zotero.general.no "Nei">
+<!ENTITY zotero.general.optional "(Valfri)">
+<!ENTITY zotero.general.note "Notat:">
+<!ENTITY zotero.general.selectAll "Merk alt">
+<!ENTITY zotero.general.deselectAll "Fjern merking">
+<!ENTITY zotero.general.edit "Endre">
+<!ENTITY zotero.general.delete "Slett">
+<!ENTITY zotero.general.ok "OK">
+<!ENTITY zotero.general.cancel "Avbryt">
+<!ENTITY zotero.general.refresh "Frisk opp">
+<!ENTITY zotero.general.saveAs "Lagra som …">
+<!ENTITY zotero.general.options "Options">
+<!ENTITY zotero.general.advancedOptions.label "Avansert">
+<!ENTITY zotero.general.tools "Verktøy">
+<!ENTITY zotero.general.more "Meir">
+<!ENTITY zotero.general.loading "Lastar …">
+<!ENTITY zotero.general.close "Close">
+<!ENTITY zotero.general.minimize "Minimize">
+<!ENTITY zotero.general.other "Other…">
+<!ENTITY zotero.general.bigger "Bigger">
+<!ENTITY zotero.general.smaller "Smaller">
+<!ENTITY zotero.general.reset "Reset">
+
+
+<!ENTITY zotero.errorReport.title "Zotero Error Report">
+<!ENTITY zotero.errorReport.submissionInProgress "Vennligst vent medan feilrapporten vert levert.">
+<!ENTITY zotero.errorReport.submitted "Feilrapporten er levert.">
+<!ENTITY zotero.errorReport.reportID "Rapport-ID:">
+<!ENTITY zotero.errorReport.postToForums "Ver god og skriv ei melding i Zotero-foruma (forums.zotero.org) med denne rapport-IDen, ei skildring av problemet og naudsynte steg for å reprodusera problemet.">
+<!ENTITY zotero.errorReport.notReviewed "Feilrapportar vert vanlegvis ikkje kommentert, dersom problemet ikkje vert teke opp i foruma.">
+
+<!ENTITY zotero.upgrade.title "Zotero Upgrade Wizard">
+<!ENTITY zotero.upgrade.newVersionInstalled "Du har installert ein ny versjon av Zotero.">
+<!ENTITY zotero.upgrade.upgradeRequired "Zotero-databasen din må oppgraderast for å fungera med den nye versjonen.">
+<!ENTITY zotero.upgrade.autoBackup "Det vert laga ein tryggleikskopi av den eksisterande databasen før han vert oppgradert.">
+<!ENTITY zotero.upgrade.majorUpgrade "Dette er ei stor oppgradering">
+<!ENTITY zotero.upgrade.majorUpgradeBeforeLink "Ver sikker på at du har lest gjennom">
+<!ENTITY zotero.upgrade.majorUpgradeLink "oppgraderingsinstruksjonane">
+<!ENTITY zotero.upgrade.majorUpgradeAfterLink "før du held fram.">
+<!ENTITY zotero.upgrade.upgradeInProgress "Vent medan oppgraderinga vert utførd. Det kan ta nokre minutt.">
+<!ENTITY zotero.upgrade.upgradeSucceeded "Oppgraderinga av Zotero-databasen var vellukka.">
+<!ENTITY zotero.upgrade.changeLogBeforeLink "Sjå">
+<!ENTITY zotero.upgrade.changeLogLink "endringsloggen">
+<!ENTITY zotero.upgrade.changeLogAfterLink "for å finne ut kva som er nytt.">
+
+<!ENTITY zotero.tabs.info.label "Info">
+<!ENTITY zotero.tabs.notes.label "Notat">
+<!ENTITY zotero.tabs.attachments.label "Vedlegg">
+<!ENTITY zotero.tabs.tags.label "Taggar">
+<!ENTITY zotero.tabs.related.label "Relatert">
+<!ENTITY zotero.notes.separate "Rediger i separat vindauge">
+
+<!ENTITY zotero.toolbar.duplicate.label "Vis duplikat">
+<!ENTITY zotero.collections.showUnfiledItems "Vis uplasserte objekt">
+<!ENTITY zotero.collections.showRetractedItems "Show Retracted Items">
+
+<!ENTITY zotero.items.itemType "Type">
+<!ENTITY zotero.items.type_column "Type">
+<!ENTITY zotero.items.title_column "Tittel">
+<!ENTITY zotero.items.creator_column "Namn">
+<!ENTITY zotero.items.date_column "Dato">
+<!ENTITY zotero.items.year_column "År">
+<!ENTITY zotero.items.publisher_column "Utgjevar">
+<!ENTITY zotero.items.publication_column "Publikasjon">
+<!ENTITY zotero.items.journalAbbr_column "Tidsskriftforkorting">
+<!ENTITY zotero.items.language_column "Språk">
+<!ENTITY zotero.items.accessDate_column "Sist opna">
+<!ENTITY zotero.items.libraryCatalog_column "Bibliotek-katalog">
+<!ENTITY zotero.items.callNumber_column "Plass-signatur">
+<!ENTITY zotero.items.rights_column "Rettar">
+<!ENTITY zotero.items.dateAdded_column "Lagt til">
+<!ENTITY zotero.items.dateModified_column "Sist endra">
+<!ENTITY zotero.items.extra_column "Ekstra">
+<!ENTITY zotero.items.archive_column "Arkiv">
+<!ENTITY zotero.items.archiveLocation_column "Loc. in Archive">
+<!ENTITY zotero.items.place_column "Stad">
+<!ENTITY zotero.items.volume_column "Volume">
+<!ENTITY zotero.items.edition_column "Utgåve">
+<!ENTITY zotero.items.pages_column "Sider">
+<!ENTITY zotero.items.issue_column "Nummer">
+<!ENTITY zotero.items.series_column "Serie">
+<!ENTITY zotero.items.seriesTitle_column "Serietittel">
+<!ENTITY zotero.items.court_column "Court">
+<!ENTITY zotero.items.medium_column "Medium/format">
+<!ENTITY zotero.items.genre_column "Sjanger">
+<!ENTITY zotero.items.system_column "System">
+<!ENTITY zotero.items.moreColumns.label "Fleire kolonner">
+<!ENTITY zotero.items.restoreColumnOrder.label "Gjenopprett kolonnerekkefølgje">
+
+<!ENTITY zotero.items.menu.showInLibrary "Vis i bibliotek">
+<!ENTITY zotero.items.menu.attach.note "Legg til notat">
+<!ENTITY zotero.items.menu.attach "Legg til vedlegg">
+<!ENTITY zotero.items.menu.attach.link.uri "Legg ved lenkje til URI …">
+<!ENTITY zotero.items.menu.attach.file "Legg ved lagra kopi av fil …">
+<!ENTITY zotero.items.menu.attach.fileLink "Legg ved lenkje til fil …">
+
+<!ENTITY zotero.items.menu.restoreToLibrary "Gjenopprett til bibliotek">
+<!ENTITY zotero.items.menu.duplicateItem "Dupliser det valde elementet">
+<!ENTITY zotero.items.menu.mergeItems "Slå saman element…">
+<!ENTITY zotero.items.menu.unrecognize "Undo Retrieve Metadata">
+<!ENTITY zotero.items.menu.reportMetadata "Report Incorrect Metadata">
+
+<!ENTITY zotero.duplicatesMerge.versionSelect "Velj kva versjon som skal vere utgangspunkt:">
+<!ENTITY zotero.duplicatesMerge.fieldSelect "Velj felt som skal behaldast frå andre versjonar av elementet:">
+
+<!ENTITY zotero.toolbar.newItem.label "Nytt element">
+<!ENTITY zotero.toolbar.moreItemTypes.label "Meir">
+<!ENTITY zotero.toolbar.lookup.label "Legg til objekt med identifikator">
+<!ENTITY zotero.toolbar.removeItem.label "Fjern element …">
+<!ENTITY zotero.toolbar.newLibrary.label "Nytt bibliotek ">
+<!ENTITY zotero.toolbar.newCollection.label "Ny samling …">
+<!ENTITY zotero.toolbar.markFeedRead.label "Mark Feed as Read">
+<!ENTITY zotero.toolbar.newGroup "New Group …">
+<!ENTITY zotero.toolbar.newSubcollection.label "Ny undersamling …">
+<!ENTITY zotero.toolbar.newSavedSearch.label "Nytt lagra søk …">
+<!ENTITY zotero.toolbar.emptyTrash.label "Tøm søppelbøtta">
+<!ENTITY zotero.toolbar.tagSelector.label "Vis/skjul taggsamling">
+<!ENTITY zotero.toolbar.actions.label "Handlingar">
+<!ENTITY zotero.toolbar.import.label "Importer …">
+<!ENTITY zotero.toolbar.importFromClipboard "Importer frå utklippstavla">
+<!ENTITY zotero.toolbar.export.label "Eksporter bibliotek …">
+<!ENTITY zotero.toolbar.rtfScan.label "RTF-skann …">
+<!ENTITY zotero.toolbar.timeline.label "Lag tidslinje">
+<!ENTITY zotero.toolbar.preferences.label "Innstillingar …">
+<!ENTITY zotero.toolbar.supportAndDocumentation "Støtte og dokumentasjon">
+<!ENTITY zotero.toolbar.about.label "Om Zotero">
+<!ENTITY zotero.toolbar.advancedSearch "Avansert søk">
+<!ENTITY zotero.toolbar.openURL.label "Lokaliser">
+<!ENTITY zotero.toolbar.openURL.tooltip "Finn gjennom det lokale biblioteket ditt">
+
+<!ENTITY zotero.toolbar.feeds.new "New Feed">
+<!ENTITY zotero.toolbar.feeds.new.fromURL "Frå URI …">
+<!ENTITY zotero.toolbar.feeds.new.fromOPML "Frå OPML …">
+<!ENTITY zotero.toolbar.feeds.refresh "Refresh Feed">
+<!ENTITY zotero.toolbar.feeds.edit "Edit Feed…">
+
+<!ENTITY zotero.item.add "Legg til">
+<!ENTITY zotero.item.attachment.file.show "Vis fil">
+<!ENTITY zotero.item.textTransform "Gøyr om tekst">
+<!ENTITY zotero.item.textTransform.titlecase "Tittel-format">
+<!ENTITY zotero.item.textTransform.sentencecase "Store bokstavar etter setningsreglar">
+<!ENTITY zotero.item.creatorTransform.nameSwap "Byt om førenamn og etternamn">
+<!ENTITY zotero.item.viewOnline "Vis på nett">
+<!ENTITY zotero.item.copyAsURL "Kopier som URL">
+<!ENTITY zotero.item.deletePermanently "Slett for godt …">
+
+<!ENTITY zotero.item.tags.removeAll "Remove All Tags…">
+
+<!ENTITY zotero.toolbar.newNote "Nytt notat">
+<!ENTITY zotero.toolbar.note.standalone "Nytt notat">
+<!ENTITY zotero.toolbar.note.child "Nytt undernotat">
+<!ENTITY zotero.toolbar.lookup "Lookup by Identifier …">
+<!ENTITY zotero.toolbar.attachment.linked "Lenkje til fil …">
+<!ENTITY zotero.toolbar.attachment.add "Lagre kopi av fil …">
+<!ENTITY zotero.toolbar.attachment.weblink "Lagre lenkje til gjeldande side">
+<!ENTITY zotero.toolbar.attachment.snapshot "Lag snapshot av gjeldande side">
+
+<!ENTITY zotero.tagSelector.noTagsToDisplay "Ingen taggar finst">
+<!ENTITY zotero.tagSelector.loadingTags "Loading tags…">
+<!ENTITY zotero.tagSelector.showAutomatic "Viser automatisk">
+<!ENTITY zotero.tagSelector.displayAllInLibrary "Display all tags in this library">
+<!ENTITY zotero.tagSelector.deleteAutomaticInLibrary "Delete Automatic Tags in This Library…">
+<!ENTITY zotero.tagSelector.clearAll "Slepp alle">
+<!ENTITY zotero.tagSelector.assignColor "Tilordna farge …">
+<!ENTITY zotero.tagSelector.renameTag "Gje tagg nytt namn …">
+<!ENTITY zotero.tagSelector.deleteTag "Slett tagg …">
+
+<!ENTITY zotero.tagColorChooser.title "Choose a Tag Color and Position">
+<!ENTITY zotero.tagColorChooser.color "Farge:">
+<!ENTITY zotero.tagColorChooser.position "Plassering:">
+<!ENTITY zotero.tagColorChooser.setColor "Set Color">
+<!ENTITY zotero.tagColorChooser.removeColor "Remove Color">
+
+<!ENTITY zotero.lookup.description "Enter ISBNs, DOIs, PMIDs, or arXiv IDs to add to your library:">
+<!ENTITY zotero.lookup.button.search "Søk">
+
+<!ENTITY zotero.selectitems.title "Vel element">
+<!ENTITY zotero.selectitems.intro.label "Vel kva for einingar du vil leggja til biblioteket ditt">
+<!ENTITY zotero.selectitems.cancel.label "Avbryt">
+<!ENTITY zotero.selectitems.select.label "OK">
+
+<!ENTITY zotero.bibliography.title "Lag bibliografi">
+<!ENTITY zotero.bibliography.style.label "Siteringsstil:">
+<!ENTITY zotero.bibliography.manageStyles "Handsama stilar …">
+<!ENTITY zotero.bibliography.locale.label "Språk:">
+<!ENTITY zotero.bibliography.outputMode "Output Mode:">
+<!ENTITY zotero.bibliography.bibliography "Bibliografi">
+<!ENTITY zotero.bibliography.outputMethod "Output Method:">
+<!ENTITY zotero.bibliography.saveAsRTF.label "Lagra som RTF">
+<!ENTITY zotero.bibliography.saveAsHTML.label "Lagra som HTML">
+<!ENTITY zotero.bibliography.copyToClipboard.label "Kopier til utklippstavle">
+<!ENTITY zotero.bibliography.print.label "Skriv ut">
+
+<!ENTITY zotero.integration.docPrefs.title "Dokumenteigenskapar">
+<!ENTITY zotero.integration.addEditCitation.title "Legg til/endra henvisning">
+<!ENTITY zotero.integration.editBibliography.title "Rediger bibliografi">
+<!ENTITY zotero.integration.quickFormatDialog.title "Quick Format Citation">
+
+<!ENTITY zotero.progress.title "Framgang">
+
+<!ENTITY zotero.import "Import">
+<!ENTITY zotero.import.whereToImportFrom "Where do you want to import from?">
+<!ENTITY zotero.import.source.file "A file (BibTeX, RIS, Zotero RDF, etc.)">
+<!ENTITY zotero.import.importing "Importing…">
+<!ENTITY zotero.import.database "Database">
+<!ENTITY zotero.import.lastModified "Last Modified">
+<!ENTITY zotero.import.size "Size">
+<!ENTITY zotero.import.createCollection "Place imported collections and items into new collection">
+<!ENTITY zotero.import.fileHandling "File Handling">
+
+<!ENTITY zotero.exportOptions.title "Eksporter …">
+<!ENTITY zotero.exportOptions.format.label "Format:">
+<!ENTITY zotero.exportOptions.translatorOptions.label "Omsetjarval">
+
+<!ENTITY zotero.charset.label "Teiknsett">
+<!ENTITY zotero.moreEncodings.label "Fleire teiknsett">
+
+<!ENTITY zotero.citation.keepSorted.label "Hald på sortering av kjeldene">
+
+<!ENTITY zotero.citation.suppressAuthor.label "Utelat forfattar">
+<!ENTITY zotero.citation.prefix.label "Prefiks:">
+<!ENTITY zotero.citation.suffix.label "Suffiks:">
+<!ENTITY zotero.citation.editorWarning.label "Åtvaring: Dersom du endrar ein referanse i redigeringsmodusen vil han etterpå ikkje bli oppdatert med endringar frå databasen eller siteringsstilen.">
+
+<!ENTITY zotero.richText.italic.label "Kursiv">
+<!ENTITY zotero.richText.bold.label "Feit">
+<!ENTITY zotero.richText.underline.label "Understreka">
+<!ENTITY zotero.richText.superscript.label "Heva skrift">
+<!ENTITY zotero.richText.subscript.label "Senka skrift">
+
+<!ENTITY zotero.annotate.toolbar.add.label "Legg til kommentar">
+<!ENTITY zotero.annotate.toolbar.collapse.label "Skjul alle kommentarar">
+<!ENTITY zotero.annotate.toolbar.expand.label "Viser alle kommentarar">
+<!ENTITY zotero.annotate.toolbar.highlight.label "Merk tekst">
+<!ENTITY zotero.annotate.toolbar.unhighlight.label "Fjern merking av tekst">
+
+<!ENTITY zotero.integration.prefs.displayAs.label "Vis siteringar som:">
+<!ENTITY zotero.integration.prefs.footnotes.label "Fotnotar">
+<!ENTITY zotero.integration.prefs.endnotes.label "Sluttnotar">
+
+<!ENTITY zotero.integration.prefs.formatUsing.label "Lagra siteringar som:">
+<!ENTITY zotero.integration.prefs.bookmarks.label "Bokmerke">
+<!ENTITY zotero.integration.prefs.bookmarks.caption "Bokmerke kan utvekslast mellom Microsoft Word og OpenOffice, men er utsette for utilsikta endringar. Dei kan ikkje plasserast i fotnotar.">
+
+<!ENTITY zotero.integration.prefs.automaticCitationUpdates.label "Automatically update citations">
+<!ENTITY zotero.integration.prefs.automaticCitationUpdates.tooltip "Citations with pending updates will be highlighted in the document">
+<!ENTITY zotero.integration.prefs.automaticCitationUpdates.description "Disabling updates can speed up citation insertion in large documents. Click Refresh to update citations manually.">
+
+<!ENTITY zotero.integration.prefs.automaticJournalAbbeviations.label "Bruk MEDLINE-journalforkortingar">
+<!ENTITY zotero.integration.prefs.automaticJournalAbbeviations.caption "Feltet «Tidsskriftforkorting» vert ignorert.">
+
+<!ENTITY zotero.integration.prefs.exportDocument "Switch to a Different Word Processor…">
+
+<!ENTITY zotero.integration.showEditor.label "Rediger sitering">
+<!ENTITY zotero.integration.classicView.label "Klassisk framsyning">
+
+<!ENTITY zotero.integration.references.label "Referansar i bibliografi">
+
+<!ENTITY zotero.sync.stop "Stopp synkronisering">
+<!ENTITY zotero.sync.error "Synkroniseringsfeil">
+<!ENTITY zotero.sync.storage.progress "Framdrift:">
+<!ENTITY zotero.sync.storage.downloads "Nedlastingar:">
+<!ENTITY zotero.sync.storage.uploads "Opplastingar:">
+
+<!ENTITY zotero.sync.longTagFixer.followingTagTooLong "Dette merket i Zotero-biblioteket ditt er for langt til å synkronisera med tenaren:">
+<!ENTITY zotero.sync.longTagFixer.syncedTagSizeLimit "Synkroniserte merke må vera kortare enn 256 teikn.">
+<!ENTITY zotero.sync.longTagFixer.splitEditDelete "Du kan anten kløyva merket til fleire merke, gjera det kortare manuelt, eller sletta det.">
+<!ENTITY zotero.sync.longTagFixer.split "Kløyv">
+<!ENTITY zotero.sync.longTagFixer.splitAtThe "Kløyv på">
+<!ENTITY zotero.sync.longTagFixer.character "teikn">
+<!ENTITY zotero.sync.longTagFixer.characters "teikn">
+<!ENTITY zotero.sync.longTagFixer.uncheckedTagsNotSaved "Merke som ikkje er kryssa av vert ikkje lagra.">
+<!ENTITY zotero.sync.longTagFixer.tagWillBeDeleted "Dette merket vert sletta frå alle elementa.">
+
+<!ENTITY zotero.merge.title "Konflikthandsaming">
+<!ENTITY zotero.merge.of "av">
+<!ENTITY zotero.merge.deleted "Sletta">
+
+<!ENTITY zotero.proxy.recognized.title "Mellomtenar attkjend">
+<!ENTITY zotero.proxy.recognized.warning "Legg berre til mellomtenarar lenkja til frå biblioteket, skulen eller arbeidsstaden din">
+<!ENTITY zotero.proxy.recognized.warning.secondary "Å leggja til andre mellomtenarar kan la vondsinna nettstader forkle seg som nettstader du stolar på.">
+<!ENTITY zotero.proxy.recognized.disable.label "Ikkje omdiriger automatisk via mellomtenarar som tidlegare er attkjende.">
+<!ENTITY zotero.proxy.recognized.ignore.label "Oversjå">
+
+<!ENTITY zotero.feedSettings.title "Feed Settings">
+<!ENTITY zotero.feedSettings.saveButton.label "Lagra">
+<!ENTITY zotero.feedSettings.url.label "URL:">
+<!ENTITY zotero.feedSettings.title.label "Tittel:">
+<!ENTITY zotero.feedSettings.refresh.label1 "Update feed every">
+<!ENTITY zotero.feedSettings.refresh.label2 "timar">
+<!ENTITY zotero.feedSettings.cleanupUnreadAfter.label1 "Remove unread feed items after">
+<!ENTITY zotero.feedSettings.cleanupUnreadAfter.label2 "dagar">
+<!ENTITY zotero.feedSettings.cleanupReadAfter.label1 "Remove read feed items after">
+<!ENTITY zotero.feedSettings.cleanupReadAfter.label2 "dagar">
+
+<!ENTITY zotero.rtfScan.title "RTF-skann">
+<!ENTITY zotero.rtfScan.cancel.label "Avbryt">
+<!ENTITY zotero.rtfScan.citation.label "Sitering">
+<!ENTITY zotero.rtfScan.itemName.label "Elementnamn">
+<!ENTITY zotero.rtfScan.unmappedCitations.label "Ikkje kopla siteringar">
+<!ENTITY zotero.rtfScan.ambiguousCitations.label "Tvetydige siteringar">
+<!ENTITY zotero.rtfScan.mappedCitations.label "Kopla siteringar">
+<!ENTITY zotero.rtfScan.introPage.label "Introduksjon">
+<!ENTITY zotero.rtfScan.introPage.description "Zotero can automatically extract and reformat citations and insert a bibliography into RTF files. To get started, choose an RTF file below.">
+<!ENTITY zotero.rtfScan.introPage.description2 "Vel ei RTF-fil og ei utfil under for å starta:">
+<!ENTITY zotero.rtfScan.scanPage.label "Ser etter siteringar">
+<!ENTITY zotero.rtfScan.scanPage.description "Zotero ser gjennom dokumentet etter siteringar. Ha tålmod.">
+<!ENTITY zotero.rtfScan.citationsPage.label "Stadfest siteringar">
+<!ENTITY zotero.rtfScan.citationsPage.description "Sjå over lista over attkjende siteringar under for å stadfesta at Zotero har kopla siteringane rett. Ukopla eller tvetydige siteringar må rettast før du kan gå vidare.">
+<!ENTITY zotero.rtfScan.stylePage.label "Dokumentformatering">
+<!ENTITY zotero.rtfScan.formatPage.label "Formaterer siteringar">
+<!ENTITY zotero.rtfScan.formatPage.description "Zotero les og formaterer RTF-fila. Ha tolmod.">
+<!ENTITY zotero.rtfScan.completePage.label "RTF-skann fullført">
+<!ENTITY zotero.rtfScan.completePage.description "Dokumentet er gjennomlest og prosessert. Kontroller at det er formatert rett.">
+<!ENTITY zotero.rtfScan.inputFile.label "Fil å lesa">
+<!ENTITY zotero.rtfScan.outputFile.label "Fil å skriva">
+
+<!ENTITY zotero.file.choose.label "Velg fil …">
+<!ENTITY zotero.file.noneSelected.label "Inga fil vald">
+
+<!ENTITY zotero.attachLink.title "Attach Link to URI">
+<!ENTITY zotero.attachLink.label.link "Lenkje:">
+<!ENTITY zotero.attachLink.label.title "Tittel:">

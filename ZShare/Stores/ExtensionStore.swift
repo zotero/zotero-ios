@@ -275,7 +275,8 @@ class ExtensionStore {
             })
             .flatMap({ [weak webView] title, url, html, cookies -> Observable<[URL]> in
                 guard let webView = webView else { return Observable.error(DownloadError.expired) }
-                return WebViewHandler(webView: webView).loadDocument(for: url, title: title, html: html, cookies: cookies).asObservable()
+                let completeHtml = "<html>" + html + "</html>"
+                return WebViewHandler(webView: webView).loadDocument(for: url, title: title, html: completeHtml, cookies: cookies).asObservable()
             })
             .flatMap { [weak self] data -> Observable<RxProgress> in
                 guard let `self` = self else { return Observable.error(DownloadError.expired) }

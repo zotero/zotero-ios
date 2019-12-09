@@ -1,0 +1,92 @@
+//
+// Tag selector
+// --------------------------------------------------
+#zotero-tag-selector-container {
+	display: flex;
+}
+
+#zotero-tag-selector-container[collapsed=true] {
+	visibility: collapse;
+}
+
+#zotero-tag-selector {
+	min-height: 100px;
+	width: 100%;
+	display: flex;
+}
+
+.tag-selector {
+	display: flex;
+	flex: 1 0;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.tag-selector-list-container {
+	flex: 1 1 auto;
+	justify-content: space-between;
+	display: flex;
+	overflow: hidden;
+	height: 100px;
+	background-color: $tag-selector-bg;
+}
+
+.tag-selector-list-container > div {
+	flex: 1 1 auto;
+}
+
+.tag-selector-message {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+}
+
+.tag-selector-list {
+	list-style: none;
+	display: inline-block;
+	margin: 0;
+	padding: 0;
+}
+
+.tag-selector-filter-container {
+	height: 30px;
+	flex: 0 0 1em;
+	display: flex;
+	flex-direction: row;
+	padding: 0.125em 0 0.125em 0.5em;
+}
+
+.tag-selector-filter-container .search {
+	display: flex;
+	flex: 1 0;
+}
+
+.tag-selector-actions {
+	flex: 0 1;
+	display: block;
+	white-space: nowrap;
+	background-color: inherit;
+}
+
+.tag-selector-item {
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: pre;
+	padding: 1px 4px 3px; // See also TagSelectorList.jsx
+
+	&.colored {
+		font-weight: bold;
+	}
+
+	&.disabled {
+		opacity: .6;
+		cursor: default;
+	}
+	
+	&.dragged-over {
+		color: $shade-0;
+		background: $shade-6;
+	}
+}

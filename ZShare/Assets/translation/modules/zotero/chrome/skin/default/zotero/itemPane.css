@@ -1,0 +1,168 @@
+.zotero-item-pane-message-box description {
+	padding: 0 2em;
+}
+
+#zotero-view-tabbox, #zotero-item-pane-content > groupbox, #zotero-item-pane-content > groupbox > .groupbox-body
+{
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+#zotero-view-tabbox tabs tab
+{
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+#zotero-view-tabbox tabs tab .tab-text
+{
+	margin-top: .2em !important;
+	margin-bottom: .25em !important;
+}
+
+#zotero-view-item
+{
+	padding: 0;
+}
+
+#zotero-view-item.no-tabs
+{
+	margin-top: 0;
+}
+
+#zotero-view-item > tabpanel > *
+{
+	overflow: auto;
+}
+
+#zotero-view-item:not([selectedIndex="0"]) > tabpanel > * {
+	padding-top: .25em;
+}
+
+#zotero-view-item > vbox
+{
+	overflow: auto;
+	margin-left: 5px;
+}
+
+#retraction-box {
+	cursor: default;
+}
+
+#retraction-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1.5em 1em;
+	background: #d93425;
+	color: white;
+	font-weight: bold;
+}
+
+#retraction-details {
+	background: #fbf0f0;
+	padding: .5em 1.5em;
+	margin-top: 0;
+	margin-bottom: 1em;
+	cursor: text;
+	-moz-user-select: text;
+}
+
+#retraction-details dt {
+	font-weight: bold;
+}
+
+#retraction-details dt:not(:first-child) {
+	margin-top: .5em;
+}
+
+#retraction-details dd {
+	margin-left: 2em;
+}
+
+#retraction-details a {
+	text-decoration: underline;
+}
+
+#retraction-links ul {
+	padding-left: 0;
+}
+
+#retraction-links li {
+	list-style: none;
+}
+
+#retraction-links li:not(:first-child) {
+	margin-top: .75em;
+}
+
+#retraction-credit {
+	text-align: right;
+	margin-top: 1.5em;
+	margin-right: -.9em;
+	margin-bottom: .2em;
+}
+
+#retraction-hide {
+	text-align: right;
+	margin-top: .3em;
+	margin-right: -1.2em;
+	margin-bottom: .3em;
+}
+
+#retraction-hide button {
+	background: none;
+	margin: 0;
+	padding: 0;
+	cursor: pointer;
+	display: inline;
+	text-decoration: underline;
+	border-style: none;
+}
+
+/* Buttons in trash and feed views */
+.zotero-item-pane-top-buttons {
+	-moz-appearance: toolbar;
+	-moz-box-pack: center;
+	min-height: 3em;
+}
+
+.zotero-item-pane-top-buttons > button {
+	-moz-box-flex: 1
+}
+
+/* Merge pane in duplicates view */
+#zotero-duplicates-merge-button
+{
+	font-size: 13px;
+}
+
+#zotero-duplicates-merge-pane > groupbox
+{
+	margin: 0;
+}
+
+#zotero-duplicates-merge-item-box row
+{
+	min-height: 20px;
+}
+
+#zotero-feed-item-toggleRead-button {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 150px;
+}
+
+#zotero-feed-item-addTo-button {
+	max-width: 250px;
+}
+
+#zotero-feed-item-addTo-button button {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#zotero-feed-item-addTo-button .button-icon {
+	margin-right: 5px;
+	height: 16px;
+}

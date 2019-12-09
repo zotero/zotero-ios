@@ -30,22 +30,22 @@ class WebViewHandler: NSObject {
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
     /// - returns: Returns a Single with detected urls.
     func loadDocument(for url: URL, title: String, html: String, cookies: String) -> Single<[URL]> {
-        guard let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "translation"),
-              var data = try? String(contentsOf: url, encoding: .utf8) else {
+        guard let containerUrl = Bundle.main.url(forResource: "src/index", withExtension: "html", subdirectory: "translation"),
+              let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
             return Single.error(Error.cantFindBaseFile)
         }
 
-        // TODO: - include javascript files
-
-        data = data.replacingOccurrences(of: "#content", with: html)
+        let escapedHtml = String(html.components(separatedBy: .newlines).joined()).replacingOccurrences(of: "\"", with: "\\\"")
 
         return self.loadCookies(from: cookies)
                    .flatMap { _ -> Single<()> in
-                       return self.loadHtml(content: data, baseUrl: url)
+                       return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
                    }
                    .flatMap { _ -> Single<Any> in
-                       // TODO: - use correct script
-                       return self.callJavascript("load stuff")
+                       return self.callJavascript("document.querySelector('#url').value=\"\(url.absoluteString)\";")
+                   }
+                   .flatMap { data -> Single<Any> in
+                       return self.callJavascript("document.querySelector('#html').innerHTML=\"\(escapedHtml)\";")
                    }
                    .flatMap { data -> Single<[URL]> in
                        if let data = data as? [String: Any] {

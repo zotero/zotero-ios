@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!--
+    ***** BEGIN LICENSE BLOCK *****
+    
+    Copyright © 2009 Center for History and New Media
+                     George Mason University, Fairfax, Virginia, USA
+                     http://zotero.org
+    
+    This file is part of Zotero.
+    
+    Zotero is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    Zotero is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+    
+    You should have received a copy of the GNU Affero General Public License
+    along with Zotero.  If not, see <http://www.gnu.org/licenses/>.
+    
+    ***** END LICENSE BLOCK *****
+-->
+<?xml-stylesheet href="chrome://global/skin/global.css"?>
+<?xml-stylesheet href="chrome://zotero/skin/zotero.css" type="text/css"?>
+
+<!DOCTYPE window [
+	<!ENTITY % csleditDTD SYSTEM "chrome://zotero/locale/csledit.dtd"> %csleditDTD;
+	<!ENTITY % zoteroDTD SYSTEM "chrome://zotero/locale/zotero.dtd"> %zoteroDTD;
+]>
+
+<window
+	id="csl-edit"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	onload="Zotero_CSL_Editor.init();"
+	title="&styles.editor;">
+	
+	<script src="chrome://zotero/content/include.js"/>
+	<script src="csledit.js"/>
+	
+	<vbox flex="1">
+		<hbox align="center">
+			<button id="preview-refresh-button" label="&zotero.general.refresh;" oncommand="Zotero_CSL_Editor.refresh()"/>
+			<button id="zotero-csl-save" label="&zotero.general.saveAs;" oncommand="Zotero_CSL_Editor.save()"/>
+			<menulist id="zotero-csl-page-type" style="min-height: 1.6em; min-width: 50px" oncommand="Zotero_CSL_Editor.refresh()" />
+			<label value=":" />
+			<textbox size="5" id="preview-pages" type="timed" timeout="250" oncommand="Zotero_CSL_Editor.refresh()"/>
+			<checkbox oncommand="Zotero_CSL_Editor.refresh()" id="preview-suppress-author" label="&zotero.citation.suppressAuthor.label;" />
+			<label value="&styles.editor.citePosition;" />
+			<menulist id="zotero-ref-position" oncommand="Zotero_CSL_Editor.refresh()">
+				<menupopup>
+					<menuitem label="first" value="0"/>
+					<menuitem label="subsequent" value="1"/>
+					<menuitem label="ibid" value="2"/>
+					<menuitem label="ibid-with-locator" value="3"/>
+					<menuitem label="near-note" value="4"/>
+				</menupopup>
+			</menulist>
+			<menulist id="locale-menu" oncommand="Zotero.Prefs.set('export.lastLocale', this.value); Zotero_CSL_Editor.refresh()"/>
+		</hbox>
+		<hbox align="center">
+			<menulist id="zotero-csl-list" style="margin-left: 7px; min-height: 1.6em; min-width: 100px" oncommand="Zotero_CSL_Editor.onStyleSelected(this.value)"/>
+		</hbox>
+		<textbox id="zotero-csl-editor" type="timed" timeout="250" multiline="true"
+			flex="1"
+			onkeypress="Zotero_CSL_Editor.handleKeyPress(event)"
+			oncommand="Zotero_CSL_Editor.onStyleModified()"/>
+		<splitter id="csledit-splitter" collapse="before" persist="state">
+			<grippy/>
+		</splitter>
+		<iframe id="zotero-csl-preview-box" flex="1" style="padding: 0 1em;background:white" overflow="auto" type="content"/>
+	</vbox>
+	
+</window>

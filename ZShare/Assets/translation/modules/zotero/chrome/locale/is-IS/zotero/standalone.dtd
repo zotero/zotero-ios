@@ -1,0 +1,101 @@
+<!ENTITY preferencesCmdMac.label "Kjörstillingar…">
+<!ENTITY preferencesCmdMac.commandkey ",">
+<!ENTITY servicesMenuMac.label "Þjónusta">
+<!ENTITY hideThisAppCmdMac.label "Fela &brandShortName;">
+<!ENTITY hideThisAppCmdMac.commandkey "H">
+<!ENTITY hideOtherAppsCmdMac.label "Fela annað">
+<!ENTITY hideOtherAppsCmdMac.commandkey "H">
+<!ENTITY showAllAppsCmdMac.label "Sýna allt">
+<!ENTITY quitApplicationCmdMac.label "Hætta í Zotero">
+<!ENTITY quitApplicationCmdMac.key "Q">
+
+
+<!ENTITY fileMenu.label "Skrá">
+<!ENTITY fileMenu.accesskey "F">
+<!ENTITY saveCmd.label "Vista…">
+<!ENTITY saveCmd.key "S">
+<!ENTITY saveCmd.accesskey "A">
+<!ENTITY pageSetupCmd.label "Uppsetning síðu…">
+<!ENTITY pageSetupCmd.accesskey "U">
+<!ENTITY printCmd.label "Prenta…">
+<!ENTITY printCmd.key "P">
+<!ENTITY printCmd.accesskey "P">
+<!ENTITY closeCmd.label "Loka">
+<!ENTITY closeCmd.key "W">
+<!ENTITY closeCmd.accesskey "C">
+<!ENTITY manageAttachments.label "Manage Attachments">
+<!ENTITY convertToStored.label "Convert Linked Files to Stored Files…">
+<!ENTITY importCmd.label "Flytja inn…">
+<!ENTITY importCmd.key "I">
+<!ENTITY importFromClipboardCmd.label "Flytja inn af klippispjaldi">
+<!ENTITY quitApplicationCmdWin.label "Fara út">
+<!ENTITY quitApplicationCmdWin.accesskey "x">
+<!ENTITY quitApplicationCmd.label "Hætta">
+<!ENTITY quitApplicationCmd.accesskey "Q">
+
+
+<!ENTITY copyCitationCmd.label "Afrita tilvísun">
+<!ENTITY copyBibliographyCmd.label "Afrita heimildaskrá">
+
+<!ENTITY bidiSwitchPageDirectionItem.label "Snúa við síðustefnu">
+<!ENTITY bidiSwitchPageDirectionItem.accesskey "g">
+<!ENTITY bidiSwitchTextDirectionItem.label "Snúa við textastefnu">
+<!ENTITY bidiSwitchTextDirectionItem.accesskey "w">
+<!ENTITY bidiSwitchTextDirectionItem.commandkey "X">
+
+
+<!ENTITY viewMenu.label "View">
+<!ENTITY layout.label "Layout">
+<!ENTITY standardView.label "Standard View">
+<!ENTITY stackedView.label "Stacked View">
+<!ENTITY collectionsPane.label "Collections Pane">
+<!ENTITY itemPane.label "Item Pane">
+<!ENTITY tagSelector.label "Tag Selector">
+<!ENTITY recursiveCollections.label "Show Items from Subcollections">
+<!ENTITY fontSize.label "Font Size">
+<!ENTITY noteFontSize.label "Note Font Size">
+
+
+<!ENTITY toolsMenu.label "Verkfæri">
+<!ENTITY toolsMenu.accesskey "T">
+<!ENTITY installConnector.label "Setja upp vafratengingu">
+<!ENTITY installConnector.accesskey "C">
+<!ENTITY addons.label "Viðbætur (add-ons)">
+<!ENTITY developer.label "Developer">
+
+
+<!ENTITY minimizeWindow.key "m">
+<!ENTITY minimizeWindow.label "Minnka">
+<!ENTITY bringAllToFront.label "Færa allt framfyrir">
+<!ENTITY zoomWindow.label "Þysja inn">
+<!ENTITY windowMenu.label "Gluggi">
+
+
+<!ENTITY helpMenu.label "Hjálp">
+<!ENTITY helpMenu.accesskey "H">
+
+
+<!ENTITY helpMenuWin.label "Hjálp">
+<!ENTITY helpMenuWin.accesskey "H">
+<!ENTITY helpMac.commandkey "?">
+<!ENTITY aboutProduct.label "Um &brandShortName;">
+<!ENTITY aboutProduct.accesskey "A">
+<!ENTITY productHelp.label "Stuðningur og leiðbeiningar">
+<!ENTITY productHelp.accesskey "D">
+<!ENTITY helpTroubleshootingInfo.label "Upplýsingar um lausn vandamála">
+<!ENTITY helpTroubleshootingInfo.accesskey "T">
+<!ENTITY helpFeedbackPage.label "Spjallrásir">
+<!ENTITY helpFeedbackPage.accesskey "F">
+
+<!ENTITY helpReportErrors.label "Tilkynna villur...">
+<!ENTITY helpReportErrors.accesskey "R">
+
+<!ENTITY debugOutputLogging.label "Kemba útkeyrslu eftirlitsskrár">
+<!ENTITY debugOutputLogging.accesskey "L">
+<!ENTITY debugOutputLogging.submit "Senda útkeyrslu">
+<!ENTITY debugOutputLogging.view "Sýna útkeyrslu">
+<!ENTITY debugOutputLogging.clear "Hreinsa útkeyrslu">
+<!ENTITY debugOutputLogging.restartWithLoggingEnabled "Endurræsa með virka eftirlitsskrá...">
+
+<!ENTITY helpCheckForUpdates.label "Athuga með uppfærslur…">
+<!ENTITY helpCheckForUpdates.accesskey "U">

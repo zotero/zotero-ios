@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<!--
+    ***** BEGIN LICENSE BLOCK *****
+    
+    Copyright © 2009 Center for History and New Media
+                     George Mason University, Fairfax, Virginia, USA
+                     http://zotero.org
+    
+    This file is part of Zotero.
+    
+    Zotero is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    Zotero is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+    
+    You should have received a copy of the GNU Affero General Public License
+    along with Zotero.  If not, see <http://www.gnu.org/licenses/>.
+    
+    ***** END LICENSE BLOCK *****
+-->
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero/skin/zotero.css" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero/skin/overlay.css" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero-platform/content/overlay.css" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero/skin/integration.css" type="text/css"?>
+<!DOCTYPE window SYSTEM "chrome://zotero/locale/zotero.dtd">
+
+<dialog
+	id="zotero-edit-bibliography-dialog"
+	orient="vertical"
+	title="&zotero.integration.editBibliography.title;"
+	width="750" height="450"
+	onload="Zotero_Bibliography_Dialog.load();"
+	ondialogaccept="Zotero_Bibliography_Dialog.accept();"
+	ondialogcancel="Zotero_Bibliography_Dialog.close();"
+	onclose="Zotero_Bibliography_Dialog.close();"
+	onunload="doUnload();"
+	buttons="extra1,extra2,accept,cancel" buttonpack="end"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	persist="screenX screenY width height"
+	resizable="true"
+	ondialogextra1="Zotero_Bibliography_Dialog.revert()"
+	ondialogextra2="Zotero_Bibliography_Dialog.revertAll()">
+	
+	<script src="../include.js"/>
+	<script src="../selectItemsDialog.js"/>
+	<script src="editBibliographyDialog.js"/>
+	
+	<vbox id="zotero-select-items-container" flex="1">
+		<vbox flex="1">
+			<hbox flex="1">
+				<vbox align="stretch" flex="1">
+					<hbox align="center" pack="end">
+						<textbox id="zotero-tb-search" type="search" timeout="250" oncommand="onSearch()" dir="reverse" onkeypress="if(event.keyCode == event.DOM_VK_ESCAPE) { this.value = ''; this.doCommand('cmd_zotero_search'); return false; } return true;"/>
+					</hbox>
+					<hbox flex="1" style="margin-top: 5px">
+						<tree id="zotero-collections-tree"
+							style="width: 150px;" hidecolumnpicker="true" seltype="single"
+							onselect="onCollectionSelected();">
+							<treecols>
+								<treecol
+									id="zotero-collections-name-column"
+									flex="1"
+									primary="true"
+									hideheader="true"/>
+							</treecols>
+							<treechildren/>
+						</tree>
+					
+						<deck id="zotero-items-pane-content" selectedIndex="0" flex="1">
+							<tree id="zotero-items-tree"
+								flex="1" hidecolumnpicker="true" seltype="multiple"
+								onselect="Zotero_Bibliography_Dialog.treeItemSelected();">
+								<treecols>
+									<treecol
+										id="zotero-items-column-title" primary="true"
+										label="&zotero.items.title_column;"
+										flex="4" persist="width ordinal hidden sortActive sortDirection"/>
+									<splitter class="tree-splitter"/>
+									<treecol
+										id="zotero-items-column-firstCreator"
+										label="&zotero.items.creator_column;"
+										flex="1" persist="width ordinal hidden sortActive sortDirection"/>
+									<splitter class="tree-splitter"/>
+									<treecol
+										id="zotero-items-column-dateAdded" hidden="true"
+										label="&zotero.items.dateAdded_column;"
+										flex="1" persist="width ordinal hidden sortActive sortDirection"/>
+									<splitter class="tree-splitter"/>
+									<treecol
+										id="zotero-items-column-dateModified" hidden="true"
+										label="&zotero.items.dateModified_column;"
+										flex="1" persist="width ordinal hidden sortActive sortDirection"/>
+								</treecols>				
+								<treechildren/>
+							</tree>
+							
+							<!-- Label for displaying messages when items pane is hidden
+							 (e.g. "Advanced search mode — press Enter to search.")-->
+							<vbox id="zotero-items-pane-message-box" pack="center" align="center"/>
+						</deck>
+					</hbox>
+				</vbox>
+						
+				<hbox id="source-list">
+					<vbox align="center" pack="center" id="citation-buttons">
+						<toolbarbutton id="add" oncommand="Zotero_Bibliography_Dialog.add()" disabled="true"/>
+						<toolbarbutton id="remove" oncommand="Zotero_Bibliography_Dialog.remove()" disabled="true"/>
+					</vbox>
+					<vbox>
+						<label value="&zotero.integration.references.label;"/>
+						<listbox id="item-list" flex="1" align="stretch" seltype="multiple"
+							style="width: 250px;" onselect="Zotero_Bibliography_Dialog.listItemSelected();"
+							onchanged="Zotero_Bibliography_Dialog.textChanged()"/>
+					</vbox>
+				</hbox>
+			</hbox>
+		</vbox>
+		
+		<textbox id="editor" type="styled" mode="integration" flex="1"/>
+		<description id="zotero-editor-warning" style="margin: 9px 1px 0">&zotero.citation.editorWarning.label;</description>
+	</vbox>
+</dialog>

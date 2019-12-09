@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<!--
+    ***** BEGIN LICENSE BLOCK *****
+    
+    Copyright © 2019 Center for History and New Media
+                     George Mason University, Fairfax, Virginia, USA
+                     http://zotero.org
+    
+    This file is part of Zotero.
+    
+    Zotero is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    Zotero is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+    
+    You should have received a copy of the GNU Affero General Public License
+    along with Zotero.  If not, see <http://www.gnu.org/licenses/>.
+    
+    ***** END LICENSE BLOCK *****
+-->
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Zotero Translate</title>
+</head>
+<script src="zotero.js"></script>
+<script src="promise.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/openurl.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/date.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/utilities.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xregexp/3.2.0/xregexp-all.min.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/utilities_translate.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/utilities_internal.js"></script>
+<script src="utilities.js"></script>
+<script src="debug.js"></script>
+<script src="http.js"></script>
+<script src="translator.js"></script>
+<script src="translators.js"></script>
+<script src="repo.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/translation/translate.js"></script>
+<script src="translation/sandboxManager.js"></script>
+<script src="translation/translate_item.js"></script>
+<script src="translation/translate.js"></script>
+<script src="../modules/zotero/chrome/content/zotero/xpcom/translation/tlds.js"></script>
+<script src="proxy.js"></script>
+<script src="rdf/init.js"></script>
+<script src="rdf/uri.js"></script>
+<script src="rdf/term.js"></script>
+<script src="rdf/identity.js"></script>
+<script src="rdf/n3parser.js"></script>
+<script src="rdf/rdfparser.js"></script>
+<script src="rdf/serialize.js"></script>
+<script src="resource/connectorTypeSchemaData.js"></script>
+<script src="cachedTypes.js"></script>
+<script src="index.js"></script>
+<body>
+<div>
+	<label>URL:
+		<input type="text" id="url">
+	</label>
+	<br/>
+	<label>HTML:
+		<textarea cols="120" rows="30" id="html"></textarea>
+	</label>
+	<br/>
+	<input type="button" value="Translate" onclick="doTranslate()">
+</div>
+<pre id="result" style="white-space: normal"></pre>
+</body>
+</html>

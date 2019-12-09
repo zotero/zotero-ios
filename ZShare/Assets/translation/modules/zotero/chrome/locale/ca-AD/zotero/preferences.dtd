@@ -1,0 +1,203 @@
+<!ENTITY zotero.preferences.title "Preferències del Zotero">
+
+<!ENTITY zotero.preferences.default "Per defecte:">
+<!ENTITY zotero.preferences.items "elements">
+<!ENTITY zotero.preferences.period ".">
+<!ENTITY zotero.preferences.settings "Configuració">
+<!ENTITY zotero.preferences.custom "Personalitza…">
+
+<!ENTITY zotero.preferences.prefpane.general "General">
+
+<!ENTITY zotero.preferences.fileHandling "Gestió de fitxers">
+<!ENTITY zotero.preferences.automaticSnapshots "Crea automàticament una captura quan es creïn elements des de pàgines web">
+<!ENTITY zotero.preferences.downloadAssociatedFiles "Adjunta automàticament documents PDF associats i altres fitxers quan es desin els elements">
+<!ENTITY zotero.preferences.autoRecognizeFiles "Recupera les metadades dels PDF automàticament">
+<!ENTITY zotero.preferences.autoRenameFiles "Reanomena els fitxers adjunts automàticament fent servir les metadades de l'element pare">
+<!ENTITY zotero.preferences.autoRenameFiles.renameLinked "Reanomena els fitxers enllaçats">
+<!ENTITY zotero.preferences.fileHandler.openPDFsUsing "Obre els PDF fent servir">
+<!ENTITY zotero.preferences.fileHandler.systemDefault "Predeterminat del sistema">
+
+<!ENTITY zotero.preferences.miscellaneous "Miscel·lània">
+<!ENTITY zotero.preferences.autoUpdate "Comprova automàticament si hi ha traductors o estils actualitzats">
+<!ENTITY zotero.preferences.updateNow "Actualitza ara">
+<!ENTITY zotero.preferences.reportTranslationFailure "Envia un informe dels transcriptors trencats">
+<!ENTITY zotero.preferences.parseRISRefer "utilitza Zotero per als fitxers descarregats BibTeX/RIS/Refer">
+<!ENTITY zotero.preferences.automaticTags "Etiqueta automàticament els elements amb les capçaleres de paraules clau i el tema">
+<!ENTITY zotero.preferences.trashAutoEmptyDaysPre "Elimina automàticament els elements de la paperera que s'han suprimit fa més de">
+<!ENTITY zotero.preferences.trashAutoEmptyDaysPost "dies">
+
+<!ENTITY zotero.preferences.groups "Grups">
+<!ENTITY zotero.preferences.groups.whenCopyingInclude "Quan copiïs elements entre les biblioteques, inclou-hi:">
+<!ENTITY zotero.preferences.groups.childNotes "notes descendents">
+<!ENTITY zotero.preferences.groups.childFiles "instantànies descendents i fitxers importats">
+<!ENTITY zotero.preferences.groups.childLinks "enllaços descendents">
+<!ENTITY zotero.preferences.groups.tags "etiquetes">
+
+<!ENTITY zotero.preferences.feeds "Canals">
+<!ENTITY zotero.preferences.feeds.sorting.label "Ordenació:">
+<!ENTITY zotero.preferences.feeds.sorting.newest "Els elements més nous primer">
+<!ENTITY zotero.preferences.feeds.sorting.oldest "Els elements més antics primer">
+<!ENTITY zotero.preferences.feeds.feedDefaults "Paràmetres per defecte dels canals">
+
+<!ENTITY zotero.preferences.openurl.search "Cerca resolutors">
+<!ENTITY zotero.preferences.openurl.custom "Personalitza…">
+<!ENTITY zotero.preferences.openurl.server "Resolutor:">
+<!ENTITY zotero.preferences.openurl.version "Versió:">
+
+<!ENTITY zotero.preferences.prefpane.sync "Sincronitza">
+<!ENTITY zotero.preferences.sync.username "Nom d'usuari">
+<!ENTITY zotero.preferences.sync.password "Contrasenya">
+<!ENTITY zotero.preferences.sync.syncServer "Sincronització de dades">
+<!ENTITY zotero.preferences.sync.setUpSync "Configura la sincronització">
+<!ENTITY zotero.preferences.sync.unlinkAccount "Desvincula el compte…">
+<!ENTITY zotero.preferences.sync.createAccount "Crea un compte">
+<!ENTITY zotero.preferences.sync.lostPassword "Has oblidat la contrasenya?">
+<!ENTITY zotero.preferences.sync.syncAutomatically "Sincronitza automàticament">
+<!ENTITY zotero.preferences.sync.syncFullTextContent "Sincronitza el contingut de text complet">
+<!ENTITY zotero.preferences.sync.syncFullTextContent.desc "El Zotero pot sincronitzar el contingut de text dels fitxers en les vostres biblioteques de Zotero amb zotero.org i altres dispositius vinculats, permetent-vos així cercar fàcilment en els vostres fitxers allà on sigueu. El contingut de text dels vostres fitxers no es compartirà públicament.">
+<!ENTITY zotero.preferences.sync.about "Quant a la sincronització">
+<!ENTITY zotero.preferences.sync.fileSyncing "Sincronització dels fitxers">
+<!ENTITY zotero.preferences.sync.fileSyncing.url "URL:">
+<!ENTITY zotero.preferences.sync.fileSyncing.myLibrary "Sincronitza els fitxers adjunts de la biblioteca mitjançant">
+<!ENTITY zotero.preferences.sync.fileSyncing.groups "Sincronitza els fitxers adjunts de les biblioteques de grup mitjançant l'emmagatzematge del Zotero">
+<!ENTITY zotero.preferences.sync.fileSyncing.download "Descarrega els fitxers">
+<!ENTITY zotero.preferences.sync.fileSyncing.download.atSyncTime "quan es sincronitzi">
+<!ENTITY zotero.preferences.sync.fileSyncing.download.onDemand "segons sigui necessari">
+<!ENTITY zotero.preferences.sync.fileSyncing.verifyServer "Verifica el servidor">
+<!ENTITY zotero.preferences.sync.fileSyncing.tos1 "Amb l'ús de l'emmagatzematge del Zotero, accepteu quedar obligat pels">
+<!ENTITY zotero.preferences.sync.fileSyncing.tos2 "termes i condicions">
+<!ENTITY zotero.preferences.sync.librariesToSync "Biblioteques per sincronitzar">
+<!ENTITY zotero.preferences.sync.librariesToSync.button "Trieu les biblioteques…">
+<!ENTITY zotero.preferences.sync.librariesToSync.sync "Sincronitza">
+<!ENTITY zotero.preferences.sync.librariesToSync.library "Biblioteca">
+<!ENTITY zotero.preferences.sync.reset.warning1 "Les operacions següents només s'utilitzen en situacions molt rares i específiques i no s'haurien d'emprar per a la resolució general dels problemes. En molts casos, el reinici causarà problemes addicionals. Consulteu">
+<!ENTITY zotero.preferences.sync.reset.warning2 "Sincronitza les opcions de reinicialització">
+<!ENTITY zotero.preferences.sync.reset.warning3 "per obtenir més informació.">
+<!ENTITY zotero.preferences.sync.reset.resetDataSyncHistory "Reinicia l'historial de sincronització de dades">
+<!ENTITY zotero.preferences.sync.reset.resetDataSyncHistory.desc "Fusiona les dades locals amb les remotes, ignorant l'historial de sincronització">
+<!ENTITY zotero.preferences.sync.reset.restoreFromServer "Restaura de la biblioteca en línia">
+<!ENTITY zotero.preferences.sync.reset.restoreFromServer.desc "Sobreescriu les dades locals de Zotero amb les dades de la biblioteca en línia">
+<!ENTITY zotero.preferences.sync.reset.restoreToServer "Reemplaça la biblioteca en línia">
+<!ENTITY zotero.preferences.sync.reset.restoreToServer.desc "Sobreescriu la biblioteca en línia amb les dades locals de Zotero">
+<!ENTITY zotero.preferences.sync.reset.resetFileSyncHistory "Reinicia l'historial de sincronització dels fitxers">
+<!ENTITY zotero.preferences.sync.reset.resetFileSyncHistory.desc "Compara tots els fitxers adjunts amb el servei d'emmagatzematge">
+<!ENTITY zotero.preferences.sync.reset "Reinicia">
+<!ENTITY zotero.preferences.sync.reset.button "Reinicia…">
+
+
+<!ENTITY zotero.preferences.prefpane.search "Cerca">
+<!ENTITY zotero.preferences.search.fulltextCache "Memòria cau de text complet">
+<!ENTITY zotero.preferences.search.indexStats "Estadístiques de l'índex">
+
+<!ENTITY zotero.preferences.search.indexStats.indexed "Indexació:">
+<!ENTITY zotero.preferences.search.indexStats.partial "Parcialment:">
+<!ENTITY zotero.preferences.search.indexStats.unindexed "Sense indexar:">
+<!ENTITY zotero.preferences.search.indexStats.words "Paraules:">
+
+<!ENTITY zotero.preferences.fulltext.textMaxLength "Nombre màxim de caràcters indexats per fitxer:">
+<!ENTITY zotero.preferences.fulltext.pdfMaxPages "Nombe màxim de pàgines indexades per fitxer:">
+
+<!ENTITY zotero.preferences.prefpane.export "Exporta">
+
+<!ENTITY zotero.preferences.citationOptions.caption "Opcions de cita">
+<!ENTITY zotero.preferences.export.citePaperJournalArticleURL "Inclou les URL dels articles a les referències">
+<!ENTITY zotero.preferences.export.citePaperJournalArticleURL.description "Quan aquesta opció està deshabilitada, el Zotero inclou les URL quan se citen articles de premsa, revistes i revistes acadèmiques només si l'article no té un ran dge pàgines assignat.">
+
+<!ENTITY zotero.preferences.quickCopy.caption "Còpia ràpida">
+<!ENTITY zotero.preferences.quickCopy.defaultFormat "Format per defecte:">
+<!ENTITY zotero.preferences.quickCopy.copyAsHTML "Copia com a HTML">
+<!ENTITY zotero.preferences.quickCopy.siteEditor.setings "Configuració específica per a llocs web:">
+<!ENTITY zotero.preferences.quickCopy.siteEditor.domainPath "Domini/Ruta">
+<!ENTITY zotero.preferences.quickCopy.siteEditor.domainPath.example "(p. ex., wikipedia.org)">
+<!ENTITY zotero.preferences.quickCopy.siteEditor.format "Format">
+<!ENTITY zotero.preferences.quickCopy.siteEditor.locale "Llengua">
+<!ENTITY zotero.preferences.quickCopy.dragLimit "Desactiva la còpia ràpida quan arrosseguis més de">
+
+<!ENTITY zotero.preferences.prefpane.cite "Cita">
+<!ENTITY zotero.preferences.cite.styles "Estils">
+<!ENTITY zotero.preferences.cite.wordProcessors "Processadors de textos">
+<!ENTITY zotero.preferences.cite.wordProcessors.useClassicAddCitationDialog "Utilitza el diàleg clàssic Afegeix cita">
+<!ENTITY zotero.preferences.styleEditor "Editor d'estils">
+<!ENTITY zotero.preferences.stylePreview "Previsualitza l'estil">
+
+<!ENTITY zotero.preferences.cite.styles.styleManager "Gestor d'estils">
+<!ENTITY zotero.preferences.cite.styles.styleManager.title "Títol">
+<!ENTITY zotero.preferences.cite.styles.styleManager.updated "Actualitzat">
+<!ENTITY zotero.preferences.cite.styles.styleManager.csl "CSL">
+<!ENTITY zotero.preferences.export.getAdditionalStyles "Aconsegueix estils addicionals…">
+
+<!ENTITY zotero.preferences.keys.saveToZotero "Desa al Zotero (icona de la barra d'adreces)">
+<!ENTITY zotero.preferences.keys.toggleFullscreen "Commuta a pantalla completa">
+<!ENTITY zotero.preferences.keys.focusLibrariesPane "Enfoca la subfinestra de les biblioteques">
+<!ENTITY zotero.preferences.keys.quicksearch "Cerca ràpida">
+<!ENTITY zotero.preferences.keys.newItem "Crea un element nou">
+<!ENTITY zotero.preferences.keys.newNote "Crea una nota nova">
+<!ENTITY zotero.preferences.keys.toggleAllRead "Marca tots els elements del canal com a llegits / no llegits">
+<!ENTITY zotero.preferences.keys.toggleTagSelector "Canvia el selector d&apos;etiquetes">
+<!ENTITY zotero.preferences.keys.copySelectedItemCitationsToClipboard "Copia les cites dels elements seleccionats al porta-retalls">
+<!ENTITY zotero.preferences.keys.copySelectedItemsToClipboard "Copia els elements seleccionats al porta-retalls">
+<!ENTITY zotero.preferences.keys.importFromClipboard "Importa des del porta-retalls">
+<!ENTITY zotero.preferences.keys.changesTakeEffect "Els canvis tindran efecte després del reinici">
+
+<!ENTITY zotero.preferences.prefpane.proxies "Servidors intermediaris">
+
+<!ENTITY zotero.preferences.proxies.proxyOptions "Opcions del servidor intermediari">
+<!ENTITY zotero.preferences.proxies.desc_before_link "El Zotero redirigirà de manera transparent les peticions a través dels servidors intermediaris desats. Vegeu ">
+<!ENTITY zotero.preferences.proxies.desc_link "Documentació del servidor intermediari">
+<!ENTITY zotero.preferences.proxies.desc_after_link "per a més informació.">
+<!ENTITY zotero.preferences.proxies.transparent "Habilita la redirecció del servidor intermediari">
+<!ENTITY zotero.preferences.proxies.autoRecognize "Reconeix automàticament els recursos dels servidors intermediaris">
+<!ENTITY zotero.preferences.proxies.showRedirectNotification "Mostra una notificació en redirigir a través d'un servidor intermediari">
+<!ENTITY zotero.preferences.proxies.disableByDomain "Desactiva la redirecció del servidor intermediari quan el nom del domini contingui">
+<!ENTITY zotero.preferences.proxies.configured "Servidors intermediaris configurats">
+<!ENTITY zotero.preferences.proxies.hostname "Nom de l'amfitrió">
+<!ENTITY zotero.preferences.proxies.scheme "Combinació">
+
+<!ENTITY zotero.preferences.proxies.multiSite "Multilloc">
+<!ENTITY zotero.preferences.proxies.autoAssociate "Associa automàticament els amfitrions nous">
+<!ENTITY zotero.preferences.proxies.variables "Podeu fer servir les variables següents en la combinació del servidor intermediari:">
+<!ENTITY zotero.preferences.proxies.h_variable "&#37;h - El nom d'amfitrió del lloc del servidor intermediari (per exemple, www.zotero.org)">
+<!ENTITY zotero.preferences.proxies.p_variable "&#37;p - El camí de la pàgina del servidor intermediari sense la barra principal (per exemple, about/index.html)">
+<!ENTITY zotero.preferences.proxies.d_variable "&#37;d - El camí del directori (per exemple, about/)">
+<!ENTITY zotero.preferences.proxies.f_variable "&#37;f - El nom de fitxer (per exemple, index.html)">
+<!ENTITY zotero.preferences.proxies.a_variable "&#37;a - Qualsevol cadena">
+
+<!ENTITY zotero.preferences.prefpane.advanced "Avançat">
+<!ENTITY zotero.preferences.advanced.filesAndFolders "Fitxers i carpetes">
+<!ENTITY zotero.preferences.advanced.keys "Dreceres de teclat">
+
+<!ENTITY zotero.preferences.advanced.advancedConfiguration "Configuració avançada">
+
+<!ENTITY zotero.preferences.prefpane.locate "Localitza">
+<!ENTITY zotero.preferences.locate.locateEngineManager "Gestor del motor de cerca d'articles">
+<!ENTITY zotero.preferences.locate.description "Descripció">
+<!ENTITY zotero.preferences.locate.name "Nom">
+<!ENTITY zotero.preferences.locate.locateEnginedescription "Un motor de cerca estén la capacitat del desplegable de localització en el panell d'informació. Quan habiliteu els motors de cerca a la llista, s'afegiran a la llista desplegable i es podran fer servir per localitzar els recursos de la vostra biblioteca al web.">
+<!ENTITY zotero.preferences.locate.addDescription "Per a afegir un motor de consulta que no és a la llista, visiteu el motor de cerca desitjat al vostre navegador i seleccioneu «Afegeix» des del menú de Cerca.">
+<!ENTITY zotero.preferences.locate.restoreDefaults "Restaura els valors predeterminats">
+
+<!ENTITY zotero.preferences.charset "Codificació de caràcters">
+<!ENTITY zotero.preferences.charset.importCharset "Importa la codificació de caràcters">
+<!ENTITY zotero.preferences.charset.displayExportOption "Mostra l'opció de codificació de caràcters en l'exportació">
+
+<!ENTITY zotero.preferences.dataDir "Lloc d'emmagatzematge">
+<!ENTITY zotero.preferences.dataDir.useProfile "Fer servir el directori del perfil del Firefox">
+<!ENTITY zotero.preferences.dataDir.custom "Personalitzat:">
+<!ENTITY zotero.preferences.dataDir.choose "Trieu…">
+<!ENTITY zotero.preferences.dataDir.viaCommandLine "(especificat a través de la línia d'ordres)">
+<!ENTITY zotero.preferences.dataDir.reveal "Mostra el directori de dades">
+<!ENTITY zotero.preferences.dataDir.migrate "Migra a una nova ubicació per defecte…">
+
+<!ENTITY zotero.preferences.attachmentBaseDir.caption "Directori base de les adjuncions enllaçades">
+<!ENTITY zotero.preferences.attachmentBaseDir.message "El Zotero utilitzarà camins relatius per a les adjuncions de fitxer enllaçades en el directori base, permetent-vos accedir als vostres fitxers des de diferents ordinadors sempre que l'estructura de fitxers en el directori base sigui la mateixa.">
+<!ENTITY zotero.preferences.attachmentBaseDir.basePath "Directori base:">
+<!ENTITY zotero.preferences.attachmentBaseDir.selectBasePath "Tria...">
+<!ENTITY zotero.preferences.attachmentBaseDir.resetBasePath "Reverteix a camins absoluts…">
+
+<!ENTITY zotero.preferences.dbMaintenance "Manteniment de la base de dades">
+<!ENTITY zotero.preferences.dbMaintenance.integrityCheck "Comprova la integritat de la base de dades">
+<!ENTITY zotero.preferences.dbMaintenance.resetTranslatorsAndStyles "Reinicia els traductors i els estils…">
+<!ENTITY zotero.preferences.dbMaintenance.resetTranslators "Reinicia els traductors…">
+<!ENTITY zotero.preferences.dbMaintenance.resetStyles "Reinicia els estils…">
+
+<!ENTITY zotero.preferences.configEditor "Editor de configuració">

@@ -1,0 +1,101 @@
+<!ENTITY preferencesCmdMac.label "Preferências...">
+<!ENTITY preferencesCmdMac.commandkey ",">
+<!ENTITY servicesMenuMac.label "Serviços">
+<!ENTITY hideThisAppCmdMac.label "Ocultar &brandShortName;">
+<!ENTITY hideThisAppCmdMac.commandkey "H">
+<!ENTITY hideOtherAppsCmdMac.label "Ocultar Outras">
+<!ENTITY hideOtherAppsCmdMac.commandkey "H">
+<!ENTITY showAllAppsCmdMac.label "Mostrar Todas">
+<!ENTITY quitApplicationCmdMac.label "Sair do Zotero">
+<!ENTITY quitApplicationCmdMac.key "Q">
+
+
+<!ENTITY fileMenu.label "Ficheiro">
+<!ENTITY fileMenu.accesskey "F">
+<!ENTITY saveCmd.label "Guardar...">
+<!ENTITY saveCmd.key "S">
+<!ENTITY saveCmd.accesskey "A">
+<!ENTITY pageSetupCmd.label "Configuração das Páginas...">
+<!ENTITY pageSetupCmd.accesskey "U">
+<!ENTITY printCmd.label "Imprimir...">
+<!ENTITY printCmd.key "P">
+<!ENTITY printCmd.accesskey "P">
+<!ENTITY closeCmd.label "Fechar">
+<!ENTITY closeCmd.key "W">
+<!ENTITY closeCmd.accesskey "C">
+<!ENTITY manageAttachments.label "Manage Attachments">
+<!ENTITY convertToStored.label "Convert Linked Files to Stored Files…">
+<!ENTITY importCmd.label "Importar…">
+<!ENTITY importCmd.key "I">
+<!ENTITY importFromClipboardCmd.label "Importar dos Recortes">
+<!ENTITY quitApplicationCmdWin.label "Sair">
+<!ENTITY quitApplicationCmdWin.accesskey "x">
+<!ENTITY quitApplicationCmd.label "Sair">
+<!ENTITY quitApplicationCmd.accesskey "x">
+
+
+<!ENTITY copyCitationCmd.label "Copiar Citação">
+<!ENTITY copyBibliographyCmd.label "Copiar Bibliografia">
+
+<!ENTITY bidiSwitchPageDirectionItem.label "Alternar Direcção da Página">
+<!ENTITY bidiSwitchPageDirectionItem.accesskey "g">
+<!ENTITY bidiSwitchTextDirectionItem.label "Alternar Direcção do Texto">
+<!ENTITY bidiSwitchTextDirectionItem.accesskey "w">
+<!ENTITY bidiSwitchTextDirectionItem.commandkey "X">
+
+
+<!ENTITY viewMenu.label "View">
+<!ENTITY layout.label "Layout">
+<!ENTITY standardView.label "Standard View">
+<!ENTITY stackedView.label "Stacked View">
+<!ENTITY collectionsPane.label "Collections Pane">
+<!ENTITY itemPane.label "Item Pane">
+<!ENTITY tagSelector.label "Tag Selector">
+<!ENTITY recursiveCollections.label "Show Items from Subcollections">
+<!ENTITY fontSize.label "Font Size">
+<!ENTITY noteFontSize.label "Note Font Size">
+
+
+<!ENTITY toolsMenu.label "Ferramentas">
+<!ENTITY toolsMenu.accesskey "T">
+<!ENTITY installConnector.label "Instalar Conector de Navegador">
+<!ENTITY installConnector.accesskey "C">
+<!ENTITY addons.label "Extensões">
+<!ENTITY developer.label "Developer">
+
+
+<!ENTITY minimizeWindow.key "m">
+<!ENTITY minimizeWindow.label "Minimizar">
+<!ENTITY bringAllToFront.label "Trazer Tudo para a Frente">
+<!ENTITY zoomWindow.label "Zoom">
+<!ENTITY windowMenu.label "Janela">
+
+
+<!ENTITY helpMenu.label "Ajuda">
+<!ENTITY helpMenu.accesskey "H">
+
+
+<!ENTITY helpMenuWin.label "Ajuda">
+<!ENTITY helpMenuWin.accesskey "H">
+<!ENTITY helpMac.commandkey "?">
+<!ENTITY aboutProduct.label "Acerca de &brandShortName;">
+<!ENTITY aboutProduct.accesskey "A">
+<!ENTITY productHelp.label "Suporte e Documentação">
+<!ENTITY productHelp.accesskey "H">
+<!ENTITY helpTroubleshootingInfo.label "Informação de Resolução de Problemas">
+<!ENTITY helpTroubleshootingInfo.accesskey "T">
+<!ENTITY helpFeedbackPage.label "Fóruns de Discussão">
+<!ENTITY helpFeedbackPage.accesskey "F">
+
+<!ENTITY helpReportErrors.label "Reportar Erros…">
+<!ENTITY helpReportErrors.accesskey "R">
+
+<!ENTITY debugOutputLogging.label "Depurar o Registo de Saída">
+<!ENTITY debugOutputLogging.accesskey "R">
+<!ENTITY debugOutputLogging.submit "Submeter Saída">
+<!ENTITY debugOutputLogging.view "Ver Saída">
+<!ENTITY debugOutputLogging.clear "Limpar a Saída">
+<!ENTITY debugOutputLogging.restartWithLoggingEnabled "Reiniciar com o Registo Activado…">
+
+<!ENTITY helpCheckForUpdates.label "Verificar Actualizações...">
+<!ENTITY helpCheckForUpdates.accesskey "U">

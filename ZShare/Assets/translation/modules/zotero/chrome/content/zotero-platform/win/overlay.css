@@ -1,0 +1,177 @@
+:root {
+	--theme-border-color: #cecece;
+}
+
+/* Hide horrible blue effect for menu bar and toolbar */
+#navigator-toolbox {
+	-moz-appearance: none;
+}
+
+#zotero-pane #zotero-toolbar {
+	-moz-appearance: none !important;
+	margin-top: -3px;
+	border-bottom-color: var(--theme-border-color);
+}
+
+
+@media (min-resolution: 1.25dppx) {
+	#zotero-toolbar .toolbarbutton-icon {
+		width: 16px;
+	}
+	
+	#zotero-tb-sync > .toolbarbutton-icon {
+		width: 20px;
+	}
+}
+
+#zotero-tb-search-menu-button {
+	margin: 0 -1px 0 -4px;
+	padding: 5px 0 5px 5px;
+	border: 0;
+	background: transparent;
+}
+
+#zotero-tb-search-menu-button .button-menu-dropmarker {
+	display: none;
+}
+
+#zotero-tb-search .textbox-search-icon {
+	visibility: hidden;
+}
+
+#zotero-tb-sync-error {
+	margin-right: 4px;
+	padding-top: 4px;
+}
+
+#zotero-tb-sync {
+	margin-right: 1px;
+	padding-top: 4px;
+}
+
+#zotero-view-tabbox tab {
+	padding-left: .7em;
+	padding-right: .7em;
+}
+
+#zotero-toolbar {
+	-moz-appearance: toolbox !important;
+	padding-left: 2px;
+}
+
+#zotero-collections-splitter:not([state=collapsed]),
+#zotero-items-splitter:not([state=collapsed]),
+#zotero-tags-splitter:not([state=collapsed]) {
+	border: 0;
+	background-color: transparent;
+	position: relative;
+	/* Positive z-index positions the splitter on top of its siblings and makes
+	it clickable on both sides. */
+	z-index: 1;
+}
+
+#zotero-collections-splitter:not([state=collapsed]),
+#zotero-items-splitter:not([state=collapsed]):not([orient=vertical]),
+#zotero-tags-splitter:not([state=collapsed]) {
+	border-inline-end: 1px solid var(--theme-border-color);
+	min-width: 0;
+	width: 3px;
+	margin-inline-start: -3px;
+}
+
+#zotero-tags-splitter:not([state=collapsed]),
+#zotero-items-splitter:not([state=collapsed])[orient=vertical] {
+	border-block-end: 1px solid var(--theme-border-color);
+	min-height: 0;
+	height: 3px;
+	margin-block-start: -3px;
+}
+
+#zotero-collections-splitter > grippy,
+#zotero-items-splitter > grippy,
+#zotero-tags-splitter > grippy {
+	border: 0;
+}
+
+#zotero-collections-splitter:not([state=collapsed]) > grippy,
+#zotero-items-splitter:not([state=collapsed]) > grippy,
+#zotero-tags-splitter:not([state=collapsed]) > grippy {
+	display: none;
+}
+
+#zotero-collections-tree, #zotero-items-tree, #zotero-view-item {
+	-moz-appearance: none;
+	border-style: solid;
+	border-color: #818790;
+	margin: 0;
+	padding: 0;
+}
+
+treechildren::-moz-tree-twisty {
+	padding: 0 4px;
+}
+
+/* Undo tree row spacing change in Fx25 on Windows */
+#zotero-collections-tree treechildren::-moz-tree-row,
+#zotero-items-tree treechildren::-moz-tree-row,
+#zotero-prefs treechildren::-moz-tree-row {
+	height: 1.6em;
+}
+
+tree {
+	border-width: 0;
+}
+
+/* Restore row highlighting on drag over, though I'm not sure how we're losing it to begin with. */
+#zotero-collections-tree treechildren::-moz-tree-row(dropOn) {
+	background-color: Highlight;
+}
+
+#zotero-tag-selector groupbox {
+	-moz-appearance: none;
+	padding: 0;
+	border: 0;
+}
+
+#tags-box {
+	padding-top: 0.1em;
+	padding-left: 0.05em;
+}
+
+#tags-box button {
+	margin: .04em 0 0 .15em !important;
+}
+
+#zotero-editpane-tabs spacer {
+	border: 0;
+}
+
+#zotero-view-item {
+	padding: 0 !important;
+	-moz-appearance: none;
+	background-color: -moz-field;
+	border-width: 1px 0 0  0;
+	border-color: var(--theme-border-color);
+}
+
+#zotero-view-tabbox > tabs {
+	margin-top: 2px;
+}
+
+#zotero-item-pane-groupbox {
+	-moz-appearance: none !important;
+	border-width: 0;
+}
+
+#zotero-editpane-item-box > scrollbox, #zotero-view-item > tabpanel > vbox, 
+#zotero-editpane-tags > scrollbox, #zotero-editpane-related {
+	padding-top: 5px;
+}
+
+#zotero-editpane-tags > scrollbox {
+	padding-left: 5px;
+}
+
+#zotero-view-item > tabpanel > vbox {
+	padding-left: 5px;
+}

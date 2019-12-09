@@ -1,0 +1,43 @@
+{
+	"env": {
+		"browser": true,
+		"es6": true,
+		"node": true
+	},
+	"globals": {
+		"Zotero": false,
+		"ZOTERO_CONFIG": false,
+		"AddonManager": false,
+		"Cc": false,
+		"Ci": false,
+		"Components": false,
+		"ConcurrentCaller": false,
+		"ctypes": false,
+		"OS": false,
+		"PluralForm": false,
+		"Services": false,
+		"XPCOMUtils": false,
+		"XRegExp": false
+	},
+	"extends": [
+		"@zotero",
+		"plugin:react/recommended"
+	],
+	"parser": "babel-eslint",
+	"parserOptions": {
+		"ecmaVersion": 2018,
+		"ecmaFeatures": {
+			"jsx": true
+		},
+		"sourceType": "module"
+	},
+	"plugins": [
+		"react"
+	],
+	"settings": {
+		"react": {
+			"version": "16.8"
+		}
+	},
+	"rules": {}
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://zotero/skin/zotero.css" type="text/css"?>
+<!DOCTYPE window SYSTEM "chrome://zotero/locale/zotero.dtd">
+
+
+<window
+	id="test-window"
+	title="Test"
+	orient="horizontal"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	style="padding:2em">
+	
+	<script src="../include.js"/>
+	<script type="application/javascript" src="test.js"/>
+	
+	<hbox><label>This is a test page.</label></hbox>
+</window>

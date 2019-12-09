@@ -1,0 +1,822 @@
+#zotero-pane
+{
+	min-height: 32px; /* must match value in ZoteroPane.updateTagSelectorSize() */
+	overflow: hidden;
+}
+
+/* Why is this necessary? */
+#zotero-collections-tree treechildren::-moz-tree-image,
+#zotero-items-tree treechildren::-moz-tree-image {
+	margin-right: 5px;
+}
+
+#zotero-collections-pane
+{
+	min-width: 150px;
+	width: 250px;
+}
+
+#zotero-collections-tree {
+	min-height: 5.2em;
+}
+
+#zotero-collections-tree treechildren::-moz-tree-row {
+	height: 1.7em;
+}
+
+/* As of Fx37, the tree doesn't scale HiDPI images properly on Windows and Linux */
+#zotero-collections-tree treechildren::-moz-tree-image,
+#zotero-items-tree treechildren::-moz-tree-image {
+	height: 16px;
+}
+
+#zotero-collections-tree treechildren::-moz-tree-image(primary)
+{
+	margin-right: 5px;
+}
+
+#zotero-collections-tree treechildren::-moz-tree-separator {
+	border: none;
+}
+
+#zotero-collections-tree treechildren::-moz-tree-twisty(notwisty),
+#zotero-collections-tree treechildren::-moz-tree-twisty(header) {
+	width: 0;
+}
+
+/* Set by setHighlightedRows() and getRowProperties() in collectionTreeView.js) */
+#zotero-collections-tree treechildren::-moz-tree-row(highlighted)
+{
+	background: #FFFF99 !important;
+}
+
+#zotero-items-column-hasAttachment, #zotero-items-column-numNotes {
+	min-width: 21px;
+}
+
+#zotero-items-column-hasAttachment {
+	list-style-image: url(chrome://zotero/skin/attach-small.png);
+}
+
+#zotero-items-column-hasAttachment .treecol-icon {
+	width: 13px;
+}
+
+#zotero-items-column-numNotes {
+	list-style-image: url(chrome://zotero/skin/treeitem-note-small.png);
+}
+
+#zotero-items-column-numNotes .treecol-icon {
+	width: 12px;
+}
+
+@media (min-resolution: 1.25dppx) {
+	.tree-columnpicker-icon {
+		list-style-image: url(chrome://zotero/skin/firefox/columnpicker@2x.gif);
+		width: 14px;
+	}
+}
+
+#zotero-items-column-numNotes {
+	text-align: center;
+}
+
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie)
+{
+	margin: 1px 0 0;
+	list-style-image: url(chrome://zotero/skin/pie.png);
+	height: 16px;
+	-moz-image-region: rect(0px, 32px, 32px, 0px);
+}
+
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie1) { -moz-image-region: rect(0px,   32px, 32px,    0px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie2) { -moz-image-region: rect(0px,   64px, 32px,   32px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie3) { -moz-image-region: rect(0px,   96px, 32px,   64px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie4) { -moz-image-region: rect(0px,  128px, 32px,   96px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie5) { -moz-image-region: rect(0px,  160px, 32px,  128px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie6) { -moz-image-region: rect(0px,  192px, 32px,  160px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie7) { -moz-image-region: rect(0px,  224px, 32px,  192px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie8) { -moz-image-region: rect(0px,  256px, 32px,  224px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment,  pie9) { -moz-image-region: rect(0px,  288px, 32px,  256px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie10) { -moz-image-region: rect(0px,  320px, 32px,  288px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie11) { -moz-image-region: rect(0px,  352px, 32px,  320px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie12) { -moz-image-region: rect(0px,  384px, 32px,  352px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie13) { -moz-image-region: rect(0px,  416px, 32px,  384px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie14) { -moz-image-region: rect(0px,  448px, 32px,  416px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie15) { -moz-image-region: rect(0px,  480px, 32px,  448px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie16) { -moz-image-region: rect(0px,  512px, 32px,  480px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie17) { -moz-image-region: rect(0px,  544px, 32px,  512px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie18) { -moz-image-region: rect(0px,  576px, 32px,  544px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie19) { -moz-image-region: rect(0px,  608px, 32px,  576px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie20) { -moz-image-region: rect(0px,  640px, 32px,  608px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie21) { -moz-image-region: rect(0px,  672px, 32px,  640px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie22) { -moz-image-region: rect(0px,  704px, 32px,  672px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie23) { -moz-image-region: rect(0px,  736px, 32px,  704px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie24) { -moz-image-region: rect(0px,  768px, 32px,  736px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie25) { -moz-image-region: rect(0px,  800px, 32px,  768px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie26) { -moz-image-region: rect(0px,  832px, 32px,  800px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie27) { -moz-image-region: rect(0px,  864px, 32px,  832px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie28) { -moz-image-region: rect(0px,  896px, 32px,  864px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie29) { -moz-image-region: rect(0px,  928px, 32px,  896px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie30) { -moz-image-region: rect(0px,  960px, 32px,  928px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie31) { -moz-image-region: rect(0px,  992px, 32px,  960px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie32) { -moz-image-region: rect(0px, 1024px, 32px,  992px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie33) { -moz-image-region: rect(0px, 1056px, 32px, 1024px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie34) { -moz-image-region: rect(0px, 1088px, 32px, 1056px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie35) { -moz-image-region: rect(0px, 1120px, 32px, 1088px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie36) { -moz-image-region: rect(0px, 1152px, 32px, 1120px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie37) { -moz-image-region: rect(0px, 1184px, 32px, 1152px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie38) { -moz-image-region: rect(0px, 1216px, 32px, 1184px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie39) { -moz-image-region: rect(0px, 1248px, 32px, 1216px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie40) { -moz-image-region: rect(0px, 1280px, 32px, 1248px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie41) { -moz-image-region: rect(0px, 1312px, 32px, 1280px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie42) { -moz-image-region: rect(0px, 1344px, 32px, 1312px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie43) { -moz-image-region: rect(0px, 1376px, 32px, 1344px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie44) { -moz-image-region: rect(0px, 1408px, 32px, 1376px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie45) { -moz-image-region: rect(0px, 1440px, 32px, 1408px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie46) { -moz-image-region: rect(0px, 1472px, 32px, 1440px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie47) { -moz-image-region: rect(0px, 1504px, 32px, 1472px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie48) { -moz-image-region: rect(0px, 1536px, 32px, 1504px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie49) { -moz-image-region: rect(0px, 1568px, 32px, 1536px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie50) { -moz-image-region: rect(0px, 1600px, 32px, 1568px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie51) { -moz-image-region: rect(0px, 1632px, 32px, 1600px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie52) { -moz-image-region: rect(0px, 1664px, 32px, 1632px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie53) { -moz-image-region: rect(0px, 1696px, 32px, 1664px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie54) { -moz-image-region: rect(0px, 1728px, 32px, 1696px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie55) { -moz-image-region: rect(0px, 1760px, 32px, 1728px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie56) { -moz-image-region: rect(0px, 1792px, 32px, 1760px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie57) { -moz-image-region: rect(0px, 1824px, 32px, 1792px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie58) { -moz-image-region: rect(0px, 1856px, 32px, 1824px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie59) { -moz-image-region: rect(0px, 1888px, 32px, 1856px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie60) { -moz-image-region: rect(0px, 1920px, 32px, 1888px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie61) { -moz-image-region: rect(0px, 1952px, 32px, 1920px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie62) { -moz-image-region: rect(0px, 1984px, 32px, 1952px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie63) { -moz-image-region: rect(0px, 2016px, 32px, 1984px); }
+#zotero-items-tree treechildren::-moz-tree-image(hasAttachment, pie64) { -moz-image-region: rect(0px, 2048px, 32px, 2016px); }
+
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie1) { -moz-image-region: rect(32px,   32px, 64px,    0px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie2) { -moz-image-region: rect(32px,   64px, 64px,   32px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie3) { -moz-image-region: rect(32px,   96px, 64px,   64px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie4) { -moz-image-region: rect(32px,  128px, 64px,   96px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie5) { -moz-image-region: rect(32px,  160px, 64px,  128px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie6) { -moz-image-region: rect(32px,  192px, 64px,  160px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie7) { -moz-image-region: rect(32px,  224px, 64px,  192px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie8) { -moz-image-region: rect(32px,  256px, 64px,  224px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment,  pie9) { -moz-image-region: rect(32px,  288px, 64px,  256px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie10) { -moz-image-region: rect(32px,  320px, 64px,  288px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie11) { -moz-image-region: rect(32px,  352px, 64px,  320px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie12) { -moz-image-region: rect(32px,  384px, 64px,  352px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie13) { -moz-image-region: rect(32px,  416px, 64px,  384px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie14) { -moz-image-region: rect(32px,  448px, 64px,  416px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie15) { -moz-image-region: rect(32px,  480px, 64px,  448px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie16) { -moz-image-region: rect(32px,  512px, 64px,  480px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie17) { -moz-image-region: rect(32px,  544px, 64px,  512px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie18) { -moz-image-region: rect(32px,  576px, 64px,  544px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie19) { -moz-image-region: rect(32px,  608px, 64px,  576px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie20) { -moz-image-region: rect(32px,  640px, 64px,  608px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie21) { -moz-image-region: rect(32px,  672px, 64px,  640px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie22) { -moz-image-region: rect(32px,  704px, 64px,  672px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie23) { -moz-image-region: rect(32px,  736px, 64px,  704px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie24) { -moz-image-region: rect(32px,  768px, 64px,  736px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie25) { -moz-image-region: rect(32px,  800px, 64px,  768px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie26) { -moz-image-region: rect(32px,  832px, 64px,  800px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie27) { -moz-image-region: rect(32px,  864px, 64px,  832px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie28) { -moz-image-region: rect(32px,  896px, 64px,  864px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie29) { -moz-image-region: rect(32px,  928px, 64px,  896px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie30) { -moz-image-region: rect(32px,  960px, 64px,  928px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie31) { -moz-image-region: rect(32px,  992px, 64px,  960px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie32) { -moz-image-region: rect(32px, 1024px, 64px,  992px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie33) { -moz-image-region: rect(32px, 1056px, 64px, 1024px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie34) { -moz-image-region: rect(32px, 1088px, 64px, 1056px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie35) { -moz-image-region: rect(32px, 1120px, 64px, 1088px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie36) { -moz-image-region: rect(32px, 1152px, 64px, 1120px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie37) { -moz-image-region: rect(32px, 1184px, 64px, 1152px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie38) { -moz-image-region: rect(32px, 1216px, 64px, 1184px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie39) { -moz-image-region: rect(32px, 1248px, 64px, 1216px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie40) { -moz-image-region: rect(32px, 1280px, 64px, 1248px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie41) { -moz-image-region: rect(32px, 1312px, 64px, 1280px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie42) { -moz-image-region: rect(32px, 1344px, 64px, 1312px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie43) { -moz-image-region: rect(32px, 1376px, 64px, 1344px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie44) { -moz-image-region: rect(32px, 1408px, 64px, 1376px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie45) { -moz-image-region: rect(32px, 1440px, 64px, 1408px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie46) { -moz-image-region: rect(32px, 1472px, 64px, 1440px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie47) { -moz-image-region: rect(32px, 1504px, 64px, 1472px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie48) { -moz-image-region: rect(32px, 1536px, 64px, 1504px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie49) { -moz-image-region: rect(32px, 1568px, 64px, 1536px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie50) { -moz-image-region: rect(32px, 1600px, 64px, 1568px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie51) { -moz-image-region: rect(32px, 1632px, 64px, 1600px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie52) { -moz-image-region: rect(32px, 1664px, 64px, 1632px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie53) { -moz-image-region: rect(32px, 1696px, 64px, 1664px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie54) { -moz-image-region: rect(32px, 1728px, 64px, 1696px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie55) { -moz-image-region: rect(32px, 1760px, 64px, 1728px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie56) { -moz-image-region: rect(32px, 1792px, 64px, 1760px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie57) { -moz-image-region: rect(32px, 1824px, 64px, 1792px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie58) { -moz-image-region: rect(32px, 1856px, 64px, 1824px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie59) { -moz-image-region: rect(32px, 1888px, 64px, 1856px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie60) { -moz-image-region: rect(32px, 1920px, 64px, 1888px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie61) { -moz-image-region: rect(32px, 1952px, 64px, 1920px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie62) { -moz-image-region: rect(32px, 1984px, 64px, 1952px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie63) { -moz-image-region: rect(32px, 2016px, 64px, 1984px); }
+#zotero-items-tree treechildren::-moz-tree-image(selected, hasAttachment, pie64) { -moz-image-region: rect(32px, 2048px, 64px, 2016px); }
+
+/* Style search results, display non-matches in gray */
+#zotero-items-tree treechildren::-moz-tree-cell-text(contextRow) {
+	color: gray;
+}
+
+#zotero-items-tree treechildren::-moz-tree-cell-text(contextRow, selected, focus) {
+	/* This is the default color, not the (platform-specific) highlight color, but at least it
+	   helps to differentiate when clicking on a context row. */
+	color: inherit;
+}
+
+/* Style unread items/collections in bold */
+#zotero-items-tree treechildren::-moz-tree-cell-text(unread),
+#zotero-collections-tree treechildren::-moz-tree-cell-text(unread) {
+	font-weight: bold;
+}
+
+#zotero-items-pane
+{
+	min-width: 290px;
+	min-height: 150px;
+}
+
+/* Used for intro text */
+#zotero-items-pane-message-box {
+	overflow-y: auto;
+	cursor: default;
+}
+
+#zotero-items-pane-message-box div {
+	padding: 0 35px;
+}
+
+#zotero-items-pane-message-box p {
+	max-width: 800px;
+	font-size: 1.45em;
+	line-height: 1.7em;
+	text-align: left;
+}
+
+#zotero-items-pane-message-box div.publications p {
+	font-size: 1.2em;
+}
+
+/* Increase size when window is wider */
+#zotero-pane.width-1000 #zotero-items-pane-message-box div.publications p {
+	font-size: 1.35em;
+}
+
+#zotero-items-pane-message-box span.text-link {
+	color: rgb(0, 149, 221);
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+#zotero-items-pane-message-box {
+	-moz-appearance: listbox;
+	text-align: center;
+	padding: 20px;
+}
+
+#zotero-items-pane-message-box description:not(:first-child) {
+	margin-top: .75em;
+}
+
+#zotero-item-pane
+{
+	width: 338px;
+	min-width: 338px;
+	overflow-y: hidden;
+}
+
+#zotero-layout-switcher
+{
+	min-width: 560px;
+}
+
+#zotero-pane .toolbar
+{
+	height: 32px !important; /* Hard-code this to fix toolbar icon compression on Linux */
+	margin: 0;
+	padding: 0;
+	min-width: 1px;
+	-moz-appearance: toolbar;
+}
+
+#zotero-pane toolbarseparator {
+	height:24px;
+}
+
+#zotero-collections-toolbar {
+	margin-right: 10px; /* Set to width of splitter for visual aesthetics */
+	padding-left: 2px;
+}
+
+#zotero-items-toolbar {
+	margin-right: 10px;
+}
+
+.zotero-tb-button {
+	padding-left: 5px;
+	padding-right: 5px;
+	margin-right: 2px;
+	margin-left: 2px;
+}
+
+.zotero-tb-button:first-child {
+	margin-left: 0 !important;
+}
+
+.zotero-tb-button:last-child {
+	margin-right: 0 !important;
+}
+
+.zotero-tb-button[type="menu"] {
+	padding-left: 3px;
+	padding-right: 3px;
+	margin-left: 4px;
+	margin-right: 2px;
+}
+
+.zotero-tb-button:hover:active {
+	mix-blend-mode: multiply;
+}
+
+.toolbarbutton-menu-dropmarker {
+	padding-inline-start: 0;
+	list-style-image: url('chrome://zotero/skin/searchbar-dropmarker.png');
+}
+
+.toolbarbutton-menu-dropmarker .dropmarker-icon {
+	width: 7px;
+}
+
+.zotero-tb-button[type="panel"] > dropmarker {
+  display: none;
+}
+
+.zotero-button-clear-image {
+  list-style-image: none
+}
+
+#zotero-tb-collection-add
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-collection-add.png');
+}
+
+.zotero-menuitem-new-feed
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-feed-add.png');
+}
+
+#zotero-tb-library-add-menu
+{
+	list-style-image: url('chrome://zotero/skin/library_add.png');
+}
+
+
+#zotero-collections-tree, #zotero-items-tree, #zotero-item-pane > groupbox
+{
+	margin: 0;
+	padding: 0;
+}
+
+
+#zotero-tb-add
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-item-add.png');
+}
+
+#zotero-tb-lookup
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-lookup.png');
+}
+
+#zotero-lookup-multiline-progress
+{
+	height: 2em;
+}
+
+#zotero-tb-item-from-page
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-item-from-page.png');
+}
+
+/*
+#zotero-tb-link-page
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-link-add.png');
+}
+
+#zotero-tb-snapshot-page
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-snapshot-add.png');
+}
+*/
+
+#zotero-tb-attachment-add
+{
+	list-style-image: url('chrome://zotero/skin/attach.png');
+}
+
+#zotero-tb-note-add
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-note-add.png');
+}
+
+#zotero-menuitem-note
+{
+	list-style-image: url('chrome://zotero/skin/treeitem-note.png');
+}
+
+.zotero-menuitem-new-saved-search
+{
+	list-style-image: url('chrome://zotero/skin/treesource-search.png');
+}
+
+.zotero-menuitem-show-duplicates
+{
+	list-style-image: url('chrome://zotero/skin/treesource-duplicates.png');
+}
+
+.zotero-menuitem-show-unfiled
+{
+	list-style-image: url('chrome://zotero/skin/treesource-unfiled.png');
+}
+
+.zotero-menuitem-show-retracted {
+	list-style-image: url('chrome://zotero/skin/cross.png');
+}
+
+.zotero-menuitem-sync {
+	list-style-image: url(chrome://zotero/skin/arrow_rotate_static.png);
+}
+
+.zotero-menuitem-new-collection
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-collection-add.png');
+}
+
+.zotero-menuitem-edit-collection
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-collection-edit.png');
+}
+
+.zotero-menuitem-edit-feed
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-feed-edit.png');
+}
+
+.zotero-menuitem-refresh-feed
+{
+	list-style-image: url('chrome://zotero/skin/arrow_refresh.png');
+}
+
+.zotero-menuitem-delete-collection, .zotero-menuitem-remove-items {
+	list-style-image: url('chrome://zotero/skin/toolbar-collection-delete.png');
+}
+
+.zotero-menuitem-show-in-library
+{
+	list-style-image: url('chrome://zotero/skin/treesource-library.png');
+}
+
+.zotero-menuitem-move-to-trash
+{
+	list-style-image: url('chrome://zotero/skin/treesource-trash-full.png');
+}
+
+.zotero-menuitem-delete-from-lib
+{
+	list-style-image: url('chrome://zotero/skin/cross-script.png');
+}
+
+.zotero-menuitem-attach-note
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-note-add.png');
+}
+
+.zotero-menuitem-attach
+{
+	list-style-image: url('chrome://zotero/skin/attach.png');
+}
+
+.zotero-menuitem-attachments-file
+{
+	list-style-image: url('chrome://zotero/skin/treeitem.png');
+}
+
+.zotero-menuitem-attachments-link
+{
+	list-style-image: url('chrome://zotero/skin/treeitem-attachment-link.png');
+}
+
+.zotero-menuitem-attachments-web-link
+{
+	list-style-image: url('chrome://zotero/skin/treeitem-attachment-web-link.png');
+}
+
+.zotero-menuitem-find-pdf {
+	list-style-image: url('chrome://zotero/skin/treeitem-attachment-pdf.png');
+}
+
+.zotero-menuitem-duplicate-item
+{
+	list-style-image: url('chrome://zotero/skin/arrow-split-090.png');
+}
+
+.zotero-menuitem-merge-items
+{
+	list-style-image: url('chrome://zotero/skin/arrow-join-090.png');
+}
+
+.zotero-menuitem-export
+{
+	list-style-image: url('chrome://zotero/skin/arrow-curve-090-left.png');
+}
+
+.zotero-menuitem-restore-to-library
+{
+	list-style-image: url('chrome://zotero/skin/lifebuoy.png');
+}
+
+.zotero-menuitem-create-bibliography
+{
+	list-style-image: url('chrome://zotero/skin/edit-list-order.png');
+}
+
+.zotero-menuitem-create-report
+{
+	list-style-image: url('chrome://zotero/skin/treeitem-report.png');
+}
+
+.zotero-menuitem-retrieve-metadata
+{
+	list-style-image: url('chrome://zotero/skin/puzzle-arrow.png');
+}
+
+.zotero-menuitem-reindex
+{
+	list-style-image: url('chrome://zotero/skin/document-search-result.png');
+}
+
+.zotero-menuitem-create-parent
+{
+	list-style-image: url('chrome://zotero/skin/page_white_add.png');
+}
+
+.zotero-menuitem-rename-from-parent
+{
+	list-style-image: url('chrome://zotero/skin/bookmark-pencil.png');
+}
+
+#zotero-tb-advanced-search
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-advanced-search.png');
+}
+
+#zotero-tb-locate
+{
+	list-style-image: url('chrome://zotero/skin/toolbar-go-arrow.png');
+}
+
+#zotero-tb-sync-stop
+{
+	list-style-image: url(chrome://zotero/skin/control_stop_blue.png);
+	margin-right: 0;
+}
+
+#zotero-tb-sync-progress
+{
+	min-width: 50px;
+	width: 50px;
+	height: 10px;
+	margin-left: 0;
+}
+
+#zotero-tb-sync-progress-tooltip-progress {
+	margin-bottom: 5px;
+}
+
+/* Library names */
+#zotero-tb-sync-progress-tooltip rows > label
+{
+	font-weight: bold;
+	margin-top: 8px;
+}
+
+/* Queue names */
+#zotero-tb-sync-progress-tooltip row:not(.library-name) label:first-child
+{
+	text-align: right;
+}
+
+#zotero-tb-pq-recognize {
+	list-style-image: url(chrome://zotero/skin/pdf-search.png);
+}
+
+#zotero-tb-pq-recognize .toolbarbutton-icon {
+	width: 18px;
+	margin-top: 1px;
+}
+
+/* Sync error icon */
+#zotero-tb-sync-error {
+	list-style-image: url(chrome://zotero/skin/error.png);
+}
+
+#zotero-tb-sync-error[state=warning] {
+	list-style-image: url(chrome://zotero/skin/warning.png);
+}
+
+#zotero-tb-sync-error[state=upgrade] {
+	list-style-image: url(chrome://zotero/skin/bell_error.png);
+}
+
+/* Sync error panel */
+#zotero-sync-error-panel {
+	margin-right: 0;
+}
+
+#zotero-sync-error-panel .error-header {
+	font-size: 14px;
+	font-weight: bold;
+	margin-bottom: 1em;
+	-moz-user-select: text;
+	cursor: text
+}
+
+.zotero-sync-error-panel-library-name {
+	font-size: 12px;
+	font-weight: bold;
+	margin-left: 0;
+	margin-bottom: 1.1em;
+}
+
+#zotero-sync-error-panel description {
+	width: 370px;
+	white-space: pre-wrap;
+}
+
+#zotero-sync-error-panel-buttons {
+	-moz-box-pack: end;
+}
+
+#zotero-tb-sync {
+	list-style-image: url(chrome://zotero/skin/arrow_rotate_static.png);
+	margin-left: -6px;
+	margin-right: -2px;
+	padding-right: 6px;
+}
+
+#zotero-tb-sync .toolbarbutton-icon {
+	max-width: 28px;
+}
+
+#zotero-tb-sync[status=animate] {
+	list-style-image: url(chrome://zotero/skin/arrow_rotate_animated.png);
+}
+
+#zotero-tb-sync-status, #zotero-tb-sync-last-sync
+{
+	color: gray;
+}
+
+#zotero-tb-search
+{
+	font-size: 11px !important;
+	margin-right: 0;
+	width: 172px;
+}
+
+#zotero-tb-search-menu-button {
+	margin: 0;
+	padding: 0;
+	-moz-appearance: none;
+	min-width: 0;
+	cursor: default;
+	list-style-image: url("chrome://zotero/skin/searchbar-dropmarker.png");
+}
+
+#zotero-tb-search-menu-button .button-icon {
+	width: 7px;
+}
+
+#zotero-toolbar
+{
+	visibility: visible !important;
+	display: inherit !important;
+}
+
+
+.zotero-box {
+	margin-left: 5px;
+}
+
+.zotero-box-icon {
+	width: 16px;
+	height: 16px;
+}
+
+.zotero-box-label {
+	margin-left: 3px !important;
+}
+
+#retracted-items-banner {
+	display: flex;
+	justify-content: center;
+	background: #d93425;
+	line-height: 2.2em;
+	font-weight: bold;
+	color: white;
+	font-size: 13.5px;
+	text-align: center;
+	padding: 0 2em;
+	position: relative;
+}
+
+#retracted-items-message {
+	margin-right: .8em;
+}
+
+#retracted-items-link {
+	text-decoration: underline;
+	margin-left: .3em;
+	cursor: pointer;
+}
+
+#retracted-items-link:active {
+	color: #f9e8e2;
+}
+
+#retracted-items-close {
+	position: absolute;
+	cursor: pointer;
+	top: -2px;
+	right: 9px;
+	font-size: 22px;
+}
+
+/* Missing in Fx60 */
+.autocomplete-richlistbox {
+	border: 1px solid transparent;
+	min-height: 1.8em;
+}
+
+.autocomplete-richlistitem {
+	font: message-box;
+	padding: 1px;
+	height: 1.5em;
+	min-height: 1.5em;
+}
+
+.autocomplete-richlistitem[selected] {
+	background-color: Highlight;
+	color: HighlightText;
+}
+
+
+/* BEGIN 2X BLOCK -- DO NOT EDIT MANUALLY -- USE 2XIZE */
+@media (min-resolution: 1.25dppx) {
+	#zotero-items-column-hasAttachment  { list-style-image: url(chrome://zotero/skin/attach-small@2x.png); }
+	#zotero-items-column-numNotes  { list-style-image: url(chrome://zotero/skin/treeitem-note-small@2x.png); }
+	.toolbarbutton-menu-dropmarker  { list-style-image: url('chrome://zotero/skin/searchbar-dropmarker@2x.png'); }
+	#zotero-tb-collection-add { list-style-image: url('chrome://zotero/skin/toolbar-collection-add@2x.png'); }
+	.zotero-menuitem-new-feed { list-style-image: url('chrome://zotero/skin/toolbar-feed-add@2x.png'); }
+	#zotero-tb-library-add-menu { list-style-image: url('chrome://zotero/skin/library_add@2x.png'); }
+	#zotero-tb-add { list-style-image: url('chrome://zotero/skin/toolbar-item-add@2x.png'); }
+	#zotero-tb-lookup { list-style-image: url('chrome://zotero/skin/toolbar-lookup@2x.png'); }
+	#zotero-tb-attachment-add { list-style-image: url('chrome://zotero/skin/attach@2x.png'); }
+	#zotero-tb-note-add { list-style-image: url('chrome://zotero/skin/toolbar-note-add@2x.png'); }
+	#zotero-menuitem-note { list-style-image: url('chrome://zotero/skin/treeitem-note@2x.png'); }
+	.zotero-menuitem-new-saved-search { list-style-image: url('chrome://zotero/skin/treesource-search@2x.png'); }
+	.zotero-menuitem-show-duplicates { list-style-image: url('chrome://zotero/skin/treesource-duplicates@2x.png'); }
+	.zotero-menuitem-show-unfiled { list-style-image: url('chrome://zotero/skin/treesource-unfiled@2x.png'); }
+	.zotero-menuitem-show-retracted  { list-style-image: url('chrome://zotero/skin/cross@2x.png'); }
+	.zotero-menuitem-sync  { list-style-image: url(chrome://zotero/skin/arrow_rotate_static@2x.png); }
+	.zotero-menuitem-new-collection { list-style-image: url('chrome://zotero/skin/toolbar-collection-add@2x.png'); }
+	.zotero-menuitem-edit-collection { list-style-image: url('chrome://zotero/skin/toolbar-collection-edit@2x.png'); }
+	.zotero-menuitem-edit-feed { list-style-image: url('chrome://zotero/skin/toolbar-feed-edit@2x.png'); }
+	.zotero-menuitem-refresh-feed { list-style-image: url('chrome://zotero/skin/arrow_refresh@2x.png'); }
+	.zotero-menuitem-delete-collection, .zotero-menuitem-remove-items  { list-style-image: url('chrome://zotero/skin/toolbar-collection-delete@2x.png'); }
+	.zotero-menuitem-show-in-library { list-style-image: url('chrome://zotero/skin/treesource-library@2x.png'); }
+	.zotero-menuitem-move-to-trash { list-style-image: url('chrome://zotero/skin/treesource-trash-full@2x.png'); }
+	.zotero-menuitem-attach-note { list-style-image: url('chrome://zotero/skin/toolbar-note-add@2x.png'); }
+	.zotero-menuitem-attach { list-style-image: url('chrome://zotero/skin/attach@2x.png'); }
+	.zotero-menuitem-attachments-file { list-style-image: url('chrome://zotero/skin/treeitem@2x.png'); }
+	.zotero-menuitem-attachments-link { list-style-image: url('chrome://zotero/skin/treeitem-attachment-link@2x.png'); }
+	.zotero-menuitem-attachments-web-link { list-style-image: url('chrome://zotero/skin/treeitem-attachment-web-link@2x.png'); }
+	.zotero-menuitem-find-pdf  { list-style-image: url('chrome://zotero/skin/treeitem-attachment-pdf@2x.png'); }
+	.zotero-menuitem-create-report { list-style-image: url('chrome://zotero/skin/treeitem-report@2x.png'); }
+	#zotero-tb-advanced-search { list-style-image: url('chrome://zotero/skin/toolbar-advanced-search@2x.png'); }
+	#zotero-tb-locate { list-style-image: url('chrome://zotero/skin/toolbar-go-arrow@2x.png'); }
+	#zotero-tb-sync-stop { list-style-image: url(chrome://zotero/skin/control_stop_blue@2x.png); }
+	#zotero-tb-pq-recognize  { list-style-image: url(chrome://zotero/skin/pdf-search@2x.png); }
+	#zotero-tb-sync-error  { list-style-image: url(chrome://zotero/skin/error@2x.png); }
+	#zotero-tb-sync-error[state=warning]  { list-style-image: url(chrome://zotero/skin/warning@2x.png); }
+	#zotero-tb-sync  { list-style-image: url(chrome://zotero/skin/arrow_rotate_static@2x.png); }
+	#zotero-tb-sync[status=animate]  { list-style-image: url(chrome://zotero/skin/arrow_rotate_animated@2x.png); }
+	#zotero-tb-search-menu-button  { list-style-image: url("chrome://zotero/skin/searchbar-dropmarker@2x.png"); }
+}

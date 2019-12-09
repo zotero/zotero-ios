@@ -1,0 +1,101 @@
+<!ENTITY preferencesCmdMac.label "Nastavení...">
+<!ENTITY preferencesCmdMac.commandkey ",">
+<!ENTITY servicesMenuMac.label "Služby">
+<!ENTITY hideThisAppCmdMac.label "Skrýt &brandShortName;">
+<!ENTITY hideThisAppCmdMac.commandkey "H">
+<!ENTITY hideOtherAppsCmdMac.label "Skrýt ostatní">
+<!ENTITY hideOtherAppsCmdMac.commandkey "H">
+<!ENTITY showAllAppsCmdMac.label "Zobrazit vše">
+<!ENTITY quitApplicationCmdMac.label "Vypnout Zotero">
+<!ENTITY quitApplicationCmdMac.key "Q">
+
+
+<!ENTITY fileMenu.label "Soubor">
+<!ENTITY fileMenu.accesskey "F">
+<!ENTITY saveCmd.label "Uložit...">
+<!ENTITY saveCmd.key "S">
+<!ENTITY saveCmd.accesskey "A">
+<!ENTITY pageSetupCmd.label "Nastavení stránky...">
+<!ENTITY pageSetupCmd.accesskey "U">
+<!ENTITY printCmd.label "Tisk...">
+<!ENTITY printCmd.key "P">
+<!ENTITY printCmd.accesskey "P">
+<!ENTITY closeCmd.label "Zavřít">
+<!ENTITY closeCmd.key "W">
+<!ENTITY closeCmd.accesskey "C">
+<!ENTITY manageAttachments.label "Manage Attachments">
+<!ENTITY convertToStored.label "Convert Linked Files to Stored Files…">
+<!ENTITY importCmd.label "Importovat...">
+<!ENTITY importCmd.key "I">
+<!ENTITY importFromClipboardCmd.label "Vložit ze schránky">
+<!ENTITY quitApplicationCmdWin.label "Zavřít">
+<!ENTITY quitApplicationCmdWin.accesskey "x">
+<!ENTITY quitApplicationCmd.label "Zavřít">
+<!ENTITY quitApplicationCmd.accesskey "Q">
+
+
+<!ENTITY copyCitationCmd.label "Kopírovat citaci">
+<!ENTITY copyBibliographyCmd.label "Kopírovat bibliografii">
+
+<!ENTITY bidiSwitchPageDirectionItem.label "Přepnout směr stránky">
+<!ENTITY bidiSwitchPageDirectionItem.accesskey "g">
+<!ENTITY bidiSwitchTextDirectionItem.label "Přepnout směr textu">
+<!ENTITY bidiSwitchTextDirectionItem.accesskey "w">
+<!ENTITY bidiSwitchTextDirectionItem.commandkey "X">
+
+
+<!ENTITY viewMenu.label "View">
+<!ENTITY layout.label "Layout">
+<!ENTITY standardView.label "Standard View">
+<!ENTITY stackedView.label "Stacked View">
+<!ENTITY collectionsPane.label "Collections Pane">
+<!ENTITY itemPane.label "Item Pane">
+<!ENTITY tagSelector.label "Tag Selector">
+<!ENTITY recursiveCollections.label "Show Items from Subcollections">
+<!ENTITY fontSize.label "Font Size">
+<!ENTITY noteFontSize.label "Note Font Size">
+
+
+<!ENTITY toolsMenu.label "Nástroje">
+<!ENTITY toolsMenu.accesskey "T">
+<!ENTITY installConnector.label "Nainstalovat Konektory do prohlížečů">
+<!ENTITY installConnector.accesskey "C">
+<!ENTITY addons.label "Doplňky">
+<!ENTITY developer.label "Developer">
+
+
+<!ENTITY minimizeWindow.key "m">
+<!ENTITY minimizeWindow.label "minimalizovat">
+<!ENTITY bringAllToFront.label "Přesunout vše do popředí">
+<!ENTITY zoomWindow.label "Přiblížit">
+<!ENTITY windowMenu.label "Okno">
+
+
+<!ENTITY helpMenu.label "Pomoc">
+<!ENTITY helpMenu.accesskey "H">
+
+
+<!ENTITY helpMenuWin.label "Pomoc">
+<!ENTITY helpMenuWin.accesskey "H">
+<!ENTITY helpMac.commandkey "?">
+<!ENTITY aboutProduct.label "O &brandShortName;">
+<!ENTITY aboutProduct.accesskey "A">
+<!ENTITY productHelp.label "Podpora a dokumentace">
+<!ENTITY productHelp.accesskey "D">
+<!ENTITY helpTroubleshootingInfo.label "Informace o řešení potíží">
+<!ENTITY helpTroubleshootingInfo.accesskey "T">
+<!ENTITY helpFeedbackPage.label "Diskusní fórum">
+<!ENTITY helpFeedbackPage.accesskey "F">
+
+<!ENTITY helpReportErrors.label "Nahlásit chyby...">
+<!ENTITY helpReportErrors.accesskey "R">
+
+<!ENTITY debugOutputLogging.label "Debug Output Logging">
+<!ENTITY debugOutputLogging.accesskey "L">
+<!ENTITY debugOutputLogging.submit "Zaslat výstup">
+<!ENTITY debugOutputLogging.view "Prohlédnout výstup">
+<!ENTITY debugOutputLogging.clear "Vymazat výstup">
+<!ENTITY debugOutputLogging.restartWithLoggingEnabled "Restartovat se zapnutým logováním...">
+
+<!ENTITY helpCheckForUpdates.label "Zkontrolovat aktualizace...">
+<!ENTITY helpCheckForUpdates.accesskey "U">

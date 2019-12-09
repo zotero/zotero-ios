@@ -1,0 +1,19 @@
+<!ENTITY zotero.publications.my_publications "Yayınlarım">
+
+<!ENTITY zotero.publications.intro "Yayınlarım'a eklediğiniz eserler zotero.org adresindeki profil sayfanızda gösterilecektir. Eklenti dosyalarını dahil etmeyi seçerseniz, bu dosyalar belirttiğiniz lisans uyarınca halka açık şekilde paylaşılacaktır. Sadece kendi ürettiğiniz eserleri ekleyiniz ve sadece dağıtım hakkına sahip olduğunuz ve paylaşmak istediğiniz dosyaları dahil ediniz.">
+<!ENTITY zotero.publications.include.checkbox.files "Dosyaları dahil et">
+<!ENTITY zotero.publications.include.checkbox.notes "Notları dahil et">
+<!ENTITY zotero.publications.include.adjustAtAnyTime "Nelerin gösterileceğini, Yayınlarım dermesinden herhangi bir zaman ayarlayabilirsiniz.">
+
+<!ENTITY zotero.publications.sharing.title "Kendi eserlerinizin nasıl paylaşılacağını seçiniz">
+<!ENTITY zotero.publications.sharing.text "Kendi eserlerinizin tüm haklarını saklı tutabilir, Creative Commons altında lisanslayabilir ya da kamu alanına açıkça sunabilirsiniz. Her durumda eser zotero.org aracılığıyla halka açık olacaktır.">
+<!ENTITY zotero.publications.sharing.prompt "Eserinizin başkaları tarafından paylaşılabilmesine izin veriyor musunuz?">
+<!ENTITY zotero.publications.sharing.cc "Evet, Creative Commons ile lisansla">
+<!ENTITY zotero.publications.sharing.cc0 "Evet, eserimi kamu alanına serbestçe koy">
+<!ENTITY zotero.publications.sharing.reserved "Hayır, eserimi sadece zotero.org adresinde yayınla">
+
+<!ENTITY zotero.publications.chooseLicense.title "Bir Creative Commons lisansı seç">
+<!ENTITY zotero.publications.chooseLicense.text "Bir Creative Commons lisansı, eğer size uygun bir atıfta bulunuluyor, lisansa bir bağlantı veriliyor ve yapılmış herhangi bir değişiklik belirtiliyorsa, başkalarına eserinizi kopyalama ve yeniden dağıtmasına izni vermektedir.">
+<!ENTITY zotero.publications.chooseLicense.adaptations.prompt "Eserinizin uyarlamalarının paylaşılmasına izin veriyor musunuz?">
+<!ENTITY zotero.publications.chooseLicense.adaptations.sharealike "Evet, başkaları da aynı şekilde paylaşacaksa">
+<!ENTITY zotero.publications.chooseLicense.commercial.prompt "Eserinizin ticari kullanımına izin veriyor musunuz?">

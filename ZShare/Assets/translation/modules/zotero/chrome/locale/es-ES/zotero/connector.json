@@ -1,0 +1,74 @@
+{
+  "general_more": {
+    "message": "Más…"
+  },
+  "general_done": {
+    "message": "Hecho"
+  },
+  "general_tryAgain": {
+    "message": "Prueba de nuevo"
+  },
+  "general_warning": {
+    "message": "Advertencia"
+  },
+  "general_cancel": {
+    "message": "Cancelar"
+  },
+  "progressWindow_savingTo": {
+    "message": "Guardando a"
+  },
+  "progressWindow_tagPlaceholder": {
+    "message": "Etiquetas (separadas por comas)"
+  },
+  "progressWindow_error_translation": {
+    "message": "Ocurrió un error mientras se guardaba este elemento. Véase $1 para más información."
+  },
+  "progressWindow_error_troubleshootingTranslatorIssues": {
+    "message": "Solución de problemas del traductor"
+  },
+  "progressWindow_error_fallback": {
+    "message": "Ocurrió un error al guardar con $1. Intentando guardar usando $2 en su lugar."
+  },
+  "progressWindow_error_upgradeClient": {
+    "message": "Esta característica no está soportada por tu versión de $1. Por favor, actualiza a $2."
+  },
+  "progressWindow_error_upgradeClient_latestVersion": {
+    "message": "última versión"
+  },
+  "appConnector": {
+    "message": "Conector de $1"
+  },
+  "upgradeApp": {
+    "message": "Actualizar $1"
+  },
+  "error_connection_isAppRunning": {
+    "message": "¿Está $1 en ejecución?"
+  },
+  "error_connection_save": {
+    "message": "El $1 fue habilitado para comunicar con la aplicación de escritorio de $2. El Conector puede guardar algunas páginas directamente en tu cuenta $3, pero para obtener mejores resultados debes asegurarte de que $2 está abierto antes de intentar guardar."
+  },
+  "error_connection_downloadOrTroubleshoot": {
+    "message": "Puedes <a href=\"$1\">descargar $2</a> o <a href=\"$3\">solucionar problemas de la conexión</a> si es necesario."
+  },
+  "error_connection_enableSavingToOnlineLibrary": {
+    "message": "Habilitar guardar en la biblioteca en línea"
+  },
+  "integration_error_clientUpgrade": {
+    "message": "La citación basada en web requiere $1 o superior."
+  },
+  "integration_error_connection": {
+    "message": "El $1 fue habilitado para comunicar con la aplicación de escritorio de $2. $2 debe estar abierto para usar la citación basada en web."
+  },
+  "integration_googleDocs_unlinkBeforeSaving_warning": {
+    "message": "Este documento contiene citas activas de Zotero que aparecerán como enlaces a zotero.org en la copia descargada."
+  },
+  "integration_googleDocs_unlinkBeforeSaving_instructions": {
+    "message": "Para generar una versión adecuada para compartir, selecciona <b>Hacer una copia... </b>desde el menú Archivo, selecciona <b>Desvincular citas </b>desde el menú de Zotero en el nuevo documento y luego descarga la versión no enlazada. Conserva este documento original vinculado en caso de que necesites realizar más cambios."
+  },
+  "integration_googleDocs_unlinkBeforeSaving_downloadAnyway": {
+    "message": "Descargar la versión enlazada de todos modos"
+  },
+  "general_saveTo": {
+    "message": "Guardar a $1"
+  }
+}

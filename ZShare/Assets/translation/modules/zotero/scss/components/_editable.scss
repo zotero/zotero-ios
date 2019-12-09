@@ -1,0 +1,17 @@
+input.editable-control {
+	flex: 1 1 auto; // Stretch within react-autosuggest__container
+	padding: 2px 1px;
+	font-size: inherit;
+}
+
+textarea.editable-control {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+.editable-content {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width: 100%;
+}

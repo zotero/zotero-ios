@@ -1,0 +1,9 @@
+<!ENTITY styles.preview "Попередній перегляд стилю Zotero">
+
+<!ENTITY styles.preview.citationFormat "Формат цитування:">
+<!ENTITY styles.preview.citationFormat.all "все">
+<!ENTITY styles.preview.citationFormat.author "автор">
+<!ENTITY styles.preview.citationFormat.authorDate "автор-дата">
+<!ENTITY styles.preview.citationFormat.label "позначка">
+<!ENTITY styles.preview.citationFormat.note "примітка">
+<!ENTITY styles.preview.citationFormat.numeric "числовий">
