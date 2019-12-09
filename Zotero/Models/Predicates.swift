@@ -151,7 +151,7 @@ extension NSPredicate {
     }
 
     static func itemSearch(for text: String) -> NSPredicate {
-        let titlePredicate = NSPredicate(format: "title contains[c] %@", text)
+        let titlePredicate = NSPredicate(format: "displayTitle contains[c] %@", text)
 
         let creatorFullNamePredicate = NSPredicate(format: "ANY creators.name contains[c] %@", text)
         let creatorFirstNamePredicate = NSPredicate(format: "ANY creators.firstName contains[c] %@", text)
