@@ -50,14 +50,7 @@ class CollectionsStore: ObservableObject {
         var editingType: EditingType?
     }
     
-    @Published var state: State {
-        didSet {
-            if self.state.selectedCollection.id != oldValue.selectedCollection.id {
-                NotificationCenter.default.post(name: .splitViewDetailChanged,
-                                                object: (self.state.selectedCollection, self.state.library))
-            }
-        }
-    }
+    @Published var state: State
 
     private let dbStorage: DbStorage
 
@@ -110,11 +103,6 @@ class CollectionsStore: ObservableObject {
                                collections: [],
                                error: .dataLoading)
         }
-    }
-
-    func didAppear() {
-        NotificationCenter.default.post(name: .splitViewDetailChanged,
-                                        object: (self.state.selectedCollection, self.state.library))
     }
 
     func assignItems(keys: [String], to collectionKey: String) {

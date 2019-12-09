@@ -57,7 +57,10 @@ class CollectionsViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.store.didAppear()
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            self.showSelectedCollection()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -66,6 +69,11 @@ class CollectionsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func showSelectedCollection() {
+        NotificationCenter.default.post(name: .splitViewDetailChanged,
+                                        object: (self.store.state.selectedCollection, self.store.state.library))
+    }
 
     private func updateDataSource(with state: CollectionsStore.State) {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
@@ -167,7 +175,7 @@ class CollectionsViewController: UIViewController {
                                                         cellProvider: { [weak self] (tableView, indexPath, object) -> UITableViewCell? in
             let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsViewController.cellId, for: indexPath) as? CollectionCell
             cell?.set(collection: object)
-            if object == self?.store.state.selectedCollection {
+            if UIDevice.current.userInterfaceIdiom == .pad && object == self?.store.state.selectedCollection {
                 tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
             }
             return cell
@@ -186,7 +194,19 @@ class CollectionsViewController: UIViewController {
 extension CollectionsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let collection = self.dataSource.itemIdentifier(for: indexPath) {
-            self.store.state.selectedCollection = collection
+            let didChange = collection.id != self.store.state.selectedCollection.id
+            if didChange {
+                self.store.state.selectedCollection = collection
+            }
+            // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
+            // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
+            if UIDevice.current.userInterfaceIdiom == .phone || didChange {
+                self.showSelectedCollection()
+            }
+        }
+
+        if UIDevice.current.userInterfaceIdiom != .pad {
+            tableView.deselectRow(at: indexPath, animated: true)
         }
     }
 
