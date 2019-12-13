@@ -16,11 +16,18 @@ class WebViewHandler: NSObject {
         case cantFindBaseFile, translation
     }
 
+    private let translatorsController: TranslatorsController
+
     private weak var webView: WKWebView!
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
 
-    init(webView: WKWebView) {
+    init(webView: WKWebView, fileStorage: FileStorage) {
         self.webView = webView
+        self.translatorsController = TranslatorsController(fileStorage: fileStorage)
+    }
+
+    func showMessage(str: String) -> Single<Any> {
+        return self.callJavascript("setResult('\(str)')")
     }
 
     /// Runs translation server against html content with cookies. Loads documents and returns their urls in completion handler.
@@ -35,17 +42,21 @@ class WebViewHandler: NSObject {
             return Single.error(Error.cantFindBaseFile)
         }
 
-        let escapedHtml = String(html.components(separatedBy: .newlines).joined()).replacingOccurrences(of: "\"", with: "\\\"")
+        var encodedHtml = html.data(using: .utf8)?.base64EncodedString(options: .endLineWithLineFeed) ?? "null"
+        encodedHtml = encodedHtml != "null" ? "'\(encodedHtml)'" : encodedHtml
 
         return self.loadCookies(from: cookies)
                    .flatMap { _ -> Single<()> in
                        return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
                    }
-                   .flatMap { _ -> Single<Any> in
-                       return self.callJavascript("document.querySelector('#url').value=\"\(url.absoluteString)\";")
+                   .flatMap { _ -> Single<[TranslatorInfo]> in
+                       return self.translatorsController.load()
                    }
-                   .flatMap { data -> Single<Any> in
-                       return self.callJavascript("document.querySelector('#html').innerHTML=\"\(escapedHtml)\";")
+                   .flatMap { translators -> Single<Any> in
+                       let translatorData = try? JSONSerialization.data(withJSONObject: translators, options: .prettyPrinted)
+                       var encodedTranslators = translatorData?.base64EncodedString(options: .endLineWithLineFeed) ?? "null"
+                       encodedTranslators = encodedTranslators != "null" ? "'\(encodedTranslators)'" : encodedTranslators
+                       return self.callJavascript("doTranslateWeb('\(url.absoluteString)', '\(cookies)', \(encodedHtml), \(encodedTranslators));")
                    }
                    .flatMap { data -> Single<[URL]> in
                        if let data = data as? [String: Any] {

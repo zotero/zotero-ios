@@ -107,7 +107,7 @@ Zotero.Translator.prototype.init = function(info) {
 		delete this.importRegexp;
 	}
 
-	this.cacheCode = Zotero.isConnector;
+	this.cacheCode = true;//Zotero.isConnector;
 	if (this.translatorType & TRANSLATOR_TYPES["web"]) {
 		// compile web regexp
 		this.cacheCode |= !this.target;

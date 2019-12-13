@@ -331,6 +331,7 @@
 		B3BA36F6222402AC006220E4 /* RSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F5222402AC006220E4 /* RSearch.swift */; };
 		B3BA36F822241601006220E4 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36F722241601006220E4 /* SearchesResponse.swift */; };
 		B3BA36FC22242672006220E4 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BA36FB22242672006220E4 /* RTag.swift */; };
+		B3BABCC323A1543E00B4C893 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BABCC123A1526000B4C893 /* TranslatorsController.swift */; };
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
@@ -657,6 +658,7 @@
 		B3BA36F5222402AC006220E4 /* RSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSearch.swift; sourceTree = "<group>"; };
 		B3BA36F722241601006220E4 /* SearchesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B3BA36FB22242672006220E4 /* RTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
+		B3BABCC123A1526000B4C893 /* TranslatorsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B3C33D852236676C0071A763 /* SyncScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
@@ -986,6 +988,7 @@
 				B3AB389F238EC02D008A1ABB /* View Controllers */,
 				B3AB38A1238EC02D008A1ABB /* Views */,
 				B3AE2A762397B5CB00E6C461 /* BackgroundApi.swift */,
+				B3BABCC123A1526000B4C893 /* TranslatorsController.swift */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
 				B3B8166723880DC900529605 /* ZShare.entitlements */,
 				B311B3232386A39800BCF592 /* Info.plist */,
@@ -1936,6 +1939,7 @@
 				B311B32F2386B15E00BCF592 /* ZoteroApiClient.swift in Sources */,
 				B32661AB238D35AF0050335F /* AuthorizeUploadResponse.swift in Sources */,
 				B387FF90238C490100D85097 /* ItemTypes.swift in Sources */,
+				B3BABCC323A1543E00B4C893 /* TranslatorsController.swift in Sources */,
 				B3AB38AF238ECB25008A1ABB /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
 				B32661A1238D349B0050335F /* DeletableObject.swift in Sources */,
 				B32661B5238D38B00050335F /* DeleteObjectsDbRequest.swift in Sources */,

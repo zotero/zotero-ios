@@ -23,16 +23,21 @@
 	***** END LICENSE BLOCK *****
 */
 
-window.doTranslate = async function translate() {
-	const url = document.querySelector('#url').value || "https://forums.zotero.org/discussion/80255/available-for-beta-testing-zotero-connector-for-safari-13";
-	const html = document.querySelector('#html').value;
+async function doTranslateWeb(url, cookies, encodedHtml, encodedTranslators) {
+	const html = window.atob(encodedHtml);
 	const doc = addLocationPropToDoc(new DOMParser().parseFromString(html, 'text/html'), url);
+    const translatorData = JSON.parse(window.atob(encodedTranslators));
+
+    if (translatorData) {
+        Zotero.Translators.init(translatorData);
+    }
 
 	// Set up a translate instance
 	const translate = new Zotero.Translate.Web();
 	translate.setDocument(doc);
-	// TODO: Manage cookies
-	// translate.setCookieSandbox(cookieSandbox);
+    if (cookies) {
+        translate.setCookieSandbox(cookies);
+    }
 
 	// Get translators
 	let translators;
@@ -46,23 +51,31 @@ window.doTranslate = async function translate() {
 
 	if (!translators.length) {
 		setResult(`No translators available for ${url}`);
+        return;
 	}
 
 	// set handlers for translation
 	translate.setHandler("select", (translate, item, callback) => {
-
 		setResult("select handler called: "+ JSON.stringify(item));
 		setTimeout(() => callback(item), 3000);
 	});
-		
+
 	translate.setHandler("error", function(obj, err) {
 		setResult(err);
 		Zotero.logError(err);
 	});
 
 	let items = await translate.translate();
+    printLog('Items: ' + items.length);
 	setResult(JSON.stringify(items));
 };
+
+var globalLog = ""
+
+function printLog(str) {
+    globalLog += str + "<br>";
+    document.querySelector('#logs').innerHTML = globalLog.toString();
+}
 
 function setResult(str) {
 	document.querySelector('#result').innerHTML = str.toString();
@@ -100,5 +113,4 @@ function addLocationPropToDoc(doc, docURL) {
 
 window.addEventListener('DOMContentLoaded', function() {
 	Zotero.Debug.init(1);
-	Zotero.Repo.init();
 });

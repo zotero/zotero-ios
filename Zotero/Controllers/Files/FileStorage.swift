@@ -17,6 +17,7 @@ protocol FileStorage {
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
     func createDictionaries(for file: File) throws
+    func contentsOfDirectory(at file: File) throws -> [File]
 }
 
 class FileStorageController: FileStorage {
@@ -56,5 +57,12 @@ class FileStorageController: FileStorage {
 
     func createDictionaries(for file: File) throws {
         try self.fileManager.createMissingDirectories(for: file.createRelativeUrl())
+    }
+
+    func contentsOfDirectory(at file: File) throws -> [File] {
+        return try self.fileManager.contentsOfDirectory(at: file.createUrl(),
+                                                        includingPropertiesForKeys: [],
+                                                        options: [])
+                                   .map { Files.file(from: $0) }
     }
 }

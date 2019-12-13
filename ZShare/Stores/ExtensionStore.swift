@@ -273,10 +273,15 @@ class ExtensionStore {
             .do(onNext: { [weak self] title, _, _, _ in
                 self?.state.title = title
             })
-            .flatMap({ [weak webView] title, url, html, cookies -> Observable<[URL]> in
-                guard let webView = webView else { return Observable.error(DownloadError.expired) }
+            .flatMap({ [weak self, weak webView] title, url, html, cookies -> Observable<[URL]> in
+                guard let `self` = self, let webView = webView else { return Observable.error(DownloadError.expired) }
                 let completeHtml = "<html>" + html + "</html>"
-                return WebViewHandler(webView: webView).loadDocument(for: url, title: title, html: completeHtml, cookies: cookies).asObservable()
+                return WebViewHandler(webView: webView,
+                                      fileStorage: self.fileStorage).loadDocument(for: url,
+                                                                                  title: title,
+                                                                                  html: completeHtml,
+                                                                                  cookies: cookies)
+                                                                    .asObservable()
             })
             .flatMap { [weak self] data -> Observable<RxProgress> in
                 guard let `self` = self else { return Observable.error(DownloadError.expired) }
@@ -288,8 +293,8 @@ class ExtensionStore {
                 self?.state.downloadState = .progress(progress.completed)
             }, onError: { [weak self] error in
                 self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
-            }, onCompleted: {
-                self.state.downloadState = nil
+            }, onCompleted: { [weak self] in
+                self?.state.downloadState = nil
             })
             .disposed(by: self.disposeBag)
     }

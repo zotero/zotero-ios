@@ -20,9 +20,13 @@ class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
+    @UserDefault(key: "TranslatorsNeedUpdate", defaultValue: true)
+    var updateTranslators: Bool
+
     func reset() {
         self.askForSyncPermission = false
         self.username = ""
         self.userId = 0
+        self.updateTranslators = false
     }
 }
