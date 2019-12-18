@@ -75,9 +75,10 @@ class ExtensionStore {
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
+    private let webViewHandler: WebViewHandler
     private let disposeBag: DisposeBag
 
-    init(apiClient: ApiClient, backgroundApi: BackgroundApi, dbStorage: DbStorage,
+    init(webView: WKWebView, apiClient: ApiClient, backgroundApi: BackgroundApi, dbStorage: DbStorage,
          schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController) {
         self.syncController = syncController
         self.apiClient = apiClient
@@ -85,6 +86,7 @@ class ExtensionStore {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.webViewHandler = WebViewHandler(webView: webView, apiClient: apiClient, fileStorage: fileStorage)
         self.state = State()
         self.disposeBag = DisposeBag()
 
@@ -94,6 +96,15 @@ class ExtensionStore {
                                self?.finishSync(successful: (data == nil))
                            }, onError: { [weak self] _ in
                                self?.finishSync(successful: false)
+                           })
+                           .disposed(by: self.disposeBag)
+
+        self.webViewHandler.observable
+                           .observeOn(MainScheduler.instance)
+                           .subscribe(onNext: { [weak self] data in
+                               self?.processItems(data)
+                           }, onError: { [weak self] error in
+                               self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
                            })
                            .disposed(by: self.disposeBag)
     }
@@ -266,37 +277,24 @@ class ExtensionStore {
         }
     }
 
-    func loadDocument(with extensionItem: NSExtensionItem, webView: WKWebView) {
-        let key = self.state.key
+    func loadDocument(with extensionItem: NSExtensionItem) {
         self.loadWebData(extensionItem: extensionItem)
             .observeOn(MainScheduler.instance)
-            .do(onNext: { [weak self] title, _, _, _ in
+            .subscribe(onNext: { [weak self] title, url, html, cookies in
                 self?.state.title = title
-            })
-            .flatMap({ [weak self, weak webView] title, url, html, cookies -> Observable<[URL]> in
-                guard let `self` = self, let webView = webView else { return Observable.error(DownloadError.expired) }
-                let completeHtml = "<html>" + html + "</html>"
-                return WebViewHandler(webView: webView,
-                                      fileStorage: self.fileStorage).loadDocument(for: url,
-                                                                                  title: title,
-                                                                                  html: completeHtml,
-                                                                                  cookies: cookies)
-                                                                    .asObservable()
-            })
-            .flatMap { [weak self] data -> Observable<RxProgress> in
-                guard let `self` = self else { return Observable.error(DownloadError.expired) }
-                let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
-                let request = FileRequest(data: .external(data[0]), destination: file)
-                return self.apiClient.download(request: request)
-            }
-            .subscribe(onNext: { [weak self] progress in
-                self?.state.downloadState = .progress(progress.completed)
+                self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies)
             }, onError: { [weak self] error in
                 self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
-            }, onCompleted: { [weak self] in
-                self?.state.downloadState = nil
             })
             .disposed(by: self.disposeBag)
+    }
+
+    private func processItems(_ itemData: [[String: Any]]) {
+        // TODO: - Process items, get URLs, download files
+
+//        let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
+//        let request = FileRequest(data: .external(data[0]), destination: file)
+//        return self.apiClient.download(request: request)
     }
 
     private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String)> {

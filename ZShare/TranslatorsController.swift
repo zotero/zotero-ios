@@ -45,10 +45,13 @@ class TranslatorsController {
     }
 
     private func loadTranslatorInfo(from file: File) -> TranslatorInfo? {
+        guard file.ext == "js" else { return nil }
+
         do {
             let data = try self.fileStorage.read(file)
+
             guard let string = String(data: data, encoding: .utf8),
-                  let endingIndex = string.firstIndex(of: "}").flatMap({ string.index($0, offsetBy: 1) }),
+                  let endingIndex = self.metadataIndex(from: string),
                   let metadataData = string[string.startIndex..<endingIndex].data(using: .utf8),
                   var metadata = try JSONSerialization.jsonObject(with: metadataData,
                                                                   options: .allowFragments) as? [String: Any] else {
@@ -62,5 +65,21 @@ class TranslatorsController {
             NSLog("TranslatorsController: cant' read data from \(file.createUrl()) - \(error)")
             return nil
         }
+    }
+
+    private func metadataIndex(from string: String) -> String.Index? {
+        var count = 0
+        for (index, character) in string.enumerated() {
+            if character == "{" {
+                count += 1
+            } else if character == "}" {
+                count -= 1
+            }
+
+            if count == 0 {
+                return string.index(string.startIndex, offsetBy: index + 1)
+            }
+        }
+        return nil
     }
 }

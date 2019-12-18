@@ -23,7 +23,7 @@
 	***** END LICENSE BLOCK *****
 */
 
-async function doTranslateWeb(url, cookies, encodedHtml, encodedTranslators) {
+async function translate(url, cookies, encodedHtml, encodedTranslators) {
 	const html = window.atob(encodedHtml);
 	const doc = addLocationPropToDoc(new DOMParser().parseFromString(html, 'text/html'), url);
     const translatorData = JSON.parse(window.atob(encodedTranslators));
@@ -62,20 +62,13 @@ async function doTranslateWeb(url, cookies, encodedHtml, encodedTranslators) {
 
 	translate.setHandler("error", function(obj, err) {
 		setResult(err);
-		Zotero.logError(err);
+        window.webkit.messageHandlers.itemResponseHandler.postMessage(err);
 	});
 
 	let items = await translate.translate();
-    printLog('Items: ' + items.length);
 	setResult(JSON.stringify(items));
+    window.webkit.messageHandlers.itemResponseHandler.postMessage(items);
 };
-
-var globalLog = ""
-
-function printLog(str) {
-    globalLog += str + "<br>";
-    document.querySelector('#logs').innerHTML = globalLog.toString();
-}
 
 function setResult(str) {
 	document.querySelector('#result').innerHTML = str.toString();

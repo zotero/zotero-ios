@@ -62,7 +62,7 @@ class ShareViewController: UIViewController {
         // Load initial data
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
             self.store?.loadCollections()
-            self.store?.loadDocument(with: extensionItem, webView: self.webView)
+            self.store?.loadDocument(with: extensionItem)
         } else {
             // TODO: - Show error about missing file
         }
@@ -268,7 +268,8 @@ class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, handler: syncHandler,
                                             conflictDelays: DelayIntervals.conflict)
 
-        return ExtensionStore(apiClient: apiClient,
+        return ExtensionStore(webView: self.webView,
+                              apiClient: apiClient,
                               backgroundApi: BackgroundApi.shared,
                               dbStorage: dbStorage,
                               schemaController: schemaController,

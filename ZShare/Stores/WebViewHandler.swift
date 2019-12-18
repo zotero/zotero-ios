@@ -12,34 +12,51 @@ import WebKit
 import RxSwift
 
 class WebViewHandler: NSObject {
-    enum Error: Swift.Error {
-        case cantFindBaseFile, translation
+    struct JSHandlers {
+        static let request = "requestHandler"
+        static let item = "itemResponseHandler"
     }
 
+    enum Error: Swift.Error {
+        case cantFindBaseFile
+        case jsError(String)
+    }
+
+    private let apiClient: ApiClient
     private let translatorsController: TranslatorsController
+    private let disposeBag: DisposeBag
+    let observable: PublishSubject<[[String: Any]]>
 
     private weak var webView: WKWebView!
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
 
-    init(webView: WKWebView, fileStorage: FileStorage) {
+    // MARK: - Lifecycle
+
+    init(webView: WKWebView, apiClient: ApiClient, fileStorage: FileStorage) {
         self.webView = webView
+        self.apiClient = apiClient
+        self.disposeBag = DisposeBag()
         self.translatorsController = TranslatorsController(fileStorage: fileStorage)
+        self.observable = PublishSubject()
+
+        super.init()
+
+        webView.configuration.userContentController.add(self, name: JSHandlers.request)
+        webView.configuration.userContentController.add(self, name: JSHandlers.item)
     }
 
-    func showMessage(str: String) -> Single<Any> {
-        return self.callJavascript("setResult('\(str)')")
-    }
+    // MARK: - Loading translation server
 
-    /// Runs translation server against html content with cookies. Loads documents and returns their urls in completion handler.
+    /// Runs translation server against html content with cookies. Results are then provided through observable publisher.
     /// - parameter url: Original URL of shared website.
     /// - parameter title: Title of the shared website.
     /// - parameter html: HTML content of the shared website. Equals to javascript "document.documentElement.innerHTML".
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
-    /// - returns: Returns a Single with detected urls.
-    func loadDocument(for url: URL, title: String, html: String, cookies: String) -> Single<[URL]> {
+    func translate(url: URL, title: String, html: String, cookies: String) {
         guard let containerUrl = Bundle.main.url(forResource: "src/index", withExtension: "html", subdirectory: "translation"),
               let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
-            return Single.error(Error.cantFindBaseFile)
+            self.observable.on(.error(Error.cantFindBaseFile))
+            return
         }
 
         var encodedHtml = html.data(using: .utf8)?.base64EncodedString(options: .endLineWithLineFeed) ?? "null"
@@ -56,30 +73,12 @@ class WebViewHandler: NSObject {
                        let translatorData = try? JSONSerialization.data(withJSONObject: translators, options: .prettyPrinted)
                        var encodedTranslators = translatorData?.base64EncodedString(options: .endLineWithLineFeed) ?? "null"
                        encodedTranslators = encodedTranslators != "null" ? "'\(encodedTranslators)'" : encodedTranslators
-                       return self.callJavascript("doTranslateWeb('\(url.absoluteString)', '\(cookies)', \(encodedHtml), \(encodedTranslators));")
+                       return self.callJavascript("translate('\(url.absoluteString)', '\(cookies)', \(encodedHtml), \(encodedTranslators));")
                    }
-                   .flatMap { data -> Single<[URL]> in
-                       if let data = data as? [String: Any] {
-                           // TODO: - convert results
-                           return Single.just([])
-                       } else {
-                           return Single.error(Error.translation)
-                       }
-                   }
-    }
-
-    private func callJavascript(_ script: String) -> Single<Any> {
-        return Single.create { subscriber -> Disposable in
-            self.webView.evaluateJavaScript(script) { result, error in
-                if let data = result {
-                    subscriber(.success(data))
-                } else {
-                    subscriber(.error(error ?? Error.translation))
-                }
-            }
-
-            return Disposables.create()
-        }
+                   .subscribe(onError: { [weak self] error in
+                       self?.observable.on(.error(error))
+                   })
+                   .disposed(by: self.disposeBag)
     }
 
     private func loadHtml(content: String, baseUrl: URL) -> Single<()> {
@@ -115,6 +114,44 @@ class WebViewHandler: NSObject {
             return Disposables.create()
         }
     }
+
+    // MARK: - Communication with WKWebView
+
+    private func sendRequest(with options: [String: Any]) {
+        guard let request = JSRequest(options: options) else { return }
+
+        self.apiClient.send(request: request)
+                      .subscribe(onSuccess: { [weak self] data, headers in
+                          self?.webView.evaluateJavaScript("responseSucceeded('data')", completionHandler: nil)
+                      }, onError: { [weak self] error in
+                          self?.webView.evaluateJavaScript("responseFailed('error')", completionHandler: nil)
+                      })
+                      .disposed(by: self.disposeBag)
+    }
+
+    private func receiveItem(with info: [String: Any]) {
+        if let error = info["error"] as? String {
+            self.observable.on(.error(Error.jsError(error)))
+            return
+        }
+        self.observable.on(.next([info]))
+    }
+
+    // MARK: - Helpers
+
+    private func callJavascript(_ script: String) -> Single<Any> {
+        return Single.create { subscriber -> Disposable in
+            self.webView.evaluateJavaScript(script) { result, error in
+                if let data = result {
+                    subscriber(.success(data))
+                } else {
+                    subscriber(.error(error ?? Error.jsError("Unknown error")))
+                }
+            }
+
+            return Disposables.create()
+        }
+    }
 }
 
 extension WebViewHandler: WKNavigationDelegate {
@@ -124,5 +161,23 @@ extension WebViewHandler: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
         self.webDidLoad?(.error(error))
+    }
+}
+
+extension WebViewHandler: WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        switch message.name {
+        case JSHandlers.request:
+            if let options = message.body as? [String: Any] {
+                self.sendRequest(with: options)
+            }
+
+        case JSHandlers.item:
+            if let info = message.body as? [String: Any] {
+                self.receiveItem(with: info)
+            }
+
+        default: return
+        }
     }
 }
