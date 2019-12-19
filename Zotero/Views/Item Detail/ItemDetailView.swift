@@ -12,7 +12,7 @@ struct ItemDetailView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
-    @Environment(\.editMode) private var editMode: Binding<EditMode>
+    @Environment(\.editMode) private var editMode: Binding<EditMode>?
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
     var body: some View {

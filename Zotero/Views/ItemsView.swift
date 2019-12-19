@@ -13,7 +13,7 @@ import RealmSwift
 struct ItemsView: View {
     @EnvironmentObject private(set) var store: ItemsStore
 
-    @Environment(\.editMode) private var editMode: Binding<EditMode>
+    @Environment(\.editMode) private var editMode: Binding<EditMode>?
     @Environment(\.dbStorage) private var dbStorage: DbStorage
     @Environment(\.apiClient) private var apiClient: ApiClient
     @Environment(\.schemaController) private var schemaController: SchemaController

@@ -11,7 +11,7 @@ import SwiftUI
 struct ItemDetailMetadataTitleView: View {
     @EnvironmentObject private(set) var store: ItemDetailStore
 
-    @Environment(\.editMode) private var editMode: Binding<EditMode>
+    @Environment(\.editMode) private var editMode: Binding<EditMode>?
 
     let title: String
 
