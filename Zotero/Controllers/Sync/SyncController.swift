@@ -1209,14 +1209,14 @@ extension Error {
     }
 
     var isUnchangedError: Bool {
-        return self.afError.flatMap({ $0.statusCode == 304 }) ?? false
+        return self.afError.flatMap({ $0.responseCode == 304 }) ?? false
     }
 
     var preconditionFailureType: PreconditionErrorType? {
         if (self as? SyncActionHandlerError) == .objectConflict {
             return .objectConflict
         }
-        if self.afError.flatMap({ $0.statusCode == 412 }) == true {
+        if self.afError.flatMap({ $0.responseCode == 412 }) == true {
             return .libraryConflict
         }
         return nil
@@ -1228,21 +1228,6 @@ extension Error {
         }
         if let alamoError = self as? AFError {
             return alamoError
-        }
-        return nil
-    }
-}
-
-extension AFError {
-    var statusCode: Int? {
-        switch self {
-        case .responseValidationFailed(let reason):
-            switch reason {
-            case .unacceptableStatusCode(let code):
-                return code
-            default: break
-            }
-        default: break
         }
         return nil
     }

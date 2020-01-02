@@ -16,10 +16,15 @@ import CocoaLumberjack
 
 class ShareViewController: UIViewController {
     // Outlets
-    @IBOutlet private weak var pickerContainer: UIView!
-    @IBOutlet private weak var pickerLabel: UILabel!
-    @IBOutlet private weak var pickerChevron: UIImageView!
-    @IBOutlet private weak var pickerIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var collectionPickerContainer: UIView!
+    @IBOutlet private weak var collectionPickerLabel: UILabel!
+    @IBOutlet private weak var collectionPickerChevron: UIImageView!
+    @IBOutlet private weak var collectionPickerIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var itemPickerTitleLabel: UILabel!
+    @IBOutlet private weak var itemPickerContainer: UIView!
+    @IBOutlet private weak var itemPickerLabel: UILabel!
+    @IBOutlet private weak var itemPickerChevron: UIImageView!
+    @IBOutlet private weak var itemPickerButton: UIButton!
     @IBOutlet private weak var toolbarContainer: UIView!
     @IBOutlet private weak var toolbarLabel: UILabel!
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
@@ -50,7 +55,7 @@ class ShareViewController: UIViewController {
         }
 
         // Setup UI
-        self.setupPicker()
+        self.setupPickers()
         self.setupPreparingIndicator()
 
         // Setup observing
@@ -61,14 +66,25 @@ class ShareViewController: UIViewController {
 
         // Load initial data
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
-            self.store?.loadCollections()
-            self.store?.loadDocument(with: extensionItem)
+            self.store?.setup(with: extensionItem)
         } else {
             // TODO: - Show error about missing file
         }
     }
 
     // MARK: - Actions
+
+    @IBAction private func showItemPicker() {
+        guard let items = self.store.state.itemPickerState?.items else { return }
+
+        let view = ItemPickerView(data: items) { [weak self] picked in
+            self?.store.pickItem(picked)
+            self?.navigationController?.popViewController(animated: true)
+        }
+
+        let controller = UIHostingController(rootView: view)
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
 
     @IBAction private func showCollectionPicker() {
         guard let dbStorage = self.dbStorage else { return }
@@ -93,7 +109,7 @@ class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        var rightButtonEnabled = state.downloadState == nil
+        var rightButtonEnabled = state.downloadState.progress == 1
 
         if let state = state.uploadState {
             switch state {
@@ -118,8 +134,9 @@ class ShareViewController: UIViewController {
 
         self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
         self.updateToolbar(to: state.downloadState)
-        self.updatePicker(to: state.pickerState)
+        self.updateCollectionPicker(to: state.collectionPickerState)
         self.navigationItem.title = state.title
+        self.updateItemPicker(to: state.itemPickerState)
     }
 
     private func prepareForUpload() {
@@ -139,40 +156,59 @@ class ShareViewController: UIViewController {
         })
     }
 
-    private func updatePicker(to state: ExtensionStore.State.PickerState) {
-        switch state {
-        case .picked(let library, let collection):
-            let title = collection?.name ?? library.name
-            self.pickerIndicator.stopAnimating()
-            self.pickerChevron.isHidden = false
-            self.pickerLabel.text = title
-            self.pickerLabel.textColor = .link
-        case .loading:
-            self.pickerIndicator.isHidden = false
-            self.pickerIndicator.startAnimating()
-            self.pickerChevron.isHidden = true
-            self.pickerLabel.text = "Loading collections"
-            self.pickerLabel.textColor = .gray
-        case .failed:
-            self.pickerIndicator.stopAnimating()
-            self.pickerChevron.isHidden = true
-            self.pickerLabel.text = "Can't sync collections"
-            self.pickerLabel.textColor = .red
+    private func updateItemPicker(to state: ExtensionStore.State.ItemPickerState?) {
+        self.itemPickerContainer.isHidden = state == nil
+        self.itemPickerTitleLabel.isHidden = self.itemPickerContainer.isHidden
+        
+        guard let state = state else { return }
+
+        if let text = state.picked {
+            self.itemPickerLabel.text = text
+            self.itemPickerLabel.textColor = .gray
+            self.itemPickerChevron.tintColor = .gray
+            self.itemPickerButton.isEnabled = false
+        } else {
+            self.itemPickerLabel.text = "Pick an item"
+            self.itemPickerLabel.textColor = .systemBlue
+            self.itemPickerChevron.tintColor = .systemBlue
+            self.itemPickerButton.isEnabled = true
         }
     }
 
-    private func updateToolbar(to state: ExtensionStore.State.DownloadState?) {
-        if let state = state {
+    private func updateCollectionPicker(to state: ExtensionStore.State.CollectionPickerState) {
+        switch state {
+        case .picked(let library, let collection):
+            let title = collection?.name ?? library.name
+            self.collectionPickerIndicator.stopAnimating()
+            self.collectionPickerChevron.isHidden = false
+            self.collectionPickerLabel.text = title
+            self.collectionPickerLabel.textColor = .link
+        case .loading:
+            self.collectionPickerIndicator.isHidden = false
+            self.collectionPickerIndicator.startAnimating()
+            self.collectionPickerChevron.isHidden = true
+            self.collectionPickerLabel.text = "Loading collections"
+            self.collectionPickerLabel.textColor = .gray
+        case .failed:
+            self.collectionPickerIndicator.stopAnimating()
+            self.collectionPickerChevron.isHidden = true
+            self.collectionPickerLabel.text = "Can't sync collections"
+            self.collectionPickerLabel.textColor = .red
+        }
+    }
+
+    private func updateToolbar(to state: ExtensionStore.State.DownloadState) {
+        if let progress = state.progress, progress < 1 {
             if self.toolbarContainer.isHidden {
                 self.showToolbar()
             }
 
-            switch state {
-            case .loadingMetadata:
-                self.setToolbarData(title: "Loading metadata", progress: nil)
-            case .failed:
+            if let error = state.error {
+                // TODO: - show actual error
                 self.setToolbarData(title: "Could not download file", progress: nil)
-            case .progress(let progress):
+            } else if progress == 0 {
+                self.setToolbarData(title: "Preparing download", progress: nil)
+            } else {
                 self.setToolbarData(title: "Downloading", progress: progress)
             }
         } else {
@@ -215,11 +251,14 @@ class ShareViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupPicker() {
-        self.pickerContainer.layer.cornerRadius = 8
-        self.pickerContainer.layer.masksToBounds = true
-        self.pickerContainer.layer.borderWidth = 1
-        self.pickerContainer.layer.borderColor = UIColor.opaqueSeparator.cgColor
+    private func setupPickers() {
+        [self.collectionPickerContainer,
+         self.itemPickerContainer].forEach { container in
+            container!.layer.cornerRadius = 8
+            container!.layer.masksToBounds = true
+            container!.layer.borderWidth = 1
+            container!.layer.borderColor = UIColor.opaqueSeparator.cgColor
+        }
     }
 
     private func setupNavbar(loggedIn: Bool) {

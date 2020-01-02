@@ -88,6 +88,7 @@ Zotero.Debug = new function () {
 		
 		var output = '(' + level + ')' + deltaStr + ': ' + message;
 		console.log(output+"\n");
+        window.webkit.messageHandlers.logHandler.postMessage(output);
 		
 		if (_store) {
 			if (Math.random() < 1/1000) {

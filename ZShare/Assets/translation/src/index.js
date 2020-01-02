@@ -45,34 +45,25 @@ async function translate(url, cookies, encodedHtml, encodedTranslators) {
 		translators = await translate.getTranslators();
 	} catch (e) {
 		Zotero.logError(e);
-		setResult(e);
 		return;
 	}
 
 	if (!translators.length) {
-		setResult(`No translators available for ${url}`);
         return;
 	}
 
 	// set handlers for translation
 	translate.setHandler("select", (translate, item, callback) => {
-		setResult("select handler called: "+ JSON.stringify(item));
-		setTimeout(() => callback(item), 3000);
+        Zotero.Messaging.sendMessage(window.webkit.messageHandlers.itemSelectionHandler, item).then(callback, function(e) { throw (e); });
 	});
 
 	translate.setHandler("error", function(obj, err) {
-		setResult(err);
         window.webkit.messageHandlers.itemResponseHandler.postMessage(err);
 	});
 
 	let items = await translate.translate();
-	setResult(JSON.stringify(items));
     window.webkit.messageHandlers.itemResponseHandler.postMessage(items);
 };
-
-function setResult(str) {
-	document.querySelector('#result').innerHTML = str.toString();
-}
 
 function addLocationPropToDoc(doc, docURL) {
 	docURL = new URL(docURL);

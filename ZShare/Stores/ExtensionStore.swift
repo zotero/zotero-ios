@@ -16,7 +16,7 @@ import RxAlamofire
 
 class ExtensionStore {
     struct State {
-        enum PickerState {
+        enum CollectionPickerState {
             case loading, failed
             case picked(Library, Collection?)
 
@@ -30,10 +30,11 @@ class ExtensionStore {
             }
         }
 
-        enum DownloadState {
-            case loadingMetadata
-            case progress(Float)
-            case failed(DownloadError)
+        struct DownloadState {
+            var progress: Float?
+            var item: ItemResponse?
+            var attachmentData: [String: String]?
+            var error: DownloadError?
         }
 
         enum UploadState {
@@ -42,21 +43,29 @@ class ExtensionStore {
             case error(UploadError)
         }
 
+        struct ItemPickerState {
+            let items: [String: String]
+            var picked: String?
+        }
+
         let key: String
         var title: String?
-        var pickerState: PickerState
-        var downloadState: DownloadState?
+        var collectionPickerState: CollectionPickerState
+        var downloadState: DownloadState
         var uploadState: UploadState?
+        var itemPickerState: ItemPickerState?
 
         init() {
             self.key = KeyGenerator.newKey
-            self.pickerState = .loading
-            self.downloadState = .loadingMetadata
+            self.collectionPickerState = .loading
+            self.downloadState = DownloadState(progress: 0, item: nil, attachmentData: nil, error: nil)
+            self.itemPickerState = nil
         }
     }
 
     enum DownloadError: Swift.Error {
-        case cantLoadWebData, downloadFailed, expired, unknown
+        case cantLoadWebData, downloadFailed, expired, unknown, attachmentNotFound
+        case parseError(ItemResponse.Error)
     }
 
     enum UploadError: Swift.Error {
@@ -78,6 +87,8 @@ class ExtensionStore {
     private let webViewHandler: WebViewHandler
     private let disposeBag: DisposeBag
 
+    // MARK: - Lifecycle
+
     init(webView: WKWebView, apiClient: ApiClient, backgroundApi: BackgroundApi, dbStorage: DbStorage,
          schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController) {
         self.syncController = syncController
@@ -90,6 +101,36 @@ class ExtensionStore {
         self.state = State()
         self.disposeBag = DisposeBag()
 
+        self.setupSyncObserving()
+        self.setupWebHandlerObserving()
+    }
+
+    // MARK: - Setup
+
+    func setup(with extensionItem: NSExtensionItem) {
+        // TODO: - when SchemaController stores schemas correctly add it as Observable, so that we wait for remote schema update if needed
+        self.schemaController.reloadSchemaIfNeeded()
+        self.syncController.start(type: .normal, libraries: .all)
+        self.loadDocument(with: extensionItem)
+    }
+
+    private func finishSync(successful: Bool) {
+        if successful {
+            self.state.collectionPickerState = .picked(Library(identifier: ExtensionStore.defaultLibraryId,
+                                                               name: RCustomLibraryType.myLibrary.libraryName,
+                                                               metadataEditable: true,
+                                                               filesEditable: true),
+                                                       nil)
+        } else {
+            self.state.collectionPickerState = .failed
+        }
+    }
+
+    func set(collection: Collection, library: Library) {
+        self.state.collectionPickerState = .picked(library, (collection.type.isCustom ? nil : collection))
+    }
+
+    private func setupSyncObserving() {
         self.syncController.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] data in
@@ -98,26 +139,128 @@ class ExtensionStore {
                                self?.finishSync(successful: false)
                            })
                            .disposed(by: self.disposeBag)
-
-        self.webViewHandler.observable
-                           .observeOn(MainScheduler.instance)
-                           .subscribe(onNext: { [weak self] data in
-                               self?.processItems(data)
-                           }, onError: { [weak self] error in
-                               self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
-                           })
-                           .disposed(by: self.disposeBag)
     }
 
+    // MARK: - Translation & Attachment download
+
+    func pickItem(_ data: (String, String)) {
+        self.state.itemPickerState?.picked = data.1
+        self.webViewHandler.selectItem(data)
+    }
+
+    private func loadDocument(with extensionItem: NSExtensionItem) {
+        self.loadWebData(extensionItem: extensionItem)
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] title, url, html, cookies in
+                self?.state.title = title
+                self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies)
+            }, onError: { [weak self] error in
+                self?.state.downloadState.error = (error as? DownloadError) ?? .unknown
+            })
+            .disposed(by: self.disposeBag)
+    }
+
+    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String)> {
+        let propertyList = kUTTypePropertyList as String
+
+        guard let itemProvider = extensionItem.attachments?.first,
+              itemProvider.hasItemConformingToTypeIdentifier(propertyList) else {
+            return Observable.error(DownloadError.cantLoadWebData)
+        }
+
+        return Observable.create { subscriber in
+            itemProvider.loadItem(forTypeIdentifier: propertyList, options: nil, completionHandler: { item, error -> Void in
+                guard let scriptData = item as? [String: Any],
+                      let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
+                    subscriber.onError(DownloadError.cantLoadWebData)
+                    return
+                }
+
+                if let url = (data["url"] as? String).flatMap(URL.init),
+                   let title = data["title"] as? String,
+                   let html = data["html"] as? String,
+                   let cookies = data["cookies"] as? String {
+                    subscriber.onNext((title, url, html, cookies))
+                    subscriber.onCompleted()
+                } else {
+                    subscriber.onError(DownloadError.cantLoadWebData)
+                }
+            })
+            return Disposables.create()
+        }
+    }
+
+    private func prepareItemSelector(with data: [String: String]) {
+        self.state.itemPickerState = State.ItemPickerState(items: data, picked: nil)
+    }
+
+    private func processItems(_ data: [[String: Any]]) {
+        guard let itemData = data.first(where: { data -> Bool in
+                  guard let attachmentData = data["attachments"] as? [[String: String]] else { return false }
+                  return attachmentData.contains(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
+              }),
+              let attachmentData = (itemData["attachments"] as? [[String: String]])?.first(where: { $0["mimeType"] == ExtensionStore.defaultMimetype }),
+              let urlString = attachmentData["url"],
+              let url = URL(string: urlString) else {
+            self.state.downloadState.error = .attachmentNotFound
+            return
+        }
+
+        do {
+            let item = try ItemResponse(response: itemData, schemaController: self.schemaController)
+            self.state.downloadState.item = item
+            self.state.downloadState.attachmentData = attachmentData
+            self.startDownload(for: url)
+        } catch let error {
+            self.state.downloadState.error = (error as? ItemResponse.Error).flatMap({ DownloadError.parseError($0) }) ?? .unknown
+        }
+    }
+
+    private func startDownload(for url: URL) {
+        let file = Files.shareExtensionTmpItem(key: self.state.key, ext: ExtensionStore.defaultExtension)
+        let request = FileRequest(data: .external(url), destination: file)
+        self.apiClient.download(request: request)
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] progress in
+                          self?.state.downloadState.progress = progress.completed
+                      }, onError: { [weak self] error in
+                          self?.state.downloadState.error = .downloadFailed
+                      }, onCompleted: { [weak self] in
+                          self?.state.downloadState.progress = 1
+                      })
+                      .disposed(by: self.disposeBag)
+    }
+
+    private func  setupWebHandlerObserving() {
+        self.webViewHandler.observable
+                           .observeOn(MainScheduler.instance)
+                           .subscribe(onNext: { [weak self] action in
+                               switch action {
+                               case .loadedItems(let data):
+                                   self?.processItems(data)
+                               case .selectItem(let data):
+                                   self?.prepareItemSelector(with: data)
+                               }
+                           }, onError: { [weak self] error in
+                               self?.state.downloadState.error = (error as? DownloadError) ?? .unknown
+                           })
+                           .disposed(by: self.disposeBag)
+
+    }
+
+    // MARK: - Items submission & Attachment upload
+
     func upload() {
-        guard let title = self.state.title else { return }
+        guard let item = self.state.downloadState.item,
+              let filename = self.state.downloadState.attachmentData?["title"] else { return }
 
         let key = self.state.key
-        let libraryId = self.state.pickerState.library?.identifier ?? ExtensionStore.defaultLibraryId
+        let libraryId = self.state.collectionPickerState.library?.identifier ?? ExtensionStore.defaultLibraryId
         let userId = Defaults.shared.userId
         let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
+        let attachment = Attachment(key: key, title: filename, type: .file(file: file, filename: filename, isLocal: true), libraryId: libraryId)
 
-        self.prepareUpload(key: key, title: title, libraryId: libraryId, userId: userId, file: file)
+        self.prepareUpload(itemResponse: item, attachment: attachment, file: file, libraryId: libraryId, userId: userId)
             .subscribe(onSuccess: { [weak self] filename, response in
                 guard let `self` = self else { return }
 
@@ -183,16 +326,16 @@ class ExtensionStore {
         }
     }
 
-    private func prepareUpload(key: String, title: String, libraryId: LibraryIdentifier, userId: Int, file: File) -> Single<(String, AuthorizeUploadResponse)> {
-        return self.moveTmpFile(with: key, to: file, libraryId: libraryId)
+    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File, libraryId: LibraryIdentifier, userId: Int) -> Single<(String, AuthorizeUploadResponse)> {
+        return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
                     .do(onError: { [weak self] _ in
                         // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
-                        let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
+                        let file = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
                         try? self?.fileStorage.remove(file)
                     })
                     .flatMap { [weak self] filesize -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        return self.createAttachment(for: file, key: key, title: title, libraryId: libraryId)
+                        return self.createItems(response: itemResponse, attachment: attachment, libraryId: libraryId)
                                    .flatMap({ Single.just((filesize, $0)) })
                                    .do(onError: { [weak self] _ in
                                        // If attachment item couldn't be created in DB, remove the moved file if possible,
@@ -202,7 +345,8 @@ class ExtensionStore {
                     }
                     .flatMap { [weak self] filesize, item -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = CreateItemRequest(libraryId: libraryId, key: key, userId: userId, parameters: item.updateParameters)
+                        // TODO: - create item request for both parent and child/attachment items
+                        let request = CreateItemRequest(libraryId: libraryId, key: attachment.key, userId: userId, parameters: item.updateParameters)
                         return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, item)) })
                     }
                     .flatMap { [weak self] filesize, item -> Single<(String, Data, ResponseHeaders)> in
@@ -230,14 +374,10 @@ class ExtensionStore {
                                       md5: md5, mtime: mtime)
     }
 
-    private func createAttachment(for file: File, key: String, title: String, libraryId: LibraryIdentifier) -> Single<RItem> {
-        let attachment = Attachment(key: key,
-                                    title: title,
-                                    type: .file(file: file, filename: file.name, isLocal: true),
-                                    libraryId: libraryId)
+    private func createItems(response: ItemResponse, attachment: Attachment, libraryId: LibraryIdentifier) -> Single<RItem> {
+        // TODO: - add main item with attachment linked
         let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
         let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, libraryId: libraryId)
-
         do {
             let item = try self.dbStorage.createCoordinator().perform(request: request)
             return Single.just(item)
@@ -259,76 +399,5 @@ class ExtensionStore {
         } catch {
             return Single.error(UploadError.fileMissing)
         }
-    }
-
-    func loadCollections() {
-        self.syncController.start(type: .normal, libraries: .all)
-    }
-
-    private func finishSync(successful: Bool) {
-        if successful {
-            self.state.pickerState = .picked(Library(identifier: ExtensionStore.defaultLibraryId,
-                                                     name: RCustomLibraryType.myLibrary.libraryName,
-                                                     metadataEditable: true,
-                                                     filesEditable: true),
-                                             nil)
-        } else {
-            self.state.pickerState = .failed
-        }
-    }
-
-    func loadDocument(with extensionItem: NSExtensionItem) {
-        self.loadWebData(extensionItem: extensionItem)
-            .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] title, url, html, cookies in
-                self?.state.title = title
-                self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies)
-            }, onError: { [weak self] error in
-                self?.state.downloadState = .failed((error as? DownloadError) ?? .unknown)
-            })
-            .disposed(by: self.disposeBag)
-    }
-
-    private func processItems(_ itemData: [[String: Any]]) {
-        // TODO: - Process items, get URLs, download files
-
-//        let file = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
-//        let request = FileRequest(data: .external(data[0]), destination: file)
-//        return self.apiClient.download(request: request)
-    }
-
-    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String)> {
-        let propertyList = kUTTypePropertyList as String
-
-        guard let itemProvider = extensionItem.attachments?.first,
-              itemProvider.hasItemConformingToTypeIdentifier(propertyList) else {
-            return Observable.error(DownloadError.cantLoadWebData)
-        }
-
-        return Observable.create { subscriber in
-            itemProvider.loadItem(forTypeIdentifier: propertyList, options: nil, completionHandler: { item, error -> Void in
-                guard let scriptData = item as? [String: Any],
-                      let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
-                    subscriber.onError(DownloadError.cantLoadWebData)
-                    return
-                }
-
-                if let url = (data["url"] as? String).flatMap(URL.init),
-                   let title = data["title"] as? String,
-                   let html = data["html"] as? String,
-                   let cookies = data["cookies"] as? String {
-                    subscriber.onNext((title, url, html, cookies))
-                    subscriber.onCompleted()
-                } else {
-                    subscriber.onError(DownloadError.cantLoadWebData)
-                }
-            })
-
-            return Disposables.create()
-        }
-    }
-
-    func set(collection: Collection, library: Library) {
-        self.state.pickerState = .picked(library, (collection.type.isCustom ? nil : collection))
     }
 }

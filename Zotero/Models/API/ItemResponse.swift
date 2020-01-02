@@ -10,22 +10,22 @@ import Foundation
 
 import CocoaLumberjack
 
-enum ItemResponseError: Error {
-    case notArray
-    case missingKey(String)
-    case unknownType(String)
-    case unknownField(String)
-    case missingFieldsForType(String)
-}
-
 struct ItemResponse {
+    enum Error: Swift.Error {
+        case notArray
+        case missingTranslatorAttachment
+        case missingKey(String)
+        case unknownType(String)
+        case unknownField(String)
+        case missingFieldsForType(String)
+    }
+
     let rawType: String
     let key: String
     let library: LibraryResponse
     let parentKey: String?
     let collectionKeys: Set<String>
     let links: LinksResponse?
-    let creatorSummary: String?
     let parsedDate: String?
     let isTrash: Bool
     let version: Int
@@ -42,19 +42,91 @@ struct ItemResponse {
     }()
 
     init(response: [String: Any], schemaController: SchemaController) throws {
-        let data: [String: Any] = try ItemResponse.parse(key: "data", from: response)
+        if response["data"] != nil {
+            try self.init(apiResponse: response, schemaController: schemaController)
+        } else {
+            try self.init(translatorResponse: response, schemaController: schemaController)
+        }
+    }
+
+    private init(apiResponse: [String: Any], schemaController: SchemaController) throws {
+        let data: [String: Any] = try ItemResponse.parse(key: "data", from: apiResponse)
         let rawType: String = try ItemResponse.parse(key: "itemType", from: data)
 
         if !schemaController.itemTypes.contains(rawType) {
-            throw ItemResponseError.unknownType(rawType)
+            throw Error.unknownType(rawType)
         }
 
+        let decoder = JSONDecoder()
+        let libraryDictionary: [String: Any] = try ItemResponse.parse(key: "library", from: apiResponse)
+        let libraryData = try JSONSerialization.data(withJSONObject: libraryDictionary)
+        let linksDictionary = apiResponse["links"] as? [String: Any]
+        let linksData = try linksDictionary.flatMap { try JSONSerialization.data(withJSONObject: $0) }
+        let tagsDictionaries = (data["tags"] as? [[String: Any]]) ?? []
+        let tagsData = try tagsDictionaries.map({ try JSONSerialization.data(withJSONObject: $0) })
+        let creatorsDictionary = (data["creators"] as? [[String: Any]]) ?? []
+        let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
+
+        self.rawType = rawType
+        self.key = try ItemResponse.parse(key: "key", from: apiResponse)
+        self.version = try ItemResponse.parse(key: "version", from: apiResponse)
+        self.collectionKeys = (data["collections"] as? [String]).flatMap(Set.init) ?? []
+        self.parentKey = data["parentItem"] as? String
+        self.dateAdded = (data["dateAdded"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        self.dateModified = (data["dateModified"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        self.parsedDate = (apiResponse["meta"] as? [String: Any])?["parsedDate"] as? String
+        self.isTrash = (data["deleted"] as? Int) == 1
+        self.library = try decoder.decode(LibraryResponse.self, from: libraryData)
+        self.links = try linksData.flatMap { try decoder.decode(LinksResponse.self, from: $0) }
+        self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
+        self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
+        self.relations = (data["relations"] as? [String: String]) ?? [:]
+        self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, schemaController: schemaController)
+    }
+
+    private init(translatorResponse: [String: Any], schemaController: SchemaController) throws {
+        let decoder = JSONDecoder()
+        let rawType: String = try ItemResponse.parse(key: "itemType", from: translatorResponse)
+        let accessDate = (translatorResponse["accessDate"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        let tagsDictionaries = (translatorResponse["tags"] as? [[String: Any]]) ?? []
+        let tagsData = try tagsDictionaries.map({ try JSONSerialization.data(withJSONObject: $0) })
+        let creatorsDictionary = (translatorResponse["creators"] as? [[String: Any]]) ?? []
+        let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
+
+        self.rawType = rawType
+        self.key = try ItemResponse.parse(key: "id", from: translatorResponse)
+        self.version = 0
+        self.collectionKeys = []
+        self.parentKey = nil
+        self.dateAdded = accessDate
+        self.dateModified = accessDate
+        self.parsedDate = translatorResponse["date"] as? String
+        self.isTrash = false
+        // We create a dummy library here, it's not returned by translation server, it'll be picked in the share extension
+        self.library = LibraryResponse(id: 0, name: "", type: "", links: nil)
+        self.links = nil
+        self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
+        self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
+        self.relations = [:]
+        // Translator returns some extra fields, which may not be recognized by schema, so we just ignore those
+        self.fields = try ItemResponse.parseFields(from: translatorResponse,
+                                                   rawType: rawType,
+                                                   schemaController: schemaController,
+                                                   ignoreUnknownFields: true)
+    }
+
+    private static func parseFields(from data: [String: Any],
+                                    rawType: String,
+                                    schemaController: SchemaController,
+                                    ignoreUnknownFields: Bool = false) throws -> [String: String] {
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]
 
         if let schemaFields = schemaController.fields(for: rawType) {
             for object in data {
                 guard !excludedKeys.contains(object.key) else { continue }
+
+                var isKnownField = true
 
                 // Check whether schema contains this key
                 if !schemaFields.contains(where: { $0.field == object.key }) {
@@ -65,62 +137,43 @@ struct ItemResponse {
                            object.key != FieldKeys.mtime && object.key != FieldKeys.filename &&
                            object.key != FieldKeys.linkMode && object.key != "charset" &&
                            object.key != FieldKeys.note {
-                            throw ItemResponseError.unknownField(object.key)
+                            if ignoreUnknownFields {
+                                isKnownField = false
+                            } else {
+                                throw Error.unknownField(object.key)
+                            }
                         }
                     } else {
                         // Note is not a field in schema but we consider it as one, since it can be returned with fields
                         // together with other data. So we filter it out as well and report all other keys.
                         if object.key != FieldKeys.note {
-                            throw ItemResponseError.unknownField(object.key)
+                            if ignoreUnknownFields {
+                                isKnownField = false
+                            } else {
+                                throw Error.unknownField(object.key)
+                            }
                         }
                     }
                 }
-                fields[object.key] = object.value as? String
+
+                if isKnownField {
+                    fields[object.key] = object.value as? String
+                }
             }
         } else {
-            throw ItemResponseError.missingFieldsForType(rawType)
+            throw Error.missingFieldsForType(rawType)
         }
 
-        self.rawType = rawType
-        self.key = try ItemResponse.parse(key: "key", from: response)
-        self.version = try ItemResponse.parse(key: "version", from: response)
-        let collections = data["collections"] as? [String]
-        self.collectionKeys = collections.flatMap(Set.init) ?? []
-        self.parentKey = data["parentItem"] as? String
-        self.dateAdded = (data["dateAdded"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
-        self.dateModified = (data["dateModified"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
-
-        let meta = response["meta"] as? [String: Any]
-        self.creatorSummary = meta?["creatorSummary"] as? String
-        self.parsedDate = meta?["parsedDate"] as? String
-
-        let deleted = data["deleted"] as? Int
-        self.isTrash = deleted == 1
-
-        let decoder = JSONDecoder()
-        let libraryDictionary: [String: Any] = try ItemResponse.parse(key: "library", from: response)
-        let libraryData = try JSONSerialization.data(withJSONObject: libraryDictionary)
-        self.library = try decoder.decode(LibraryResponse.self, from: libraryData)
-        let linksDictionary = response["links"] as? [String: Any]
-        let linksData = try linksDictionary.flatMap { try JSONSerialization.data(withJSONObject: $0) }
-        self.links = try linksData.flatMap { try decoder.decode(LinksResponse.self, from: $0) }
-        let tagsDictionaries = (data["tags"] as? [[String: Any]]) ?? []
-        let tagsData = try tagsDictionaries.map({ try JSONSerialization.data(withJSONObject: $0) })
-        self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
-        let creatorsDictionary = (data["creators"] as? [[String: Any]]) ?? []
-        let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
-        self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
-        self.relations = (data["relations"] as? [String: String]) ?? [:]
-        self.fields = fields
+        return fields
     }
 
-    static func decode(response: Any, schemaController: SchemaController) throws -> ([ItemResponse], [Error]) {
+    static func decode(response: Any, schemaController: SchemaController) throws -> ([ItemResponse], [Swift.Error]) {
         guard let array = response as? [[String: Any]] else {
-            throw ZoteroApiError.jsonDecoding(ItemResponseError.notArray)
+            throw ZoteroApiError.jsonDecoding(Error.notArray)
         }
 
         var items: [ItemResponse] = []
-        var errors: [Error] = []
+        var errors: [Swift.Error] = []
         array.forEach { data in
             do {
                 let item = try ItemResponse(response: data, schemaController: schemaController)
@@ -134,7 +187,7 @@ struct ItemResponse {
 
     private static func parse<T>(key: String, from data: [String: Any]) throws -> T {
         guard let parsed = data[key] as? T else {
-            throw ZoteroApiError.jsonDecoding(ItemResponseError.missingKey(key))
+            throw ZoteroApiError.jsonDecoding(Error.missingKey(key))
         }
         return parsed
     }

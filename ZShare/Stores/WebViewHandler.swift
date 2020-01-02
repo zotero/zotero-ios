@@ -11,10 +11,17 @@ import WebKit
 
 import RxSwift
 
+enum WebViewAction {
+    case loadedItems([[String: Any]])
+    case selectItem([String: String])
+}
+
 class WebViewHandler: NSObject {
-    struct JSHandlers {
-        static let request = "requestHandler"
-        static let item = "itemResponseHandler"
+    enum JSHandlers: String, CaseIterable {
+        case request = "requestHandler"
+        case item = "itemResponseHandler"
+        case itemSelection = "itemSelectionHandler"
+        case log = "logHandler"
     }
 
     enum Error: Swift.Error {
@@ -25,10 +32,11 @@ class WebViewHandler: NSObject {
     private let apiClient: ApiClient
     private let translatorsController: TranslatorsController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<[[String: Any]]>
+    let observable: PublishSubject<WebViewAction>
 
     private weak var webView: WKWebView!
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
+    private var itemSelectionMessageId: Int?
 
     // MARK: - Lifecycle
 
@@ -41,8 +49,9 @@ class WebViewHandler: NSObject {
 
         super.init()
 
-        webView.configuration.userContentController.add(self, name: JSHandlers.request)
-        webView.configuration.userContentController.add(self, name: JSHandlers.item)
+        JSHandlers.allCases.forEach { handler in
+            webView.configuration.userContentController.add(self, name: handler.rawValue)
+        }
     }
 
     // MARK: - Loading translation server
@@ -59,8 +68,7 @@ class WebViewHandler: NSObject {
             return
         }
 
-        var encodedHtml = html.data(using: .utf8)?.base64EncodedString(options: .endLineWithLineFeed) ?? "null"
-        encodedHtml = encodedHtml != "null" ? "'\(encodedHtml)'" : encodedHtml
+        let encodedHtml = self.encodeForJavascript(html.data(using: .utf8))
 
         return self.loadCookies(from: cookies)
                    .flatMap { _ -> Single<()> in
@@ -70,15 +78,20 @@ class WebViewHandler: NSObject {
                        return self.translatorsController.load()
                    }
                    .flatMap { translators -> Single<Any> in
-                       let translatorData = try? JSONSerialization.data(withJSONObject: translators, options: .prettyPrinted)
-                       var encodedTranslators = translatorData?.base64EncodedString(options: .endLineWithLineFeed) ?? "null"
-                       encodedTranslators = encodedTranslators != "null" ? "'\(encodedTranslators)'" : encodedTranslators
+                       let encodedTranslators = self.encodeJSONForJavascript(translators)
                        return self.callJavascript("translate('\(url.absoluteString)', '\(cookies)', \(encodedHtml), \(encodedTranslators));")
                    }
                    .subscribe(onError: { [weak self] error in
                        self?.observable.on(.error(error))
                    })
                    .disposed(by: self.disposeBag)
+    }
+
+    func selectItem(_ item: (String, String)) {
+        guard let messageId = self.itemSelectionMessageId else { return }
+        let (key, value) = item
+        self.webView.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));", completionHandler: nil)
+        self.itemSelectionMessageId = nil
     }
 
     private func loadHtml(content: String, baseUrl: URL) -> Single<()> {
@@ -118,23 +131,56 @@ class WebViewHandler: NSObject {
     // MARK: - Communication with WKWebView
 
     private func sendRequest(with options: [String: Any]) {
-        guard let request = JSRequest(options: options) else { return }
+        guard let urlString = options["url"] as? String,
+              let url = URL(string: urlString),
+              let method = options["method"] as? String,
+              let messageId = options["messageId"] as? Int else { return }
 
-        self.apiClient.send(request: request)
-                      .subscribe(onSuccess: { [weak self] data, headers in
-                          self?.webView.evaluateJavaScript("responseSucceeded('data')", completionHandler: nil)
-                      }, onError: { [weak self] error in
-                          self?.webView.evaluateJavaScript("responseFailed('error')", completionHandler: nil)
-                      })
-                      .disposed(by: self.disposeBag)
+        let headers = (options["headers"] as? [String: String]) ?? [:]
+        let body = options["body"] as? String
+        let timeout = (options["timeout"] as? Double).flatMap({ $0 / 1000 }) ?? 60
+        let successCodes = (options["successCodes"] as? [Int]) ?? []
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        headers.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        request.httpBody = body?.data(using: .utf8)
+        request.timeoutInterval = timeout
+
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 400
+            guard let script = self?.javascript(for: messageId, statusCode: statusCode, successCodes: successCodes, data: data) else { return }
+
+            DispatchQueue.main.async {
+                self?.webView.evaluateJavaScript(script, completionHandler: nil)
+            }
+        }
+        task.resume()
     }
 
-    private func receiveItem(with info: [String: Any]) {
-        if let error = info["error"] as? String {
-            self.observable.on(.error(Error.jsError(error)))
-            return
+    private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?) -> String {
+        let isSuccess = successCodes.isEmpty ? 200..<300 ~= statusCode : successCodes.contains(statusCode)
+        let responseText = data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+
+        var payload: [String: Any]
+        if isSuccess {
+            payload = ["status": statusCode, "responseText": responseText]
+        } else {
+            payload = ["error": ["status": statusCode, "responseText": responseText]]
         }
-        self.observable.on(.next([info]))
+
+        return "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
+    }
+
+    private func receiveItems(with result: Result<[[String: Any]], Error>) {
+        switch result {
+        case .success(let info):
+            self.observable.on(.next(.loadedItems(info)))
+        case .failure(let error):
+            self.observable.on(.error(error))
+        }
     }
 
     // MARK: - Helpers
@@ -145,12 +191,32 @@ class WebViewHandler: NSObject {
                 if let data = result {
                     subscriber(.success(data))
                 } else {
-                    subscriber(.error(error ?? Error.jsError("Unknown error")))
+                    let error = error ?? Error.jsError("Unknown error")
+                    let nsError = error as NSError
+
+                    // TODO: - Check JS code to see if it's possible to remove this error.
+                    // For some calls we get an WKWebView error "JavaScript execution returned a result of an unsupported type" even though
+                    // no error really occured in the code. Because of this error the observable doesn't send any more "next" events and we don't
+                    // receive the response. So we just ignore this error.
+                    if nsError.domain == WKErrorDomain && nsError.code == 5 {
+                        return
+                    }
+
+                    subscriber(.error(error))
                 }
             }
 
             return Disposables.create()
         }
+    }
+
+    private func encodeForJavascript(_ data: Data?) -> String {
+        return data.flatMap({ "'" + $0.base64EncodedString(options: .endLineWithLineFeed) + "'" }) ?? "null"
+    }
+
+    private func encodeJSONForJavascript(_ payload: Any) -> String {
+        let data = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted)
+        return self.encodeForJavascript(data)
     }
 }
 
@@ -166,18 +232,33 @@ extension WebViewHandler: WKNavigationDelegate {
 
 extension WebViewHandler: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        switch message.name {
-        case JSHandlers.request:
+        guard let handler = JSHandlers(rawValue: message.name) else { return }
+
+        switch handler {
+        case .request:
             if let options = message.body as? [String: Any] {
                 self.sendRequest(with: options)
             }
-
-        case JSHandlers.item:
-            if let info = message.body as? [String: Any] {
-                self.receiveItem(with: info)
+        case .item:
+            if let info = message.body as? [[String: Any]] {
+                self.receiveItems(with: .success(info))
+            } else if let info = message.body as? [String: Any] {
+                self.receiveItems(with: .success([info]))
+            } else if let error = message.body as? String {
+                self.receiveItems(with: .failure(.jsError(error)))
+            } else {
+                self.receiveItems(with: .failure(.jsError("Unknown response")))
             }
-
-        default: return
+        case .itemSelection:
+            // TODO: - show item picker, call "receiveResponse" after item is picked
+            if let info = message.body as? [String: Any],
+               let messageId = info["messageId"] as? Int,
+               let data = info.filter({ $0.key != "messageId" }) as? [String: String] {
+                self.itemSelectionMessageId = messageId
+                self.observable.on(.next(.selectItem(data)))
+            }
+        case .log:
+            NSLog("JSLOG: \(message.body)")
         }
     }
 }

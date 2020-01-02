@@ -38,7 +38,7 @@ Zotero.Messaging = new function() {
 
         if (!callback) return;
 
-        let response = callback(data);
+        let response = callback(payload);
         // await for the response for error handling
         if (response && response.then) {
             await response;
@@ -55,9 +55,11 @@ Zotero.Messaging = new function() {
                 resolved = true;
 
                 if (payload && payload["error"]) {
-                    var errJSON = JSON.parse(payload["error"]);
+                    var errJSON = payload["error"];
                     let e = new Error(errJSON.message);
                     for (let key in errJSON) e[key] = errJSON[key];
+                    Zotero.debug("Callback error: " + errJSON.message);
+                    Zotero.debug("Callback error: " + e);
                     deferred.reject(e);
                 }
 
@@ -77,7 +79,7 @@ Zotero.Messaging = new function() {
                 if (!resolved) {
                     deferred.reject(new Error(`Message ${messageName} response timed out`));
                 }
-                delete Zotero.Messaging._responseListeners[messageId];
+                delete _responseListeners[messageId];
             }, MESSAGE_TIMEOUT);
             var response = await deferred.promise;
         }
