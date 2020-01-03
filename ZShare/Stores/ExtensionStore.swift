@@ -255,12 +255,23 @@ class ExtensionStore {
               let filename = self.state.downloadState.attachmentData?["title"] else { return }
 
         let key = self.state.key
-        let libraryId = self.state.collectionPickerState.library?.identifier ?? ExtensionStore.defaultLibraryId
+        let libraryId: LibraryIdentifier
+        let collectionKey: String?
         let userId = Defaults.shared.userId
+
+        switch self.state.collectionPickerState {
+        case .picked(let library, let collection):
+            libraryId = library.identifier
+            collectionKey = collection?.key
+        default:
+            libraryId = ExtensionStore.defaultLibraryId
+            collectionKey = nil
+        }
+
         let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
         let attachment = Attachment(key: key, title: filename, type: .file(file: file, filename: filename, isLocal: true), libraryId: libraryId)
 
-        self.prepareUpload(itemResponse: item, attachment: attachment, file: file, libraryId: libraryId, userId: userId)
+        self.prepareUpload(itemResponse: item, attachment: attachment, file: file, libraryId: libraryId, collectionKey: collectionKey, userId: userId)
             .subscribe(onSuccess: { [weak self] filename, response in
                 guard let `self` = self else { return }
 
@@ -326,32 +337,38 @@ class ExtensionStore {
         }
     }
 
-    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File, libraryId: LibraryIdentifier, userId: Int) -> Single<(String, AuthorizeUploadResponse)> {
+    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File,
+                               libraryId: LibraryIdentifier, collectionKey: String?, userId: Int) -> Single<(String, AuthorizeUploadResponse)> {
         return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
                     .do(onError: { [weak self] _ in
                         // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
                         let file = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
                         try? self?.fileStorage.remove(file)
                     })
-                    .flatMap { [weak self] filesize -> Single<(UInt64, RItem)> in
+                    .flatMap { [weak self] filesize -> Single<(UInt64, RItem, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        return self.createItems(response: itemResponse, attachment: attachment, libraryId: libraryId)
-                                   .flatMap({ Single.just((filesize, $0)) })
+                        let collectionKeys = collectionKey.flatMap({ Set(arrayLiteral: $0) }) ?? []
+                        return self.createItems(response: itemResponse.copy(libraryId: libraryId, collectionKeys: collectionKeys), attachment: attachment)
+                                   .flatMap({ Single.just((filesize, $0, $1)) })
                                    .do(onError: { [weak self] _ in
                                        // If attachment item couldn't be created in DB, remove the moved file if possible,
                                        // it won't be processed even from the main app
                                        try? self?.fileStorage.remove(file)
                                    })
                     }
-                    .flatMap { [weak self] filesize, item -> Single<(UInt64, RItem)> in
+                    .flatMap { [weak self] filesize, item, attachment -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        // TODO: - create item request for both parent and child/attachment items
-                        let request = CreateItemRequest(libraryId: libraryId, key: attachment.key, userId: userId, parameters: item.updateParameters)
-                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, item)) })
+                        let request = CreateItemRequest(libraryId: libraryId, key: item.key, userId: userId, parameters: item.updateParameters)
+                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, attachment)) })
                     }
-                    .flatMap { [weak self] filesize, item -> Single<(String, Data, ResponseHeaders)> in
+                    .flatMap { [weak self] filesize, attachment -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = self.createAuthorizeRequest(from: item, libraryId: libraryId, userId: userId, filesize: filesize)
+                        let request = CreateItemRequest(libraryId: libraryId, key: attachment.key, userId: userId, parameters: attachment.updateParameters)
+                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, attachment)) })
+                    }
+                    .flatMap { [weak self] filesize, attachment -> Single<(String, Data, ResponseHeaders)> in
+                        guard let `self` = self else { return Single.error(UploadError.expired) }
+                        let request = self.createAuthorizeRequest(from: attachment, libraryId: libraryId, userId: userId, filesize: filesize)
                         return self.apiClient.send(request: request).flatMap({ Single.just((request.filename, $0.0, $0.1)) })
                     }
                     .flatMap { filename, data, _ -> Single<(String, AuthorizeUploadResponse)> in
@@ -374,13 +391,12 @@ class ExtensionStore {
                                       md5: md5, mtime: mtime)
     }
 
-    private func createItems(response: ItemResponse, attachment: Attachment, libraryId: LibraryIdentifier) -> Single<RItem> {
+    private func createItems(response: ItemResponse, attachment: Attachment) -> Single<(RItem, RItem)> {
         // TODO: - add main item with attachment linked
-        let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-        let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, libraryId: libraryId)
+        let request = CreateItemWithAttachmentDbRequest(item: response, attachment: attachment, schemaController: self.schemaController)
         do {
-            let item = try self.dbStorage.createCoordinator().perform(request: request)
-            return Single.just(item)
+            let items = try self.dbStorage.createCoordinator().perform(request: request)
+            return Single.just(items)
         } catch let error {
             return Single.error(error)
         }

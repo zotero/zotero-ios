@@ -41,6 +41,26 @@ struct ItemResponse {
                 "collections", "relations", "dateAdded", "dateModified", "parentItem"]
     }()
 
+    init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?,
+         parsedDate: String?, isTrash: Bool, version: Int, dateModified: Date, dateAdded: Date, fields: [String: String], tags: [TagResponse],
+         creators: [CreatorResponse], relations: [String: String]) {
+        self.rawType = rawType
+        self.key = key
+        self.library = library
+        self.parentKey = parentKey
+        self.collectionKeys = collectionKeys
+        self.links = links
+        self.parsedDate = parsedDate
+        self.isTrash = isTrash
+        self.version = version
+        self.dateModified = dateModified
+        self.dateAdded = dateAdded
+        self.fields = fields
+        self.tags = tags
+        self.creators = creators
+        self.relations = relations
+    }
+
     init(response: [String: Any], schemaController: SchemaController) throws {
         if response["data"] != nil {
             try self.init(apiResponse: response, schemaController: schemaController)
@@ -94,7 +114,7 @@ struct ItemResponse {
         let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
 
         self.rawType = rawType
-        self.key = try ItemResponse.parse(key: "id", from: translatorResponse)
+        self.key = KeyGenerator.newKey
         self.version = 0
         self.collectionKeys = []
         self.parentKey = nil
@@ -113,6 +133,33 @@ struct ItemResponse {
                                                    rawType: rawType,
                                                    schemaController: schemaController,
                                                    ignoreUnknownFields: true)
+    }
+
+    func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>) -> ItemResponse {
+        let library: LibraryResponse
+
+        switch libraryId {
+        case .custom:
+            library = LibraryResponse(id: 0, name: "", type: "user", links: nil)
+        case .group(let id):
+            library = LibraryResponse(id: id, name: "", type: "group", links: nil)
+        }
+
+        return ItemResponse(rawType: self.rawType,
+                            key: self.key,
+                            library: library,
+                            parentKey: self.parentKey,
+                            collectionKeys: collectionKeys,
+                            links: self.links,
+                            parsedDate: self.parsedDate,
+                            isTrash: self.isTrash,
+                            version: self.version,
+                            dateModified: self.dateModified,
+                            dateAdded: self.dateAdded,
+                            fields: self.fields,
+                            tags: self.tags,
+                            creators: self.creators,
+                            relations: self.relations)
     }
 
     private static func parseFields(from data: [String: Any],

@@ -141,8 +141,7 @@ class ItemsStore: ObservableObject {
 
                 for attachment in attachments {
                     let request = CreateAttachmentDbRequest(attachment: attachment,
-                                                            localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
-                                                            libraryId: self.state.library.identifier)
+                                                            localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""))
                     _ = try self.dbStorage.createCoordinator().perform(request: request)
                 }
             } catch let error {

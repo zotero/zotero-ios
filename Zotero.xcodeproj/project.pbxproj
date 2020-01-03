@@ -142,6 +142,7 @@
 		B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33744F8232BDA280082760A /* PdfReaderView.swift */; };
 		B33744FB232BDAE40082760A /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33744FA232BDAE40082760A /* SafariView.swift */; };
 		B33744FD232BEAD70082760A /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33744FC232BEAD70082760A /* ActivityView.swift */; };
+		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
 		B337AB6322E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */; };
 		B337AB6522E0C7CF0092AC22 /* AuthorizeUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */; };
 		B337AB6722E0CAD90092AC22 /* AuthorizeUploadResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */; };
@@ -494,6 +495,7 @@
 		B33744F8232BDA280082760A /* PdfReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfReaderView.swift; sourceTree = "<group>"; };
 		B33744FA232BDAE40082760A /* SafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
 		B33744FC232BEAD70082760A /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B337AB6222E0C52D0092AC22 /* CheckItemIsChangedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckItemIsChangedDbRequest.swift; sourceTree = "<group>"; };
 		B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadRequest.swift; sourceTree = "<group>"; };
 		B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadResponse.swift; sourceTree = "<group>"; };
@@ -987,6 +989,7 @@
 			children = (
 				B3AB38B5238ED023008A1ABB /* Assets */,
 				B311B3342386B2FE00BCF592 /* ApiRequests */,
+				B33791D523BF7B2900919210 /* DbRequests */,
 				B3AB38A3238EC02D008A1ABB /* Stores */,
 				B3AB389F238EC02D008A1ABB /* View Controllers */,
 				B3AB38A1238EC02D008A1ABB /* Views */,
@@ -1015,6 +1018,14 @@
 				B32CD309221C58DE003F8073 /* Assets.xcassets */,
 			);
 			path = Assets;
+			sourceTree = "<group>";
+		};
+		B33791D523BF7B2900919210 /* DbRequests */ = {
+			isa = PBXGroup;
+			children = (
+				B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */,
+			);
+			path = DbRequests;
 			sourceTree = "<group>";
 		};
 		B33A56AE23561F2000C33F28 /* Settings */ = {
@@ -1951,6 +1962,7 @@
 				B326618B238D26580050335F /* Formatter.swift in Sources */,
 				B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */,
 				B32661BB238D80BA0050335F /* DelayIntervals.swift in Sources */,
+				B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */,
 				B326617A238D24640050335F /* SyncActionHandler.swift in Sources */,
 				B3266179238D24610050335F /* SyncController.swift in Sources */,
 				B3BD28A523967EF400175E34 /* SessionController.swift in Sources */,

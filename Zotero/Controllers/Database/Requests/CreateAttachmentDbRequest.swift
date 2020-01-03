@@ -15,7 +15,6 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
     let attachment: Attachment
     let localizedType: String
-    let libraryId: LibraryIdentifier?
 
     var needsWrite: Bool { return true }
 
@@ -34,15 +33,13 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.dateAdded = Date()
         item.dateModified = Date()
 
-        if let libraryId = self.libraryId {
-            switch libraryId {
-            case .custom(let type):
-                let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-                item.customLibrary = library
-            case .group(let identifier):
-                let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-                item.group = group
-            }
+        switch self.attachment.libraryId {
+        case .custom(let type):
+            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
+            item.customLibrary = library
+        case .group(let identifier):
+            let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
+            item.group = group
         }
 
         database.add(item)
