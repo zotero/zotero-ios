@@ -321,10 +321,10 @@ class ExtensionStore {
                     .flatMap { [weak self] filesize, item, attachment -> Single<(UInt64, RItem)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
                         var parameters: [[String: Any]] = []
-                        if let updateParameters = item.updateParametersWithVersion {
+                        if let updateParameters = item.updateParameters {
                             parameters.append(updateParameters)
                         }
-                        if let updateParameters = attachment.updateParametersWithVersion {
+                        if let updateParameters = attachment.updateParameters {
                             parameters.append(updateParameters)
                         }
                         let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: .item, params: parameters, version: nil)
