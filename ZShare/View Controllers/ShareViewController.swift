@@ -112,31 +112,36 @@ class ShareViewController: UIViewController {
         var rightButtonEnabled = state.downloadState.progress == 1
 
         if let state = state.uploadState {
-            switch state {
-            case .ready:
-                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-                return
-            case .preparing:
-                self.prepareForUpload()
+            self.updateUploadState(state)
+            if state == .preparing {
                 rightButtonEnabled = false
-            case .error(let error):
-                self.hidePreparingIndicator()
-
-                switch error {
-                case .fileMissing:
-                    self.showError(message: "Could not find file to upload")
-                case .unknown:
-                    self.showError(message: "Unknown error. Can't upload file.")
-                case .expired: break
-                }
             }
         }
-
         self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
         self.updateToolbar(to: state.downloadState)
         self.updateCollectionPicker(to: state.collectionPickerState)
         self.navigationItem.title = state.title
         self.updateItemPicker(to: state.itemPickerState)
+    }
+
+    private func updateUploadState(_ state: ExtensionStore.State.UploadState) {
+        switch state {
+        case .ready:
+            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            return
+        case .preparing:
+            self.prepareForUpload()
+        case .error(let error):
+            self.hidePreparingIndicator()
+
+            switch error {
+            case .fileMissing:
+                self.showError(message: "Could not find file to upload")
+            case .unknown:
+                self.showError(message: "Unknown error. Can't upload file.")
+            case .expired: break
+            }
+        }
     }
 
     private func prepareForUpload() {

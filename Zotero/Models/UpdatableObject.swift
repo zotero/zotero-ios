@@ -137,6 +137,12 @@ extension RItem: Updatable {
         return parameters
     }
 
+    var updateParametersWithVersion: [String: Any]? {
+        guard var parameters = self.updateParameters else { return nil }
+        parameters["version"] = self.version
+        return parameters
+    }
+
     func resetChanges() {
         self.rawChangedFields = 0
         self.fields.filter("changed = true").forEach { field in

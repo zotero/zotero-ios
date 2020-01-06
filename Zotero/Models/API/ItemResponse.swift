@@ -169,46 +169,44 @@ struct ItemResponse {
         let excludedKeys = ItemResponse.notFieldKeys
         var fields: [String: String] = [:]
 
-        if let schemaFields = schemaController.fields(for: rawType) {
-            for object in data {
-                guard !excludedKeys.contains(object.key) else { continue }
+        guard let schemaFields = schemaController.fields(for: rawType) else { throw Error.missingFieldsForType(rawType) }
 
-                var isKnownField = true
+        for object in data {
+            guard !excludedKeys.contains(object.key) else { continue }
 
-                // Check whether schema contains this key
-                if !schemaFields.contains(where: { $0.field == object.key }) {
-                    if rawType == ItemTypes.attachment {
-                        // Attachments don't have some fields that are returned by backend in schema,
-                        // so we have to filter them out here manually.
-                        if object.key != FieldKeys.contentType && object.key != FieldKeys.md5 &&
-                           object.key != FieldKeys.mtime && object.key != FieldKeys.filename &&
-                           object.key != FieldKeys.linkMode && object.key != "charset" &&
-                           object.key != FieldKeys.note {
-                            if ignoreUnknownFields {
-                                isKnownField = false
-                            } else {
-                                throw Error.unknownField(object.key)
-                            }
+            var isKnownField = true
+
+            // Check whether schema contains this key
+            if !schemaFields.contains(where: { $0.field == object.key }) {
+                if rawType == ItemTypes.attachment {
+                    // Attachments don't have some fields that are returned by backend in schema,
+                    // so we have to filter them out here manually.
+                    if object.key != FieldKeys.contentType && object.key != FieldKeys.md5 &&
+                       object.key != FieldKeys.mtime && object.key != FieldKeys.filename &&
+                       object.key != FieldKeys.linkMode && object.key != "charset" &&
+                       object.key != FieldKeys.note {
+                        if ignoreUnknownFields {
+                            isKnownField = false
+                        } else {
+                            throw Error.unknownField(object.key)
                         }
-                    } else {
-                        // Note is not a field in schema but we consider it as one, since it can be returned with fields
-                        // together with other data. So we filter it out as well and report all other keys.
-                        if object.key != FieldKeys.note {
-                            if ignoreUnknownFields {
-                                isKnownField = false
-                            } else {
-                                throw Error.unknownField(object.key)
-                            }
+                    }
+                } else {
+                    // Note is not a field in schema but we consider it as one, since it can be returned with fields
+                    // together with other data. So we filter it out as well and report all other keys.
+                    if object.key != FieldKeys.note {
+                        if ignoreUnknownFields {
+                            isKnownField = false
+                        } else {
+                            throw Error.unknownField(object.key)
                         }
                     }
                 }
-
-                if isKnownField {
-                    fields[object.key] = object.value as? String
-                }
             }
-        } else {
-            throw Error.missingFieldsForType(rawType)
+
+            if isKnownField {
+                fields[object.key] = object.value as? String
+            }
         }
 
         return fields

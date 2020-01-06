@@ -37,7 +37,7 @@ class ExtensionStore {
             var error: DownloadError?
         }
 
-        enum UploadState {
+        enum UploadState: Equatable {
             case preparing
             case ready
             case error(UploadError)
@@ -68,7 +68,7 @@ class ExtensionStore {
         case parseError(ItemResponse.Error)
     }
 
-    enum UploadError: Swift.Error {
+    enum UploadError: Swift.Error, Equatable {
         case expired, fileMissing, unknown
     }
 
@@ -271,6 +271,8 @@ class ExtensionStore {
         let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
         let attachment = Attachment(key: key, title: filename, type: .file(file: file, filename: filename, isLocal: true), libraryId: libraryId)
 
+        self.state.uploadState = .preparing
+
         self.prepareUpload(itemResponse: item, attachment: attachment, file: file, libraryId: libraryId, collectionKey: collectionKey, userId: userId)
             .subscribe(onSuccess: { [weak self] filename, response in
                 guard let `self` = self else { return }
@@ -295,6 +297,53 @@ class ExtensionStore {
                 self?.state.uploadState = .error(error)
             })
             .disposed(by: self.disposeBag)
+    }
+
+    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File,
+                               libraryId: LibraryIdentifier, collectionKey: String?, userId: Int) -> Single<(String, AuthorizeUploadResponse)> {
+        return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
+                    .do(onError: { [weak self] _ in
+                        // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
+                        let file = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
+                        try? self?.fileStorage.remove(file)
+                    })
+                    .flatMap { [weak self] filesize -> Single<(UInt64, RItem, RItem)> in
+                        guard let `self` = self else { return Single.error(UploadError.expired) }
+                        let collectionKeys = collectionKey.flatMap({ Set(arrayLiteral: $0) }) ?? []
+                        return self.createItems(response: itemResponse.copy(libraryId: libraryId, collectionKeys: collectionKeys), attachment: attachment)
+                                   .flatMap({ Single.just((filesize, $0, $1)) })
+                                   .do(onError: { [weak self] _ in
+                                       // If attachment item couldn't be created in DB, remove the moved file if possible,
+                                       // it won't be processed even from the main app
+                                       try? self?.fileStorage.remove(file)
+                                   })
+                    }
+                    .flatMap { [weak self] filesize, item, attachment -> Single<(UInt64, RItem)> in
+                        guard let `self` = self else { return Single.error(UploadError.expired) }
+                        var parameters: [[String: Any]] = []
+                        if let updateParameters = item.updateParametersWithVersion {
+                            parameters.append(updateParameters)
+                        }
+                        if let updateParameters = attachment.updateParametersWithVersion {
+                            parameters.append(updateParameters)
+                        }
+                        let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: .item, params: parameters, version: nil)
+                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, attachment)) })
+                    }
+                    .flatMap { [weak self] filesize, attachment -> Single<(String, Data, ResponseHeaders)> in
+                        guard let `self` = self else { return Single.error(UploadError.expired) }
+                        let request = self.createAuthorizeRequest(from: attachment, libraryId: libraryId, userId: userId, filesize: filesize)
+                        return self.apiClient.send(request: request).flatMap({ Single.just((request.filename, $0.0, $0.1)) })
+                    }
+                    .flatMap { filename, data, _ -> Single<(String, AuthorizeUploadResponse)> in
+                       do {
+                           let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+                           let response = try AuthorizeUploadResponse(from: jsonObject)
+                           return Single.just((filename, response))
+                       } catch {
+                           return Single.error(error)
+                       }
+                    }
     }
 
     private func startBackgroundUpload(to url: URL, filename: String, file: File, params: [String: String],
@@ -335,51 +384,6 @@ class ExtensionStore {
         } catch let error {
             return Single.error(error)
         }
-    }
-
-    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File,
-                               libraryId: LibraryIdentifier, collectionKey: String?, userId: Int) -> Single<(String, AuthorizeUploadResponse)> {
-        return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
-                    .do(onError: { [weak self] _ in
-                        // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
-                        let file = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
-                        try? self?.fileStorage.remove(file)
-                    })
-                    .flatMap { [weak self] filesize -> Single<(UInt64, RItem, RItem)> in
-                        guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let collectionKeys = collectionKey.flatMap({ Set(arrayLiteral: $0) }) ?? []
-                        return self.createItems(response: itemResponse.copy(libraryId: libraryId, collectionKeys: collectionKeys), attachment: attachment)
-                                   .flatMap({ Single.just((filesize, $0, $1)) })
-                                   .do(onError: { [weak self] _ in
-                                       // If attachment item couldn't be created in DB, remove the moved file if possible,
-                                       // it won't be processed even from the main app
-                                       try? self?.fileStorage.remove(file)
-                                   })
-                    }
-                    .flatMap { [weak self] filesize, item, attachment -> Single<(UInt64, RItem)> in
-                        guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = CreateItemRequest(libraryId: libraryId, key: item.key, userId: userId, parameters: item.updateParameters)
-                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, attachment)) })
-                    }
-                    .flatMap { [weak self] filesize, attachment -> Single<(UInt64, RItem)> in
-                        guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = CreateItemRequest(libraryId: libraryId, key: attachment.key, userId: userId, parameters: attachment.updateParameters)
-                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, attachment)) })
-                    }
-                    .flatMap { [weak self] filesize, attachment -> Single<(String, Data, ResponseHeaders)> in
-                        guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = self.createAuthorizeRequest(from: attachment, libraryId: libraryId, userId: userId, filesize: filesize)
-                        return self.apiClient.send(request: request).flatMap({ Single.just((request.filename, $0.0, $0.1)) })
-                    }
-                    .flatMap { filename, data, _ -> Single<(String, AuthorizeUploadResponse)> in
-                       do {
-                           let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                           let response = try AuthorizeUploadResponse(from: jsonObject)
-                           return Single.just((filename, response))
-                       } catch {
-                           return Single.error(error)
-                       }
-                    }
     }
 
     private func createAuthorizeRequest(from item: RItem, libraryId: LibraryIdentifier, userId: Int, filesize: UInt64) -> AuthorizeUploadRequest {

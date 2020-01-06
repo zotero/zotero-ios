@@ -13,7 +13,7 @@ struct UpdatesRequest: ApiRequest {
     let userId: Int
     let objectType: SyncController.Object
     let params: [[String: Any]]
-    let version: Int
+    let version: Int?
 
     var endpoint: ApiEndpoint {
         return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/\(self.objectType.apiPath)")
@@ -32,6 +32,6 @@ struct UpdatesRequest: ApiRequest {
     }
 
     var headers: [String : String]? {
-        return ["If-Unmodified-Since-Version": self.version.description]
+        return self.version.flatMap { ["If-Unmodified-Since-Version": $0.description] }
     }
 }
