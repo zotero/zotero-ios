@@ -60,6 +60,13 @@ struct Files {
                         relativeComponents: ["database"],
                         name: "maindb_\(userId)", ext: "realm")
     }
+
+    static func uploadFile(from streamUrl: URL) -> File {
+        return FileData(rootPath: Files.appGroupPath,
+                        relativeComponents: ["uploads"],
+                        name: streamUrl.lastPathComponent,
+                        ext: streamUrl.pathExtension)
+    }
 }
 
 extension LibraryIdentifier {

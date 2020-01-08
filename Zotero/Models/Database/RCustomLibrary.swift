@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-enum RCustomLibraryType: Int {
+enum RCustomLibraryType: Int, Codable {
     case myLibrary
 }
 

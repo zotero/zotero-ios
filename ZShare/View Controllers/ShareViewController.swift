@@ -298,8 +298,6 @@ class ShareViewController: UIViewController {
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         apiClient.set(authToken: authToken)
 
-        BackgroundApi.shared.client.set(authToken: authToken)
-
         let fileStorage = FileStorageController()
         let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
 
@@ -312,9 +310,12 @@ class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, handler: syncHandler,
                                             conflictDelays: DelayIntervals.conflict)
 
+        let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage)
+        BackgroundUploader.shared.uploadProcessor = uploadProcessor
+
         return ExtensionStore(webView: self.webView,
                               apiClient: apiClient,
-                              backgroundApi: BackgroundApi.shared,
+                              backgroundUploader: BackgroundUploader.shared,
                               dbStorage: dbStorage,
                               schemaController: schemaController,
                               fileStorage: fileStorage,
