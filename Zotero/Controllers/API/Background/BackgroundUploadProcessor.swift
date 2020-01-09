@@ -8,19 +8,22 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RxSwift
 
 class BackgroundUploadProcessor {
     private let apiClient: ApiClient
     private let dbStorage: DbStorage
+    private let fileStorage: FileStorage
 
     enum Error: Swift.Error {
         case expired
     }
 
-    init(apiClient: ApiClient, dbStorage: DbStorage) {
+    init(apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
         self.apiClient = apiClient
         self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
     }
 
     func finish(upload: BackgroundUpload) -> Observable<()> {
@@ -40,6 +43,19 @@ class BackgroundUploadProcessor {
                                      return Single.error(error)
                                  }
                              }
-                            .asObservable()
+                             .do(onSuccess: { [weak self] _ in
+                                 self?.delete(file: Files.file(from: upload.fileUrl))
+                             }, onError: { [weak self] _ in
+                                 self?.delete(file: Files.file(from: upload.fileUrl))
+                             })
+                             .asObservable()
+    }
+
+    private func delete(file: File) {
+        do {
+            try self.fileStorage.remove(file)
+        } catch let error {
+            DDLogError("BackgroundUploadProcessor: can't remove uploaded file - \(error)")
+        }
     }
 }

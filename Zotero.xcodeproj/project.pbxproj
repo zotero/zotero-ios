@@ -59,7 +59,6 @@
 		B31CB7B4234B4D8200FB12A0 /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B3234B4D8200FB12A0 /* NoteEditorView.swift */; };
 		B31CB7B6234B4D9600FB12A0 /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B5234B4D9600FB12A0 /* NoteEditorViewController.swift */; };
 		B31CB7B8234B7A3100FB12A0 /* StoreNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31CB7B7234B7A3100FB12A0 /* StoreNoteDbRequest.swift */; };
-		B320298F23C4CA2F009FEF09 /* BackgroundUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856C23C35AB700920FFC /* BackgroundUploader.swift */; };
 		B320299023C4CA32009FEF09 /* BackgroundUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856E23C35ACD00920FFC /* BackgroundUpload.swift */; };
 		B320299123C4CA34009FEF09 /* BackgroundUploaderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356857023C3613600920FFC /* BackgroundUploaderContext.swift */; };
 		B323932B2208E0CF00B161B8 /* VersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B323932A2208E0CF00B161B8 /* VersionsRequest.swift */; };
@@ -344,6 +343,7 @@
 		B3BABCC323A1543E00B4C893 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BABCC123A1526000B4C893 /* TranslatorsController.swift */; };
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
+		B3BD0B4B23C749E500DFA54C /* BackgroundUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856C23C35AB700920FFC /* BackgroundUploader.swift */; };
 		B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B3BD28A523967EF400175E34 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B4B6892384338400D4FD3F /* SessionController.swift */; };
 		B3BD28A62396911700175E34 /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487300221D73CA00244CCC /* FileRequest.swift */; };
@@ -1995,6 +1995,7 @@
 				B326617E238D248F0050335F /* SyncProgressHandler.swift in Sources */,
 				B3AB38B2238ECC17008A1ABB /* ReadCollectionsDbRequest.swift in Sources */,
 				B387FF92238C57B900D85097 /* LibraryObject.swift in Sources */,
+				B3BD0B4B23C749E500DFA54C /* BackgroundUploader.swift in Sources */,
 				B32661B1238D385A0050335F /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B387FF8A238C47F100D85097 /* RTag.swift in Sources */,
 				B32661AF238D384A0050335F /* SubmitDeletionsRequest.swift in Sources */,
@@ -2006,7 +2007,6 @@
 				B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */,
 				B387FF84238C3CA700D85097 /* Collection.swift in Sources */,
 				B326618A238D26290050335F /* RealmDbStorage.swift in Sources */,
-				B320298F23C4CA2F009FEF09 /* BackgroundUploader.swift in Sources */,
 				B372B37723C61E8300A0F5EC /* BackgroundUploadProcessor.swift in Sources */,
 				B311B3312386B19700BCF592 /* ObservableRequestExtensions.swift in Sources */,
 				B3AB38B1238ECBD5008A1ABB /* CollectionTreeBuilder.swift in Sources */,
@@ -2230,6 +2230,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"COCOAPODS=1",
+					"MAINAPP=1",
+				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2260,6 +2265,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"COCOAPODS=1",
+					"MAINAPP=1",
 				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
@@ -2504,6 +2514,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"COCOAPODS=1",
+					"MAINAPP=1",
 				);
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;

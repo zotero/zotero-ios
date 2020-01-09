@@ -127,10 +127,11 @@ extension AppDelegate: UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        // TODO: - Disable sync
         let controllers = self.controllers ?? Controllers()
         if let dbStorage = controllers.userControllers?.dbStorage {
-            BackgroundUploader.shared.uploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient, dbStorage: dbStorage)
+            BackgroundUploader.shared.uploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
+                                                                                  dbStorage: dbStorage,
+                                                                                  fileStorage: controllers.fileStorage)
         }
         BackgroundUploader.shared.backgroundCompletionHandler = completionHandler
     }

@@ -178,7 +178,9 @@ protocol SyncActionHandler: class {
     func synchronizeSettings(for libraryId: LibraryIdentifier, userId: Int,
                              current currentVersion: Int?, since version: Int?) -> Single<(Bool, Int)>
     func submitUpdate(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
-                      since version: Int, parameters: [[String: Any]]) -> Single<(Int, Error?)>
+                      since version: Int?, parameters: [[String: Any]]) -> Single<(Int, Error?)>
+    func authorizeUpload(key: String, filename: String, filesize: UInt64, md5: String,
+                         mtime: Int, libraryId: LibraryIdentifier, userId: Int) -> Single<AuthorizeUploadResponse>
     func uploadAttachment(for libraryId: LibraryIdentifier, userId: Int, key: String, file: File,
                           filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>)
     func submitDeletion(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
@@ -495,7 +497,7 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func submitUpdate(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
-                      since version: Int, parameters: [[String : Any]]) -> Single<(Int, Error?)> {
+                      since version: Int?, parameters: [[String : Any]]) -> Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: object, params: parameters, version: version)
         return self.apiClient.send(request: request)
                              .observeOn(self.scheduler)
@@ -562,6 +564,22 @@ extension SyncActionHandlerController: SyncActionHandler {
                              })
     }
 
+    func authorizeUpload(key: String, filename: String, filesize: UInt64, md5: String,
+                         mtime: Int, libraryId: LibraryIdentifier, userId: Int) -> Single<AuthorizeUploadResponse> {
+        let request = AuthorizeUploadRequest(libraryId: libraryId, userId: userId, key: key,
+                                             filename: filename, filesize: filesize,
+                                             md5: md5, mtime: mtime)
+        return self.apiClient.send(request: request).flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
+           do {
+               let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+               let response = try AuthorizeUploadResponse(from: jsonObject)
+               return Single.just(response)
+           } catch {
+               return Single.error(error)
+           }
+        }
+    }
+
     func uploadAttachment(for libraryId: LibraryIdentifier, userId: Int, key: String, file: File,
                           filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>) {
         let dbCheck: Single<()> = Single.create { [weak self] subscriber -> Disposable in
@@ -596,21 +614,15 @@ extension SyncActionHandlerController: SyncActionHandler {
                                     return Single.just(size)
                                 }
                             }
-                            .flatMap { [weak self] filesize -> Single<(Data, ResponseHeaders)> in
+                            .flatMap { [weak self] filesize -> Single<AuthorizeUploadResponse> in
                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }
-                                let request = AuthorizeUploadRequest(libraryId: libraryId, userId: userId, key: key,
-                                                                     filename: filename, filesize: filesize,
-                                                                     md5: md5, mtime: mtime)
-                                return self.apiClient.send(request: request)
-                            }
-                            .flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
-                               do {
-                                   let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                   let response = try AuthorizeUploadResponse(from: jsonObject)
-                                   return Single.just(response)
-                               } catch {
-                                   return Single.error(error)
-                               }
+                                return self.authorizeUpload(key: key,
+                                                            filename: filename,
+                                                            filesize: filesize,
+                                                            md5: md5,
+                                                            mtime: mtime,
+                                                            libraryId: libraryId,
+                                                            userId: userId)
                             }
                             .flatMap { [weak self] response -> Single<Swift.Result<(UploadRequest, String), SyncActionHandlerError>> in
                                 guard let `self` = self else { return Single.error(SyncActionHandlerError.expired) }

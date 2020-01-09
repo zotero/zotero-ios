@@ -20,6 +20,16 @@ struct BackgroundUpload: Codable {
 
     var completion: BackgroundUploadCompletion?
 
+    func copy(with fileUrl: URL) -> BackgroundUpload {
+        return BackgroundUpload(key: self.key,
+                                libraryId: self.libraryId,
+                                userId: self.userId,
+                                remoteUrl: self.remoteUrl,
+                                fileUrl: fileUrl,
+                                uploadKey: self.uploadKey,
+                                completion: self.completion)
+    }
+
     private enum CodingKeys: String, CodingKey {
         case key, libraryId, userId, remoteUrl, fileUrl, uploadKey
     }

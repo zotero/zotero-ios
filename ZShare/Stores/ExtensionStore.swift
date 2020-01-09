@@ -85,6 +85,7 @@ class ExtensionStore {
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
     private let webViewHandler: WebViewHandler
+    private let syncHandler: SyncActionHandler
     private let disposeBag: DisposeBag
 
     // MARK: - Lifecycle
@@ -97,6 +98,12 @@ class ExtensionStore {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.syncHandler = SyncActionHandlerController(userId: Defaults.shared.userId,
+                                                       apiClient: apiClient,
+                                                       dbStorage: dbStorage,
+                                                       fileStorage: fileStorage,
+                                                       schemaController: schemaController,
+                                                       syncDelayIntervals: [])
         self.webViewHandler = WebViewHandler(webView: webView, apiClient: apiClient, fileStorage: fileStorage)
         self.state = State()
         self.disposeBag = DisposeBag()
@@ -273,8 +280,9 @@ class ExtensionStore {
 
         self.state.uploadState = .preparing
 
-        self.prepareUpload(itemResponse: item, attachment: attachment, file: file, libraryId: libraryId, collectionKey: collectionKey, userId: userId)
-            .subscribe(onSuccess: { [weak self] filename, response in
+        self.prepareUpload(itemResponse: item, attachment: attachment, file: file, filename: filename,
+                           libraryId: libraryId, collectionKey: collectionKey, userId: userId)
+            .subscribe(onSuccess: { [weak self] response in
                 guard let `self` = self else { return }
 
                 switch response {
@@ -298,8 +306,8 @@ class ExtensionStore {
             .disposed(by: self.disposeBag)
     }
 
-    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File,
-                               libraryId: LibraryIdentifier, collectionKey: String?, userId: Int) -> Single<(String, AuthorizeUploadResponse)> {
+    private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File, filename: String,
+                               libraryId: LibraryIdentifier, collectionKey: String?, userId: Int) -> Single<AuthorizeUploadResponse> {
         return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
                     .do(onError: { [weak self] _ in
                         // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
@@ -326,22 +334,16 @@ class ExtensionStore {
                         if let updateParameters = attachment.updateParameters {
                             parameters.append(updateParameters)
                         }
-                        let request = UpdatesRequest(libraryId: libraryId, userId: userId, objectType: .item, params: parameters, version: nil)
-                        return self.apiClient.send(request: request).flatMap({ _ in Single.just((filesize, attachment)) })
+                        return self.syncHandler.submitUpdate(for: libraryId,
+                                                             userId: userId,
+                                                             object: .item,
+                                                             since: nil,
+                                                             parameters: parameters)
+                                               .flatMap({ _ in Single.just((filesize, attachment)) })
                     }
-                    .flatMap { [weak self] filesize, attachment -> Single<(String, Data, ResponseHeaders)> in
+                    .flatMap { [weak self] filesize, attachment -> Single<AuthorizeUploadResponse> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        let request = self.createAuthorizeRequest(from: attachment, libraryId: libraryId, userId: userId, filesize: filesize)
-                        return self.apiClient.send(request: request).flatMap({ Single.just((request.filename, $0.0, $0.1)) })
-                    }
-                    .flatMap { filename, data, _ -> Single<(String, AuthorizeUploadResponse)> in
-                       do {
-                           let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                           let response = try AuthorizeUploadResponse(from: jsonObject)
-                           return Single.just((filename, response))
-                       } catch {
-                           return Single.error(error)
-                       }
+                        return self.authorizeUpload(from: attachment, filename: filename, libraryId: libraryId, userId: userId, filesize: filesize)
                     }
     }
 
@@ -365,62 +367,6 @@ class ExtensionStore {
                                                self?.state.uploadState = .ready
                                            }
                                        }
-//        let request = AttachmentUploadRequest(url: url)
-//        self.backgroundApi.client.upload(request: request) { data in
-//                                     params.forEach { (key, value) in
-//                                         if let stringData = value.data(using: .utf8) {
-//                                             data.append(stringData, withName: key)
-//                                         }
-//                                     }
-//                                     data.append(file.createUrl(), withName: "file", fileName: filename, mimeType: ExtensionStore.defaultMimetype)
-//                                 }
-//                                 .flatMap { request -> Single<Data> in
-//                                     return request.rx.data().asSingle()
-//                                 }
-//                                 .flatMap { _ -> Single<(Data, ResponseHeaders)> in
-//                                     let request = RegisterUploadRequest(libraryId: libraryId,
-//                                                                         userId: userId,
-//                                                                         key: key,
-//                                                                         uploadKey: uploadKey)
-//                                     return self.apiClient.send(request: request)
-//                                 }
-//                                 .flatMap { _ -> Single<()> in
-//                                     return self.markAttachmentUploaded(with: key, libraryId: libraryId)
-//                                 }
-//                                 .subscribe(onSuccess: nil, onError: { error in
-//                                     // TODO: - add logging
-//                                 })
-//                                 .disposed(by: self.backgroundApi.disposeBag)
-    }
-
-    private func markAttachmentUploaded(with key: String, libraryId: LibraryIdentifier) -> Single<()> {
-        do {
-            let request = MarkAttachmentUploadedDbRequest(libraryId: libraryId, key: key)
-            try self.dbStorage.createCoordinator().perform(request: request)
-            return Single.just(())
-        } catch let error {
-            return Single.error(error)
-        }
-    }
-
-    private func createAuthorizeRequest(from item: RItem, libraryId: LibraryIdentifier, userId: Int, filesize: UInt64) -> AuthorizeUploadRequest {
-        let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? ""
-        let mtime = item.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-        let md5 = item.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
-        return AuthorizeUploadRequest(libraryId: libraryId, userId: userId, key: item.key,
-                                      filename: filename, filesize: filesize,
-                                      md5: md5, mtime: mtime)
-    }
-
-    private func createItems(response: ItemResponse, attachment: Attachment) -> Single<(RItem, RItem)> {
-        // TODO: - add main item with attachment linked
-        let request = CreateItemWithAttachmentDbRequest(item: response, attachment: attachment, schemaController: self.schemaController)
-        do {
-            let items = try self.dbStorage.createCoordinator().perform(request: request)
-            return Single.just(items)
-        } catch let error {
-            return Single.error(error)
-        }
     }
 
     private func moveTmpFile(with key: String, to file: File, libraryId: LibraryIdentifier) -> Single<UInt64> {
@@ -436,5 +382,28 @@ class ExtensionStore {
         } catch {
             return Single.error(UploadError.fileMissing)
         }
+    }
+
+    private func createItems(response: ItemResponse, attachment: Attachment) -> Single<(RItem, RItem)> {
+        let request = CreateItemWithAttachmentDbRequest(item: response, attachment: attachment, schemaController: self.schemaController)
+        do {
+            let items = try self.dbStorage.createCoordinator().perform(request: request)
+            return Single.just(items)
+        } catch let error {
+            return Single.error(error)
+        }
+    }
+
+    private func authorizeUpload(from item: RItem, filename: String, libraryId: LibraryIdentifier,
+                                 userId: Int, filesize: UInt64) -> Single<AuthorizeUploadResponse> {
+        let mtime = item.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+        let md5 = item.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+        return self.syncHandler.authorizeUpload(key: item.key,
+                                                filename: filename,
+                                                filesize: filesize,
+                                                md5: md5,
+                                                mtime: mtime,
+                                                libraryId: libraryId,
+                                                userId: userId)
     }
 }
