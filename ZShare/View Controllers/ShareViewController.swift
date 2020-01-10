@@ -310,9 +310,6 @@ class ShareViewController: UIViewController {
         let syncController = SyncController(userId: userId, handler: syncHandler,
                                             conflictDelays: DelayIntervals.conflict)
 
-        let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-        BackgroundUploader.shared.uploadProcessor = uploadProcessor
-
         return ExtensionStore(webView: self.webView,
                               apiClient: apiClient,
                               backgroundUploader: BackgroundUploader.shared,

@@ -314,36 +314,35 @@ class ExtensionStore {
                         let file = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
                         try? self?.fileStorage.remove(file)
                     })
-                    .flatMap { [weak self] filesize -> Single<(UInt64, RItem, RItem)> in
+                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
                         let collectionKeys = collectionKey.flatMap({ Set(arrayLiteral: $0) }) ?? []
                         return self.createItems(response: itemResponse.copy(libraryId: libraryId, collectionKeys: collectionKeys), attachment: attachment)
-                                   .flatMap({ Single.just((filesize, $0, $1)) })
+                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
                                    .do(onError: { [weak self] _ in
                                        // If attachment item couldn't be created in DB, remove the moved file if possible,
                                        // it won't be processed even from the main app
                                        try? self?.fileStorage.remove(file)
                                    })
                     }
-                    .flatMap { [weak self] filesize, item, attachment -> Single<(UInt64, RItem)> in
+                    .flatMap { [weak self] filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        var parameters: [[String: Any]] = []
-                        if let updateParameters = item.updateParameters {
-                            parameters.append(updateParameters)
-                        }
-                        if let updateParameters = attachment.updateParameters {
-                            parameters.append(updateParameters)
-                        }
                         return self.syncHandler.submitUpdate(for: libraryId,
                                                              userId: userId,
                                                              object: .item,
                                                              since: nil,
                                                              parameters: parameters)
-                                               .flatMap({ _ in Single.just((filesize, attachment)) })
+                                               .flatMap({ _ in Single.just((filesize, md5, mtime)) })
                     }
-                    .flatMap { [weak self] filesize, attachment -> Single<AuthorizeUploadResponse> in
+                    .flatMap { [weak self] filesize, md5, mtime -> Single<AuthorizeUploadResponse> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
-                        return self.authorizeUpload(from: attachment, filename: filename, libraryId: libraryId, userId: userId, filesize: filesize)
+                        return self.syncHandler.authorizeUpload(key: attachment.key,
+                                                                filename: filename,
+                                                                filesize: filesize,
+                                                                md5: md5,
+                                                                mtime: mtime,
+                                                                libraryId: libraryId,
+                                                                userId: userId)
                     }
     }
 
@@ -384,26 +383,25 @@ class ExtensionStore {
         }
     }
 
-    private func createItems(response: ItemResponse, attachment: Attachment) -> Single<(RItem, RItem)> {
+    private func createItems(response: ItemResponse, attachment: Attachment) -> Single<([[String: Any]], String, Int)> {
         let request = CreateItemWithAttachmentDbRequest(item: response, attachment: attachment, schemaController: self.schemaController)
         do {
-            let items = try self.dbStorage.createCoordinator().perform(request: request)
-            return Single.just(items)
+            let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
+
+            let mtime = attachment.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+            let md5 = attachment.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+
+            var parameters: [[String: Any]] = []
+            if let updateParameters = item.updateParameters {
+                parameters.append(updateParameters)
+            }
+            if let updateParameters = attachment.updateParameters {
+                parameters.append(updateParameters)
+            }
+
+            return Single.just((parameters, md5, mtime))
         } catch let error {
             return Single.error(error)
         }
-    }
-
-    private func authorizeUpload(from item: RItem, filename: String, libraryId: LibraryIdentifier,
-                                 userId: Int, filesize: UInt64) -> Single<AuthorizeUploadResponse> {
-        let mtime = item.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-        let md5 = item.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
-        return self.syncHandler.authorizeUpload(key: item.key,
-                                                filename: filename,
-                                                filesize: filesize,
-                                                md5: md5,
-                                                mtime: mtime,
-                                                libraryId: libraryId,
-                                                userId: userId)
     }
 }

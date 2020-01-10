@@ -116,8 +116,7 @@ class UserControllers {
         self.changeObserver.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] changedLibraries in
-                                NSLog("Changed libraries")
-//                               self?.syncScheduler.requestSync(for: changedLibraries)
+                               self?.syncScheduler.requestSync(for: changedLibraries)
                            })
                            .disposed(by: self.disposeBag)
     }

@@ -19,10 +19,9 @@ class BackgroundUploader: NSObject {
 
     private var session: URLSession!
     private var finishedUploads: [BackgroundUpload] = []
-    #if MAINAPP
     private var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
-    #endif
     private var disposeBag = DisposeBag()
+
     var uploadProcessor: BackgroundUploadProcessor?
     var backgroundCompletionHandler: (() -> Void)?
 
@@ -66,8 +65,8 @@ class BackgroundUploader: NSObject {
         task.resume()
     }
 
-    /// Create a multipartform request a file ready for upload. The original file is copied to another folder so that we can stream from it,
-    /// it needs to be deleted once the upload finishes (successful or not).
+    /// Creates a multipartform request for a file upload. The original file is copied to another folder so that it can be streamed from it.
+    /// It needs to be deleted once the upload finishes (successful or not).
     /// - parameter upload: Backgroud upload to prepare
     /// - parameter filename: Filename for file to upload
     /// - parameter mimeType: Mimetype of file to upload
@@ -78,9 +77,9 @@ class BackgroundUploader: NSObject {
     private func createMultipartformRequest(for upload: BackgroundUpload, filename: String, mimeType: String,
                                             parameters: [String: String]?, headers: [String: String]? = nil,
                                             completion: @escaping (Swift.Result<(URLRequest, URL), Error>) -> Void) {
-        /// iOS doesn't provide a simple way to create a multipartform request for uploading the file to backend. Alamofire is used to simplify
-        /// the process. Normally, Alamofire would encode the request and send it by itself, but it doesn't support background uploads. So we just
-        /// use it to create a propert multipartform request and file for us, then we copy the request and file and cancel original Alamofire request.
+        // iOS doesn't provide a simple way to create a multipartform request for uploading the file to backend. Alamofire is used to simplify
+        // the process. Normally, Alamofire would encode the request and send it by itself, but it doesn't support background uploads. So we just
+        // use it to create a propert multipartform request and file for us, then we copy the request and file and cancel original Alamofire request.
         Alamofire.upload(multipartFormData: { data in
                              if let parameters = parameters {
                                  // Append parameters to the multipartform request.
@@ -113,10 +112,10 @@ class BackgroundUploader: NSObject {
                                  }
 
                                  do {
-                                     // Copy the file to a location controlled by us, so that it doesn't get deleted before upload.
+                                     // Move the file to a location controlled by us, so that it doesn't get deleted before upload.
                                      let file = Files.file(from: fileUrl)
                                      let newFile = Files.uploadFile(from: fileUrl)
-                                     try self.fileStorage.copy(from: file, to: newFile)
+                                     try self.fileStorage.move(from: file, to: newFile)
                                      // Create a new request with correct URL
                                      var newRequest = URLRequest(url: upload.remoteUrl)
                                      newRequest.httpMethod = "POST"
