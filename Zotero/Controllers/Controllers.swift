@@ -55,6 +55,25 @@ class Controllers {
                                                    .sink { [weak self] data in
                                                        self?.update(sessionData: data)
                                                    }
+
+        // Controllers are initialized in application(:didFinishLaunchingWithOptions:). willEnterForegound is not called after launching the app for
+        // the first time. But we want to run necessary services initially as well as when entering the foreground.
+        self.willEnterForeground()
+    }
+
+    func willEnterForeground() {
+        self.crashReporter.processPendingReports()
+        self.userControllers?.itemLocaleController.loadLocale()
+        // TODO: - run sync after schema loaded (possibly from remote source)
+        self.schemaController.reloadSchemaIfNeeded()
+        self.userControllers?.syncScheduler.requestFullSync()
+        self.userControllers?.startObserving()
+    }
+
+    func didEnterBackground() {
+        self.userControllers?.itemLocaleController.storeLocale()
+        self.userControllers?.syncScheduler.cancelSync()
+        self.userControllers?.stopObserving()
     }
 
     private func update(sessionData: SessionData?) {
@@ -63,9 +82,7 @@ class Controllers {
         // Cancel ongoing sync in case of log out
         self.userControllers?.syncScheduler.cancelSync()
         self.userControllers = sessionData.flatMap { UserControllers(userId: $0.userId, controllers: self) }
-        // Full syncs are enqueued after login or when the app becomes active. So here this needs to be called only after successful login
-        // (it gets called in AppDelegate after becoming active). If we called it in UserControllers.performInitialActions()
-        // we'd queue too many unneeded full sync requests, since that's called on didFinishLaunching as well.
+        // Enqueue full sync after successful login (
         self.userControllers?.syncScheduler.requestFullSync()
     }
 }
@@ -76,7 +93,8 @@ class UserControllers {
     let changeObserver: ObjectChangeObserver
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
-    private let disposeBag: DisposeBag
+
+    private var disposeBag: DisposeBag
 
     init(userId: Int, controllers: Controllers) {
         let dbStorage = UserControllers.createDbStorage(for: userId, controllers: controllers)
@@ -94,8 +112,6 @@ class UserControllers {
         self.changeObserver = RealmObjectChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.disposeBag = DisposeBag()
-
-        self.performInitialActions()
     }
 
     deinit {
@@ -104,7 +120,7 @@ class UserControllers {
         // TODO: - remove cached files
     }
 
-    private func performInitialActions() {
+    func startObserving() {
         do {
             let coordinator = try self.dbStorage.createCoordinator()
             try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
@@ -119,6 +135,10 @@ class UserControllers {
                                self?.syncScheduler.requestSync(for: changedLibraries)
                            })
                            .disposed(by: self.disposeBag)
+    }
+
+    func stopObserving() {
+        self.disposeBag = DisposeBag()
     }
 
     private class func createDbStorage(for userId: Int, controllers: Controllers) -> DbStorage {
