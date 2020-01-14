@@ -93,19 +93,19 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     }
 
     private func logRequest(_ request: ApiRequest, url: URL?) {
-        print("--- API request '\(type(of: request))' ---")
-        print("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
+        DDLogInfo("--- API request '\(type(of: request))' ---")
+        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
         if request.httpMethod != .get, let params = request.parameters {
-            print("\(params)")
+            DDLogInfo("\(params)")
         }
     }
 
     private func logResponse(data: Data?, error: Error?) {
         if let data = data {
             let string = String(data: data, encoding: .utf8)
-            print("\(string ?? "")")
+            DDLogInfo("\(string ?? "")")
         } else if let error = error {
-            print("\(error)")
+            DDLogInfo("\(error)")
         }
     }
 }

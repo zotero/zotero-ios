@@ -24,7 +24,7 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> (RItem, RItem) {
         _ = try StoreItemsDbRequest(response: [self.item], schemaController: self.schemaController, preferRemoteData: true).process(in: database)
 
-        guard let item = database.objects(RItem.self).filter(.key(self.item.key, in: attachment.libraryId)).first else {
+        guard let item = database.objects(RItem.self).filter(.key(self.item.key, in: self.attachment.libraryId)).first else {
             throw DbError.objectNotFound
         }
 

@@ -307,6 +307,7 @@
 		B3A8CD8222258F3600E553F4 /* SettingsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */; };
 		B3A8CD8422258F5000E553F4 /* SettingsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */; };
 		B3A8CD8C2225A12500E553F4 /* TagColorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */; };
+		B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */; };
 		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
 		B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */; };
 		B3AB38A7238EC02D008A1ABB /* ExtensionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */; };
@@ -646,6 +647,7 @@
 		B3A8CD8122258F3600E553F4 /* SettingsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRequest.swift; sourceTree = "<group>"; };
 		B3A8CD8322258F5000E553F4 /* SettingsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsResponse.swift; sourceTree = "<group>"; };
 		B3A8CD8B2225A12500E553F4 /* TagColorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorsView.swift; sourceTree = "<group>"; };
+		B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBackendItemDbRequest.swift; sourceTree = "<group>"; };
 		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerView.swift; sourceTree = "<group>"; };
 		B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionStore.swift; sourceTree = "<group>"; };
@@ -1034,6 +1036,7 @@
 			isa = PBXGroup;
 			children = (
 				B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */,
+				B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */,
 			);
 			path = DbRequests;
 			sourceTree = "<group>";
@@ -2048,6 +2051,7 @@
 				B32661AC238D382E0050335F /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B326A0752388343300249D15 /* Convertible.swift in Sources */,
 				B32661A9238D359B0050335F /* UpdatesResponse.swift in Sources */,
+				B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */,
 				B3266186238D25C20050335F /* SchemaController.swift in Sources */,
 				B3266193238D276C0050335F /* ObjectsRequest.swift in Sources */,
 				B32661B7238D38C50050335F /* AttachmentUploadRequest.swift in Sources */,

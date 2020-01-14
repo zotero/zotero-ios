@@ -101,7 +101,7 @@ class ShareViewController: UIViewController {
     }
 
     @objc private func done() {
-        self.store?.upload()
+        self.store?.submit()
     }
 
     @objc private func cancel() {
@@ -109,14 +109,23 @@ class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        var rightButtonEnabled = state.downloadState.progress == 1
+        var rightButtonEnabled: Bool
+        // Enable "Upload" button if translation and file download (if any) are finished
+        switch state.downloadState {
+        case .downloaded, .translated:
+            rightButtonEnabled = true
+        default:
+            rightButtonEnabled = false
+        }
 
         if let state = state.uploadState {
             self.updateUploadState(state)
             if state == .preparing {
+                // Disable "Upload" button if the upload is being prepared so that the user can't start it multiple times
                 rightButtonEnabled = false
             }
         }
+
         self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
         self.updateToolbar(to: state.downloadState)
         self.updateCollectionPicker(to: state.collectionPickerState)
@@ -203,23 +212,35 @@ class ShareViewController: UIViewController {
     }
 
     private func updateToolbar(to state: ExtensionStore.State.DownloadState) {
-        if let progress = state.progress, progress < 1 {
+        switch state {
+        case .translating:
             if self.toolbarContainer.isHidden {
                 self.showToolbar()
             }
+            self.setToolbarData(title: "Translating", progress: nil)
 
-            if let error = state.error {
-                // TODO: - show actual error
-                self.setToolbarData(title: "Could not download file", progress: nil)
-            } else if progress == 0 {
-                self.setToolbarData(title: "Preparing download", progress: nil)
-            } else {
-                self.setToolbarData(title: "Downloading", progress: progress)
-            }
-        } else {
+        case .translated, .downloaded:
             if !self.toolbarContainer.isHidden {
                 self.hideToolbar()
             }
+
+        case .downloading(_, _, let progress):
+            self.setToolbarData(title: "Downloading", progress: progress)
+
+        case .failed(let error):
+            switch error {
+            case .cantLoadWebData:
+                self.setToolbarData(title: "Translation failed", progress: nil)
+            case .downloadFailed:
+                self.setToolbarData(title: "Download failed", progress: nil)
+            case .itemsNotFound:
+                self.setToolbarData(title: "Translator couldn't find any items", progress: nil)
+            case .parseError:
+                self.setToolbarData(title: "Incorrect item was returned", progress: nil)
+            default:
+                self.setToolbarData(title: "Unknown error", progress: nil)
+            }
+
         }
     }
 
