@@ -37,6 +37,20 @@ class BackgroundUploader: NSObject {
 
     // MARK: - Actions
 
+    func cancel() {
+        self.session.invalidateAndCancel()
+    }
+
+    func ongoingUploads() -> Single<[String]> {
+        return Single.create { subscriber -> Disposable in
+            self.session.getTasksWithCompletionHandler { _, uploads, _ in
+                let allMd5s = uploads.compactMap({ $0.state == .running ? $0.originalRequest?.allHTTPHeaderFields?["md5"] : nil })
+                subscriber(.success(allMd5s))
+            }
+            return Disposables.create()
+        }
+    }
+
     func upload(_ upload: BackgroundUpload,
                 filename: String,
                 mimeType: String,

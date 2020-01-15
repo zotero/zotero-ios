@@ -93,6 +93,7 @@ class UserControllers {
     let changeObserver: ObjectChangeObserver
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
+    let backgroundUploader: BackgroundUploader
 
     private var disposeBag: DisposeBag
 
@@ -111,12 +112,15 @@ class UserControllers {
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.changeObserver = RealmObjectChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
+        self.backgroundUploader = BackgroundUploader.shared
         self.disposeBag = DisposeBag()
     }
 
     deinit {
         // User logged out, clear database, cached files, etc.
         self.dbStorage.clear()
+        // Cancel all pending background uploads
+        self.backgroundUploader.cancel()
         // TODO: - remove cached files
     }
 

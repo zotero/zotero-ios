@@ -199,16 +199,18 @@ class SyncActionHandlerController {
     private let fileStorage: FileStorage
     private let disposeBag: DisposeBag
     private let schemaController: SchemaController
+    private let backgroundUploader: BackgroundUploader
     private let syncDelayIntervals: [Double]
 
     init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage,
-         schemaController: SchemaController, syncDelayIntervals: [Double]) {
+         schemaController: SchemaController, backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double]) {
         let queue = DispatchQueue(label: "org.zotero.SyncHandlerActionQueue", qos: .utility, attributes: .concurrent)
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.apiClient = apiClient
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.backgroundUploader = backgroundUploader
         self.syncDelayIntervals = syncDelayIntervals
         self.disposeBag = DisposeBag()
     }
@@ -630,7 +632,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                 case .exists:
                                     return Single.just(.failure(SyncActionHandlerError.attachmentAlreadyUploaded))
                                 case .new(let response):
-                                    let request = AttachmentUploadRequest(url: response.url)
+                                    let request = AttachmentUploadRequest(url: response.url, md5: md5)
                                     return self.apiClient.upload(request: request) { data in
                                         response.params.forEach({ (key, value) in
                                             if let stringData = value.data(using: .utf8) {
@@ -864,7 +866,14 @@ extension SyncActionHandlerController: SyncActionHandler {
 
     func loadUploadData(in libraryId: LibraryIdentifier) -> Single<[SyncController.AttachmentUpload]> {
         let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId)
+        let ongoingUploadsObservable = self.backgroundUploader.ongoingUploads().asObservable()
         return self.createSingleDbResponseRequest(request)
+                   .asObservable()
+                   .withLatestFrom(ongoingUploadsObservable) { uploads, backgroundUploads -> [SyncController.AttachmentUpload] in
+                       // Filter out uploads that are currently being processed in background, we don't want to start another upload from the main app
+                       return uploads.filter({ !backgroundUploads.contains($0.md5) })
+                   }
+                   .asSingle()
     }
 
     private func createSingleDbResponseRequest<Request: DbResponseRequest>(_ request: Request) -> Single<Request.Response> {
