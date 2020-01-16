@@ -79,8 +79,8 @@ class Controllers {
     private func update(sessionData: SessionData?) {
         self.apiClient.set(authToken: sessionData?.apiToken)
 
-        // Cancel ongoing sync in case of log out
-        self.userControllers?.syncScheduler.cancelSync()
+        // Cleanup user controllers on logout
+        self.userControllers?.cleanup()
         self.userControllers = sessionData.flatMap { UserControllers(userId: $0.userId, controllers: self) }
         // Enqueue full sync after successful login (
         self.userControllers?.syncScheduler.requestFullSync()
@@ -98,12 +98,14 @@ class UserControllers {
     private var disposeBag: DisposeBag
 
     init(userId: Int, controllers: Controllers) {
+        let backgroundUploader = BackgroundUploader.shared
         let dbStorage = UserControllers.createDbStorage(for: userId, controllers: controllers)
 
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
                                                       dbStorage: dbStorage,
                                                       fileStorage: controllers.fileStorage,
                                                       schemaController: controllers.schemaController,
+                                                      backgroundUploader: backgroundUploader,
                                                       syncDelayIntervals: DelayIntervals.sync)
         let syncController = SyncController(userId: userId, handler: syncHandler,
                                             conflictDelays: DelayIntervals.conflict)
@@ -112,12 +114,15 @@ class UserControllers {
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.changeObserver = RealmObjectChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
-        self.backgroundUploader = BackgroundUploader.shared
+        self.backgroundUploader = backgroundUploader
         self.disposeBag = DisposeBag()
     }
 
-    deinit {
-        // User logged out, clear database, cached files, etc.
+    /// Called when user logs out and we need to cleanup stored/cached data
+    func cleanup() {
+        // Stop ongoing sync
+        self.syncScheduler.cancelSync()
+        // Clear DB storage
         self.dbStorage.clear()
         // Cancel all pending background uploads
         self.backgroundUploader.cancel()

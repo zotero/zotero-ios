@@ -81,31 +81,26 @@ class ExtensionStore {
     private static let defaultMimetype = "application/pdf"
 
     private let syncController: SyncController
+    private let syncHandler: SyncActionHandler
     private let apiClient: ApiClient
     private let backgroundUploader: BackgroundUploader
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
     private let webViewHandler: WebViewHandler
-    private let syncHandler: SyncActionHandler
     private let disposeBag: DisposeBag
 
     // MARK: - Lifecycle
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, dbStorage: DbStorage,
-         schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController) {
+         schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController, syncActionHandler: SyncActionHandler) {
         self.syncController = syncController
         self.apiClient = apiClient
         self.backgroundUploader = backgroundUploader
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
-        self.syncHandler = SyncActionHandlerController(userId: Defaults.shared.userId,
-                                                       apiClient: apiClient,
-                                                       dbStorage: dbStorage,
-                                                       fileStorage: fileStorage,
-                                                       schemaController: schemaController,
-                                                       syncDelayIntervals: [])
+        self.syncHandler = syncActionHandler
         self.webViewHandler = WebViewHandler(webView: webView, apiClient: apiClient, fileStorage: fileStorage)
         self.state = State()
         self.disposeBag = DisposeBag()
@@ -313,6 +308,7 @@ class ExtensionStore {
         case .downloaded(let item, let attachmentData):
             let newItem = item.copy(libraryId: libraryId, collectionKeys: collectionKeys)
             let filename = attachmentData["title"] ?? self.state.title ?? "Unknown"
+            let bundleUrl = Bundle.main.url(forResource: "test", withExtension: "pdf")!
             let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
             let attachment = Attachment(key: key, title: filename, type: .file(file: file, filename: filename, isLocal: true), libraryId: libraryId)
             self.upload(key: key, item: newItem, attachment: attachment, file: file,
@@ -356,7 +352,7 @@ class ExtensionStore {
                         filename: String, libraryId: LibraryIdentifier, userId: Int) {
         self.prepareUpload(itemResponse: item, attachment: attachment, file: file, filename: filename,
                        libraryId: libraryId, userId: userId)
-            .subscribe(onSuccess: { [weak self] response in
+            .subscribe(onSuccess: { [weak self] response, md5 in
                 guard let `self` = self else { return }
 
                 switch response {
@@ -370,6 +366,7 @@ class ExtensionStore {
                                                params: response.params,
                                                key: key,
                                                uploadKey: response.uploadKey,
+                                               md5: md5,
                                                libraryId: libraryId,
                                                userId: userId)
                 }
@@ -381,7 +378,7 @@ class ExtensionStore {
     }
 
     private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File, filename: String,
-                               libraryId: LibraryIdentifier, userId: Int) -> Single<AuthorizeUploadResponse> {
+                               libraryId: LibraryIdentifier, userId: Int) -> Single<(AuthorizeUploadResponse, String)> {
         return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
                     .do(onError: { [weak self] _ in
                         // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
@@ -407,7 +404,7 @@ class ExtensionStore {
                                                              parameters: parameters)
                                                .flatMap({ _ in Single.just((filesize, md5, mtime)) })
                     }
-                    .flatMap { [weak self] filesize, md5, mtime -> Single<AuthorizeUploadResponse> in
+                    .flatMap { [weak self] filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
                         guard let `self` = self else { return Single.error(UploadError.expired) }
                         return self.syncHandler.authorizeUpload(key: attachment.key,
                                                                 filename: filename,
@@ -416,22 +413,25 @@ class ExtensionStore {
                                                                 mtime: mtime,
                                                                 libraryId: libraryId,
                                                                 userId: userId)
+                                               .flatMap({ return Single.just(($0, md5)) })
                     }
     }
 
     private func startBackgroundUpload(to url: URL, filename: String, file: File, params: [String: String],
-                                       key: String, uploadKey: String, libraryId: LibraryIdentifier, userId: Int) {
+                                       key: String, uploadKey: String, md5: String, libraryId: LibraryIdentifier, userId: Int) {
         let upload = BackgroundUpload(key: key,
                                       libraryId: libraryId,
                                       userId: userId,
                                       remoteUrl: url,
                                       fileUrl: file.createUrl(),
-                                      uploadKey: uploadKey)
+                                      uploadKey: uploadKey,
+                                      md5: md5)
         self.backgroundUploader.upload(upload,
                                        filename: filename,
                                        mimeType: ExtensionStore.defaultMimetype,
                                        parameters: params,
-                                       headers: ["If-None-Match": "*"]) { [weak self] error in
+                                       headers: ["If-None-Match": "*",
+                                                 "md5": md5]) { [weak self] error in
                                            if let error = error {
                                                // TODO: - Log error
                                                self?.state.uploadState = .error(.unknown)

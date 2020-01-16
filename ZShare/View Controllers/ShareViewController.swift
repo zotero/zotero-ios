@@ -327,6 +327,7 @@ class ShareViewController: UIViewController {
                                                       dbStorage: dbStorage,
                                                       fileStorage: fileStorage,
                                                       schemaController: schemaController,
+                                                      backgroundUploader: BackgroundUploader.shared,
                                                       syncDelayIntervals: DelayIntervals.sync)
         let syncController = SyncController(userId: userId, handler: syncHandler,
                                             conflictDelays: DelayIntervals.conflict)
@@ -337,6 +338,7 @@ class ShareViewController: UIViewController {
                               dbStorage: dbStorage,
                               schemaController: schemaController,
                               fileStorage: fileStorage,
-                              syncController: syncController)
+                              syncController: syncController,
+                              syncActionHandler: syncHandler)
     }
 }

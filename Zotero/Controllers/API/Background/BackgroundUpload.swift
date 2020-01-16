@@ -17,6 +17,7 @@ struct BackgroundUpload: Codable {
     let remoteUrl: URL
     let fileUrl: URL
     let uploadKey: String
+    let md5: String
 
     var completion: BackgroundUploadCompletion?
 
@@ -27,10 +28,11 @@ struct BackgroundUpload: Codable {
                                 remoteUrl: self.remoteUrl,
                                 fileUrl: fileUrl,
                                 uploadKey: self.uploadKey,
+                                md5: self.md5,
                                 completion: self.completion)
     }
 
     private enum CodingKeys: String, CodingKey {
-        case key, libraryId, userId, remoteUrl, fileUrl, uploadKey
+        case key, libraryId, userId, remoteUrl, fileUrl, uploadKey, md5
     }
 }

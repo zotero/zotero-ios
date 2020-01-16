@@ -9,36 +9,32 @@
 import Foundation
 
 class BackgroundUploaderContext {
-    private var uploads: [Int: BackgroundUpload] = [:]
+    private static let key = "uploads"
+
     private let userDefault = UserDefaults(suiteName: AppGroup.identifier) ?? UserDefaults.standard
 
-    func loadUpload(for taskId: Int) -> BackgroundUpload? {
-        if let upload = self.uploads[taskId] {
-            return upload
-        } else if let upload = self.loadUploadFromStorage(with: taskId) {
-            self.uploads[taskId] = upload
-            return upload
-        }
-        return nil
+    var activeUploads: [BackgroundUpload] {
+        return (self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]).flatMap({ Array($0.values) }) ?? []
     }
 
-    private func loadUploadFromStorage(with taskId: Int) -> BackgroundUpload? {
-        guard let data = self.userDefault.object(forKey: self.defaultsKey(for: taskId)) as? Data else { return nil }
-        return try? JSONDecoder().decode(BackgroundUpload.self, from: data)
+    func loadUpload(for taskId: Int) -> BackgroundUpload? {
+        let data = self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]
+        return data?[taskId]
     }
 
     func saveUpload(_ upload: BackgroundUpload, taskId: Int) {
-        self.uploads[taskId] = upload
-        let data = try? JSONEncoder().encode(upload)
-        self.userDefault.set(data, forKey: self.defaultsKey(for: taskId))
+        var uploads = (self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]) ?? [:]
+        uploads[taskId] = upload
+        self.userDefault.set(uploads, forKey: BackgroundUploaderContext.key)
     }
 
     func deleteUpload(with taskId: Int) {
-        self.uploads[taskId] = nil
-        self.userDefault.removeObject(forKey: self.defaultsKey(for: taskId))
+        var uploads = (self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]) ?? [:]
+        uploads[taskId] = nil
+        self.userDefault.set(uploads, forKey: BackgroundUploaderContext.key)
     }
 
-    private func defaultsKey(for taskId: Int) -> String {
-        return "upload_\(taskId)"
+    func deleteAllUploads() {
+        self.userDefault.removeObject(forKey: BackgroundUploaderContext.key)
     }
 }

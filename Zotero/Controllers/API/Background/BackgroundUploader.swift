@@ -19,6 +19,7 @@ class BackgroundUploader: NSObject {
 
     private var session: URLSession!
     private var finishedUploads: [BackgroundUpload] = []
+    private var uploadsFinishedProcessing: Bool = true
     private var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
     private var disposeBag = DisposeBag()
 
@@ -39,16 +40,11 @@ class BackgroundUploader: NSObject {
 
     func cancel() {
         self.session.invalidateAndCancel()
+        self.context.deleteAllUploads()
     }
 
-    func ongoingUploads() -> Single<[String]> {
-        return Single.create { subscriber -> Disposable in
-            self.session.getTasksWithCompletionHandler { _, uploads, _ in
-                let allMd5s = uploads.compactMap({ $0.state == .running ? $0.originalRequest?.allHTTPHeaderFields?["md5"] : nil })
-                subscriber(.success(allMd5s))
-            }
-            return Disposables.create()
-        }
+    func ongoingUploads() -> [String] {
+        return self.context.activeUploads.map({ $0.md5 })
     }
 
     func upload(_ upload: BackgroundUpload,
@@ -72,6 +68,8 @@ class BackgroundUploader: NSObject {
                                             }
                                         })
     }
+
+    // MARK: - Uploading
 
     private func startUpload(_ upload: BackgroundUpload, request: URLRequest) {
         let task = self.session.uploadTask(with: request, fromFile: upload.fileUrl)
@@ -147,13 +145,11 @@ class BackgroundUploader: NSObject {
                              }
                          }
     }
-}
 
-extension BackgroundUploader: URLSessionDelegate {
-    /// Background uploads started in share extension are started in background session and the share extension is closed immediately.
-    /// The background url session always finishes in main app. We need to ask for additional time to register uploads and write results to DB.
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        guard !self.finishedUploads.isEmpty,
+    // MARK: - Finishing upload
+
+    private func finishUploads(uploads: [BackgroundUpload]) {
+        guard !uploads.isEmpty,
               let processor = self.uploadProcessor else {
             self.completeBackgroundSession()
             return
@@ -162,15 +158,16 @@ extension BackgroundUploader: URLSessionDelegate {
         // Start background task so that we can send register requests to API and store results in DB.
         self.startBackgroundTask()
         // Create actions for all uploads for this background session.
-        let actions = self.finishedUploads.map({ processor.finish(upload: $0) })
-        self.finishedUploads = []
+        let actions = uploads.map({ processor.finish(upload: $0) })
         // Process all actions, call appropriate completion handlers and finish the background task.
         Observable.concat(actions)
                   .observeOn(MainScheduler.instance)
                   .subscribe(onError: { [weak self] error in
+                      self?.uploadsFinishedProcessing = true
                       self?.completeBackgroundSession()
                       self?.endBackgroundTask()
                   }, onCompleted: { [weak self] in
+                      self?.uploadsFinishedProcessing = true
                       self?.completeBackgroundSession()
                       self?.endBackgroundTask()
                   })
@@ -186,6 +183,7 @@ extension BackgroundUploader: URLSessionDelegate {
     /// is started, so the upload will be finished in the main app.
     private func startBackgroundTask() {
         #if MAINAPP
+        guard UIApplication.shared.applicationState == .background else { return }
         self.backgroundTaskId = UIApplication.shared.beginBackgroundTask(withName: "org.zotero.background.upload.finish") { [weak self] in
             guard let `self` = self else { return }
             // If the background time expired, cancel ongoing upload processing
@@ -199,16 +197,35 @@ extension BackgroundUploader: URLSessionDelegate {
     /// Ends the background task in the main app.
     private func endBackgroundTask() {
         #if MAINAPP
+        guard self.backgroundTaskId != .invalid else { return }
         UIApplication.shared.endBackgroundTask(self.backgroundTaskId)
         self.backgroundTaskId = .invalid
         #endif
     }
 }
 
+extension BackgroundUploader: URLSessionDelegate {
+    /// Background uploads started in share extension are started in background session and the share extension is closed immediately.
+    /// The background url session always finishes in main app. We need to ask for additional time to register uploads and write results to DB.
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        if self.uploadsFinishedProcessing {
+            self.completeBackgroundSession()
+        }
+    }
+}
+
 extension BackgroundUploader: URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let upload = self.context.loadUpload(for: task.taskIdentifier) else { return }
-        self.finishedUploads.append(upload)
-        self.context.deleteUpload(with: task.taskIdentifier)
+        self.uploadsFinishedProcessing = false
+
+        if let upload = self.context.loadUpload(for: task.taskIdentifier) {
+            self.finishedUploads.append(upload)
+            self.context.deleteUpload(with: task.taskIdentifier)
+        }
+
+        if self.context.activeUploads.isEmpty {
+            self.finishUploads(uploads: self.finishedUploads)
+            self.finishedUploads = []
+        }
     }
 }

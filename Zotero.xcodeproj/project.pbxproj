@@ -149,6 +149,7 @@
 		B337AB6522E0C7CF0092AC22 /* AuthorizeUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6422E0C7CF0092AC22 /* AuthorizeUploadRequest.swift */; };
 		B337AB6722E0CAD90092AC22 /* AuthorizeUploadResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6622E0CAD90092AC22 /* AuthorizeUploadResponse.swift */; };
 		B337AB6922E0DD080092AC22 /* AttachmentUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337AB6822E0DD080092AC22 /* AttachmentUploadRequest.swift */; };
+		B338810D23D0BD7500A44937 /* BackgroundUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856C23C35AB700920FFC /* BackgroundUploader.swift */; };
 		B33920D32373497C00FDD3C2 /* ItemTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920D22373497C00FDD3C2 /* ItemTitleFormatter.swift */; };
 		B33920D7237349C400FDD3C2 /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920D4237349C400FDD3C2 /* KeyGenerator.swift */; };
 		B33920D8237349C400FDD3C2 /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33920D5237349C400FDD3C2 /* Formatter.swift */; };
@@ -344,7 +345,6 @@
 		B3BABCC323A1543E00B4C893 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BABCC123A1526000B4C893 /* TranslatorsController.swift */; };
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
-		B3BD0B4B23C749E500DFA54C /* BackgroundUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856C23C35AB700920FFC /* BackgroundUploader.swift */; };
 		B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B3BD28A523967EF400175E34 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B4B6892384338400D4FD3F /* SessionController.swift */; };
 		B3BD28A62396911700175E34 /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487300221D73CA00244CCC /* FileRequest.swift */; };
@@ -1945,6 +1945,7 @@
 			files = (
 				B387FF87238C47E400D85097 /* RSearch.swift in Sources */,
 				B320299023C4CA32009FEF09 /* BackgroundUpload.swift in Sources */,
+				B338810D23D0BD7500A44937 /* BackgroundUploader.swift in Sources */,
 				B326619C238D27ED0050335F /* DeletionsRequest.swift in Sources */,
 				B3266194238D27990050335F /* Defaults.swift in Sources */,
 				B3266190238D27550050335F /* KeyRequest.swift in Sources */,
@@ -1998,7 +1999,6 @@
 				B326617E238D248F0050335F /* SyncProgressHandler.swift in Sources */,
 				B3AB38B2238ECC17008A1ABB /* ReadCollectionsDbRequest.swift in Sources */,
 				B387FF92238C57B900D85097 /* LibraryObject.swift in Sources */,
-				B3BD0B4B23C749E500DFA54C /* BackgroundUploader.swift in Sources */,
 				B32661B1238D385A0050335F /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B387FF8A238C47F100D85097 /* RTag.swift in Sources */,
 				B32661AF238D384A0050335F /* SubmitDeletionsRequest.swift in Sources */,

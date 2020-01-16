@@ -632,7 +632,7 @@ extension SyncActionHandlerController: SyncActionHandler {
                                 case .exists:
                                     return Single.just(.failure(SyncActionHandlerError.attachmentAlreadyUploaded))
                                 case .new(let response):
-                                    let request = AttachmentUploadRequest(url: response.url, md5: md5)
+                                    let request = AttachmentUploadRequest(url: response.url)
                                     return self.apiClient.upload(request: request) { data in
                                         response.params.forEach({ (key, value) in
                                             if let stringData = value.data(using: .utf8) {
@@ -865,15 +865,12 @@ extension SyncActionHandlerController: SyncActionHandler {
     }
 
     func loadUploadData(in libraryId: LibraryIdentifier) -> Single<[SyncController.AttachmentUpload]> {
+        let backgroundUploads = self.backgroundUploader.ongoingUploads()
         let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId)
-        let ongoingUploadsObservable = self.backgroundUploader.ongoingUploads().asObservable()
         return self.createSingleDbResponseRequest(request)
-                   .asObservable()
-                   .withLatestFrom(ongoingUploadsObservable) { uploads, backgroundUploads -> [SyncController.AttachmentUpload] in
-                       // Filter out uploads that are currently being processed in background, we don't want to start another upload from the main app
-                       return uploads.filter({ !backgroundUploads.contains($0.md5) })
-                   }
-                   .asSingle()
+                   .flatMap({ uploads in
+                       return Single.just(uploads.filter({ !backgroundUploads.contains($0.md5) }))
+                   })
     }
 
     private func createSingleDbResponseRequest<Request: DbResponseRequest>(_ request: Request) -> Single<Request.Response> {

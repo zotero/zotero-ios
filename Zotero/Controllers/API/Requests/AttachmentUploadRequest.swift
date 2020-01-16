@@ -10,7 +10,6 @@ import Foundation
 
 struct AttachmentUploadRequest: ApiRequest {
     let url: URL
-    let md5: String
 
     var endpoint: ApiEndpoint {
         return .other(self.url)
@@ -29,7 +28,6 @@ struct AttachmentUploadRequest: ApiRequest {
     }
 
     var headers: [String : String]? {
-        return ["If-None-Match": "*",
-                "md5": self.md5]
+        return ["If-None-Match": "*"]
     }
 }
