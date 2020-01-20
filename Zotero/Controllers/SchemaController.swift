@@ -26,64 +26,40 @@ protocol SchemaDataSource: class {
 }
 
 class SchemaController {
+    enum Error: Swift.Error {
+        case etagMissing, cachedDataNotJson
+    }
+
     private let apiClient: ApiClient
-    private let userDefaults: UserDefaults
-    private let defaultsDateKey: String
-    private let defaultsEtagKey: String
+    private let fileStorage: FileStorage
     private let disposeBag: DisposeBag
-    private let minReloadInterval: Double
 
     private(set) var itemSchemas: [String: ItemSchema] = [:]
     private(set) var locales: [String: SchemaLocale] = [:]
     private(set) var version: Int = 0
+    private(set) var etag: String = ""
 
-    init(apiClient: ApiClient, userDefaults: UserDefaults) {
+    init(apiClient: ApiClient, fileStorage: FileStorage) {
         self.apiClient = apiClient
-        self.userDefaults = userDefaults
-        self.defaultsDateKey = "SchemaControllerLastFetchKey"
-        self.defaultsEtagKey = "SchemaControllerEtagKey"
+        self.fileStorage = fileStorage
         self.disposeBag = DisposeBag()
-        self.minReloadInterval = 86400 // 1 day
-    }
 
-    func reloadSchemaIfNeeded() {
-        if self.itemSchemas.isEmpty || self.locales.isEmpty {
+        if self.fileStorage.has(Files.schemaFile) {
+            self.loadCachedData()
+        } else {
             self.loadBundledData()
         }
-        self.fetchSchemaIfNeeded()
-    }
-
-    private func fetchSchemaIfNeeded() {
-        let lastFetchTimestamp = self.userDefaults.double(forKey: self.defaultsDateKey)
-
-        if lastFetchTimestamp == 0 {
-            self.fetchSchema()
-            return
-        }
-
-        let lastFetchDate = Date(timeIntervalSince1970: lastFetchTimestamp)
-        if Date().timeIntervalSince(lastFetchDate) >= self.minReloadInterval {
-            self.fetchSchema()
-        }
-    }
-
-    private func fetchSchema() {
-        self.createFetchSchemaCompletable().observeOn(MainScheduler.instance).subscribe().disposed(by: self.disposeBag)
     }
 
     func createFetchSchemaCompletable() -> Completable {
-        let etag = self.userDefaults.string(forKey: self.defaultsEtagKey)
         return self.apiClient.send(request: SchemaRequest(etag: etag))
                              .do(onSuccess: { [weak self] (data, headers) in
                                  guard let `self` = self else { return }
-                                 self.reloadSchema(from: data)
                                  // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
                                  let lowercase = headers["etag"] as? String
-                                 let uppercase = headers["ETag"] as? String
-                                 if let etag = lowercase ?? uppercase {
-                                     self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
-                                 }
-                                 self.userDefaults.set(Date().timeIntervalSince1970, forKey: self.defaultsDateKey)
+                                 let uppercase = headers["Etag"] as? String
+                                 let etag = lowercase ?? uppercase ?? ""
+                                 self.processResponse(data, etag: etag)
                              }, onError: { error in
                                  if error.isUnchangedError {
                                      return
@@ -96,29 +72,58 @@ class SchemaController {
                              .asCompletable()
     }
 
+    private func processResponse(_ data: Data, etag: String) {
+        guard let jsonData = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any] else { return }
+        self.storeSchema(from: jsonData, etag: etag)
+        self.cache(json: jsonData, etag: etag)
+    }
+
+    private func cache(json: [String: Any], etag: String) {
+        var newJson = json
+        newJson["etag"] = etag
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: newJson, options: [])
+            try self.fileStorage.write(data, to: Files.schemaFile, options: .atomicWrite)
+        } catch let error {
+            DDLogError("SchemaController: could not cache file - \(error)")
+        }
+    }
+
+    private func loadCachedData() {
+        do {
+            let data = try self.fileStorage.read(Files.schemaFile)
+            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+
+            guard let json = jsonObject as? [String: Any] else { throw Error.cachedDataNotJson }
+            guard let etag = json["etag"] as? String else { throw Error.etagMissing }
+
+            self.storeSchema(from: json, etag: etag)
+        } catch let error {
+            DDLogError("SchemaController: could not load cached data - \(error)")
+            self.loadBundledData()
+        }
+    }
+
     private func loadBundledData() {
         guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
         guard let schemaData = try? Data(contentsOf: url),
-              let (etagPart, schemaPart) = self.chunks(from: schemaData, separator: "\n\n") else { return }
-        self.storeEtag(from: etagPart)
-        self.reloadSchema(from: schemaPart)
+              let (etagPart, schemaPart) = self.chunks(from: schemaData, separator: "\n\n"),
+              let etag = self.etag(from: etagPart),
+              let json = try? JSONSerialization.jsonObject(with: schemaPart, options: .allowFragments) as? [String: Any] else { return }
+        self.storeSchema(from: json, etag: etag)
     }
 
-    private func storeEtag(from data: Data) {
-        if let etag = self.etag(from: data) {
-            self.userDefaults.set(etag, forKey: self.defaultsEtagKey)
-        }
-    }
-
-    private func reloadSchema(from data: Data) {
-        guard let jsonData = try? JSONSerialization.jsonObject(with: data,
-                                                               options: .allowFragments) as? [String: Any] else { return }
-        let schema = SchemaResponse(data: jsonData)
+    private func storeSchema(from json: [String: Any], etag: String) {
+        let schema = SchemaResponse(data: json)
         self.itemSchemas = schema.itemSchemas
         self.locales = schema.locales
         self.version = schema.version
+        self.etag = etag
     }
+
+    // MARK: - Helpers
 
     private func etag(from data: Data) -> String? {
         guard let headers = String(data: data, encoding: .utf8) else { return nil }

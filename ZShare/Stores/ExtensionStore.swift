@@ -112,8 +112,7 @@ class ExtensionStore {
     // MARK: - Setup
 
     func setup(with extensionItem: NSExtensionItem) {
-        // TODO: - when SchemaController stores schemas correctly add it as Observable, so that we wait for remote schema update if needed
-        self.schemaController.reloadSchemaIfNeeded()
+        // TODO: - Add schema observable to sycn controller and observe when schema has been loaded, then load document
         self.syncController.start(type: .normal, libraries: .all)
         self.loadDocument(with: extensionItem)
     }

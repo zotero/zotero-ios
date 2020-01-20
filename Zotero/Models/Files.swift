@@ -21,6 +21,10 @@ struct Files {
         return NSSearchPathForDirectoriesInDomains(.cachesDirectory, .allDomainsMask, true).first ?? "/"
     }()
 
+    static var schemaFile: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: [], name: "schema", ext: "json")
+    }
+
     static func shareExtensionTmpItem(key: String, ext: String) -> File {
         return FileData(rootPath: Files.appGroupPath,
                         relativeComponents: ["tmp"],

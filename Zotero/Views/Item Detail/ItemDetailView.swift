@@ -115,7 +115,6 @@ fileprivate extension EditMode {
 struct ItemDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        controllers.schemaController.reloadSchemaIfNeeded()
         let store = ItemDetailStore(type: .creation(libraryId: .custom(.myLibrary),
                                                     collectionKey: nil, filesEditable: true),
                                     userId: Defaults.shared.userId,

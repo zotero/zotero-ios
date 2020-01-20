@@ -320,7 +320,7 @@ class ShareViewController: UIViewController {
         apiClient.set(authToken: authToken)
 
         let fileStorage = FileStorageController()
-        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
+        let schemaController = SchemaController(apiClient: apiClient, fileStorage: fileStorage)
 
         let syncHandler = SyncActionHandlerController(userId: userId,
                                                       apiClient: apiClient,

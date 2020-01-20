@@ -30,17 +30,18 @@ class Controllers {
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
         configuration.sharedContainerIdentifier = AppGroup.identifier
 
+        let fileStorage = FileStorageController()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage)
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let crashReporter = CrashReporter(apiClient: apiClient)
-        let schemaController = SchemaController(apiClient: apiClient, userDefaults: UserDefaults.zotero)
+        let schemaController = SchemaController(apiClient: apiClient, fileStorage: fileStorage)
 
         self.sessionController = sessionController
         self.apiClient = apiClient
         self.secureStorage = secureStorage
-        self.fileStorage = FileStorageController()
+        self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.dragDropController = DragDropController()
         self.crashReporter = crashReporter
@@ -64,8 +65,6 @@ class Controllers {
     func willEnterForeground() {
         self.crashReporter.processPendingReports()
         self.userControllers?.itemLocaleController.loadLocale()
-        // TODO: - run sync after schema loaded (possibly from remote source)
-        self.schemaController.reloadSchemaIfNeeded()
         self.userControllers?.syncScheduler.requestFullSync()
         self.userControllers?.startObserving()
     }
