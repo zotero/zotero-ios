@@ -348,6 +348,8 @@
 		B3BD28A423967EED00175E34 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36795FC22078F15003D0471 /* SecureStorage.swift */; };
 		B3BD28A523967EF400175E34 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B4B6892384338400D4FD3F /* SessionController.swift */; };
 		B3BD28A62396911700175E34 /* FileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3487300221D73CA00244CCC /* FileRequest.swift */; };
+		B3C1B69723D5AE3700475834 /* UserDefaults+Codable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C1B69623D5AE3700475834 /* UserDefaults+Codable.swift */; };
+		B3C1B69823D5AE3C00475834 /* UserDefaults+Codable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C1B69623D5AE3700475834 /* UserDefaults+Codable.swift */; };
 		B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D852236676C0071A763 /* SyncScheduler.swift */; };
 		B3C33D8E223698C90071A763 /* UpdatesRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8D223698C90071A763 /* UpdatesRequest.swift */; };
 		B3C33D9022369B2F0071A763 /* ArrayEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */; };
@@ -678,6 +680,7 @@
 		B3BABCC123A1526000B4C893 /* TranslatorsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
+		B3C1B69623D5AE3700475834 /* UserDefaults+Codable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Codable.swift"; sourceTree = "<group>"; };
 		B3C33D852236676C0071A763 /* SyncScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
 		B3C33D8D223698C90071A763 /* UpdatesRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesRequest.swift; sourceTree = "<group>"; };
 		B3C33D8F22369B2F0071A763 /* ArrayEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrayEncoding.swift; sourceTree = "<group>"; };
@@ -971,6 +974,7 @@
 				B3E8ABFE2344B6C300CCED64 /* PreferenceKeys.swift */,
 				B33A56BD2356329C00C33F28 /* UserDefault+PropertyWrapper.swift */,
 				B3D12C66236B35330001A4F5 /* Notifications.swift */,
+				B3C1B69623D5AE3700475834 /* UserDefaults+Codable.swift */,
 			);
 			path = Extras;
 			sourceTree = "<group>";
@@ -1809,6 +1813,7 @@
 				B363034C224B8285009F839F /* Predicates.swift in Sources */,
 				B33A56B223561F9200C33F28 /* SettingsListView.swift in Sources */,
 				B33744FD232BEAD70082760A /* ActivityView.swift in Sources */,
+				B3C1B69723D5AE3700475834 /* UserDefaults+Codable.swift in Sources */,
 				B3FD6B33220D8130008D9D74 /* LibraryResponse.swift in Sources */,
 				B3FFDEDB228031AA0009EBBE /* DeletableObject.swift in Sources */,
 				B38C9698223FFB2900343F8F /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */,
@@ -1976,6 +1981,7 @@
 				B32661A2238D34AD0050335F /* Array+Utils.swift in Sources */,
 				B3BD28A62396911700175E34 /* FileRequest.swift in Sources */,
 				B32661A4238D35130050335F /* SearchesResponse.swift in Sources */,
+				B3C1B69823D5AE3C00475834 /* UserDefaults+Codable.swift in Sources */,
 				B3AB38AD238ECA11008A1ABB /* LibraryRow.swift in Sources */,
 				B326617C238D24740050335F /* SyncScheduler.swift in Sources */,
 				B326618F238D27500050335F /* KeyedResponse.swift in Sources */,

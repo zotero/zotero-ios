@@ -13,25 +13,26 @@ class BackgroundUploaderContext {
 
     private let userDefault = UserDefaults(suiteName: AppGroup.identifier) ?? UserDefaults.standard
 
+    // MARK: - Actions
+
     var activeUploads: [BackgroundUpload] {
-        return (self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]).flatMap({ Array($0.values) }) ?? []
+        return self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.key).flatMap({ Array($0.values) }) ?? []
     }
 
     func loadUpload(for taskId: Int) -> BackgroundUpload? {
-        let data = self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]
-        return data?[taskId]
+        return self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.key)?[taskId]
     }
 
     func saveUpload(_ upload: BackgroundUpload, taskId: Int) {
-        var uploads = (self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]) ?? [:]
+        var uploads = self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.key) ?? [:]
         uploads[taskId] = upload
-        self.userDefault.set(uploads, forKey: BackgroundUploaderContext.key)
+        self.userDefault.set(object: uploads, forKey: BackgroundUploaderContext.key)
     }
 
     func deleteUpload(with taskId: Int) {
-        var uploads = (self.userDefault.object(forKey: BackgroundUploaderContext.key) as? [Int: BackgroundUpload]) ?? [:]
+        var uploads = self.userDefault.object([Int: BackgroundUpload].self, with: BackgroundUploaderContext.key) ?? [:]
         uploads[taskId] = nil
-        self.userDefault.set(uploads, forKey: BackgroundUploaderContext.key)
+        self.userDefault.set(object: uploads, forKey: BackgroundUploaderContext.key)
     }
 
     func deleteAllUploads() {
