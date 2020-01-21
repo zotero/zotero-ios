@@ -12,7 +12,6 @@ import RxCocoa
 import RxSwift
 
 protocol SynchronizationScheduler: class {
-    var progressObservable: BehaviorRelay<SyncProgress?> { get }
     var syncController: SynchronizationController { get }
 
     func requestFullSync()
@@ -34,10 +33,6 @@ final class SyncScheduler: SynchronizationScheduler {
     private var inProgress: SchedulerAction?
     private var nextAction: SchedulerAction?
     private var timerDisposeBag: DisposeBag
-
-    var progressObservable: BehaviorRelay<SyncProgress?> {
-        return self.syncController.progressObservable
-    }
 
     init(controller: SynchronizationController) {
         self.syncController = controller

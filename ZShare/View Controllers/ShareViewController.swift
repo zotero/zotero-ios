@@ -111,14 +111,14 @@ class ShareViewController: UIViewController {
     private func update(to state: ExtensionStore.State) {
         var rightButtonEnabled: Bool
         // Enable "Upload" button if translation and file download (if any) are finished
-        switch state.downloadState {
+        switch state.translationState {
         case .downloaded, .translated:
             rightButtonEnabled = true
         default:
             rightButtonEnabled = false
         }
 
-        if let state = state.uploadState {
+        if let state = state.submissionState {
             self.updateUploadState(state)
             if state == .preparing {
                 // Disable "Upload" button if the upload is being prepared so that the user can't start it multiple times
@@ -127,13 +127,13 @@ class ShareViewController: UIViewController {
         }
 
         self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
-        self.updateToolbar(to: state.downloadState)
+        self.updateToolbar(to: state.translationState)
         self.updateCollectionPicker(to: state.collectionPickerState)
         self.navigationItem.title = state.title
         self.updateItemPicker(to: state.itemPickerState)
     }
 
-    private func updateUploadState(_ state: ExtensionStore.State.UploadState) {
+    private func updateUploadState(_ state: ExtensionStore.State.SubmissionState) {
         switch state {
         case .ready:
             self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
@@ -211,7 +211,7 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateToolbar(to state: ExtensionStore.State.DownloadState) {
+    private func updateToolbar(to state: ExtensionStore.State.TranslationState) {
         switch state {
         case .translating:
             if self.toolbarContainer.isHidden {
@@ -229,6 +229,8 @@ class ShareViewController: UIViewController {
 
         case .failed(let error):
             switch error {
+            case .cantLoadSchema:
+                self.setToolbarData(title: "Could not update schema", progress: nil)
             case .cantLoadWebData:
                 self.setToolbarData(title: "Translation failed", progress: nil)
             case .downloadFailed:
@@ -237,7 +239,7 @@ class ShareViewController: UIViewController {
                 self.setToolbarData(title: "Translator couldn't find any items", progress: nil)
             case .parseError:
                 self.setToolbarData(title: "Incorrect item was returned", progress: nil)
-            default:
+            case .unknown, .expired:
                 self.setToolbarData(title: "Unknown error", progress: nil)
             }
 

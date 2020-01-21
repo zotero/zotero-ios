@@ -173,8 +173,10 @@ final class SyncController: SynchronizationController {
     private let handler: SyncActionHandler
     private let progressHandler: SyncProgressHandler
     private let conflictDelays: [Int]
-    /// Bool specifies whether a new sync is needed, SyncType and LibrarySyncType are types used for new sync
+    // Bool specifies whether a new sync is needed, SyncType and LibrarySyncType are types used for new sync
     let observable: PublishSubject<(SyncController.SyncType, SyncController.LibrarySyncType)?>
+    // Observable for when schema was updated, in case there is a need to perform additional tasks after schema is up to date.
+    let schemaObservable: PublishSubject<()>
 
     private var queue: [Action]
     private var processingAction: Action?
@@ -206,6 +208,7 @@ final class SyncController: SynchronizationController {
         self.handler = handler
         self.timerScheduler = ConcurrentDispatchQueueScheduler(queue: accessQueue)
         self.observable = PublishSubject()
+        self.schemaObservable = PublishSubject()
         self.progressHandler = SyncProgressHandler()
         self.disposeBag = DisposeBag()
         self.queue = []
@@ -528,6 +531,8 @@ final class SyncController: SynchronizationController {
                                               if needsSchemaUpdate {
                                                   self?.enqueue(actions: [.updateSchema], at: 0)
                                               } else {
+                                                  // Report schema update as done, since it's up to date
+                                                  self?.schemaObservable.on(.next(()))
                                                   self?.processNextAction()
                                               }
                                           }
@@ -540,11 +545,21 @@ final class SyncController: SynchronizationController {
     private func updateSchema() {
         self.handler.updateSchema()
                     .subscribe(onCompleted: { [weak self] in
-                        self?.finishCompletableAction(error: nil)
+                        self?.finishUpdateSchemaAction(with: nil)
                     }, onError: { [weak self] error in
-                        self?.finishCompletableAction(error: error)
+                        self?.finishUpdateSchemaAction(with: error)
                     })
                     .disposed(by: self.disposeBag)
+    }
+
+    private func finishUpdateSchemaAction(with error: Error?) {
+        if let error = error, !error.isUnchangedError {
+            self.schemaObservable.on(.error(error))
+            self.finishCompletableAction(error: error)
+        } else {
+            self.schemaObservable.on(.next(()))
+            self.finishCompletableAction(error: nil)
+        }
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {

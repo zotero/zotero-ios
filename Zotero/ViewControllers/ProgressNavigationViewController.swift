@@ -35,7 +35,7 @@ class ProgressNavigationViewController: UINavigationController {
     }()
     weak var syncScheduler: SynchronizationScheduler? {
         didSet {
-            if let observable = self.syncScheduler?.progressObservable {
+            if let observable = self.syncScheduler?.syncController.progressObservable {
                 self.setupObserving(for: observable)
             }
         }
