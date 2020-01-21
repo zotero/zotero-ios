@@ -13,26 +13,32 @@ import RxSwift
 import RxCocoa
 
 class BackgroundUploader: NSObject {
-    static let shared = BackgroundUploader()
-    private let context = BackgroundUploaderContext()
-    private let fileStorage: FileStorage = FileStorageController()
+    private let context: BackgroundUploaderContext
+    private let fileStorage: FileStorage
+    private let uploadProcessor: BackgroundUploadProcessor
 
     private var session: URLSession!
-    private var finishedUploads: [BackgroundUpload] = []
-    private var uploadsFinishedProcessing: Bool = true
-    private var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
-    private var disposeBag = DisposeBag()
+    private var finishedUploads: [BackgroundUpload]
+    private var uploadsFinishedProcessing: Bool
+    private var backgroundTaskId: UIBackgroundTaskIdentifier
+    private var disposeBag: DisposeBag
 
-    var uploadProcessor: BackgroundUploadProcessor?
     var backgroundCompletionHandler: (() -> Void)?
 
-    override init() {
+    init(uploadProcessor: BackgroundUploadProcessor) {
+        self.context = BackgroundUploaderContext()
+        self.fileStorage = FileStorageController()
+        self.uploadProcessor = uploadProcessor
+        self.finishedUploads = []
+        self.uploadsFinishedProcessing = true
+        self.backgroundTaskId = .invalid
+        self.disposeBag = DisposeBag()
+
         super.init()
 
         let configuration = URLSessionConfiguration.background(withIdentifier: "org.zotero.background.upload.session")
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
         configuration.sharedContainerIdentifier = AppGroup.identifier
-        configuration.networkServiceType = .background
         self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }
 
@@ -149,8 +155,7 @@ class BackgroundUploader: NSObject {
     // MARK: - Finishing upload
 
     private func finishUploads(uploads: [BackgroundUpload]) {
-        guard !uploads.isEmpty,
-              let processor = self.uploadProcessor else {
+        guard !uploads.isEmpty else {
             self.completeBackgroundSession()
             return
         }
@@ -158,7 +163,7 @@ class BackgroundUploader: NSObject {
         // Start background task so that we can send register requests to API and store results in DB.
         self.startBackgroundTask()
         // Create actions for all uploads for this background session.
-        let actions = uploads.map({ processor.finish(upload: $0) })
+        let actions = uploads.map({ self.uploadProcessor.finish(upload: $0) })
         // Process all actions, call appropriate completion handlers and finish the background task.
         Observable.concat(actions)
                   .observeOn(MainScheduler.instance)

@@ -192,6 +192,7 @@
 		B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA5F220B2AAD005906C4 /* SyncController.swift */; };
 		B33FBA62220B2AC0005906C4 /* SyncActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA61220B2AC0005906C4 /* SyncActionHandler.swift */; };
 		B33FBA64220B2AFD005906C4 /* SyncControllerModels+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33FBA63220B2AFD005906C4 /* SyncControllerModels+Extensions.swift */; };
+		B340006B23D74A71000238B9 /* BackgroundUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856C23C35AB700920FFC /* BackgroundUploader.swift */; };
 		B34111DB230C4EAE0021B2FA /* CollectionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34111DA230C4EAE0021B2FA /* CollectionRow.swift */; };
 		B346E47422CB5F0C00256AC2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B346E47322CB5F0C00256AC2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */; };
 		B346E47622CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B346E47522CB910B00256AC2 /* MarkGroupAsLocalOnlyDbRequest.swift */; };
@@ -209,7 +210,6 @@
 		B353370A22CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353370922CCBA8E005648CB /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
 		B355B8FF239951E800E837B9 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
 		B3562481226758EE006D039F /* CreateCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3562480226758EE006D039F /* CreateCollectionDbRequest.swift */; };
-		B356856D23C35AB700920FFC /* BackgroundUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856C23C35AB700920FFC /* BackgroundUploader.swift */; };
 		B356856F23C35ACD00920FFC /* BackgroundUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356856E23C35ACD00920FFC /* BackgroundUpload.swift */; };
 		B356857123C3613600920FFC /* BackgroundUploaderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = B356857023C3613600920FFC /* BackgroundUploaderContext.swift */; };
 		B35CF5DA22E5BE7A007ADAAA /* MD5+Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35CF5D922E5BE7A007ADAAA /* MD5+Url.swift */; };
@@ -1690,6 +1690,7 @@
 				B339F0E82343AE0F00055345 /* ItemDetailMetadataSectionView.swift in Sources */,
 				B32D47432358AE1B00DD38BB /* ItemCell.swift in Sources */,
 				B33744F9232BDA280082760A /* PdfReaderView.swift in Sources */,
+				B340006B23D74A71000238B9 /* BackgroundUploader.swift in Sources */,
 				B33A56B023561F5600C33F28 /* SettingsView.swift in Sources */,
 				B38C969E223FFB2900343F8F /* StoreSearchesDbRequest.swift in Sources */,
 				B37147472382B59F00AC8758 /* CrashReporter.swift in Sources */,
@@ -1758,7 +1759,6 @@
 				B30DF3F92209A282000B6DE2 /* RCustomLibrary.swift in Sources */,
 				B37147492382C01F00AC8758 /* CrashUploadRequest.swift in Sources */,
 				B38C9696223FFB2900343F8F /* ReadItemsDbRequest.swift in Sources */,
-				B356856D23C35AB700920FFC /* BackgroundUploader.swift in Sources */,
 				B3FFDEDD228031F60009EBBE /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B36D2BC9232FCA1E0056F022 /* ItemRow.swift in Sources */,
 				B33FBA5D220AFAB5005906C4 /* Array+Utils.swift in Sources */,
@@ -2233,6 +2233,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -2269,6 +2270,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -2518,6 +2520,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;

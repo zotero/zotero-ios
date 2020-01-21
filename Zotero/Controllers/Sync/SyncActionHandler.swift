@@ -866,7 +866,6 @@ extension SyncActionHandlerController: SyncActionHandler {
 
     func loadUploadData(in libraryId: LibraryIdentifier) -> Single<[SyncController.AttachmentUpload]> {
         let backgroundUploads = self.backgroundUploader.ongoingUploads()
-        NSLog("UPLOADS: \(backgroundUploads)")  
         let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId)
         return self.createSingleDbResponseRequest(request)
                    .flatMap({ uploads in

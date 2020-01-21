@@ -97,8 +97,11 @@ class UserControllers {
     private var disposeBag: DisposeBag
 
     init(userId: Int, controllers: Controllers) {
-        let backgroundUploader = BackgroundUploader.shared
         let dbStorage = UserControllers.createDbStorage(for: userId, controllers: controllers)
+        let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
+                                                                  dbStorage: dbStorage,
+                                                                  fileStorage: controllers.fileStorage)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor)
 
         let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
                                                       dbStorage: dbStorage,

@@ -77,6 +77,8 @@ class ExtensionStore {
     @Published var state: State
     private var isSchemaUpdated: Bool
     private var pendingItems: [[String: Any]]?
+    // The background uploader is optional because it needs to be deinitialized after starting the upload. See more in comment where the uploader is nilled.
+    private var backgroundUploader: BackgroundUploader?
 
     private static let defaultLibraryId: LibraryIdentifier = .custom(.myLibrary)
     private static let defaultExtension = "pdf"
@@ -85,7 +87,6 @@ class ExtensionStore {
     private let syncController: SyncController
     private let syncHandler: SyncActionHandler
     private let apiClient: ApiClient
-    private let backgroundUploader: BackgroundUploader
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
@@ -185,7 +186,9 @@ class ExtensionStore {
             return Observable.error(TranslationError.cantLoadWebData)
         }
 
-        return Observable.create { subscriber in
+        return Observable.create { [weak itemProvider] subscriber in
+            guard let itemProvider = itemProvider else { return Disposables.create() }
+
             itemProvider.loadItem(forTypeIdentifier: propertyList, options: nil, completionHandler: { item, error -> Void in
                 guard let scriptData = item as? [String: Any],
                       let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
@@ -203,6 +206,7 @@ class ExtensionStore {
                     subscriber.onError(TranslationError.cantLoadWebData)
                 }
             })
+
             return Disposables.create()
         }
     }
@@ -435,6 +439,7 @@ class ExtensionStore {
 
     private func startBackgroundUpload(to url: URL, filename: String, file: File, params: [String: String],
                                        key: String, uploadKey: String, md5: String, libraryId: LibraryIdentifier, userId: Int) {
+        guard let backgroundUploader = self.backgroundUploader else { return }
         let upload = BackgroundUpload(key: key,
                                       libraryId: libraryId,
                                       userId: userId,
@@ -442,19 +447,22 @@ class ExtensionStore {
                                       fileUrl: file.createUrl(),
                                       uploadKey: uploadKey,
                                       md5: md5)
-        self.backgroundUploader.upload(upload,
-                                       filename: filename,
-                                       mimeType: ExtensionStore.defaultMimetype,
-                                       parameters: params,
-                                       headers: ["If-None-Match": "*",
-                                                 "md5": md5]) { [weak self] error in
-                                           if let error = error {
-                                               // TODO: - Log error
-                                               self?.state.submissionState = .error(.unknown)
-                                           } else {
-                                               self?.state.submissionState = .ready
-                                           }
-                                       }
+        backgroundUploader.upload(upload,
+                                  filename: filename,
+                                  mimeType: ExtensionStore.defaultMimetype,
+                                  parameters: params,
+                                  headers: ["If-None-Match": "*"]) { [weak self] error in
+                                      if let error = error {
+                                          // TODO: - Log error
+                                          self?.state.submissionState = .error(.unknown)
+                                      } else {
+                                          // The uploader is set to nil so that the URLSession delegate no longer exists for the share extension. This
+                                          // way the URLSession delegate will always be called in the main (container) app, where additional upload
+                                          // processing is performed.
+                                          self?.backgroundUploader = nil
+                                          self?.state.submissionState = .ready
+                                      }
+                                  }
     }
 
     private func moveTmpFile(with key: String, to file: File, libraryId: LibraryIdentifier) -> Single<UInt64> {
