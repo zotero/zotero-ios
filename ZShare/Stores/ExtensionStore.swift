@@ -49,7 +49,7 @@ class ExtensionStore {
             var picked: String?
         }
 
-        let key: String
+        let attachmentKey: String
         var title: String?
         var collectionPickerState: CollectionPickerState
         var translationState: TranslationState
@@ -58,7 +58,7 @@ class ExtensionStore {
         var itemPickerState: ItemPickerState?
 
         init() {
-            self.key = KeyGenerator.newKey
+            self.attachmentKey = KeyGenerator.newKey
             self.collectionPickerState = .loading
             self.translationState = .translating
             self.itemPickerState = nil
@@ -251,7 +251,7 @@ class ExtensionStore {
     }
 
     private func startDownload(for url: URL) {
-        let file = Files.shareExtensionTmpItem(key: self.state.key, ext: ExtensionStore.defaultExtension)
+        let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
         let request = FileRequest(data: .external(url), destination: file)
         self.apiClient.download(request: request)
                       .observeOn(MainScheduler.instance)
@@ -305,7 +305,7 @@ class ExtensionStore {
     // MARK: - Items submission & Attachment upload
 
     func submit() {
-        let key = self.state.key
+        let attachmentKey = self.state.attachmentKey
         let libraryId: LibraryIdentifier
         let collectionKeys: Set<String>
         let userId = Defaults.shared.userId
@@ -329,10 +329,9 @@ class ExtensionStore {
         case .downloaded(let item, let attachmentData):
             let newItem = item.copy(libraryId: libraryId, collectionKeys: collectionKeys)
             let filename = attachmentData["title"] ?? self.state.title ?? "Unknown"
-            let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.key, ext: ExtensionStore.defaultExtension)
-            let attachment = Attachment(key: key, title: filename, type: .file(file: file, filename: filename, isLocal: true), libraryId: libraryId)
-            self.upload(key: key, item: newItem, attachment: attachment, file: file,
-                        filename: filename, libraryId: libraryId, userId: userId)
+            let file = Files.objectFile(for: .item, libraryId: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
+            let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, isLocal: true), libraryId: libraryId)
+            self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId)
 
         default: break
         }
@@ -368,8 +367,7 @@ class ExtensionStore {
         }
     }
 
-    private func upload(key: String, item: ItemResponse, attachment: Attachment, file: File,
-                        filename: String, libraryId: LibraryIdentifier, userId: Int) {
+    private func upload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int) {
         self.prepareUpload(itemResponse: item, attachment: attachment, file: file, filename: filename,
                        libraryId: libraryId, userId: userId)
             .subscribe(onSuccess: { [weak self] response, md5 in
@@ -384,7 +382,7 @@ class ExtensionStore {
                                                filename: filename,
                                                file: file,
                                                params: response.params,
-                                               key: key,
+                                               key: attachment.key,
                                                uploadKey: response.uploadKey,
                                                md5: md5,
                                                libraryId: libraryId,
@@ -400,41 +398,36 @@ class ExtensionStore {
     private func prepareUpload(itemResponse: ItemResponse, attachment: Attachment, file: File, filename: String,
                                libraryId: LibraryIdentifier, userId: Int) -> Single<(AuthorizeUploadResponse, String)> {
         return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
-                    .do(onError: { [weak self] _ in
-                        // If file couldn't be moved from original tmp location for some reason, remove the tmp file if it's there
-                        let file = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
-                        try? self?.fileStorage.remove(file)
-                    })
-                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
-                        guard let `self` = self else { return Single.error(SubmissionError.expired) }
-                        return self.createItems(response: itemResponse, attachment: attachment)
-                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
-                                   .do(onError: { [weak self] _ in
-                                       // If attachment item couldn't be created in DB, remove the moved file if possible,
-                                       // it won't be processed even from the main app
-                                       try? self?.fileStorage.remove(file)
-                                   })
-                    }
-                    .flatMap { [weak self] filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
-                        guard let `self` = self else { return Single.error(SubmissionError.expired) }
-                        return self.syncHandler.submitUpdate(for: libraryId,
-                                                             userId: userId,
-                                                             object: .item,
-                                                             since: nil,
-                                                             parameters: parameters)
-                                               .flatMap({ _ in Single.just((filesize, md5, mtime)) })
-                    }
-                    .flatMap { [weak self] filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
-                        guard let `self` = self else { return Single.error(SubmissionError.expired) }
-                        return self.syncHandler.authorizeUpload(key: attachment.key,
-                                                                filename: filename,
-                                                                filesize: filesize,
-                                                                md5: md5,
-                                                                mtime: mtime,
-                                                                libraryId: libraryId,
-                                                                userId: userId)
-                                               .flatMap({ return Single.just(($0, md5)) })
-                    }
+                   .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
+                       guard let `self` = self else { return Single.error(SubmissionError.expired) }
+                       return self.createItems(response: itemResponse, attachment: attachment)
+                                  .flatMap({ Single.just((filesize, $0, $1, $2)) })
+                                  .do(onError: { [weak self] _ in
+                                      // If attachment item couldn't be created in DB, remove the moved file if possible,
+                                      // it won't be processed even from the main app
+                                      try? self?.fileStorage.remove(file)
+                                  })
+                   }
+                   .flatMap { [weak self] filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
+                       guard let `self` = self else { return Single.error(SubmissionError.expired) }
+                       return self.syncHandler.submitUpdate(for: libraryId,
+                                                            userId: userId,
+                                                            object: .item,
+                                                            since: nil,
+                                                            parameters: parameters)
+                                              .flatMap({ _ in Single.just((filesize, md5, mtime)) })
+                   }
+                   .flatMap { [weak self] filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
+                       guard let `self` = self else { return Single.error(SubmissionError.expired) }
+                       return self.syncHandler.authorizeUpload(key: attachment.key,
+                                                               filename: filename,
+                                                               filesize: filesize,
+                                                               md5: md5,
+                                                               mtime: mtime,
+                                                               libraryId: libraryId,
+                                                               userId: userId)
+                                              .flatMap({ return Single.just(($0, md5)) })
+                   }
     }
 
     private func startBackgroundUpload(to url: URL, filename: String, file: File, params: [String: String],
@@ -476,6 +469,8 @@ class ExtensionStore {
             try self.fileStorage.move(from: tmpFile, to: file)
             return Single.just(size)
         } catch {
+            // If tmp file couldn't be moved, remove it if it's there
+            try? self.fileStorage.remove(tmpFile)
             return Single.error(SubmissionError.fileMissing)
         }
     }

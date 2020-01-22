@@ -49,7 +49,7 @@ struct Files {
             objectName = "group"
         }
 
-        return FileData(rootPath: Files.documentsRootPath,
+        return FileData(rootPath: Files.appGroupPath,
                         relativeComponents: ["downloads"],
                         name: "library_\(libraryId.fileName)_\(objectName)_\(key)", ext: ext)
     }
