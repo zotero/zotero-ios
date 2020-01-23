@@ -105,6 +105,7 @@ class ShareViewController: UIViewController {
     }
 
     @objc private func cancel() {
+        self.store.cancel()
         self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
     }
 
@@ -123,6 +124,8 @@ class ShareViewController: UIViewController {
             if state == .preparing {
                 // Disable "Upload" button if the upload is being prepared so that the user can't start it multiple times
                 rightButtonEnabled = false
+                // Disable "Cancel" button so that the user doesn't close the extension at this point.
+                self.navigationItem.leftBarButtonItem?.isEnabled = false
             }
         }
 

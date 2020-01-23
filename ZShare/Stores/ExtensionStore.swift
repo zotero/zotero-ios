@@ -113,6 +113,12 @@ class ExtensionStore {
         self.setupWebHandlerObserving()
     }
 
+    func cancel() {
+        // Remove temporary downloaded file if it exists
+        let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+        try? self.fileStorage.remove(file)
+    }
+
     // MARK: - Setup
 
     func setup(with extensionItem: NSExtensionItem) {
