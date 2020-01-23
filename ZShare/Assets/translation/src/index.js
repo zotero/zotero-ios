@@ -58,7 +58,7 @@ async function translate(url, cookies, encodedHtml, encodedTranslators) {
 	});
 
 	translate.setHandler("error", function(obj, err) {
-        window.webkit.messageHandlers.itemResponseHandler.postMessage(err);
+        window.webkit.messageHandlers.itemResponseHandler.postMessage(err.toString());
 	});
 
 	let items = await translate.translate();

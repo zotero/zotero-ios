@@ -67,6 +67,7 @@ class ExtensionStore {
 
     enum TranslationError: Swift.Error {
         case cantLoadSchema, cantLoadWebData, downloadFailed, itemsNotFound, expired, unknown
+        case webViewError(WebViewHandler.Error)
         case parseError(ItemResponse.Error)
     }
 
@@ -302,7 +303,7 @@ class ExtensionStore {
                                    self?.prepareItemSelector(with: data)
                                }
                            }, onError: { [weak self] error in
-                               self?.state.translationState = .failed((error as? TranslationError) ?? .unknown)
+                               self?.state.translationState = .failed((error as? WebViewHandler.Error).flatMap({ .webViewError($0) }) ?? .unknown)
                            })
                            .disposed(by: self.disposeBag)
 

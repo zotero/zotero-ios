@@ -235,13 +235,20 @@ class ShareViewController: UIViewController {
             case .cantLoadSchema:
                 self.setToolbarData(title: "Could not update schema", progress: nil)
             case .cantLoadWebData:
-                self.setToolbarData(title: "Translation failed", progress: nil)
+                self.setToolbarData(title: "Could not load web data", progress: nil)
             case .downloadFailed:
-                self.setToolbarData(title: "Download failed", progress: nil)
+                self.setToolbarData(title: "Could not download attachment file", progress: nil)
             case .itemsNotFound:
                 self.setToolbarData(title: "Translator couldn't find any items", progress: nil)
             case .parseError:
-                self.setToolbarData(title: "Incorrect item was returned", progress: nil)
+                self.setToolbarData(title: "Translator response couldn't be parsed", progress: nil)
+            case .webViewError(let error):
+                switch error {
+                case .jsError(let string):
+                    self.setToolbarData(title: "Translation failed: \(string)", progress: nil)
+                case .cantFindBaseFile: // should never happen
+                    self.setToolbarData(title: "Translator missing", progress: nil)
+                }
             case .unknown, .expired:
                 self.setToolbarData(title: "Unknown error", progress: nil)
             }
