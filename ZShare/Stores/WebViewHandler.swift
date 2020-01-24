@@ -44,7 +44,7 @@ class WebViewHandler: NSObject {
         self.webView = webView
         self.apiClient = apiClient
         self.disposeBag = DisposeBag()
-        self.translatorsController = TranslatorsController(fileStorage: fileStorage)
+        self.translatorsController = TranslatorsController(apiClient: apiClient, fileStorage: fileStorage)
         self.observable = PublishSubject()
 
         super.init()

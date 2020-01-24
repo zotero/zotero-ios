@@ -36,6 +36,9 @@ struct FileData: File {
     }
 
     func createUrl() -> URL {
+        if self.name == "" && self.ext == "" {
+            return self.createRelativeUrl()
+        }
         return self.createRelativeUrl().appendingPathComponent(self.name).appendingPathExtension(self.ext)
     }
 

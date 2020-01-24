@@ -9,7 +9,7 @@
 import Foundation
 
 extension FileManager {
-    func createMissingDirectories(for url: URL) throws {
+    func createMissingDirectories(for url: URL) throws {    
         var isDirectory: ObjCBool = false
         var exists = self.fileExists(atPath: url.path, isDirectory: &isDirectory)
 

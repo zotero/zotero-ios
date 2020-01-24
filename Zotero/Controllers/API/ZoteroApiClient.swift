@@ -76,13 +76,10 @@ class ZoteroApiClient: ApiClient {
                               .asSingle()
     }
 
-    func download(request: ApiDownloadRequest) -> Observable<RxProgress> {
+    func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.DownloadOptions) in
                                   return (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile])
-                              }
-                              .flatMap { downloadRequest -> Observable<RxProgress> in
-                                  return downloadRequest.rx.progress()
                               }
     }
 

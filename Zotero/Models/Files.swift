@@ -25,6 +25,18 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: [], name: "schema", ext: "json")
     }
 
+    static var translators: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: "", ext: "")
+    }
+
+    static var translatorsUnpacked: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators_unpacked"], name: "", ext: "")
+    }
+
+    static var translatorZip: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: [], name: "translators", ext: "zip")
+    }
+
     static func shareExtensionTmpItem(key: String, ext: String) -> File {
         return FileData(rootPath: Files.appGroupPath,
                         relativeComponents: ["tmp"],

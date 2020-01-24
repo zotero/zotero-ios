@@ -9,22 +9,99 @@
 import Foundation
 
 import RxSwift
+import Zip
 
 typealias TranslatorInfo = [String: Any]
 
 class TranslatorsController {
     enum Error: Swift.Error {
-        case bundleMissing, incompatibleString
+        case expired, bundleMissing, incompatibleString, unpackedFileEmpty, unpackedUnknownContent
     }
 
+    @UserDefault(key: "TranslatorsNeedReload", defaultValue: false)
+    static var needsReload: Bool
+
+    let apiClient: ApiClient
     let fileStorage: FileStorage
 
-    init(fileStorage: FileStorage) {
+    init(apiClient: ApiClient, fileStorage: FileStorage) {
+        self.apiClient = apiClient
         self.fileStorage = fileStorage
     }
 
     func load() -> Single<[TranslatorInfo]> {
-        return self.loadBundledData()
+        if TranslatorsController.needsReload {
+            return self.download()
+                       .do(onSuccess: {
+                           TranslatorsController.needsReload = false
+                       })
+                       .flatMap  { [weak self] in
+                           guard let `self` = self else { return Single.error(Error.expired) }
+                           return self.loadLocalData()
+                       }
+        }
+
+        if self.fileStorage.has(Files.translators) {
+            return self.loadLocalData()
+        } else {
+            return self.loadBundledData()
+        }
+    }
+
+    private func download() -> Single<()> {
+        return self.apiClient.download(request: TranslatorsRequest())
+                             .flatMap { request in
+                                return request.rx.response()
+                             }
+                             .asSingle()
+                             .flatMap { [weak self] _ in
+                                 guard let `self` = self else { return Single.error(Error.expired) }
+                                 return self.unzipTranslators()
+                             }
+    }
+
+    /// Unzip translators if possible. This method tries to:
+    /// 1. Unzip files into temporary directory
+    /// 2. Remove original translators directory if available
+    /// 3. Move temporary directory to original destination
+    /// 4. Cleanup zip file
+    /// If anything breaks, it tries to cleanup temporary directory and zip file.
+    /// - returns: Single which reports that translators have been successfully unpacked, Error otherwise.
+    private func unzipTranslators() -> Single<()> {
+        let translators = Files.translators
+        let zip = Files.translatorZip
+        let unpacked = Files.translatorsUnpacked
+
+        do {
+            try Zip.unzipFile(zip.createUrl(), destination: unpacked.createUrl(), overwrite: true, password: nil)
+            if self.fileStorage.has(translators) {
+                try self.fileStorage.remove(translators)
+            }
+            // Unzipping creates a folder inside our unpacked folder, find File and move its contents to translators
+            let unpackedFiles = try self.fileStorage.contentsOfDirectory(at: unpacked)
+            if unpackedFiles.isEmpty {
+                throw Error.unpackedFileEmpty
+            } else if unpackedFiles.count == 1, let content = unpackedFiles.first {
+                try self.fileStorage.move(from: content, to: translators)
+                try self.fileStorage.remove(unpacked)
+            } else {
+                if unpackedFiles.contains(where: { $0.ext == "js" }) {
+                    try self.fileStorage.move(from: unpacked, to: translators)
+                } else {
+                    throw Error.unpackedUnknownContent
+                }
+            }
+            try self.fileStorage.remove(zip)
+            return Single.just(())
+        } catch let error {
+            try? self.fileStorage.remove(zip)
+            try? self.fileStorage.remove(unpacked)
+            return Single.error(error)
+        }
+    }
+
+    private func loadLocalData() -> Single<[TranslatorInfo]> {
+        return self.loadTranslators(from: Files.translators)
     }
 
     private func loadBundledData() -> Single<[TranslatorInfo]> {
@@ -33,9 +110,12 @@ class TranslatorsController {
                                         subdirectory: "translation/modules/zotero") else {
             return Single.error(Error.bundleMissing)
         }
+        return self.loadTranslators(from: Files.file(from: url))
+    }
 
+    private func loadTranslators(from file: File) -> Single<[TranslatorInfo]> {
         do {
-            let contents = try self.fileStorage.contentsOfDirectory(at: Files.file(from: url))
+            let contents = try self.fileStorage.contentsOfDirectory(at: file)
             let translators = contents.compactMap({ self.loadTranslatorInfo(from: $0) })
             return Single.just(translators)
         } catch let error {

@@ -155,7 +155,7 @@ class UserControllers {
     private class func createDbStorage(for userId: Int, controllers: Controllers) -> DbStorage {
         do {
             let file = Files.dbFile(for: userId)
-            try controllers.fileStorage.createDictionaries(for: file)
+            try controllers.fileStorage.createDirectories(for: file)
 
             DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
 

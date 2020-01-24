@@ -679,6 +679,9 @@ class ItemDetailStore: ObservableObject {
     private func cacheFile(_ file: File, key: String) {
         let request = FileRequest(data: .internal(self.state.libraryId, self.state.userId, key), destination: file)
         self.apiClient.download(request: request)
+                      .flatMap { request in
+                          return request.rx.progress()
+                      }
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in
                           let progress = progress.totalBytes == 0 ? 0 : Double(progress.bytesWritten) / Double(progress.totalBytes)

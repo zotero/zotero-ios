@@ -261,6 +261,9 @@ class ExtensionStore {
         let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
         let request = FileRequest(data: .external(url), destination: file)
         self.apiClient.download(request: request)
+                      .flatMap { request in
+                          return request.rx.progress()
+                      }
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in
                           self?.setDownloadProgress(progress.completed)

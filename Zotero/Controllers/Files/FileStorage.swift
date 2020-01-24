@@ -16,7 +16,7 @@ protocol FileStorage {
     func move(from fromFile: File, to toFile: File) throws
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
-    func createDictionaries(for file: File) throws
+    func createDirectories(for file: File) throws
     func contentsOfDirectory(at file: File) throws -> [File]
 }
 
@@ -28,7 +28,7 @@ class FileStorageController: FileStorage {
     }
 
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws {
-        try self.createDictionaries(for: file)
+        try self.createDirectories(for: file)
         try data.write(to: file.createUrl(), options: options)
     }
 
@@ -37,13 +37,13 @@ class FileStorageController: FileStorage {
     }
 
     func copy(from fromFile: File, to toFile: File) throws {
-        try self.createDictionaries(for: toFile)
+        try self.createDirectories(for: toFile)
         try self.fileManager.copyItem(at: fromFile.createUrl(), to: toFile.createUrl())
     }
 
     func move(from fromFile: File, to toFile: File) throws {
-        try self.createDictionaries(for: toFile)
-        try self.fileManager.moveItem(at: fromFile.createUrl(), to: toFile.createUrl())
+        try self.createDirectories(for: toFile)
+        try self.fileManager.moveItem(atPath: fromFile.createUrl().path, toPath: toFile.createUrl().path)
     }
 
     func has(_ file: File) -> Bool {
@@ -55,8 +55,13 @@ class FileStorageController: FileStorage {
         return (attributes?[FileAttributeKey.size] as? UInt64) ?? 0
     }
 
-    func createDictionaries(for file: File) throws {
-        try self.fileManager.createMissingDirectories(for: file.createRelativeUrl())
+    func createDirectories(for file: File) throws {
+        var relativeUrl = file.createRelativeUrl()
+        if file.name == "" && file.ext == "" {
+            // It's a directory, create missing directories up to parent
+            relativeUrl.deleteLastPathComponent()
+        }
+        try self.fileManager.createMissingDirectories(for: relativeUrl)
     }
 
     func contentsOfDirectory(at file: File) throws -> [File] {
