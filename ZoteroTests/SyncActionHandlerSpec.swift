@@ -23,7 +23,7 @@ class SyncActionHandlerSpec: QuickSpec {
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static let fileStorage = FileStorageController()
     private static var schemaController: SchemaController = {
-        let controller = SchemaController(apiClient: apiClient, fileStorage: fileStorage)
+        let controller = SchemaController()
         controller.reloadSchemaIfNeeded()
         return controller
     }()

@@ -161,8 +161,7 @@ struct Versions {
 }
 
 protocol SyncActionHandler: class {
-    func loadPermissions() -> Single<(KeyResponse, Bool)> // Key response, Bool indicates whether schema needs an update
-    func updateSchema() -> Completable
+    func loadPermissions() -> Single<KeyResponse>
     func loadLibraryData(for type: SyncController.LibrarySyncType, fetchUpdates: Bool) -> Single<[LibraryData]>
     func synchronizeVersions(for libraryId: LibraryIdentifier, userId: Int, object: SyncController.Object,
                              since sinceVersion: Int?, current currentVersion: Int?,
@@ -217,27 +216,17 @@ class SyncActionHandlerController {
 }
 
 extension SyncActionHandlerController: SyncActionHandler {
-    func loadPermissions() -> Single<(KeyResponse, Bool)> {
+    func loadPermissions() -> Single<KeyResponse> {
         return self.apiClient.send(request: KeyRequest())
                              .flatMap { (response, headers) in
                                  do {
-                                     // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
-                                     let lowercase = headers["zotero-schema-version"] as? String
-                                     let uppercase = headers["Zotero-Schema-Version"] as? String
-                                     let schemaVersion = (lowercase ?? uppercase).flatMap(Int.init) ?? 0
-                                     let schemaNeedsUpdate = schemaVersion > self.schemaController.version
-                                     let json = try JSONSerialization.jsonObject(with: response,
-                                                                                 options: .allowFragments)
+                                     let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)
                                      let keyResponse = try KeyResponse(response: json)
-                                     return Single.just((keyResponse, schemaNeedsUpdate))
+                                     return Single.just(keyResponse)
                                  } catch let error {
                                      return Single.error(error)
                                  }
                              }
-    }
-
-    func updateSchema() -> Completable {
-        return self.schemaController.createFetchSchemaCompletable().observeOn(self.scheduler)
     }
 
     func loadLibraryData(for type: SyncController.LibrarySyncType, fetchUpdates: Bool) -> Single<[LibraryData]> {

@@ -53,7 +53,7 @@ extension SyncController.Object {
 extension SyncController.Action {
     var libraryId: LibraryIdentifier? {
         switch self {
-        case .loadKeyPermissions, .updateSchema, .createLibraryActions:
+        case .loadKeyPermissions, .createLibraryActions:
             return nil
         case .syncBatchToDb(let batch):
             return batch.libraryId
@@ -87,7 +87,7 @@ extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema, .uploadAttachment,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
              .createUploadActions:
             return false
         }
@@ -99,7 +99,7 @@ extension SyncController.Action {
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
             return false
         }
@@ -115,7 +115,7 @@ extension SyncController.Action {
             return "Upload \(upload.filename).\(upload.extension) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
-             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .updateSchema,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
             return "Unknown action"
         }

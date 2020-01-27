@@ -1,17 +1,5 @@
-HTTP/2 200 
-date: Mon, 08 Jul 2019 14:22:00 GMT
-content-type: application/json
-content-length: 64914
-server: Apache/2.4.39 (Amazon)
-strict-transport-security: max-age=31536000; includeSubDomains; preload
-vary: Accept-Encoding
-last-modified: Sun, 26 May 2019 10:54:59 GMT
-etag: "fd92-588c8434ae6c0"
-accept-ranges: bytes
-content-encoding: gzip
-
 {
-	"version": 2,
+	"version": 3,
 	"itemTypes": [
 		{
 			"itemType": "artwork",

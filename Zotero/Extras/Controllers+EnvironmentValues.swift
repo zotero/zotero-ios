@@ -32,8 +32,7 @@ struct FileStorageEnvironmentKey: EnvironmentKey {
 
 struct SchemaControllerEnvironmentKey: EnvironmentKey {
     static var defaultValue: SchemaController {
-        return SchemaController(apiClient: ApiClientEnvironmentKey.defaultValue,
-                                fileStorage: FileStorageEnvironmentKey.defaultValue)
+        return SchemaController()
     }
 }
 

@@ -36,7 +36,7 @@ class Controllers {
         let sessionController = SessionController(secureStorage: secureStorage)
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let crashReporter = CrashReporter(apiClient: apiClient)
-        let schemaController = SchemaController(apiClient: apiClient, fileStorage: fileStorage)
+        let schemaController = SchemaController()
 
         self.sessionController = sessionController
         self.apiClient = apiClient

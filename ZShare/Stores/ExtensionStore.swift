@@ -76,8 +76,6 @@ class ExtensionStore {
     }
 
     @Published var state: State
-    private var isSchemaUpdated: Bool
-    private var pendingItems: [[String: Any]]?
     // The background uploader is optional because it needs to be deinitialized after starting the upload. See more in comment where the uploader is nilled.
     private var backgroundUploader: BackgroundUploader?
 
@@ -107,7 +105,6 @@ class ExtensionStore {
         self.syncHandler = syncActionHandler
         self.webViewHandler = WebViewHandler(webView: webView, apiClient: apiClient, fileStorage: fileStorage)
         self.state = State()
-        self.isSchemaUpdated = false
         self.disposeBag = DisposeBag()
 
         self.setupSyncObserving()
@@ -144,18 +141,6 @@ class ExtensionStore {
     }
 
     private func setupSyncObserving() {
-        self.syncController.schemaObservable
-                           .observeOn(MainScheduler.instance)
-                           .subscribe(onNext: { [weak self] data in
-                               self?.isSchemaUpdated = true
-                               if let data = self?.pendingItems {
-                                   self?.processItems(data)
-                               }
-                           }, onError: { [weak self] _ in
-                               self?.state.translationState = .failed(.cantLoadSchema)
-                           })
-                           .disposed(by: self.disposeBag)
-
         self.syncController.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] data in
@@ -297,11 +282,7 @@ class ExtensionStore {
                            .subscribe(onNext: { [weak self] action in
                                switch action {
                                case .loadedItems(let data):
-                                   if self?.isSchemaUpdated == true {
-                                       self?.processItems(data)
-                                   } else {
-                                       self?.pendingItems = data
-                                   }
+                                   self?.processItems(data)
                                case .selectItem(let data):
                                    self?.prepareItemSelector(with: data)
                                }
