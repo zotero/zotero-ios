@@ -11,16 +11,24 @@ import WebKit
 
 import RxSwift
 
-enum WebViewAction {
-    case loadedItems([[String: Any]])
-    case selectItem([String: String])
-}
-
 class WebViewHandler: NSObject {
+    /// Actions that can be returned by this handler.
+    /// - loadedItems: Items have been translated.
+    /// - selectItem: Multiple items have been found on this website and the user needs to choose one.
+    enum Action {
+        case loadedItems([[String: Any]])
+        case selectItem([String: String])
+    }
+
+    /// Handlers for communication with JS in `webView`
     enum JSHandlers: String, CaseIterable {
+        /// Handler used for HTTP requests. Expects response (HTTP response).
         case request = "requestHandler"
+        /// Handler used for passing translated items.
         case item = "itemResponseHandler"
+        /// Handler used for item selection. Expects response (selected item).
         case itemSelection = "itemSelectionHandler"
+        /// Handler used to log JS debug info.
         case log = "logHandler"
     }
 
@@ -32,7 +40,7 @@ class WebViewHandler: NSObject {
     private let apiClient: ApiClient
     private let translatorsController: TranslatorsController
     private let disposeBag: DisposeBag
-    let observable: PublishSubject<WebViewAction>
+    let observable: PublishSubject<WebViewHandler.Action>
 
     private weak var webView: WKWebView!
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
@@ -87,13 +95,17 @@ class WebViewHandler: NSObject {
                    .disposed(by: self.disposeBag)
     }
 
+    /// Sends selected item back to `webView`.
+    /// - parameter item: Selected item by the user.
     func selectItem(_ item: (String, String)) {
         guard let messageId = self.itemSelectionMessageId else { return }
         let (key, value) = item
-        self.webView.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));", completionHandler: nil)
+        self.webView.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));",
+                                        completionHandler: nil)
         self.itemSelectionMessageId = nil
     }
 
+    /// Load the translation server.
     private func loadHtml(content: String, baseUrl: URL) -> Single<()> {
         self.webView.navigationDelegate = self
         self.webView.loadHTMLString(content, baseURL: baseUrl)
@@ -104,6 +116,7 @@ class WebViewHandler: NSObject {
         }
     }
 
+    /// Loads cookies retrieved from website to `webView`s `httpCookieStore`.
     private func loadCookies(from string: String) -> Single<()> {
         return Single.create { subscriber -> Disposable in
             let cookies = string.split(separator: ";").compactMap { pair -> HTTPCookie? in
@@ -130,6 +143,8 @@ class WebViewHandler: NSObject {
 
     // MARK: - Communication with WKWebView
 
+    /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
+    /// - parameter options: Options for HTTP request.
     private func sendRequest(with options: [String: Any]) {
         guard let urlString = options["url"] as? String,
               let url = URL(string: urlString),
@@ -174,6 +189,8 @@ class WebViewHandler: NSObject {
         return "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
     }
 
+    /// Report received items from translation server.
+    /// - parameter result: Result with either successfully translated items or failure.
     private func receiveItems(with result: Result<[[String: Any]], Error>) {
         switch result {
         case .success(let info):
@@ -185,6 +202,9 @@ class WebViewHandler: NSObject {
 
     // MARK: - Helpers
 
+    /// Makes a javascript call to `webView` with `Single` response.
+    /// - parameter script: JS script to be performed.
+    /// - returns: `Single` with response from `webView`.
     private func callJavascript(_ script: String) -> Single<Any> {
         return Single.create { subscriber -> Disposable in
             self.webView.evaluateJavaScript(script) { result, error in
@@ -210,10 +230,12 @@ class WebViewHandler: NSObject {
         }
     }
 
+    /// Encodes data which need to be sent to `webView`. All data that is passed to JS is Base64 encoded so that it can be sent as a simple `String`.
     private func encodeForJavascript(_ data: Data?) -> String {
         return data.flatMap({ "'" + $0.base64EncodedString(options: .endLineWithLineFeed) + "'" }) ?? "null"
     }
 
+    /// Encodes JSON payload so that it can be sent to `webView`.
     private func encodeJSONForJavascript(_ payload: Any) -> String {
         let data = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted)
         return self.encodeForJavascript(data)
@@ -230,6 +252,8 @@ extension WebViewHandler: WKNavigationDelegate {
     }
 }
 
+/// Communication with JS in `webView`. The `webView` sends a message through one of the registered `JSHandlers`, which is received here.
+/// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
 extension WebViewHandler: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let handler = JSHandlers(rawValue: message.name) else { return }
@@ -250,7 +274,6 @@ extension WebViewHandler: WKScriptMessageHandler {
                 self.receiveItems(with: .failure(.jsError("Unknown response")))
             }
         case .itemSelection:
-            // TODO: - show item picker, call "receiveResponse" after item is picked
             if let info = message.body as? [String: Any],
                let messageId = info["messageId"] as? Int,
                let data = info.filter({ $0.key != "messageId" }) as? [String: String] {

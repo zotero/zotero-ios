@@ -66,7 +66,7 @@ class ShareViewController: UIViewController {
 
         // Load initial data
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
-            self.store?.setup(with: extensionItem)
+            self.store?.start(with: extensionItem)
         } else {
             // TODO: - Show error about missing file
         }
@@ -75,7 +75,7 @@ class ShareViewController: UIViewController {
     // MARK: - Actions
 
     @IBAction private func showItemPicker() {
-        guard let items = self.store.state.itemPickerState?.items else { return }
+        guard let items = self.store.state.itemPicker?.items else { return }
 
         let view = ItemPickerView(data: items) { [weak self] picked in
             self?.store.pickItem(picked)
@@ -112,14 +112,14 @@ class ShareViewController: UIViewController {
     private func update(to state: ExtensionStore.State) {
         var rightButtonEnabled: Bool
         // Enable "Upload" button if translation and file download (if any) are finished
-        switch state.translationState {
+        switch state.translation {
         case .downloaded, .translated:
             rightButtonEnabled = true
         default:
             rightButtonEnabled = false
         }
 
-        if let state = state.submissionState {
+        if let state = state.submission {
             self.updateUploadState(state)
             if state == .preparing {
                 // Disable "Upload" button if the upload is being prepared so that the user can't start it multiple times
@@ -130,13 +130,13 @@ class ShareViewController: UIViewController {
         }
 
         self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
-        self.updateToolbar(to: state.translationState)
-        self.updateCollectionPicker(to: state.collectionPickerState)
+        self.updateToolbar(to: state.translation)
+        self.updateCollectionPicker(to: state.collectionPicker)
         self.navigationItem.title = state.title
-        self.updateItemPicker(to: state.itemPickerState)
+        self.updateItemPicker(to: state.itemPicker)
     }
 
-    private func updateUploadState(_ state: ExtensionStore.State.SubmissionState) {
+    private func updateUploadState(_ state: ExtensionStore.State.Submission) {
         switch state {
         case .ready:
             self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
@@ -173,7 +173,7 @@ class ShareViewController: UIViewController {
         })
     }
 
-    private func updateItemPicker(to state: ExtensionStore.State.ItemPickerState?) {
+    private func updateItemPicker(to state: ExtensionStore.State.ItemPicker?) {
         self.itemPickerContainer.isHidden = state == nil
         self.itemPickerTitleLabel.isHidden = self.itemPickerContainer.isHidden
         
@@ -192,7 +192,7 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateCollectionPicker(to state: ExtensionStore.State.CollectionPickerState) {
+    private func updateCollectionPicker(to state: ExtensionStore.State.CollectionPicker) {
         switch state {
         case .picked(let library, let collection):
             let title = collection?.name ?? library.name
@@ -214,7 +214,7 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateToolbar(to state: ExtensionStore.State.TranslationState) {
+    private func updateToolbar(to state: ExtensionStore.State.Translation) {
         switch state {
         case .translating:
             if self.toolbarContainer.isHidden {
