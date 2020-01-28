@@ -33,6 +33,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private let controllers: Controllers
     private let disposeBag: DisposeBag
     // Variables
+    private var syncToolbarController: SyncToolbarController?
     private var currentLandscapePrimaryColumnFraction: CGFloat = 0
     private var isViewingLibraries: Bool {
         return (self.viewControllers.first as? UINavigationController)?.viewControllers.count == 1
@@ -380,6 +381,10 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
         self.viewControllers = [masterController, detailController]
         self.reloadPrimaryColumnFraction(with: collectionsStore.state.collections, animated: false)
+
+        if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable {
+            self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable)
+        }
     }
 
     private func setupNotificationObservers() {

@@ -30,7 +30,6 @@ enum SyncError: Error {
 
 protocol SynchronizationController: class {
     var isSyncing: Bool { get }
-    var observable: PublishSubject<(SyncController.SyncType, SyncController.LibrarySyncType)?> { get }
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
 
     func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)

@@ -34,7 +34,7 @@ final class SyncScheduler: SynchronizationScheduler {
     private var nextAction: SchedulerAction?
     private var timerDisposeBag: DisposeBag
 
-    init(controller: SynchronizationController) {
+    init(controller: SyncController) {
         self.syncController = controller
         let queue = DispatchQueue(label: "org.zotero.SchedulerAccessQueue", qos: .utility, attributes: .concurrent)
         self.queue = queue
@@ -43,21 +43,21 @@ final class SyncScheduler: SynchronizationScheduler {
         self.disposeBag = DisposeBag()
         self.timerDisposeBag = DisposeBag()
 
-        self.syncController.observable
-                           .observeOn(self.scheduler)
-                           .subscribe(onNext: { [weak self] data in
-                               self?.inProgress = nil
-                               if let data = data { // We're retrying, enqueue the new sync
-                                   self?._enqueueAndStartTimer(action: data)
-                               } else if self?.nextAction != nil {
-                                   // We're not retrying, start timer so that next in queue is processed
-                                   self?.startTimer()
-                               }
-                           }, onError: { [weak self] _ in
-                               self?.inProgress = nil
-                               self?.startTimer()
-                           })
-                           .disposed(by: self.disposeBag)
+        controller.observable
+                  .observeOn(self.scheduler)
+                  .subscribe(onNext: { [weak self] data in
+                      self?.inProgress = nil
+                      if let data = data { // We're retrying, enqueue the new sync
+                          self?._enqueueAndStartTimer(action: data)
+                      } else if self?.nextAction != nil {
+                          // We're not retrying, start timer so that next in queue is processed
+                          self?.startTimer()
+                      }
+                  }, onError: { [weak self] _ in
+                      self?.inProgress = nil
+                      self?.startTimer()
+                  })
+                  .disposed(by: self.disposeBag)
     }
 
     func requestFullSync() {

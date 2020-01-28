@@ -249,6 +249,7 @@
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3819CB32210AB2B00EE02CA /* CollectionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */; };
 		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
+		B3827F2D23E064B200EE022C /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3827F2C23E064B200EE022C /* SyncToolbarController.swift */; };
 		B3831DD922AFAAAA0072A969 /* DelayIntervals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */; };
 		B385E2B72208791100DFE361 /* DbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B62208791100DFE361 /* DbStorage.swift */; };
 		B385E2B92208827C00DFE361 /* RealmDbStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B385E2B82208827C00DFE361 /* RealmDbStorage.swift */; };
@@ -607,6 +608,7 @@
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3819CB22210AB2B00EE02CA /* CollectionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsStore.swift; sourceTree = "<group>"; };
 		B3823B292399302100953F5D /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
+		B3827F2C23E064B200EE022C /* SyncToolbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncToolbarController.swift; sourceTree = "<group>"; };
 		B3831DD822AFAAAA0072A969 /* DelayIntervals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DelayIntervals.swift; sourceTree = "<group>"; };
 		B385E2B62208791100DFE361 /* DbStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DbStorage.swift; sourceTree = "<group>"; };
 		B385E2B82208827C00DFE361 /* RealmDbStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmDbStorage.swift; sourceTree = "<group>"; };
@@ -1070,6 +1072,7 @@
 				B39372972229420A008B2A96 /* SyncProgressHandler.swift */,
 				B3C33D852236676C0071A763 /* SyncScheduler.swift */,
 				B3341F6C22CA314900580FE8 /* ConflictResolutionController.swift */,
+				B3827F2C23E064B200EE022C /* SyncToolbarController.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -1881,6 +1884,7 @@
 				B3C33D922236B4FA0071A763 /* UpdatesResponse.swift in Sources */,
 				B39F2FB4233A4D650027EFC3 /* CollectionEditView.swift in Sources */,
 				B339F0EF2343AE0F00055345 /* ItemDetailCreatorView.swift in Sources */,
+				B3827F2D23E064B200EE022C /* SyncToolbarController.swift in Sources */,
 				B3C33D862236676C0071A763 /* SyncScheduler.swift in Sources */,
 				B33FBA60220B2AAD005906C4 /* SyncController.swift in Sources */,
 				B3341F6F22CA580E00580FE8 /* DeleteGroupDbRequest.swift in Sources */,
