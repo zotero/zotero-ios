@@ -60,7 +60,6 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
 //                conflicts.append(object.key)
 //            } else {
-                object.removeChildren(in: database)
                 database.delete(object)
 //            }
         }
