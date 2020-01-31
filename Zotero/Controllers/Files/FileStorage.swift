@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol FileStorage {
+protocol FileStorage: class {
     func read(_ file: File) throws -> Data
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws
     func remove(_ file: File) throws

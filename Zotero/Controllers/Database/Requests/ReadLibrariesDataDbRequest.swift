@@ -14,6 +14,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
     typealias Response = [LibraryData]
 
     let identifiers: [LibraryIdentifier]?
+    let fetchUpdates: Bool
 
     var needsWrite: Bool { return false }
 
@@ -69,6 +70,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
     }
 
     func deletions(for libraryId: LibraryIdentifier, database: Realm) throws -> [SyncController.Object: [[String]]] {
+        guard self.fetchUpdates else { return [:] }
         let chunkSize = SyncController.DeleteBatch.maxCount
         return [.collection: try ReadDeletedObjectsDbRequest<RCollection>(libraryId: libraryId).process(in: database).map({ $0.key }).chunked(into: chunkSize),
                 .search: try ReadDeletedObjectsDbRequest<RSearch>(libraryId: libraryId).process(in: database).map({ $0.key }).chunked(into: chunkSize),
@@ -76,6 +78,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
     }
 
     private func updates(for libraryId: LibraryIdentifier, database: Realm) throws -> ([SyncController.Object: [[[String: Any]]]], Bool) {
+        guard self.fetchUpdates else { return ([:], false) }
         let chunkSize = SyncController.WriteBatch.maxCount
         let (itemParams, hasUpload) = try ReadUpdatedItemUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         return ([.collection: try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),

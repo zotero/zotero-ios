@@ -336,15 +336,13 @@ class ShareViewController: UIViewController {
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
         let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor)
-
-        let syncHandler = SyncActionHandlerController(userId: userId,
-                                                      apiClient: apiClient,
-                                                      dbStorage: dbStorage,
-                                                      fileStorage: fileStorage,
-                                                      schemaController: schemaController,
-                                                      backgroundUploader: backgroundUploader,
-                                                      syncDelayIntervals: DelayIntervals.sync)
-        let syncController = SyncController(userId: userId, handler: syncHandler,
+        let syncController = SyncController(userId: userId,
+                                            apiClient: apiClient,
+                                            dbStorage: dbStorage,
+                                            fileStorage: fileStorage,
+                                            schemaController: schemaController,
+                                            backgroundUploader: backgroundUploader,
+                                            syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
 
         return ExtensionStore(webView: self.webView,
@@ -353,7 +351,6 @@ class ShareViewController: UIViewController {
                               dbStorage: dbStorage,
                               schemaController: schemaController,
                               fileStorage: fileStorage,
-                              syncController: syncController,
-                              syncActionHandler: syncHandler)
+                              syncController: syncController)
     }
 }

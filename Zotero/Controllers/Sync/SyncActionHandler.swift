@@ -240,7 +240,7 @@ extension SyncActionHandlerController: SyncActionHandler {
 
     private func loadLibraryData(identifiers: [LibraryIdentifier]?) -> Single<[LibraryData]> {
         if identifiers?.count == 0 { return Single.just([]) }
-        let request = ReadLibrariesDataDbRequest(identifiers: identifiers)
+        let request = ReadLibrariesDataDbRequest(identifiers: identifiers, fetchUpdates: true)
         return self.createSingleDbResponseRequest(request)
     }
 

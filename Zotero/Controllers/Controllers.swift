@@ -103,13 +103,13 @@ class UserControllers {
                                                                   fileStorage: controllers.fileStorage)
         let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor)
 
-        let syncHandler = SyncActionHandlerController(userId: userId, apiClient: controllers.apiClient,
-                                                      dbStorage: dbStorage,
-                                                      fileStorage: controllers.fileStorage,
-                                                      schemaController: controllers.schemaController,
-                                                      backgroundUploader: backgroundUploader,
-                                                      syncDelayIntervals: DelayIntervals.sync)
-        let syncController = SyncController(userId: userId, handler: syncHandler,
+        let syncController = SyncController(userId: userId,
+                                            apiClient: controllers.apiClient,
+                                            dbStorage: dbStorage,
+                                            fileStorage: controllers.fileStorage,
+                                            schemaController: controllers.schemaController,
+                                            backgroundUploader: backgroundUploader,
+                                            syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
 
         self.dbStorage = dbStorage

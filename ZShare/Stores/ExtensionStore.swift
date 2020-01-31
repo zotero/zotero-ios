@@ -109,7 +109,6 @@ class ExtensionStore {
     private static let defaultMimetype = "application/pdf"
 
     private let syncController: SyncController
-    private let syncHandler: SyncActionHandler
     private let apiClient: ApiClient
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
@@ -118,14 +117,13 @@ class ExtensionStore {
     private let disposeBag: DisposeBag
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, dbStorage: DbStorage,
-         schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController, syncActionHandler: SyncActionHandler) {
+         schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController) {
         self.syncController = syncController
         self.apiClient = apiClient
         self.backgroundUploader = backgroundUploader
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
-        self.syncHandler = syncActionHandler
         self.webViewHandler = WebViewHandler(webView: webView, apiClient: apiClient, fileStorage: fileStorage)
         self.state = State()
         self.disposeBag = DisposeBag()
@@ -336,8 +334,8 @@ class ExtensionStore {
 
         switch self.state.translation {
         case .translated(let item):
-            self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys),
-                        libraryId: libraryId, userId: userId, schemaController: self.schemaController)
+            self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys), libraryId: libraryId, userId: userId,
+                        apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController)
 
         case .downloaded(let item, let attachmentData):
             let newItem = item.copy(libraryId: libraryId, collectionKeys: collectionKeys)
@@ -347,7 +345,8 @@ class ExtensionStore {
                                         title: filename,
                                         type: .file(file: file, filename: filename, isLocal: true),
                                         libraryId: libraryId)
-            self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId)
+            self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId,
+                        apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
         default: break
         }
@@ -356,17 +355,16 @@ class ExtensionStore {
     /// Used for item without attachment. Creates a DB model of item and submits it to Zotero API.
     /// - parameter item: Parsed item to submit.
     /// - parameter libraryId: Identifier of library to which the item will be submitted.
+    /// - parameter apiClient: API client
+    /// - parameter dbStorage: Database storage
+    /// - parameter fileStorage: File storage
     /// - parameter schemaController: Schema controller for validating item type and field types.
-    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, schemaController: SchemaController) {
+    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int,
+                        apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
         self.createItem(item, schemaController: schemaController)
-            .flatMap { [weak self] parameters -> Single<()> in
-                guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
-                return self.syncHandler.submitUpdate(for: libraryId,
-                                                     userId: userId,
-                                                     object: .item,
-                                                     since: nil,
-                                                     parameters: [parameters])
-                                       .flatMap({ _ in Single.just(()) })
+            .flatMap { parameters in
+                return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId,
+                                              userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage).result
             }
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.submission = .ready
@@ -398,9 +396,13 @@ class ExtensionStore {
     /// - parameter filename: Filename of file to upload.
     /// - parameter libraryId: Identifier of library to which items will be submitted.
     /// - parameter userId: Id of current user.
-    private func upload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int) {
+    /// - parameter apiClient: API client
+    /// - parameter dbStorage: Database storage
+    /// - parameter fileStorage: File storage
+    private func upload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
+                        apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
         self.prepareUpload(item: item, attachment: attachment, file: file, filename: filename,
-                       libraryId: libraryId, userId: userId)
+                       libraryId: libraryId, userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
             .subscribe(onSuccess: { [weak self] response, md5 in
                 guard let `self` = self else { return }
 
@@ -434,9 +436,12 @@ class ExtensionStore {
     /// - parameter filename: Filename of file to upload.
     /// - parameter libraryId: Identifier of library to which items will be submitted.
     /// - parameter userId: Id of current user.
+    /// - parameter apiClient: API client
+    /// - parameter dbStorage: Database storage
+    /// - parameter fileStorage: File storage 
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, filename: String,
-                               libraryId: LibraryIdentifier, userId: Int) -> Single<(AuthorizeUploadResponse, String)> {
+    private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
+                               apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
         return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
                        guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
@@ -448,25 +453,15 @@ class ExtensionStore {
                                       try? self?.fileStorage.remove(file)
                                   })
                    }
-                   .flatMap { [weak self] filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
-                       guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
-                       return self.syncHandler.submitUpdate(for: libraryId,
-                                                            userId: userId,
-                                                            object: .item,
-                                                            since: nil,
-                                                            parameters: parameters)
-                                              .flatMap({ _ in Single.just((filesize, md5, mtime)) })
+                   .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
+                    return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+                                                  apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage).result
+                                    .flatMap({ _ in Single.just((filesize, md5, mtime)) })
                    }
-                   .flatMap { [weak self] filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
-                       guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
-                       return self.syncHandler.authorizeUpload(key: attachment.key,
-                                                               filename: filename,
-                                                               filesize: filesize,
-                                                               md5: md5,
-                                                               mtime: mtime,
-                                                               libraryId: libraryId,
-                                                               userId: userId)
-                                              .flatMap({ return Single.just(($0, md5)) })
+                   .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
+                       return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
+                                                        libraryId: libraryId, userId: userId, apiClient: apiClient).result
+                                    .flatMap({ return Single.just(($0, md5)) })
                    }
     }
 
