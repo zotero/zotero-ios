@@ -11,7 +11,7 @@ import Foundation
 import RxSwift
 
 struct RevertLibraryUpdatesSyncAction: SyncAction {
-    typealias Result = [SyncController.Object : [String]]
+    typealias Result = [SyncObject : [String]]
 
     let libraryId: LibraryIdentifier
 
@@ -19,7 +19,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     unowned let fileStorage: FileStorage
     unowned let schemaController: SchemaController
 
-    var result: Single<[SyncController.Object : [String]]> {
+    var result: Single<[SyncObject : [String]]> {
         return Single.create { subscriber -> Disposable in
             do {
                 let coordinator = try self.dbStorage.createCoordinator()
@@ -49,7 +49,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                 let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
                 try coordinator.perform(request: storeSearchesRequest)
 
-                let failures: [SyncController.Object : [String]] = [.collection: collections.failed,
+                let failures: [SyncObject : [String]] = [.collection: collections.failed,
                                                                     .search: searches.failed,
                                                                     .item: items.failed]
 
@@ -90,7 +90,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     }
 
     private func loadCachedJsonsForChangedDecodableObjects<Obj: Syncable&UpdatableObject, Response: Decodable>(of type: Obj.Type,
-                                                                                                               objectType: SyncController.Object,
+                                                                                                               objectType: SyncObject,
                                                                                                                response: Response.Type,
                                                                                                                in libraryId: LibraryIdentifier,
                                                                                                                coordinator: DbCoordinator,

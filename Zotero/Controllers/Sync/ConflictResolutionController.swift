@@ -13,8 +13,15 @@ enum Conflict {
     case groupWriteDenied(Int, String)
 }
 
+enum ConflictResolution {
+    case deleteGroup(Int)
+    case markGroupAsLocalOnly(Int)
+    case revertLibraryToOriginal(LibraryIdentifier)
+    case markChangesAsResolved(LibraryIdentifier)
+}
+
 protocol ConflictReceiver {
-    func resolve(conflict: Conflict, completed: @escaping (SyncController.Action?) -> Void)
+    func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void)
 }
 
 protocol ConflictPresenter: UIViewController {
@@ -62,13 +69,13 @@ class ConflictResolutionController: ConflictReceiver, DebugPermissionReceiver {
         self.presenter.present(controller: alert)
     }
 
-    func resolve(conflict: Conflict, completed: @escaping (SyncController.Action?) -> Void) {
+    func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             self?._resolve(conflict: conflict, completed: completed)
         }
     }
 
-    private func _resolve(conflict: Conflict, completed: @escaping (SyncController.Action?) -> Void) {
+    private func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         let (title, message, actions) = self.createAlert(for: conflict, completed: completed)
 
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -79,7 +86,7 @@ class ConflictResolutionController: ConflictReceiver, DebugPermissionReceiver {
     }
 
     private func createAlert(for conflict: Conflict,
-                             completed: @escaping (SyncController.Action?) -> Void) -> (title: String, message: String, actions: [UIAlertAction]) {
+                             completed: @escaping (ConflictResolution?) -> Void) -> (title: String, message: String, actions: [UIAlertAction]) {
         switch conflict {
         case .groupRemoved(let groupId, let groupName):
             let actions = [UIAlertAction(title: "Remove", style: .destructive, handler: { _ in

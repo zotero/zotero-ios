@@ -44,7 +44,7 @@ struct Files {
                         ext: ext)
     }
 
-    static func objectFile(for object: SyncController.Object, libraryId: LibraryIdentifier,
+    static func objectFile(for object: SyncObject, libraryId: LibraryIdentifier,
                            key: String, ext: String) -> File {
         let objectName: String
 

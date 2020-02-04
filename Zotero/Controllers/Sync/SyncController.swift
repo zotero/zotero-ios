@@ -21,19 +21,6 @@ protocol SyncAction {
     var result: Single<Result> { get }
 }
 
-enum SyncError: Error {
-    case cancelled
-    // Abort (fatal) errors
-    case noInternetConnection
-    case apiError
-    case dbError
-    case versionMismatch
-    case groupSyncFailed(Error)
-    case allLibrariesFetchFailed(Error)
-    case uploadObjectConflict
-    case permissionLoadingFailed
-}
-
 protocol SynchronizationController: class {
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
 
@@ -43,161 +30,116 @@ protocol SynchronizationController: class {
 }
 
 final class SyncController: SynchronizationController {
+    /// Type of sync.
+    /// - normal: Only objects which need to be synced are fetched. Either synced objects with old version or unsynced objects with backoff schedule.
+    /// - ignoreIndividualDelays: Same as .normal, but individual backoff schedule is ignored.
+    /// - all: All objects are fetched. Both individual backoff schedule and local versions are ignored.
     enum SyncType {
-        case normal                 // Only objects which need to be synced are fetched. Either synced objects
-                                    // with old version or unsynced objects with backoff schedule.
-        case ignoreIndividualDelays // Same as .normal, but individual backoff schedule is ignored.
-        case all                    // All objects are fetched. Both individual backoff schedule and local versions are ignored.
+        case normal
+        case ignoreIndividualDelays
+        case all
     }
 
+    /// Specifies which libraries need to be synced.
+    /// - all: All libraries will be synced.
+    /// - specific: Only specified libraries will be synced.
     enum LibrarySyncType: Equatable {
-        case all                              // Syncs all libraries
-        case specific([LibraryIdentifier])    // Syncs only specific libraries
+        case all
+        case specific([LibraryIdentifier])
     }
 
-    enum Object: CaseIterable, Equatable {
-        case group, collection, search, item, trash, tag
-    }
-
-    struct DownloadBatch: Equatable {
-        static let maxCount = 50
-        let libraryId: LibraryIdentifier
-        let object: Object
-        let keys: [Any]
-        let version: Int
-
-        // We don't really need equatability in this target, we need it for testing. Swift can't automatically
-        // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
-        // equatability functions here so that Action equatability is synthesized automatically.
-        static func ==(lhs: DownloadBatch, rhs: DownloadBatch) -> Bool {
-            return true
-        }
-    }
-
-    struct WriteBatch: Equatable {
-        static let maxCount = 50
-        let libraryId: LibraryIdentifier
-        let object: Object
-        let version: Int
-        let parameters: [[String: Any]]
-
-        func copy(withVersion version: Int) -> WriteBatch {
-            return WriteBatch(libraryId: self.libraryId, object: self.object, version: version, parameters: self.parameters)
-        }
-
-        // We don't really need equatability in this target, we need it for testing. Swift can't automatically
-        // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
-        // equatability functions here so that Action equatability is synthesized automatically.
-        static func ==(lhs: WriteBatch, rhs: WriteBatch) -> Bool {
-            return true
-        }
-    }
-
-    struct AttachmentUpload: Equatable {
-        let libraryId: LibraryIdentifier
-        let key: String
-        let filename: String
-        let `extension`: String
-        let md5: String
-        let mtime: Int
-
-        var file: File {
-            return Files.objectFile(for: .item, libraryId: self.libraryId, key: self.key, ext: self.extension)
-        }
-    }
-
-    struct DeleteBatch: Equatable {
-        static let maxCount = 50
-        let libraryId: LibraryIdentifier
-        let object: Object
-        let version: Int
-        let keys: [String]
-
-        func copy(withVersion version: Int) -> DeleteBatch {
-            return DeleteBatch(libraryId: self.libraryId, object: self.object, version: version, keys: self.keys)
-        }
-
-        // We don't really need equatability in this target, we need it for testing. Swift can't automatically
-        // synthesize equatability function in an extension in a different file to the type. So I'm adding "placeholder"
-        // equatability functions here so that Action equatability is synthesized automatically.
-        static func ==(lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
-            return true
-        }
-    }
-
+    /// Specifies which actions should be created for libraries.
+    /// - automatic: Create all types of actions, which are needed.
+    /// - onlyWrites: Create only "write" actions - item submission, uploads, etc.
+    /// - forceDownloads: Create only "download" actions - version check, item data, etc.
     enum CreateLibraryActionsOptions: Equatable {
         case automatic, onlyWrites, forceDownloads
     }
 
-    struct AccessPermissions {
-        struct Permissions {
-            let library: Bool
-            let notes: Bool
-            let files: Bool
-            let write: Bool
-        }
-
-        let user: Permissions
-        let groupDefault: Permissions
-        let groups: [Int: Permissions]
-    }
-
+    /// Sync action represents a step that the synchronization controller needs to take.
+    /// - loadKeyPermissions: Checks current key for access permissions.
+    /// - syncVersions: Fetch versions from API, update DB based on response.
+    /// - createLibraryActions: Loads required libraries, spawns actions for each.
+    /// - createUploadActions: Loads items that need upload, spawns actions for each.
+    /// - syncBatchToDb: Fetch data and store to db.
+    /// - storeVersion: Store new version for given library-object.
+    /// - syncDeletions: Synchronize deletions of objects in library.
+    /// - syncSettings: Synchronize settings for library.
+    /// - storeSettingsVersion: Store new version for settings in library.
+    /// - submitWriteBatch: Submit local changes to backend.
+    /// - uploadAttachment: Upload local attachment to backend.
+    /// - submitDeleteBatch: Submit local deletions to backend.
+    /// - resolveConflict: Handle conflict resolution.
+    /// - resolveDeletedGroup: Handle group that was deleted remotely - (Id, Name).
+    /// - resolveGroupMetadataWritePermission: Resolve when group had metadata editing allowed, but it was disabled and we try to upload new data.
+    /// - revertLibraryToOriginal: Revert all changes to original cached version of this group.
+    /// - markChangesAsResolved: Local changes couldn't be written remotely, but we want to keep them locally anyway.
+    /// - deleteGroup: Removes group from db.
+    /// - markGroupAsLocalOnly: Marks group as local only (not synced with backend).
     enum Action: Equatable {
-        case loadKeyPermissions                                // Checks current key for access permissions
-        case syncVersions(LibraryIdentifier, Object, Int?)     // Fetch versions from API, update DB based on response
-        case createLibraryActions(LibrarySyncType,             // Loads required libraries, spawn actions for each
-                                  CreateLibraryActionsOptions)
+        case loadKeyPermissions
+        case syncVersions(LibraryIdentifier, SyncObject, Int?)
+        case createLibraryActions(LibrarySyncType, CreateLibraryActionsOptions)
         case createUploadActions(LibraryIdentifier)
-        case syncBatchToDb(DownloadBatch)                      // Fetch data and store to db
-        case storeVersion(Int, LibraryIdentifier, Object)      // Store new version for given library-object
-        case syncDeletions(LibraryIdentifier, Int)             // Synchronize deletions of objects in library
-        case syncSettings(LibraryIdentifier, Int?)             // Synchronize settings for library
-        case storeSettingsVersion(Int, LibraryIdentifier)      // Store new version for settings in library
-        case submitWriteBatch(WriteBatch)                      // Submit local changes to backend
-        case uploadAttachment(AttachmentUpload)                // Upload local attachment to backend
-        case submitDeleteBatch(DeleteBatch)                    // Submit local deletions to backend
-        case resolveConflict(String, LibraryIdentifier)        // Handle conflict resolution
-        case resolveDeletedGroup(Int, String)                  // Handle group that was deleted remotely - (Id, Name)
-        case resolveGroupMetadataWritePermission(Int, String)  // Resolve when group had metadata editing allowed,
-                                                               // but it was disabled and we try to upload new data
-        case revertLibraryToOriginal(LibraryIdentifier)        // Revert all changes to original
-                                                               // cached version of this group.
-        case markChangesAsResolved(LibraryIdentifier)          // Local changes couldn't be written remotely, but we
-                                                               // want to keep them locally anyway
-        case deleteGroup(Int)                                  // Removes group from db
-        case markGroupAsLocalOnly(Int)                         // Marks group as local only (not synced with backend)
+        case syncBatchToDb(DownloadBatch)
+        case storeVersion(Int, LibraryIdentifier, SyncObject)
+        case syncDeletions(LibraryIdentifier, Int)
+        case syncSettings(LibraryIdentifier, Int?)
+        case storeSettingsVersion(Int, LibraryIdentifier)
+        case submitWriteBatch(WriteBatch)
+        case uploadAttachment(AttachmentUpload)
+        case submitDeleteBatch(DeleteBatch)
+        case resolveConflict(String, LibraryIdentifier)
+        case resolveDeletedGroup(Int, String)
+        case resolveGroupMetadataWritePermission(Int, String)
+        case revertLibraryToOriginal(LibraryIdentifier)
+        case markChangesAsResolved(LibraryIdentifier)
+        case deleteGroup(Int)
+        case markGroupAsLocalOnly(Int)
     }
 
-    private static let timeoutPeriod: Double = 15.0
-
-    private let userId: Int
+    // All actions and access to local variables are performed on this queue.
     private let accessQueue: DispatchQueue
     private let accessScheduler: SerialDispatchQueueScheduler
-    private let timerScheduler: ConcurrentDispatchQueueScheduler
+    // Controllers
     private let apiClient: ApiClient
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
     private let backgroundUploader: BackgroundUploader
-    private let syncDelayIntervals: [Double]
+    // Handler for reporting sync progress to observers.
     private let progressHandler: SyncProgressHandler
+    // Id of currently logged in user.
+    private let userId: Int
+    // Delay for queue. In case of conflict the queue will wait this amount of second before trying to download remote changes and submitting local
+    // changes again.
     private let conflictDelays: [Int]
-    // SyncType and LibrarySyncType are types used for new sync, if available, otherwise sync is not needed
+    // Delay for syncing. Local objects won't try to sync again until the delay passes (based on count of retries).
+    private let syncDelayIntervals: [Double]
+    // SyncType and LibrarySyncType are types used for new sync, if available, otherwise sync is not needed.
     let observable: PublishSubject<(SyncController.SyncType, SyncController.LibrarySyncType)?>
 
-    private var queue: [Action]
-    private var processingAction: Action?
+    // Type of current sync.
     private var type: SyncType
+    // Queue of sync actions.
+    private var queue: [Action]
+    // Current action in progress.
+    private var processingAction: Action?
+    // Type of previous sync. Used for figuring out resync policy.
     private var previousType: SyncType?
+    // Sync type for libraries.
     private var libraryType: LibrarySyncType
-    /// Version returned by last object sync, used to check for version mismatches between object syncs
+    // Version returned by last object sync, used to check for version mismatches between object syncs
     private var lastReturnedVersion: Int?
-    /// Array of non-fatal errors that happened during current sync
+    // Array of non-fatal errors that happened during current sync
     private var nonFatalErrors: [Error]
+    // DisposeBag is a var so that the sync can be cancelled.
     private var disposeBag: DisposeBag
+    // Number of retries for conflicts. Used to calculate conflict delay for processing next action.
     private var conflictRetries: Int
-    private var timerDisposeBag: DisposeBag
+    // Access permissions for current sync.
     private var accessPermissions: AccessPermissions?
+    // Used for conflict resolution when user interaction is needed.
     private var conflictReceiver: (ConflictReceiver & DebugPermissionReceiver)?
 
     private var isSyncing: Bool {
@@ -206,13 +148,12 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Lifecycle
 
-    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage,
-         schemaController: SchemaController, backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
+    init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
+         backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncAccessQueue", qos: .utility, attributes: .concurrent)
         self.userId = userId
         self.accessQueue = accessQueue
         self.accessScheduler = SerialDispatchQueueScheduler(queue: accessQueue, internalSerialQueueName: "org.zotero.SyncController.accessScheduler")
-        self.timerScheduler = ConcurrentDispatchQueueScheduler(queue: accessQueue)
         self.observable = PublishSubject()
         self.progressHandler = SyncProgressHandler()
         self.disposeBag = DisposeBag()
@@ -221,7 +162,6 @@ final class SyncController: SynchronizationController {
         self.type = .normal
         self.previousType = nil
         self.libraryType = .all
-        self.timerDisposeBag = DisposeBag()
         self.conflictDelays = conflictDelays
         self.conflictRetries = 0
         self.apiClient = apiClient
@@ -238,6 +178,7 @@ final class SyncController: SynchronizationController {
         return self.progressHandler.observable
     }
 
+    /// Sets presenter for conflict resolution.
     func setConflictPresenter(_ presenter: ConflictPresenter) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             self?.conflictReceiver = ConflictResolutionController(presenter: presenter)
@@ -251,6 +192,9 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Start a new sync if another sync is not already in progress (current sync is not automatically cancelled).
+    /// - parameter type: Type of sync. See `SyncType` documentation for more info.
+    /// - parameter libraries: Specifies which libraries should be synced. See `LibrarySyncType` documentation for more info.
     func start(type: SyncType, libraries: LibrarySyncType) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             guard let `self` = self, !self.isSyncing else { return }
@@ -263,11 +207,11 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Cancels ongoing sync.
     func cancel() {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             guard let `self` = self, self.isSyncing else { return }
             DDLogInfo("--- Sync: cancelled ---")
-            self.disposeBag = DisposeBag()
             self.cleanup()
             self.report(fatalError: SyncError.cancelled)
         }
@@ -275,20 +219,7 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Controls
 
-    private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
-        switch libraries {
-        case .all:
-            return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
-        case .specific(let identifiers):
-            for identifier in identifiers {
-                if case .group = identifier {
-                    return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
-                }
-            }
-            return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
-        }
-    }
-
+    /// Finishes ongoing sync.
     private func finish() {
         let errors = self.nonFatalErrors
 
@@ -305,6 +236,8 @@ final class SyncController: SynchronizationController {
         self.cleanup()
     }
 
+    /// Aborts ongoing sync with given error.
+    /// - parameter error: Error which will be reported as a reason for this abort.
     private func abort(error: Error) {
         DDLogInfo("--- Sync: aborted ---")
         DDLogInfo("Error: \(error)")
@@ -317,6 +250,7 @@ final class SyncController: SynchronizationController {
         self.cleanup()
     }
 
+    /// Cleans up helper variables for current sync.
     private func cleanup() {
         self.processingAction = nil
         self.queue = []
@@ -324,12 +258,14 @@ final class SyncController: SynchronizationController {
         self.type = .normal
         self.lastReturnedVersion = nil
         self.conflictRetries = 0
-        self.timerDisposeBag = DisposeBag()
+        self.disposeBag = DisposeBag()
         self.accessPermissions = nil
     }
 
     // MARK: - Error handling
 
+    /// Reports fatal error. Fatal error stops the sync and aborts it. Enqueues a new sync if needed.
+    /// - parameter fatalError: Error to be reported.
     private func report(fatalError: Error) {
         self.progressHandler.reportAbort(with: fatalError)
         self.previousType = nil
@@ -344,6 +280,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Reports non-fatal errors. These happened during sync, but didn't need to stop it. Enqueues a new sync if needed.
     private func reportFinish(nonFatalErrors errors: [Error]) {
         self.progressHandler.reportFinish(with: errors)
 
@@ -368,6 +305,10 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Queue management
 
+    /// Enqueues new actions and processes next action.
+    /// - parameter actions: Array of actions to be added.
+    /// - parameter index: Index in array where actions should be added. If nil, they will be appended.
+    /// - parameter delay: Delay for processing new action.
     private func enqueue(actions: [Action], at index: Int? = nil, delay: Int? = nil) {
         if !actions.isEmpty {
             if let index = index {
@@ -379,16 +320,18 @@ final class SyncController: SynchronizationController {
 
         if let delay = delay, delay > 0 {
             self.reportDelay?(delay)
-            Single<Int>.timer(.seconds(delay), scheduler: self.timerScheduler)
+            Single<Int>.timer(.seconds(delay), scheduler: self.accessScheduler)
                        .subscribe(onSuccess: { [weak self] _ in
                            self?.processNextAction()
                        })
-                       .disposed(by: self.timerDisposeBag)
+                       .disposed(by: self.disposeBag)
         } else {
             self.processNextAction()
         }
     }
 
+    /// Removes all actions for given library from the beginning of the queue.
+    /// - parameter libraryId: Library identifier for which actions will be deleted.
     private func removeAllActions(for libraryId: LibraryIdentifier) {
         while !self.queue.isEmpty {
             guard self.queue.first?.libraryId == libraryId else { break }
@@ -396,18 +339,21 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Removes all download actions for given library from the beginning of the queue.
+    /// - parameter libraryId: Library identifier for which actions will be deleted.
     private func removeAllDownloadActions(for libraryId: LibraryIdentifier) {
         while !self.queue.isEmpty {
             guard let action = self.queue.first, action.libraryId == libraryId else { break }
             switch action {
-            case .resolveConflict, .submitDeleteBatch, .submitWriteBatch:
+            case .storeSettingsVersion, .storeVersion, .syncBatchToDb, .syncDeletions, .syncSettings, .syncVersions:
+                self.queue.removeFirst()
+            default:
                 continue
-            default: break
             }
-            self.queue.removeFirst()
         }
     }
 
+    /// Processes next action in queue.
     private func processNextAction() {
         guard !self.queue.isEmpty else {
             self.processingAction = nil
@@ -436,6 +382,8 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Action processing
 
+    /// Processes given action.
+    /// - parameter action: Action to process
     private func process(action: Action) {
         DDLogInfo("--- Sync: action ---")
         DDLogInfo("\(action)")
@@ -488,19 +436,49 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Asks conflict receiver to resolve a conflict. Enqueues actions for given conflict resolution.
+    /// - parameter conflict: Conflict to resolve.
     private func resolve(conflict: Conflict) {
         // If conflict receiver isn't yet assigned, we just wait for it and process current action when it's assigned
         // It's assigned either after login or shortly after app is launched, so we should never stay stuck on this.
         guard let receiver = self.conflictReceiver else { return }
 
-        receiver.resolve(conflict: conflict) { [weak self] action in
+        receiver.resolve(conflict: conflict) { [weak self] resolution in
             self?.accessQueue.async(flags: .barrier) {
-                if let action = action {
-                    self?.enqueue(actions: [action], at: 0)
+                guard let `self` = self else { return }
+                if let resolution = resolution {
+                    self.enqueue(actions: self.actions(for: resolution), at: 0)
                 } else {
-                    self?.processNextAction()
+                    self.processNextAction()
                 }
             }
+        }
+    }
+
+    private func actions(for resolution: ConflictResolution) -> [Action] {
+        switch resolution {
+        case .deleteGroup(let id):
+            return [.deleteGroup(id)]
+        case .markChangesAsResolved(let id):
+            return [.markChangesAsResolved(id)]
+        case .markGroupAsLocalOnly(let id):
+            return [.markGroupAsLocalOnly(id)]
+        case .revertLibraryToOriginal(let id):
+            return [.revertLibraryToOriginal(id)]
+        }
+    }
+
+    private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
+        switch libraries {
+        case .all:
+            return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
+        case .specific(let identifiers):
+            for identifier in identifiers {
+                if case .group = identifier {
+                    return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
+                }
+            }
+            return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
         }
     }
 
@@ -663,7 +641,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func processSyncVersions(libraryId: LibraryIdentifier, object: Object, since version: Int?) {
+    private func processSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, since version: Int?) {
         let userId = self.userId
         switch object {
         case .group:
@@ -694,7 +672,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func finishFailedSyncVersionsAction(libraryId: LibraryIdentifier, object: Object, error: Error) {
+    private func finishFailedSyncVersionsAction(libraryId: LibraryIdentifier, object: SyncObject, error: Error) {
         if let abortError = self.errorRequiresAbort(error) {
             self.abort(error: abortError)
             return
@@ -714,7 +692,7 @@ final class SyncController: SynchronizationController {
         self.processNextAction()
     }
 
-    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: Object,
+    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: SyncObject,
                                             from keys: [Any], currentVersion: Int) {
         let batches = self.createBatchObjects(for: keys, libraryId: libraryId, object: object, version: currentVersion)
 
@@ -754,7 +732,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func createBatchObjects(for keys: [Any], libraryId: LibraryIdentifier,
-                                    object: Object, version: Int) -> [DownloadBatch] {
+                                    object: SyncObject, version: Int) -> [DownloadBatch] {
         let maxBatchSize = DownloadBatch.maxCount
         var batchSize = 5
         var processed = 0
@@ -791,7 +769,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishBatchSyncAction(for libraryId: LibraryIdentifier, object: Object, allKeys: [Any],
+    private func finishBatchSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, allKeys: [Any],
                                        result: Result<([String], [Error], [StoreItemsError])>) {
         switch result {
         case .success(let ids, let parseErrors, let itemConflicts):
@@ -854,7 +832,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: Object) {
+    private func markForResync(keys: [Any], libraryId: LibraryIdentifier, object: SyncObject) {
         let result = MarkForResyncSyncAction(keys: keys, object: object, libraryId: libraryId, dbStorage: self.dbStorage).result
         result.observeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] _ in
@@ -978,7 +956,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: Object) {
+    private func finishSubmission(error: Error?, newVersion: Int?, libraryId: LibraryIdentifier, object: SyncObject) {
         if let error = error {
             if self.handleUpdatePreconditionFailureIfNeeded(for: error, libraryId: libraryId) {
                 return
@@ -1059,6 +1037,9 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Helpers
 
+    /// Updates a version in next `WriteBatch` or `DeleteBatch` if available. This happens because submitting a batch of changes increases the version
+    /// on backend. The new version is returned by backend and needs to be used in next batch, so that it doesn't report a conflict.
+    /// - parameter version: New version after submission of last batch of changes.
     private func updateVersionInNextWriteBatch(to version: Int) {
         guard let action = self.queue.first else { return }
 
@@ -1073,6 +1054,9 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Checks whether given error is fatal and requires abort.
+    /// - parameter error: Error to check.
+    /// - returns: `SyncError` with appropriate error, if abort is required, `nil` otherwise.
     private func errorRequiresAbort(_ error: Error) -> Error? {
         let nsError = error as NSError
 
@@ -1097,6 +1081,9 @@ final class SyncController: SynchronizationController {
         return nil
     }
 
+    /// Checks whether given `AFError` is fatal and requires abort.
+    /// - error: `AFError` to check.
+    /// - returns: `SyncError` with appropriate error, if abort is required, `nil` otherwise.
     private func alamoErrorRequiresAbort(_ error: AFError) -> SyncError? {
         switch error {
         case .responseValidationFailed(let reason):
@@ -1113,6 +1100,10 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Handles version mismatch error, if required. Version mismatch is handled by removing actions for current library, so that we don't get conflicts.
+    /// - parameter error: Error to check.
+    /// - parameter libraryId: Identifier of current library, which is being synced.
+    /// - returns: `true` if there was a mismatch error, `false` otherwise.
     private func handleVersionMismatchIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
         guard error.isMismatchError else { return false }
 
@@ -1125,14 +1116,19 @@ final class SyncController: SynchronizationController {
         return true
     }
 
+    /// Handles precondition error, if required. Precondition error is handled by removing all actions for current library. Then downloading all
+    /// remote changes from backend and then trying to submit our local changes again.
+    /// - parameter error: Error to check.
+    /// - parameter libraryId: Identifier of current library, which is being synced.
+    /// - returns: `true` if there was a precondition error, `false` otherwise.
     private func handleUpdatePreconditionFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
-        guard let type = error.preconditionFailureType else { return false }
+        guard let preconditionError = error.preconditionError else { return false }
 
         // Remote has newer version than local, we need to remove remaining write actions for this library from queue,
         // sync remote changes and then try to upload our local changes again, we remove existing write actions from
         // queue because they might change - for example some deletions might be overwritten by remote changes
 
-        switch type {
+        switch preconditionError {
         case .objectConflict:
             self.abort(error: SyncError.uploadObjectConflict)
 
@@ -1150,6 +1146,11 @@ final class SyncController: SynchronizationController {
         return true
     }
 
+    /// Handle unchanged "error", if required. If backend returns response code 304, it is treated as error. If this error is returned,
+    /// we can safely assume, that there are no further remote changes and we can remove all download actions for current library.
+    /// - parameter error: Error to check.
+    /// - parameter libraryId: Identifier of current library, which is being synced.
+    /// - returns: `true` if there was a unchanged error, `false` otherwise.
     private func handleUnchangedFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
         guard error.isUnchangedError else { return false }
 
@@ -1175,36 +1176,74 @@ final class SyncController: SynchronizationController {
     }
 }
 
-enum PreconditionErrorType {
-    case objectConflict, libraryConflict
-}
-
-extension Error {
-    var isMismatchError: Bool {
-        return (self as? SyncActionHandlerError) == .versionMismatch
+fileprivate extension SyncController.Action {
+    var libraryId: LibraryIdentifier? {
+        switch self {
+        case .loadKeyPermissions, .createLibraryActions:
+            return nil
+        case .syncBatchToDb(let batch):
+            return batch.libraryId
+        case .submitWriteBatch(let batch):
+            return batch.libraryId
+        case .submitDeleteBatch(let batch):
+            return batch.libraryId
+        case .uploadAttachment(let upload):
+            return upload.libraryId
+        case .resolveDeletedGroup(let groupId, _),
+             .resolveGroupMetadataWritePermission(let groupId, _),
+             .deleteGroup(let groupId),
+             .markGroupAsLocalOnly(let groupId):
+            return .group(groupId)
+        case .syncVersions(let libraryId, _, _),
+             .storeVersion(_, let libraryId, _),
+             .syncDeletions(let libraryId, _),
+             .syncSettings(let libraryId, _),
+             .storeSettingsVersion(_, let libraryId),
+             .resolveConflict(_, let libraryId),
+             .markChangesAsResolved(let libraryId),
+             .revertLibraryToOriginal(let libraryId),
+             .createUploadActions(let libraryId):
+            return libraryId
+        }
     }
 
-    var isUnchangedError: Bool {
-        return self.afError.flatMap({ $0.responseCode == 304 }) ?? false
+    var requiresConflictReceiver: Bool {
+        switch self {
+        case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+            return true
+        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
+             .createUploadActions:
+            return false
+        }
     }
 
-    var preconditionFailureType: PreconditionErrorType? {
-        if (self as? SyncActionHandlerError) == .objectConflict {
-            return .objectConflict
+    var requiresDebugPermissionPrompt: Bool {
+        switch self {
+        case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
+            return true
+        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+             .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
+             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+            return false
         }
-        if self.afError.flatMap({ $0.responseCode == 412 }) == true {
-            return .libraryConflict
-        }
-        return nil
     }
 
-    private var afError: AFError? {
-        if let responseError = self as? AFResponseError {
-            return responseError.error
+    var debugPermissionMessage: String {
+        switch self {
+        case .submitDeleteBatch(let batch):
+            return "Delete \(batch.keys.count) \(batch.object) in \(batch.libraryId.debugName)\n\(batch.keys)"
+        case .submitWriteBatch(let batch):
+            return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
+        case .uploadAttachment(let upload):
+            return "Upload \(upload.filename).\(upload.extension) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
+        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+             .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
+             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+            return "Unknown action"
         }
-        if let alamoError = self as? AFError {
-            return alamoError
-        }
-        return nil
     }
 }

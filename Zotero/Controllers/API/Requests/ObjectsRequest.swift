@@ -11,7 +11,7 @@ import Foundation
 struct ObjectsRequest: ApiRequest {
     let libraryId: LibraryIdentifier
     let userId: Int
-    let objectType: SyncController.Object
+    let objectType: SyncObject
     let keys: String
 
     var endpoint: ApiEndpoint {

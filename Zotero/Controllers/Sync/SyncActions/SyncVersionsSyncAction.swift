@@ -14,7 +14,7 @@ import RxSwift
 struct SyncVersionsSyncAction: SyncAction {
     typealias Result = (Int, [Any])
 
-    let object: SyncController.Object
+    let object: SyncObject
     let sinceVersion: Int?
     let currentVersion: Int?
     let syncType: SyncController.SyncType
@@ -46,7 +46,7 @@ struct SyncVersionsSyncAction: SyncAction {
     }
 
     private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, libraryId: LibraryIdentifier, userId: Int,
-                                                          object: SyncController.Object, since sinceVersion: Int?,
+                                                          object: SyncObject, since sinceVersion: Int?,
                                                           current currentVersion: Int?,
                                                           syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         let forcedSinceVersion = syncType == .all ? nil : sinceVersion
@@ -56,7 +56,7 @@ struct SyncVersionsSyncAction: SyncAction {
                                   let newVersion = self.lastVersion(from: headers)
 
                                   if let current = currentVersion, newVersion != current {
-                                      return Single.error(SyncActionHandlerError.versionMismatch)
+                                      return Single.error(SyncError.versionMismatch)
                                   }
 
                                   var isTrash: Bool?

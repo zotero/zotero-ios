@@ -15,7 +15,7 @@ struct MarkForResyncSyncAction: SyncAction {
     typealias Result = ()
 
     let keys: [Any]
-    let object: SyncController.Object
+    let object: SyncObject
     let libraryId: LibraryIdentifier
 
     unowned let dbStorage: DbStorage

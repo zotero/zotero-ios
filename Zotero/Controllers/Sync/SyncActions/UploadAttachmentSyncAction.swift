@@ -36,7 +36,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                           if !isChanged {
                                               subscriber(.success(()))
                                           } else {
-                                              subscriber(.error(SyncActionHandlerError.attachmentItemNotSubmitted))
+                                              subscriber(.error(SyncActionError.attachmentItemNotSubmitted))
                                           }
                                       } catch let error {
                                           subscriber(.error(error))
@@ -48,7 +48,7 @@ struct UploadAttachmentSyncAction: SyncAction {
         let upload = dbCheck.flatMap { _ -> Single<UInt64> in
                                 let size = self.fileStorage.size(of: self.file)
                                 if size == 0 {
-                                    return Single.error(SyncActionHandlerError.attachmentMissing)
+                                    return Single.error(SyncActionError.attachmentMissing)
                                 } else {
                                     return Single.just(size)
                                 }
@@ -58,10 +58,10 @@ struct UploadAttachmentSyncAction: SyncAction {
                                                                  md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
                                                                  userId: self.userId, apiClient: self.apiClient).result
                             }
-                            .flatMap { response -> Single<Swift.Result<(UploadRequest, String), SyncActionHandlerError>> in
+                            .flatMap { response -> Single<Swift.Result<(UploadRequest, String), SyncActionError>> in
                                 switch response {
                                 case .exists:
-                                    return Single.just(.failure(SyncActionHandlerError.attachmentAlreadyUploaded))
+                                    return Single.just(.failure(SyncActionError.attachmentAlreadyUploaded))
                                 case .new(let response):
                                     let request = AttachmentUploadRequest(url: response.url)
                                     return self.apiClient.upload(request: request) { data in
@@ -75,7 +75,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                 }
                             }
 
-        let response = upload.flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionHandlerError>> in
+        let response = upload.flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionError>> in
                                  switch result {
                                  case .success(let uploadRequest, let uploadKey):
                                       return uploadRequest.rx.data()
@@ -85,7 +85,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                      return Single.just(.failure(error))
                                  }
                              })
-                             .flatMap({ result -> Single<Swift.Result<(Data, ResponseHeaders), SyncActionHandlerError>> in
+                             .flatMap({ result -> Single<Swift.Result<(Data, ResponseHeaders), SyncActionError>> in
                                  switch result {
                                  case .success(_, let uploadKey):
                                      let request = RegisterUploadRequest(libraryId: self.libraryId,

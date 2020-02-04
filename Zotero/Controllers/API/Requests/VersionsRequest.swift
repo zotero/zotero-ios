@@ -13,7 +13,7 @@ struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
 
     let libraryId: LibraryIdentifier
     let userId: Int
-    let objectType: SyncController.Object
+    let objectType: SyncObject
     let version: Int?
 
     var endpoint: ApiEndpoint {

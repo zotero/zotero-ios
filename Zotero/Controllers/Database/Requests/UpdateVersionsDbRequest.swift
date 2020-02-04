@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 enum UpdateVersionType {
-    case object(SyncController.Object)
+    case object(SyncObject)
     case settings
 }
 

@@ -28,7 +28,7 @@ struct SyncSettingsSyncAction: SyncAction {
                                 let newVersion = self.lastVersion(from: headers)
 
                                 if let current = self.currentVersion, newVersion != current {
-                                    return Single.error(SyncActionHandlerError.versionMismatch)
+                                    return Single.error(SyncError.versionMismatch)
                                 }
 
                                 do {

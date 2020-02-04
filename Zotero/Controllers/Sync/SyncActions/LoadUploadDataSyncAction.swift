@@ -11,14 +11,14 @@ import Foundation
 import RxSwift
 
 struct LoadUploadDataSyncAction: SyncAction {
-    typealias Result = [SyncController.AttachmentUpload]
+    typealias Result = [AttachmentUpload]
 
     let libraryId: LibraryIdentifier
 
     unowned let backgroundUploader: BackgroundUploader
     unowned let dbStorage: DbStorage
 
-    var result: Single<[SyncController.AttachmentUpload]> {
+    var result: Single<[AttachmentUpload]> {
         return self.loadUploads(libraryId: self.libraryId)
                    .flatMap { uploads in
                        let backgroundUploads = self.backgroundUploader.ongoingUploads()
@@ -26,7 +26,7 @@ struct LoadUploadDataSyncAction: SyncAction {
                    }
     }
 
-    private func loadUploads(libraryId: LibraryIdentifier) -> Single<[SyncController.AttachmentUpload]> {
+    private func loadUploads(libraryId: LibraryIdentifier) -> Single<[AttachmentUpload]> {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = ReadAttachmentUploadsDbRequest(libraryId: libraryId)

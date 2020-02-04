@@ -15,7 +15,7 @@ typealias SyncProgressData = (completed: Int, total: Int)
 
 enum SyncProgress {
     case groups
-    case library(String, SyncController.Object, SyncProgressData?) // Library name, object, data
+    case library(String, SyncObject, SyncProgressData?) // Library name, object, data
     case deletions(String) // Library name
     case finished([Error])
     case aborted(Error)
@@ -53,19 +53,19 @@ final class SyncProgressHandler {
         self.libraryNames = data
     }
 
-    func reportVersionsSync(for libraryId: LibraryIdentifier, object: SyncController.Object) {
+    func reportVersionsSync(for libraryId: LibraryIdentifier, object: SyncObject) {
         guard object != .group, let name = self.libraryNames?[libraryId] else { return }
         self.currentLibrary = name
         self.observable.accept(.library(name, object, nil))
     }
 
-    func reportObjectCount(for object: SyncController.Object, count: Int) {
+    func reportObjectCount(for object: SyncObject, count: Int) {
         self.currentTotal = count
         self.currentDone = 0
         self.reportCurrentNumbers(for: object)
     }
 
-    func reportBatch(for object: SyncController.Object, count: Int) {
+    func reportBatch(for object: SyncObject, count: Int) {
         self.currentDone += count
         self.reportCurrentNumbers(for: object)
     }
@@ -105,7 +105,7 @@ final class SyncProgressHandler {
         self.currentTotal = 0
     }
 
-    private func reportCurrentNumbers(for object: SyncController.Object) {
+    private func reportCurrentNumbers(for object: SyncObject) {
         guard let name = self.currentLibrary, self.currentTotal > 0 else { return }
         self.observable.accept(.library(name, object, (self.currentDone, self.currentTotal)))
     }

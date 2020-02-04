@@ -41,6 +41,29 @@ extension LibraryIdentifier: Codable {
     }
 }
 
+extension LibraryIdentifier {
+    func apiPath(userId: Int) -> String {
+        switch self {
+        case .group(let identifier):
+            return "groups/\(identifier)"
+        case .custom:
+            return "users/\(userId)"
+        }
+    }
+
+    var debugName: String {
+        switch self {
+        case .group(let groupId):
+            return "Group (\(groupId))"
+        case .custom(let type):
+            switch type {
+            case .myLibrary:
+                return "My Library"
+            }
+        }
+    }
+}
+
 enum LibraryObject {
     case custom(RCustomLibrary)
     case group(RGroup)

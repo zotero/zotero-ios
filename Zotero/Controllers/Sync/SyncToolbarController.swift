@@ -82,7 +82,7 @@ class SyncToolbarController {
         }
     }
 
-    private func name(for object: SyncController.Object) -> String {
+    private func name(for object: SyncObject) -> String {
         switch object {
         case .collection:
             return "collections"

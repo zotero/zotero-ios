@@ -14,7 +14,7 @@ struct SubmitDeletionSyncAction: SyncAction {
     typealias Result = Int
 
     let keys: [String]
-    let object: SyncController.Object
+    let object: SyncObject
     let version: Int
     let libraryId: LibraryIdentifier
     let userId: Int

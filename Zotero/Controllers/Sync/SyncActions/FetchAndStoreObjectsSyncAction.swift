@@ -15,7 +15,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
     typealias Result = ([String], [Error], [StoreItemsError])
 
     let keys: [Any]
-    let object: SyncController.Object
+    let object: SyncObject
     let version: Int
     let libraryId: LibraryIdentifier
     let userId: Int
@@ -34,7 +34,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
 
                                  // Group version sync doesn't return last version, so we ignore them
                                  if self.object != .group && self.version != newVersion {
-                                     return Single.error(SyncActionHandlerError.versionMismatch)
+                                     return Single.error(SyncError.versionMismatch)
                                  }
 
                                  do {
@@ -48,7 +48,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
     }
 
     private func syncToDb(data: Data, libraryId: LibraryIdentifier,
-                          object: SyncController.Object, userId: Int) throws -> ([String], [Error], [StoreItemsError]) {
+                          object: SyncObject, userId: Int) throws -> ([String], [Error], [StoreItemsError]) {
         let coordinator = try self.dbStorage.createCoordinator()
 
         switch object {
@@ -112,7 +112,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
     }
 
     private func storeIndividualCodableJsonObjects<Object: KeyedResponse&Codable>(from objects: [Object],
-                                                                                  type: SyncController.Object,
+                                                                                  type: SyncObject,
                                                                                   libraryId: LibraryIdentifier) {
         for object in objects {
             do {

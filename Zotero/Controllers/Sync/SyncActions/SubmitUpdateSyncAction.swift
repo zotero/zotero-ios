@@ -17,7 +17,7 @@ struct SubmitUpdateSyncAction: SyncAction {
 
     let parameters: [[String : Any]]
     let sinceVersion: Int?
-    let object: SyncController.Object
+    let object: SyncObject
     let libraryId: LibraryIdentifier
     let userId: Int
 
@@ -77,7 +77,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                                  }
 
                                  if response.failed.first(where: { $0.code == 412 }) != nil {
-                                     return Single.just((response.newVersion, SyncActionHandlerError.objectConflict))
+                                     return Single.just((response.newVersion, PreconditionErrorType.objectConflict))
                                  }
 
                                  if response.failed.first(where: { $0.code == 409 }) != nil {
