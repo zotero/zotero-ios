@@ -1,5 +1,5 @@
 //
-//  SyncActionHandlerSpec.swift
+//  SyncActionsSpec.swift
 //  ZoteroTests
 //
 //  Created by Michal Rentka on 09/07/2019.
@@ -18,23 +18,15 @@ import RealmSwift
 import RxSwift
 import Quick
 
-class SyncActionHandlerSpec: QuickSpec {
+class SyncActionsSpec: QuickSpec {
     private static let userId = 100
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static let fileStorage = FileStorageController()
-    private static var schemaController: SchemaController = {
-        let controller = SchemaController()
-        controller.reloadSchemaIfNeeded()
-        return controller
-    }()
+    private static let schemaController = SchemaController()
     private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
-    private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
-    private static let syncHandler = SyncActionHandlerController(userId: userId,
-                                                                 apiClient: apiClient,
-                                                                 dbStorage: RealmDbStorage(config: realmConfig),
-                                                                 fileStorage: FileStorageController(),
-                                                                 schemaController: schemaController,
-                                                                 syncDelayIntervals: [2])
+    // We need to retain realm with memory identifier so that data are not deleted
+    private static let realm = try! Realm(configuration: realmConfig)
+    private static let dbStorage = RealmDbStorage(config: realmConfig)
     private static let disposeBag = DisposeBag()
 
     override func spec() {
@@ -44,7 +36,7 @@ class SyncActionHandlerSpec: QuickSpec {
 
             OHHTTPStubs.removeAllStubs()
 
-            let realm = SyncActionHandlerSpec.realm
+            let realm = SyncActionsSpec.realm
             try! realm.write {
                 realm.deleteAll()
             }
@@ -82,12 +74,12 @@ class SyncActionHandlerSpec: QuickSpec {
                 // Create response models
                 let collectionResponse = try! JSONDecoder().decode(CollectionResponse.self, from: collectionData)
                 let searchResponse = try! JSONDecoder().decode(SearchResponse.self, from: searchData)
-                let itemResponse = try! ItemResponse(response: itemJson, schemaController: SyncActionHandlerSpec.schemaController)
+                let itemResponse = try! ItemResponse(response: itemJson, schemaController: SyncActionsSpec.schemaController)
 
-                let coordinator = try! RealmDbStorage(config: SyncActionHandlerSpec.realmConfig).createCoordinator()
+                let coordinator = try! SyncActionsSpec.dbStorage.createCoordinator()
                 // Store original objects to db
                 _ = try! coordinator.perform(request: StoreItemsDbRequest(response: [itemResponse],
-                                                                          schemaController: SyncActionHandlerSpec.schemaController,
+                                                                          schemaController: SyncActionsSpec.schemaController,
                                                                           preferRemoteData: false))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
                 try! coordinator.perform(request: StoreSearchesDbRequest(response: [searchResponse]))
@@ -107,7 +99,9 @@ class SyncActionHandlerSpec: QuickSpec {
                                                                                 abstract: "New abstract",
                                                                                 notes: [],
                                                                                 attachments: [],
-                                                                                tags: []),
+                                                                                tags: [],
+                                                                                dateModified: Date(),
+                                                                                dateAdded: Date()),
                                                                     snapshot: .init(title: "Bachelor thesis",
                                                                                     type: "thesis",
                                                                                     localizedType: "Thesis",
@@ -118,11 +112,13 @@ class SyncActionHandlerSpec: QuickSpec {
                                                                                     abstract: "Some note",
                                                                                     notes: [],
                                                                                     attachments: [],
-                                                                                    tags: []),
-                                                                    schemaController: SyncActionHandlerSpec.schemaController)
+                                                                                    tags: [],
+                                                                                    dateModified: Date(),
+                                                                                    dateAdded: Date()),
+                                                                    schemaController: SyncActionsSpec.schemaController)
                 try! coordinator.perform(request: changeRequest)
 
-                let realm = SyncActionHandlerSpec.realm
+                let realm = SyncActionsSpec.realm
                 realm.refresh()
 
                 let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
@@ -136,14 +132,16 @@ class SyncActionHandlerSpec: QuickSpec {
                 expect(collection?.parent).to(beNil())
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .revertLibraryUpdates(in: .user(0, .myLibrary))
+                    RevertLibraryUpdatesSyncAction(libraryId: .custom(.myLibrary),
+                                                   dbStorage: SyncActionsSpec.dbStorage,
+                                                   fileStorage: SyncActionsSpec.fileStorage,
+                                                   schemaController: SyncActionsSpec.schemaController).result
                                          .subscribe(onSuccess: { failures in
                                              expect(failures[.item]).to(beEmpty())
                                              expect(failures[.collection]).to(beEmpty())
                                              expect(failures[.search]).to(beEmpty())
 
-                                             let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
+                                             let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
                                              realm.refresh()
 
                                              let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
@@ -157,18 +155,20 @@ class SyncActionHandlerSpec: QuickSpec {
                                              fail("Could not revert user library: \(error)")
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .revertLibraryUpdates(in: .group(1234123))
+                    RevertLibraryUpdatesSyncAction(libraryId: .group(1234123),
+                                                   dbStorage: SyncActionsSpec.dbStorage,
+                                                   fileStorage: SyncActionsSpec.fileStorage,
+                                                   schemaController: SyncActionsSpec.schemaController).result
                                          .subscribe(onSuccess: { failures in
                                              expect(failures[.item]).to(beEmpty())
                                              expect(failures[.collection]).to(beEmpty())
                                              expect(failures[.search]).to(beEmpty())
 
-                                             let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
+                                             let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
                                              realm.refresh()
 
                                              let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
@@ -180,7 +180,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              fail("Could not revert group library: \(error)")
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
 
@@ -203,12 +203,12 @@ class SyncActionHandlerSpec: QuickSpec {
 
                 // Create response models
                 let collectionResponse = try! JSONDecoder().decode(CollectionResponse.self, from: collectionData)
-                let itemResponse = try! ItemResponse(response: itemJson, schemaController: SyncActionHandlerSpec.schemaController)
+                let itemResponse = try! ItemResponse(response: itemJson, schemaController: SyncActionsSpec.schemaController)
 
-                let coordinator = try! RealmDbStorage(config: SyncActionHandlerSpec.realmConfig).createCoordinator()
+                let coordinator = try! SyncActionsSpec.dbStorage.createCoordinator()
                 // Store original objects to db
                 _ = try! coordinator.perform(request: StoreItemsDbRequest(response: [itemResponse],
-                                                                          schemaController: SyncActionHandlerSpec.schemaController,
+                                                                          schemaController: SyncActionsSpec.schemaController,
                                                                           preferRemoteData: false))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
 
@@ -227,7 +227,9 @@ class SyncActionHandlerSpec: QuickSpec {
                                                                                 abstract: "New abstract",
                                                                                 notes: [],
                                                                                 attachments: [],
-                                                                                tags: []),
+                                                                                tags: [],
+                                                                                dateModified: Date(),
+                                                                                dateAdded: Date()),
                                                                     snapshot: .init(title: "Title",
                                                                                     type: "thesis",
                                                                                     localizedType: "Thesis",
@@ -238,11 +240,13 @@ class SyncActionHandlerSpec: QuickSpec {
                                                                                     abstract: "Some note",
                                                                                     notes: [],
                                                                                     attachments: [],
-                                                                                    tags: []),
-                                                                    schemaController: SyncActionHandlerSpec.schemaController)
+                                                                                    tags: [],
+                                                                                    dateModified: Date(),
+                                                                                    dateAdded: Date()),
+                                                                    schemaController: SyncActionsSpec.schemaController)
                 try! coordinator.perform(request: changeRequest)
 
-                let realm = SyncActionHandlerSpec.realm
+                let realm = SyncActionsSpec.realm
                 realm.refresh()
 
                 let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
@@ -258,10 +262,9 @@ class SyncActionHandlerSpec: QuickSpec {
                 expect(collection?.rawChangedFields).toNot(equal(0))
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .markChangesAsResolved(in: .user(0, .myLibrary))
-                                         .subscribe(onCompleted: {
-                                             let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
+                    MarkChangesAsResolvedSyncAction(libraryId: .custom(.myLibrary), dbStorage: SyncActionsSpec.dbStorage).result
+                                         .subscribe(onSuccess: { _ in
+                                             let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
                                              realm.refresh()
 
                                              let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
@@ -275,14 +278,13 @@ class SyncActionHandlerSpec: QuickSpec {
                                             fail("Could not sync user library: \(error)")
                                             doneAction()
                                         })
-                                        .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                        .disposed(by: SyncActionsSpec.disposeBag)
                 })
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .markChangesAsResolved(in: .group(1234123))
-                                         .subscribe(onCompleted: {
-                                             let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
+                    MarkChangesAsResolvedSyncAction(libraryId: .group(1234123), dbStorage: SyncActionsSpec.dbStorage).result
+                                         .subscribe(onSuccess: { _ in
+                                             let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
                                              realm.refresh()
 
                                              let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
@@ -295,7 +297,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              fail("Could not sync group library: \(error)")
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
         }
@@ -305,10 +307,10 @@ class SyncActionHandlerSpec: QuickSpec {
 
             it("fails when item metadata not submitted") {
                 let key = "AAAAAAAA"
-                let library = SyncController.Library.group(1)
-                let file = Files.objectFile(for: .item, libraryId: library.libraryId, key: key, ext: "pdf")
+                let libraryId = LibraryIdentifier.group(1)
+                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "pdf")
 
-                let realm = SyncActionHandlerSpec.realm
+                let realm = SyncActionsSpec.realm
 
                 try! realm.write {
                     let library = RGroup()
@@ -325,31 +327,35 @@ class SyncActionHandlerSpec: QuickSpec {
                 }
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .uploadAttachment(for: library, key: key,
-                                                           file: file, filename: "doc.pdf",
-                                                           md5: "aaaaaaaa", mtime: 0).0
-                                         .subscribe(onCompleted: {
+                    UploadAttachmentSyncAction(key: key, file: file, filename: "doc.pdf", md5: "aaaaaaaa", mtime: 0, libraryId: libraryId,
+                                               userId: SyncActionsSpec.userId,
+                                               apiClient: SyncActionsSpec.apiClient,
+                                               dbStorage: SyncActionsSpec.dbStorage,
+                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                         .flatMap({ response, _ -> Single<Never> in
+                                             return response.asObservable().asSingle()
+                                         })
+                                         .subscribe(onSuccess: { test in
                                              fail("Upload didn't fail with unsubmitted item")
                                              doneAction()
                                          }, onError: { error in
-                                             if let handlerError = error as? SyncActionHandlerError {
+                                             if let handlerError = error as? SyncActionError {
                                                  expect(handlerError).to(equal(.attachmentItemNotSubmitted))
                                              } else {
                                                  fail("Unknown error: \(error.localizedDescription)")
                                              }
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
 
             it("fails when file is not available") {
                 let key = "AAAAAAAA"
-                let library = SyncController.Library.group(1)
-                let file = Files.objectFile(for: .item, libraryId: library.libraryId, key: key, ext: "pdf")
+                let libraryId = LibraryIdentifier.group(1)
+                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "pdf")
 
-                let realm = SyncActionHandlerSpec.realm
+                let realm = SyncActionsSpec.realm
 
                 try! realm.write {
                     let library = RGroup()
@@ -366,36 +372,40 @@ class SyncActionHandlerSpec: QuickSpec {
                 }
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .uploadAttachment(for: library, key: key,
-                                                           file: file, filename: "doc.pdf",
-                                                           md5: "aaaaaaaa", mtime: 0).0
-                                         .subscribe(onCompleted: {
+                    UploadAttachmentSyncAction(key: key, file: file, filename: "doc.pdf", md5: "aaaaaaaa", mtime: 0, libraryId: libraryId,
+                                               userId: SyncActionsSpec.userId,
+                                               apiClient: SyncActionsSpec.apiClient,
+                                               dbStorage: SyncActionsSpec.dbStorage,
+                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                         .flatMap({ response, _ -> Single<Never> in
+                                             return response.asObservable().asSingle()
+                                         })
+                                         .subscribe(onSuccess: { _ in
                                              fail("Upload didn't fail with unsubmitted item")
                                              doneAction()
                                          }, onError: { error in
-                                             if let handlerError = error as? SyncActionHandlerError {
+                                             if let handlerError = error as? SyncActionError {
                                                  expect(handlerError).to(equal(.attachmentMissing))
                                              } else {
                                                  fail("Unknown error: \(error.localizedDescription)")
                                              }
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
 
             it("it doesn't reupload when file is already uploaded") {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
-                let library = SyncController.Library.group(1)
-                let file = Files.objectFile(for: .item, libraryId: library.libraryId, key: key, ext: "txt")
+                let libraryId = LibraryIdentifier.group(1)
+                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "txt")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
                 let fileMd5 = md5(from: file.createUrl())!
 
-                let realm = SyncActionHandlerSpec.realm
+                let realm = SyncActionsSpec.realm
 
                 try! realm.write {
                     let library = RGroup()
@@ -423,36 +433,48 @@ class SyncActionHandlerSpec: QuickSpec {
                     realm.add(filenameField)
                 }
 
-                createStub(for: AuthorizeUploadRequest(libraryType: library, key: key, filename: filename,
-                                                       filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
+                createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
+                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
                            baseUrl: baseUrl, response: ["exists": 1])
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .uploadAttachment(for: library, key: key,
-                                                           file: file, filename: filename,
-                                                           md5: fileMd5, mtime: 123).0
-                                         .subscribe(onCompleted: {
+                    UploadAttachmentSyncAction(key: key, file: file, filename: filename, md5: fileMd5, mtime: 123, libraryId: libraryId,
+                                               userId: SyncActionsSpec.userId,
+                                               apiClient: SyncActionsSpec.apiClient,
+                                               dbStorage: SyncActionsSpec.dbStorage,
+                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                         .flatMap({ response, _ -> Single<()> in
+                                             return Single.create { subscriber -> Disposable in
+                                                response.subscribe(onCompleted: {
+                                                            subscriber(.success(()))
+                                                        }, onError: { error in
+                                                            subscriber(.error(error))
+                                                        })
+                                                        .disposed(by: SyncActionsSpec.disposeBag)
+                                                return Disposables.create()
+                                             }
+                                         })
+                                         .subscribe(onSuccess: { _ in
                                              doneAction()
                                          }, onError: { error in
                                              fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
 
             it("uploads new file") {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
-                let library = SyncController.Library.group(1)
-                let file = Files.objectFile(for: .item, libraryId: library.libraryId, key: key, ext: "txt")
+                let libraryId = LibraryIdentifier.group(1)
+                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "txt")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
                 let fileMd5 = md5(from: file.createUrl())!
 
-                let realm = SyncActionHandlerSpec.realm
+                let realm = SyncActionsSpec.realm
 
                 try! realm.write {
                     let library = RGroup()
@@ -480,12 +502,12 @@ class SyncActionHandlerSpec: QuickSpec {
                     realm.add(filenameField)
                 }
 
-                createStub(for: AuthorizeUploadRequest(libraryType: library, key: key, filename: filename,
-                                                       filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
+                createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
+                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
                            baseUrl: baseUrl, response: ["url": "https://www.zotero.org/",
                                                         "uploadKey": "key",
                                                         "params": ["key": "key"]])
-                createStub(for: RegisterUploadRequest(libraryType: library, key: key, uploadKey: "key"),
+                createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, uploadKey: "key"),
                            baseUrl: baseUrl, headers: nil, statusCode: 204, response: [:])
                 stub(condition: { request -> Bool in
                     return request.url?.absoluteString == "https://www.zotero.org/"
@@ -494,12 +516,24 @@ class SyncActionHandlerSpec: QuickSpec {
                 })
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionHandlerSpec.syncHandler
-                                         .uploadAttachment(for: library, key: key,
-                                                           file: file, filename: filename,
-                                                           md5: fileMd5, mtime: 123).0
-                                         .subscribe(onCompleted: {
-                                             let realm = try! Realm(configuration: SyncActionHandlerSpec.realmConfig)
+                    UploadAttachmentSyncAction(key: key, file: file, filename: filename, md5: fileMd5, mtime: 123, libraryId: libraryId,
+                                               userId: SyncActionsSpec.userId,
+                                               apiClient: SyncActionsSpec.apiClient,
+                                               dbStorage: SyncActionsSpec.dbStorage,
+                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                         .flatMap({ response, _ -> Single<()> in
+                                             return Single.create { subscriber -> Disposable in
+                                                response.subscribe(onCompleted: {
+                                                            subscriber(.success(()))
+                                                        }, onError: { error in
+                                                            subscriber(.error(error))
+                                                        })
+                                                        .disposed(by: SyncActionsSpec.disposeBag)
+                                                return Disposables.create()
+                                             }
+                                         })
+                                         .subscribe(onSuccess: { _ in
+                                             let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
                                              realm.refresh()
 
                                              let item = realm.objects(RItem.self).filter(.key(key)).first
@@ -510,7 +544,7 @@ class SyncActionHandlerSpec: QuickSpec {
                                              fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
-                                         .disposed(by: SyncActionHandlerSpec.disposeBag)
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
         }

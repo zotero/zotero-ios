@@ -146,6 +146,12 @@ final class SyncController: SynchronizationController {
         return self.processingAction != nil || !self.queue.isEmpty
     }
 
+    // MARK: - Testing
+
+    var reportFinish: ((Result<([Action], [Error])>) -> Void)?
+    var reportDelay: ((Int) -> Void)?
+    private var allActions: [Action] = []
+
     // MARK: - Lifecycle
 
     init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
@@ -1158,21 +1164,6 @@ final class SyncController: SynchronizationController {
         self.removeAllDownloadActions(for: libraryId)
         self.processNextAction()
         return true
-    }
-
-    // MARK: - Testing
-
-    var reportFinish: ((Result<([Action], [Error])>) -> Void)?
-    var reportDelay: ((Int) -> Void)?
-    private var allActions: [Action] = []
-
-    func start(with queue: [Action], libraries: LibrarySyncType,
-               finishedAction: @escaping (Result<([Action], [Error])>) -> Void) {
-        self.queue = queue
-        self.libraryType = libraries
-        self.allActions = []
-        self.reportFinish = finishedAction
-        self.processNextAction()
     }
 }
 

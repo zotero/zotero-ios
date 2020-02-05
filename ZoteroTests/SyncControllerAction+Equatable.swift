@@ -10,9 +10,9 @@ import Foundation
 
 @testable import Zotero
 
-extension SyncController.WriteBatch {
-    public static func ==(lhs: SyncController.WriteBatch, rhs: SyncController.WriteBatch) -> Bool {
-        if lhs.library != rhs.library || lhs.object != rhs.object || lhs.version != rhs.version {
+extension WriteBatch {
+    public static func ==(lhs: WriteBatch, rhs: WriteBatch) -> Bool {
+        if lhs.libraryId != rhs.libraryId || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }
 
@@ -43,18 +43,18 @@ extension SyncController.WriteBatch {
     }
 }
 
-extension SyncController.DeleteBatch {
-    public static func ==(lhs: SyncController.DeleteBatch, rhs: SyncController.DeleteBatch) -> Bool {
-        if lhs.library != rhs.library || lhs.object != rhs.object || lhs.version != rhs.version {
+extension DeleteBatch {
+    public static func ==(lhs: DeleteBatch, rhs: DeleteBatch) -> Bool {
+        if lhs.libraryId != rhs.libraryId || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }
         return lhs.keys == rhs.keys
     }
 }
 
-extension SyncController.DownloadBatch {
-    public static func ==(lhs: SyncController.DownloadBatch, rhs: SyncController.DownloadBatch) -> Bool {
-        if lhs.library != rhs.library || lhs.object != rhs.object || lhs.version != rhs.version {
+extension DownloadBatch {
+    public static func ==(lhs: DownloadBatch, rhs: DownloadBatch) -> Bool {
+        if lhs.libraryId != rhs.libraryId || lhs.object != rhs.object || lhs.version != rhs.version {
             return false
         }
 

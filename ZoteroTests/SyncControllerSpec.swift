@@ -20,530 +20,57 @@ import RxSwift
 import Quick
 
 class SyncControllerSpec: QuickSpec {
-    fileprivate static let groupId = 10
     private static let userId = 100
-    private static let conflictDelays = [0, 1, 2, 3]
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static let fileStorage = FileStorageController()
-    private static var schemaController: SchemaController = {
-        let controller = SchemaController()
-        controller.reloadSchemaIfNeeded()
-        return controller
-    }()
-    private static let userLibrary: SyncController.Library = .user(userId, .myLibrary)
-    private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
-    private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
-    private static let syncHandler = SyncActionHandlerController(userId: userId,
-                                                                 apiClient: apiClient,
-                                                                 dbStorage: RealmDbStorage(config: realmConfig),
-                                                                 fileStorage: TestFileStorage(),
-                                                                 schemaController: schemaController,
-                                                                 syncDelayIntervals: [2])
+    private static let schemaController = SchemaController()
+    private static let userLibraryId: LibraryIdentifier = .custom(.myLibrary)
 
-    fileprivate static var syncVersionData: (Int, Int) = (0, 0) // version, object count
-    fileprivate static var expectedKeys: [String] = []
-    fileprivate static var groupIdVersions: Versions = Versions(collections: 0, items: 0, trash: 0, searches: 0,
-                                                                deletions: 0, settings: 0)
-    private var controller: SyncController?
+    private static var realmConfig: Realm.Configuration!
+    private static var realm: Realm!
+    private static var syncController: SyncController!
+
+    private static func createNewSyncController() {
+        // Create new realm with empty data
+        let memoryId = UUID().uuidString
+        let config = Realm.Configuration(inMemoryIdentifier: memoryId)
+        let realm = try! Realm(configuration: config)
+        // Create "My Library" in new realm
+        try! realm.write {
+            let myLibrary = RCustomLibrary()
+            myLibrary.rawType = RCustomLibraryType.myLibrary.rawValue
+            realm.add(myLibrary)
+        }
+        // Create DB storage with the same config
+        let dbStorage = RealmDbStorage(config: config)
+        // Create background uploader with storage
+        let backgroundUploader = BackgroundUploader(uploadProcessor: BackgroundUploadProcessor(apiClient: apiClient,
+                                                                                               dbStorage: dbStorage,
+                                                                                               fileStorage: fileStorage))
+
+        // Store config so that realms can be created from other threads as well (used when checking db state after sync finished)
+        SyncControllerSpec.realmConfig = config
+        // Store realm so that it's not deallocated and its data removed
+        SyncControllerSpec.realm = realm
+        SyncControllerSpec.syncController = SyncController(userId: userId,
+                                                           apiClient: apiClient,
+                                                           dbStorage: dbStorage,
+                                                           fileStorage: fileStorage,
+                                                           schemaController: schemaController,
+                                                           backgroundUploader: backgroundUploader,
+                                                           syncDelayIntervals: [0, 1, 2, 3],
+                                                           conflictDelays: [0, 1, 2, 3])
+    }
 
     override func spec() {
 
         beforeEach {
             OHHTTPStubs.removeAllStubs()
-            self.controller = nil
-
             Defaults.shared.userId = SyncControllerSpec.userId
 
-            let realm = SyncControllerSpec.realm
-            try! realm.write {
-                realm.deleteAll()
-
-                let myLibrary = RCustomLibrary()
-                myLibrary.rawType = RCustomLibraryType.myLibrary.rawValue
-                realm.add(myLibrary)
-            }
-        }
-
-        describe("Queue") {
-            describe("action processing") {
-                it("processes store version action") {
-                    let initial: [SyncController.Action] = [.storeVersion(3, .group(SyncControllerSpec.groupId), .collection)]
-                    let expected: [SyncController.Action] = initial
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .all,
-                                                              result: { _ in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("processes sync batch to db") {
-                    let action = SyncController.DownloadBatch(library: SyncControllerSpec.userLibrary,
-                                                              object: .group, keys: [1], version: 0)
-                    let initial: [SyncController.Action] = [.syncBatchToDb(action)]
-                    let expected: [SyncController.Action] = initial
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .all,
-                                                              result: { _ in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("processes sync versions (collection) action") {
-                    SyncControllerSpec.syncVersionData = (3, 35)
-
-                    let library = SyncControllerSpec.userLibrary
-                    let keys1 = (0..<5).map({ $0.description })
-                    let keys2 = (5..<15).map({ $0.description })
-                    let keys3 = (15..<35).map({ $0.description })
-                    let initial: [SyncController.Action] = [.syncVersions(library, .collection, 2)]
-                    let expected: [SyncController.Action] = [.syncVersions(library, .collection, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .collection,
-                                                                                                         keys: keys1,
-                                                                                                         version: 3)),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .collection,
-                                                                                                         keys: keys2,
-                                                                                                         version: 3)),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .collection,
-                                                                                                         keys: keys3,
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, library, .collection)]
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .all,
-                                                              result: { _ in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("processes create groups action") {
-                    SyncControllerSpec.syncVersionData = (3, 1)
-                    SyncControllerSpec.groupIdVersions = Versions(collections: 2, items: 1, trash: 1, searches: 1,
-                                                                  deletions: 1, settings: 1)
-
-                    let groupId = SyncControllerSpec.groupId
-                    let initial: [SyncController.Action] = [.createLibraryActions(.all, .automatic)]
-                    let expected: [SyncController.Action] = [.createLibraryActions(.all, .automatic),
-                                                             .syncSettings(.group(groupId), 1),
-                                                             .storeSettingsVersion(3, .group(groupId)),
-                                                             .syncVersions(.group(groupId), .collection, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                                         object: .collection,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, .group(groupId), .collection),
-                                                             .syncVersions(.group(groupId), .search, 1),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                                         object: .search,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, .group(groupId), .search),
-                                                             .syncVersions(.group(groupId), .item, 1),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                                         object: .item,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, .group(groupId), .item),
-                                                             .syncVersions(.group(groupId), .trash, 1),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: .group(groupId),
-                                                                                                         object: .trash,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, .group(groupId), .trash),
-                                                             .syncDeletions(.group(groupId), 1)]
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .all,
-                                                              result: { _ in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("processes sync versions (group) action") {
-                    SyncControllerSpec.syncVersionData = (7, 1)
-                    SyncControllerSpec.groupIdVersions = Versions(collections: 4, items: 4, trash: 2, searches: 2,
-                                                                  deletions: 4, settings: 4)
-
-                    let userLibrary = SyncControllerSpec.userLibrary
-                    let groupLibrary = SyncController.Library.group(SyncControllerSpec.groupId)
-                    let initial: [SyncController.Action] = [.syncVersions(userLibrary, .group, nil)]
-                    let expected: [SyncController.Action] = [.syncVersions(userLibrary, .group, nil),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: userLibrary,
-                                                                                                         object: .group,
-                                                                                                         keys: [0],
-                                                                                                         version: 7)),
-                                                             .createLibraryActions(.all, .automatic),
-                                                             .syncSettings(groupLibrary, 4),
-                                                             .storeSettingsVersion(7, groupLibrary),
-                                                             .syncVersions(groupLibrary, .collection, 4),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .collection,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .collection),
-                                                             .syncVersions(groupLibrary, .search, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .search,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .search),
-                                                             .syncVersions(groupLibrary, .item, 4),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .item,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .item),
-                                                             .syncVersions(groupLibrary, .trash, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .trash,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .trash),
-                                                             .syncDeletions(groupLibrary, 4)]
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .all,
-                                                              result: { _ in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("processes specific library only") {
-                    SyncControllerSpec.syncVersionData = (7, 5)
-                    SyncControllerSpec.groupIdVersions = Versions(collections: 4, items: 4, trash: 2, searches: 2,
-                                                                  deletions: 4, settings: 4)
-
-                    let groupId = 2
-                    let groupLibrary = SyncController.Library.group(groupId)
-                    let userLibrary = SyncControllerSpec.userLibrary
-                    let keys = ["0", "1", "2", "3", "4"]
-
-                    let initial: [SyncController.Action] = [.loadKeyPermissions, .syncVersions(userLibrary, .group, nil)]
-                    let expected: [SyncController.Action] = [.loadKeyPermissions,
-                                                             .syncVersions(userLibrary, .group, nil),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: userLibrary,
-                                                                                                         object: .group,
-                                                                                                         keys: [2],
-                                                                                                         version: 7)),
-                                                             .createLibraryActions(.specific([.group(groupId)]), .automatic),
-                                                             .syncSettings(groupLibrary, 4),
-                                                             .storeSettingsVersion(7, groupLibrary),
-                                                             .syncVersions(groupLibrary, .collection, 4),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .collection,
-                                                                                                         keys: keys,
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .collection),
-                                                             .syncVersions(groupLibrary, .search, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .search,
-                                                                                                         keys: keys,
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .search),
-                                                             .syncVersions(groupLibrary, .item, 4),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .item,
-                                                                                                         keys: keys,
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .item),
-                                                             .syncVersions(groupLibrary, .trash, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: groupLibrary,
-                                                                                                         object: .trash,
-                                                                                                         keys: keys,
-                                                                                                         version: 7)),
-                                                             .storeVersion(7, groupLibrary, .trash),
-                                                             .syncDeletions(groupLibrary, 4)]
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .specific([.group(groupId)]),
-                                                              result: { action in
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  all = result
-                                                              })
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("doesn't process group metadata when only my library is supposed to sync") {
-                    var all: [SyncController.Action]?
-
-                    self.controller = self.performActionsTest(libraries: .specific([.custom(.myLibrary)]),
-                                                              updates: [],
-                                                              result: { _ -> Single<()> in
-                                                                  return Single.just(())
-                                                              }, check: { actions in
-                                                                  all = actions
-                                                              })
-                    self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
-
-                    expect(all?[1]).toEventually(equal(.createLibraryActions(.specific([.custom(.myLibrary)]), .automatic)))
-                }
-
-                it("processes update actions") {
-                    SyncControllerSpec.syncVersionData = (4, 0)
-                    let library = SyncControllerSpec.userLibrary
-                    let batch1 = SyncController.WriteBatch(library: library,
-                                                           object: .collection,
-                                                           version: 1,
-                                                           parameters: [["name": "A",
-                                                                         "key": "AAAAAAAA",
-                                                                         "version": 1]])
-                    let batch2 = SyncController.WriteBatch(library: library,
-                                                           object: .item,
-                                                           version: 1,
-                                                           parameters: [["title": "B",
-                                                                         "key": "BBBBBBBB",
-                                                                         "version": 2]])
-                    let expectedBatch2 = SyncController.WriteBatch(library: library,
-                                                                   object: .item,
-                                                                   version: 4,
-                                                                   parameters: [["title": "B",
-                                                                                 "key": "BBBBBBBB",
-                                                                                 "version": 2]])
-
-                    var all: [SyncController.Action]?
-                    let expected: [SyncController.Action] = [.loadKeyPermissions,
-                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
-                                                             .submitWriteBatch(batch1),
-                                                             .submitWriteBatch(expectedBatch2),
-                                                             .createUploadActions(library)]
-
-                    self.controller = self.performActionsTest(libraries: .specific([.custom(.myLibrary)]),
-                                                              updates: [batch1, batch2],
-                                                              result: { _ -> Single<()> in
-                                                                  return Single.just(())
-                                                              }, check: { actions in
-                                                                  all = actions
-                                                              })
-                    self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
-
-                    expect(all).toEventually(equal(expected))
-                }
-
-                it("updates local data from remote when update returns 412") {
-                    SyncControllerSpec.syncVersionData = (3, 1)
-                    SyncControllerSpec.groupIdVersions = Versions(collections: 2, items: 2, trash: 2, searches: 2,
-                                                                  deletions: 2, settings: 2)
-
-                    let library = SyncControllerSpec.userLibrary
-                    let batch1 = SyncController.WriteBatch(library: library,
-                                                           object: .collection,
-                                                           version: 1,
-                                                           parameters: [["name": "A",
-                                                                         "key": "AAAAAAAA",
-                                                                         "version": 1]])
-                    var all: [SyncController.Action]?
-                    let expected: [SyncController.Action] = [.loadKeyPermissions,
-                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .automatic),
-                                                             .submitWriteBatch(batch1),
-                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .forceDownloads),
-                                                             .syncSettings(library, 2),
-                                                             .storeSettingsVersion(3, library),
-                                                             .syncVersions(library, .collection, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .collection,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, library, .collection),
-                                                             .syncVersions(library, .search, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .search,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, library, .search),
-                                                             .syncVersions(library, .item, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .item,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, library, .item),
-                                                             .syncVersions(library, .trash, 2),
-                                                             .syncBatchToDb(SyncController.DownloadBatch(library: library,
-                                                                                                         object: .trash,
-                                                                                                         keys: ["0"],
-                                                                                                         version: 3)),
-                                                             .storeVersion(3, library, .trash),
-                                                             .syncDeletions(library, 2),
-                                                             .createLibraryActions(.specific([.custom(.myLibrary)]), .onlyWrites),
-                                                             .submitWriteBatch(batch1),
-                                                             .createUploadActions(library)]
-                    var updateCount = 0
-
-                    let preconditionError = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 412))
-
-                    self.controller = self.performActionsTest(libraries: .specific([.custom(.myLibrary)]),
-                                                              updates: [batch1],
-                                                              result: { action -> Single<()> in
-                                                                  switch action {
-                                                                  case .submitUpdate:
-                                                                      if updateCount == 0 {
-                                                                          updateCount += 1
-                                                                          return Single.error(preconditionError)
-                                                                      }
-                                                                  default: break
-                                                                  }
-                                                                  return Single.just(())
-                                                              }, check: { actions in
-                                                                  all = actions
-                                                              })
-                    self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
-
-                    expect(all).toEventually(equal(expected))
-                }
-            }
-
-            describe("fatal error handling") {
-                it("doesn't process store version action") {
-                    let initial: [SyncController.Action] = [.storeVersion(1, SyncControllerSpec.userLibrary, .group)]
-                    var error: Zotero.SyncError?
-
-                    self.controller = self.performErrorTest(queue: initial,
-                                                            libraries: .all,
-                                                            result: { action in
-                                                                switch action {
-                                                                case .storeVersion:
-                                                                    return Single.error(TestErrors.fatal)
-                                                                default:
-                                                                    return Single.just(())
-                                                                }
-                                                            }, check: { result in
-                                                                error = result as? Zotero.SyncError
-                                                            })
-
-                    expect(error).toEventually(equal(SyncError.noInternetConnection))
-                }
-
-                it("doesn't process sync batch to db") {
-                    let action = SyncController.DownloadBatch(library: SyncControllerSpec.userLibrary, object: .group,
-                                                              keys: [1], version: 0)
-                    let initial: [SyncController.Action] = [.syncBatchToDb(action)]
-                    var error: Zotero.SyncError?
-
-                    self.controller = self.performErrorTest(queue: initial,
-                                                            libraries: .all,
-                                                            result: { action in
-                                                                switch action {
-                                                                case .storeObject(let object):
-                                                                    if object == .group {
-                                                                        return Single.error(TestErrors.fatal)
-                                                                    }
-                                                                    return Single.just(())
-                                                                default:
-                                                                    return Single.just(())
-                                                                }
-                                                            }, check: { result in
-                                                                error = result as? Zotero.SyncError
-                                                            })
-
-                    expect(error).toEventually(equal(SyncError.noInternetConnection))
-                }
-
-                it("doesn't process sync versions (collection) action") {
-                    SyncControllerSpec.syncVersionData = (7, 1)
-
-                    let initial: [SyncController.Action] = [.syncVersions(SyncControllerSpec.userLibrary, .collection, 1)]
-                    var error: Zotero.SyncError?
-
-                    self.controller = self.performErrorTest(queue: initial,
-                                                            libraries: .all,
-                                                            result: { action in
-                                                                switch action {
-                                                                case .syncVersions(let object):
-                                                                    if object == .collection {
-                                                                        return Single.error(TestErrors.fatal)
-                                                                    }
-                                                                    return Single.just(())
-                                                                default:
-                                                                    return Single.just(())
-                                                                }
-                                                            }, check: { result in
-                                                                error = result as? Zotero.SyncError
-                                                            })
-
-                    expect(error).toEventually(equal(SyncError.noInternetConnection))
-                }
-
-                it("doesn't process create groups action") {
-                    SyncControllerSpec.syncVersionData = (7, 1)
-
-                    let initial: [SyncController.Action] = [.createLibraryActions(.all, .automatic)]
-                    var error: Zotero.SyncError?
-
-                    self.controller = self.performErrorTest(queue: initial,
-                                                            libraries: .all,
-                                                            result: { action in
-                                                                switch action {
-                                                                case .loadGroups:
-                                                                    return Single.error(TestErrors.fatal)
-                                                                default:
-                                                                    return Single.just(())
-                                                                }
-                                                            }, check: { result in
-                                                                error = result as? Zotero.SyncError
-                                                            })
-
-                    expect(error).toEventually(equal(SyncError.allLibrariesFetchFailed(SyncError.noInternetConnection)))
-                }
-            }
-
-            describe("non-fatal error handling") {
-                it("doesn't abort") {
-                    SyncControllerSpec.syncVersionData = (7, 1)
-                    SyncControllerSpec.groupIdVersions = Versions(collections: 4, items: 4, trash: 2, searches: 2,
-                                                                  deletions: 0, settings: 0)
-
-                    let initial: [SyncController.Action] = [.syncVersions(SyncControllerSpec.userLibrary, .group, nil)]
-                    var didFinish: Bool?
-
-                    self.controller = self.performActionsTest(queue: initial,
-                                                              libraries: .all,
-                                                              result: { action in
-                                                                  switch action {
-                                                                  case .syncVersions(let object):
-                                                                      if object == .collection {
-                                                                          return Single.error(SyncActionHandlerError.expired)
-                                                                      }
-                                                                  default: break
-                                                                  }
-                                                                  return Single.just(())
-                                                              }, check: { result in
-                                                                  didFinish = true
-                                                              })
-
-                    expect(didFinish).toEventually(beTrue())
-                }
-            }
+            SyncControllerSpec.realmConfig = nil
+            SyncControllerSpec.realm = nil
+            SyncControllerSpec.syncController = nil
         }
 
         describe("Syncing") {
@@ -552,10 +79,10 @@ class SyncControllerSpec: QuickSpec {
             describe("Download") {
                 it("should download items into a new library") {
                     let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
 
-                    var versionResponses: [SyncController.Object: Any] = [:]
+                    var versionResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -570,11 +97,11 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA",
+                    let objectKeys: [SyncObject: String] = [.collection: "AAAAAAAA",
                                                                        .search: "AAAAAAAA",
                                                                        .item: "AAAAAAAA",
                                                                        .trash: "BBBBBBBB"]
-                    var objectResponses: [SyncController.Object: Any] = [:]
+                    var objectResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -610,35 +137,33 @@ class SyncControllerSpec: QuickSpec {
 
                     objects.forEach { object in
                         let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                      objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
                     objects.forEach { object in
-                        createStub(for: ObjectsRequest(libraryType: library, objectType: object, keys: (objectKeys[object] ?? "")),
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    SyncControllerSpec.createNewSyncController()
 
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
                             let library = realm.objects(RCustomLibrary.self).first
-                            expect(library).toNot(beNil())
+                            expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
                             expect(library?.collections.count).to(equal(1))
@@ -721,17 +246,17 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController?.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should download items into a new read-only group") {
                     let header = ["last-modified-version" : "3"]
                     let groupId = 123
-                    let library = SyncController.Library.group(groupId)
-                    let objects = SyncController.Object.allCases
+                    let libraryId = LibraryIdentifier.group(groupId)
+                    let objects = SyncObject.allCases
 
-                    var versionResponses: [SyncController.Object: Any] = [:]
+                    var versionResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -748,12 +273,12 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA",
+                    let objectKeys: [SyncObject: String] = [.collection: "AAAAAAAA",
                                                                        .search: "AAAAAAAA",
                                                                        .item: "AAAAAAAA",
                                                                        .trash: "BBBBBBBB",
                                                                        .group: groupId.description]
-                    var objectResponses: [SyncController.Object: Any] = [:]
+                    var objectResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -797,52 +322,50 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let myLibrary = SyncControllerSpec.userLibrary
+                    let myLibrary = SyncControllerSpec.userLibraryId
                     objects.forEach { object in
                         if object == .group {
-                            createStub(for: VersionsRequest<String>(libraryType: myLibrary, objectType: object, version: nil),
+                            createStub(for: VersionsRequest<String>(libraryId: myLibrary, userId: SyncControllerSpec.userId, objectType: object, version: nil),
                                             baseUrl: baseUrl, headers: header,
                                             response: (versionResponses[object] ?? [:]))
                         } else {
-                            createStub(for: VersionsRequest<String>(libraryType: myLibrary, objectType: object, version: 0),
+                            createStub(for: VersionsRequest<String>(libraryId: myLibrary, userId: SyncControllerSpec.userId, objectType: object, version: 0),
                                             baseUrl: baseUrl, headers: header, response: [:])
                         }
                     }
-                    createStub(for: ObjectsRequest(libraryType: myLibrary, objectType: .group, keys: (objectKeys[.group] ?? "")),
+                    createStub(for: ObjectsRequest(libraryId: myLibrary, userId: SyncControllerSpec.userId, objectType: .group, keys: (objectKeys[.group] ?? "")),
                                     baseUrl: baseUrl, headers: header,
                                     response: (objectResponses[.group] ?? [:]))
                     for object in objects {
                         if object == .group { continue }
-                        createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, version: 0),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
                     for object in objects {
                         if object == .group { continue }
-                        createStub(for: ObjectsRequest(libraryType: library, objectType: object, keys: (objectKeys[object] ?? "")),
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: myLibrary, version: 0),
+                    createStub(for: SettingsRequest(libraryId: myLibrary, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: myLibrary, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: myLibrary, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    SyncControllerSpec.createNewSyncController()
 
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -889,17 +412,19 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should apply remote deletions") {
                     let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
+                    let libraryId = SyncControllerSpec.userLibraryId
                     let itemToDelete = "CCCCCCCC"
-                    let objects = SyncController.Object.allCases
+                    let objects = SyncObject.allCases
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
                         let item = RItem()
@@ -914,25 +439,21 @@ class SyncControllerSpec: QuickSpec {
 
                     objects.forEach { object in
                         let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                      objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: [:])
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -942,16 +463,16 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 // TODO: Enable when proper CR is implemented
 //                it("should ignore remote deletions if local object changed") {
 //                    let header = ["last-modified-version" : "3"]
-//                    let library = SyncControllerSpec.userLibrary
+//                    let libraryId = SyncControllerSpec.userLibraryId
 //                    let itemToDelete = "DDDDDDDD"
-//                    let objects = SyncController.Object.allCases
+//                    let objects = SyncObject.allCases
 //
 //                    let realm = SyncControllerSpec.realm
 //                    try! realm.write {
@@ -969,7 +490,7 @@ class SyncControllerSpec: QuickSpec {
 //                    expect(toBeDeletedItem).toNot(beNil())
 //
 //                    var statusCode: Int32 = 412
-//                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+//                    let request = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, params: [], version: 0)
 //                    // We don't care about specific post params here, we just want to track all update requests
 //                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
 //                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
@@ -979,22 +500,22 @@ class SyncControllerSpec: QuickSpec {
 //                    })
 //                    objects.forEach { object in
 //                        let version: Int? = object == .group ? nil : 0
-//                        createStub(for: VersionsRequest<String>(libraryType: library,
+//                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
 //                                                                     objectType: object, version: version),
 //                                        baseUrl: baseUrl, headers: header,
 //                                        response: [:])
 //                    }
 //                    createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-//                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+//                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
 //                                    baseUrl: baseUrl, headers: header,
 //                                    response: ["tagColors" : ["value": [], "version": 2]])
-//                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+//                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
 //                                    baseUrl: baseUrl, headers: header,
 //                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
 //
 //                    self.controller = SyncController(userId: SyncControllerSpec.userId,
 //                                                     handler: SyncControllerSpec.syncHandler,
-//                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+//                                                     conflictDelays: SyncControllerSpec.delays)
 //
 //                    waitUntil(timeout: 10) { doneAction in
 //                        self.controller?.reportFinish = { result in
@@ -1021,8 +542,8 @@ class SyncControllerSpec: QuickSpec {
 
                 it("should handle new remote item referencing locally missing collection") {
                     let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
                     let itemKey = "AAAAAAAA"
                     let collectionKey = "CCCCCCCC"
                     let itemResponse = [["key": itemKey,
@@ -1030,39 +551,37 @@ class SyncControllerSpec: QuickSpec {
                                          "library": ["id": 0, "type": "user", "name": "A"],
                                          "data": ["title": "A", "itemType": "thesis", "collections": [collectionKey]]]]
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     let collection = realm.objects(RItem.self).filter("key = %@", collectionKey).first
                     expect(collection).to(beNil())
 
                     objects.forEach { object in
                         if object == .item {
-                            createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                            createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, version: 0),
                                             baseUrl: baseUrl, headers: header,
                                             response: [itemKey: 3])
                         } else {
                             let version: Int? = object == .group ? nil : 0
-                            createStub(for: VersionsRequest<String>(libraryType: library,
+                            createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                          objectType: object, version: version),
                                             baseUrl: baseUrl, headers: header,
                                             response: [:])
                         }
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: ObjectsRequest(libraryType: library, objectType: .item, keys: itemKey),
+                    createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, keys: itemKey),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -1079,14 +598,14 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should include unsynced objects in sync queue") {
                     let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
                     let unsyncedItemKey = "AAAAAAAA"
                     let responseItemKey = "BBBBBBBB"
                     let itemResponse = [["key": responseItemKey,
@@ -1098,7 +617,9 @@ class SyncControllerSpec: QuickSpec {
                                          "library": ["id": 0, "type": "user", "name": "A"],
                                          "data": ["title": "B", "itemType": "thesis"]]]
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -1115,37 +636,33 @@ class SyncControllerSpec: QuickSpec {
 
                     objects.forEach { object in
                         if object == .item {
-                            createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                            createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, version: 0),
                                             baseUrl: baseUrl, headers: header,
                                             response: [responseItemKey: 3])
                         } else {
                             let version: Int? = object == .group ? nil : 0
-                            createStub(for: VersionsRequest<String>(libraryType: library,
+                            createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                          objectType: object, version: version),
                                             baseUrl: baseUrl, headers: header,
                                             response: [:])
                         }
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: ObjectsRequest(libraryType: library, objectType: .item,
+                    createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                         keys: "\(unsyncedItemKey),\(responseItemKey)"),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
-                    createStub(for: ObjectsRequest(libraryType: library, objectType: .item,
+                    createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                         keys: "\(responseItemKey),\(unsyncedItemKey)"),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { result in
+                        SyncControllerSpec.syncController.reportFinish = { result in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -1179,14 +696,14 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should mark object as needsSync if not parsed correctly and syncRetries should be increased") {
                     let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
                     let correctKey = "AAAAAAAA"
                     let incorrectKey = "BBBBBBBB"
                     let itemResponse = [["key": correctKey,
@@ -1199,37 +716,35 @@ class SyncControllerSpec: QuickSpec {
 
                     objects.forEach { object in
                         if object == .item {
-                            createStub(for: VersionsRequest<String>(libraryType: library, objectType: object, version: 0),
+                            createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, version: 0),
                                             baseUrl: baseUrl, headers: header,
                                             response: [correctKey: 3, incorrectKey: 3])
                         } else {
                             let version: Int? = object == .group ? nil : 0
-                            createStub(for: VersionsRequest<String>(libraryType: library,
+                            createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                          objectType: object, version: version),
                                             baseUrl: baseUrl, headers: header,
                                             response: [:])
                         }
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: ObjectsRequest(libraryType: library, objectType: .item,
+                    createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                         keys: "\(correctKey),\(incorrectKey)"),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
-                    createStub(for: ObjectsRequest(libraryType: library, objectType: .item,
+                    createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                         keys: "\(incorrectKey),\(correctKey)"),
                                     baseUrl: baseUrl, headers: header, response: itemResponse)
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    SyncControllerSpec.createNewSyncController()
 
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { result in
+                        SyncControllerSpec.syncController.reportFinish = { result in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -1246,16 +761,16 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should ignore errors when saving downloaded objects") {
                     let header = ["last-modified-version" : "2"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
 
-                    var versionResponses: [SyncController.Object: Any] = [:]
+                    var versionResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -1274,10 +789,10 @@ class SyncControllerSpec: QuickSpec {
                         }
                     }
 
-                    let objectKeys: [SyncController.Object: String] = [.collection: "AAAAAAAA,BBBBBBBB,CCCCCCCC",
+                    let objectKeys: [SyncObject: String] = [.collection: "AAAAAAAA,BBBBBBBB,CCCCCCCC",
                                                                        .search: "GGGGGGGG,HHHHHHHH,IIIIIIII",
                                                                        .item: "DDDDDDDD,EEEEEEEE,FFFFFFFF"]
-                    var objectResponses: [SyncController.Object: Any] = [:]
+                    var objectResponses: [SyncObject: Any] = [:]
                     objects.forEach { object in
                         switch object {
                         case .collection:
@@ -1337,35 +852,33 @@ class SyncControllerSpec: QuickSpec {
 
                     objects.forEach { object in
                         let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                      objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
                     objects.forEach { object in
-                        createStub(for: ObjectsRequest(libraryType: library, objectType: object, keys: (objectKeys[object] ?? "")),
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, keys: (objectKeys[object] ?? "")),
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    SyncControllerSpec.createNewSyncController()
 
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
                             let library = realm.objects(RCustomLibrary.self).first
-                            expect(library).toNot(beNil())
+                            expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
                             expect(library?.collections.count).to(equal(4))
@@ -1443,18 +956,20 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should add items that exist remotely in a locally deleted," +
                    " remotely modified collection back to collection") {
                     let header = ["last-modified-version" : "1"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
                     let collectionKey = "AAAAAAAA"
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -1486,49 +1001,45 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(item2)
                     }
 
-                    let versionResponses: [SyncController.Object: Any] = [.collection: [collectionKey: 1]]
-                    let objectKeys: [SyncController.Object: String] = [.collection: collectionKey]
+                    let versionResponses: [SyncObject: Any] = [.collection: [collectionKey: 1]]
+                    let objectKeys: [SyncObject: String] = [.collection: collectionKey]
                     let collectionData: [[String: Any]] = [["key": collectionKey,
                                                             "version": 1,
                                                             "library": ["id": 0, "type": "user", "name": "A"],
                                                             "data": ["name": "A"]]]
-                    let objectResponses: [SyncController.Object: Any] = [.collection: collectionData]
+                    let objectResponses: [SyncObject: Any] = [.collection: collectionData]
 
-                    createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                                 keys: [collectionKey], version: 0),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
                     objects.forEach { object in
                         let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                      objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
                     objects.forEach { object in
-                        createStub(for: ObjectsRequest(libraryType: library, objectType: object,
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object,
                                                             keys: (objectKeys[object] ?? "")),
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
                             let library = realm.objects(RCustomLibrary.self).first
-                            expect(library).toNot(beNil())
+                            expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
                             expect(library?.collections.count).to(equal(1))
@@ -1548,19 +1059,21 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should add locally deleted items that exist remotely in a locally deleted, remotely modified" +
                    " collection to sync queue and remove from delete log") {
                     let header = ["last-modified-version" : "1"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
                     let collectionKey = "AAAAAAAA"
                     let deletedItemKey = "CCCCCCCC"
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -1599,52 +1112,48 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(item2)
                     }
 
-                    let versionResponses: [SyncController.Object: Any] = [.collection: [collectionKey: 2]]
-                    let objectKeys: [SyncController.Object: String] = [.collection: collectionKey]
+                    let versionResponses: [SyncObject: Any] = [.collection: [collectionKey: 2]]
+                    let objectKeys: [SyncObject: String] = [.collection: collectionKey]
                     let collectionData: [[String: Any]] = [["key": collectionKey,
                                                             "version": 2,
                                                             "library": ["id": 0, "type": "user", "name": "A"],
                                                             "data": ["name": "A"]]]
-                    let objectResponses: [SyncController.Object: Any] = [.collection: collectionData]
+                    let objectResponses: [SyncObject: Any] = [.collection: collectionData]
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                                 keys: [collectionKey], version: 1),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
-                    createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .item,
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                                 keys: [deletedItemKey], version: 1),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, response: [:])
                     objects.forEach { object in
                         let version: Int? = object == .group ? nil : 1
-                        createStub(for: VersionsRequest<String>(libraryType: library,
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                      objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header,
                                         response: (versionResponses[object] ?? [:]))
                     }
                     objects.forEach { object in
-                        createStub(for: ObjectsRequest(libraryType: library, objectType: object,
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object,
                                                             keys: (objectKeys[object] ?? "")),
                                         baseUrl: baseUrl, headers: header,
                                         response: (objectResponses[object] ?? [:]))
                     }
-                    createStub(for: SettingsRequest(libraryType: library, version: 1),
+                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 1),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 1),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 1),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
                             let library = realm.objects(RCustomLibrary.self).first
-                            expect(library).toNot(beNil())
+                            expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
                             expect(library?.collections.count).to(equal(1))
@@ -1671,50 +1180,7 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
-                    }
-                }
-
-                it("should update schema if keys return newer schema version") {
-                    let newVersion = (SyncControllerSpec.schemaController.version + 1)
-                    let header: [String : Any] = ["last-modified-version" : "1",
-                                                  "zotero-schema-version": "\(newVersion)"]
-                    let library = SyncControllerSpec.userLibrary
-
-                    let objects = SyncController.Object.allCases
-
-                    createStub(for: SchemaRequest(etag: nil), baseUrl:  baseUrl, response: [:])
-                    createStub(for: KeyRequest(), baseUrl: baseUrl,
-                                    headers: header, response: ["access": ["":""]])
-                    createStub(for: SettingsRequest(libraryType: library, version: 0),
-                                    baseUrl: baseUrl, headers: header,
-                                    response: ["tagColors" : ["value": [], "version": 2]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
-                                    baseUrl: baseUrl, headers: header,
-                                    response: ["collections": [], "searches": [], "items": [], "tags": []])
-                    objects.forEach { object in
-                        let version: Int? = object == .group ? nil : 1
-                        createStub(for: VersionsRequest<String>(libraryType: library,
-                                                                     objectType: object, version: version),
-                                        baseUrl: baseUrl, headers: header, response: [:])
-                    }
-
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
-                    waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { result in
-                            switch result {
-                            case .success(let data):
-                                expect(data.0[1]).to(equal(.updateSchema))
-                            case .failure(let error):
-                                fail("\(error)")
-                            }
-                            doneAction()
-                        }
-
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
             }
@@ -1726,7 +1192,9 @@ class SyncControllerSpec: QuickSpec {
                     let collectionKey = "AAAAAAAA"
                     let itemKey = "BBBBBBBB"
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -1775,9 +1243,9 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(unchangedField)
                     }
 
-                    let library = SyncControllerSpec.userLibrary
+                    let libraryId = SyncControllerSpec.userLibraryId
 
-                    let collectionUpdate = UpdatesRequest(libraryType: library, objectType: .collection,
+                    let collectionUpdate = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                           params: [], version: oldVersion)
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let collectionConditions = collectionUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
@@ -1792,7 +1260,7 @@ class SyncControllerSpec: QuickSpec {
                                                    statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
 
-                    let itemUpdate = UpdatesRequest(libraryType: library, objectType: .item,
+                    let itemUpdate = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                     params: [], version: oldVersion)
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
@@ -1810,12 +1278,8 @@ class SyncControllerSpec: QuickSpec {
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -1839,7 +1303,7 @@ class SyncControllerSpec: QuickSpec {
 
                             doneAction()
                         }
-                        self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
                     }
                 }
 
@@ -1850,7 +1314,9 @@ class SyncControllerSpec: QuickSpec {
                     let childKey = "CCCCCCCC"
                     let otherKey = "AAAAAAAA"
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -1899,9 +1365,9 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(item3)
                     }
 
-                    let library = SyncControllerSpec.userLibrary
+                    let libraryId = SyncControllerSpec.userLibraryId
 
-                    let update = UpdatesRequest(libraryType: library, objectType: .item,
+                    let update = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                 params: [], version: oldVersion)
                     let conditions = update.stubCondition(with: baseUrl)
                     stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
@@ -1922,15 +1388,11 @@ class SyncControllerSpec: QuickSpec {
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             doneAction()
                         }
-                        self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
                     }
                 }
 
@@ -1941,7 +1403,9 @@ class SyncControllerSpec: QuickSpec {
                     let secondKey = "BBBBBBBB"
                     let thirdKey = "CCCCCCCC"
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -1989,9 +1453,9 @@ class SyncControllerSpec: QuickSpec {
                         collection3.parent = collection2
                     }
 
-                    let library = SyncControllerSpec.userLibrary
+                    let libraryId = SyncControllerSpec.userLibraryId
 
-                    let update = UpdatesRequest(libraryType: library, objectType: .collection,
+                    let update = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                 params: [], version: oldVersion)
                     let conditions = update.stubCondition(with: baseUrl)
                     stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
@@ -2010,15 +1474,13 @@ class SyncControllerSpec: QuickSpec {
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    SyncControllerSpec.createNewSyncController()
 
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             doneAction()
                         }
-                        self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
                     }
                 }
 
@@ -2026,7 +1488,9 @@ class SyncControllerSpec: QuickSpec {
                     let oldVersion = 3
                     let newVersion = oldVersion + 10
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -2048,9 +1512,9 @@ class SyncControllerSpec: QuickSpec {
                         collection.customLibrary = library
                     }
 
-                    let library = SyncControllerSpec.userLibrary
+                    let libraryId = SyncControllerSpec.userLibraryId
 
-                    let update = UpdatesRequest(libraryType: library, objectType: .collection,
+                    let update = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                 params: [], version: oldVersion)
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
                     // We don't care about specific post params, we just need to catch all updates for given type
@@ -2059,12 +1523,8 @@ class SyncControllerSpec: QuickSpec {
                                statusCode: 200,
                                response: ["success": ["0": [:]], "unchanged": [], "failed": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -2075,19 +1535,19 @@ class SyncControllerSpec: QuickSpec {
 
                             doneAction()
                         }
-                        self.controller?.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .specific([.custom(.myLibrary)]))
                     }
                 }
 
                 it("should process downloads after upload failure") {
                     let header = ["last-modified-version" : "3"]
-                    let library = SyncControllerSpec.userLibrary
-                    let objects = SyncController.Object.allCases
+                    let libraryId = SyncControllerSpec.userLibraryId
+                    let objects = SyncObject.allCases
 
                     var downloadCalled = false
 
                     var statusCode: Int32 = 412
-                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+                    let request = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, params: [], version: 0)
                     stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
                         let code = statusCode
                         statusCode = 200
@@ -2095,42 +1555,42 @@ class SyncControllerSpec: QuickSpec {
                     })
                     objects.forEach { object in
                         let version: Int? = object == .group ? nil : 0
-                        createStub(for: VersionsRequest<String>(libraryType: library,
+                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
                                                                      objectType: object, version: version),
                                         baseUrl: baseUrl, headers: header, response: [:])
                     }
-                    stub(condition: SettingsRequest(libraryType: library, version: 0).stubCondition(with: baseUrl),
+                    stub(condition: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0).stubCondition(with: baseUrl),
                          response: { _ -> OHHTTPStubsResponse in
                         downloadCalled = true
                         return OHHTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     response: ["collections": [], "searches": [], "items": [], "tags": []])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+                    SyncControllerSpec.createNewSyncController()
 
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             expect(downloadCalled).to(beTrue())
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 it("should upload local deletions") {
                     let header = ["last-modified-version" : "1"]
-                    let library = SyncControllerSpec.userLibrary
+                    let libraryId = SyncControllerSpec.userLibraryId
                     let collectionKey = "AAAAAAAA"
                     let searchKey = "BBBBBBBB"
                     let itemKey = "CCCCCCCC"
 
-                    let realm = SyncControllerSpec.realm
+                    SyncControllerSpec.createNewSyncController()
+
+                    let realm = SyncControllerSpec.realm!
                     try! realm.write {
                         let library = realm.object(ofType: RCustomLibrary.self,
                                                    forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
@@ -2164,22 +1624,18 @@ class SyncControllerSpec: QuickSpec {
                     }
 
                     createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-                    createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .collection,
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                                 keys: [collectionKey], version: 0),
                                     baseUrl: baseUrl, headers: header, response: [:])
-                    createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .search,
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .search,
                                                                 keys: [searchKey], version: 0),
                                     baseUrl: baseUrl, headers: header, response: [:])
-                    createStub(for: SubmitDeletionsRequest(libraryType: library, objectType: .item,
+                    createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                                 keys: [itemKey], version: 0),
                                     baseUrl: baseUrl, headers: header, response: [:])
 
-                    self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                     handler: SyncControllerSpec.syncHandler,
-                                                     conflictDelays: SyncControllerSpec.conflictDelays)
-
                     waitUntil(timeout: 10) { doneAction in
-                        self.controller?.reportFinish = { _ in
+                        SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
 
@@ -2197,16 +1653,16 @@ class SyncControllerSpec: QuickSpec {
                             doneAction()
                         }
 
-                        self.controller?.start(type: .normal, libraries: .all)
+                        SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                     }
                 }
 
                 // TODO: Enable when proper CR is implemented
 //                it("should delay on second upload conflict") {
 //                    let header = ["last-modified-version" : "3"]
-//                    let library = SyncControllerSpec.userLibrary
+//                    let libraryId = SyncControllerSpec.userLibraryId
 //                    let itemToDelete = "DDDDDDDD"
-//                    let objects = SyncController.Object.allCases
+//                    let objects = SyncObject.allCases
 //
 //                    let realm = SyncControllerSpec.realm
 //                    try! realm.write {
@@ -2224,7 +1680,7 @@ class SyncControllerSpec: QuickSpec {
 //                    expect(toBeDeletedItem).toNot(beNil())
 //
 //                    var retryCount = 0
-//                    let request = UpdatesRequest(libraryType: library, objectType: .item, params: [], version: 0)
+//                    let request = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, params: [], version: 0)
 //                    // We don't care about specific params, we just need to count all update requests
 //                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
 //                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
@@ -2233,23 +1689,23 @@ class SyncControllerSpec: QuickSpec {
 //                    })
 //                    objects.forEach { object in
 //                        let version: Int? = object == .group ? nil : 0
-//                        createStub(for: VersionsRequest<String>(libraryType: library,
+//                        createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId,
 //                                                                     objectType: object, version: version),
 //                                        baseUrl: baseUrl, headers: header,
 //                                        response: [:])
 //                    }
 //                    createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
-//                    createStub(for: SettingsRequest(libraryType: library, version: 0),
+//                    createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
 //                                    baseUrl: baseUrl, headers: header,
 //                                    response: ["tagColors" : ["value": [], "version": 2]])
-//                    createStub(for: DeletionsRequest(libraryType: library, version: 0),
+//                    createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
 //                                    baseUrl: baseUrl, headers: header,
 //                                    response: ["collections": [], "searches": [], "items": [itemToDelete], "tags": []])
 //
 //                    var lastDelay: Int?
 //                    self.controller = SyncController(userId: SyncControllerSpec.userId,
 //                                                     handler: SyncControllerSpec.syncHandler,
-//                                                     conflictDelays: SyncControllerSpec.conflictDelays)
+//                                                     conflictDelays: SyncControllerSpec.delays)
 //                    self.controller?.reportDelay = { delay in
 //                        lastDelay = delay
 //                    }
@@ -2274,19 +1730,17 @@ class SyncControllerSpec: QuickSpec {
             }
 
             it("should make only one request if in sync") {
-                let library = SyncControllerSpec.userLibrary
-                let expected: [SyncController.Action] = [.loadKeyPermissions, .syncVersions(library, .group, nil)]
+                let libraryId = SyncControllerSpec.userLibraryId
+                let expected: [SyncController.Action] = [.loadKeyPermissions, .syncVersions(libraryId, .group, nil)]
 
-                createStub(for: VersionsRequest<String>(libraryType: library, objectType: .group, version: nil),
+                createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .group, version: nil),
                                 baseUrl: baseUrl, headers: nil, statusCode: 304, response: [:])
                 createStub(for: KeyRequest(), baseUrl: baseUrl, response: ["access": ["":""]])
 
-                self.controller = SyncController(userId: SyncControllerSpec.userId,
-                                                 handler: SyncControllerSpec.syncHandler,
-                                                 conflictDelays: SyncControllerSpec.conflictDelays)
+                SyncControllerSpec.createNewSyncController()
 
                 waitUntil(timeout: 10) { doneAction in
-                    self.controller?.reportFinish = { result in
+                    SyncControllerSpec.syncController.reportFinish = { result in
                         switch result {
                         case .success(let data):
                             expect(data.0).to(equal(expected))
@@ -2297,7 +1751,7 @@ class SyncControllerSpec: QuickSpec {
                         doneAction()
                     }
 
-                    self.controller?.start(type: .normal, libraries: .all)
+                    SyncControllerSpec.syncController.start(type: .normal, libraries: .all)
                 }
             }
         }
@@ -2307,220 +1761,10 @@ class SyncControllerSpec: QuickSpec {
         let json = try? JSONSerialization.jsonObject(with: stream.data, options: .allowFragments)
         return (json as? [[String: Any]]) ?? []
     }
-
-    private func performActionsTest(queue: [SyncController.Action], libraries: SyncController.LibrarySyncType,
-                                    result: @escaping (TestAction) -> Single<()>,
-                                    check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
-        let handler = TestHandler(updates: [], deletions: [])
-        let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                        conflictDelays: SyncControllerSpec.conflictDelays)
-
-        handler.requestResult = result
-
-        controller.start(with: queue, libraries: libraries, finishedAction: { result in
-            switch result {
-            case .success(let data):
-                check(data.0)
-            case .failure: break
-            }
-        })
-
-        return controller
-    }
-
-    private func performActionsTest(libraries: SyncController.LibrarySyncType, updates: [SyncController.WriteBatch],
-                                    result: @escaping (TestAction) -> Single<()>,
-                                    check: @escaping ([SyncController.Action]) -> Void) -> SyncController {
-        let handler = TestHandler(updates: updates, deletions: [])
-        let controller = SyncController(userId: SyncControllerSpec.userId,
-                                        handler: handler,
-                                        conflictDelays: SyncControllerSpec.conflictDelays)
-
-        handler.requestResult = result
-        controller.reportFinish = { result in
-            switch result {
-            case .success(let data):
-                check(data.0)
-            case .failure: break
-            }
-        }
-
-        return controller
-    }
-
-    private func performErrorTest(queue: [SyncController.Action], libraries: SyncController.LibrarySyncType,
-                                  result: @escaping (TestAction) -> Single<()>,
-                                  check: @escaping (Error) -> Void) -> SyncController {
-        let handler = TestHandler(updates: [], deletions: [])
-        let controller = SyncController(userId: SyncControllerSpec.userId, handler: handler,
-                                        conflictDelays: SyncControllerSpec.conflictDelays)
-
-        handler.requestResult = result
-
-        controller.start(with: queue, libraries: libraries, finishedAction: { result in
-            switch result {
-            case .success: break
-            case .failure(let error):
-                check(error)
-            }
-        })
-
-        return controller
-    }
 }
 
 fileprivate struct TestErrors {
-    static let nonFatal = SyncActionHandlerError.expired
-    static let versionMismatch = SyncActionHandlerError.versionMismatch
-    static let fatal = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet, userInfo: nil)
     static let file = NSError(domain: "file", code: 123, userInfo: nil)
-}
-
-fileprivate enum TestAction {
-    case loadGroups
-    case loadSpecificGroups([LibraryIdentifier])
-    case syncVersions(SyncController.Object)
-    case storeObject(SyncController.Object)
-    case resync(SyncController.Object)
-    case storeVersion(SyncController.Library)
-    case markResync(SyncController.Object)
-    case syncDeletions(SyncController.Library)
-    case syncSettings(SyncController.Library)
-    case submitUpdate(SyncController.Library, SyncController.Object)
-    case submitDeletion(SyncController.Library, SyncController.Object)
-}
-
-fileprivate class TestHandler: SyncActionHandler {
-    private var writeBatches: [SyncController.WriteBatch]?
-    private var deleteBatches: [SyncController.DeleteBatch]?
-
-    init(updates: [SyncController.WriteBatch], deletions: [SyncController.DeleteBatch]) {
-        self.writeBatches = updates
-        self.deleteBatches = deletions
-    }
-
-    func loadPermissions() -> Single<(KeyResponse, Bool)> {
-        return Single.just((KeyResponse(), false))
-    }
-
-    func updateSchema() -> Completable {
-        return Completable.empty()
-    }
-
-    var requestResult: ((TestAction) -> Single<()>)?
-
-    private func result(for action: TestAction) -> Single<()> {
-        return self.requestResult?(action) ?? Single.just(())
-    }
-
-    private func loadAllLibraryData() -> Single<[LibraryData]> {
-        return self.result(for: .loadGroups).flatMap {
-            let data = LibraryData(identifier: .group(SyncControllerSpec.groupId), name: "",
-                                   versions: SyncControllerSpec.groupIdVersions,
-                                   updates: (self.writeBatches ?? []),
-                                   deletions: (self.deleteBatches ?? []))
-            return Single.just([data])
-        }
-    }
-
-    private func loadLibraryData(for libraryIds: [LibraryIdentifier]) -> Single<[LibraryData]> {
-        return self.result(for: .loadSpecificGroups(libraryIds)).flatMap { _ in
-            return Single.just(libraryIds.map({ LibraryData(identifier: $0, name: "",
-                                                            versions: SyncControllerSpec.groupIdVersions,
-                                                            updates: (self.writeBatches ?? []),
-                                                            deletions: (self.deleteBatches ?? [])) }))
-        }
-    }
-
-    func loadLibraryData(for type: SyncController.LibrarySyncType, fetchUpdates: Bool) -> Single<[LibraryData]> {
-        switch type {
-        case .all:
-            return self.loadAllLibraryData()
-        case .specific(let ids):
-            return self.loadLibraryData(for: ids)
-        }
-    }
-
-    func synchronizeVersions(for library: SyncController.Library, object: SyncController.Object,
-                             since sinceVersion: Int?, current currentVersion: Int?,
-                             syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
-        return self.result(for: .syncVersions(object)).flatMap {
-            let data = SyncControllerSpec.syncVersionData
-            return Single.just((data.0, (0..<data.1).map({ $0.description })))
-        }
-    }
-
-    func synchronizeGroupVersions(library: SyncController.Library, syncType: SyncController.SyncType) -> Single<(Int, [Int], [(Int, String)])> {
-        return self.result(for: .syncVersions(.group)).flatMap {
-            let data = SyncControllerSpec.syncVersionData
-            return Single.just((data.0, Array(0..<data.1), []))
-        }
-    }
-
-    func markForResync(keys: [Any], library: SyncController.Library, object: SyncController.Object) -> Completable {
-        return self.result(for: .markResync(object)).asCompletable()
-    }
-
-    func fetchAndStoreObjects(with keys: [Any], library: SyncController.Library, object: SyncController.Object,
-                              version: Int, userId: Int) -> Single<([String], [Error], [StoreItemsError])> {
-        let keys = SyncControllerSpec.expectedKeys
-        return self.result(for: .storeObject(object)).flatMap({ return Single.just((keys, [], [])) })
-    }
-
-    func storeVersion(_ version: Int, for library: SyncController.Library, type: UpdateVersionType) -> Completable {
-        return self.result(for: .storeVersion(.group(SyncControllerSpec.groupId))).asCompletable()
-    }
-
-    func synchronizeDeletions(for library: SyncController.Library, since sinceVersion: Int,
-                              current currentVersion: Int?) -> Single<[String]> {
-        return self.result(for: .syncDeletions(library)).flatMap({ return Single.just([]) })
-    }
-
-    func synchronizeSettings(for library: SyncController.Library, current currentVersion: Int?,
-                             since version: Int?) -> Single<(Bool, Int)> {
-        return self.result(for: .syncSettings(library)).flatMap {
-            let data = SyncControllerSpec.syncVersionData
-            return Single.just((true, data.0))
-        }
-    }
-
-    func submitUpdate(for library: SyncController.Library, object: SyncController.Object, since version: Int, parameters: [[String : Any]]) -> Single<(Int, Error?)> {
-        return self.result(for: .submitUpdate(library, object)).flatMap {
-            let data = SyncControllerSpec.syncVersionData
-            return Single.just((data.0, nil))
-        }
-    }
-
-    func submitDeletion(for library: SyncController.Library, object: SyncController.Object, since version: Int, keys: [String]) -> Single<Int> {
-        return self.result(for: .submitDeletion(library, object)).flatMap {
-            let data = SyncControllerSpec.syncVersionData
-            return Single.just(data.0)
-        }
-    }
-
-    func deleteGroup(with groupId: Int) -> Completable {
-        return Completable.empty()
-    }
-
-    func markGroupAsLocalOnly(with groupId: Int) -> Completable {
-        return Completable.empty()
-    }
-
-    func markChangesAsResolved(in library: SyncController.Library) -> Completable {
-        return Completable.empty()
-    }
-
-    func revertLibraryUpdates(in library: SyncController.Library) -> Single<[SyncController.Object : [String]]> {
-        return Single.just([:])
-    }
-
-    func loadUploadData(in library: SyncController.Library) -> Single<[SyncController.AttachmentUpload]> {
-        return Single.just([])
-    }
-
-    func uploadAttachment(for library: SyncController.Library, key: String, file: File, filename: String, md5: String, mtime: Int) -> (Completable, Observable<RxProgress>) {
-        return (Completable.empty(), Observable.error(TestErrors.nonFatal))
-    }
 }
 
 fileprivate class TestFileStorage: FileStorage {
@@ -2559,6 +1803,12 @@ fileprivate class TestFileStorage: FileStorage {
     func createDictionaries(for file: File) throws {}
 
     func move(from fromFile: File, to toFile: File) throws {}
+
+    func createDirectories(for file: File) throws {}
+
+    func contentsOfDirectory(at file: File) throws -> [File] {
+        return []
+    }
 }
 
 extension InputStream {

@@ -24,8 +24,7 @@ func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
 
 extension ApiRequest {
     func stubCondition(with baseUrl: URL, ignorePostParams: Bool = false) -> OHHTTPStubsTestBlock {
-        guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl,
-                                                 token: nil, headers: [:]).asURLRequest()),
+        guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl, token: nil).asURLRequest()),
               let url = urlRequest.url,
               let host = baseUrl.host else {
             return { _ in false }
