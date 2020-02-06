@@ -156,6 +156,7 @@ class BackgroundUploader: NSObject {
 
     private func finishUploads(uploads: [BackgroundUpload]) {
         guard !uploads.isEmpty else {
+            self.uploadsFinishedProcessing = true
             self.completeBackgroundSession()
             return
         }
@@ -224,7 +225,9 @@ extension BackgroundUploader: URLSessionTaskDelegate {
         self.uploadsFinishedProcessing = false
 
         if let upload = self.context.loadUpload(for: task.taskIdentifier) {
-            self.finishedUploads.append(upload)
+            if error == nil && task.error == nil {
+                self.finishedUploads.append(upload)
+            }
             self.context.deleteUpload(with: task.taskIdentifier)
         }
 
