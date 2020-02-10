@@ -246,6 +246,7 @@ class ItemDetailStore: ObservableObject {
         let metadataEditable: Bool
         let filesEditable: Bool
 
+        var isEditing: Bool
         var type: DetailType
         var data: Data
         var snapshot: Data?
@@ -268,13 +269,17 @@ class ItemDetailStore: ObservableObject {
 
             switch type {
             case .preview(let item), .duplication(let item, _):
+                self.isEditing = false
                 self.libraryId = item.libraryObject?.identifier ?? .custom(.myLibrary)
                 self.snapshot = nil
                 // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
                 self.metadataEditable = item.group?.canEditMetadata ?? true
                 // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
                 self.filesEditable = item.group?.canEditFiles ?? true
+                // Filter fieldIds to show only non-empty values
+                self.data.fieldIds = ItemDetailStore.filteredFieldKeys(from: self.data.fieldIds, fields: self.data.fields)
             case .creation(let libraryId, _, let filesEditable):
+                self.isEditing = true
                 self.libraryId = libraryId
                 self.snapshot = data
                 // Since we're in creation mode editing must have beeen enabled
@@ -323,6 +328,21 @@ class ItemDetailStore: ObservableObject {
             self.state = State(type: type, userId: userId,
                                error: (error as? Error) ?? .typeNotSupported)
         }
+    }
+
+    private static func allFieldKeys(for itemType: String, schemaController: SchemaController) -> [String] {
+        guard var fieldSchemas = schemaController.fields(for: itemType) else { return [] }
+        return fieldSchemas.map({ $0.field })
+    }
+
+    private static func filteredFieldKeys(from fieldKeys: [String], fields: [String: State.Field]) -> [String] {
+        var newFieldKeys: [String] = []
+        fieldKeys.forEach { key in
+            if !(fields[key]?.value ?? "").isEmpty {
+                newFieldKeys.append(key)
+            }
+        }
+        return newFieldKeys
     }
 
     private static func fieldData(for itemType: String, schemaController: SchemaController,
@@ -721,61 +741,84 @@ class ItemDetailStore: ObservableObject {
     }
 
     func startEditing() {
-        self.state.snapshot = self.state.data
+        var state = self.state
+        state.snapshot = state.data
+        state.data.fieldIds = ItemDetailStore.allFieldKeys(for: state.data.type, schemaController: self.schemaController)
+        state.isEditing = true
+        self.state = state
     }
 
     func cancelChanges() {
         guard let snapshot = self.state.snapshot else { return }
-        self.state.data = snapshot
-        self.state.snapshot = nil
+        var state = self.state
+        state.data = snapshot
+        state.snapshot = nil
+        state.isEditing = false
+        self.state = state
     }
 
-    @discardableResult func saveChanges() -> Bool {
-        let didChange = self.state.snapshot != self.state.data
-        if didChange {
+    func saveChanges() {
+        if self.state.snapshot != self.state.data {
             self._saveChanges()
         }
-        return didChange
     }
 
     private func _saveChanges() {
         // TODO: - move to background thread if possible
         // SWIFTUI BUG: - sync store with environment .editMode so that we can switch edit mode when background task finished
 
-        var newType: State.DetailType?
+        // TODO: - add loading indicator for saving
 
-        let originalModifiedDate = self.state.data.dateModified
+        self.save(state: self.state)
+            .observeOn(MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] state in
+                self?.state = state
+            }, onError: { [weak self] error in
+                DDLogError("ItemDetailStore: can't store changes - \(error)")
+                self?.state.error = (error as? Error) ?? .cantStoreChanges
+            })
+            .disposed(by: self.disposeBag)
+    }
 
-        do {
-            try self.fileStorage.copyAttachmentFilesIfNeeded(for: self.state.data.attachments)
+    private func save(state: State) -> Single<State> {
+        return Single.create { subscriber -> Disposable in
+            do {
+                try self.fileStorage.copyAttachmentFilesIfNeeded(for: state.data.attachments)
 
-            self.updateDateFieldIfNeeded()
-            self.state.data.dateModified = Date()
+                var newState = state
+                var newType: State.DetailType?
 
-            switch self.state.type {
-            case .preview(let item):
-                if let snapshot = self.state.snapshot {
-                    try self.updateItem(key: item.key, libraryId: self.state.libraryId, data: self.state.data, snapshot: snapshot)
+                self.updateDateFieldIfNeeded(in: &newState)
+                newState.data.dateModified = Date()
+
+                switch self.state.type {
+                case .preview(let item):
+                    if let snapshot = state.snapshot {
+                        try self.updateItem(key: item.key, libraryId: state.libraryId, data: state.data, snapshot: snapshot)
+                    }
+
+                case .creation(_, let collectionKey, _), .duplication(_, let collectionKey):
+                    let item = try self.createItem(with: state.libraryId, collectionKey: collectionKey, data: state.data)
+                    newType = .preview(item)
                 }
 
-            case .creation(_, let collectionKey, _), .duplication(_, let collectionKey):
-                let item = try self.createItem(with: self.state.libraryId, collectionKey: collectionKey, data: self.state.data)
-                newType = .preview(item)
-            }
+                newState.snapshot = nil
+                if let type = newType {
+                    newState.type = type
+                }
+                newState.isEditing = false
+                newState.data.fieldIds = ItemDetailStore.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
 
-            self.state.snapshot = nil
-            if let type = newType {
-                self.state.type = type
+                subscriber(.success(newState))
+            } catch let error {
+                subscriber(.error(error))
             }
-        } catch let error {
-            DDLogError("ItemDetailStore: can't store changes - \(error)")
-            self.state.data.dateModified = originalModifiedDate
-            self.state.error = (error as? Error) ?? .cantStoreChanges
+            return Disposables.create()
         }
     }
 
-    private func updateDateFieldIfNeeded() {
-        guard var field = self.state.data.fields.values.first(where: { $0.baseField == FieldKeys.date }) else { return }
+    private func updateDateFieldIfNeeded(in state: inout State) {
+        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.date }) else { return }
 
         let date: Date?
 
@@ -796,7 +839,7 @@ class ItemDetailStore: ObservableObject {
             formatter.dateFormat = "yyyy-MM-dd"
 
             field.value = formatter.string(from: date)
-            self.state.data.fields[field.key] = field
+            state.data.fields[field.key] = field
         }
     }
 

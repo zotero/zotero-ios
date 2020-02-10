@@ -211,12 +211,8 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                         fileStorage: self.controllers.fileStorage,
                                         dbStorage: dbStorage,
                                         schemaController: self.controllers.schemaController)
-            let view = ItemDetailView()
-                            .environment(\.dbStorage, dbStorage)
-                            .environment(\.schemaController, self.controllers.schemaController)
-                            .environmentObject(store)
-            (self.viewControllers.last as? UINavigationController)?.pushViewController(UIHostingController(rootView: view),
-                                                                                        animated: true)
+            let controller = ItemDetailViewController(store: store)
+            (self.viewControllers.last as? UINavigationController)?.pushViewController(controller, animated: true)
         } catch let error {
             // TODO: - show some error
         }

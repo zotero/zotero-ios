@@ -57,7 +57,7 @@ extension RealmDbStorage: DbStorage {
     }
 }
 
-class RealmDbCoordinator {
+struct RealmDbCoordinator {
     private let realm: Realm
 
     init(config: Realm.Configuration) throws {

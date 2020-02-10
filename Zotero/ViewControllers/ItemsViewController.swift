@@ -148,13 +148,7 @@ class ItemsViewController: UIViewController {
     }
 
     private func showItemView(with store: ItemDetailStore, hidesBackButton: Bool = false) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let view = ItemDetailView()
-                        .environment(\.dbStorage, dbStorage)
-                        .environment(\.schemaController, self.controllers.schemaController)
-                        .environmentObject(store)
-        let controller = UIHostingController(rootView: view)
+        let controller = ItemDetailViewController(store: store)
         if hidesBackButton {
             controller.navigationItem.setHidesBackButton(true, animated: false)
         }

@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-struct ItemDetailSectionView: View {
+struct ItemDetailSectionVView: View {
     let title: String
 
     var body: some View {
@@ -20,8 +20,8 @@ struct ItemDetailSectionView: View {
     }
 }
 
-struct ItemDetailSectionView_Previews: PreviewProvider {
+struct ItemDetailSectionVView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetailSectionView(title: "Section")
+        ItemDetailSectionVView(title: "Section")
     }
 }

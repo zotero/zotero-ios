@@ -83,9 +83,9 @@ struct ItemDetailView: View {
 
             Button(action: {
                 if self.editMode?.wrappedValue.isEditing == true {
-                    if self.store.saveChanges() {
-                        self.editMode?.wrappedValue = .inactive
-                    }
+//                    if self.store.saveChanges() {
+//                        self.editMode?.wrappedValue = .inactive
+//                    }
                 } else {
                     self.store.startEditing()
                     self.editMode?.wrappedValue = .active

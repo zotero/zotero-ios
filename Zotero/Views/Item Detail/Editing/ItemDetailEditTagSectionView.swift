@@ -13,7 +13,7 @@ struct ItemDetailEditTagSectionView: View {
 
     var body: some View {
         Section {
-            ItemDetailSectionView(title: "Tags")
+            ItemDetailSectionVView(title: "Tags")
             ForEach(self.store.state.data.tags) { tag in
                 TagView(color: Color(hex: tag.color), name: tag.name)
             }

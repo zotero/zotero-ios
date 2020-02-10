@@ -13,7 +13,7 @@ struct ItemDetailEditNoteSectionView: View {
 
     var body: some View {
         Section {
-            ItemDetailSectionView(title: "Notes")
+            ItemDetailSectionVView(title: "Notes")
             ForEach(self.store.state.data.notes) { note in
                 ItemDetailNoteView(text: note.title)
             }

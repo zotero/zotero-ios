@@ -13,7 +13,7 @@ struct ItemDetailEditAttachmentSectionView: View {
 
     var body: some View {
         Section {
-            ItemDetailSectionView(title: "Attachments")
+            ItemDetailSectionVView(title: "Attachments")
             ForEach(self.store.state.data.attachments) { attachment in
                 ItemDetailAttachmentView(iconName: attachment.iconName,
                                          title: attachment.title,
