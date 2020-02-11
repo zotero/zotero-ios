@@ -120,47 +120,37 @@ class ItemDetailViewController: UIViewController {
 
         let oldSections = self.sections
         self.sections = sections
-        let oldRows = self.rowIds
         self.rowIds = rows
 
-        let sectionDiff = diff(old: oldSections, new: sections)
-        let sectionChanges = IndexPathConverter().convert(changes: sectionDiff, section: 0)
+        let (sectionInsertions, sectionDeletions) = self.separated(difference: sections.difference(from: oldSections))
+        let sectionReloads = Set(0..<oldSections.count).subtracting(Set(sectionDeletions))
 
         tableView.performBatchUpdates({
-            // Update rows in unchanged sections if needed
-            for section in Set(oldSections).intersection(Set(sections)) {
-                guard let idx = oldSections.firstIndex(of: section) else { continue }
-                let oldIds = oldRows[section] ?? []
-                let newIds = rows[section] ?? []
-                let rowDiff = diff(old: oldIds, new: newIds)
-                let rowChanges = IndexPathConverter().convert(changes: rowDiff, section: idx)
-
-                rowChanges.deletes.executeIfPresent { indexPaths in
-                    tableView.deleteRows(at: indexPaths, with: .automatic)
-                }
-                rowChanges.replaces.executeIfPresent { indexPaths in
-                    tableView.reloadRows(at: indexPaths, with: .automatic)
-                }
-                rowChanges.inserts.executeIfPresent { indexPaths in
-                    tableView.insertRows(at: indexPaths, with: .automatic)
-                }
-                rowChanges.moves.executeIfPresent { indexPaths in
-                    indexPaths.forEach { tableView.moveRow(at: $0.from, to: $0.to) }
-                }
+            tableView.reloadSections(IndexSet(sectionReloads), with: .automatic)
+            if !sectionDeletions.isEmpty {
+                tableView.deleteSections(IndexSet(sectionDeletions), with: .automatic)
             }
-
-            // Sections don't change order, they just appear or disappear
-            sectionChanges.deletes.executeIfPresent { indexPaths in
-                tableView.deleteSections(IndexSet(indexPaths.map({ $0.row })), with: .automatic)
+            if !sectionInsertions.isEmpty {
+                tableView.insertSections(IndexSet(sectionInsertions), with: .automatic)
             }
-            sectionChanges.inserts.executeIfPresent { indexPaths in
-                tableView.insertSections(IndexSet(indexPaths.map({ $0.row })), with: .automatic)
-            }
-
             if let isEditing = isEditing {
                 tableView.setEditing(isEditing, animated: true)
             }
         }, completion: nil)
+    }
+
+    private func separated<T>(difference: CollectionDifference<T>) -> ([Int], [Int]) {
+        var insertions: [Int] = []
+        var deletions: [Int] = []
+        difference.forEach { change in
+            switch change {
+            case .insert(let offset, _, _):
+                insertions.append(offset)
+            case .remove(let offset, _, _):
+                deletions.append(offset)
+            }
+        }
+        return (insertions, deletions)
     }
 
     /// Creates sectioned arrays of ids for each section. These ids are used for diffing of changes made to current state during editing.
