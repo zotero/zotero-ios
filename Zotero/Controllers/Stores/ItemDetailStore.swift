@@ -43,7 +43,7 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        struct Field: Identifiable, Equatable {
+        struct Field: Identifiable, Equatable, Hashable {
             let key: String
             let baseField: String?
             var name: String
@@ -51,6 +51,11 @@ class ItemDetailStore: ObservableObject {
             let isTitle: Bool
 
             var id: String { return self.key }
+
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(self.key)
+                hasher.combine(self.value)
+            }
         }
 
         struct Note: Identifiable, Equatable {
@@ -78,7 +83,7 @@ class ItemDetailStore: ObservableObject {
             }
         }
 
-        struct Creator: Identifiable, Equatable {
+        struct Creator: Identifiable, Equatable, Hashable {
             enum NamePresentation: Equatable {
                 case separate, full
 
@@ -166,6 +171,14 @@ class ItemDetailStore: ObservableObject {
                     self.firstName = components.dropLast().joined(separator: " ")
                     self.lastName = components.last ?? ""
                 }
+            }
+
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(self.type)
+                hasher.combine(self.primary)
+                hasher.combine(self.fullName)
+                hasher.combine(self.firstName)
+                hasher.combine(self.lastName)
             }
         }
 
@@ -331,8 +344,16 @@ class ItemDetailStore: ObservableObject {
     }
 
     private static func allFieldKeys(for itemType: String, schemaController: SchemaController) -> [String] {
-        guard var fieldSchemas = schemaController.fields(for: itemType) else { return [] }
-        return fieldSchemas.map({ $0.field })
+        guard let fieldSchemas = schemaController.fields(for: itemType) else { return [] }
+        var fieldKeys = fieldSchemas.map({ $0.field })
+        // Remove title and abstract keys, those 2 are used separately in Data struct
+        if let index = fieldKeys.firstIndex(of: FieldKeys.abstract) {
+            fieldKeys.remove(at: index)
+        }
+        if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
+            fieldKeys.remove(at: index)
+        }
+        return fieldKeys
     }
 
     private static func filteredFieldKeys(from fieldKeys: [String], fields: [String: State.Field]) -> [String] {

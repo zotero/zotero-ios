@@ -9,11 +9,12 @@
 import Combine
 import UIKit
 
+import DeepDiff
 import RxSwift
 
 class ItemDetailViewController: UIViewController {
-    private enum Section: CaseIterable {
-        case abstract, attachments, creators, fields, notes, tags, title
+    private enum Section: CaseIterable, Equatable, Hashable, DiffAware {
+        case abstract, attachments, creators, dates, fields, notes, tags, title, type
 
         func cellId(isEditing: Bool) -> String {
             switch self {
@@ -25,7 +26,7 @@ class ItemDetailViewController: UIViewController {
                 return "ItemDetailNoteCell"
             case .tags:
                 return "ItemDetailTagCell"
-            case .fields:
+            case .fields, .type, .dates:
                 return "ItemDetailFieldCell"
             case .creators:
                 if isEditing {
@@ -42,6 +43,7 @@ class ItemDetailViewController: UIViewController {
     @IBOutlet private var tableView: UITableView!
 
     private var sections: [Section] = []
+    private var rowIds: [Section: [Int]] = [:]
     private var storeSubscriber: AnyCancellable?
 
     private static let sectionId = "ItemDetailSectionView"
@@ -72,8 +74,7 @@ class ItemDetailViewController: UIViewController {
         self.setupTableView()
 
         self.setNavigationBarEditingButton(toEditing: self.store.state.isEditing)
-        self.tableView.setEditing(self.store.state.isEditing, animated: false)
-        self.reloadSections(isEditing: self.store.state.isEditing, animated: false)
+        self.reloadIfNeeded(state: self.store.state, animated: false, tableView: self.tableView)
 
         self.storeSubscriber = self.store.$state.receive(on: DispatchQueue.main)
                                                 .dropFirst()
@@ -84,41 +85,158 @@ class ItemDetailViewController: UIViewController {
 
     // MARK: - Actions
 
+    /// Update UI based on new state.
+    /// - parameter state: New state.
     private func update(to state: ItemDetailStore.State) {
         if state.isEditing != self.tableView.isEditing {
             self.setNavigationBarEditingButton(toEditing: state.isEditing)
-            self.reloadSections(isEditing: state.isEditing, animated: true)
-            self.tableView.setEditing(state.isEditing, animated: true)
+        }
+        self.reloadIfNeeded(state: state, animated: true, tableView: self.tableView)
+    }
+
+    private func reloadIfNeeded(state: ItemDetailStore.State, animated: Bool, tableView: UITableView) {
+        let sections = self.sections(for: state.data, isEditing: state.isEditing)
+        let rows = self.rowIds(from: state.data, sections: sections, isEditing: state.isEditing)
+        if sections != self.sections || rows != self.rowIds {
+            let isEditing: Bool? = tableView.isEditing == state.isEditing ? nil : state.isEditing
+            self.reload(sections: sections, rows: rows, isEditing: isEditing, animated: animated, tableView: self.tableView)
         }
     }
 
-    private func reloadSections(isEditing: Bool, animated: Bool) {
+    /// Reloads table view.
+    /// - parameter data: Current state data.
+    /// - parameter isEditing: New editing state for tableView.
+    /// - parameter animated: True if reload should happen with animation, false otherwise.
+    private func reload(sections: [Section], rows: [Section: [Int]], isEditing: Bool?, animated: Bool, tableView: UITableView) {
         if !animated {
-            self.sections = self.sections(for: self.store.state.data, isEditing: isEditing)
-            self.tableView.reloadData()
+            self.sections = sections
+            self.rowIds = rows
+            tableView.reloadData()
+            if let isEditing = isEditing {
+                tableView.setEditing(isEditing, animated: false)
+            }
+            return
         }
 
-        // TODO: - create diff, reload sections with animation based on diff
         let oldSections = self.sections
-        self.sections = self.sections(for: self.store.state.data, isEditing: isEditing)
-        self.tableView.reloadData()
+        self.sections = sections
+        let oldRows = self.rowIds
+        self.rowIds = rows
+
+        let sectionDiff = diff(old: oldSections, new: sections)
+        let sectionChanges = IndexPathConverter().convert(changes: sectionDiff, section: 0)
+
+        tableView.performBatchUpdates({
+            // Update rows in unchanged sections if needed
+            for section in Set(oldSections).intersection(Set(sections)) {
+                guard let idx = oldSections.firstIndex(of: section) else { continue }
+                let oldIds = oldRows[section] ?? []
+                let newIds = rows[section] ?? []
+                let rowDiff = diff(old: oldIds, new: newIds)
+                let rowChanges = IndexPathConverter().convert(changes: rowDiff, section: idx)
+
+                rowChanges.deletes.executeIfPresent { indexPaths in
+                    tableView.deleteRows(at: indexPaths, with: .automatic)
+                }
+                rowChanges.replaces.executeIfPresent { indexPaths in
+                    tableView.reloadRows(at: indexPaths, with: .automatic)
+                }
+                rowChanges.inserts.executeIfPresent { indexPaths in
+                    tableView.insertRows(at: indexPaths, with: .automatic)
+                }
+                rowChanges.moves.executeIfPresent { indexPaths in
+                    indexPaths.forEach { tableView.moveRow(at: $0.from, to: $0.to) }
+                }
+            }
+
+            // Sections don't change order, they just appear or disappear
+            sectionChanges.deletes.executeIfPresent { indexPaths in
+                tableView.deleteSections(IndexSet(indexPaths.map({ $0.row })), with: .automatic)
+            }
+            sectionChanges.inserts.executeIfPresent { indexPaths in
+                tableView.insertSections(IndexSet(indexPaths.map({ $0.row })), with: .automatic)
+            }
+
+            if let isEditing = isEditing {
+                tableView.setEditing(isEditing, animated: true)
+            }
+        }, completion: nil)
     }
 
+    /// Creates sectioned arrays of ids for each section. These ids are used for diffing of changes made to current state during editing.
+    /// Only those sections should change ids, which want to add/delete/update their rows in table view during editing.
+    /// For example, .title, .abstract or .fields don't change their ids, because they are updated by textField/textView and their change
+    /// is already reflected there. On the other hand, .type is changed by a picker, so we want to reload the field when the value changes.
+    /// .creators can be added or deleted, so their ids are changed as well.
+    /// - parameter data: Data from `ItemDetailStore`
+    /// - parameter sections: Currently visible sections
+    /// - returns: Sectioned arrays of ids.
+    private func rowIds(from data: ItemDetailStore.State.Data, sections: [Section], isEditing: Bool) -> [Section: [Int]] {
+        var rowIds: [Section: [Int]] = [:]
+        sections.forEach { section in
+            var ids: [Int] = []
+            switch section {
+            case .title:
+                ids = [data.title.hashValue]
+            case .abstract:
+                ids = [String(describing: data.abstract).hashValue]
+            case .dates:
+                ids = [data.dateAdded.hashValue, data.dateModified.hashValue]
+            case .type:
+                ids = [data.type.hashValue]
+            case .fields:
+                ids = data.fieldIds.compactMap({ data.fields[$0] }).map({ $0.hashValue })
+            case .creators:
+                ids = data.creatorIds.compactMap({ data.creators[$0] }).map({ $0.hashValue })
+                if isEditing {
+                    ids.append("add_button".hashValue)
+                }
+            case .attachments:
+                ids = data.attachments.map({ $0.hashValue })
+                if isEditing {
+                    ids.append("add_button".hashValue)
+                }
+            case .notes:
+                ids = data.notes.map({ $0.title.hashValue })
+                if isEditing {
+                    ids.append("add_button".hashValue)
+                }
+            case .tags:
+                ids = data.tags.map({ $0.id.hashValue })
+                if isEditing {
+                    ids.append("add_button".hashValue)
+                }
+            }
+            rowIds[section] = ids
+        }
+        return rowIds
+    }
+
+    /// Creates array of visible section for current state.
+    /// - parameter data: Current state.
+    /// - parameter isEditing: Current editing table view state.
+    /// - returns: Array of visible sections.
     private func sections(for data: ItemDetailStore.State.Data, isEditing: Bool) -> [Section] {
         if isEditing {
             // Each section is visible during editing, so that the user can actually edit them
-            return [.title, .creators, .fields, .abstract, .notes, .tags, .attachments]
+            return [.title, .type, .creators, .fields, .abstract, .notes, .tags, .attachments]
         }
 
         var sections: [Section] = []
         if !data.title.isEmpty {
             sections.append(.title)
         }
+        // Item type is always visible
+        sections.append(.type)
         if !data.creators.isEmpty {
             sections.append(.creators)
         }
-        // Fields always contain at least dates, so they are always visible
-        sections.append(.fields)
+        if !data.fieldIds.isEmpty {
+            sections.append(.fields)
+        }
+        if !isEditing {
+            sections.append(.dates)
+        }
         if let abstract = data.abstract, !abstract.isEmpty {
             sections.append(.abstract)
         }
@@ -134,6 +252,8 @@ class ItemDetailViewController: UIViewController {
         return sections
     }
 
+    /// Updates navigation bar with appropriate buttons based on editing state.
+    /// - parameter isEditing: Current editing state of tableView.
     private func setNavigationBarEditingButton(toEditing editing: Bool) {
         if !editing {
             let button = UIBarButtonItem(title: "Edit", style: .plain, target: nil, action: nil)
@@ -181,10 +301,13 @@ class ItemDetailViewController: UIViewController {
 }
 
 extension ItemDetailViewController: UITableViewDataSource {
+    /// Base count of objects in each section. "Base" means just count of actual objects in data arrays, without additional rows shown in tableView.
     private func baseCount(in section: Section) -> Int {
         switch section {
-        case .abstract, .title:
+        case .abstract, .title, .type:
             return 1
+        case .dates:
+            return 2
         case .creators:
             return self.store.state.data.creatorIds.count
         case .fields:
@@ -198,18 +321,16 @@ extension ItemDetailViewController: UITableViewDataSource {
         }
     }
 
+    /// Count of rows for each section. This count includes all rows, including additional rows for some sections (add buttons while editing).
     private func count(in section: Section, isEditing: Bool) -> Int {
         let base = self.baseCount(in: section)
         var additional = 0
 
         switch section {
-        case .abstract, .title: break
-        case .creators, .attachments, .notes, .tags:
+        case .abstract, .title, .type, .dates, .fields: break
+        case .creators, .notes, .attachments, .tags:
             // +1 for add button
             additional = isEditing ? 1 : 0
-        case .fields:
-            // +2 for date added and date modified
-            additional = isEditing ? 0 : 2
         }
 
         return base + additional
@@ -220,7 +341,7 @@ extension ItemDetailViewController: UITableViewDataSource {
         let cellId: String
 
         switch section {
-        case .fields, .abstract, .title:
+        case .fields, .abstract, .title, .type, .dates:
             cellId = section.cellId(isEditing: isEditing)
         case .creators, .attachments, .notes, .tags:
             if indexPath.row < self.baseCount(in: section) {
@@ -291,7 +412,7 @@ extension ItemDetailViewController: UITableViewDataSource {
         let (section, cellId) = self.cellData(for: indexPath, isEditing: self.store.state.isEditing)
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
-        cell.separatorInset = UIEdgeInsets(top: 0, left: cell.layoutMargins.left, bottom: 0, right: 0)
+        var hasSeparator = true
 
         switch section {
         case .abstract:
@@ -314,6 +435,35 @@ extension ItemDetailViewController: UITableViewDataSource {
                     cell.setup(with: "Add attachment")
                 }
 
+        case .notes:
+            if let cell = cell as? ItemDetailNoteCell {
+                cell.setup(with: self.store.state.data.notes[indexPath.row])
+            } else if let cell = cell as? ItemDetailAddCell {
+                cell.setup(with: "Add note")
+            }
+
+        case .tags:
+            if let cell = cell as? ItemDetailTagCell {
+                cell.setup(with: self.store.state.data.tags[indexPath.row])
+            } else if let cell = cell as? ItemDetailAddCell {
+                cell.setup(with: "Add tag")
+            }
+
+        case .type:
+            if let cell = cell as? ItemDetailFieldCell {
+                cell.setup(with: self.store.state.data.localizedType, title: "Item Type")
+            }
+            hasSeparator = false
+
+        case .fields:
+            if let cell = cell as? ItemDetailFieldCell {
+                let fieldId = self.store.state.data.fieldIds[indexPath.row]
+                if let field = self.store.state.data.fields[fieldId] {
+                    cell.setup(with: field, isEditing: self.store.state.isEditing)
+                }
+            }
+            hasSeparator = false
+
         case .creators:
             if let cell = cell as? ItemDetailCreatorEditingCell {
                 let creatorId = self.store.state.data.creatorIds[indexPath.row]
@@ -328,45 +478,24 @@ extension ItemDetailViewController: UITableViewDataSource {
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: "Add creator")
             }
-            cell.separatorInset = UIEdgeInsets(top: 0, left: .greatestFiniteMagnitude, bottom: 0, right: 0)
+            hasSeparator = false
 
-        case .fields:
+        case .dates:
             if let cell = cell as? ItemDetailFieldCell {
-                let baseCount = self.baseCount(in: .fields)
-                if indexPath.row < baseCount {
-                    let fieldId = self.store.state.data.fieldIds[indexPath.row]
-                    if let field = self.store.state.data.fields[fieldId] {
-                        cell.setup(with: field, isEditing: self.store.state.isEditing)
-                    }
-                } else {
-                    let index = indexPath.row - baseCount
-                    switch index {
-                    case 0:
-                        let date = ItemDetailViewController.dateFormatter.string(from: self.store.state.data.dateAdded)
-                        cell.setup(with: date, title: "Date Added")
-                    case 1:
-                        let date = ItemDetailViewController.dateFormatter.string(from: self.store.state.data.dateModified)
-                        cell.setup(with: date, title: "Date Modified")
-                    default: break
-                    }
+                switch indexPath.row {
+                case 0:
+                    let date = ItemDetailViewController.dateFormatter.string(from: self.store.state.data.dateAdded)
+                    cell.setup(with: date, title: "Date Added")
+                case 1:
+                    let date = ItemDetailViewController.dateFormatter.string(from: self.store.state.data.dateModified)
+                    cell.setup(with: date, title: "Date Modified")
+                default: break
                 }
             }
-            cell.separatorInset = UIEdgeInsets(top: 0, left: .greatestFiniteMagnitude, bottom: 0, right: 0)
-
-        case .notes:
-            if let cell = cell as? ItemDetailNoteCell {
-                cell.setup(with: self.store.state.data.notes[indexPath.row])
-            } else if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: "Add note")
-            }
-
-        case .tags:
-            if let cell = cell as? ItemDetailTagCell {
-                cell.setup(with: self.store.state.data.tags[indexPath.row])
-            } else if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: "Add tag")
-            }
+            hasSeparator = false
         }
+
+        cell.separatorInset = UIEdgeInsets(top: 0, left: (hasSeparator ? .greatestFiniteMagnitude : cell.layoutMargins.left), bottom: 0, right: 0)
 
         return cell
     }
@@ -377,7 +506,7 @@ extension ItemDetailViewController: UITableViewDataSource {
         switch section {
         case .creators, .attachments, .notes, .tags:
             return indexPath.row < rows
-        case .title, .abstract, .fields:
+        case .title, .abstract, .fields, .type, .dates:
             return false
         }
     }
@@ -414,15 +543,15 @@ extension ItemDetailViewController: UITableViewDelegate {
         guard editingStyle == .delete else { return }
 
         switch self.sections[indexPath.section] {
-        case .creators: break
-            // TODO: - delete creator
-        case .tags: break
-            // TODO: - delete tag
-        case .attachments: break
-            // TODO: - delete attachment
-        case .notes: break
-            // TODO: - delete note
-        case .title, .abstract, .fields: break
+        case .creators:
+            self.store.deleteCreators(at: [indexPath.row])
+        case .tags:
+            self.store.deleteTags(at: [indexPath.row])
+        case .attachments:
+            self.store.deleteAttachments(at: [indexPath.row])
+        case .notes:
+            self.store.deleteNotes(at: [indexPath.row])
+        case .title, .abstract, .fields, .type, .dates: break
         }
     }
 
@@ -433,7 +562,7 @@ extension ItemDetailViewController: UITableViewDelegate {
         case .attachments:
             if self.store.state.isEditing {
                 if indexPath.row == self.store.state.data.attachments.count {
-                    // TODO: - Add attachment
+                    NotificationCenter.default.post(name: .presentFilePicker, object: self.store.addAttachments)
                     animated = true
                 }
             } else {
@@ -450,15 +579,22 @@ extension ItemDetailViewController: UITableViewDelegate {
             }
         case .tags:
             if self.store.state.isEditing && indexPath.row == self.store.state.data.tags.count {
-                // TODO: - Add tag
+                NotificationCenter.default.post(name: .presentTagPicker, object: (Set(self.store.state.data.tags.map({ $0.id })), self.store.state.libraryId, self.store.setTags))
                 animated = true
             }
         case .creators:
             if self.store.state.isEditing && indexPath.row == self.store.state.data.creators.count {
-                // TODO: - Add creator
+                self.store.addCreator()
                 animated = true
             }
-        case .title, .abstract, .fields: break
+        case .type:
+            if self.store.state.isEditing {
+                if self.store.state.data.type != ItemTypes.attachment {
+                    NotificationCenter.default.post(name: .presentTypePicker, object: (self.store.state.data.type, self.store.changeType))
+                }
+                animated = true
+            }
+        case .title, .abstract, .fields, .dates: break
         }
 
         tableView.deselectRow(at: indexPath, animated: animated)

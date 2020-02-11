@@ -33,7 +33,6 @@
                     <viewLayoutGuide key="safeArea" id="bda-Bw-CLl"/>
                 </view>
             </subviews>
-            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <constraints>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="iA1-y2-ImJ" secondAttribute="trailing" id="VrG-6l-GRe"/>
                 <constraint firstItem="iA1-y2-ImJ" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="esp-2K-IZh"/>
