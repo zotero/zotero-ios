@@ -8,10 +8,17 @@
 
 import UIKit
 
+import RxCocoa
+import RxSwift
+
 class ItemDetailTitleCell: UITableViewCell {
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var textField: UITextField!
     @IBOutlet private weak var separatorLeft: NSLayoutConstraint!
+
+    var textObservable: ControlProperty<String> {
+        return self.textField.rx.text.orEmpty
+    }
 
     func setup(with title: String, isEditing: Bool) {
         self.separatorLeft.constant = self.separatorInset.left

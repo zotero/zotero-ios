@@ -66,7 +66,7 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func showNoteEditing(for note: ItemDetailStore.State.Note) {
+    private func showNoteEditing(for note: ItemDetailState.Note) {
         self.presentNoteEditor(with: note.text) { [weak self] text in
             var newNote = note
             newNote.title = text.strippedHtml ?? ""
@@ -114,41 +114,52 @@ class ItemsViewController: UIViewController {
     }
 
     private func showItemCreation() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let store = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
-                                                    collectionKey: self.store.state.type.collectionKey,
-                                                    filesEditable: self.store.state.library.filesEditable),
-                                    userId: Defaults.shared.userId,
-                                    apiClient: self.controllers.apiClient,
-                                    fileStorage: self.controllers.fileStorage,
-                                    dbStorage: dbStorage,
-                                    schemaController: self.controllers.schemaController)
-        self.showItemView(with: store, hidesBackButton: true)
+        self.showItemDetail(for: .creation(libraryId: self.store.state.library.identifier,
+                                           collectionKey: self.store.state.type.collectionKey,
+                                           filesEditable: self.store.state.library.filesEditable))
     }
 
     private func showItemDetail(for item: RItem) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
         switch item.rawType {
         case ItemTypes.note:
-            if let note = ItemDetailStore.State.Note(item: item) {
+            if let note = ItemDetailState.Note(item: item) {
                 self.showNoteEditing(for: note)
             }
 
         default:
-            let store = ItemDetailStore(type: .preview(item),
+            self.showItemDetail(for: .preview(item))
+        }
+    }
+
+    private func showItemDetail(for type: ItemDetailState.DetailType) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        do {
+            let data = try ItemDetailDataCreator.createData(from: type,
+                                                            schemaController: self.controllers.schemaController,
+                                                            fileStorage: self.controllers.fileStorage)
+            let state = ItemDetailState(type: type, userId: Defaults.shared.userId, data: data)
+            let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
+                                                  fileStorage: self.controllers.fileStorage,
+                                                  dbStorage: dbStorage,
+                                                  schemaController: self.controllers.schemaController)
+            let store = ViewModel(initialState: state, handler: handler)
+            let oldStore = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
+                                                        collectionKey: self.store.state.type.collectionKey,
+                                                        filesEditable: self.store.state.library.filesEditable),
                                         userId: Defaults.shared.userId,
                                         apiClient: self.controllers.apiClient,
                                         fileStorage: self.controllers.fileStorage,
                                         dbStorage: dbStorage,
                                         schemaController: self.controllers.schemaController)
-            self.showItemView(with: store)
+            self.showItemView(with: store, oldStore: oldStore, hidesBackButton: true)
+        } catch let error {
+            // TODO: - show error
         }
     }
 
-    private func showItemView(with store: ItemDetailStore, hidesBackButton: Bool = false) {
-        let controller = ItemDetailViewController(store: store)
+    private func showItemView(with store: ViewModel<ItemDetailActionHandler>, oldStore: ItemDetailStore, hidesBackButton: Bool = false) {
+        let controller = ItemDetailViewController(oldStore: oldStore, store: store)
         if hidesBackButton {
             controller.navigationItem.setHidesBackButton(true, animated: false)
         }

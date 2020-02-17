@@ -8,10 +8,17 @@
 
 import UIKit
 
+import RxCocoa
+import RxSwift
+
 class ItemDetailFieldCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var valueLabel: UILabel!
+
+    var textObservable: ControlProperty<String> {
+        return self.valueTextField.rx.text.orEmpty
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()

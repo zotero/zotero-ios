@@ -205,13 +205,23 @@ class MainViewController: UISplitViewController, ConflictPresenter {
             let request = ReadItemDbRequest(libraryId: library.identifier, key: key)
             let item = try dbStorage.createCoordinator().perform(request: request)
 
-            let store = ItemDetailStore(type: .duplication(item, collectionKey: collectionKey),
+            let oldStore = ItemDetailStore(type: .duplication(item, collectionKey: collectionKey),
                                         userId: Defaults.shared.userId,
                                         apiClient: self.controllers.apiClient,
                                         fileStorage: self.controllers.fileStorage,
                                         dbStorage: dbStorage,
                                         schemaController: self.controllers.schemaController)
-            let controller = ItemDetailViewController(store: store)
+            let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
+                                                  fileStorage: self.controllers.fileStorage,
+                                                  dbStorage: dbStorage,
+                                                  schemaController: self.controllers.schemaController)
+            let type = ItemDetailState.DetailType.duplication(item, collectionKey: collectionKey)
+            let data = try ItemDetailDataCreator.createData(from: type,
+                                                            schemaController: self.controllers.schemaController,
+                                                            fileStorage: self.controllers.fileStorage)
+            let state = ItemDetailState(type: type, userId: Defaults.shared.userId, data: data)
+            let store = ViewModel(initialState: state, handler: handler)
+            let controller = ItemDetailViewController(oldStore: oldStore, store: store)
             (self.viewControllers.last as? UINavigationController)?.pushViewController(controller, animated: true)
         } catch let error {
             // TODO: - show some error

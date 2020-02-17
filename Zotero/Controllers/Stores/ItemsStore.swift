@@ -154,7 +154,7 @@ class ItemsStore: ObservableObject {
     }
 
     func saveNewNote(with text: String) {
-        let note = ItemDetailStore.State.Note(key: KeyGenerator.newKey, text: text)
+        let note = ItemDetailState.Note(key: KeyGenerator.newKey, text: text)
         let request = CreateNoteDbRequest(note: note,
                                           localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
                                           libraryId: self.state.library.identifier)
@@ -164,7 +164,7 @@ class ItemsStore: ObservableObject {
         }
     }
 
-    func saveChanges(for note: ItemDetailStore.State.Note) {
+    func saveChanges(for note: ItemDetailState.Note) {
         let request = StoreNoteDbRequest(note: note, libraryId: self.state.library.identifier)
         self.perform(request: request) { [weak self] error in
             DDLogError("ItemsStore: can't save note: \(error)")

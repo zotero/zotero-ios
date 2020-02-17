@@ -49,7 +49,8 @@ class ItemDetailViewController: UIViewController {
     private static let sectionId = "ItemDetailSectionView"
     private static let addCellId = "ItemDetailAddCell"
     private static let dateFormatter: DateFormatter = createDateFormatter()
-    private let store: ItemDetailStore
+    private let oldStore: ItemDetailStore
+    private let store: ViewModel<ItemDetailActionHandler>
     private let disposeBag: DisposeBag
 
     private static func createDateFormatter() -> DateFormatter {
@@ -58,7 +59,8 @@ class ItemDetailViewController: UIViewController {
         return formatter
     }
 
-    init(store: ItemDetailStore) {
+    init(oldStore: ItemDetailStore, store: ViewModel<ItemDetailActionHandler>) {
+        self.oldStore = oldStore
         self.store = store
         self.disposeBag = DisposeBag()
         super.init(nibName: "ItemDetailViewController", bundle: nil)
@@ -73,17 +75,37 @@ class ItemDetailViewController: UIViewController {
 
         self.setupTableView()
 
-        self.setNavigationBarEditingButton(toEditing: self.store.state.isEditing)
-        self.reloadIfNeeded(state: self.store.state, animated: false, tableView: self.tableView)
+        self.setNavigationBarEditingButton(toEditing: self.oldStore.state.isEditing)
+        self.reloadIfNeeded(state: self.oldStore.state, animated: false, tableView: self.tableView)
 
-        self.storeSubscriber = self.store.$state.receive(on: DispatchQueue.main)
+        self.storeSubscriber = self.oldStore.$state.receive(on: DispatchQueue.main)
                                                 .dropFirst()
                                                 .sink(receiveValue: { [weak self] state in
                                                     self?.update(to: state)
                                                 })
+
+        self.store.stateObservable
+                  .observeOn(MainScheduler.instance)
+                  .subscribe(onNext: { [weak self] state in
+                      self?.update(to: state)
+                  })
+                  .disposed(by: self.disposeBag)
     }
 
     // MARK: - Actions
+
+    private func openNote(with text: String) {
+        let controller = NoteEditorViewController(text: text) { [weak self] text in
+            guard let `self` = self else { return }
+            self.oldStore.saveNote(text: text)
+        }
+        let navigationController = UINavigationController(rootViewController: controller)
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
+    private func update(to state: ItemDetailState) {
+
+    }
 
     /// Update UI based on new state.
     /// - parameter state: New state.
@@ -98,8 +120,8 @@ class ItemDetailViewController: UIViewController {
         let sections = self.sections(for: state.data, isEditing: state.isEditing)
         let rows = self.rowIds(from: state.data, sections: sections, isEditing: state.isEditing)
         if sections != self.sections || rows != self.rowIds {
-            let isEditing: Bool? = tableView.isEditing == state.isEditing ? nil : state.isEditing
-            self.reload(sections: sections, rows: rows, isEditing: isEditing, animated: animated, tableView: self.tableView)
+            let editingChanged = tableView.isEditing != state.isEditing
+            self.reload(sections: sections, rows: rows, isEditing: state.isEditing, editingChanged: editingChanged, animated: animated, tableView: self.tableView)
         }
     }
 
@@ -107,12 +129,12 @@ class ItemDetailViewController: UIViewController {
     /// - parameter data: Current state data.
     /// - parameter isEditing: New editing state for tableView.
     /// - parameter animated: True if reload should happen with animation, false otherwise.
-    private func reload(sections: [Section], rows: [Section: [Int]], isEditing: Bool?, animated: Bool, tableView: UITableView) {
+    private func reload(sections: [Section], rows: [Section: [Int]], isEditing: Bool, editingChanged: Bool, animated: Bool, tableView: UITableView) {
         if !animated {
             self.sections = sections
             self.rowIds = rows
             tableView.reloadData()
-            if let isEditing = isEditing {
+            if editingChanged {
                 tableView.setEditing(isEditing, animated: false)
             }
             return
@@ -120,20 +142,39 @@ class ItemDetailViewController: UIViewController {
 
         let oldSections = self.sections
         self.sections = sections
+        let typeChanged = self.rowIds[.type]?.first != rows[.type]?.first
         self.rowIds = rows
 
         let (sectionInsertions, sectionDeletions) = self.separated(difference: sections.difference(from: oldSections))
-        let sectionReloads = Set(0..<oldSections.count).subtracting(Set(sectionDeletions))
+        var sectionReloads: Set<Int>
+        if editingChanged || !isEditing {
+            // Reload all sections if editing is changing or user is not editing
+            sectionReloads = Set(0..<oldSections.count)
+        } else {
+            // Some sections contain cells with text fields. Those shouldn't be reloaded. They already have updated content (from editing) and would
+            // just cancel the keyboard input.
+            var editableSections: Set<Section> = [.attachments, .notes, .tags, .type]
+            if typeChanged {
+                editableSections.insert(.fields)
+            }
+            let indices = oldSections.enumerated().compactMap({ editableSections.contains($0.element) ? $0.offset : nil })
+            sectionReloads = Set(indices)
+        }
+        // Subtract deleted sections to avoid crash
+        sectionReloads = sectionReloads.subtracting(Set(sectionDeletions))
 
         tableView.performBatchUpdates({
-            tableView.reloadSections(IndexSet(sectionReloads), with: .automatic)
+            if !sectionReloads.isEmpty {
+                let animation: UITableView.RowAnimation = !editingChanged && isEditing && !typeChanged ? .none : .automatic
+                tableView.reloadSections(IndexSet(sectionReloads), with: animation)
+            }
             if !sectionDeletions.isEmpty {
                 tableView.deleteSections(IndexSet(sectionDeletions), with: .automatic)
             }
             if !sectionInsertions.isEmpty {
                 tableView.insertSections(IndexSet(sectionInsertions), with: .automatic)
             }
-            if let isEditing = isEditing {
+            if editingChanged {
                 tableView.setEditing(isEditing, animated: true)
             }
         }, completion: nil)
@@ -248,7 +289,7 @@ class ItemDetailViewController: UIViewController {
         if !editing {
             let button = UIBarButtonItem(title: "Edit", style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
-                             self?.store.startEditing()
+                             self?.oldStore.startEditing()
                          })
                          .disposed(by: self.disposeBag)
             self.navigationItem.rightBarButtonItems = [button]
@@ -257,13 +298,13 @@ class ItemDetailViewController: UIViewController {
 
         let saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: nil)
         saveButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                             self?.store.saveChanges()
+                             self?.oldStore.saveChanges()
                          })
                          .disposed(by: self.disposeBag)
 
         let cancelButton = UIBarButtonItem(title: "Cancel", style: .plain, target: nil, action: nil)
         cancelButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                               self?.store.cancelChanges()
+                               self?.oldStore.cancelChanges()
                            })
                            .disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItems = [saveButton, cancelButton]
@@ -299,15 +340,15 @@ extension ItemDetailViewController: UITableViewDataSource {
         case .dates:
             return 2
         case .creators:
-            return self.store.state.data.creatorIds.count
+            return self.oldStore.state.data.creatorIds.count
         case .fields:
-            return self.store.state.data.fieldIds.count
+            return self.oldStore.state.data.fieldIds.count
         case .attachments:
-            return self.store.state.data.attachments.count
+            return self.oldStore.state.data.attachments.count
         case .notes:
-            return self.store.state.data.notes.count
+            return self.oldStore.state.data.notes.count
         case .tags:
-            return self.store.state.data.tags.count
+            return self.oldStore.state.data.tags.count
         }
     }
 
@@ -349,7 +390,7 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.count(in: self.sections[section], isEditing: self.store.state.isEditing)
+        return self.count(in: self.sections[section], isEditing: self.oldStore.state.isEditing)
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
@@ -399,7 +440,8 @@ extension ItemDetailViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let (section, cellId) = self.cellData(for: indexPath, isEditing: self.store.state.isEditing)
+        let isEditing = self.oldStore.state.isEditing
+        let (section, cellId) = self.cellData(for: indexPath, isEditing: isEditing)
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
         var hasSeparator = true
@@ -407,62 +449,82 @@ extension ItemDetailViewController: UITableViewDataSource {
         switch section {
         case .abstract:
             if let cell = cell as? ItemDetailAbstractCell {
-                cell.setup(with: (self.store.state.data.abstract ?? ""), isEditing: self.store.state.isEditing)
+                cell.setup(with: (self.oldStore.state.data.abstract ?? ""), isEditing: isEditing)
             }
 
         case .title:
             if let cell = cell as? ItemDetailTitleCell {
-                cell.setup(with: self.store.state.data.title, isEditing: self.store.state.isEditing)
+                cell.setup(with: self.oldStore.state.data.title, isEditing: isEditing)
+                cell.textObservable.subscribe(onNext: { [weak self] title in
+                    if isEditing {
+                        self?.oldStore.state.data.title = title
+                    }
+                }).disposed(by: self.disposeBag)
             }
 
         case .attachments:
                 if let cell = cell as? ItemDetailAttachmentCell {
-                    let attachment = self.store.state.data.attachments[indexPath.row]
+                    let attachment = self.oldStore.state.data.attachments[indexPath.row]
                     cell.setup(with: attachment,
-                               progress: self.store.state.downloadProgress[attachment.key],
-                               error: self.store.state.downloadError[attachment.key])
+                               progress: self.oldStore.state.downloadProgress[attachment.key],
+                               error: self.oldStore.state.downloadError[attachment.key])
                 } else if let cell = cell as? ItemDetailAddCell {
                     cell.setup(with: "Add attachment")
                 }
 
         case .notes:
             if let cell = cell as? ItemDetailNoteCell {
-                cell.setup(with: self.store.state.data.notes[indexPath.row])
+                cell.setup(with: self.oldStore.state.data.notes[indexPath.row])
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: "Add note")
             }
 
         case .tags:
             if let cell = cell as? ItemDetailTagCell {
-                cell.setup(with: self.store.state.data.tags[indexPath.row])
+                cell.setup(with: self.oldStore.state.data.tags[indexPath.row])
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: "Add tag")
             }
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: self.store.state.data.localizedType, title: "Item Type")
+                cell.setup(with: self.oldStore.state.data.localizedType, title: "Item Type")
             }
             hasSeparator = false
 
         case .fields:
             if let cell = cell as? ItemDetailFieldCell {
-                let fieldId = self.store.state.data.fieldIds[indexPath.row]
-                if let field = self.store.state.data.fields[fieldId] {
-                    cell.setup(with: field, isEditing: self.store.state.isEditing)
+                let fieldId = self.oldStore.state.data.fieldIds[indexPath.row]
+                if let field = self.oldStore.state.data.fields[fieldId] {
+                    cell.setup(with: field, isEditing: isEditing)
+                    cell.textObservable.subscribe(onNext: { [weak self] value in
+                        self?.oldStore.state.data.fields[fieldId]?.value = value
+                    }).disposed(by: self.disposeBag)
                 }
             }
             hasSeparator = false
 
         case .creators:
             if let cell = cell as? ItemDetailCreatorEditingCell {
-                let creatorId = self.store.state.data.creatorIds[indexPath.row]
-                if let creator = self.store.state.data.creators[creatorId] {
+                let creatorId = self.oldStore.state.data.creatorIds[indexPath.row]
+                if let creator = self.oldStore.state.data.creators[creatorId] {
                     cell.setup(with: creator)
+                    cell.namePresentationObservable.subscribe(onNext: { [weak self] namePresentation in
+                        self?.oldStore.state.data.creators[creatorId]?.namePresentation = namePresentation
+                    }).disposed(by: self.disposeBag)
+                    cell.fullNameObservable.subscribe(onNext: { [weak self] fullName in
+                        self?.oldStore.state.data.creators[creatorId]?.fullName = fullName
+                    }).disposed(by: self.disposeBag)
+                    cell.firstNameObservable.subscribe(onNext: { [weak self] firstName in
+                        self?.oldStore.state.data.creators[creatorId]?.firstName = firstName
+                    }).disposed(by: self.disposeBag)
+                    cell.lastNameObservable.subscribe(onNext: { [weak self] lastName in
+                        self?.oldStore.state.data.creators[creatorId]?.lastName = lastName
+                    }).disposed(by: self.disposeBag)
                 }
             } else if let cell = cell as? ItemDetailFieldCell {
-                let creatorId = self.store.state.data.creatorIds[indexPath.row]
-                if let creator = self.store.state.data.creators[creatorId] {
+                let creatorId = self.oldStore.state.data.creatorIds[indexPath.row]
+                if let creator = self.oldStore.state.data.creators[creatorId] {
                     cell.setup(with: creator)
                 }
             } else if let cell = cell as? ItemDetailAddCell {
@@ -474,10 +536,10 @@ extension ItemDetailViewController: UITableViewDataSource {
             if let cell = cell as? ItemDetailFieldCell {
                 switch indexPath.row {
                 case 0:
-                    let date = ItemDetailViewController.dateFormatter.string(from: self.store.state.data.dateAdded)
+                    let date = ItemDetailViewController.dateFormatter.string(from: self.oldStore.state.data.dateAdded)
                     cell.setup(with: date, title: "Date Added")
                 case 1:
-                    let date = ItemDetailViewController.dateFormatter.string(from: self.store.state.data.dateModified)
+                    let date = ItemDetailViewController.dateFormatter.string(from: self.oldStore.state.data.dateModified)
                     cell.setup(with: date, title: "Date Modified")
                 default: break
                 }
@@ -526,7 +588,7 @@ extension ItemDetailViewController: UITableViewDelegate {
         let sourceSection = self.sections[sourceIndexPath.section]
         let destinationSection = self.sections[destinationIndexPath.section]
         guard sourceSection == .creators && destinationSection == .creators else { return }
-        // TODO: - move creators
+        self.oldStore.moveCreators(from: IndexSet([sourceIndexPath.row]), to: destinationIndexPath.row)
     }
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -534,13 +596,13 @@ extension ItemDetailViewController: UITableViewDelegate {
 
         switch self.sections[indexPath.section] {
         case .creators:
-            self.store.deleteCreators(at: [indexPath.row])
+            self.oldStore.deleteCreators(at: [indexPath.row])
         case .tags:
-            self.store.deleteTags(at: [indexPath.row])
+            self.oldStore.deleteTags(at: [indexPath.row])
         case .attachments:
-            self.store.deleteAttachments(at: [indexPath.row])
+            self.oldStore.deleteAttachments(at: [indexPath.row])
         case .notes:
-            self.store.deleteNotes(at: [indexPath.row])
+            self.oldStore.deleteNotes(at: [indexPath.row])
         case .title, .abstract, .fields, .type, .dates: break
         }
     }
@@ -550,37 +612,40 @@ extension ItemDetailViewController: UITableViewDelegate {
 
         switch self.sections[indexPath.section] {
         case .attachments:
-            if self.store.state.isEditing {
-                if indexPath.row == self.store.state.data.attachments.count {
-                    NotificationCenter.default.post(name: .presentFilePicker, object: self.store.addAttachments)
+            if self.oldStore.state.isEditing {
+                if indexPath.row == self.oldStore.state.data.attachments.count {
+                    NotificationCenter.default.post(name: .presentFilePicker, object: self.oldStore.addAttachments)
                     animated = true
                 }
             } else {
-                // TODO: - Open attachment
+                self.oldStore.openAttachment(self.oldStore.state.data.attachments[indexPath.row])
                 animated = true
             }
         case .notes:
-            if self.store.state.isEditing {
-                // TODO: - Add note
+            if self.oldStore.state.isEditing && indexPath.row == self.oldStore.state.data.notes.count {
+                self.oldStore.addNote()
+                self.openNote(with: "")
                 animated = true
             } else {
-                // TODO: - Open note
+                let note = self.oldStore.state.data.notes[indexPath.row]
+                self.oldStore.openNote(note)
+                self.openNote(with: note.text)
                 animated = true
             }
         case .tags:
-            if self.store.state.isEditing && indexPath.row == self.store.state.data.tags.count {
-                NotificationCenter.default.post(name: .presentTagPicker, object: (Set(self.store.state.data.tags.map({ $0.id })), self.store.state.libraryId, self.store.setTags))
+            if self.oldStore.state.isEditing && indexPath.row == self.oldStore.state.data.tags.count {
+                NotificationCenter.default.post(name: .presentTagPicker, object: (Set(self.oldStore.state.data.tags.map({ $0.id })), self.oldStore.state.libraryId, self.oldStore.setTags))
                 animated = true
             }
         case .creators:
-            if self.store.state.isEditing && indexPath.row == self.store.state.data.creators.count {
-                self.store.addCreator()
+            if self.oldStore.state.isEditing && indexPath.row == self.oldStore.state.data.creators.count {
+                self.oldStore.addCreator()
                 animated = true
             }
         case .type:
-            if self.store.state.isEditing {
-                if self.store.state.data.type != ItemTypes.attachment {
-                    NotificationCenter.default.post(name: .presentTypePicker, object: (self.store.state.data.type, self.store.changeType))
+            if self.oldStore.state.isEditing {
+                if self.oldStore.state.data.type != ItemTypes.attachment {
+                    NotificationCenter.default.post(name: .presentTypePicker, object: (self.oldStore.state.data.type, self.oldStore.changeType))
                 }
                 animated = true
             }

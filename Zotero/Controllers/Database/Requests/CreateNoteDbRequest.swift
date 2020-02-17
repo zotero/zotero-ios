@@ -13,7 +13,7 @@ import RealmSwift
 struct CreateNoteDbRequest: DbResponseRequest {
     typealias Response = RItem
 
-    let note: ItemDetailStore.State.Note
+    let note: ItemDetailState.Note
     let localizedType: String
     let libraryId: LibraryIdentifier?
 

@@ -18,8 +18,8 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
 
     let libraryId: LibraryIdentifier
     let itemKey: String
-    let data: ItemDetailStore.State.Data
-    let snapshot: ItemDetailStore.State.Data
+    let data: ItemDetailState.Data
+    let snapshot: ItemDetailState.Data
     let schemaController: SchemaController
 
     func process(in database: Realm) throws {
@@ -42,7 +42,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         item.updateDerivedTitles()
     }
 
-    private func updateCreators(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data, item: RItem, database: Realm) {
+    private func updateCreators(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) {
         guard data.creators != snapshot.creators else { return }
 
         database.delete(item.creators)
@@ -65,7 +65,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         item.changedFields.insert(.creators)
     }
 
-    private func updateFields(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data,
+    private func updateFields(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data,
                               item: RItem, typeChanged: Bool, database: Realm) {
         let allFields = self.data.databaseFields(schemaController: self.schemaController)
         let snapshotFields = self.snapshot.databaseFields(schemaController: self.schemaController)
@@ -137,7 +137,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         }
     }
 
-    private func updateNotes(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data, item: RItem, database: Realm) throws {
+    private func updateNotes(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
         let noteKeys = data.notes.map({ $0.key })
         let notesToRemove = item.children.filter(.item(type: ItemTypes.note))
                                          .filter(.key(notIn: noteKeys))
@@ -167,7 +167,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         }
     }
 
-    private func updateAttachments(with data: ItemDetailStore.State.Data, snapshot: ItemDetailStore.State.Data, item: RItem, database: Realm) throws {
+    private func updateAttachments(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
         let attachmentKeys = data.attachments.map({ $0.key })
         let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
                                                .filter(.key(notIn: attachmentKeys))
@@ -199,7 +199,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
         }
     }
 
-    private func updateTags(with data: ItemDetailStore.State.Data, item: RItem, database: Realm) {
+    private func updateTags(with data: ItemDetailState.Data, item: RItem, database: Realm) {
         var tagsDidChange = false
 
         let tagNames = data.tags.map({ $0.name })

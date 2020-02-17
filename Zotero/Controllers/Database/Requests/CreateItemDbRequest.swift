@@ -15,7 +15,7 @@ struct CreateItemDbRequest: DbResponseRequest {
 
     let libraryId: LibraryIdentifier
     let collectionKey: String?
-    let data: ItemDetailStore.State.Data
+    let data: ItemDetailState.Data
     let schemaController: SchemaController
 
     var needsWrite: Bool {
