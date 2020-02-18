@@ -19,17 +19,13 @@ class ItemDetailCreatorEditingCell: UITableViewCell {
     @IBOutlet private weak var fullTextField: UITextField!
     @IBOutlet private weak var button: UIButton!
 
-    private var creator: ItemDetailStore.State.Creator = .init(type: "", primary: false, localizedType: "")
+    private var namePresentation: ItemDetailState.Creator.NamePresentation = .full
 
-    var namePresentationObservable: Observable<ItemDetailStore.State.Creator.NamePresentation> {
+    var namePresentationObservable: Observable<ItemDetailState.Creator.NamePresentation> {
         return self.button.rx.controlEvent(.touchUpInside)
-                             .flatMap { _ -> Observable<ItemDetailStore.State.Creator.NamePresentation> in
-                                 self.creator.namePresentation.toggle()
-                                 return Observable.just(self.creator.namePresentation)
+                             .flatMap { _ -> Observable<ItemDetailState.Creator.NamePresentation> in
+                                 return Observable.just(self.namePresentation == .full ? .separate : .full)
                              }
-                             .do(onNext: { namePresentation in
-                                 self.setup(with: self.creator)
-                             })
     }
     var firstNameObservable: ControlProperty<String> {
         return self.firstNameTextField.rx.text.orEmpty
@@ -47,9 +43,9 @@ class ItemDetailCreatorEditingCell: UITableViewCell {
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    func setup(with creator: ItemDetailStore.State.Creator) {
+    func setup(with creator: ItemDetailState.Creator) {
         let isSplit = creator.namePresentation == .separate
-        self.creator = creator
+        self.namePresentation = creator.namePresentation
         self.titleLabel.text = creator.localizedType
         self.splitContainer.isHidden = !isSplit
         self.fullTextField.isHidden = isSplit

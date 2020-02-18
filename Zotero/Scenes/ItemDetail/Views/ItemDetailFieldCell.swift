@@ -26,7 +26,7 @@ class ItemDetailFieldCell: UITableViewCell {
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    func setup(with field: ItemDetailStore.State.Field, isEditing: Bool) {
+    func setup(with field: ItemDetailState.Field, isEditing: Bool) {
         self.titleLabel.text = field.name
         self.valueTextField.text = field.value
         self.valueLabel.text = field.value
@@ -34,7 +34,7 @@ class ItemDetailFieldCell: UITableViewCell {
         self.valueTextField.isHidden = !isEditing
     }
 
-    func setup(with creator: ItemDetailStore.State.Creator) {
+    func setup(with creator: ItemDetailState.Creator) {
         self.titleLabel.text = creator.localizedType
         self.valueLabel.text = creator.name
         self.valueLabel.isHidden = false

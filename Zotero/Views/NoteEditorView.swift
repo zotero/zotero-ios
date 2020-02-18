@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct NoteEditorView: UIViewControllerRepresentable {
-    @Binding private(set) var note: ItemDetailStore.State.Note
+    @Binding private(set) var note: ItemDetailState.Note
     let saveAction: () -> Void
 
     func makeUIViewController(context: Self.Context) -> UINavigationController {

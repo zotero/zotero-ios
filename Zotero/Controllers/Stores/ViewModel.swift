@@ -12,7 +12,7 @@ import RxCocoa
 import RxSwift
 
 protocol ViewModelState {
-    func cleanup()
+    mutating func cleanup()
 }
 
 protocol ViewModelActionHandler {

@@ -138,7 +138,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func presentNote(_ note: Binding<ItemDetailStore.State.Note>, saveAction: @escaping () -> Void) {
+    private func presentNote(_ note: Binding<ItemDetailState.Note>, saveAction: @escaping () -> Void) {
         let view = NoteEditorView(note: note, saveAction: saveAction)
         let controller = UIHostingController(rootView: view)
         controller.isModalInPresentation = true
@@ -205,12 +205,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
             let request = ReadItemDbRequest(libraryId: library.identifier, key: key)
             let item = try dbStorage.createCoordinator().perform(request: request)
 
-            let oldStore = ItemDetailStore(type: .duplication(item, collectionKey: collectionKey),
-                                        userId: Defaults.shared.userId,
-                                        apiClient: self.controllers.apiClient,
-                                        fileStorage: self.controllers.fileStorage,
-                                        dbStorage: dbStorage,
-                                        schemaController: self.controllers.schemaController)
             let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
@@ -220,8 +214,8 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                                             schemaController: self.controllers.schemaController,
                                                             fileStorage: self.controllers.fileStorage)
             let state = ItemDetailState(type: type, userId: Defaults.shared.userId, data: data)
-            let store = ViewModel(initialState: state, handler: handler)
-            let controller = ItemDetailViewController(oldStore: oldStore, store: store)
+            let viewModel = ViewModel(initialState: state, handler: handler)
+            let controller = ItemDetailViewController(viewModel: viewModel)
             (self.viewControllers.last as? UINavigationController)?.pushViewController(controller, animated: true)
         } catch let error {
             // TODO: - show some error
@@ -434,7 +428,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                 case .presentSettings:
                     self?.presentSettings()
                 case .presentNote:
-                    if let (note, block) = notification.object as? (Binding<ItemDetailStore.State.Note>, () -> Void) {
+                    if let (note, block) = notification.object as? (Binding<ItemDetailState.Note>, () -> Void) {
                         self?.presentNote(note, saveAction: block)
                     }
                 case .presentTypePicker:

@@ -143,23 +143,15 @@ class ItemsViewController: UIViewController {
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
                                                   schemaController: self.controllers.schemaController)
-            let store = ViewModel(initialState: state, handler: handler)
-            let oldStore = ItemDetailStore(type: .creation(libraryId: self.store.state.library.identifier,
-                                                        collectionKey: self.store.state.type.collectionKey,
-                                                        filesEditable: self.store.state.library.filesEditable),
-                                        userId: Defaults.shared.userId,
-                                        apiClient: self.controllers.apiClient,
-                                        fileStorage: self.controllers.fileStorage,
-                                        dbStorage: dbStorage,
-                                        schemaController: self.controllers.schemaController)
-            self.showItemView(with: store, oldStore: oldStore, hidesBackButton: true)
+            let viewModel = ViewModel(initialState: state, handler: handler)
+            self.showItemView(with: viewModel, hidesBackButton: true)
         } catch let error {
             // TODO: - show error
         }
     }
 
-    private func showItemView(with store: ViewModel<ItemDetailActionHandler>, oldStore: ItemDetailStore, hidesBackButton: Bool = false) {
-        let controller = ItemDetailViewController(oldStore: oldStore, store: store)
+    private func showItemView(with viewModel: ViewModel<ItemDetailActionHandler>, hidesBackButton: Bool = false) {
+        let controller = ItemDetailViewController(viewModel: viewModel)
         if hidesBackButton {
             controller.navigationItem.setHidesBackButton(true, animated: false)
         }
