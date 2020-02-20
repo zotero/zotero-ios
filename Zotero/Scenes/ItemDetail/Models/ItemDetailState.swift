@@ -216,35 +216,6 @@ struct ItemDetailState: ViewModelState {
 
             return allFields
         }
-
-        mutating func recalculateMaxTitleWidth() {
-            var maxTitle = ""
-            var maxNonEmptyTitle = ""
-
-            self.fields.values.forEach { field in
-                if field.name.count > maxTitle.count {
-                    maxTitle = field.name
-                }
-
-                if !field.value.isEmpty && field.name.count > maxNonEmptyTitle.count {
-                    maxNonEmptyTitle = field.name
-                }
-            }
-
-            // TODO: - localize
-            let extraFields = ["Item Type", "Date Modified", "Date Added", "Abstract"] + self.creators.values.map({ $0.localizedType })
-            extraFields.forEach { name in
-                if name.count > maxTitle.count {
-                    maxTitle = name
-                }
-                if name.count > maxNonEmptyTitle.count {
-                    maxNonEmptyTitle = name
-                }
-            }
-
-            self.maxFieldTitleWidth = ceil(maxTitle.size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width)
-            self.maxNonemptyFieldTitleWidth = ceil(maxNonEmptyTitle.size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width)
-        }
     }
 
     enum Diff {

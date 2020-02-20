@@ -176,7 +176,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         data.abstract = hasAbstract ? (originalData.abstract ?? "") : nil
         data.creators = try self.creators(for: type, from: originalData.creators)
         data.creatorIds = originalData.creatorIds
-        data.recalculateMaxTitleWidth()
         return data
     }
 

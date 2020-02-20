@@ -45,6 +45,11 @@ class ItemDetailViewController: UIViewController {
     @IBOutlet private var tableView: UITableView!
 
     private var sections: [Section] = []
+    private var maxTitleWidth: CGFloat = 0
+    private var maxNonemptyTitleWidth: CGFloat = 0
+    private var titleWidth: CGFloat {
+        return self.viewModel.state.isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
+    }
 
     private static let sectionId = "ItemDetailSectionView"
     private static let addCellId = "ItemDetailAddCell"
@@ -77,6 +82,9 @@ class ItemDetailViewController: UIViewController {
 
         self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing)
         self.sections = self.sections(for: self.viewModel.state.data, isEditing: self.viewModel.state.isEditing)
+        let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: self.viewModel.state.data)
+        self.maxTitleWidth = titleWidth
+        self.maxNonemptyTitleWidth = nonEmptyTitleWidth
 
         self.viewModel.stateObservable
                   .observeOn(MainScheduler.instance)
@@ -176,6 +184,12 @@ class ItemDetailViewController: UIViewController {
     private func update(to state: ItemDetailState) {
         if state.changes.contains(.editing) {
             self.setNavigationBarEditingButton(toEditing: state.isEditing)
+        }
+
+        if state.changes.contains(.type) {
+            let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: state.data)
+            self.maxTitleWidth = titleWidth
+            self.maxNonemptyTitleWidth = nonEmptyTitleWidth
         }
 
         if state.changes.contains(.editing) ||
@@ -334,6 +348,36 @@ class ItemDetailViewController: UIViewController {
             sections.append(.attachments)
         }
         return sections
+    }
+
+    private func calculateTitleWidths(for data: ItemDetailState.Data) -> (CGFloat, CGFloat) {
+        var maxTitle = ""
+        var maxNonEmptyTitle = ""
+
+        data.fields.values.forEach { field in
+            if field.name.count > maxTitle.count {
+                maxTitle = field.name
+            }
+
+            if !field.value.isEmpty && field.name.count > maxNonEmptyTitle.count {
+                maxNonEmptyTitle = field.name
+            }
+        }
+
+        // TODO: - localize
+        let extraFields = ["Item Type", "Date Modified", "Date Added", "Abstract"] + data.creators.values.map({ $0.localizedType })
+        extraFields.forEach { name in
+            if name.count > maxTitle.count {
+                maxTitle = name
+            }
+            if name.count > maxNonEmptyTitle.count {
+                maxNonEmptyTitle = name
+            }
+        }
+
+        let maxTitleWidth = ceil(maxTitle.size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width)
+        let maxNonemptyTitleWidth = ceil(maxNonEmptyTitle.size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width)
+        return (maxTitleWidth, maxNonemptyTitleWidth)
     }
 
     // MARK: - Setups
@@ -514,7 +558,7 @@ extension ItemDetailViewController: UITableViewDataSource {
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: self.viewModel.state.data.localizedType, title: "Item Type")
+                cell.setup(with: self.viewModel.state.data.localizedType, title: "Item Type", titleWidth: self.titleWidth)
             }
             hasSeparator = false
 
@@ -522,7 +566,7 @@ extension ItemDetailViewController: UITableViewDataSource {
             if let cell = cell as? ItemDetailFieldCell {
                 let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
                 if let field = self.viewModel.state.data.fields[fieldId] {
-                    cell.setup(with: field, isEditing: isEditing)
+                    cell.setup(with: field, isEditing: isEditing, titleWidth: self.titleWidth)
                     cell.textObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
                     }).disposed(by: self.disposeBag)
@@ -554,7 +598,7 @@ extension ItemDetailViewController: UITableViewDataSource {
             } else if let cell = cell as? ItemDetailFieldCell {
                 let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
                 if let creator = self.viewModel.state.data.creators[creatorId] {
-                    cell.setup(with: creator)
+                    cell.setup(with: creator, titleWidth: self.titleWidth)
                 }
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: "Add creator")
@@ -566,10 +610,10 @@ extension ItemDetailViewController: UITableViewDataSource {
                 switch indexPath.row {
                 case 0:
                     let date = ItemDetailViewController.dateFormatter.string(from: self.viewModel.state.data.dateAdded)
-                    cell.setup(with: date, title: "Date Added")
+                    cell.setup(with: date, title: "Date Added", titleWidth: self.titleWidth)
                 case 1:
                     let date = ItemDetailViewController.dateFormatter.string(from: self.viewModel.state.data.dateModified)
-                    cell.setup(with: date, title: "Date Modified")
+                    cell.setup(with: date, title: "Date Modified", titleWidth: self.titleWidth)
                 default: break
                 }
             }

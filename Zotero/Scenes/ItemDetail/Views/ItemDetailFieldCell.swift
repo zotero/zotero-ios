@@ -13,6 +13,7 @@ import RxSwift
 
 class ItemDetailFieldCell: UITableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var titleWidth: NSLayoutConstraint!
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var valueLabel: UILabel!
 
@@ -26,25 +27,28 @@ class ItemDetailFieldCell: UITableViewCell {
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    func setup(with field: ItemDetailState.Field, isEditing: Bool) {
+    func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {
         self.titleLabel.text = field.name
         self.valueTextField.text = field.value
         self.valueLabel.text = field.value
         self.valueLabel.isHidden = isEditing
         self.valueTextField.isHidden = !isEditing
+        self.titleWidth.constant = titleWidth
     }
 
-    func setup(with creator: ItemDetailState.Creator) {
+    func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat) {
         self.titleLabel.text = creator.localizedType
         self.valueLabel.text = creator.name
         self.valueLabel.isHidden = false
         self.valueTextField.isHidden = true
+        self.titleWidth.constant = titleWidth
     }
 
-    func setup(with date: String, title: String) {
+    func setup(with date: String, title: String, titleWidth: CGFloat) {
         self.titleLabel.text = title
         self.valueLabel.text = date
         self.valueLabel.isHidden = false
         self.valueTextField.isHidden = true
+        self.titleWidth.constant = titleWidth
     }
 }

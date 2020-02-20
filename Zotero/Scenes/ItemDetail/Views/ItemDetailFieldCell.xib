@@ -17,22 +17,25 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <stackView opaque="NO" contentMode="scaleToFill" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="Z24-GW-m9L">
-                        <rect key="frame" x="20" y="4" width="401" height="136"/>
+                        <rect key="frame" x="20" y="4" width="0.0" height="136"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="999" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bqm-5K-aUO">
-                                <rect key="frame" x="0.0" y="0.0" width="401" height="136"/>
+                                <rect key="frame" x="0.0" y="0.0" width="0.0" height="136"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="QqB-In-7u0"/>
+                                </constraints>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                 <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4vs-TP-UvN">
-                                <rect key="frame" x="401" y="0.0" width="0.0" height="136"/>
+                                <rect key="frame" x="0.0" y="0.0" width="0.0" height="136"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" adjustsFontForContentSizeCategory="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ERe-bP-QgB">
-                                <rect key="frame" x="401" y="0.0" width="0.0" height="136"/>
+                                <rect key="frame" x="0.0" y="0.0" width="0.0" height="136"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
@@ -49,6 +52,7 @@
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
                 <outlet property="titleLabel" destination="Bqm-5K-aUO" id="3lx-Ia-Fhg"/>
+                <outlet property="titleWidth" destination="QqB-In-7u0" id="UbZ-vp-Ir1"/>
                 <outlet property="valueLabel" destination="4vs-TP-UvN" id="EXI-2m-Vth"/>
                 <outlet property="valueTextField" destination="ERe-bP-QgB" id="c2G-EA-Dpo"/>
             </connections>
