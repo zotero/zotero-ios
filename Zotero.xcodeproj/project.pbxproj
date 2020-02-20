@@ -468,6 +468,7 @@
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
+		B3EA17F123FEB58700F80A0C /* DocumentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EA17F023FEB58700F80A0C /* DocumentPickerViewController.swift */; };
 		B3F9058C23DAEC6A008B0B40 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9058B23DAEC6A008B0B40 /* TranslatorsRequest.swift */; };
 /* End PBXBuildFile section */
 
@@ -827,6 +828,7 @@
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
+		B3EA17F023FEB58700F80A0C /* DocumentPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPickerViewController.swift; sourceTree = "<group>"; };
 		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
 		B3F9058B23DAEC6A008B0B40 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1321,6 +1323,7 @@
 				B305656823FC051E003304F2 /* NoteEditorViewController.swift */,
 				B305656923FC051E003304F2 /* ItemsViewController.swift */,
 				B305656A23FC051E003304F2 /* ProgressNavigationViewController.swift */,
+				B3EA17F023FEB58700F80A0C /* DocumentPickerViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -1895,6 +1898,7 @@
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
 				B305667523FC051F003304F2 /* String+Extensions.swift in Sources */,
 				B30565CE23FC051E003304F2 /* StoreGroupDbRequest.swift in Sources */,
+				B3EA17F123FEB58700F80A0C /* DocumentPickerViewController.swift in Sources */,
 				B30565C623FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */,
 				B30566AF23FC051F003304F2 /* LibraryResponse.swift in Sources */,
 				B305662E23FC051F003304F2 /* CollectionRow.swift in Sources */,

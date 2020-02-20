@@ -151,7 +151,7 @@ class ItemsViewController: UIViewController {
     }
 
     private func showItemView(with viewModel: ViewModel<ItemDetailActionHandler>, hidesBackButton: Bool = false) {
-        let controller = ItemDetailViewController(viewModel: viewModel)
+        let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
         if hidesBackButton {
             controller.navigationItem.setHidesBackButton(true, animated: false)
         }

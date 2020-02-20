@@ -12,17 +12,20 @@ import RxCocoa
 import RxSwift
 
 class ItemDetailCreatorEditingCell: UITableViewCell {
-    @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var titleButton: UIButton!
     @IBOutlet private weak var splitContainer: UIStackView!
     @IBOutlet private weak var firstNameTextField: UITextField!
     @IBOutlet private weak var lastNameTextField: UITextField!
     @IBOutlet private weak var fullTextField: UITextField!
-    @IBOutlet private weak var button: UIButton!
+    @IBOutlet private weak var namePresentationButton: UIButton!
 
     private var namePresentation: ItemDetailState.Creator.NamePresentation = .full
 
+    var typeObservable: ControlEvent<()> {
+        return self.titleButton.rx.controlEvent(.touchUpInside)
+    }
     var namePresentationObservable: Observable<ItemDetailState.Creator.NamePresentation> {
-        return self.button.rx.controlEvent(.touchUpInside)
+        return self.namePresentationButton.rx.controlEvent(.touchUpInside)
                              .flatMap { _ -> Observable<ItemDetailState.Creator.NamePresentation> in
                                  return Observable.just(self.namePresentation == .full ? .separate : .full)
                              }
@@ -40,18 +43,18 @@ class ItemDetailCreatorEditingCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
+        self.titleButton.titleLabel?.font = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
     func setup(with creator: ItemDetailState.Creator) {
         let isSplit = creator.namePresentation == .separate
         self.namePresentation = creator.namePresentation
-        self.titleLabel.text = creator.localizedType
+        self.titleButton.setTitle(creator.localizedType, for: .normal)
         self.splitContainer.isHidden = !isSplit
         self.fullTextField.isHidden = isSplit
         self.firstNameTextField.text = creator.firstName
         self.lastNameTextField.text = creator.lastName
         self.fullTextField.text = creator.fullName
-        self.button.setTitle((isSplit ? "Merge name" : "Split name"), for: .normal)
+        self.namePresentationButton.setTitle((isSplit ? "Merge name" : "Split name"), for: .normal)
     }
 }

@@ -240,7 +240,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private func updateCreator(with identifier: UUID, update: ItemDetailAction.CreatorUpdate, in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
             guard var creator = state.data.creators[identifier] else { return }
+            var needsReload = false
+
             switch update {
+            case .type(let value):
+                creator.type = value
+                creator.localizedType = self.schemaController.localized(creator: value) ?? ""
+                needsReload = true
             case .firstName(let value):
                 creator.firstName = value
             case .lastName(let value):
@@ -249,10 +255,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 creator.fullName = value
             case .namePresentation(let value):
                 creator.namePresentation = value
-                if let index = state.data.creatorIds.firstIndex(of: identifier) {
-                    state.diff = .creators(insertions: [], deletions: [], reloads: [index])
-                }
+                needsReload = true
             }
+
+            if needsReload, let index = state.data.creatorIds.firstIndex(of: identifier) {
+                state.diff = .creators(insertions: [], deletions: [], reloads: [index])
+            }
+
             state.data.creators[identifier] = creator
         }
     }

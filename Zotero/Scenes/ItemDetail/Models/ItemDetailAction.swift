@@ -14,6 +14,7 @@ enum ItemDetailAction {
         case firstName(String)
         case lastName(String)
         case fullName(String)
+        case type(String)
     }
 
     case acceptPrompt

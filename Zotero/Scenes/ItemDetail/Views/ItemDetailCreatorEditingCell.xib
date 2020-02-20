@@ -19,12 +19,13 @@
                     <stackView opaque="NO" contentMode="scaleToFill" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="4Af-vQ-T3N">
                         <rect key="frame" x="20" y="4" width="381" height="87"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="999" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lsQ-jt-9At">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="f7A-qR-1HZ">
                                 <rect key="frame" x="0.0" y="0.0" width="278" height="87"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                                <state key="normal" title="Button">
+                                    <color key="titleColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                </state>
+                            </button>
                             <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="Z0K-Vb-cA8">
                                 <rect key="frame" x="284" y="0.0" width="8" height="87"/>
                                 <subviews>
@@ -71,12 +72,12 @@
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
-                <outlet property="button" destination="2pN-Op-rGM" id="BVc-eI-l5L"/>
                 <outlet property="firstNameTextField" destination="fN9-Ml-fn7" id="c3P-6f-OU7"/>
                 <outlet property="fullTextField" destination="d6C-1K-V70" id="vDb-U0-Buu"/>
                 <outlet property="lastNameTextField" destination="H5Y-P6-XrH" id="ftG-Fz-bGd"/>
+                <outlet property="namePresentationButton" destination="2pN-Op-rGM" id="lEh-cn-Tob"/>
                 <outlet property="splitContainer" destination="Z0K-Vb-cA8" id="gSQ-74-X9e"/>
-                <outlet property="titleLabel" destination="lsQ-jt-9At" id="inX-2s-DFc"/>
+                <outlet property="titleButton" destination="f7A-qR-1HZ" id="Avz-MM-cLm"/>
             </connections>
             <point key="canvasLocation" x="210.86956521739131" y="143.63839285714286"/>
         </tableViewCell>

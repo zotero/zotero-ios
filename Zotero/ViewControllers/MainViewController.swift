@@ -215,7 +215,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                                             fileStorage: self.controllers.fileStorage)
             let state = ItemDetailState(type: type, userId: Defaults.shared.userId, data: data)
             let viewModel = ViewModel(initialState: state, handler: handler)
-            let controller = ItemDetailViewController(viewModel: viewModel)
+            let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
             (self.viewControllers.last as? UINavigationController)?.pushViewController(controller, animated: true)
         } catch let error {
             // TODO: - show some error
@@ -238,13 +238,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     private func showItems(in collection: Collection, library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-//        let view = ItemsView()
-//                        .environment(\.dbStorage, self.controllers.dbStorage)
-//                        .environment(\.apiClient, self.controllers.apiClient)
-//                        .environment(\.fileStorage, self.controllers.fileStorage)
-//                        .environment(\.schemaController, self.controllers.schemaController)
-//                        .environmentObject(self.itemsStore(for: collection, library: library))
-//        let controller = UIHostingController(rootView: view)
         let controller = ItemsViewController(store: self.itemsStore(for: collection, library: library, dbStorage: dbStorage),
                                              controllers: self.controllers)
         self.showSecondaryController(controller)
@@ -354,9 +347,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                 .environmentObject(LibrariesStore(dbStorage: dbStorage))
         let collectionsStore = CollectionsStore(library: self.defaultLibrary,
                                                 dbStorage: dbStorage)
-//        let collectionsView = CollectionsView()
-//                                    .environment(\.dbStorage, self.controllers.dbStorage)
-//                                    .environmentObject(collectionsStore)
         let collectionsController = CollectionsViewController(store: collectionsStore,
                                                               dbStorage: dbStorage,
                                                               dragDropController: self.controllers.dragDropController)
@@ -364,16 +354,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
                                             collectionsController]
-//                                            UIHostingController(rootView: collectionsView)]
-
-//        let itemsView = ItemsView()
-//                            .environment(\.dbStorage, self.controllers.dbStorage)
-//                            .environment(\.apiClient, self.controllers.apiClient)
-//                            .environment(\.fileStorage, self.controllers.fileStorage)
-//                            .environment(\.schemaController, self.controllers.schemaController)
-//                            .environmentObject(self.itemsStore(for: self.defaultCollection,
-//                                                               library: self.defaultLibrary))
-//        let controller = UIHostingController(rootView: itemsView)
         let controller = ItemsViewController(store: self.itemsStore(for: self.defaultCollection, library: self.defaultLibrary, dbStorage: dbStorage),
                                              controllers: self.controllers)
 
