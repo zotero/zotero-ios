@@ -51,31 +51,6 @@ struct ItemDetailState: ViewModelState {
         }
     }
 
-    struct Note: Identifiable, Equatable {
-        let key: String
-        var title: String
-        var text: String
-
-        var id: String { return self.key }
-
-        init(key: String, text: String) {
-            self.key = key
-            self.title = text.strippedHtml ?? text
-            self.text = text
-        }
-
-        init?(item: RItem) {
-            guard item.rawType == ItemTypes.note else {
-                DDLogError("Trying to create Note from RItem which is not a note!")
-                return nil
-            }
-
-            self.key = item.key
-            self.title = item.displayTitle
-            self.text = item.fields.filter(.key(FieldKeys.note)).first?.value ?? ""
-        }
-    }
-
     struct Creator: Identifiable, Equatable, Hashable {
         enum NamePresentation: Equatable {
             case separate, full
@@ -284,19 +259,19 @@ struct ItemDetailState: ViewModelState {
 
         switch type {
         case .preview(let item), .duplication(let item, _):
-            self.isEditing = false
+            self.isEditing = type.isCreation
             self.libraryId = item.libraryObject?.identifier ?? .custom(.myLibrary)
-            self.snapshot = nil
             // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
             self.metadataEditable = item.group?.canEditMetadata ?? true
             // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
             self.filesEditable = item.group?.canEditFiles ?? true
-            // Filter fieldIds to show only non-empty values
-            self.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: self.data.fieldIds, fields: self.data.fields)
+            if !self.isEditing {
+                // Filter fieldIds to show only non-empty values
+                self.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: self.data.fieldIds, fields: self.data.fields)
+            }
         case .creation(let libraryId, _, let filesEditable):
             self.isEditing = true
             self.libraryId = libraryId
-            self.snapshot = data
             // Since we're in creation mode editing must have beeen enabled
             self.metadataEditable = true
             self.filesEditable = filesEditable

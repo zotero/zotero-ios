@@ -11,7 +11,7 @@ import UIKit
 class ItemDetailNoteCell: UITableViewCell {
     @IBOutlet private weak var label: UILabel!
 
-    func setup(with note: ItemDetailState.Note) {
+    func setup(with note: Note) {
         self.label.text = note.title
     }
 }

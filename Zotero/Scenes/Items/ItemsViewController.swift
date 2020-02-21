@@ -7,6 +7,7 @@
 //
 
 import Combine
+import MobileCoreServices
 import UIKit
 import SwiftUI
 
@@ -19,16 +20,16 @@ class ItemsViewController: UIViewController {
     private static let barButtonItemEmptyTag = 1
     private static let barButtonItemSingleTag = 2
 
-    private let store: ItemsStore
+    private let store: ViewModel<ItemsActionHandler>
     private let controllers: Controllers
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
 
-    private var storeSubscriber: AnyCancellable?
+    private var overlaySink: AnyCancellable?
     private var resultsToken: NotificationToken?
 
-    init(store: ItemsStore, controllers: Controllers) {
+    init(store: ViewModel<ItemsActionHandler>, controllers: Controllers) {
         self.store = store
         self.controllers = controllers
         self.disposeBag = DisposeBag()
@@ -47,12 +48,16 @@ class ItemsViewController: UIViewController {
         self.setupTableView()
         self.setupToolbar()
         self.updateNavigationBarItems()
-        self.startObservingItemChanges()
 
-        self.storeSubscriber = self.store.$state.receive(on: DispatchQueue.main)
-                                                .sink(receiveValue: { [weak self] state in
-                                                    self?.updateToolbarItems()
-                                                })
+        if let results = self.store.state.results {
+            self.startObserving(results: results)
+        }
+        self.store.stateObservable
+                  .observeOn(MainScheduler.instance)
+                  .subscribe(onNext: { [weak self] state in
+                      self?.update(state: state)
+                  })
+                  .disposed(by: self.disposeBag)
     }
 
     override func viewWillLayoutSubviews() {
@@ -64,19 +69,83 @@ class ItemsViewController: UIViewController {
         }
     }
 
+    private func update(state: ItemsState) {
+        if state.changes.contains(.editing) {
+            self.tableView.setEditing(state.isEditing, animated: true)
+            self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
+            self.updateNavigationBarItems()
+        }
+
+        if state.changes.contains(.results),
+           let results = state.results {
+            self.startObserving(results: results)
+        }
+
+        if state.changes.contains(.sortType) {
+            self.tableView.reloadData()
+        }
+
+        if state.changes.contains(.selection) {
+            self.updateToolbarItems()
+        }
+
+        if let item = state.itemDuplication {
+            self.showItemDetail(for: .duplication(item, collectionKey: self.store.state.type.collectionKey))
+        }
+    }
+
     // MARK: - Actions
 
-    private func showNoteEditing(for note: ItemDetailState.Note) {
+    private func perform(overlayAction: ItemsActionSheetView.Action) {
+        var shouldDismiss = true
+        
+        switch overlayAction {
+        case .dismiss: break
+        case .showAttachmentPicker:
+            self.showAttachmentPicker()
+        case .showItemCreation:
+            self.showItemCreation()
+        case .showNoteCreation:
+            self.showNoteCreation()
+        case .showSortTypePicker:
+            self.presentSortTypePicker()
+        case .startEditing:
+            self.store.process(action: .startEditing)
+        case .toggleSortOrder:
+            self.store.process(action: .toggleSortOrder)
+            shouldDismiss = false
+        }
+
+        if shouldDismiss {
+            self.dismiss(animated: true, completion: nil)
+        }
+    }
+
+    private func presentSortTypePicker() {
+        let binding: Binding<ItemsSortType.Field> = Binding(get: {
+            return self.store.state.sortType.field
+        }) { value in
+            self.store.process(action: .setSortField(value))
+        }
+        let view = ItemSortTypePickerView(sortBy: binding,
+                                          closeAction: { [weak self] in
+                                              self?.dismiss(animated: true, completion: nil)
+                                          })
+        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        navigationController.isModalInPresentation = true
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
+    private func showNoteEditing(for note: Note) {
         self.presentNoteEditor(with: note.text) { [weak self] text in
-            var newNote = note
-            newNote.title = text.strippedHtml ?? ""
-            newNote.text = text
-            self?.store.saveChanges(for: newNote)
+            self?.store.process(action: .saveNote(note.key, text))
         }
     }
 
     private func showNoteCreation() {
-        self.presentNoteEditor(with: "", save: self.store.saveNewNote)
+        self.presentNoteEditor(with: "") { [weak self] text in
+            self?.store.process(action: .saveNote(nil, text))
+        }
     }
 
     private func presentNoteEditor(with text: String, save: @escaping (String) -> Void) {
@@ -87,30 +156,32 @@ class ItemsViewController: UIViewController {
     }
 
     private func showAttachmentPicker() {
-        NotificationCenter.default.post(name: .presentFilePicker, object: self.store.addAttachments)
+        let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
+        let controller = DocumentPickerViewController(documentTypes: documentTypes, in: .import)
+        controller.popoverPresentationController?.sourceView = self.view
+        controller.observable
+                  .observeOn(MainScheduler.instance)
+                  .subscribe(onNext: { [weak self] urls in
+                      self?.store.process(action: .addAttachments(urls))
+                  })
+                  .disposed(by: self.disposeBag)
+        self.present(controller, animated: true, completion: nil)
     }
 
-    @objc private func showCollectionPicker() {
-        NotificationCenter.default.post(name: .presentCollectionsPicker, object: (self.store.state.library, self.store.assignSelectedItems))
-    }
+    private func showCollectionPicker() {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-    @objc private func duplicateSelected() {
-        let key = self.store.state.selectedItems.first ?? ""
-        NotificationCenter.default.post(name: .showDuplicateCreation,
-                                        object: (key, self.store.state.library, self.store.state.type.collectionKey))
-    }
+        let view = CollectionsPickerView(selectedKeys: { [weak self] keys in
+                                             self?.store.process(action: .assignSelectedItemsToCollections(keys))
+                                         },
+                                         closeAction: { [weak self] in
+                                             self?.dismiss(animated: true, completion: nil)
+                                         })
+                        .environmentObject(CollectionPickerStore(library: self.store.state.library, dbStorage: dbStorage))
 
-    private func startEditing() {
-        self.tableView.setEditing(true, animated: true)
-        self.navigationController?.setToolbarHidden(false, animated: true)
-        self.updateNavigationBarItems()
-    }
-
-    @objc private func finishEditing() {
-        self.tableView.setEditing(false, animated: true)
-        self.store.state.selectedItems.removeAll()
-        self.navigationController?.setToolbarHidden(true, animated: true)
-        self.updateNavigationBarItems()
+        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        navigationController.isModalInPresentation = true
+        self.present(navigationController, animated: true, completion: nil)
     }
 
     private func showItemCreation() {
@@ -122,7 +193,7 @@ class ItemsViewController: UIViewController {
     private func showItemDetail(for item: RItem) {
         switch item.rawType {
         case ItemTypes.note:
-            if let note = ItemDetailState.Note(item: item) {
+            if let note = Note(item: item) {
                 self.showNoteEditing(for: note)
             }
 
@@ -144,30 +215,23 @@ class ItemsViewController: UIViewController {
                                                   dbStorage: dbStorage,
                                                   schemaController: self.controllers.schemaController)
             let viewModel = ViewModel(initialState: state, handler: handler)
-            self.showItemView(with: viewModel, hidesBackButton: false)
+
+            let hidesBackButton: Bool
+            switch type {
+            case .preview:
+                hidesBackButton = false
+            case .creation, .duplication:
+                hidesBackButton = true
+            }
+
+            let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
+            if hidesBackButton {
+                controller.navigationItem.setHidesBackButton(true, animated: false)
+            }
+            self.navigationController?.pushViewController(controller, animated: true)
         } catch let error {
             // TODO: - show error
         }
-    }
-
-    private func showItemView(with viewModel: ViewModel<ItemDetailActionHandler>, hidesBackButton: Bool = false) {
-        let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
-        if hidesBackButton {
-            controller.navigationItem.setHidesBackButton(true, animated: false)
-        }
-        self.navigationController?.pushViewController(controller, animated: true)
-    }
-
-    private func startObservingItemChanges() {
-        let startObserving: () -> Void = { [weak self] in
-            if let results = self?.store.state.results {
-                self?.startObserving(results: results)
-            }
-        }
-        // Set for observation changes
-        self.store.state.resultsDidChange = startObserving
-        // Start initial observing
-        startObserving()
     }
 
     private func startObserving(results: Results<RItem>) {
@@ -184,30 +248,18 @@ class ItemsViewController: UIViewController {
                 }, completion: nil)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
-                self?.store.state.error = .dataLoading
+                self?.store.process(action: .observingFailed)
             }
         })
     }
 
-    @objc private func showActionSheet() {
-        var view = ItemsActionSheetView()
-        view.startEditing = { [weak self] in
-            self?.startEditing()
-        }
-        view.dismiss = { [weak self] in
-            self?.dismiss(animated: true, completion: nil)
-        }
-        view.showItemCreation = { [weak self] in
-            self?.showItemCreation()
-        }
-        view.showNoteCreation = { [weak self] in
-            self?.showNoteCreation()
-        }
-        view.showAttachmentPicker = { [weak self] in
-            self?.showAttachmentPicker()
+    private func showActionSheet() {
+        let view = ItemsActionSheetView(sortType: self.store.state.sortType)
+        self.overlaySink = view.actionObserver.sink { [weak self] action in
+            self?.perform(overlayAction: action)
         }
 
-        let controller = UIHostingController(rootView: view.environmentObject(self.store))
+        let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = .clear
         controller.modalPresentationStyle = .overCurrentContext
         controller.modalTransitionStyle = .crossDissolve
@@ -218,15 +270,17 @@ class ItemsViewController: UIViewController {
         let trailingitem: UIBarButtonItem
 
         if self.tableView.isEditing {
-            trailingitem = UIBarButtonItem(title: "Done",
-                                           style: .done,
-                                           target: self,
-                                           action: #selector(ItemsViewController.finishEditing))
+            trailingitem = UIBarButtonItem(title: "Done", style: .done, target: nil, action: nil)
+            trailingitem.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.store.process(action: .stopEditing)
+            })
+            .disposed(by: self.disposeBag)
         } else {
-            trailingitem = UIBarButtonItem(image: UIImage(systemName: "ellipsis"),
-                                           style: .plain,
-                                           target: self,
-                                           action: #selector(ItemsViewController.showActionSheet))
+            trailingitem = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), style: .plain, target: nil, action: nil)
+            trailingitem.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.showActionSheet()
+            })
+            .disposed(by: self.disposeBag)
         }
 
         self.navigationItem.rightBarButtonItem = trailingitem
@@ -275,22 +329,27 @@ class ItemsViewController: UIViewController {
     }
 
     private func createNormalToolbarItems() -> [UIBarButtonItem] {
-        let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"),
-                                        style: .plain,
-                                        target: self,
-                                        action: #selector(ItemsViewController.showCollectionPicker))
+        let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"), style: .plain, target: nil, action: nil)
+        pickerItem.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.showCollectionPicker()
+        })
+        .disposed(by: self.disposeBag)
         pickerItem.tag = ItemsViewController.barButtonItemEmptyTag
 
-        let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"),
-                                        style: .plain,
-                                        target: self.store,
-                                        action: #selector(ItemsStore.trashSelectedItems))
+        let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain, target: nil, action: nil)
+        trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.store.process(action: .trashSelectedItems)
+        })
+        .disposed(by: self.disposeBag)
         trashItem.tag = ItemsViewController.barButtonItemEmptyTag
 
-        let duplicateItem = UIBarButtonItem(image: UIImage(systemName: "square.on.square"),
-                                            style: .plain,
-                                            target: self,
-                                            action: #selector(ItemsViewController.duplicateSelected))
+        let duplicateItem = UIBarButtonItem(image: UIImage(systemName: "square.on.square"), style: .plain, target: nil, action: nil)
+        duplicateItem.rx.tap.subscribe(onNext: { [weak self] _ in
+            if let key = self?.store.state.selectedItems.first {
+                self?.store.process(action: .loadItemToDuplicate(key))
+            }
+        })
+        .disposed(by: self.disposeBag)
         duplicateItem.tag = ItemsViewController.barButtonItemSingleTag
 
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
@@ -298,10 +357,11 @@ class ItemsViewController: UIViewController {
         var items = [spacer, pickerItem, spacer, trashItem, spacer, duplicateItem, spacer]
 
         if self.store.state.type.collectionKey != nil {
-            let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"),
-                                             style: .plain,
-                                             target: self.store,
-                                             action: #selector(ItemsStore.removeSelectedItemsFromCollection))
+            let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"), style: .plain, target: nil, action: nil)
+            removeItem.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.store.process(action: .trashSelectedItems)
+            })
+            .disposed(by: self.disposeBag)
             removeItem.tag = ItemsViewController.barButtonItemEmptyTag
 
             items.insert(contentsOf: [spacer, removeItem], at: 2)
@@ -312,16 +372,18 @@ class ItemsViewController: UIViewController {
 
     private func createTrashToolbarItems() -> [UIBarButtonItem] {
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let trashItem = UIBarButtonItem(image: UIImage(named: "restore_trash"),
-                                        style: .plain,
-                                        target: self.store,
-                                        action: #selector(ItemsStore.restoreSelectedItems))
+        let trashItem = UIBarButtonItem(image: UIImage(named: "restore_trash"), style: .plain, target: nil, action: nil)
+        trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.store.process(action: .restoreSelectedItems)
+        })
+        .disposed(by: self.disposeBag)
         trashItem.tag = ItemsViewController.barButtonItemEmptyTag
 
-        let emptyItem = UIBarButtonItem(image: UIImage(named: "empty_trash"),
-                                        style: .plain,
-                                        target: self.store,
-                                        action: #selector(ItemsStore.deleteSelectedItems))
+        let emptyItem = UIBarButtonItem(image: UIImage(named: "empty_trash"), style: .plain, target: nil, action: nil)
+        emptyItem.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.store.process(action: .deleteSelectedItems)
+        })
+        .disposed(by: self.disposeBag)
         emptyItem.tag = ItemsViewController.barButtonItemEmptyTag
 
         return [spacer, trashItem, spacer, emptyItem, spacer]
@@ -337,7 +399,7 @@ class ItemsViewController: UIViewController {
         controller.searchBar.rx.text.observeOn(MainScheduler.instance)
                                     .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                                     .subscribe(onNext: { [weak self] text in
-                                        self?.store.search(for: (text ?? ""))
+                                        self?.store.process(action: .search(text ?? ""))
                                     })
                                     .disposed(by: self.disposeBag)
     }
@@ -367,7 +429,7 @@ extension ItemsViewController: UITableViewDataSource {
         guard let item = self.store.state.results?[indexPath.row] else { return }
 
         if tableView.isEditing {
-            self.store.state.selectedItems.insert(item.key)
+            self.store.process(action: .selectItem(item.key))
         } else {
             tableView.deselectRow(at: indexPath, animated: true)
             self.showItemDetail(for: item)
@@ -378,8 +440,8 @@ extension ItemsViewController: UITableViewDataSource {
 extension ItemsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         if tableView.isEditing,
-           let item = self.store.state.results?[indexPath.row] {
-            self.store.state.selectedItems.remove(item.key)
+            let item = self.store.state.results?[indexPath.row] {
+            self.store.process(action: .deselectItem(item.key))
         }
     }
 }
@@ -394,12 +456,12 @@ extension ItemsViewController: UITableViewDragDelegate {
 extension ItemsViewController: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
         guard let indexPath = coordinator.destinationIndexPath,
-            let key = self.store.state.results?[indexPath.row].key else { return }
+              let key = self.store.state.results?[indexPath.row].key else { return }
 
         switch coordinator.proposal.operation {
         case .move:
             self.controllers.dragDropController.itemKeys(from: coordinator.items) { [weak self] keys in
-                self?.store.moveItems(with: keys, to: key)
+                self?.store.process(action: .moveItems(keys, key))
             }
         default: break
         }

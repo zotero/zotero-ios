@@ -259,8 +259,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func saveNote(key: String?, text: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            var note = key.flatMap({ key in state.data.notes.first(where: { $0.key == key }) }) ??
-                       ItemDetailState.Note(key: KeyGenerator.newKey, text: "")
+            var note = key.flatMap({ key in state.data.notes.first(where: { $0.key == key }) }) ?? Note(key: KeyGenerator.newKey, text: "")
             note.text = text
             note.title = text.strippedHtml ?? ""
 
@@ -285,7 +284,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func saveNoteChanges(_ note: ItemDetailState.Note, libraryId: LibraryIdentifier) throws {
+    private func saveNoteChanges(_ note: Note, libraryId: LibraryIdentifier) throws {
         let request = StoreNoteDbRequest(note: note, libraryId: libraryId)
         try self.dbStorage.createCoordinator().perform(request: request)
     }

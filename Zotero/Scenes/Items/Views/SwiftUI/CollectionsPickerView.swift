@@ -10,11 +10,8 @@ import SwiftUI
 
 struct CollectionsPickerView: View {
     @EnvironmentObject private(set) var store: CollectionPickerStore
-    private(set) var selectedKeys: (Set<String>) -> Void
 
-    // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() didn't work when presented from UIViewController, so I pass a closure
-    // This view is presented by UIKit, because modals in SwiftUI are currently buggy
-//    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
+    private(set) var selectedKeys: (Set<String>) -> Void
     let closeAction: () -> Void
 
     var body: some View {

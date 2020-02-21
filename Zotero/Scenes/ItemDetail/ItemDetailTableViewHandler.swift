@@ -16,7 +16,7 @@ class ItemDetailTableViewHandler: NSObject {
     /// Actions that need to take place when user taps on some cells
     enum Action {
         case openCreatorTypePicker(ItemDetailState.Creator)
-        case openNoteEditor(ItemDetailState.Note?)
+        case openNoteEditor(Note?)
         case openTagPicker
         case openTypePicker
         case openFilePicker

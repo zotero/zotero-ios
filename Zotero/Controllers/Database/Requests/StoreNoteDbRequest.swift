@@ -11,15 +11,15 @@ import Foundation
 import RealmSwift
 
 struct StoreNoteDbRequest: DbRequest {
-    let note: ItemDetailState.Note
+    let note: Note
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool {
         return true
     }
 
-    init(note: ItemDetailState.Note, libraryId: LibraryIdentifier) {
-        self.note = ItemDetailState.Note(key: note.key, text: note.text)
+    init(note: Note, libraryId: LibraryIdentifier) {
+        self.note = Note(key: note.key, text: note.text)
         self.libraryId = libraryId
     }
 

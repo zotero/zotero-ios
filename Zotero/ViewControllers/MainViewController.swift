@@ -138,7 +138,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func presentNote(_ note: Binding<ItemDetailState.Note>, saveAction: @escaping () -> Void) {
+    private func presentNote(_ note: Binding<Note>, saveAction: @escaping () -> Void) {
         let view = NoteEditorView(note: note, saveAction: saveAction)
         let controller = UIHostingController(rootView: view)
         controller.isModalInPresentation = true
@@ -255,30 +255,33 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         }
     }
 
-    private func itemsStore(for collection: Collection, library: Library, dbStorage: DbStorage) -> ItemsStore {
-        let type: ItemsStore.State.ItemType
+    private func itemsStore(for collection: Collection, library: Library, dbStorage: DbStorage) -> ViewModel<ItemsActionHandler> {
+        let libraryId = library.identifier
+        let type = self.itemType(from: collection)
+        let results = try? ItemResultsCreator.results(for: type, sortType: .default, libraryId: libraryId, dbStorage: dbStorage)
+        let state = ItemsState(type: type, library: library, results: results, error: (results == nil ? .dataLoading : nil))
+        let handler = ItemsActionHandler(dbStorage: dbStorage,
+                                         fileStorage: self.controllers.fileStorage,
+                                         schemaController: self.controllers.schemaController)
+        return ViewModel(initialState: state, handler: handler)
+    }
 
+    private func itemType(from collection: Collection) -> ItemsState.ItemType {
         switch collection.type {
         case .collection:
-            type = .collection(collection.key, collection.name)
+            return .collection(collection.key, collection.name)
         case .search:
-            type = .search(collection.key, collection.name)
+            return .search(collection.key, collection.name)
         case .custom(let customType):
             switch customType {
             case .all:
-                type = .all
+                return .all
             case .publications:
-                type = .publications
+                return .publications
             case .trash:
-                type = .trash
+                return .trash
             }
         }
-
-        return ItemsStore(type: type,
-                          library: library,
-                          dbStorage: dbStorage,
-                          fileStorage: self.controllers.fileStorage,
-                          schemaController: self.controllers.schemaController)
     }
 
     // MARK: - Dynamic primary column
@@ -354,7 +357,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
                                             collectionsController]
-        let controller = ItemsViewController(store: self.itemsStore(for: self.defaultCollection, library: self.defaultLibrary, dbStorage: dbStorage),
+        let controller = ItemsViewController(store: self.itemsStore(for: self.defaultCollection,
+                                                                    library: self.defaultLibrary,
+                                                                    dbStorage: dbStorage),
                                              controllers: self.controllers)
 
         let detailController = UINavigationController(rootViewController: controller)
@@ -408,7 +413,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                 case .presentSettings:
                     self?.presentSettings()
                 case .presentNote:
-                    if let (note, block) = notification.object as? (Binding<ItemDetailState.Note>, () -> Void) {
+                    if let (note, block) = notification.object as? (Binding<Note>, () -> Void) {
                         self?.presentNote(note, saveAction: block)
                     }
                 case .presentTypePicker:

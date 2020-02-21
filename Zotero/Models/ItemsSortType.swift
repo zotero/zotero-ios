@@ -44,6 +44,10 @@ struct ItemsSortType {
     
     var field: Field
     var ascending: Bool
+
+    static var `default`: ItemsSortType {
+        return ItemsSortType(field: .title, ascending: true)
+    }
 }
 
 extension ItemsSortType: SortType {

@@ -94,7 +94,7 @@ struct ItemDetailDataCreator {
 
         let notes = item.children.filter(.items(type: ItemTypes.note, notSyncState: .dirty, trash: false))
                                  .sorted(byKeyPath: "displayTitle")
-                                 .compactMap(ItemDetailState.Note.init)
+                                 .compactMap(Note.init)
         let attachments: [Attachment]
         if item.rawType == ItemTypes.attachment {
             let attachment = self.attachmentType(for: item, fileStorage: fileStorage).flatMap({ Attachment(item: item, type: $0) })

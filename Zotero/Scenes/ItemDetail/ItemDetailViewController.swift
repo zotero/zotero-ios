@@ -71,7 +71,7 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func open(note: ItemDetailState.Note?) {
+    private func open(note: Note?) {
         let controller = NoteEditorViewController(text: (note?.text ?? "")) { [weak self] text in
             guard let `self` = self else { return }
             self.viewModel.process(action: .saveNote(key: note?.key, text: text))
@@ -135,6 +135,15 @@ class ItemDetailViewController: UIViewController {
         self.present(controller, animated: true, completion: nil)
     }
 
+    private func cancelEditing() {
+        switch self.viewModel.state.type {
+        case .preview:
+            self.viewModel.process(action: .cancelEditing)
+        case .creation, .duplication:
+            self.navigationController?.popViewController(animated: true)
+        }
+    }
+
     // MARK: - UI state
 
     /// Update UI based on new state.
@@ -169,6 +178,8 @@ class ItemDetailViewController: UIViewController {
     /// Updates navigation bar with appropriate buttons based on editing state.
     /// - parameter isEditing: Current editing state of tableView.
     private func setNavigationBarEditingButton(toEditing editing: Bool) {
+        self.navigationItem.setHidesBackButton(editing, animated: false)
+
         if !editing {
             let button = UIBarButtonItem(title: "Edit", style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
@@ -187,7 +198,7 @@ class ItemDetailViewController: UIViewController {
 
         let cancelButton = UIBarButtonItem(title: "Cancel", style: .plain, target: nil, action: nil)
         cancelButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                               self?.viewModel.process(action: .cancelEditing)
+                               self?.cancelEditing()
                            })
                            .disposed(by: self.disposeBag)
         self.navigationItem.rightBarButtonItems = [saveButton, cancelButton]

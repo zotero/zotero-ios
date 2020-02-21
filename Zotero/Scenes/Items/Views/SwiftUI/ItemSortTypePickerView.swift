@@ -11,9 +11,6 @@ import SwiftUI
 struct ItemSortTypePickerView: View {
     @Binding var sortBy: ItemsSortType.Field
 
-        // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() didn't work when presented from UIViewController, so I pass a closure
-        // This view is presented by UIKit, because modals in SwiftUI are currently buggy
-//    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
     let closeAction: () -> Void
 
     var body: some View {

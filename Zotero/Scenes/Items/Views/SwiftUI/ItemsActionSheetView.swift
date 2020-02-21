@@ -6,29 +6,35 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import SwiftUI
 
 struct ItemsActionSheetView: View {
-    @EnvironmentObject private(set) var store: ItemsStore
+    enum Action {
+        case dismiss,
+        startEditing,
+        showSortTypePicker,
+        toggleSortOrder,
+        showItemCreation,
+        showNoteCreation,
+        showAttachmentPicker
+    }
 
-    var startEditing: (() -> Void)?
-    var showItemCreation: (() -> Void)?
-    var showNoteCreation: (() -> Void)?
-    var showAttachmentPicker: (() -> Void)?
-    var dismiss: (() -> Void)?
+    @State var sortType: ItemsSortType
+
+    let actionObserver = PassthroughSubject<Action, Never>()
 
     var body: some View {
         Group {
             ZStack(alignment: .topTrailing) {
                 Color.black.opacity(0.1)
                     .onTapGesture {
-                        self.dismiss?()
+                        self.actionObserver.send(.dismiss)
                     }
 
                 VStack(alignment: .leading, spacing: 18) {
                     Button(action: {
-                        self.startEditing?()
-                        self.dismiss?()
+                        self.actionObserver.send(.startEditing)
                     }) {
                         Text("Select Items")
                     }
@@ -36,35 +42,34 @@ struct ItemsActionSheetView: View {
                     Divider()
 
                     Button(action: {
-                        NotificationCenter.default.post(name: .presentSortTypePicker, object: self.$store.state.sortType.field)
-                        self.dismiss?()
+                        self.actionObserver.send(.showSortTypePicker)
                     }) {
-                        Text("Sort By: \(self.store.state.sortType.field.title)")
+                        Text("Sort By: \(self.sortType.field.title)")
                     }
 
-                    Button(action: { self.store.state.sortType.ascending.toggle() }) {
+                    Button(action: {
+                        self.sortType.ascending.toggle()
+                        self.actionObserver.send(.toggleSortOrder)
+                    }) {
                         Text("Sort Order: \(self.sortOrderTitle)")
                     }
 
                     Divider()
 
                     Button(action: {
-                        self.dismiss?()
-                        self.showItemCreation?()
+                        self.actionObserver.send(.showItemCreation)
                     }) {
                         Text("New Item")
                     }
 
                     Button(action: {
-                        self.dismiss?()
-                        self.showNoteCreation?()
+                        self.actionObserver.send(.showNoteCreation)
                     }) {
                         Text("New Standalone Note")
                     }
 
                     Button(action: {
-                        self.dismiss?()
-                        self.showAttachmentPicker?()
+                        self.actionObserver.send(.showAttachmentPicker)
                     }) {
                         Text("Upload File")
                     }
@@ -79,12 +84,12 @@ struct ItemsActionSheetView: View {
     }
 
     private var sortOrderTitle: String {
-        return self.store.state.sortType.ascending ? "Ascending" : "Descending"
+        return self.sortType.ascending ? "Ascending" : "Descending"
     }
 }
 
 struct ItemsActionSheetView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemsActionSheetView()
+        ItemsActionSheetView(sortType: .default)
     }
 }

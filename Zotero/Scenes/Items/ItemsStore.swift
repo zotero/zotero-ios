@@ -65,6 +65,7 @@ class ItemsStore: ObservableObject {
     }
 
     @Published var state: State
+
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
@@ -154,7 +155,7 @@ class ItemsStore: ObservableObject {
     }
 
     func saveNewNote(with text: String) {
-        let note = ItemDetailState.Note(key: KeyGenerator.newKey, text: text)
+        let note = Note(key: KeyGenerator.newKey, text: text)
         let request = CreateNoteDbRequest(note: note,
                                           localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
                                           libraryId: self.state.library.identifier)
@@ -164,7 +165,7 @@ class ItemsStore: ObservableObject {
         }
     }
 
-    func saveChanges(for note: ItemDetailState.Note) {
+    func saveChanges(for note: Note) {
         let request = StoreNoteDbRequest(note: note, libraryId: self.state.library.identifier)
         self.perform(request: request) { [weak self] error in
             DDLogError("ItemsStore: can't save note: \(error)")
@@ -172,7 +173,7 @@ class ItemsStore: ObservableObject {
         }
     }
 
-    @objc func removeSelectedItemsFromCollection() {
+    func removeSelectedItemsFromCollection() {
         guard let collectionKey = self.state.type.collectionKey else { return }
         let request = DeleteItemsFromCollectionDbRequest(collectionKey: collectionKey,
                                                         itemKeys: self.state.selectedItems,
