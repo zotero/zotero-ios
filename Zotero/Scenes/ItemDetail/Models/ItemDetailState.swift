@@ -270,7 +270,6 @@ struct ItemDetailState: ViewModelState {
     var downloadProgress: [String: Double]
     var downloadError: [String: ItemDetailError]
     var error: ItemDetailError?
-    var presentedNote: Note
     var metadataTitleMaxWidth: CGFloat
 
     init(type: DetailType, userId: Int, data: Data, error: ItemDetailError? = nil) {
@@ -282,7 +281,6 @@ struct ItemDetailState: ViewModelState {
         self.downloadError = [:]
         self.metadataTitleMaxWidth = 0
         self.error = error
-        self.presentedNote = Note(key: KeyGenerator.newKey, text: "")
 
         switch type {
         case .preview(let item), .duplication(let item, _):

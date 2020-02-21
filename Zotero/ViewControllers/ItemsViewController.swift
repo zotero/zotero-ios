@@ -144,7 +144,7 @@ class ItemsViewController: UIViewController {
                                                   dbStorage: dbStorage,
                                                   schemaController: self.controllers.schemaController)
             let viewModel = ViewModel(initialState: state, handler: handler)
-            self.showItemView(with: viewModel, hidesBackButton: true)
+            self.showItemView(with: viewModel, hidesBackButton: false)
         } catch let error {
             // TODO: - show error
         }

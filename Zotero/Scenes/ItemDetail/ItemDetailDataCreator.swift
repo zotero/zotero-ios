@@ -11,6 +11,11 @@ import Foundation
 import CocoaLumberjack
 
 struct ItemDetailDataCreator {
+    /// Creates `ItemDetailState.Data` for given type.
+    /// - parameter type: Type of item detail screen.
+    /// - parameter schemaController: Schema controller.
+    /// - parameter fileStorage: File storage.
+    /// - returns: Populated data for given type.
     static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController, fileStorage: FileStorage) throws -> ItemDetailState.Data {
         switch type {
         case .creation:
@@ -20,6 +25,9 @@ struct ItemDetailDataCreator {
         }
     }
 
+    /// Creates data for `ItemDetailState.DetailType.creator`. When creating new item, most data is empty. Only `itemType` is set to first value
+    /// and appropriate (empty) fields are added for given type.
+    /// - parameter schemaController: Schema controller for fetching item type and localization.
     private static func creationData(schemaController: SchemaController) throws -> ItemDetailState.Data {
         guard let itemType = schemaController.itemTypes.sorted().first,
               let localizedType = schemaController.localized(itemType: itemType) else {
@@ -44,6 +52,10 @@ struct ItemDetailDataCreator {
                                     dateAdded: date)
     }
 
+    /// Creates data for `ItemDetailState.DetailType.preview`. When previewing an item, data needs to be fetched and formatted from given item.
+    /// - parameter item: Item to preview.
+    /// - parameter schemaController: Schema controller for fetching item type/field data and localizations.
+    /// - parameter fileStorage: File storage for checking availability of attachments.
     private static func itemData(item: RItem, schemaController: SchemaController, fileStorage: FileStorage) throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
@@ -114,8 +126,14 @@ struct ItemDetailDataCreator {
                                     dateAdded: item.dateAdded)
     }
 
+    /// Creates field data for given item type with the option of setting values for given fields.
+    /// - parameter itemType: Item type for which fields will be created.
+    /// - parameter schemaController: Schema controller for checking field data.
+    /// - parameter getExistingData: Closure for getting available data for given field. It passes the field key and baseField and receives existing
+    ///                              field name and value if available.
+    /// - returns: Tuple with 3 values: field keys of new fields, actual fields, Bool indicating whether this item type contains an abstract.
     static func fieldData(for itemType: String, schemaController: SchemaController,
-                                  getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: ItemDetailState.Field], Bool) {
+                          getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: ItemDetailState.Field], Bool) {
         guard var fieldSchemas = schemaController.fields(for: itemType) else {
             throw ItemDetailError.typeNotSupported
         }
@@ -151,6 +169,10 @@ struct ItemDetailDataCreator {
         return (fieldKeys, fields, (abstractIndex != nil))
     }
 
+    /// Returns attachment content type type based on attachment item.
+    /// - parameter item: Attachment item to check.
+    /// - parameter fileStorage: File storage to check availability of local attachment.
+    /// - returns: Attachment content type if recognized. Nil otherwise.
     private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> Attachment.ContentType? {
         let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value ?? ""
         if !contentType.isEmpty { // File attachment
@@ -175,6 +197,7 @@ struct ItemDetailDataCreator {
         }
     }
 
+    /// Returns all field keys for given item type, except those that should not appear as fields in item detail.
     static func allFieldKeys(for itemType: String, schemaController: SchemaController) -> [String] {
         guard let fieldSchemas = schemaController.fields(for: itemType) else { return [] }
         var fieldKeys = fieldSchemas.map({ $0.field })
@@ -188,6 +211,7 @@ struct ItemDetailDataCreator {
         return fieldKeys
     }
 
+    /// Returns filtered, sorted array of keys for fields that have non-empty values.
     static func filteredFieldKeys(from fieldKeys: [String], fields: [String: ItemDetailState.Field]) -> [String] {
         var newFieldKeys: [String] = []
         fieldKeys.forEach { key in

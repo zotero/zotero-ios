@@ -455,6 +455,7 @@
 		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
 		B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
+		B39D335523FFC25200EF2ACB /* ItemDetailTableViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
 		B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */; };
 		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
@@ -814,6 +815,7 @@
 		B3823B292399302100953F5D /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTableViewHandler.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
 		B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBackendItemDbRequest.swift; sourceTree = "<group>"; };
 		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -1203,6 +1205,7 @@
 				B30566D023FC0650003304F2 /* ItemDetailDataCreator.swift */,
 				B305652923FC051E003304F2 /* ItemDetailViewController.swift */,
 				B305651523FC051E003304F2 /* ItemDetailViewController.xib */,
+				B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */,
 			);
 			path = ItemDetail;
 			sourceTree = "<group>";
@@ -1885,6 +1888,7 @@
 				B305666523FC051F003304F2 /* PdfReaderView.swift in Sources */,
 				B30566C923FC051F003304F2 /* PickerViewController.swift in Sources */,
 				B30565FE23FC051E003304F2 /* BackgroundUploader.swift in Sources */,
+				B39D335523FFC25200EF2ACB /* ItemDetailTableViewHandler.swift in Sources */,
 				B305664D23FC051F003304F2 /* ClosureTextField.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
 				B305660423FC051E003304F2 /* ObservableRequestExtensions.swift in Sources */,

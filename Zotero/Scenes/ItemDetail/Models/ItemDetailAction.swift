@@ -20,7 +20,6 @@ enum ItemDetailAction {
     case acceptPrompt
     case addAttachments([URL])
     case addCreator
-    case addNote
     case cancelEditing
     case cancelPrompt
     case changeType(String)
@@ -30,8 +29,7 @@ enum ItemDetailAction {
     case deleteTags(IndexSet)
     case moveCreators(from: IndexSet, to: Int)
     case openAttachment(Attachment)
-    case openNote(ItemDetailState.Note)
-    case saveNote(String)
+    case saveNote(key: String?, text: String)
     case setFieldValue(id: String, value: String)
     case setTags([Tag])
     case setTitle(String)

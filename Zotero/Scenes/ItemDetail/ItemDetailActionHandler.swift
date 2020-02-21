@@ -67,24 +67,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.data.creatorIds.move(fromOffsets: from, toOffset: to)
             }
 
-        case .addNote:
-            self.update(viewModel: viewModel) { state in
-                state.presentedNote = State.Note(key: KeyGenerator.newKey, text: "")
-            }
-
-        case .openNote(let note):
-            self.update(viewModel: viewModel) { state in
-                state.presentedNote = note
-            }
-
         case .deleteNotes(let offsets):
             self.update(viewModel: viewModel) { state in
                 state.data.notes.remove(atOffsets: offsets)
                 state.diff = .notes(insertions: [], deletions: Array(offsets), reloads: [])
             }
 
-        case .saveNote(let text):
-            self.saveNote(text: text, in: viewModel)
+        case .saveNote(let key, let text):
+            self.saveNote(key: key, text: text, in: viewModel)
 
         case .setTags(let tags):
             self.set(tags: tags, in: viewModel)
@@ -267,9 +257,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Notes
 
-    private func saveNote(text: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func saveNote(key: String?, text: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            var note = state.presentedNote
+            var note = key.flatMap({ key in state.data.notes.first(where: { $0.key == key }) }) ??
+                       ItemDetailState.Note(key: KeyGenerator.newKey, text: "")
             note.text = text
             note.title = text.strippedHtml ?? ""
 
