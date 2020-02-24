@@ -40,11 +40,11 @@ class ItemDetailViewController: UIViewController {
         self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel)
 
         self.viewModel.stateObservable
-                  .observeOn(MainScheduler.instance)
-                  .subscribe(onNext: { [weak self] state in
-                      self?.update(to: state)
-                  })
-                  .disposed(by: self.disposeBag)
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] state in
+                          self?.update(to: state)
+                      })
+                      .disposed(by: self.disposeBag)
 
         self.tableViewHandler.observer
                              .observeOn(MainScheduler.instance)

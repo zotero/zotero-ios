@@ -14,11 +14,11 @@ enum ItemsError: Error, Equatable {
         case someFailed([String])
     }
 
-    case dataLoading,
-         deletion,
-         collectionAssignment,
-         itemMove,
-         noteSaving,
-         attachmentAdding(AttachmentLoading),
-         duplicationLoading
+    case dataLoading
+    case deletion
+    case collectionAssignment
+    case itemMove
+    case noteSaving
+    case attachmentAdding(AttachmentLoading)
+    case duplicationLoading
 }

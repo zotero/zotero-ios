@@ -80,9 +80,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .stopEditing:
             self.update(viewModel: viewModel) { state in
-                state.isEditing = false
-                state.selectedItems.removeAll()
-                state.changes.insert(.editing)
+                self.stopEditing(in: &state)
             }
 
         case .toggleSortOrder:
@@ -100,6 +98,34 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.deleteSelectedItems(in: viewModel)
         }
     }
+
+    // MARK: - Drag & Drop
+
+    private func moveItems(from keys: [String], to key: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: viewModel.state.library.identifier)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+            DDLogError("ItemsStore: can't move items to parent: \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .itemMove
+            }
+        }
+    }
+
+    private func addSelectedItems(to collectionKeys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
+                                                        itemKeys: viewModel.state.selectedItems,
+                                                        libraryId: viewModel.state.library.identifier)
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+            DDLogError("ItemsStore: can't assign collections to items - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .collectionAssignment
+            }
+        }
+    }
+
+    // MARK: - Toolbar actions
 
     private func deleteSelectedItems(in viewModel: ViewModel<ItemsActionHandler>) {
         let request = DeleteObjectsDbRequest<RItem>(keys: Array(viewModel.state.selectedItems),
@@ -126,6 +152,26 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
+    /// Loads item which was selected for duplication from DB. When `itemDuplication` is set, appropriate screen with loaded item is opened.
+    /// - parameter key: Key of item for duplication.
+    private func loadItemForDuplication(key: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key)
+
+        do {
+            let item = try self.dbStorage.createCoordinator().perform(request: request)
+            self.update(viewModel: viewModel) { state in
+                state.itemDuplication = item
+                self.stopEditing(in: &state)
+            }
+        } catch let error {
+            self.update(viewModel: viewModel) { state in
+                state.error = .duplicationLoading
+            }
+        }
+    }
+
+    // MARK: - Overlay actions
+
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.sortType = sortType
@@ -133,17 +179,6 @@ struct ItemsActionHandler: ViewModelActionHandler {
             state.results = state.results?.sorted(by: descriptors)
             state.unfilteredResults = state.unfilteredResults?.sorted(by: descriptors)
             state.changes.insert(.sortType)
-        }
-    }
-
-    private func moveItems(from keys: [String], to key: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = MoveItemsToParentDbRequest(itemKeys: keys, parentKey: key, libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
-            DDLogError("ItemsStore: can't move items to parent: \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .itemMove
-            }
         }
     }
 
@@ -169,46 +204,6 @@ struct ItemsActionHandler: ViewModelActionHandler {
             DDLogError("ItemsStore: can't save note: \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .noteSaving
-            }
-        }
-    }
-
-    private func search(for text: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        if text.isEmpty {
-            self.removeResultsFilters(in: viewModel)
-        } else {
-            self.filterResults(with: text, in: viewModel)
-        }
-    }
-
-    private func filterResults(with text: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            if state.unfilteredResults == nil {
-                state.unfilteredResults = state.results
-            }
-            state.results = state.unfilteredResults?.filter(.itemSearch(for: text))
-            state.changes.insert(.results)
-        }
-    }
-
-    private func removeResultsFilters(in viewModel: ViewModel<ItemsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            guard state.unfilteredResults != nil else { return }
-            state.results = state.unfilteredResults
-            state.changes.insert(.results)
-            state.unfilteredResults = nil
-        }
-    }
-
-    private func addSelectedItems(to collectionKeys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
-                                                        itemKeys: viewModel.state.selectedItems,
-                                                        libraryId: viewModel.state.library.identifier)
-        self.perform(request: request) { [weak viewModel] error in
-            guard let viewModel = viewModel else { return }
-            DDLogError("ItemsStore: can't assign collections to items - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.error = .collectionAssignment
             }
         }
     }
@@ -249,22 +244,41 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loadItemForDuplication(key: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key)
+    // MARK: - Searching
 
-        do {
-            let item = try self.dbStorage.createCoordinator().perform(request: request)
-            self.update(viewModel: viewModel) { state in
-                state.itemDuplication = item
-                state.isEditing = false
-                state.selectedItems.removeAll()
-                state.changes.insert(.editing)
-            }
-        } catch let error {
-            self.update(viewModel: viewModel) { state in
-                state.error = .duplicationLoading
-            }
+    private func search(for text: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        if text.isEmpty {
+            self.removeResultsFilters(in: viewModel)
+        } else {
+            self.filterResults(with: text, in: viewModel)
         }
+    }
+
+    private func filterResults(with text: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            if state.unfilteredResults == nil {
+                state.unfilteredResults = state.results
+            }
+            state.results = state.unfilteredResults?.filter(.itemSearch(for: text))
+            state.changes.insert(.results)
+        }
+    }
+
+    private func removeResultsFilters(in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            guard state.unfilteredResults != nil else { return }
+            state.results = state.unfilteredResults
+            state.changes.insert(.results)
+            state.unfilteredResults = nil
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func stopEditing(in state: inout ItemsState) {
+        state.isEditing = false
+        state.selectedItems.removeAll()
+        state.changes.insert(.editing)
     }
 
     private func perform<Request: DbResponseRequest>(request: Request, errorAction: @escaping (Swift.Error) -> Void) {

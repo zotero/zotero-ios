@@ -55,10 +55,10 @@ class ItemDetailTableViewHandler: NSObject {
     // Identifier for "Add *" cell
     private static let addCellId = "ItemDetailAddCell"
     private static let dateFormatter = createDateFormatter()
-    let viewModel: ViewModel<ItemDetailActionHandler>
-    let observer: PublishSubject<Action>
-    unowned let tableView: UITableView
+    private unowned let viewModel: ViewModel<ItemDetailActionHandler>
+    private unowned let tableView: UITableView
     private let disposeBag: DisposeBag
+    let observer: PublishSubject<Action>
 
     private var sections: [Section] = []
     // Width of title for field cells when editing is enabled (all fields are visible)

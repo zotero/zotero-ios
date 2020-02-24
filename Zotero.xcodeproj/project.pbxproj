@@ -145,13 +145,11 @@
 		B305664C23FC051F003304F2 /* SettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564DD23FC051E003304F2 /* SettingsListView.swift */; };
 		B305664D23FC051F003304F2 /* ClosureTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564DE23FC051E003304F2 /* ClosureTextField.swift */; };
 		B305664F23FC051F003304F2 /* CollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E123FC051E003304F2 /* CollectionCell.swift */; };
-		B305665023FC051F003304F2 /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E223FC051E003304F2 /* ItemCell.swift */; };
 		B305665123FC051F003304F2 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E323FC051E003304F2 /* TextFieldCell.swift */; };
 		B305665223FC051F003304F2 /* LibraryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E423FC051E003304F2 /* LibraryCell.swift */; };
 		B305665323FC051F003304F2 /* TextFieldCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30564E523FC051E003304F2 /* TextFieldCell.xib */; };
 		B305665423FC051F003304F2 /* LibraryCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30564E623FC051E003304F2 /* LibraryCell.xib */; };
 		B305665523FC051F003304F2 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E723FC051E003304F2 /* SafariView.swift */; };
-		B305665623FC051F003304F2 /* ItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E823FC051E003304F2 /* ItemRow.swift */; };
 		B305665723FC051F003304F2 /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564E923FC051E003304F2 /* NoteEditorView.swift */; };
 		B305665823FC051F003304F2 /* LibrariesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564EA23FC051E003304F2 /* LibrariesView.swift */; };
 		B305665923FC051F003304F2 /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564EB23FC051E003304F2 /* LibraryRow.swift */; };
@@ -438,6 +436,10 @@
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
+		B31071112403BC8F0055D40F /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31071102403BC8F0055D40F /* ItemCell.swift */; };
+		B31071132403BCB60055D40F /* ItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31071122403BCB60055D40F /* ItemRow.swift */; };
+		B31071152403BD280055D40F /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31071142403BD280055D40F /* ItemsViewController.xib */; };
+		B31071172403C3030055D40F /* ItemsTableViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31071162403C3030055D40F /* ItemsTableViewHandler.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
@@ -452,7 +454,6 @@
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39D335523FFC25200EF2ACB /* ItemDetailTableViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */; };
 		B39D335A23FFD15300EF2ACB /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D335923FFD15300EF2ACB /* ItemsViewController.swift */; };
-		B39D335C23FFD16D00EF2ACB /* ItemsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D335B23FFD16D00EF2ACB /* ItemsStore.swift */; };
 		B39D335E23FFD48C00EF2ACB /* ItemsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D335D23FFD48C00EF2ACB /* ItemsState.swift */; };
 		B39D336023FFD4AD00EF2ACB /* ItemsError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D335F23FFD4AD00EF2ACB /* ItemsError.swift */; };
 		B39D336223FFD4C300EF2ACB /* ItemsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336123FFD4C300EF2ACB /* ItemsActionHandler.swift */; };
@@ -664,13 +665,11 @@
 		B30564DD23FC051E003304F2 /* SettingsListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsListView.swift; sourceTree = "<group>"; };
 		B30564DE23FC051E003304F2 /* ClosureTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClosureTextField.swift; sourceTree = "<group>"; };
 		B30564E123FC051E003304F2 /* CollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionCell.swift; sourceTree = "<group>"; };
-		B30564E223FC051E003304F2 /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
 		B30564E323FC051E003304F2 /* TextFieldCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
 		B30564E423FC051E003304F2 /* LibraryCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryCell.swift; sourceTree = "<group>"; };
 		B30564E523FC051E003304F2 /* TextFieldCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TextFieldCell.xib; sourceTree = "<group>"; };
 		B30564E623FC051E003304F2 /* LibraryCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = LibraryCell.xib; sourceTree = "<group>"; };
 		B30564E723FC051E003304F2 /* SafariView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
-		B30564E823FC051E003304F2 /* ItemRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemRow.swift; sourceTree = "<group>"; };
 		B30564E923FC051E003304F2 /* NoteEditorView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
 		B30564EA23FC051E003304F2 /* LibrariesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesView.swift; sourceTree = "<group>"; };
 		B30564EB23FC051E003304F2 /* LibraryRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
@@ -803,6 +802,10 @@
 		B30D59762206F60500884C4A /* ZoteroUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZoteroUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D597A2206F60500884C4A /* ZoteroUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroUITests.swift; sourceTree = "<group>"; };
 		B30D597C2206F60500884C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B31071102403BC8F0055D40F /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
+		B31071122403BCB60055D40F /* ItemRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemRow.swift; sourceTree = "<group>"; };
+		B31071142403BD280055D40F /* ItemsViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
+		B31071162403C3030055D40F /* ItemsTableViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsTableViewHandler.swift; sourceTree = "<group>"; };
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -819,7 +822,6 @@
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailTableViewHandler.swift; sourceTree = "<group>"; };
 		B39D335923FFD15300EF2ACB /* ItemsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
-		B39D335B23FFD16D00EF2ACB /* ItemsStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsStore.swift; sourceTree = "<group>"; };
 		B39D335D23FFD48C00EF2ACB /* ItemsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsState.swift; sourceTree = "<group>"; };
 		B39D335F23FFD4AD00EF2ACB /* ItemsError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsError.swift; sourceTree = "<group>"; };
 		B39D336123FFD4C300EF2ACB /* ItemsActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsActionHandler.swift; sourceTree = "<group>"; };
@@ -1126,7 +1128,6 @@
 				B305650023FC051E003304F2 /* CollectionEditView.swift */,
 				B30564F323FC051E003304F2 /* CollectionPickerView.swift */,
 				B30564BB23FC051E003304F2 /* CollectionRow.swift */,
-				B30564E823FC051E003304F2 /* ItemRow.swift */,
 				B30564EA23FC051E003304F2 /* LibrariesView.swift */,
 				B30564EB23FC051E003304F2 /* LibraryRow.swift */,
 				B30564EE23FC051E003304F2 /* LoginView.swift */,
@@ -1165,7 +1166,6 @@
 			isa = PBXGroup;
 			children = (
 				B30564E123FC051E003304F2 /* CollectionCell.swift */,
-				B30564E223FC051E003304F2 /* ItemCell.swift */,
 				B30564E323FC051E003304F2 /* TextFieldCell.swift */,
 				B30564E423FC051E003304F2 /* LibraryCell.swift */,
 				B30564E523FC051E003304F2 /* TextFieldCell.xib */,
@@ -1215,9 +1215,9 @@
 				B305651623FC051E003304F2 /* Views */,
 				B305652A23FC051E003304F2 /* ItemDetailActionHandler.swift */,
 				B30566D023FC0650003304F2 /* ItemDetailDataCreator.swift */,
+				B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */,
 				B305652923FC051E003304F2 /* ItemDetailViewController.swift */,
 				B305651523FC051E003304F2 /* ItemDetailViewController.xib */,
-				B39D335423FFC25200EF2ACB /* ItemDetailTableViewHandler.swift */,
 			);
 			path = ItemDetail;
 			sourceTree = "<group>";
@@ -1434,6 +1434,14 @@
 			path = ZoteroUITests;
 			sourceTree = "<group>";
 		};
+		B310710F2403BC8F0055D40F /* UIKit */ = {
+			isa = PBXGroup;
+			children = (
+				B31071102403BC8F0055D40F /* ItemCell.swift */,
+			);
+			path = UIKit;
+			sourceTree = "<group>";
+		};
 		B311B31D2386A39800BCF592 /* ZShare */ = {
 			isa = PBXGroup;
 			children = (
@@ -1474,10 +1482,11 @@
 			children = (
 				B39D335723FFD10A00EF2ACB /* Models */,
 				B39D335823FFD10A00EF2ACB /* Views */,
-				B39D335B23FFD16D00EF2ACB /* ItemsStore.swift */,
-				B39D335923FFD15300EF2ACB /* ItemsViewController.swift */,
 				B39D336123FFD4C300EF2ACB /* ItemsActionHandler.swift */,
 				B39D336323FFD4D900EF2ACB /* ItemsResultsCreator.swift */,
+				B31071162403C3030055D40F /* ItemsTableViewHandler.swift */,
+				B39D335923FFD15300EF2ACB /* ItemsViewController.swift */,
+				B31071142403BD280055D40F /* ItemsViewController.xib */,
 			);
 			path = Items;
 			sourceTree = "<group>";
@@ -1496,6 +1505,7 @@
 			isa = PBXGroup;
 			children = (
 				B39D336923FFDE1E00EF2ACB /* SwiftUI */,
+				B310710F2403BC8F0055D40F /* UIKit */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1504,6 +1514,7 @@
 			isa = PBXGroup;
 			children = (
 				B39D336E23FFE68F00EF2ACB /* CollectionsPickerView.swift */,
+				B31071122403BCB60055D40F /* ItemRow.swift */,
 				B39D336A23FFDE1E00EF2ACB /* ItemsActionSheetView.swift */,
 				B39D336C23FFE3F800EF2ACB /* ItemSortTypePickerView.swift */,
 			);
@@ -1722,6 +1733,7 @@
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B305668023FC051F003304F2 /* ItemDetailViewController.xib in Resources */,
+				B31071152403BD280055D40F /* ItemsViewController.xib in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B305665423FC051F003304F2 /* LibraryCell.xib in Resources */,
 				B305668923FC051F003304F2 /* ItemDetailTitleCell.xib in Resources */,
@@ -2016,7 +2028,6 @@
 				B30565D723FC051E003304F2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B30565E723FC051E003304F2 /* ObjectChangeObserver.swift in Sources */,
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
-				B39D335C23FFD16D00EF2ACB /* ItemsStore.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
 				B305664C23FC051F003304F2 /* SettingsListView.swift in Sources */,
@@ -2088,6 +2099,7 @@
 				B305662A23FC051F003304F2 /* ConflictResolutionController.swift in Sources */,
 				B30565D323FC051E003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B305669723FC051F003304F2 /* RTag.swift in Sources */,
+				B31071172403C3030055D40F /* ItemsTableViewHandler.swift in Sources */,
 				B305666A23FC051F003304F2 /* ActivityIndicatorView.swift in Sources */,
 				B305660123FC051E003304F2 /* BackgroundUpload.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
@@ -2100,6 +2112,7 @@
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
+				B31071132403BCB60055D40F /* ItemRow.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B30566BB23FC051F003304F2 /* ItemsSortType.swift in Sources */,
 				B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */,
@@ -2127,8 +2140,8 @@
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
 				B305666123FC051F003304F2 /* CollectionPickerView.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
+				B31071112403BC8F0055D40F /* ItemCell.swift in Sources */,
 				B39D336223FFD4C300EF2ACB /* ItemsActionHandler.swift in Sources */,
-				B305665023FC051F003304F2 /* ItemCell.swift in Sources */,
 				B305664A23FC051F003304F2 /* GeneralSettingsView.swift in Sources */,
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
@@ -2166,7 +2179,6 @@
 				B30566BD23FC051F003304F2 /* AccessPermissions.swift in Sources */,
 				B305662923FC051F003304F2 /* SyncToolbarController.swift in Sources */,
 				B30565CF23FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
-				B305665623FC051F003304F2 /* ItemRow.swift in Sources */,
 				B30565D923FC051E003304F2 /* ReadCollectionDbRequest.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				B39D336D23FFE3F800EF2ACB /* ItemSortTypePickerView.swift in Sources */,
