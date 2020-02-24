@@ -147,11 +147,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     private func showCollections(for library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let store = CollectionsStore(library: library, dbStorage: dbStorage)
-        let controller = CollectionsViewController(store: store,
-                                                   dbStorage: dbStorage,
-                                                   dragDropController: self.controllers.dragDropController)
+        let (controller, _) = self.collectionsViewController(library: library, dbStorage: dbStorage)
         (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
     }
 
@@ -255,6 +251,17 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         }
     }
 
+    private func collectionsViewController(library: Library, dbStorage: DbStorage) -> (CollectionsViewController, [Collection]) {
+        let results = try? CollectionsResultsCreator.results(for: library.identifier, dbStorage: dbStorage)
+        let handler = CollectionsActionHandler(dbStorage: dbStorage)
+        let state = CollectionsState(library: library, collections: (results?.0 ?? []), error: (results == nil ? .dataLoading : nil))
+        let controller = CollectionsViewController(results: results,
+                                                   viewModel: ViewModel(initialState: state, handler: handler),
+                                                   dbStorage: dbStorage,
+                                                   dragDropController: self.controllers.dragDropController)
+        return (controller, results?.0 ?? [])
+    }
+
     private func itemsStore(for collection: Collection, library: Library, dbStorage: DbStorage) -> ViewModel<ItemsActionHandler> {
         let libraryId = library.identifier
         let type = self.itemType(from: collection)
@@ -348,11 +355,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                          })
                                 .environment(\.dbStorage, dbStorage)
                                 .environmentObject(LibrariesStore(dbStorage: dbStorage))
-        let collectionsStore = CollectionsStore(library: self.defaultLibrary,
-                                                dbStorage: dbStorage)
-        let collectionsController = CollectionsViewController(store: collectionsStore,
-                                                              dbStorage: dbStorage,
-                                                              dragDropController: self.controllers.dragDropController)
+        let (collectionsController, collections) = self.collectionsViewController(library: self.defaultLibrary, dbStorage: dbStorage)
 
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
@@ -365,7 +368,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let detailController = UINavigationController(rootViewController: controller)
 
         self.viewControllers = [masterController, detailController]
-        self.reloadPrimaryColumnFraction(with: collectionsStore.state.collections, animated: false)
+        self.reloadPrimaryColumnFraction(with: collections, animated: false)
 
         if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable {
             self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable)

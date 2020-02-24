@@ -63,7 +63,6 @@ struct CollectionEditView: View {
 
     private var leadingItems: some View {
         Button(action: {
-//            self.presentationMode.wrappedValue.dismiss()
             self.closeAction()
         }, label: {
             Text("Cancel")

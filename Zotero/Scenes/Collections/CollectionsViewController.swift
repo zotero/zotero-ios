@@ -10,24 +10,37 @@ import Combine
 import UIKit
 import SwiftUI
 
+import RealmSwift
+import RxSwift
+
 class CollectionsViewController: UIViewController {
     private static let cellId = "CollectionRow"
 
-    private let store: CollectionsStore
-    private let dbStorage: DbStorage
-    private let dragDropController: DragDropController
+    private let store: ViewModel<CollectionsActionHandler>
+    private unowned let dragDropController: DragDropController
+    private unowned let dbStorage: DbStorage
+    private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
 
     private var dataSource: UITableViewDiffableDataSource<Int, Collection>!
-    private var storeSubscriber: AnyCancellable?
-    private var didAppear: Bool = false
+    private var didAppear: Bool
 
-    init(store: CollectionsStore, dbStorage: DbStorage, dragDropController: DragDropController) {
-        self.store = store
+    private var collectionsToken: NotificationToken?
+    private var searchesToken: NotificationToken?
+
+    init(results: CollectionsResults?, viewModel: ViewModel<CollectionsActionHandler>, dbStorage: DbStorage, dragDropController: DragDropController) {
+        self.store = viewModel
         self.dbStorage = dbStorage
         self.dragDropController = dragDropController
+        self.disposeBag = DisposeBag()
+        self.didAppear = false
+
         super.init(nibName: nil, bundle: nil)
+
+        if let results = results {
+            self.setupObserving(for: results)
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -43,23 +56,21 @@ class CollectionsViewController: UIViewController {
         self.setupTableView()
         self.setupDataSource()
 
-        self.updateDataSource(with: self.store.state)
+        self.updateDataSource(with: self.store.state.collections)
 
-        self.storeSubscriber = self.store.$state.receive(on: DispatchQueue.main)
-                                                // Group updates by 1ms, added mainly because of CollectionsStore.replaceCollections where we perform
-                                                // deletion and insertion on collections array, which if not debounced creates 2 fast delete/add
-                                                // animations and it looks weird to the user, now the update acts as 1 and there is nothing to animate
-                                                .debounce(for: .milliseconds(1), scheduler: RunLoop.main)
-                                                .sink(receiveValue: { [weak self] state in
-                                                    self?.updateDataSource(with: state)
-                                                })
+        self.store.stateObservable
+                  .observeOn(MainScheduler.instance)
+                  .subscribe(onNext: { [weak self] state in
+                      self?.update(to: state)
+                  })
+                  .disposed(by: self.disposeBag)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            self.showSelectedCollection()
+            self.show(selectedCollection: self.store.state.selectedCollection, library: self.store.state.library)
         }
     }
 
@@ -68,27 +79,40 @@ class CollectionsViewController: UIViewController {
         self.didAppear = true
     }
 
-    // MARK: - Actions
+    // MARK: - UI state
 
-    private func showSelectedCollection() {
-        NotificationCenter.default.post(name: .splitViewDetailChanged,
-                                        object: (self.store.state.selectedCollection, self.store.state.library))
+    private func update(to state: CollectionsState) {
+        if state.changes.contains(.results) {
+            self.updateDataSource(with: state.collections)
+        }
+        if state.changes.contains(.selection) {
+            self.show(selectedCollection: state.selectedCollection, library: state.library)
+        }
+        if let data = state.editingData {
+            self.presentEditView(for: data)
+        }
     }
 
-    private func updateDataSource(with state: CollectionsStore.State) {
+    private func updateDataSource(with collections: [Collection]) {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
         snapshot.appendSections([0])
-        snapshot.appendItems(state.collections, toSection: 0)
+        snapshot.appendItems(collections, toSection: 0)
         self.dataSource.apply(snapshot, animatingDifferences: self.didAppear, completion: nil)
     }
 
-    @objc private func addCollection() {
-        self.presentEditView(with: .add)
+    // MARK: - Navigation
+
+    private func show(selectedCollection: Collection, library: Library) {
+        NotificationCenter.default.post(name: .splitViewDetailChanged, object: (selectedCollection, library))
     }
 
-    private func presentEditView(with type: CollectionsStore.State.EditingType) {
+    @objc private func addCollection() {
+        self.store.process(action: .startEditing(.add))
+    }
+
+    private func presentEditView(for data: CollectionStateEditingData) {
         let view = NavigationView {
-            self.createEditView(with: type)
+            self.createEditView(for: data)
         }
         .navigationViewStyle(StackNavigationViewStyle())
 
@@ -97,34 +121,9 @@ class CollectionsViewController: UIViewController {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func createEditView(with type: CollectionsStore.State.EditingType) -> some View {
-        let key: String?
-        let name: String
-        let parent: Collection?
-
-        switch type {
-        case .add:
-            key = nil
-            name = ""
-            parent = nil
-        case .addSubcollection(let collection):
-            key = nil
-            name = ""
-            parent = collection
-        case .edit(let collection):
-            let request = ReadCollectionDbRequest(libraryId: self.store.state.library.identifier, key: collection.key)
-            let rCollection = try? self.dbStorage.createCoordinator().perform(request: request)
-
-            key = collection.key
-            name = collection.name
-            parent = rCollection?.parent.flatMap { Collection(object: $0, level: 0) }
-        }
-
-        let store = CollectionEditStore(library: self.store.state.library,
-                                           key: key,
-                                           name: name,
-                                           parent: parent,
-                                           dbStorage: self.dbStorage)
+    private func createEditView(for data: CollectionStateEditingData) -> some View {
+        let store = CollectionEditStore(library: self.store.state.library, key: data.0, name: data.1,
+                                        parent: data.2, dbStorage: self.dbStorage)
         store.shouldDismiss = { [weak self] in
             self?.dismiss(animated: true, completion: nil)
         }
@@ -135,14 +134,14 @@ class CollectionsViewController: UIViewController {
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu {
-        let edit = UIAction(title: "Edit", image: UIImage(systemName: "pencil")) { action in
-            self.presentEditView(with: .edit(collection))
+        let edit = UIAction(title: "Edit", image: UIImage(systemName: "pencil")) { [weak self] action in
+            self?.store.process(action: .startEditing(.edit(collection)))
         }
-        let subcollection = UIAction(title: "New subcollection", image: UIImage(systemName: "folder.badge.plus")) { action in
-            self.presentEditView(with: .addSubcollection(collection))
+        let subcollection = UIAction(title: "New subcollection", image: UIImage(systemName: "folder.badge.plus")) { [weak self] action in
+            self?.store.process(action: .startEditing(.addSubcollection(collection)))
         }
-        let delete = UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { action in
-            self.store.deleteCollection(with: collection.key)
+        let delete = UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.store.process(action: .deleteCollection(collection.key))
         }
         return UIMenu(title: "", children: [edit, subcollection, delete])
     }
@@ -189,19 +188,37 @@ class CollectionsViewController: UIViewController {
                                    action: #selector(CollectionsViewController.addCollection))
         self.navigationItem.rightBarButtonItem = item
     }
+
+    private func setupObserving(for results: CollectionsResults) {
+        self.collectionsToken = results.1.observe({ [weak self] changes in
+            guard let `self` = self else { return }
+            switch changes {
+            case .update(let objects, _, _, _):
+                self.store.process(action: .updateCollections(CollectionTreeBuilder.collections(from: objects)))
+            case .initial: break
+            case .error: break
+            }
+        })
+        self.searchesToken = results.2.observe({ [weak self] changes in
+            guard let `self` = self else { return }
+            switch changes {
+            case .update(let objects, _, _, _):
+                self.store.process(action: .updateCollections(CollectionTreeBuilder.collections(from: objects)))
+            case .initial: break
+            case .error: break
+            }
+        })
+    }
 }
 
 extension CollectionsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let collection = self.dataSource.itemIdentifier(for: indexPath) {
             let didChange = collection.id != self.store.state.selectedCollection.id
-            if didChange {
-                self.store.state.selectedCollection = collection
-            }
             // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
             // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
             if UIDevice.current.userInterfaceIdiom == .phone || didChange {
-                self.showSelectedCollection()
+                self.store.process(action: .select(collection))
             }
         }
 
@@ -226,7 +243,7 @@ extension CollectionsViewController: UITableViewDropDelegate {
         switch coordinator.proposal.operation {
         case .copy:
             self.dragDropController.itemKeys(from: coordinator.items) { [weak self] keys in
-                self?.store.assignItems(keys: keys, to: key)
+                self?.store.process(action: .assignKeysToCollection(keys, key))
             }
         default: break
         }
