@@ -238,7 +238,7 @@ class ItemsViewController: UIViewController {
                                          closeAction: { [weak self] in
                                              self?.dismiss(animated: true, completion: nil)
                                          })
-                        .environmentObject(CollectionPickerStore(library: self.viewModel.state.library, dbStorage: dbStorage))
+                        .environmentObject(CollectionPickerStore(library: self.viewModel.state.library, excludedKeys: [], dbStorage: dbStorage))
 
         let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
         navigationController.isModalInPresentation = true

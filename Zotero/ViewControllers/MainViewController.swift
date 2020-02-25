@@ -138,13 +138,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func presentNote(_ note: Binding<Note>, saveAction: @escaping () -> Void) {
-        let view = NoteEditorView(note: note, saveAction: saveAction)
-        let controller = UIHostingController(rootView: view)
-        controller.isModalInPresentation = true
-        self.present(controller, animated: true, completion: nil)
-    }
-
     private func showCollections(for library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
         let (controller, _) = self.collectionsViewController(library: library, dbStorage: dbStorage)
@@ -188,7 +181,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                          closeAction: { [weak self] in
                                              self?.dismiss(animated: true, completion: nil)
                                          })
-                            .environmentObject(CollectionPickerStore(library: library, dbStorage: dbStorage))
+                            .environmentObject(CollectionPickerStore(library: library, excludedKeys: [], dbStorage: dbStorage))
         let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
         navigationController.isModalInPresentation = true
         self.present(navigationController, animated: true, completion: nil)
@@ -232,13 +225,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func showItems(in collection: Collection, library: Library) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let controller = ItemsViewController(store: self.itemsStore(for: collection, library: library, dbStorage: dbStorage),
-                                             controllers: self.controllers)
-        self.showSecondaryController(controller)
-    }
-
     private func showSecondaryController(_ controller: UIViewController) {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
@@ -259,6 +245,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                                                    viewModel: ViewModel(initialState: state, handler: handler),
                                                    dbStorage: dbStorage,
                                                    dragDropController: self.controllers.dragDropController)
+        controller.navigationDelegate = self
         return (controller, results?.0 ?? [])
     }
 
@@ -376,9 +363,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func setupNotificationObservers() {
-        let notifications: [Notification.Name] = [.presentPdf, .presentWeb, .splitViewDetailChanged, .showDuplicateCreation,
+        let notifications: [Notification.Name] = [.presentPdf, .presentWeb, .showDuplicateCreation,
                                                   .presentCollectionsPicker, .presentSortTypePicker, .presentFilePicker,
-                                                  .presentSettings, .presentNote, .presentTypePicker, .presentCreatorPicker,
+                                                  .presentSettings, .presentTypePicker, .presentCreatorPicker,
                                                   .presentTagPicker, .presentUnknownAttachment]
 
         notifications.forEach { name in
@@ -391,10 +378,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                 case .presentWeb:
                     if let url = notification.object as? URL {
                        self?.presentWeb(with: url)
-                    }
-                case .splitViewDetailChanged:
-                    if let (collection, library) = notification.object as? (Collection, Library) {
-                        self?.showItems(in: collection, library: library)
                     }
                 case .showDuplicateCreation:
                     if let (key, library, collectionKey) = notification.object as? (String, Library, String?) {
@@ -415,10 +398,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
                     }
                 case .presentSettings:
                     self?.presentSettings()
-                case .presentNote:
-                    if let (note, block) = notification.object as? (Binding<Note>, () -> Void) {
-                        self?.presentNote(note, saveAction: block)
-                    }
                 case .presentTypePicker:
                     if let (selected, block) = notification.object as? (String, (String) -> Void) {
                         self?.presentItemTypePicker(for: selected, saveAction: block)
@@ -469,5 +448,14 @@ extension MainViewController: UIDocumentPickerDelegate {
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         self.dismiss(animated: true, completion: nil)
         self.filesPickedAction = nil
+    }
+}
+
+extension MainViewController: CollectionsNavigationDelegate {
+    func show(collection: Collection, in library: Library) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        let store = self.itemsStore(for: collection, library: library, dbStorage: dbStorage)
+        let controller = ItemsViewController(store: store, controllers: self.controllers)
+        self.showSecondaryController(controller)
     }
 }

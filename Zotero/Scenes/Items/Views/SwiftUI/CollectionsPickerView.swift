@@ -63,6 +63,7 @@ struct CollectionsPickerView_Previews: PreviewProvider {
                                                                            name: "My Library",
                                                                            metadataEditable: true,
                                                                            filesEditable: true),
+                                                         excludedKeys: [],
                                                          dbStorage: Controllers().userControllers!.dbStorage))
     }
 }

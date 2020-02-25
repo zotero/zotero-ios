@@ -85,6 +85,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
     }
 
+    /// Loads data needed to show editing controller.
+    /// - parameter type: Editing type.
     private func startEditing(type: CollectionsState.EditingType, in viewModel: ViewModel<CollectionsActionHandler>) {
         let key: String?
         let name: String
@@ -116,6 +118,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
             self.update(collections: collections, state: &state)
+            state.changes.insert(.results)
         }
     }
 

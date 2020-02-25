@@ -91,8 +91,9 @@ struct CollectionEditView: View {
     }
 
     private func createPickerView() -> some View {
-        CollectionPickerView(collection: self.$store.state.parent)
-                .environmentObject(CollectionPickerStore(library: self.store.state.library, dbStorage: self.dbStorage))
+        let excludedKeys: Set<String> = self.store.state.key.flatMap({ [$0] }) ?? []
+        let store = CollectionPickerStore(library: self.store.state.library, excludedKeys: excludedKeys, dbStorage: self.dbStorage)
+        return CollectionPickerView(collection: self.$store.state.parent).environmentObject(store)
     }
 }
 

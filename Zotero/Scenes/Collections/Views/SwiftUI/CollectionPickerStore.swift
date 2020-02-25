@@ -29,9 +29,9 @@ class CollectionPickerStore: ObservableObject {
 
     @Published var state: State
 
-    init(library: Library, dbStorage: DbStorage) {
+    init(library: Library, excludedKeys: Set<String>, dbStorage: DbStorage) {
         do {
-            let collectionsRequest = ReadCollectionsDbRequest(libraryId: library.identifier)
+            let collectionsRequest = ReadCollectionsDbRequest(libraryId: library.identifier, excludedKeys: excludedKeys)
             let results = try dbStorage.createCoordinator().perform(request: collectionsRequest)
             let collections = CollectionTreeBuilder.collections(from: results)
             self.state = State(library: library, collections: collections)

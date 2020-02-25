@@ -14,12 +14,19 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
     typealias Response = Results<RCollection>
 
     let libraryId: LibraryIdentifier
+    let excludedKeys: Set<String>
 
     var needsWrite: Bool { return false }
 
+    init(libraryId: LibraryIdentifier, excludedKeys: Set<String> = []) {
+        self.libraryId = libraryId
+        self.excludedKeys = excludedKeys
+    }
+
     func process(in database: Realm) throws -> Results<RCollection> {
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.notSyncState(.dirty, in: self.libraryId),
-                                                                            .deleted(false)])
+                                                                            .deleted(false),
+                                                                            .key(notIn: self.excludedKeys)])
         return database.objects(RCollection.self).filter(predicate)
     }
 }

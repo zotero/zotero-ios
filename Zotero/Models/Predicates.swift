@@ -25,6 +25,10 @@ extension NSPredicate {
         return NSPredicate(format: "not key in %@", keys)
     }
 
+    static func key(notIn keys: Set<String>) -> NSPredicate {
+        return NSPredicate(format: "not key in %@", keys)
+    }
+
     static func name(_ name: String) -> NSPredicate {
         return NSPredicate(format: "name = %@", name)
     }
