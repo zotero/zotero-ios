@@ -11,6 +11,7 @@
 		2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */; };
 		2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */; };
 		9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */; };
+		B3024BC72405B01000B2AAB5 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B305643423FC051E003304F2 /* schema.json */; };
 		B3027C1E23BDB2B8007F5B26 /* ItemPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */; };
 		B30565B123FC051E003304F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B305643323FC051E003304F2 /* Assets.xcassets */; };
 		B30565B223FC051E003304F2 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B305643423FC051E003304F2 /* schema.json */; };
@@ -1806,6 +1807,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
+				B3024BC72405B01000B2AAB5 /* schema.json in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
