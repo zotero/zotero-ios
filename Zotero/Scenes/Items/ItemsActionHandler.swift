@@ -14,6 +14,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     typealias State = ItemsState
     typealias Action = ItemsAction
 
+    private static let sortTypeKey = "ItemsSortType"
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
@@ -96,6 +97,25 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .deleteSelectedItems:
             self.deleteSelectedItems(in: viewModel)
+
+        case .loadInitialState:
+            self.loadInitialState(in: viewModel)
+        }
+    }
+
+    private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
+        let sortTypeData = UserDefaults.standard.data(forKey: ItemsActionHandler.sortTypeKey)
+        let unarchived = sortTypeData.flatMap({ try? PropertyListDecoder().decode(ItemsSortType.self, from: $0) })
+        let sortType = unarchived ?? .default
+
+        let results = try? ItemResultsCreator.results(for: viewModel.state.type,
+                                                      sortType: sortType,
+                                                      libraryId: viewModel.state.library.identifier,
+                                                      dbStorage: self.dbStorage)
+        self.update(viewModel: viewModel) { state in
+            state.results = results
+            state.sortType = sortType
+            state.error = (results == nil ? .dataLoading : nil)
         }
     }
 
@@ -173,6 +193,10 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Overlay actions
 
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<ItemsActionHandler>) {
+        if let data = try? PropertyListEncoder().encode(sortType) {
+            UserDefaults.standard.set(data, forKey: ItemsActionHandler.sortTypeKey)
+        }
+
         self.update(viewModel: viewModel) { state in
             state.sortType = sortType
             let descriptors = state.sortType.descriptors

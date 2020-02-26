@@ -199,7 +199,6 @@
 		B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655123FC051E003304F2 /* SearchesResponse.swift */; };
 		B30566B923FC051F003304F2 /* SchemaResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655223FC051E003304F2 /* SchemaResponse.swift */; };
 		B30566BA23FC051F003304F2 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655323FC051E003304F2 /* Defaults.swift */; };
-		B30566BB23FC051F003304F2 /* ItemsSortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655423FC051E003304F2 /* ItemsSortType.swift */; };
 		B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655623FC051E003304F2 /* WriteBatch.swift */; };
 		B30566BD23FC051F003304F2 /* AccessPermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655723FC051E003304F2 /* AccessPermissions.swift */; };
 		B30566BE23FC051F003304F2 /* Versions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655823FC051E003304F2 /* Versions.swift */; };
@@ -349,7 +348,6 @@
 		B305676223FC0A0B003304F2 /* DelayIntervals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653F23FC051E003304F2 /* DelayIntervals.swift */; };
 		B305676323FC0A0B003304F2 /* DeletableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305652C23FC051E003304F2 /* DeletableObject.swift */; };
 		B305676423FC0A0B003304F2 /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654223FC051E003304F2 /* FieldKeys.swift */; };
-		B305676523FC0A0B003304F2 /* ItemsSortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305655423FC051E003304F2 /* ItemsSortType.swift */; };
 		B305676623FC0A0B003304F2 /* ItemTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654323FC051E003304F2 /* ItemTypes.swift */; };
 		B305676723FC0A0B003304F2 /* KeyedResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653823FC051E003304F2 /* KeyedResponse.swift */; };
 		B305676823FC0A0B003304F2 /* Predicates.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305654423FC051E003304F2 /* Predicates.swift */; };
@@ -408,6 +406,7 @@
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
 		B355B8FF239951E800E837B9 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
 		B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B37147402382B51000AC8758 /* CrashReporter.framework */; };
+		B37E8FF82406ADF900E48E1E /* ItemsSortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37E8FF72406ADF900E48E1E /* ItemsSortType.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
 		B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */; };
@@ -714,7 +713,6 @@
 		B305655123FC051E003304F2 /* SearchesResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchesResponse.swift; sourceTree = "<group>"; };
 		B305655223FC051E003304F2 /* SchemaResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SchemaResponse.swift; sourceTree = "<group>"; };
 		B305655323FC051E003304F2 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
-		B305655423FC051E003304F2 /* ItemsSortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsSortType.swift; sourceTree = "<group>"; };
 		B305655623FC051E003304F2 /* WriteBatch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WriteBatch.swift; sourceTree = "<group>"; };
 		B305655723FC051E003304F2 /* AccessPermissions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccessPermissions.swift; sourceTree = "<group>"; };
 		B305655823FC051E003304F2 /* Versions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Versions.swift; sourceTree = "<group>"; };
@@ -773,6 +771,7 @@
 		B355B8FE239951E800E837B9 /* translation */ = {isa = PBXFileReference; lastKnownFileType = folder; path = translation; sourceTree = "<group>"; };
 		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
+		B37E8FF72406ADF900E48E1E /* ItemsSortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsSortType.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3823B292399302100953F5D /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
@@ -1213,7 +1212,6 @@
 				B305654223FC051E003304F2 /* FieldKeys.swift */,
 				B305654123FC051E003304F2 /* File.swift */,
 				B305653E23FC051E003304F2 /* Files.swift */,
-				B305655423FC051E003304F2 /* ItemsSortType.swift */,
 				B305654323FC051E003304F2 /* ItemTypes.swift */,
 				B305653823FC051E003304F2 /* KeyedResponse.swift */,
 				B305653923FC051E003304F2 /* Library.swift */,
@@ -1535,9 +1533,10 @@
 		B39D335723FFD10A00EF2ACB /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				B39D335D23FFD48C00EF2ACB /* ItemsState.swift */,
-				B39D335F23FFD4AD00EF2ACB /* ItemsError.swift */,
 				B39D336523FFD50F00EF2ACB /* ItemsAction.swift */,
+				B39D335F23FFD4AD00EF2ACB /* ItemsError.swift */,
+				B37E8FF72406ADF900E48E1E /* ItemsSortType.swift */,
+				B39D335D23FFD48C00EF2ACB /* ItemsState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1968,6 +1967,7 @@
 				B30565CD23FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift in Sources */,
 				B305661023FC051E003304F2 /* SchemaRequest.swift in Sources */,
 				B305678B23FC0FAE003304F2 /* ItemDetailAction.swift in Sources */,
+				B37E8FF82406ADF900E48E1E /* ItemsSortType.swift in Sources */,
 				B305660223FC051E003304F2 /* ApiClient.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B39D336423FFD4D900EF2ACB /* ItemsResultsCreator.swift in Sources */,
@@ -2153,7 +2153,6 @@
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
 				B31071132403BCB60055D40F /* ItemRow.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
-				B30566BB23FC051F003304F2 /* ItemsSortType.swift in Sources */,
 				B33E3C4724042CD800E84623 /* CollectionEditStore.swift in Sources */,
 				B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */,
 				B30566A523FC051F003304F2 /* SyncableObject.swift in Sources */,
@@ -2258,7 +2257,6 @@
 				B305676223FC0A0B003304F2 /* DelayIntervals.swift in Sources */,
 				B305676323FC0A0B003304F2 /* DeletableObject.swift in Sources */,
 				B305676423FC0A0B003304F2 /* FieldKeys.swift in Sources */,
-				B305676523FC0A0B003304F2 /* ItemsSortType.swift in Sources */,
 				B305676623FC0A0B003304F2 /* ItemTypes.swift in Sources */,
 				B305676D23FC0A47003304F2 /* SchemaController.swift in Sources */,
 				B305676723FC0A0B003304F2 /* KeyedResponse.swift in Sources */,

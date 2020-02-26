@@ -13,6 +13,7 @@ enum ItemsAction {
     case assignSelectedItemsToCollections(Set<String>)
     case deleteSelectedItems
     case deselectItem(String)
+    case loadInitialState
     case loadItemToDuplicate(String)
     case moveItems([String], String)
     case observingFailed

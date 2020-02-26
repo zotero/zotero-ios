@@ -29,12 +29,14 @@ class ItemsViewController: UIViewController {
     private var overlaySink: AnyCancellable?
     private var resultsToken: NotificationToken?
 
-    init(store: ViewModel<ItemsActionHandler>, controllers: Controllers) {
-        self.viewModel = store
+    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers) {
+        self.viewModel = viewModel
         self.controllers = controllers
         self.disposeBag = DisposeBag()
 
         super.init(nibName: "ItemsViewController", bundle: nil)
+
+        viewModel.process(action: .loadInitialState)
     }
 
     required init?(coder: NSCoder) {

@@ -249,11 +249,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         return (controller, results?.0 ?? [])
     }
 
-    private func itemsStore(for collection: Collection, library: Library, dbStorage: DbStorage) -> ViewModel<ItemsActionHandler> {
-        let libraryId = library.identifier
+    private func itemsViewModel(for collection: Collection, library: Library, dbStorage: DbStorage) -> ViewModel<ItemsActionHandler> {
         let type = self.itemType(from: collection)
-        let results = try? ItemResultsCreator.results(for: type, sortType: .default, libraryId: libraryId, dbStorage: dbStorage)
-        let state = ItemsState(type: type, library: library, results: results, error: (results == nil ? .dataLoading : nil))
+        let state = ItemsState(type: type, library: library, results: nil, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController)
@@ -347,9 +345,9 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         let masterController = UINavigationController()
         masterController.viewControllers = [UIHostingController(rootView: librariesView),
                                             collectionsController]
-        let controller = ItemsViewController(store: self.itemsStore(for: self.defaultCollection,
-                                                                    library: self.defaultLibrary,
-                                                                    dbStorage: dbStorage),
+        let controller = ItemsViewController(viewModel: self.itemsViewModel(for: self.defaultCollection,
+                                                                            library: self.defaultLibrary,
+                                                                            dbStorage: dbStorage),
                                              controllers: self.controllers)
 
         let detailController = UINavigationController(rootViewController: controller)
@@ -454,8 +452,8 @@ extension MainViewController: UIDocumentPickerDelegate {
 extension MainViewController: CollectionsNavigationDelegate {
     func show(collection: Collection, in library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let store = self.itemsStore(for: collection, library: library, dbStorage: dbStorage)
-        let controller = ItemsViewController(store: store, controllers: self.controllers)
+        let viewModel = self.itemsViewModel(for: collection, library: library, dbStorage: dbStorage)
+        let controller = ItemsViewController(viewModel: viewModel, controllers: self.controllers)
         self.showSecondaryController(controller)
     }
 }

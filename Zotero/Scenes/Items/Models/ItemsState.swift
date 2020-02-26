@@ -58,15 +58,15 @@ struct ItemsState: ViewModelState {
     var error: ItemsError?
     var itemDuplication: RItem?
 
-    init(type: ItemType, library: Library, results: Results<RItem>?, error: ItemsError?) {
+    init(type: ItemType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
         self.library = library
         self.results = results
         self.error = error
         self.isEditing = false
-        self.sortType = .default
         self.selectedItems = []
         self.changes = []
+        self.sortType = sortType
     }
 
     mutating func cleanup() {
