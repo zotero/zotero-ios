@@ -60,6 +60,8 @@ class SyncToolbarController {
 
     private func text(for progress: SyncProgress) -> String {
         switch progress {
+        case .starting:
+            return "Sync starting"
         case .groups:
             return "Syncing groups"
         case .library(let name, let type, let data):

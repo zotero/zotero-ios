@@ -22,6 +22,7 @@ protocol SyncAction {
 }
 
 protocol SynchronizationController: class {
+    var inProgress: Bool { get }
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
 
     func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
@@ -179,6 +180,14 @@ final class SyncController: SynchronizationController {
     }
 
     // MARK: - SynchronizationController
+
+    var inProgress: Bool {
+        var inProgress = false
+        self.accessQueue.sync { [unowned self] in
+            inProgress = self.progressHandler.inProgress
+        }
+        return inProgress
+    }
 
     var progressObservable: BehaviorRelay<SyncProgress?> {
         return self.progressHandler.observable

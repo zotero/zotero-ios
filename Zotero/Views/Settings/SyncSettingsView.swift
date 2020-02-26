@@ -14,6 +14,17 @@ struct SyncSettingsView: View {
     var body: some View {
         Form {
             Section {
+                if self.store.state.isSyncing {
+                    Button(action: self.store.cancelSync) {
+                        Text("Cancel ongoing sync")
+                    }
+                } else {
+                    Button(action: self.store.startSync) {
+                        Text("Sync with zotero.org")
+                    }
+                }
+            }
+            Section {
                 SettingsToggleRow(title: "User Permission",
                                   subtitle: "Ask for user permission for each write action",
                                   value: self.$store.state.askForSyncPermission)
@@ -24,6 +35,8 @@ struct SyncSettingsView: View {
 
 struct SyncSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        return SyncSettingsView().environmentObject(SettingsStore(sessionController: Controllers().sessionController))
+        let controllers = Controllers()
+        return SyncSettingsView().environmentObject(SettingsStore(sessionController: controllers.sessionController,
+                                                                  syncScheduler: controllers.userControllers!.syncScheduler))
     }
 }

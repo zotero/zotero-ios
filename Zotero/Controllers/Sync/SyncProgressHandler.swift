@@ -14,6 +14,7 @@ import RxSwift
 typealias SyncProgressData = (completed: Int, total: Int)
 
 enum SyncProgress {
+    case starting
     case groups
     case library(String, SyncObject, SyncProgressData?) // Library name, object, data
     case deletions(String) // Library name
@@ -32,10 +33,13 @@ final class SyncProgressHandler {
     private var currentTotal: Int
     private var timerDisposeBag: DisposeBag
 
+    private(set) var inProgress: Bool
+
     init() {
         self.observable = BehaviorRelay(value: nil)
         self.currentDone = 0
         self.currentTotal = 0
+        self.inProgress = false
         self.timerDisposeBag = DisposeBag()
     }
 
@@ -43,6 +47,8 @@ final class SyncProgressHandler {
 
     func reportNewSync() {
         self.cleanup()
+        self.inProgress = true
+        self.observable.accept(.starting)
     }
 
     func reportGroupSync() {
@@ -101,6 +107,7 @@ final class SyncProgressHandler {
         self.timerDisposeBag = DisposeBag()
         self.libraryNames = nil
         self.currentLibrary = nil
+        self.inProgress = false
         self.currentDone = 0
         self.currentTotal = 0
     }

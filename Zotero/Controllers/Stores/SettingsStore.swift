@@ -9,6 +9,8 @@
 import Combine
 import Foundation
 
+import RxSwift
+
 class SettingsStore: ObservableObject {
     struct State {
         var askForSyncPermission: Bool {
@@ -17,18 +19,41 @@ class SettingsStore: ObservableObject {
             }
         }
 
-        init() {
+        var isSyncing: Bool
+
+        init(isSyncing: Bool) {
+            self.isSyncing = isSyncing
             self.askForSyncPermission = Defaults.shared.askForSyncPermission
+
         }
     }
 
     @Published var state: State
 
-    private let sessionController: SessionController
+    private unowned let sessionController: SessionController
+    private unowned let syncScheduler: SynchronizationScheduler
+    private let disposeBag: DisposeBag
 
-    init(sessionController: SessionController) {
-        self.state = State()
+    init(sessionController: SessionController, syncScheduler: SynchronizationScheduler) {
         self.sessionController = sessionController
+        self.syncScheduler = syncScheduler
+        self.state = State(isSyncing: syncScheduler.syncController.inProgress)
+        self.disposeBag = DisposeBag()
+
+        syncScheduler.syncController.progressObservable
+                                    .observeOn(MainScheduler.instance)
+                                    .subscribe(onNext: { [weak self] progress in
+                                        self?.state.isSyncing = progress != nil
+                                    })
+                                    .disposed(by: self.disposeBag)
+    }
+
+    func startSync() {
+        self.syncScheduler.requestFullSync()
+    }
+
+    func cancelSync() {
+        self.syncScheduler.cancelSync()
     }
 
     func logout() {

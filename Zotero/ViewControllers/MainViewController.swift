@@ -145,7 +145,8 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func presentSettings() {
-        let store = SettingsStore(sessionController: self.controllers.sessionController)
+        guard let syncScheduler = self.controllers.userControllers?.syncScheduler else { return }
+        let store = SettingsStore(sessionController: self.controllers.sessionController, syncScheduler: syncScheduler)
         let view = SettingsView(closeAction: { [weak self] in
             self?.dismiss(animated: true, completion: nil)
         })

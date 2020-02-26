@@ -214,7 +214,6 @@
 		B30566C823FC051F003304F2 /* SortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656223FC051E003304F2 /* SortType.swift */; };
 		B30566CA23FC051F003304F2 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656523FC051E003304F2 /* MainViewController.swift */; };
 		B30566CD23FC051F003304F2 /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656823FC051E003304F2 /* NoteEditorViewController.swift */; };
-		B30566CF23FC051F003304F2 /* ProgressNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305656A23FC051E003304F2 /* ProgressNavigationViewController.swift */; };
 		B30566D123FC0650003304F2 /* ItemDetailDataCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30566D023FC0650003304F2 /* ItemDetailDataCreator.swift */; };
 		B30566D923FC0769003304F2 /* tinymce in Resources */ = {isa = PBXBuildFile; fileRef = B30566D823FC0769003304F2 /* tinymce */; };
 		B30566DA23FC07E0003304F2 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653923FC051E003304F2 /* Library.swift */; };
@@ -728,7 +727,6 @@
 		B305656223FC051E003304F2 /* SortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortType.swift; sourceTree = "<group>"; };
 		B305656523FC051E003304F2 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B305656823FC051E003304F2 /* NoteEditorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoteEditorViewController.swift; sourceTree = "<group>"; };
-		B305656A23FC051E003304F2 /* ProgressNavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgressNavigationViewController.swift; sourceTree = "<group>"; };
 		B30566D023FC0650003304F2 /* ItemDetailDataCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailDataCreator.swift; sourceTree = "<group>"; };
 		B30566D823FC0769003304F2 /* tinymce */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tinymce; sourceTree = "<group>"; };
 		B305678723FC0FAE003304F2 /* ItemDetailState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemDetailState.swift; sourceTree = "<group>"; };
@@ -1282,7 +1280,6 @@
 			children = (
 				B305656523FC051E003304F2 /* MainViewController.swift */,
 				B305656823FC051E003304F2 /* NoteEditorViewController.swift */,
-				B305656A23FC051E003304F2 /* ProgressNavigationViewController.swift */,
 				B3EA17F023FEB58700F80A0C /* DocumentPickerViewController.swift */,
 			);
 			path = ViewControllers;
@@ -2009,7 +2006,6 @@
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
-				B30566CF23FC051F003304F2 /* ProgressNavigationViewController.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
 				B305660523FC051E003304F2 /* DeletionsRequest.swift in Sources */,
 				B39984C22405753800149606 /* TagView.swift in Sources */,
