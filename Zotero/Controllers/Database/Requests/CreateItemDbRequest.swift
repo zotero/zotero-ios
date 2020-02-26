@@ -90,11 +90,9 @@ struct CreateItemDbRequest: DbResponseRequest {
             } else if field.key == FieldKeys.date {
                 item.setDateFieldMetadata(field.value)
             } else if field.key == FieldKeys.publisher || field.baseField == FieldKeys.publisher {
-                item.publisher = field.value
-                item.hasPublisher = !field.value.isEmpty
+                item.set(publisher: field.value)
             } else if field.key == FieldKeys.publicationTitle || field.baseField == FieldKeys.publicationTitle {
-                item.publicationTitle = field.value
-                item.hasPublicationTitle = !field.value.isEmpty
+                item.set(publicationTitle: field.value)
             }
         }
 

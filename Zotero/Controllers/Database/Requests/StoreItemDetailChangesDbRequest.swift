@@ -81,11 +81,9 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 if field.key == FieldKeys.date {
                     item.setDateFieldMetadata(nil)
                 } else if field.key == FieldKeys.publisher || field.baseKey == FieldKeys.publisher {
-                    item.publisher = nil
-                    item.hasPublisher = false
+                    item.set(publisher: nil)
                 } else if field.key == FieldKeys.publicationTitle || field.baseKey == FieldKeys.publicationTitle {
-                    item.publicationTitle = nil
-                    item.hasPublicationTitle = false
+                    item.set(publicationTitle: nil)
                 }
             }
 
@@ -121,11 +119,9 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
                 } else if field.key == FieldKeys.date {
                     item.setDateFieldMetadata(field.value)
                 } else if field.key == FieldKeys.publisher || field.baseField == FieldKeys.publisher {
-                    item.publisher = field.value
-                    item.hasPublisher = !field.value.isEmpty
+                    item.set(publisher: field.value)
                 } else if field.key == FieldKeys.publicationTitle || field.baseField == FieldKeys.publicationTitle {
-                    item.publicationTitle = field.value
-                    item.hasPublicationTitle = !field.value.isEmpty
+                    item.set(publicationTitle: field.value)
                 }
 
                 fieldsDidChange = true
@@ -152,7 +148,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             if let childItem = item.children.filter(.key(note.key)).first,
                let noteField = childItem.fields.filter(.key(FieldKeys.note)).first {
                 guard noteField.value != note.text else { continue }
-                childItem.setTitle(note.title)
+                childItem.set(title: note.title)
                 childItem.changedFields.insert(.fields)
                 noteField.value = note.text
                 noteField.changed = true
@@ -185,7 +181,7 @@ struct StoreItemDetailChangesDbRequest: DbRequest {
             if let childItem = item.children.filter(.key(attachment.key)).first,
                let titleField = childItem.fields.filter(.key(FieldKeys.title)).first {
                 guard titleField.value != attachment.title else { continue }
-                childItem.setTitle(attachment.title)
+                childItem.set(title: attachment.title)
                 childItem.changedFields.insert(.fields)
                 titleField.value = attachment.title
                 titleField.changed = true

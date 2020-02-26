@@ -131,10 +131,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
         }
 
         item.setDateFieldMetadata(date)
-        item.publisher = publisher
-        item.hasPublisher = publisher?.isEmpty == false
-        item.publicationTitle = publicationTitle
-        item.hasPublicationTitle = publicationTitle?.isEmpty == false
+        item.set(publisher: publisher)
+        item.set(publicationTitle: publicationTitle)
     }
 
     private func syncLibrary(identifier: LibraryIdentifier, libraryName: String, item: RItem, database: Realm) throws {

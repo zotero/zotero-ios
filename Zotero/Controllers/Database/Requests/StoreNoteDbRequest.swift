@@ -30,7 +30,7 @@ struct StoreNoteDbRequest: DbRequest {
         }
 
         guard field.value != self.note.text else { return }
-        item.setTitle(self.note.title)
+        item.set(title: self.note.title)
         item.changedFields.insert(.fields)
         field.value = self.note.text
         field.changed = true

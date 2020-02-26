@@ -130,9 +130,19 @@ class RItem: Object {
 
     // MARK: - Helpers
 
-    func setTitle(_ title: String) {
+    func set(title: String) {
         self.baseTitle = title
         self.updateDerivedTitles()
+    }
+
+    func set(publicationTitle: String?) {
+        self.publicationTitle = publicationTitle?.lowercased()
+        self.hasPublicationTitle = publicationTitle?.isEmpty == false
+    }
+
+    func set(publisher: String?) {
+        self.publisher = publisher?.lowercased()
+        self.hasPublisher = publisher?.isEmpty == false
     }
 
     func updateDerivedTitles() {
@@ -144,7 +154,7 @@ class RItem: Object {
     }
 
     private func updateSortTitle() {
-        let newTitle = self.displayTitle.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\""))
+        let newTitle = self.displayTitle.trimmingCharacters(in: CharacterSet(charactersIn: "[]'\"")).lowercased()
         if newTitle != self.sortTitle {
             self.sortTitle = newTitle
         }
@@ -165,7 +175,7 @@ class RItem: Object {
     }
 
     func updateCreatorSummary() {
-        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))
+        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))?.lowercased()
         self.hasCreatorSummary = self.creatorSummary != nil
     }
 }

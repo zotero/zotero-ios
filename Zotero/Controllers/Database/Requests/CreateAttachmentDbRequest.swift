@@ -26,7 +26,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.rawType = ItemTypes.attachment
         item.localizedType = self.localizedType
         item.syncState = .synced
-        item.setTitle(self.attachment.title)
+        item.set(title: self.attachment.title)
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         item.changedFields = [.type, .fields, .tags]
         item.attachmentNeedsSync = true
