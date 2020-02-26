@@ -382,7 +382,7 @@ class ItemsViewController: UIViewController {
         controller.searchBar.placeholder = "Search Items"
         controller.obscuresBackgroundDuringPresentation = false
         self.navigationItem.searchController = controller
-
+        self.navigationItem.hidesSearchBarWhenScrolling = false
 
         controller.searchBar.rx.text.observeOn(MainScheduler.instance)
                                     .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
