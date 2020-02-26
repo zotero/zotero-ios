@@ -630,7 +630,7 @@ final class SyncController: SynchronizationController {
     private func createDownloadActions(for libraryId: LibraryIdentifier, versions: Versions) -> [Action] {
         return [.syncSettings(libraryId, versions.settings),
                 .syncVersions(libraryId, .collection, versions.collections),
-                .syncVersions(libraryId, .search, versions.searches),
+//                .syncVersions(libraryId, .search, versions.searches),
                 .syncVersions(libraryId, .item, versions.items),
                 .syncVersions(libraryId, .trash, versions.trash),
                 .syncDeletions(libraryId, versions.deletions)]
