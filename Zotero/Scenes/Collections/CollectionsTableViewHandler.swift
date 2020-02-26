@@ -92,7 +92,8 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let collection = self?.dataSource.itemIdentifier(for: indexPath) else { return nil }
+            guard let collection = self?.dataSource.itemIdentifier(for: indexPath),
+                  collection.type.isCollection else { return nil }
             return self?.createContextMenu(for: collection)
         }
     }
