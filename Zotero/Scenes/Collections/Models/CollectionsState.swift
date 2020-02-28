@@ -34,14 +34,16 @@ struct CollectionsState: ViewModelState {
     var collections: [Collection]
     var editingData: CollectionStateEditingData?
     var changes: Changes
+    var collectionsToken: NotificationToken?
+    var searchesToken: NotificationToken?
     var error: CollectionsError?
 
-    init(library: Library, collections: [Collection], error: CollectionsError?) {
+    init(library: Library) {
         self.library = library
-        self.selectedCollection = collections.first ?? Collection(custom: .all)
-        self.collections = collections
+        self.selectedCollection = Collection(custom: .all)
+        self.collections = []
         self.changes = []
-        self.error = error
+        self.error = nil
     }
 
     mutating func cleanup() {

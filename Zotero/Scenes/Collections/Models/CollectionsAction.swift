@@ -15,4 +15,5 @@ enum CollectionsAction {
     case startEditing(CollectionsState.EditingType)
     case select(Collection)
     case updateCollections([Collection])
+    case loadData
 }

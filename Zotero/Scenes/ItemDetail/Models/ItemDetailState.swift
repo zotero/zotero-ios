@@ -230,6 +230,12 @@ struct ItemDetailState: ViewModelState {
         }
     }
 
+    enum OpenAttachmentAction {
+        case pdf(URL)
+        case unknownFile(URL)
+        case web(URL)
+    }
+
     let libraryId: LibraryIdentifier
     let userId: Int
     let metadataEditable: Bool
@@ -246,6 +252,7 @@ struct ItemDetailState: ViewModelState {
     var downloadError: [String: ItemDetailError]
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
+    var openAttachmentAction: OpenAttachmentAction?
 
     init(type: DetailType, userId: Int, data: Data, error: ItemDetailError? = nil) {
         self.changes = []
@@ -294,5 +301,6 @@ struct ItemDetailState: ViewModelState {
         self.changes = []
         self.error = nil
         self.diff = nil
+        self.openAttachmentAction = nil
     }
 }

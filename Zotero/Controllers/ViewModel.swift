@@ -6,7 +6,9 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import Combine
 import Foundation
+import SwiftUI
 
 import RxCocoa
 import RxSwift
@@ -28,9 +30,11 @@ extension ViewModelActionHandler {
     }
 }
 
-class ViewModel<Handler: ViewModelActionHandler> {
+class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
     private let handler: Handler
     private let disposeBag: DisposeBag
+
+    let objectWillChange: ObservableObjectPublisher
 
     private(set) var stateObservable: BehaviorRelay<Handler.State>
     var state: Handler.State {
@@ -40,6 +44,7 @@ class ViewModel<Handler: ViewModelActionHandler> {
     init(initialState: Handler.State, handler: Handler) {
         self.handler = handler
         self.stateObservable = BehaviorRelay(value: initialState)
+        self.objectWillChange = ObservableObjectPublisher()
         self.disposeBag = DisposeBag()
     }
 
@@ -47,10 +52,19 @@ class ViewModel<Handler: ViewModelActionHandler> {
         self.handler.process(action: action, in: self)
     }
 
+    func binding<Value>(keyPath: Swift.KeyPath<Handler.State, Value>, action: @escaping (Value) -> Handler.Action) -> Binding<Value> {
+        return Binding(get: { [unowned self] in
+            return self.state[keyPath: keyPath]
+        }, set: { [unowned self] value in
+            self.process(action: action(value))
+        })
+    }
+
     fileprivate func update(action: (inout Handler.State) -> Void) {
         var state = self.state
         state.cleanup()
         action(&state)
         self.stateObservable.accept(state)
+        self.objectWillChange.send()
     }
 }
