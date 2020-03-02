@@ -80,6 +80,9 @@ class CollectionsViewController: UIViewController {
             self.tableViewHandler.update(collections: state.collections, animated: true)
             self.collectionsChanged?(state.collections)
         }
+        if state.changes.contains(.itemCount) {
+            self.tableViewHandler.update(collections: state.collections, animated: false)
+        }
         if state.changes.contains(.selection) {
             self.navigationDelegate?.show(collection: state.selectedCollection, in: state.library)
         }

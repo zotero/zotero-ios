@@ -33,6 +33,12 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.askForSyncPermission = value
             }
 
+        case .setShowCollectionItemCounts(let value):
+            Defaults.shared.showCollectionItemCount = value
+            self.update(viewModel: viewModel) { state in
+                state.showCollectionItemCount = value
+            }
+
         case .startSync:
             self.syncScheduler.requestFullSync()
 

@@ -23,6 +23,9 @@ class Defaults {
     @UserDefault(key: "TranslatorsNeedUpdate", defaultValue: true)
     var updateTranslators: Bool
 
+    @UserDefault(key: "ShowCollectionItemCount", defaultValue: false)
+    var showCollectionItemCount
+
     func reset() {
         self.askForSyncPermission = false
         self.username = ""

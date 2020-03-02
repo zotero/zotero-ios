@@ -81,7 +81,7 @@ class CreatorSummaryFormatterSpec: QuickSpec {
         }
     }
 
-    private func createCreators(type: String, namePresentation: ItemDetailStore.State.Creator.NamePresentation, count: Int) -> [RCreator] {
+    private func createCreators(type: String, namePresentation: ItemDetailState.Creator.NamePresentation, count: Int) -> [RCreator] {
         return (0..<count).map { index in
             let creator = RCreator()
             creator.rawType = type

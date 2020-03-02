@@ -108,27 +108,13 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let unarchived = sortTypeData.flatMap({ try? PropertyListDecoder().decode(ItemsSortType.self, from: $0) })
         let sortType = unarchived ?? .default
 
-        let request = self.request(for: viewModel.state.type, libraryId: viewModel.state.library.identifier)
+        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
         let results = try? self.dbStorage.createCoordinator().perform(request: request).sorted(by: sortType.descriptors)
 
         self.update(viewModel: viewModel) { state in
             state.results = results
             state.sortType = sortType
             state.error = (results == nil ? .dataLoading : nil)
-        }
-    }
-
-    private func request(for type: ItemsState.ItemType, libraryId: LibraryIdentifier) -> ReadItemsDbRequest {
-        switch type {
-        case .all:
-            return ReadItemsDbRequest(libraryId: libraryId, collectionKey: nil, parentKey: "", trash: false)
-        case .trash:
-            return ReadItemsDbRequest(libraryId: libraryId, collectionKey: nil, parentKey: nil, trash: true)
-        case .publications, .search:
-            // TODO: - implement publications and search fetching
-            return ReadItemsDbRequest(libraryId: .group(-1), collectionKey: nil, parentKey: nil, trash: true)
-        case .collection(let key, _):
-            return ReadItemsDbRequest(libraryId: libraryId, collectionKey: key, parentKey: "", trash: false)
         }
     }
 

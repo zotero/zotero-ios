@@ -53,6 +53,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     let key: String
     let name: String
     let level: Int
+    var itemCount: Int
 
     var iconName: String {
         switch self.type {
@@ -75,6 +76,7 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.key = object.key
         self.name = object.name
         self.level = level
+        self.itemCount = object.items.count
     }
 
     init(object: RSearch) {
@@ -82,9 +84,11 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.key = object.key
         self.name = object.name
         self.level = 0
+        self.itemCount = 0
     }
 
-    init(custom type: CustomType) {
+    init(custom type: CustomType, itemCount: Int = 0) {
+        self.itemCount = itemCount
         self.type = .custom(type)
         self.key = ""
         self.level = 0
@@ -95,6 +99,15 @@ struct Collection: Identifiable, Equatable, Hashable {
             self.name = "My Publications"
         case .trash:
             self.name = "Trash"
+        }
+    }
+
+    func isCustom(type: CustomType) -> Bool {
+        switch self.type {
+        case .custom(let customType):
+            return type == customType
+        case .collection, .search:
+            return false
         }
     }
 }

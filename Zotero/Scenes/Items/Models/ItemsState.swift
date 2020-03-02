@@ -22,31 +22,7 @@ struct ItemsState: ViewModelState {
         static let sortType = Changes(rawValue: 1 << 3)
     }
 
-    enum ItemType {
-        case all, trash, publications
-        case collection(String, String) // Key, Title
-        case search(String, String) // Key, Title
-
-        var collectionKey: String? {
-            switch self {
-            case .collection(let key, _):
-                return key
-            default:
-                return nil
-            }
-        }
-
-        var isTrash: Bool {
-            switch self {
-            case .trash:
-                return true
-            default:
-                return false
-            }
-        }
-    }
-
-    let type: ItemType
+    let type: ItemFetchType
     let library: Library
 
     var sortType: ItemsSortType
@@ -58,7 +34,7 @@ struct ItemsState: ViewModelState {
     var error: ItemsError?
     var itemDuplication: RItem?
 
-    init(type: ItemType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
+    init(type: ItemFetchType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
         self.library = library
         self.results = results

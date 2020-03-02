@@ -10,6 +10,7 @@ import Foundation
 
 enum SettingsAction {
     case setAskForSyncPermission(Bool)
+    case setShowCollectionItemCounts(Bool)
     case startSync
     case cancelSync
     case logout

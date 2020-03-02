@@ -9,9 +9,13 @@
 import SwiftUI
 
 struct GeneralSettingsView: View {
+    @EnvironmentObject private(set) var viewModel: ViewModel<SettingsActionHandler>
+
     var body: some View {
         Form {
-            EmptyView()
+            SettingsToggleRow(title: "Item count",
+                              subtitle: "Show item count for all collections.",
+                              value: self.viewModel.binding(keyPath: \.showCollectionItemCount, action: { .setShowCollectionItemCounts($0) }))
         }
     }
 }

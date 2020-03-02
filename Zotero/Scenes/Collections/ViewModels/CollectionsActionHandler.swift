@@ -62,16 +62,18 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
         let libraryId = viewModel.state.library.identifier
-        let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId)
-        let searchesRequest = ReadSearchesDbRequest(libraryId: libraryId)
 
         do {
-            let collections = try self.dbStorage.createCoordinator().perform(request: collectionsRequest)
-            let searches = try self.dbStorage.createCoordinator().perform(request: searchesRequest)
+            let coordinator = try self.dbStorage.createCoordinator()
+            let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
+            let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
+            let allItems = try coordinator.perform(request: ReadItemsDbRequest(type: .all, libraryId: libraryId))
+            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
+            let trashItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
 
-            var allCollections: [Collection] = [Collection(custom: .all),
-                                                Collection(custom: .publications),
-                                                Collection(custom: .trash)]
+            var allCollections: [Collection] = [Collection(custom: .all, itemCount: allItems.count),
+                                                Collection(custom: .publications, itemCount: publicationItemsCount),
+                                                Collection(custom: .trash, itemCount: trashItemsCount)]
             allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections) +
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
@@ -98,6 +100,20 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 }
             })
 
+            let itemsToken = allItems.observe { [weak viewModel] changes in
+                guard let viewModel = viewModel else { return }
+                switch changes {
+                case .update(let objects, let deletions, let insertions, _):
+                    // If we show item counts for all collections, we need to track all changes (insertion, deletion, collection change).
+                    // Otherwise we need to track only insertions and deletions for all items.
+                    if Defaults.shared.showCollectionItemCount || (!insertions.isEmpty || !deletions.isEmpty) {
+                        self.updateItemCounts(in: viewModel, allItemCount: objects.count)
+                    }
+                case .initial: break
+                case .error: break
+                }
+            }
+
             self.update(viewModel: viewModel) { state in
                 state.collections = allCollections
                 if !allCollections.isEmpty {
@@ -105,12 +121,63 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 }
                 state.collectionsToken = collectionsToken
                 state.searchesToken = searchesToken
+                state.itemsToken = itemsToken
             }
         } catch let error {
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .dataLoading
             }
+        }
+    }
+
+    private func updateItemCounts(in viewModel: ViewModel<CollectionsActionHandler>, allItemCount: Int) {
+        if !Defaults.shared.showCollectionItemCount {
+            self.update(viewModel: viewModel) { state in
+                if let index = state.collections.firstIndex(where: { $0.isCustom(type: .all) }) {
+                    state.collections[index].itemCount = allItemCount
+                    state.changes.insert(.itemCount)
+                }
+            }
+            return
+        }
+
+        self.reloadCounts(in: viewModel, allItemCount: allItemCount)
+    }
+
+    private func reloadCounts(in viewModel: ViewModel<CollectionsActionHandler>, allItemCount: Int) {
+        let libraryId = viewModel.state.library.identifier
+        var allCollections = viewModel.state.collections
+
+        do {
+            let coordinator = try self.dbStorage.createCoordinator()
+
+            for (index, collection) in viewModel.state.collections.enumerated() {
+                let count: Int
+                switch collection.type {
+                case .collection:
+                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .collection(collection.key, collection.name), libraryId: libraryId)).count
+                case .search:
+                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .search(collection.key, collection.name), libraryId: libraryId)).count
+                case .custom(let type):
+                    switch type {
+                    case .all:
+                        count = allItemCount
+                    case .publications:
+                        count = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
+                    case .trash:
+                        count = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
+                    }
+                }
+                allCollections[index].itemCount = count
+            }
+
+            self.update(viewModel: viewModel) { state in
+                state.collections = allCollections
+                state.changes.insert(.itemCount)
+            }
+        } catch let error {
+            DDLogError("CollectionsActionHandlers: can't load counts - \(error)")
         }
     }
 

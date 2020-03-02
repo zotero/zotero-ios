@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionRow: View {
-    static let levelOffset: CGFloat = 20.0
+    static let levelOffset: CGFloat = 40.0
     let data: Collection
 
     var body: some View {
@@ -21,17 +21,48 @@ struct CollectionRow: View {
                 Text(self.data.name)
                     .foregroundColor(.black)
                     .lineLimit(1)
+
+                Spacer()
+
+                if self.shouldShowCount {
+                    Text("\(self.data.itemCount)")
+                        .font(.caption)
+                        .padding(.vertical, 2)
+                        .padding(.horizontal, 8)
+                        .background(
+                            Rectangle()
+                                .foregroundColor(Color.gray.opacity(0.2))
+                                .cornerRadius(proxy.size.height/2.0)
+                        )
+                }
             }
-            .frame(width: proxy.size.width, alignment: .leading)
             .padding(.vertical, 10)
             .padding(.leading, self.inset(for: self.data.level))
+            .padding(.trailing, 8)
+            .frame(width: proxy.size.width, alignment: .leading)
+        }
+    }
+
+    private var shouldShowCount: Bool {
+        if self.data.itemCount == 0 {
+            return false
+        }
+
+        if Defaults.shared.showCollectionItemCount {
+            return true
+        }
+
+        switch self.data.type {
+        case .custom(let type):
+            return type == .all
+        case .collection, .search:
+            return false
         }
     }
 
     private func inset(for level: Int) -> CGFloat {
-        // When this view is embedded in UIHostingController and used in UITableViewCell, the padding is actually just 10, so we multiply it by 2
-        // to get the same offset as separator
-        let offset = CollectionRow.levelOffset * 2
+        // When this view is embedded in UIHostingController and used in UITableViewCell, the padding value is halved for unknown reason.
+        let offset = CollectionRow.levelOffset
         return offset + (CGFloat(level) * offset)
     }
 }
@@ -40,10 +71,10 @@ struct CollectionRow: View {
 
 struct CollectionRow_Previews: PreviewProvider {
     static var previews: some View {
-        Group {
-            CollectionRow(data: Collection(custom: .all))
-            CollectionRow(data: Collection(custom: .publications))
-            CollectionRow(data: Collection(custom: .trash))
+        List {
+            CollectionRow(data: Collection(custom: .all, itemCount: 48))
+            CollectionRow(data: Collection(custom: .publications, itemCount: 2))
+            CollectionRow(data: Collection(custom: .trash, itemCount: 4))
         }
     }
 }

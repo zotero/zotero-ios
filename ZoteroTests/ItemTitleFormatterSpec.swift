@@ -526,7 +526,7 @@ class ItemTitleFormatterSpec: QuickSpec {
         }
     }
 
-    private func createCreators(type: String, namePresentation: ItemDetailStore.State.Creator.NamePresentation, count: Int, item: RItem) -> [RCreator] {
+    private func createCreators(type: String, namePresentation: ItemDetailState.Creator.NamePresentation, count: Int, item: RItem) -> [RCreator] {
         return (0..<count).map { index in
             let creator = RCreator()
             creator.rawType = type

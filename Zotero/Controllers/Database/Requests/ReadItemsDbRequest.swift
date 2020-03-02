@@ -15,8 +15,36 @@ struct ReadItemsDbRequest: DbResponseRequest {
 
     let libraryId: LibraryIdentifier
     let collectionKey: String?
-    let parentKey: String?
+    let withoutParentOnly: Bool
     let trash: Bool
+
+    init(type: ItemFetchType, libraryId: LibraryIdentifier) {
+        self.libraryId = libraryId
+
+        // TODO: - implement publications and search fetching
+        switch type {
+        case .all:
+            self.collectionKey = nil
+            self.trash = false
+            self.withoutParentOnly = true
+        case .trash:
+            self.collectionKey = nil
+            self.trash = true
+            self.withoutParentOnly = false
+        case .search:
+            self.collectionKey = nil
+            self.trash = false
+            self.withoutParentOnly = true
+        case .publications:
+            self.collectionKey = "unknown"
+            self.trash = false
+            self.withoutParentOnly = true
+        case .collection(let key, _):
+            self.collectionKey = key
+            self.trash = false
+            self.withoutParentOnly = true
+        }
+    }
 
     var needsWrite: Bool { return false }
 
@@ -27,12 +55,8 @@ struct ReadItemsDbRequest: DbResponseRequest {
         if let collectionId = self.collectionKey {
             predicates.append(NSPredicate(format: "ANY collections.key = %@", collectionId))
         }
-        if let key = self.parentKey {
-            if key.isEmpty {
-                predicates.append(NSPredicate(format: "parent = nil"))
-            } else {
-                predicates.append(NSPredicate(format: "parent.key = %@", key))
-            }
+        if self.withoutParentOnly {
+            predicates.append(NSPredicate(format: "parent = nil"))
         }
         predicates.append(NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: self.trash)))
 

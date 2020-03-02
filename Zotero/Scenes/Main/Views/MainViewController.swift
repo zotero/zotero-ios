@@ -122,7 +122,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     }
 
     private func itemsViewController(collection: Collection, library: Library, dbStorage: DbStorage) -> ItemsViewController {
-        let type = self.itemType(from: collection)
+        let type = self.fetchType(from: collection)
         let state = ItemsState(type: type, library: library, results: nil, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
@@ -216,7 +216,7 @@ class MainViewController: UISplitViewController, ConflictPresenter {
 
     // MARK: - Helpers
 
-    private func itemType(from collection: Collection) -> ItemsState.ItemType {
+    private func fetchType(from collection: Collection) -> ItemFetchType {
         switch collection.type {
         case .collection:
             return .collection(collection.key, collection.name)

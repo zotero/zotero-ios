@@ -387,6 +387,8 @@
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
+		B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
+		B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3DCDE172408EDFB0039ED0D /* LibrariesActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE162408EDFB0039ED0D /* LibrariesActionHandler.swift */; };
 		B3DCDE1A2408EE160039ED0D /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE182408EE160039ED0D /* LibraryRow.swift */; };
 		B3DCDE1B2408EE160039ED0D /* LibrariesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE192408EE160039ED0D /* LibrariesView.swift */; };
@@ -768,6 +770,7 @@
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
+		B3D3F78A240D222C0018F354 /* ItemFetchType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFetchType.swift; sourceTree = "<group>"; };
 		B3DCDE162408EDFB0039ED0D /* LibrariesActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesActionHandler.swift; sourceTree = "<group>"; };
 		B3DCDE182408EE160039ED0D /* LibraryRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
 		B3DCDE192408EE160039ED0D /* LibrariesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesView.swift; sourceTree = "<group>"; };
@@ -1190,6 +1193,7 @@
 				B305653D23FC051E003304F2 /* SyncableObject.swift */,
 				B305655F23FC051E003304F2 /* Tag.swift */,
 				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
+				B3D3F78A240D222C0018F354 /* ItemFetchType.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2268,6 +2272,7 @@
 				B305660123FC051E003304F2 /* BackgroundUpload.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
+				B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift in Sources */,
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,
@@ -2411,6 +2416,7 @@
 				B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */,
 				B305674723FC09AF003304F2 /* SchemaResponse.swift in Sources */,
 				B305674923FC09AF003304F2 /* RTag.swift in Sources */,
+				B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */,
 				B305674A23FC09AF003304F2 /* RCollection.swift in Sources */,
 				B305674B23FC09AF003304F2 /* RCreator.swift in Sources */,
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
