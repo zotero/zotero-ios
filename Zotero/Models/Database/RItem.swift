@@ -58,6 +58,8 @@ class RItem: Object {
     @objc dynamic var sortTitle: String = ""
     /// Summary of creators collected from linked RCreators
     @objc dynamic var creatorSummary: String? = nil
+    /// Summary of creators used for sorting
+    @objc dynamic var sortCreatorSummary: String? = nil
     /// Indicates whether this instance has nonempty creatorSummary, helper variable, used in sorting so that we can show items with summaries
     /// first and sort them in any order we want (asd/desc) and all other items later
     @objc dynamic var hasCreatorSummary: Bool = false
@@ -175,7 +177,8 @@ class RItem: Object {
     }
 
     func updateCreatorSummary() {
-        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))?.lowercased()
+        self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))
+        self.sortCreatorSummary = self.creatorSummary?.lowercased()
         self.hasCreatorSummary = self.creatorSummary != nil
     }
 }

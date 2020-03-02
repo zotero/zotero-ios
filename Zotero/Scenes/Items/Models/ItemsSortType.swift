@@ -57,7 +57,7 @@ extension ItemsSortType: SortType {
             return [SortDescriptor(keyPath: "sortTitle", ascending: self.ascending)]
         case .creator:
             return [SortDescriptor(keyPath: "hasCreatorSummary", ascending: false),
-                    SortDescriptor(keyPath: "creatorSummary", ascending: self.ascending),
+                    SortDescriptor(keyPath: "sortCreatorSummary", ascending: self.ascending),
                     SortDescriptor(keyPath: "sortTitle", ascending: true)]
         case .date:
             return [SortDescriptor(keyPath: "hasParsedDate", ascending: false),
