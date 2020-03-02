@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionRow: View {
-    static let levelOffset: CGFloat = 40.0
+    static let levelOffset: CGFloat = 20.0
     let data: Collection
 
     var body: some View {
@@ -61,7 +61,6 @@ struct CollectionRow: View {
     }
 
     private func inset(for level: Int) -> CGFloat {
-        // When this view is embedded in UIHostingController and used in UITableViewCell, the padding value is halved for unknown reason.
         let offset = CollectionRow.levelOffset
         return offset + (CGFloat(level) * offset)
     }
