@@ -110,9 +110,8 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func perform(overlayAction: ItemsActionSheetView.Action) {
+    private func perform(overlayAction: ItemsActionSheetViewController.Action) {
         switch overlayAction {
-        case .dismiss: break
         case .showAttachmentPicker:
             self.showAttachmentPicker()
         case .showItemCreation:
@@ -122,8 +121,6 @@ class ItemsViewController: UIViewController {
         case .showSortTypePicker:
             self.presentSortTypePicker()
         }
-
-        self.dismiss(animated: true, completion: nil)
     }
 
     private func startObserving(results: Results<RItem>) {
@@ -291,16 +288,17 @@ class ItemsViewController: UIViewController {
     }
 
     private func showActionSheet() {
-        let view = ItemsActionSheetView()
-        self.overlaySink = view.actionObserver.sink { [weak self] action in
-            self?.perform(overlayAction: action)
-        }
+        let controller = ItemsActionSheetViewController(viewModel: self.viewModel, topOffset: self.view.safeAreaInsets.top)
+        controller.actionObserver
+                  .observeOn(MainScheduler.instance)
+                  .subscribe(onNext: { [weak self] action in
+                      self?.perform(overlayAction: action)
+                  })
+                  .disposed(by: self.disposeBag)
 
-        let controller = UIHostingController(rootView: view.environmentObject(self.viewModel))
-        controller.view.backgroundColor = .clear
         controller.modalPresentationStyle = .overCurrentContext
         controller.modalTransitionStyle = .crossDissolve
-        self.present(controller, animated: true, completion: nil)
+        self.navigationController?.present(controller, animated: true, completion: nil)
     }
 
     // MARK: - Setups

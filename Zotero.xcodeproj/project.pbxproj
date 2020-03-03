@@ -387,6 +387,8 @@
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
+		B3C8C164240E8ACF00379A26 /* ItemsActionSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C8C162240E8ACF00379A26 /* ItemsActionSheetViewController.swift */; };
+		B3C8C165240E8ACF00379A26 /* ItemsActionSheetViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C8C163240E8ACF00379A26 /* ItemsActionSheetViewController.xib */; };
 		B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3DCDE172408EDFB0039ED0D /* LibrariesActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE162408EDFB0039ED0D /* LibrariesActionHandler.swift */; };
@@ -398,7 +400,6 @@
 		B3DCDE2B2408EE870039ED0D /* CollectionsPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE202408EE870039ED0D /* CollectionsPickerView.swift */; };
 		B3DCDE2C2408EE870039ED0D /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3DCDE212408EE870039ED0D /* ItemsViewController.xib */; };
 		B3DCDE2D2408EE870039ED0D /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE222408EE870039ED0D /* ItemsViewController.swift */; };
-		B3DCDE2E2408EE870039ED0D /* ItemsActionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE232408EE870039ED0D /* ItemsActionSheetView.swift */; };
 		B3DCDE2F2408EE870039ED0D /* ItemSortTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE242408EE870039ED0D /* ItemSortTypePickerView.swift */; };
 		B3DCDE302408EE870039ED0D /* TagCirclesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE252408EE870039ED0D /* TagCirclesView.swift */; };
 		B3DCDE312408EE870039ED0D /* ItemsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDE272408EE870039ED0D /* ItemsActionHandler.swift */; };
@@ -770,6 +771,8 @@
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
+		B3C8C162240E8ACF00379A26 /* ItemsActionSheetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsActionSheetViewController.swift; sourceTree = "<group>"; };
+		B3C8C163240E8ACF00379A26 /* ItemsActionSheetViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsActionSheetViewController.xib; sourceTree = "<group>"; };
 		B3D3F78A240D222C0018F354 /* ItemFetchType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFetchType.swift; sourceTree = "<group>"; };
 		B3DCDE162408EDFB0039ED0D /* LibrariesActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesActionHandler.swift; sourceTree = "<group>"; };
 		B3DCDE182408EE160039ED0D /* LibraryRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
@@ -780,7 +783,6 @@
 		B3DCDE202408EE870039ED0D /* CollectionsPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsPickerView.swift; sourceTree = "<group>"; };
 		B3DCDE212408EE870039ED0D /* ItemsViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
 		B3DCDE222408EE870039ED0D /* ItemsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
-		B3DCDE232408EE870039ED0D /* ItemsActionSheetView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsActionSheetView.swift; sourceTree = "<group>"; };
 		B3DCDE242408EE870039ED0D /* ItemSortTypePickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemSortTypePickerView.swift; sourceTree = "<group>"; };
 		B3DCDE252408EE870039ED0D /* TagCirclesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagCirclesView.swift; sourceTree = "<group>"; };
 		B3DCDE272408EE870039ED0D /* ItemsActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsActionHandler.swift; sourceTree = "<group>"; };
@@ -1446,7 +1448,8 @@
 				B3DCDE202408EE870039ED0D /* CollectionsPickerView.swift */,
 				B3DCDE1F2408EE870039ED0D /* ItemCell.swift */,
 				B3DCDE1E2408EE870039ED0D /* ItemRow.swift */,
-				B3DCDE232408EE870039ED0D /* ItemsActionSheetView.swift */,
+				B3C8C162240E8ACF00379A26 /* ItemsActionSheetViewController.swift */,
+				B3C8C163240E8ACF00379A26 /* ItemsActionSheetViewController.xib */,
 				B3DCDE242408EE870039ED0D /* ItemSortTypePickerView.swift */,
 				B3DCDE1D2408EE870039ED0D /* ItemsTableViewHandler.swift */,
 				B3DCDE222408EE870039ED0D /* ItemsViewController.swift */,
@@ -1897,6 +1900,7 @@
 				B3DCDE582408F13D0039ED0D /* ItemDetailAttachmentCell.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
+				B3C8C165240E8ACF00379A26 /* ItemsActionSheetViewController.xib in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3DCDE5B2408F13D0039ED0D /* ItemDetailSectionView.xib in Resources */,
 				B3DCDE9A2408F1FB0039ED0D /* CollectionsViewController.xib in Resources */,
@@ -2194,7 +2198,6 @@
 				B3DCDE782408F13D0039ED0D /* ItemDetailAction.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
-				B3DCDE2E2408EE870039ED0D /* ItemsActionSheetView.swift in Sources */,
 				B3DCDE5E2408F13D0039ED0D /* ItemDetailTagCell.swift in Sources */,
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
@@ -2332,6 +2335,7 @@
 				B3DCDF2D24094A3B0039ED0D /* TagPickerActionHandler.swift in Sources */,
 				B39D335E23FFD48C00EF2ACB /* ItemsState.swift in Sources */,
 				B30565C023FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
+				B3C8C164240E8ACF00379A26 /* ItemsActionSheetViewController.swift in Sources */,
 				B30566AA23FC051F003304F2 /* FieldKeys.swift in Sources */,
 				B305667923FC051F003304F2 /* UserDefault+PropertyWrapper.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
