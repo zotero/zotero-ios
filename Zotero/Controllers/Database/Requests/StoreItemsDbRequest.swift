@@ -118,7 +118,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
                (key == FieldKeys.note && item.rawType == ItemTypes.note) {
                 var title = value
                 if key == FieldKeys.note {
-                    title = title.strippedHtml ?? title
+                    title = title.notePreview ?? title
                 }
                 item.baseTitle = title
             } else if key == FieldKeys.date {

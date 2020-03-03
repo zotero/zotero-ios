@@ -10,7 +10,7 @@ import Foundation
 import CoreServices
 import CocoaLumberjack
 
-private let stripCharacters = CharacterSet(charactersIn: "\t\r\n")
+private let stripCharacters = CharacterSet(charactersIn: "\t")
 
 extension String {
     var extensionFromMimeType: String? {
@@ -21,7 +21,9 @@ extension String {
         return ext.takeRetainedValue() as String
     }
 
-    var strippedHtml: String? {
+    /// Creates preview/title for a Note. Strips HTML characters (by using NSAttributedString). Removes any tabs for readability.
+    /// Returns only first line from whole string and limits it to 200 characters.
+    var notePreview: String? {
         guard !self.isEmpty else { return nil }
 
         guard let data = self.data(using: .utf8) else {
@@ -31,10 +33,12 @@ extension String {
 
         do {
             let attributed = try NSAttributedString(data: data,
-                                                    options: [.documentType : NSAttributedString.DocumentType.html],
+                                                    options: [.documentType : NSAttributedString.DocumentType.html,
+                                                              .characterEncoding: String.Encoding.utf8.rawValue],
                                                     documentAttributes: nil)
-            var stripped = attributed.string.trimmingCharacters(in: CharacterSet.whitespaces)
-                                            .components(separatedBy: stripCharacters).joined()
+            var stripped = attributed.string.components(separatedBy: stripCharacters).joined()
+                                            .trimmingCharacters(in: CharacterSet.whitespaces)
+            stripped = stripped.components(separatedBy: .newlines).first ?? stripped
             if stripped.count > 200 {
                 let endIndex = stripped.index(stripped.startIndex, offsetBy: 200)
                 stripped = String(stripped[stripped.startIndex..<endIndex])

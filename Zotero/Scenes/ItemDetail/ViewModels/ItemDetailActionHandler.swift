@@ -261,7 +261,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             var note = key.flatMap({ key in state.data.notes.first(where: { $0.key == key }) }) ?? Note(key: KeyGenerator.newKey, text: "")
             note.text = text
-            note.title = text.strippedHtml ?? ""
+            note.title = text.notePreview ?? ""
 
             if !state.isEditing {
                 // Note was edited outside of editing mode, so it needs to be saved immediately

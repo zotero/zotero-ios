@@ -19,7 +19,7 @@ struct Note: Identifiable, Equatable {
 
     init(key: String, text: String) {
         self.key = key
-        self.title = text.strippedHtml ?? text
+        self.title = text.notePreview ?? text
         self.text = text
     }
 
