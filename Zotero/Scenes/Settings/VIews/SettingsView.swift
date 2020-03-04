@@ -22,8 +22,9 @@ struct SettingsView: View {
                 .navigationBarTitle("Settings", displayMode: .inline)
                 .navigationBarItems(leading: Button(action: self.closeAction, label: { Text("Close") }))
 
-            Color.gray.opacity(0.5)
+            ProfileView()
         }
+        .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
             self.viewModel.process(action: .startObservingSyncChanges)
         }
@@ -33,9 +34,12 @@ struct SettingsView: View {
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let state = SettingsState(isSyncing: false)
+        let state = SettingsState(isSyncing: false,
+                                  isLogging: controllers.debugLogging.isLoggingInProgress,
+                                  isWaitingOnTermination: controllers.debugLogging.isWaitingOnTermination)
         let handler = SettingsActionHandler(sessionController: controllers.sessionController,
-                                            syncScheduler: controllers.userControllers!.syncScheduler)
+                                            syncScheduler: controllers.userControllers!.syncScheduler,
+                                            debugLogging: controllers.debugLogging)
         return SettingsView(closeAction: {}).environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

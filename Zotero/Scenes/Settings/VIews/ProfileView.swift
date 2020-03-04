@@ -37,9 +37,12 @@ struct ProfileView: View {
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
-        let state = SettingsState(isSyncing: false)
+        let state = SettingsState(isSyncing: false,
+                                  isLogging: controllers.debugLogging.isLoggingInProgress,
+                                  isWaitingOnTermination: controllers.debugLogging.isWaitingOnTermination)
         let handler = SettingsActionHandler(sessionController: controllers.sessionController,
-                                            syncScheduler: controllers.userControllers!.syncScheduler)
+                                            syncScheduler: controllers.userControllers!.syncScheduler,
+                                            debugLogging: controllers.debugLogging)
         return ProfileView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

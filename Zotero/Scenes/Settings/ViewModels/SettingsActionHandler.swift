@@ -17,11 +17,13 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
+    private unowned let debugLogging: DebugLogging
     private let disposeBag: DisposeBag
 
-    init(sessionController: SessionController, syncScheduler: SynchronizationScheduler) {
+    init(sessionController: SessionController, syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging) {
         self.sessionController = sessionController
         self.syncScheduler = syncScheduler
+        self.debugLogging = debugLogging
         self.disposeBag = DisposeBag()
     }
 
@@ -50,6 +52,25 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
         case .startObservingSyncChanges:
             self.observeSyncChanges(in: viewModel)
+
+        case .startImmediateLogging:
+            self.debugLogging.start(type: .immediate)
+            self.update(viewModel: viewModel) { state in
+                state.isLogging = true
+            }
+
+        case .startLoggingOnNextLaunch:
+            self.debugLogging.start(type: .nextLaunch)
+            self.update(viewModel: viewModel) { state in
+                state.isWaitingOnTermination = true
+            }
+
+        case .stopLogging:
+            self.debugLogging.stop()
+            self.update(viewModel: viewModel) { state in
+                state.isLogging = false
+                state.isWaitingOnTermination = false
+            }
         }
     }
 

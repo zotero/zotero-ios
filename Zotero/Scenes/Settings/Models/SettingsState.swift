@@ -12,9 +12,13 @@ struct SettingsState: ViewModelState {
     var askForSyncPermission: Bool
     var showCollectionItemCount: Bool
     var isSyncing: Bool
+    var isLogging: Bool
+    var isWaitingOnTermination: Bool
 
-    init(isSyncing: Bool) {
+    init(isSyncing: Bool, isLogging: Bool, isWaitingOnTermination: Bool) {
         self.isSyncing = isSyncing
+        self.isLogging = isLogging
+        self.isWaitingOnTermination = isWaitingOnTermination
         self.askForSyncPermission = Defaults.shared.askForSyncPermission
         self.showCollectionItemCount = Defaults.shared.showCollectionItemCount
     }

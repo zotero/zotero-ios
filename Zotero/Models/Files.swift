@@ -83,6 +83,10 @@ struct Files {
                         name: streamUrl.lastPathComponent,
                         ext: streamUrl.pathExtension)
     }
+
+    static var debugLogDirectory: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["debug_logs"], name: "", ext: "")
+    }
 }
 
 extension LibraryIdentifier {

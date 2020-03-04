@@ -16,6 +16,35 @@ import SwiftUI
 import PSPDFKit
 #endif
 
+extension UIViewController: DebugLoggingCoordinator {
+    func share(logs: [URL], completed: @escaping () -> Void) {
+        let controller = UIActivityViewController(activityItems: logs, applicationActivities: nil)
+        controller.popoverPresentationController?.sourceView = self.view
+        controller.completionWithItemsHandler = { (_, _, _, _) in
+            completed()
+        }
+
+        var topController = self
+        while topController.presentedViewController != nil {
+            topController = topController.presentedViewController!
+        }
+        topController.present(controller, animated: true, completion: nil)
+    }
+
+    func show(error: DebugLogging.Error) {
+        let message: String
+        switch error {
+        case .start:
+            message = "Can't start debug logging."
+        case .contentReading:
+            message = "Can't find log files."
+        }
+        let controller = UIAlertController(title: "Debugging error", message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: "Ok", style: .cancel, handler: nil))
+        self.present(controller, animated: true, completion: nil)
+    }
+}
+
 class AppDelegate: UIResponder {
     var window: UIWindow?
     var controllers: Controllers!
@@ -35,6 +64,8 @@ class AppDelegate: UIResponder {
 
             self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)
         }
+
+        self.controllers.debugLogging.coordinator = self.window?.rootViewController
     }
 
     private func show(viewController: UIViewController?, animated: Bool = false) {
@@ -91,6 +122,7 @@ extension AppDelegate: UIApplicationDelegate {
         self.controllers = Controllers()
         self.controllers.crashReporter.start()
         self.controllers.crashReporter.processPendingReports()
+        self.controllers.debugLogging.startLoggingOnLaunchIfNeeded()
 
         self.setupObservers()
 

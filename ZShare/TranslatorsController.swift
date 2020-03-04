@@ -78,7 +78,7 @@ class TranslatorsController {
                 try self.fileStorage.remove(translators)
             }
             // Unzipping creates a folder inside our unpacked folder, find File and move its contents to translators
-            let unpackedFiles = try self.fileStorage.contentsOfDirectory(at: unpacked)
+            let unpackedFiles: [File] = try self.fileStorage.contentsOfDirectory(at: unpacked)
             if unpackedFiles.isEmpty {
                 throw Error.unpackedFileEmpty
             } else if unpackedFiles.count == 1, let content = unpackedFiles.first {
@@ -115,7 +115,7 @@ class TranslatorsController {
 
     private func loadTranslators(from file: File) -> Single<[TranslatorInfo]> {
         do {
-            let contents = try self.fileStorage.contentsOfDirectory(at: file)
+            let contents: [File] = try self.fileStorage.contentsOfDirectory(at: file)
             let translators = contents.compactMap({ self.loadTranslatorInfo(from: $0) })
             return Single.just(translators)
         } catch let error {

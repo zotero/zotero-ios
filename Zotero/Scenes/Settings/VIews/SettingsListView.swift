@@ -25,6 +25,10 @@ struct SettingsListView: View {
                 NavigationLink(destination: SyncSettingsView()) {
                     Text("Sync")
                 }
+
+                NavigationLink(destination: DebugSettingsView()) {
+                    Text("Debug")
+                }
             }
         }
     }

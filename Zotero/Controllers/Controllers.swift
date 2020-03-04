@@ -21,6 +21,7 @@ class Controllers {
     let schemaController: SchemaController
     let dragDropController: DragDropController
     let crashReporter: CrashReporter
+    let debugLogging: DebugLogging
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -45,6 +46,7 @@ class Controllers {
         self.schemaController = schemaController
         self.dragDropController = DragDropController()
         self.crashReporter = crashReporter
+        self.debugLogging = DebugLogging(fileStorage: fileStorage)
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)

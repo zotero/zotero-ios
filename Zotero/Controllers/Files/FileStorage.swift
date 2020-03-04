@@ -17,6 +17,7 @@ protocol FileStorage: class {
     func has(_ file: File) -> Bool
     func size(of file: File) -> UInt64
     func createDirectories(for file: File) throws
+    func contentsOfDirectory(at file: File) throws -> [URL]
     func contentsOfDirectory(at file: File) throws -> [File]
 }
 
@@ -33,6 +34,13 @@ class FileStorageController: FileStorage {
     }
 
     func remove(_ file: File) throws {
+        if file.name == "" && file.ext == "" {
+            // This File instance is a directory, remove its contents.
+            let contents = try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [])
+            for url in contents {
+                try self.fileManager.removeItem(at: url)
+            }
+        }
         try self.fileManager.removeItem(at: file.createUrl())
     }
 
@@ -64,10 +72,11 @@ class FileStorageController: FileStorage {
         try self.fileManager.createMissingDirectories(for: relativeUrl)
     }
 
+    func contentsOfDirectory(at file: File) throws -> [URL] {
+        return try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [])
+    }
+
     func contentsOfDirectory(at file: File) throws -> [File] {
-        return try self.fileManager.contentsOfDirectory(at: file.createUrl(),
-                                                        includingPropertiesForKeys: [],
-                                                        options: [])
-                                   .map { Files.file(from: $0) }
+        return try self.contentsOfDirectory(at: file).map { Files.file(from: $0) }
     }
 }
