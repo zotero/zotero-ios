@@ -39,6 +39,19 @@ protocol ApiRequest {
     var parameters: [String: Any]? { get }
     var encoding: ApiParameterEncoding { get }
     var headers: [String: String]? { get }
+
+    func redact(parameters: [String: Any]) -> [String: Any]
+    func redact(response: String) -> String
+}
+
+extension ApiRequest {
+    func redact(parameters: [String: Any]) -> [String: Any] {
+        return parameters
+    }
+
+    func redact(response: String) -> String {
+        return response
+    }
 }
 
 protocol ApiResponseRequest: ApiRequest {

@@ -80,30 +80,26 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<Element> {
         return self.asObservable()
                    .do(onNext: { response in
-                       #if DEBUG
-                       self.logRequest(request, url: convertible.urlRequest?.url)
-                       self.logResponse(data: response.1, error: nil)
-                       #endif
+                       self.log(request: request, url: convertible.urlRequest?.url)
+                       self.log(responseData: response.1, error: nil, for: request)
                    }, onError: { error in
-                       #if DEBUG
-                       self.logRequest(request, url: convertible.urlRequest?.url)
-                       self.logResponse(data: nil, error: error)
-                       #endif
+                       self.log(request: request, url: convertible.urlRequest?.url)
+                       self.log(responseData: nil, error: error, for: request)
                    })
     }
 
-    private func logRequest(_ request: ApiRequest, url: URL?) {
+    private func log(request: ApiRequest, url: URL?) {
         DDLogInfo("--- API request '\(type(of: request))' ---")
         DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
         if request.httpMethod != .get, let params = request.parameters {
-            DDLogInfo("\(params)")
+            DDLogInfo("\(request.redact(parameters: params))")
         }
     }
 
-    private func logResponse(data: Data?, error: Error?) {
-        if let data = data {
-            let string = String(data: data, encoding: .utf8)
-            DDLogInfo("\(string ?? "")")
+    private func log(responseData data: Data?, error: Error?, for request: ApiRequest) {
+        if let data = data,
+           let string = String(data: data, encoding: .utf8) {
+            DDLogInfo("\(request.redact(response: string))")
         } else if let error = error {
             DDLogInfo("\(error)")
         }

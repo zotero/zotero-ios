@@ -40,4 +40,14 @@ struct LoginRequest: ApiResponseRequest {
                                       "groups": ["all": ["library": true,
                                                          "write": true]]]]
     }
+
+    func redact(parameters: [String : Any]) -> [String : Any] {
+        var redacted = parameters
+        redacted["password"] = "<redacted>"
+        return redacted
+    }
+
+    func redact(response: String) -> String {
+        return KeysResponseProcessor.redact(response: response)
+    }
 }

@@ -90,7 +90,6 @@ class ZoteroApiClient: ApiClient {
                 return Disposables.create()
             }
 
-
             let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
 
             let method = HTTPMethod(rawValue: request.httpMethod.rawValue)!
