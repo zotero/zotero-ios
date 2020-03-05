@@ -26,9 +26,10 @@ class DebugLogFormatter: NSObject, DDLogFormatter {
     func format(message logMessage: DDLogMessage) -> String? {
         let level = self.logLevelString(from: logMessage.flag)
         let timeDiff = self.lastTimestamp.flatMap({ logMessage.timestamp.timeIntervalSince($0) }) ?? 0
+        let formattedTimeDiff = String(format: "%.8f", timeDiff)
         self.lastTimestamp = logMessage.timestamp
-        return "\(level) \(self.targetName)(+\(timeDiff)): \(logMessage.message)." +
-               " [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? "");" +
+        return "\(level) \(self.targetName)(+\(formattedTimeDiff)): \(logMessage.message)." +
+               " [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); " +
                "\(logMessage.queueLabel); \(logMessage.timestamp.timeIntervalSince1970)]"
     }
 
