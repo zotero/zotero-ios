@@ -1,1 +1,0 @@
-../node_modules/react-virtualized/dist/umd/react-virtualized.js

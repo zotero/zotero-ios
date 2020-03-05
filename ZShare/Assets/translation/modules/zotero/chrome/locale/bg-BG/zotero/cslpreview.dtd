@@ -1,9 +1,0 @@
-<!ENTITY styles.preview "Зотеро визуализация на стилове за цитиране и библиография">
-
-<!ENTITY styles.preview.citationFormat "Формат на цитиране:">
-<!ENTITY styles.preview.citationFormat.all "всички">
-<!ENTITY styles.preview.citationFormat.author "автор">
-<!ENTITY styles.preview.citationFormat.authorDate "автор-дата">
-<!ENTITY styles.preview.citationFormat.label "етикет">
-<!ENTITY styles.preview.citationFormat.note "бележка">
-<!ENTITY styles.preview.citationFormat.numeric "числено">

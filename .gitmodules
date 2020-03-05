@@ -1,0 +1,3 @@
+[submodule "ZShare/Assets/translation/modules/zotero"]
+	path = ZShare/Assets/translation/modules/zotero
+	url = git@github.com:zotero/zotero.git

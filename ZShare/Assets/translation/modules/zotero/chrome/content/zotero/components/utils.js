@@ -1,5 +1,0 @@
-const noop = () => {};
-
-export {
-	noop
-};
