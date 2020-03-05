@@ -33,6 +33,7 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var webView: WKWebView!
     // Variables
     private var dbStorage: DbStorage!
+    private var debugLogging: DebugLogging!
     private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
     // Constants
@@ -42,6 +43,9 @@ class ShareViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        self.debugLogging = DebugLogging(fileStorage: FileStorageController())
+        self.debugLogging.startLoggingOnLaunchIfNeeded()
 
         let session = SessionController(secureStorage: KeychainSecureStorage()).sessionData
 
@@ -106,7 +110,9 @@ class ShareViewController: UIViewController {
 
     @objc private func cancel() {
         self.store.cancel()
-        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        self.debugLogging.storeLogs { [unowned self] in
+            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        }
     }
 
     private func update(to state: ExtensionStore.State) {
@@ -139,7 +145,9 @@ class ShareViewController: UIViewController {
     private func updateUploadState(_ state: ExtensionStore.State.Submission) {
         switch state {
         case .ready:
-            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            self.debugLogging.storeLogs { [unowned self] in
+                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
             return
         case .preparing:
             self.prepareForUpload()

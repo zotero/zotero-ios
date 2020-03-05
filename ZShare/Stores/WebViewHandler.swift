@@ -9,6 +9,7 @@
 import Foundation
 import WebKit
 
+import CocoaLumberjack
 import RxSwift
 
 class WebViewHandler: NSObject {
@@ -281,7 +282,7 @@ extension WebViewHandler: WKScriptMessageHandler {
                 self.observable.on(.next(.selectItem(data)))
             }
         case .log:
-            NSLog("JSLOG: \(message.body)")
+            DDLogInfo("JSLOG: \(message.body)")
         }
     }
 }

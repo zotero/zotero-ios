@@ -361,6 +361,7 @@
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
 		B33A7496240FE0C1003B322B /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7495240FE0C1003B322B /* DebugLogging.swift */; };
 		B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7497240FE63F003B322B /* DebugSettingsView.swift */; };
+		B3416A422410E530005817C2 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7495240FE0C1003B322B /* DebugLogging.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
@@ -2538,6 +2539,7 @@
 				B305672923FC0911003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B305670D23FC08BC003304F2 /* ReadItemsDbRequest.swift in Sources */,
 				B30566F723FC0855003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
+				B3416A422410E530005817C2 /* DebugLogging.swift in Sources */,
 				B30566F323FC084C003304F2 /* CreateCollectionDbRequest.swift in Sources */,
 				B305670723FC08AF003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B305673523FC092C003304F2 /* SyncVersionsSyncAction.swift in Sources */,

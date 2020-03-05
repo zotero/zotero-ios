@@ -11,6 +11,7 @@ import Foundation
 import MobileCoreServices
 import WebKit
 
+import CocoaLumberjack
 import RxSwift
 import RxAlamofire
 
@@ -491,7 +492,7 @@ class ExtensionStore {
                                   parameters: params,
                                   headers: ["If-None-Match": "*"]) { [weak self] error in
                                       if let error = error {
-                                          // TODO: - Log error
+                                          DDLogError("ExtensionStore: can't start upload - \(error)")
                                           self?.state.submission = .error(.unknown)
                                       } else {
                                           // The uploader is set to nil so that the URLSession delegate no longer exists for the share extension. This

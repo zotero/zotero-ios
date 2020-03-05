@@ -62,14 +62,13 @@ struct SettingsActionHandler: ViewModelActionHandler {
         case .startLoggingOnNextLaunch:
             self.debugLogging.start(type: .nextLaunch)
             self.update(viewModel: viewModel) { state in
-                state.isWaitingOnTermination = true
+                state.isLogging = true
             }
 
         case .stopLogging:
             self.debugLogging.stop()
             self.update(viewModel: viewModel) { state in
                 state.isLogging = false
-                state.isWaitingOnTermination = false
             }
         }
     }

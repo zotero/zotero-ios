@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RxSwift
 import Zip
 
@@ -119,7 +120,7 @@ class TranslatorsController {
             let translators = contents.compactMap({ self.loadTranslatorInfo(from: $0) })
             return Single.just(translators)
         } catch let error {
-            NSLog("TranslatorController: error - \(error)")
+            DDLogError("TranslatorController: error - \(error)")
             return Single.error(error)
         }
     }
@@ -142,7 +143,7 @@ class TranslatorsController {
 
             return metadata
         } catch let error {
-            NSLog("TranslatorsController: cant' read data from \(file.createUrl()) - \(error)")
+            DDLogError("TranslatorsController: cant' read data from \(file.createUrl()) - \(error)")
             return nil
         }
     }

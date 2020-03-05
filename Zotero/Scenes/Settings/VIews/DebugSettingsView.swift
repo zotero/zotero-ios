@@ -14,25 +14,20 @@ struct DebugSettingsView: View {
     var body: some View {
         Form {
             Section {
-                if self.viewModel.state.isWaitingOnTermination {
-                    Text("Please force-quit the app now. Once you start it again, debug logging will start automatically.")
-                } else if self.viewModel.state.isLogging {
+                if self.viewModel.state.isLogging {
                     Button(action: {
                         self.viewModel.process(action: .stopLogging)
                     }) {
                         Text("Stop logging")
                     }
+
+                    Text("If you want to debug an issue on launch, kill the app and start it again.")
+                    Text("If you want to debug share extension issue, open the share extension.")
                 } else {
                     Button(action: {
                         self.viewModel.process(action: .startImmediateLogging)
                     }) {
-                        Text("Start logging now")
-                    }
-
-                    Button(action: {
-                        self.viewModel.process(action: .startLoggingOnNextLaunch)
-                    }) {
-                        Text("Start logging on next launch")
+                        Text("Start logging")
                     }
                 }
             }

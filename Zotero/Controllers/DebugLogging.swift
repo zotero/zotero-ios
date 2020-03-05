@@ -16,45 +16,35 @@ protocol DebugLoggingCoordinator: class {
 }
 
 class DebugLogFormatter: NSObject, DDLogFormatter {
+    private let targetName: String
     private var lastTimestamp: Date?
 
+    init(targetName: String) {
+        self.targetName = targetName
+    }
+
     func format(message logMessage: DDLogMessage) -> String? {
-        let schema = self.schema(from: logMessage.file)
-        let level = self.logLevelString(from: logMessage.level)
+        let level = self.logLevelString(from: logMessage.flag)
         let timeDiff = self.lastTimestamp.flatMap({ logMessage.timestamp.timeIntervalSince($0) }) ?? 0
         self.lastTimestamp = logMessage.timestamp
-        return "\(level) \(schema)(+\(timeDiff)): \(logMessage.message)." +
-               " [\(logMessage.queueLabel); \(logMessage.fileName); " +
-               "\(logMessage.function ?? ""); \(logMessage.line); \(logMessage.timestamp.timeIntervalSince1970)]"
+        return "\(level) \(self.targetName)(+\(timeDiff)): \(logMessage.message)." +
+               " [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? "");" +
+               "\(logMessage.queueLabel); \(logMessage.timestamp.timeIntervalSince1970)]"
     }
 
-    private func schema(from file: String) -> String {
-        if file.contains("Zotero/") {
-            return "Zotero"
-        } else if file.contains("ZShare/") {
-            return "ZShare"
-        } else {
-            return "Unknown"
-        }
-    }
-
-    private func logLevelString(from level: DDLogLevel) -> String {
+    private func logLevelString(from level: DDLogFlag) -> String {
         switch level {
-        case .all:
-            return "[ALL]"
         case .debug:
             return "[DEBUG]"
         case .error:
             return "[ERROR]"
         case .info:
             return "[INFO]"
-        case .off:
-            return "[OFF]"
         case .verbose:
             return "[VERBOSE]"
         case .warning:
             return "[WARNING]"
-        @unknown default:
+        default:
             return "[UNKNOWN]"
         }
     }
@@ -72,8 +62,8 @@ class DebugLogging {
 
     private let fileStorage: FileStorage
 
-    @UserDefault(key: "StartLoggingOnNextLaunch", defaultValue: false)
-    private var startLoggingOnLaunch: Bool
+    @UserDefault(key: "IsDebugLoggingEnabled", defaultValue: false)
+    private(set) var isEnabled: Bool
     private var logger: DDFileLogger?
     weak var coordinator: DebugLoggingCoordinator?
 
@@ -81,24 +71,16 @@ class DebugLogging {
         self.fileStorage = fileStorage
     }
 
-    var isLoggingInProgress: Bool {
-        return self.logger != nil
-    }
-
-    var isWaitingOnTermination: Bool {
-        return self.startLoggingOnLaunch
-    }
-
     func start(type: LoggingType) {
-        switch type {
-        case .immediate:
+        self.isEnabled = true
+        if type == .immediate {
             self.startLogger()
-        case .nextLaunch:
-            self.startLoggingOnLaunch = true
         }
     }
 
     func stop() {
+        self.isEnabled = false
+
         guard let logger = self.logger else { return }
 
         DDLog.remove(logger)
@@ -109,6 +91,19 @@ class DebugLogging {
                 self?.shareLogs()
             }
         }
+    }
+
+    func startLoggingOnLaunchIfNeeded() {
+        guard self.isEnabled else { return }
+        self.startLogger()
+    }
+
+    func storeLogs(completed: @escaping () -> Void) {
+        guard let logger = self.logger else {
+            completed()
+            return
+        }
+        logger.rollLogFile(withCompletion: completed)
     }
 
     private func shareLogs() {
@@ -132,12 +127,6 @@ class DebugLogging {
         }
     }
 
-    func startLoggingOnLaunchIfNeeded() {
-        guard self.startLoggingOnLaunch else { return }
-        self.startLoggingOnLaunch = false
-        self.startLogger()
-    }
-
     private func startLogger() {
         do {
             let file = Files.debugLogDirectory
@@ -148,7 +137,10 @@ class DebugLogging {
 
             let manager = DDLogFileManagerDefault(logsDirectory: file.createUrl().path)
             let logger = DDFileLogger(logFileManager: manager)
-            logger.logFormatter = DebugLogFormatter()
+            let targetName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
+            logger.logFormatter = DebugLogFormatter(targetName: targetName)
+            logger.doNotReuseLogFiles = true
+            logger.rollingFrequency = 60
 
             DDLog.add(logger)
             self.logger = logger

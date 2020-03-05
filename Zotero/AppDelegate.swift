@@ -19,7 +19,6 @@ import PSPDFKit
 extension UIViewController: DebugLoggingCoordinator {
     func share(logs: [URL], completed: @escaping () -> Void) {
         let controller = UIActivityViewController(activityItems: logs, applicationActivities: nil)
-        controller.popoverPresentationController?.sourceView = self.view
         controller.completionWithItemsHandler = { (_, _, _, _) in
             completed()
         }
@@ -28,6 +27,7 @@ extension UIViewController: DebugLoggingCoordinator {
         while topController.presentedViewController != nil {
             topController = topController.presentedViewController!
         }
+        controller.popoverPresentationController?.sourceView = topController.view
         topController.present(controller, animated: true, completion: nil)
     }
 

@@ -9,6 +9,8 @@
 import Combine
 import Foundation
 
+import CocoaLumberjack
+
 class AllCollectionPickerStore: ObservableObject {
     struct State {
         var libraries: [Library]
@@ -42,7 +44,7 @@ class AllCollectionPickerStore: ObservableObject {
             self.state.libraries = libraries
             self.state.collections = collections
         } catch let error {
-            // TODO: - Add logging
+            DDLogError("AllCollectionPickerStore: can't load collections - \(error)")
         }
     }
 }
