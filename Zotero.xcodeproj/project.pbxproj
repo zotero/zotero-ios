@@ -72,7 +72,6 @@
 		B30565E923FC051E003304F2 /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646E23FC051E003304F2 /* SessionController.swift */; };
 		B30565EA23FC051E003304F2 /* SecureStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646F23FC051E003304F2 /* SecureStorage.swift */; };
 		B30565EB23FC051E003304F2 /* Controllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305647023FC051E003304F2 /* Controllers.swift */; };
-		B30565F823FC051E003304F2 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305647E23FC051E003304F2 /* CrashReporter.swift */; };
 		B30565F923FC051E003304F2 /* DragDropController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305647F23FC051E003304F2 /* DragDropController.swift */; };
 		B30565FA23FC051E003304F2 /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648023FC051E003304F2 /* KeyGenerator.swift */; };
 		B30565FB23FC051E003304F2 /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648123FC051E003304F2 /* Formatter.swift */; };
@@ -359,13 +358,16 @@
 		B3127E77240816A800BE30B2 /* LibrariesAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3127E76240816A800BE30B2 /* LibrariesAction.swift */; };
 		B3127E79240816D200BE30B2 /* LibrariesError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3127E78240816D200BE30B2 /* LibrariesError.swift */; };
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
-		B33A7496240FE0C1003B322B /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7495240FE0C1003B322B /* DebugLogging.swift */; };
 		B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7497240FE63F003B322B /* DebugSettingsView.swift */; };
-		B3416A422410E530005817C2 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7495240FE0C1003B322B /* DebugLogging.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
 		B355B8FF239951E800E837B9 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
+		B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
+		B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE224165DEE00E06153 /* CrashReporter.swift */; };
+		B357DEE624165E0B00E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
+		B357DEE7241661E300E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
+		B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
 		B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B37147402382B51000AC8758 /* CrashReporter.framework */; };
 		B37E8FF82406ADF900E48E1E /* ItemsSortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37E8FF72406ADF900E48E1E /* ItemsSortType.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
@@ -607,7 +609,6 @@
 		B305646E23FC051E003304F2 /* SessionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionController.swift; sourceTree = "<group>"; };
 		B305646F23FC051E003304F2 /* SecureStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
 		B305647023FC051E003304F2 /* Controllers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Controllers.swift; sourceTree = "<group>"; };
-		B305647E23FC051E003304F2 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		B305647F23FC051E003304F2 /* DragDropController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DragDropController.swift; sourceTree = "<group>"; };
 		B305648023FC051E003304F2 /* KeyGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyGenerator.swift; sourceTree = "<group>"; };
 		B305648123FC051E003304F2 /* Formatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Formatter.swift; sourceTree = "<group>"; };
@@ -746,12 +747,14 @@
 		B3127E76240816A800BE30B2 /* LibrariesAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesAction.swift; sourceTree = "<group>"; };
 		B3127E78240816D200BE30B2 /* LibrariesError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrariesError.swift; sourceTree = "<group>"; };
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
-		B33A7495240FE0C1003B322B /* DebugLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogging.swift; sourceTree = "<group>"; };
 		B33A7497240FE63F003B322B /* DebugSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingsView.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
 		B355B8FE239951E800E837B9 /* translation */ = {isa = PBXFileReference; lastKnownFileType = folder; path = translation; sourceTree = "<group>"; };
+		B357DEE124165DEE00E06153 /* DebugLogging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DebugLogging.swift; sourceTree = "<group>"; };
+		B357DEE224165DEE00E06153 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
+		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
 		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		B37E8FF72406ADF900E48E1E /* ItemsSortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsSortType.swift; sourceTree = "<group>"; };
@@ -949,15 +952,16 @@
 			children = (
 				B305648523FC051E003304F2 /* API */,
 				B305643623FC051E003304F2 /* Database */,
+				B357DEE024165DEE00E06153 /* Debugging */,
 				B305648223FC051E003304F2 /* Files */,
 				B305649F23FC051E003304F2 /* Sync */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
-				B305647E23FC051E003304F2 /* CrashReporter.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
 				B305648123FC051E003304F2 /* Formatter.swift */,
 				B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */,
 				B305648023FC051E003304F2 /* KeyGenerator.swift */,
+				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
 				B305649E23FC051E003304F2 /* Licenses.swift */,
 				B305646C23FC051E003304F2 /* ObjectChangeObserver.swift */,
 				B305646A23FC051E003304F2 /* RItemLocaleController.swift */,
@@ -965,8 +969,6 @@
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
 				B39984C5240577A200149606 /* ViewModel.swift */,
-				B33A7495240FE0C1003B322B /* DebugLogging.swift */,
-				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -1384,6 +1386,16 @@
 				B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */,
 			);
 			path = DbRequests;
+			sourceTree = "<group>";
+		};
+		B357DEE024165DEE00E06153 /* Debugging */ = {
+			isa = PBXGroup;
+			children = (
+				B357DEE224165DEE00E06153 /* CrashReporter.swift */,
+				B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */,
+				B357DEE124165DEE00E06153 /* DebugLogging.swift */,
+			);
+			path = Debugging;
 			sourceTree = "<group>";
 		};
 		B39D335623FFD10A00EF2ACB /* Items */ = {
@@ -2105,7 +2117,6 @@
 				B305661023FC051E003304F2 /* SchemaRequest.swift in Sources */,
 				B37E8FF82406ADF900E48E1E /* ItemsSortType.swift in Sources */,
 				B305660223FC051E003304F2 /* ApiClient.swift in Sources */,
-				B33A7496240FE0C1003B322B /* DebugLogging.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B3DCDEB02408F2650039ED0D /* CollectionsActionHandler.swift in Sources */,
 				B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */,
@@ -2273,6 +2284,7 @@
 				B3DCDE7F2408F1850039ED0D /* ItemDetailTableViewHandler.swift in Sources */,
 				B30565CC23FC051E003304F2 /* StoreSettingsDbRequest.swift in Sources */,
 				B305661123FC051E003304F2 /* AuthorizeUploadRequest.swift in Sources */,
+				B357DEE624165E0B00E06153 /* DebugLogFormatter.swift in Sources */,
 				B30565DF23FC051E003304F2 /* ReadSearchesDbRequest.swift in Sources */,
 				B30566AD23FC051F003304F2 /* ItemResponse.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
@@ -2297,6 +2309,7 @@
 				B3DCDE662408F13D0039ED0D /* ItemDetailNoteCell.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
+				B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
@@ -2323,6 +2336,7 @@
 				B305661A23FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift in Sources */,
 				B30566A423FC051F003304F2 /* UpdatableObject.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
+				B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
 				B3127E77240816A800BE30B2 /* LibrariesAction.swift in Sources */,
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
@@ -2339,7 +2353,6 @@
 				B3DCDE9D2408F1FB0039ED0D /* CollectionsTableViewHandler.swift in Sources */,
 				B305661923FC051E003304F2 /* SyncDeletionsSyncAction.swift in Sources */,
 				B30565B323FC051E003304F2 /* DeleteObjectsDbRequest.swift in Sources */,
-				B30565F823FC051E003304F2 /* CrashReporter.swift in Sources */,
 				B3DCDEE52408F8960039ED0D /* LoginState.swift in Sources */,
 				B305662323FC051F003304F2 /* MarkForResyncSyncAction.swift in Sources */,
 				B30565D423FC051E003304F2 /* ReadItemsDbRequest.swift in Sources */,
@@ -2520,6 +2533,7 @@
 				B305672123FC08EF003304F2 /* RealmDbStorage.swift in Sources */,
 				B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */,
 				B305673A23FC0938003304F2 /* SyncScheduler.swift in Sources */,
+				B357DEE7241661E300E06153 /* DebugLogging.swift in Sources */,
 				B305673123FC0923003304F2 /* SubmitUpdateSyncAction.swift in Sources */,
 				B305670523FC08A8003304F2 /* ReadAllGroupsDbRequest.swift in Sources */,
 				B305677C23FC0C7B003304F2 /* KeyGenerator.swift in Sources */,
@@ -2527,6 +2541,7 @@
 				B305670E23FC08BF003304F2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B305671223FC08C7003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */,
 				B30566E423FC081A003304F2 /* LoginRequest.swift in Sources */,
+				B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */,
 				B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */,
 				B30566EF23FC0833003304F2 /* FileRequest.swift in Sources */,
 				B30566F223FC084A003304F2 /* CreateAttachmentDbRequest.swift in Sources */,
@@ -2545,7 +2560,6 @@
 				B305672923FC0911003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B305670D23FC08BC003304F2 /* ReadItemsDbRequest.swift in Sources */,
 				B30566F723FC0855003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
-				B3416A422410E530005817C2 /* DebugLogging.swift in Sources */,
 				B30566F323FC084C003304F2 /* CreateCollectionDbRequest.swift in Sources */,
 				B305670723FC08AF003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B305673523FC092C003304F2 /* SyncVersionsSyncAction.swift in Sources */,
@@ -2747,6 +2761,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3034,6 +3049,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (

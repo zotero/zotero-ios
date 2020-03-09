@@ -32,11 +32,16 @@ class Controllers {
         configuration.sharedContainerIdentifier = AppGroup.identifier
 
         let fileStorage = FileStorageController()
+        let debugLogging = DebugLogging(fileStorage: fileStorage)
+        // Start logging as soon as possible to catch all errors/warnings.
+        debugLogging.startLoggingOnLaunchIfNeeded()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+        let crashReporter = CrashReporter(apiClient: apiClient)
+        // Start crash reporter as soon as possible to catch all crashes.
+        crashReporter.start()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage)
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
-        let crashReporter = CrashReporter(apiClient: apiClient)
         let schemaController = SchemaController()
 
         self.sessionController = sessionController
@@ -46,7 +51,7 @@ class Controllers {
         self.schemaController = schemaController
         self.dragDropController = DragDropController()
         self.crashReporter = crashReporter
-        self.debugLogging = DebugLogging(fileStorage: fileStorage)
+        self.debugLogging = debugLogging
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)
