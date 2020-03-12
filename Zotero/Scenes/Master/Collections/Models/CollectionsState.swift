@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-typealias CollectionStateEditingData = (String?, String, Collection?)
+typealias CollectionStateEditingData = (key: String?, name: String, parent: Collection?)
 
 struct CollectionsState: ViewModelState {
     struct Changes: OptionSet {

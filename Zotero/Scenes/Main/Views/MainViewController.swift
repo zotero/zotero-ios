@@ -18,14 +18,18 @@ fileprivate enum PrimaryColumnState {
     case dynamic(CGFloat)
 }
 
+protocol MainCoordinatorDelegate: class {
+    func show(collection: Collection, in library: Library)
+    func collectionsChanged(to collections: [Collection])
+}
+
 class MainViewController: UISplitViewController, ConflictPresenter {
     // Constants
     private static let minPrimaryColumnWidth: CGFloat = 300
     private static let maxPrimaryColumnFraction: CGFloat = 0.4
     private static let averageCharacterWidth: CGFloat = 10.0
-    private let defaultLibrary: Library
-    private let defaultCollection: Collection
     private let controllers: Controllers
+    private let defaultCollection: Collection
     private let disposeBag: DisposeBag
     // Variables
     private var didAppear: Bool = false
@@ -37,16 +41,14 @@ class MainViewController: UISplitViewController, ConflictPresenter {
     private var maxSize: CGFloat {
         return max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
     }
+    private var masterCoordinator: MasterCoordinator?
+    private var detailCoordinator: DetailCoordinator?
 
     // MARK: - Lifecycle
 
     init(controllers: Controllers) {
-        self.defaultLibrary = Library(identifier: .custom(.myLibrary),
-                                      name: RCustomLibraryType.myLibrary.libraryName,
-                                      metadataEditable: true,
-                                      filesEditable: true)
-        self.defaultCollection = Collection(custom: .all)
         self.controllers = controllers
+        self.defaultCollection = Collection(custom: .all)
         self.disposeBag = DisposeBag()
 
         super.init(nibName: nil, bundle: nil)
@@ -85,82 +87,6 @@ class MainViewController: UISplitViewController, ConflictPresenter {
             }
             self.setPrimaryColumn(state: .dynamic(self.currentLandscapePrimaryColumnFraction), animated: false)
         }, completion: nil)
-    }
-
-    // MARK: - Navigation
-
-    private func showCollections(for library: Library) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let controller = self.collectionsViewController(library: library, dbStorage: dbStorage)
-        (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
-    }
-
-    private func presentSettings() {
-        guard let syncScheduler = self.controllers.userControllers?.syncScheduler else { return }
-        let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
-                                  isLogging: self.controllers.debugLogging.isEnabled)
-        let handler = SettingsActionHandler(sessionController: self.controllers.sessionController,
-                                            syncScheduler: syncScheduler,
-                                            debugLogging: self.controllers.debugLogging)
-        let view = SettingsView(closeAction: { [weak self] in
-            self?.dismiss(animated: true, completion: nil)
-        })
-        .environmentObject(ViewModel(initialState: state, handler: handler))
-
-        let controller = UIHostingController(rootView: view)
-        controller.isModalInPresentation = true
-        self.present(controller, animated: true, completion: nil)
-    }
-
-    private func showSecondaryController(_ controller: UIViewController) {
-        switch UIDevice.current.userInterfaceIdiom {
-        case .pad:
-            let navigationController = self.viewControllers.last as? UINavigationController
-            navigationController?.setToolbarHidden(true, animated: false)
-            navigationController?.setViewControllers([controller], animated: false)
-        case .phone:
-            (self.viewControllers.first as? UINavigationController)?.pushViewController(controller, animated: true)
-        default: break
-        }
-    }
-
-    private func itemsViewController(collection: Collection, library: Library, dbStorage: DbStorage) -> ItemsViewController {
-        let type = self.fetchType(from: collection)
-        let state = ItemsState(type: type, library: library, results: nil, sortType: .default, error: nil)
-        let handler = ItemsActionHandler(dbStorage: dbStorage,
-                                         fileStorage: self.controllers.fileStorage,
-                                         schemaController: self.controllers.schemaController)
-        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers)
-    }
-
-    private func collectionsViewController(library: Library, dbStorage: DbStorage) -> CollectionsViewController {
-        let handler = CollectionsActionHandler(dbStorage: dbStorage)
-        let state = CollectionsState(library: library)
-        let controller = CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                                   dbStorage: dbStorage,
-                                                   dragDropController: self.controllers.dragDropController)
-        controller.collectionsChanged = { [weak self] collections in
-            guard let `self` = self else { return }
-            self.reloadPrimaryColumnFraction(with: collections, animated: self.didAppear)
-        }
-        controller.navigationDelegate = self
-        return controller
-    }
-
-    private func librariesViewController(dbStorage: DbStorage) -> UIViewController {
-        let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        // SWIFTUI BUG: - We need to call loadData here, because when we do so in `onAppear` in SwiftuI `View` we'll crash when data change
-        // instantly in that function. If we delay it, the user will see unwanted animation of data on screen. If we call it here, data
-        // is available immediately.
-        viewModel.process(action: .loadData)
-        let librariesView = LibrariesView(pushCollectionsView: { [weak self] library in
-                                             self?.showCollections(for: library)
-                                          },
-                                          showSettings: { [weak self] in
-                                              self?.presentSettings()
-                                          })
-                                    .environmentObject(viewModel)
-        return UIHostingController(rootView: librariesView)
     }
 
     // MARK: - Dynamic primary column
@@ -217,38 +143,24 @@ class MainViewController: UISplitViewController, ConflictPresenter {
         return min(1.0, (actualWidth / self.maxSize))
     }
 
-    // MARK: - Helpers
-
-    private func fetchType(from collection: Collection) -> ItemFetchType {
-        switch collection.type {
-        case .collection:
-            return .collection(collection.key, collection.name)
-        case .search:
-            return .search(collection.key, collection.name)
-        case .custom(let customType):
-            switch customType {
-            case .all:
-                return .all
-            case .publications:
-                return .publications
-            case .trash:
-                return .trash
-            }
-        }
-    }
-
     // MARK: - Setups
 
     private func setupControllers() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let librariesController = self.librariesViewController(dbStorage: dbStorage)
-        let collectionsController = self.collectionsViewController(library: self.defaultLibrary, dbStorage: dbStorage)
-        let itemsController = self.itemsViewController(collection: self.defaultCollection, library: self.defaultLibrary, dbStorage: dbStorage)
-
         let masterController = UINavigationController()
-        masterController.viewControllers = [librariesController, collectionsController]
-        let detailController = UINavigationController(rootViewController: itemsController)
+        let detailController = UINavigationController()
+
+        let masterCoordinator = MasterCoordinator(navigationController: masterController,
+                                                  mainCoordinatorDelegate: self,
+                                                  controllers: self.controllers)
+        masterCoordinator.start(animated: false)
+        self.masterCoordinator = masterCoordinator
+
+        let detailCoordinator = DetailCoordinator(library: masterCoordinator.defaultLibrary,
+                                                  collection: self.defaultCollection,
+                                                  navigationController: detailController,
+                                                  controllers: self.controllers)
+        detailCoordinator.start(animated: false)
+        self.detailCoordinator = detailCoordinator
 
         self.viewControllers = [masterController, detailController]
 
@@ -266,10 +178,18 @@ extension MainViewController: UISplitViewControllerDelegate {
     }
 }
 
-extension MainViewController: CollectionsNavigationDelegate {
+extension MainViewController: MainCoordinatorDelegate {
     func show(collection: Collection, in library: Library) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let controller = self.itemsViewController(collection: collection, library: library, dbStorage: dbStorage)
-        self.showSecondaryController(controller)
+        guard let navigationController = self.viewControllers.last as? UINavigationController else { return }
+        let coordinator = DetailCoordinator(library: library,
+                                            collection: collection,
+                                            navigationController: navigationController,
+                                            controllers: self.controllers)
+        coordinator.start(animated: false)
+        self.detailCoordinator = coordinator
+    }
+
+    func collectionsChanged(to collections: [Collection]) {
+        self.reloadPrimaryColumnFraction(with: collections, animated: self.didAppear)
     }
 }

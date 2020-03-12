@@ -11,10 +11,7 @@ import SwiftUI
 struct CollectionEditView: View {
     @EnvironmentObject private(set) var viewModel: ViewModel<CollectionEditActionHandler>
 
-    @Environment(\.dbStorage) private var dbStorage: DbStorage
-
-    let showPicker: (Library, String, Set<String>) -> Void
-    let closeAction: () -> Void
+    weak var coordinatorDelegate: (CollectionEditingCoordinatorDelegate & Coordinator)?
 
     private var title: Text {
         return Text(self.viewModel.state.key == nil ? "Create collection" : "Edit collection")
@@ -63,7 +60,7 @@ struct CollectionEditView: View {
 
             if self.viewModel.state.shouldDismiss {
                 EmptyView().onAppear {
-                    self.closeAction()
+                    self.coordinatorDelegate?.dismiss()
                 }
             }
         }
@@ -77,7 +74,7 @@ struct CollectionEditView: View {
 
     private var leadingItems: some View {
         Button(action: {
-            self.closeAction()
+            self.coordinatorDelegate?.dismiss()
         }, label: {
             Text("Cancel")
         })
@@ -107,10 +104,7 @@ struct CollectionEditView: View {
     }
 
     private func showPickerView() {
-        let library = self.viewModel.state.library
-        let selected = self.viewModel.state.parent?.key ?? library.name
-        let excludedKeys: Set<String> = self.viewModel.state.key.flatMap({ [$0] }) ?? []
-        self.showPicker(library, selected, excludedKeys)
+        self.coordinatorDelegate?.showCollectionPicker(viewModel: self.viewModel)
     }
 }
 
@@ -124,7 +118,7 @@ struct CollectionEditView_Previews: PreviewProvider {
                                         name: "",
                                         parent: nil)
         let handler = CollectionEditActionHandler(dbStorage: Controllers().userControllers!.dbStorage)
-        return CollectionEditView(showPicker: { _, _, _ in }, closeAction: {})
+        return CollectionEditView()
                         .environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

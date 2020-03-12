@@ -13,8 +13,7 @@ struct LibrariesView: View {
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 
-    let pushCollectionsView: (Library) -> Void
-    let showSettings: () -> Void
+    weak var coordinatorDelegate: MasterLibrariesCoordinatorDelegate?
 
     var body: some View {
         List {
@@ -23,7 +22,7 @@ struct LibrariesView: View {
                     Section {
                         ForEach(libraries) { library in
                             Button(action: {
-                                self.pushCollectionsView(Library(customLibrary: library))
+                                self.coordinatorDelegate?.showCollections(for: Library(customLibrary: library))
                             }) {
                                 LibraryRow(title: library.type.libraryName)
                             }
@@ -37,7 +36,7 @@ struct LibrariesView: View {
                     Section {
                         ForEach(libraries) { library in
                             Button(action: {
-                                self.pushCollectionsView(Library(group: library))
+                                self.coordinatorDelegate?.showCollections(for: Library(group: library))
                             }) {
                                 LibraryRow(title: library.name)
                             }
@@ -48,8 +47,11 @@ struct LibrariesView: View {
         }
         .listStyle(GroupedListStyle())
         .navigationBarItems(trailing:
-            Button(action: self.showSettings,
-                   label: { Image(systemName: "person.circle").imageScale(.large) })
+            Button(action: {
+                self.coordinatorDelegate?.showSettings()
+            }, label: {
+                Image(systemName: "person.circle").imageScale(.large)
+            })
         )
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -62,7 +64,7 @@ struct LibrariesView: View {
 struct LibrariesView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            LibrariesView(pushCollectionsView: { _ in }, showSettings: {})
+            LibrariesView()
                 .environmentObject(ViewModel(initialState: LibrariesState(),
                                              handler: LibrariesActionHandler(dbStorage: Controllers().userControllers!.dbStorage)))
         }

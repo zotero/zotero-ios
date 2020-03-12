@@ -11,20 +11,17 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private(set) var viewModel: ViewModel<SettingsActionHandler>
 
-    // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() didn't work when presented from UIViewController, so I pass a closure
-    // This view is presented by UIKit, because modals in SwiftUI are currently buggy
-//    @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
-    let closeAction: () -> Void
+    // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() doesn't work when presented from UIViewController.
+    weak var coordinatorDelegate: MasterSettingsCoordinatorDelegate?
 
     var body: some View {
         NavigationView {
             SettingsListView()
                 .navigationBarTitle("Settings", displayMode: .inline)
-                .navigationBarItems(leading: Button(action: self.closeAction, label: { Text("Close") }))
-
+                .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() }, label: { Text("Close") }))
             ProfileView()
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationViewStyle(DoubleColumnNavigationViewStyle())
         .onAppear {
             self.viewModel.process(action: .startObservingSyncChanges)
         }
@@ -39,6 +36,6 @@ struct SettingsView_Previews: PreviewProvider {
         let handler = SettingsActionHandler(sessionController: controllers.sessionController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging)
-        return SettingsView(closeAction: {}).environmentObject(ViewModel(initialState: state, handler: handler))
+        return SettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }
