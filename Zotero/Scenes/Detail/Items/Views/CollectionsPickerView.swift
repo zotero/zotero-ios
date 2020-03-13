@@ -11,7 +11,7 @@ import SwiftUI
 struct CollectionsPickerView: View {
     @EnvironmentObject private(set) var viewModel: ViewModel<CollectionPickerActionHandler>
 
-    private(set) var selectedKeys: (Set<String>) -> Void
+    @State var selectedKeys: Binding<Set<String>>
     let closeAction: () -> Void
 
     var body: some View {
@@ -30,7 +30,7 @@ struct CollectionsPickerView: View {
                                        label: { Text("Cancel") })
                             , trailing:
                                 Button(action: {
-                                    self.selectedKeys(self.viewModel.state.selected)
+                                    self.selectedKeys.wrappedValue = self.viewModel.state.selected
                                     self.closeAction()
                                 },
                                 label: {
@@ -65,7 +65,7 @@ struct CollectionsPickerView_Previews: PreviewProvider {
                                           excludedKeys: [],
                                           selected: ["My Library"])
         let handler = CollectionPickerActionHandler(dbStorage: Controllers().userControllers!.dbStorage)
-        return CollectionsPickerView(selectedKeys: { _ in }, closeAction: {})
+        return CollectionsPickerView(selectedKeys: .constant([]), closeAction: {})
                                 .environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

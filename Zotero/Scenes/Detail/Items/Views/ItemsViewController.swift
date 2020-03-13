@@ -6,10 +6,7 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Combine
-import MobileCoreServices
 import UIKit
-import SwiftUI
 
 import CocoaLumberjack
 import RealmSwift
@@ -26,8 +23,9 @@ class ItemsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var tableViewHandler: ItemsTableViewHandler!
-    private var overlaySink: AnyCancellable?
     private var resultsToken: NotificationToken?
+
+    weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
     init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers) {
         self.viewModel = viewModel
@@ -104,22 +102,22 @@ class ItemsViewController: UIViewController {
         }
 
         if let item = state.itemDuplication {
-            self.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey))
+            self.coordinatorDelegate?.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey))
         }
     }
 
     // MARK: - Actions
 
-    private func perform(overlayAction: ItemsActionSheetViewController.Action) {
-        switch overlayAction {
-        case .showAttachmentPicker:
-            self.showAttachmentPicker()
-        case .showItemCreation:
-            self.showItemCreation()
-        case .showNoteCreation:
-            self.showNoteCreation()
-        case .showSortTypePicker:
-            self.presentSortTypePicker()
+    private func showItemDetail(for item: RItem) {
+        switch item.rawType {
+        case ItemTypes.note:
+            guard let note = Note(item: item) else { return }
+            self.coordinatorDelegate?.showNote(with: note.text, save: { [weak self] newText in
+                self?.viewModel.process(action: .saveNote(note.key, newText))
+            })
+
+        default:
+            self.coordinatorDelegate?.showItemDetail(for: .preview(item))
         }
     }
 
@@ -150,7 +148,7 @@ class ItemsViewController: UIViewController {
             if self.viewModel.state.isEditing {
                 self.viewModel.process(action: .stopEditing)
             } else {
-                self.showActionSheet()
+                self.coordinatorDelegate?.showActionSheet(viewModel: self.viewModel, topInset: self.view.safeAreaInsets.top)
             }
         })
         .disposed(by: self.disposeBag)
@@ -170,137 +168,6 @@ class ItemsViewController: UIViewController {
         })
     }
 
-    // MARK: - Navigation
-
-    private func presentSortTypePicker() {
-        let view = ItemSortTypePickerView(sortBy: self.viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) }),
-                                          closeAction: { [weak self] in
-                                              self?.dismiss(animated: true, completion: nil)
-                                          })
-        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
-        navigationController.isModalInPresentation = true
-        self.present(navigationController, animated: true, completion: nil)
-    }
-
-    private func showNoteEditing(for note: Note) {
-        self.presentNoteEditor(with: note.text) { [weak self] text in
-            self?.viewModel.process(action: .saveNote(note.key, text))
-        }
-    }
-
-    private func showNoteCreation() {
-        self.presentNoteEditor(with: "") { [weak self] text in
-            self?.viewModel.process(action: .saveNote(nil, text))
-        }
-    }
-
-    private func presentNoteEditor(with text: String, save: @escaping (String) -> Void) {
-        let controller = NoteEditorViewController(text: text, saveAction: save)
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.isModalInPresentation = true
-        self.present(navigationController, animated: true, completion: nil)
-    }
-
-    private func showAttachmentPicker() {
-        let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
-        let controller = DocumentPickerViewController(documentTypes: documentTypes, in: .import)
-        controller.popoverPresentationController?.sourceView = self.view
-        controller.observable
-                  .observeOn(MainScheduler.instance)
-                  .subscribe(onNext: { [weak self] urls in
-                      self?.viewModel.process(action: .addAttachments(urls))
-                  })
-                  .disposed(by: self.disposeBag)
-        self.present(controller, animated: true, completion: nil)
-    }
-
-    private func showCollectionPicker() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let state = CollectionPickerState(library: self.viewModel.state.library, excludedKeys: [], selected: [])
-        let handler = CollectionPickerActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-
-        // SWIFTUI BUG: - We need to call loadData here, because when we do so in `onAppear` in SwiftuI `View` we'll crash when data change
-        // instantly in that function. If we delay it, the user will see unwanted animation of data on screen. If we call it here, data
-        // is available immediately.
-        viewModel.process(action: .loadData)
-        
-        let view = CollectionsPickerView(selectedKeys: { [weak self] keys in
-                                             self?.viewModel.process(action: .assignSelectedItemsToCollections(keys))
-                                         },
-                                         closeAction: { [weak self] in
-                                             self?.dismiss(animated: true, completion: nil)
-                                         }).environmentObject(viewModel)
-
-        let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
-        navigationController.isModalInPresentation = true
-        self.present(navigationController, animated: true, completion: nil)
-    }
-
-    private func showItemCreation() {
-        self.showItemDetail(for: .creation(libraryId: self.viewModel.state.library.identifier,
-                                           collectionKey: self.viewModel.state.type.collectionKey,
-                                           filesEditable: self.viewModel.state.library.filesEditable))
-    }
-
-    private func showItemDetail(for item: RItem) {
-        switch item.rawType {
-        case ItemTypes.note:
-            if let note = Note(item: item) {
-                self.showNoteEditing(for: note)
-            }
-
-        default:
-            self.showItemDetail(for: .preview(item))
-        }
-    }
-
-    private func showItemDetail(for type: ItemDetailState.DetailType) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        do {
-            let data = try ItemDetailDataCreator.createData(from: type,
-                                                            schemaController: self.controllers.schemaController,
-                                                            fileStorage: self.controllers.fileStorage)
-            let state = ItemDetailState(type: type, userId: Defaults.shared.userId, data: data)
-            let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
-                                                  fileStorage: self.controllers.fileStorage,
-                                                  dbStorage: dbStorage,
-                                                  schemaController: self.controllers.schemaController)
-            let viewModel = ViewModel(initialState: state, handler: handler)
-
-            let hidesBackButton: Bool
-            switch type {
-            case .preview:
-                hidesBackButton = false
-            case .creation, .duplication:
-                hidesBackButton = true
-            }
-
-            let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
-            if hidesBackButton {
-                controller.navigationItem.setHidesBackButton(true, animated: false)
-            }
-            self.navigationController?.pushViewController(controller, animated: true)
-        } catch let error {
-            // TODO: - show error
-        }
-    }
-
-    private func showActionSheet() {
-        let controller = ItemsActionSheetViewController(viewModel: self.viewModel, topOffset: self.view.safeAreaInsets.top)
-        controller.actionObserver
-                  .observeOn(MainScheduler.instance)
-                  .subscribe(onNext: { [weak self] action in
-                      self?.perform(overlayAction: action)
-                  })
-                  .disposed(by: self.disposeBag)
-
-        controller.modalPresentationStyle = .overCurrentContext
-        controller.modalTransitionStyle = .crossDissolve
-        self.navigationController?.present(controller, animated: true, completion: nil)
-    }
-
     // MARK: - Setups
 
     private func setupToolbar() {
@@ -310,7 +177,9 @@ class ItemsViewController: UIViewController {
     private func createNormalToolbarItems() -> [UIBarButtonItem] {
         let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"), style: .plain, target: nil, action: nil)
         pickerItem.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.showCollectionPicker()
+            guard let `self` = self else { return }
+            let binding = self.viewModel.binding(keyPath: \.selectedItems, action: { .assignSelectedItemsToCollections($0) })
+            self.coordinatorDelegate?.showCollectionPicker(in: self.viewModel.state.library, selectedKeys: binding)
         })
         .disposed(by: self.disposeBag)
         pickerItem.tag = ItemsViewController.barButtonItemEmptyTag

@@ -11,13 +11,6 @@ import UIKit
 import RxSwift
 
 class ItemsActionSheetViewController: UIViewController {
-    enum Action {
-        case showSortTypePicker
-        case showItemCreation
-        case showNoteCreation
-        case showAttachmentPicker
-    }
-
     @IBOutlet private weak var menuView: UIView!
     @IBOutlet private weak var editingButton: UIButton!
     @IBOutlet private weak var sortTypeButton: UIButton!
@@ -31,12 +24,12 @@ class ItemsActionSheetViewController: UIViewController {
     private let topOffset: CGFloat
     private let viewModel: ViewModel<ItemsActionHandler>
     private let disposeBag: DisposeBag
-    let actionObserver: PublishSubject<Action>
+
+    weak var coordinatorDelegate: DetailItemActionSheetCoordinatorDelegate?
 
     init(viewModel: ViewModel<ItemsActionHandler>, topOffset: CGFloat) {
         self.viewModel = viewModel
         self.topOffset = topOffset
-        self.actionObserver = PublishSubject()
         self.disposeBag = DisposeBag()
 
         super.init(nibName: "ItemsActionSheetViewController", bundle: nil)
@@ -106,7 +99,8 @@ class ItemsActionSheetViewController: UIViewController {
 
     @IBAction private func changeSortType() {
         self.dismiss(animated: true) {
-            self.actionObserver.on(.next(.showSortTypePicker))
+            let binding = self.viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
+            self.coordinatorDelegate?.showSortTypePicker(sortBy: binding)
         }
     }
 
@@ -116,19 +110,27 @@ class ItemsActionSheetViewController: UIViewController {
 
     @IBAction private func createNewItem() {
         self.dismiss(animated: true) {
-            self.actionObserver.on(.next(.showItemCreation))
+            self.coordinatorDelegate?.showItemCreation(libraryId: self.viewModel.state.library.identifier,
+                                                       collectionKey: self.viewModel.state.type.collectionKey,
+                                                       filesEditable: self.viewModel.state.library.filesEditable)
         }
     }
 
     @IBAction private func createNewNote() {
+        let viewModel = self.viewModel
         self.dismiss(animated: true) {
-            self.actionObserver.on(.next(.showNoteCreation))
+            self.coordinatorDelegate?.showNoteCreation(save: { text in
+                viewModel.process(action: .saveNote(nil, text))
+            })
         }
     }
 
     @IBAction private func uploadAttachment() {
+        let viewModel = self.viewModel
         self.dismiss(animated: true) {
-            self.actionObserver.on(.next(.showAttachmentPicker))
+            self.coordinatorDelegate?.showAttachmentPicker(save: { urls in
+                viewModel.process(action: .addAttachments(urls))
+            })
         }
     }
 

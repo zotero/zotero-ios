@@ -433,7 +433,6 @@
 		B3593F60241A62C900760E20 /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F04241A61C700760E20 /* LibraryRow.swift */; };
 		B3593F62241A62DD00760E20 /* DetailCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F61241A62DD00760E20 /* DetailCoordinator.swift */; };
 		B3593F64241A62E400760E20 /* MasterCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F63241A62E400760E20 /* MasterCoordinator.swift */; };
-		B3593F66241A634900760E20 /* LoginCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F65241A634900760E20 /* LoginCoordinator.swift */; };
 		B3593F77241A76E600760E20 /* CollectionEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F6F241A76E600760E20 /* CollectionEditActionHandler.swift */; };
 		B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F71241A76E600760E20 /* CollectionEditError.swift */; };
 		B3593F79241A76E600760E20 /* CollectionEditAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F72241A76E600760E20 /* CollectionEditAction.swift */; };
@@ -822,7 +821,6 @@
 		B3593F18241A61C700760E20 /* CollectionTreeBuilder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionTreeBuilder.swift; sourceTree = "<group>"; };
 		B3593F61241A62DD00760E20 /* DetailCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailCoordinator.swift; sourceTree = "<group>"; };
 		B3593F63241A62E400760E20 /* MasterCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterCoordinator.swift; sourceTree = "<group>"; };
-		B3593F65241A634900760E20 /* LoginCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginCoordinator.swift; sourceTree = "<group>"; };
 		B3593F6F241A76E600760E20 /* CollectionEditActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditActionHandler.swift; sourceTree = "<group>"; };
 		B3593F71241A76E600760E20 /* CollectionEditError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditError.swift; sourceTree = "<group>"; };
 		B3593F72241A76E600760E20 /* CollectionEditAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditAction.swift; sourceTree = "<group>"; };
@@ -1682,7 +1680,6 @@
 				B3DCDEB32408F2A50039ED0D /* Models */,
 				B3DCDEB22408F2A50039ED0D /* ViewModels */,
 				B3DCDEB42408F2A50039ED0D /* Views */,
-				B3593F65241A634900760E20 /* LoginCoordinator.swift */,
 			);
 			path = Login;
 			sourceTree = "<group>";
@@ -2325,7 +2322,6 @@
 				B30566B523FC051F003304F2 /* LoginResponse.swift in Sources */,
 				B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
-				B3593F66241A634900760E20 /* LoginCoordinator.swift in Sources */,
 				B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */,
 				B30566C823FC051F003304F2 /* SortType.swift in Sources */,
 				B3DCDEF7240900F70039ED0D /* LoginActionHandler.swift in Sources */,

@@ -27,6 +27,8 @@ class ItemDetailViewController: UIViewController {
 
     private var tableViewHandler: ItemDetailTableViewHandler!
 
+    weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
+
     init(viewModel: ViewModel<ItemDetailActionHandler>, controllers: Controllers) {
         self.viewModel = viewModel
         self.controllers = controllers
@@ -64,86 +66,31 @@ class ItemDetailViewController: UIViewController {
     private func perform(tableViewAction: ItemDetailTableViewHandler.Action) {
         switch tableViewAction {
         case .openCreatorTypePicker(let creator):
-            self.openCreatorTypePicker(for: creator)
+            self.coordinatorDelegate?.showCreatorTypePicker(itemType: self.viewModel.state.data.type,
+                                                            selected: creator.type,
+                                                            picked: { [weak self] creatorType in
+                                                                self?.viewModel.process(action: .updateCreator(creator.id, .type(creatorType)))
+                                                            })
         case .openFilePicker:
-            self.openFilePicker()
+            self.coordinatorDelegate?.showAttachmentPicker(save: { [weak self] urls in
+                self?.viewModel.process(action: .addAttachments(urls))
+            })
         case .openNoteEditor(let note):
-            self.open(note: note)
+            self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), save: { [weak self] text in
+                self?.viewModel.process(action: .saveNote(key: note?.key, text: text))
+            })
         case .openTagPicker:
-            self.openTagPicker()
+            self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.libraryId,
+                                                    selected: Set(self.viewModel.state.data.tags.map({ $0.id })),
+                                                    picked: { [weak self] tags in
+                                                        self?.viewModel.process(action: .setTags(tags))
+                                                    })
         case .openTypePicker:
-            self.openTypePicker()
+            self.coordinatorDelegate?.showTypePicker(selected: self.viewModel.state.data.type,
+                                                     picked: { [weak self] type in
+                                                         self?.viewModel.process(action: .changeType(type))
+                                                     })
         }
-    }
-
-    private func open(note: Note?) {
-        let controller = NoteEditorViewController(text: (note?.text ?? "")) { [weak self] text in
-            guard let `self` = self else { return }
-            self.viewModel.process(action: .saveNote(key: note?.key, text: text))
-        }
-        let navigationController = UINavigationController(rootViewController: controller)
-        self.present(navigationController, animated: true, completion: nil)
-    }
-
-    private func openFilePicker() {
-        let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
-        let controller = DocumentPickerViewController(documentTypes: documentTypes, in: .import)
-        controller.popoverPresentationController?.sourceView = self.view
-        controller.observable
-                  .observeOn(MainScheduler.instance)
-                  .subscribe(onNext: { [weak self] urls in
-                      self?.viewModel.process(action: .addAttachments(urls))
-                  })
-                  .disposed(by: self.disposeBag)
-        self.present(controller, animated: true, completion: nil)
-    }
-
-    private func openTagPicker() {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let libraryId = self.viewModel.state.libraryId
-        let selectedIds = Set(self.viewModel.state.data.tags.map({ $0.id }))
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selectedIds)
-        let handler = TagPickerActionHandler(dbStorage: dbStorage)
-
-        let view = TagPickerView(saveAction: { [weak self] tags in
-                                     self?.viewModel.process(action: .setTags(tags))
-                                 }, dismiss: { [weak self] in
-                                     self?.dismiss(animated: true, completion: nil)
-                                 })
-                            .environmentObject(ViewModel(initialState: state, handler: handler))
-
-        let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
-        controller.isModalInPresentation = true
-        self.present(controller, animated: true, completion: nil)
-    }
-
-    private func openCreatorTypePicker(for creator: ItemDetailState.Creator) {
-        let viewModel = CreatorTypePickerViewModelCreator.create(itemType: self.viewModel.state.data.type,
-                                                                 selected: creator.type,
-                                                                 schemaController: self.controllers.schemaController)
-        self.presentPicker(viewModel: viewModel) { [weak self] type in
-            self?.viewModel.process(action: .updateCreator(creator.id, .type(type)))
-        }
-    }
-
-    private func openTypePicker() {
-        let viewModel = ItemTypePickerViewModelCreator.create(selected: self.viewModel.state.data.type,
-                                                              schemaController: self.controllers.schemaController)
-        self.presentPicker(viewModel: viewModel) { [weak self] type in
-            self?.viewModel.process(action: .changeType(type))
-        }
-    }
-
-    private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, saveAction: @escaping (String) -> Void) {
-        let view = SinglePickerView(saveAction: saveAction) { [weak self] in
-            self?.dismiss(animated: true, completion: nil)
-        }
-        .environmentObject(viewModel)
-
-        let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
-        controller.isModalInPresentation = true
-        self.present(controller, animated: true, completion: nil)
     }
 
     private func cancelEditing() {
@@ -158,39 +105,14 @@ class ItemDetailViewController: UIViewController {
     private func open(attachmentAction: ItemDetailState.OpenAttachmentAction) {
         switch attachmentAction {
         case .pdf(let url):
-            self.presentPdf(with: url)
+            self.coordinatorDelegate?.showPdf(at: url)
 
         case .unknownFile(let url):
-            self.presentUnknownAttachment(with: url)
+            self.coordinatorDelegate?.showUnknownAttachment(at: url)
 
         case .web(let url):
-            self.presentWeb(with: url)
+            self.coordinatorDelegate?.showWeb(url: url)
         }
-    }
-
-    private func presentPdf(with url: URL) {
-        #if PDFENABLED
-        let controller = PSPDFViewController(document: PSPDFDocument(url: url))
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .fullScreen
-        self.present(navigationController, animated: true, completion: nil)
-        #endif
-    }
-
-    private func presentUnknownAttachment(with url: URL) {
-        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = self.view
-        controller.popoverPresentationController?.sourceRect = CGRect(x: (self.view.frame.width / 3.0),
-                                                                      y: (self.view.frame.height * 2.0 / 3.0),
-                                                                      width: (self.view.frame.width / 3),
-                                                                      height: (self.view.frame.height / 3))
-        self.present(controller, animated: true, completion: nil)
-    }
-
-    private func presentWeb(with url: URL) {
-        let controller = SFSafariViewController(url: url)
-        self.present(controller, animated: true, completion: nil)
     }
 
     // MARK: - UI state
