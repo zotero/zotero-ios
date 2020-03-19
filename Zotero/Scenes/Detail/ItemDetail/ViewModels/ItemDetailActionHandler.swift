@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import CocoaLumberjack
 import RealmSwift
 import RxSwift
@@ -390,12 +391,23 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                           self.finishCachingFile(for: key, result: .failure(error), in: viewModel)
                       }, onCompleted: { [weak viewModel] in
                           guard let viewModel = viewModel else { return }
-                          self.finishCachingFile(for: key, result: .success(()), in: viewModel)
+                          self.finishCachingFile(for: key, result: self.checkFileResponse(for: file), in: viewModel)
                       })
                       .disposed(by: self.disposeBag)
     }
 
-    private func finishCachingFile(for key: String, result: Result<(), Swift.Error>, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    /// Alamofire bug workaround
+    /// When the request returns 404 "Not found" Alamofire download doesn't recognize it and just downloads the file with content "Not found".
+    private func checkFileResponse(for file: File) -> Swift.Result<(), Error> {
+        if self.fileStorage.size(of: file) == 9 &&
+           (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found" {
+            try? self.fileStorage.remove(file)
+            return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404)))
+        }
+        return .success(())
+    }
+
+    private func finishCachingFile(for key: String, result: Swift.Result<(), Error>, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch result {
         case .failure(let error):
             DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
