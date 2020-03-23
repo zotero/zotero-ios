@@ -22,6 +22,7 @@ class Controllers {
     let dragDropController: DragDropController
     let crashReporter: CrashReporter
     let debugLogging: DebugLogging
+    let translatorsController: TranslatorsController
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -43,6 +44,7 @@ class Controllers {
         let sessionController = SessionController(secureStorage: secureStorage)
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let schemaController = SchemaController()
+        let translatorsController = TranslatorsController(apiClient: apiClient, fileStorage: fileStorage)
 
         self.sessionController = sessionController
         self.apiClient = apiClient
@@ -52,6 +54,7 @@ class Controllers {
         self.dragDropController = DragDropController()
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
+        self.translatorsController = translatorsController
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)
@@ -71,6 +74,7 @@ class Controllers {
 
     func willEnterForeground() {
         self.crashReporter.processPendingReports()
+        self.translatorsController.update()
         self.userControllers?.itemLocaleController.loadLocale()
         self.userControllers?.syncScheduler.requestFullSync()
         self.userControllers?.startObserving()

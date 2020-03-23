@@ -84,7 +84,7 @@ class WebViewHandler: NSObject {
                        return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
                    }
                    .flatMap { _ -> Single<[TranslatorInfo]> in
-                       return self.translatorsController.load()
+                       return self.translatorsController.translators()
                    }
                    .flatMap { translators -> Single<Any> in
                        let encodedTranslators = self.encodeJSONForJavascript(translators)

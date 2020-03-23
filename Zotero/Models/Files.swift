@@ -9,6 +9,8 @@
 import Foundation
 
 struct Files {
+    // MARK: - Base paths
+
     static var appGroupPath: String = {
         return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroup.identifier)?.path ?? Files.documentsRootPath
     }()
@@ -21,28 +23,7 @@ struct Files {
         return NSSearchPathForDirectoriesInDomains(.cachesDirectory, .allDomainsMask, true).first ?? "/"
     }()
 
-    static var schemaFile: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: [], name: "schema", ext: "json")
-    }
-
-    static var translators: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: "", ext: "")
-    }
-
-    static var translatorsUnpacked: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators_unpacked"], name: "", ext: "")
-    }
-
-    static var translatorZip: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: [], name: "translators", ext: "zip")
-    }
-
-    static func shareExtensionTmpItem(key: String, ext: String) -> File {
-        return FileData(rootPath: Files.appGroupPath,
-                        relativeComponents: ["tmp"],
-                        name: "item_\(key)",
-                        ext: ext)
-    }
+    // MARK: - Items
 
     static func objectFile(for object: SyncObject, libraryId: LibraryIdentifier,
                            key: String, ext: String) -> File {
@@ -63,18 +44,50 @@ struct Files {
 
         return FileData(rootPath: Files.appGroupPath,
                         relativeComponents: ["downloads"],
-                        name: "library_\(libraryId.fileName)_\(objectName)_\(key)", ext: ext)
+                        name: "library_\(libraryId.fileName)_\(objectName)_\(key)",
+                        ext: ext)
     }
+
+    // MARK: - Database
+
+    static func dbFile(for userId: Int) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["database"], name: "maindb_\(userId)", ext: "realm")
+    }
+
+    static var translatorsDbFile: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["database"], name: "translators", ext: "realm")
+    }
+
+    // MARK: - Logging
+
+    static var debugLogDirectory: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["debug_logs"], name: "", ext: "")
+    }
+
+    // MARK: - Bundled
+
+    static var translators: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: "", ext: "")
+    }
+
+    static var tmpTranslators: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators_unpacked"], name: "", ext: "")
+    }
+
+    // MARK: - Share extension
+
+    static func shareExtensionTmpItem(key: String, ext: String) -> File {
+        return FileData(rootPath: Files.appGroupPath,
+                        relativeComponents: ["tmp"],
+                        name: "item_\(key)",
+                        ext: ext)
+    }
+
+    // MARK: - Helper
 
     static func file(from url: URL) -> File {
         return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],
                         name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension.lowercased())
-    }
-
-    static func dbFile(for userId: Int) -> File {
-        return FileData(rootPath: Files.appGroupPath,
-                        relativeComponents: ["database"],
-                        name: "maindb_\(userId)", ext: "realm")
     }
 
     static func uploadFile(from streamUrl: URL) -> File {
@@ -82,10 +95,6 @@ struct Files {
                         relativeComponents: ["uploads"],
                         name: streamUrl.lastPathComponent,
                         ext: streamUrl.pathExtension)
-    }
-
-    static var debugLogDirectory: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["debug_logs"], name: "", ext: "")
     }
 }
 

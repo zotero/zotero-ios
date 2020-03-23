@@ -11,10 +11,14 @@
 		2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */; };
 		2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */; };
 		9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */; };
-		B3024BC72405B01000B2AAB5 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B305643423FC051E003304F2 /* schema.json */; };
+		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
+		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
+		B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
+		B300B3382429254900C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */; };
+		B300B33924292A7F00C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */; };
+		B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B3027C1E23BDB2B8007F5B26 /* ItemPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */; };
 		B30565B123FC051E003304F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B305643323FC051E003304F2 /* Assets.xcassets */; };
-		B30565B223FC051E003304F2 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = B305643423FC051E003304F2 /* schema.json */; };
 		B30565B323FC051E003304F2 /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */; };
 		B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */; };
 		B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */; };
@@ -440,6 +444,9 @@
 		B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F75241A76E600760E20 /* CollectionPickerView.swift */; };
 		B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F76241A76E600760E20 /* CollectionEditView.swift */; };
 		B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */; };
+		B36A988B2428DA5D005D5790 /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
+		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
+		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B37147402382B51000AC8758 /* CrashReporter.framework */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
@@ -459,7 +466,6 @@
 		B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */; };
 		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
-		B3BABCC323A1543E00B4C893 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BABCC123A1526000B4C893 /* TranslatorsController.swift */; };
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
@@ -500,7 +506,6 @@
 		B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */; };
 		B3DCDF25240946090039ED0D /* CollectionPickerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF24240946090039ED0D /* CollectionPickerError.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
-		B3F9058C23DAEC6A008B0B40 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F9058B23DAEC6A008B0B40 /* TranslatorsRequest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -553,9 +558,11 @@
 		5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZoteroUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.release.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.release.xcconfig"; sourceTree = "<group>"; };
 		A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug pdf.xcconfig"; sourceTree = "<group>"; };
+		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
+		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
+		B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTranslatorsDbRequest.swift; sourceTree = "<group>"; };
 		B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemPickerView.swift; sourceTree = "<group>"; };
 		B305643323FC051E003304F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B305643423FC051E003304F2 /* schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = schema.json; sourceTree = "<group>"; };
 		B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkForResyncDbAction.swift; sourceTree = "<group>"; };
 		B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsSyncedDbRequest.swift; sourceTree = "<group>"; };
@@ -828,6 +835,8 @@
 		B3593F75241A76E600760E20 /* CollectionPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionPickerView.swift; sourceTree = "<group>"; };
 		B3593F76241A76E600760E20 /* CollectionEditView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditView.swift; sourceTree = "<group>"; };
 		B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditingCoordinator.swift; sourceTree = "<group>"; };
+		B36A988A2428DA5D005D5790 /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
+		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
@@ -848,7 +857,6 @@
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B3B8166723880DC900529605 /* ZShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZShare.entitlements; sourceTree = "<group>"; };
-		B3BABCC123A1526000B4C893 /* TranslatorsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
@@ -888,7 +896,6 @@
 		B3DCDF24240946090039ED0D /* CollectionPickerError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerError.swift; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
 		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
-		B3F9058B23DAEC6A008B0B40 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
 		D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.debug pdf.xcconfig"; sourceTree = "<group>"; };
 		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -949,7 +956,6 @@
 			isa = PBXGroup;
 			children = (
 				B305643323FC051E003304F2 /* Assets.xcassets */,
-				B305643423FC051E003304F2 /* schema.json */,
 				B30566D823FC0769003304F2 /* tinymce */,
 			);
 			path = Assets;
@@ -977,6 +983,7 @@
 				B305646B23FC051E003304F2 /* SchemaController.swift */,
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
+				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -1043,6 +1050,7 @@
 				B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
+				B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1203,6 +1211,7 @@
 				B305655F23FC051E003304F2 /* Tag.swift */,
 				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
 				B3D3F78A240D222C0018F354 /* ItemFetchType.swift */,
+				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1218,6 +1227,7 @@
 				B305653423FC051E003304F2 /* RVersions.swift */,
 				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
+				B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -1271,6 +1281,7 @@
 		B30D594C2206F60400884C4A = {
 			isa = PBXGroup;
 			children = (
+				B36A988A2428DA5D005D5790 /* bundled */,
 				B30D59572206F60400884C4A /* Zotero */,
 				B30D596E2206F60500884C4A /* ZoteroTests */,
 				B30D59792206F60500884C4A /* ZoteroUITests */,
@@ -1346,7 +1357,6 @@
 				B3AB38A3238EC02D008A1ABB /* Stores */,
 				B3AB389F238EC02D008A1ABB /* View Controllers */,
 				B3AB38A1238EC02D008A1ABB /* Views */,
-				B3BABCC123A1526000B4C893 /* TranslatorsController.swift */,
 				B311B3202386A39800BCF592 /* MainInterface.storyboard */,
 				B3B8166723880DC900529605 /* ZShare.entitlements */,
 				B311B3232386A39800BCF592 /* Info.plist */,
@@ -1358,7 +1368,6 @@
 			isa = PBXGroup;
 			children = (
 				B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */,
-				B3F9058B23DAEC6A008B0B40 /* TranslatorsRequest.swift */,
 			);
 			path = ApiRequests;
 			sourceTree = "<group>";
@@ -1988,7 +1997,6 @@
 				B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */,
 				B30566D923FC0769003304F2 /* tinymce in Resources */,
 				B3593F32241A61C700760E20 /* ItemDetailAbstractCell.xib in Resources */,
-				B30565B223FC051E003304F2 /* schema.json in Resources */,
 				B3593F23241A61C700760E20 /* ItemDetailSectionView.xib in Resources */,
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
 				B3593F29241A61C700760E20 /* ItemDetailTitleCell.xib in Resources */,
@@ -1996,6 +2004,7 @@
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
 				B3593F58241A61C700760E20 /* CollectionsViewController.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
+				B36A988B2428DA5D005D5790 /* bundled in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 			);
@@ -2023,7 +2032,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
-				B3024BC72405B01000B2AAB5 /* schema.json in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
@@ -2224,6 +2232,7 @@
 				B30565FE23FC051E003304F2 /* BackgroundUploader.swift in Sources */,
 				B3DCDEF5240900E40039ED0D /* SettingsActionHandler.swift in Sources */,
 				B3593F19241A61C700760E20 /* ItemDetailActionHandler.swift in Sources */,
+				B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
 				B305660423FC051E003304F2 /* ObservableRequestExtensions.swift in Sources */,
@@ -2385,6 +2394,7 @@
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
+				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
 				B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */,
@@ -2418,6 +2428,7 @@
 				B3593F2D241A61C700760E20 /* TagView.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
 				B3593F1F241A61C700760E20 /* TagPickerAction.swift in Sources */,
+				B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */,
 				B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */,
 				B3593F59241A61C700760E20 /* CollectionsViewController.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
@@ -2432,6 +2443,7 @@
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B305661923FC051E003304F2 /* SyncDeletionsSyncAction.swift in Sources */,
+				B300B3382429254900C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */,
 				B30565B323FC051E003304F2 /* DeleteObjectsDbRequest.swift in Sources */,
 				B3DCDEE52408F8960039ED0D /* LoginState.swift in Sources */,
 				B305662323FC051F003304F2 /* MarkForResyncSyncAction.swift in Sources */,
@@ -2518,6 +2530,7 @@
 				B305674523FC09AF003304F2 /* GroupResponse.swift in Sources */,
 				B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */,
 				B305674723FC09AF003304F2 /* SchemaResponse.swift in Sources */,
+				B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B305674923FC09AF003304F2 /* RTag.swift in Sources */,
 				B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */,
 				B305674A23FC09AF003304F2 /* RCollection.swift in Sources */,
@@ -2552,6 +2565,7 @@
 				B305673623FC092F003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
 				B305677123FC0A5A003304F2 /* ZoteroApiClient.swift in Sources */,
 				B305677B23FC0C72003304F2 /* Formatter.swift in Sources */,
+				B300B33924292A7F00C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */,
 				B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
@@ -2572,7 +2586,6 @@
 				B30566DB23FC07E7003304F2 /* LibraryObject.swift in Sources */,
 				B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */,
 				B30566FA23FC085C003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
-				B3BABCC323A1543E00B4C893 /* TranslatorsController.swift in Sources */,
 				B305677423FC0BCD003304F2 /* ItemTitleFormatter.swift in Sources */,
 				B305672423FC0906003304F2 /* AuthorizeUploadSyncAction.swift in Sources */,
 				B305670F23FC08C1003304F2 /* ReadSearchDbRequest.swift in Sources */,
@@ -2618,7 +2631,7 @@
 				B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */,
 				B30566EF23FC0833003304F2 /* FileRequest.swift in Sources */,
 				B30566F223FC084A003304F2 /* CreateAttachmentDbRequest.swift in Sources */,
-				B3F9058C23DAEC6A008B0B40 /* TranslatorsRequest.swift in Sources */,
+				B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B305672B23FC0916003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
 				B305673323FC0927003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
 				B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */,
@@ -2651,6 +2664,7 @@
 				B305677923FC0C4D003304F2 /* FileManager+Utils.swift in Sources */,
 				B305671523FC08CD003304F2 /* StoreCollectionDbRequest.swift in Sources */,
 				B305677F23FC0D0A003304F2 /* SessionController.swift in Sources */,
+				B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */,
 				B30566F623FC0853003304F2 /* DeleteGroupDbRequest.swift in Sources */,
 				B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */,
 				B305671123FC08C5003304F2 /* ReadTagsDbRequest.swift in Sources */,
@@ -2827,7 +2841,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
@@ -2865,7 +2879,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
@@ -2902,7 +2916,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
@@ -2924,7 +2938,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
@@ -2946,7 +2960,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
@@ -2967,7 +2981,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
@@ -3115,7 +3129,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
@@ -3154,7 +3168,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 39682C248A657BEC127C91A7 /* Pods-ZoteroTests.debug pdf.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
@@ -3176,7 +3190,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;

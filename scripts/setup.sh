@@ -6,6 +6,7 @@ realpath() {
 
 SCRIPT_PATH=`realpath $0`
 SCRIPT_DIR=`dirname $SCRIPT_PATH`
-SCHEMA_FILE="$SCRIPT_DIR/../bundled/schema.json"
+LICENSE_FILE="$SCRIPT_DIR/../pdf-keys/pspdfkit_pod.txt"
 
-curl --compressed https://api.zotero.org/schema --output $SCHEMA_FILE
+sh "$SCRIPT_DIR/fetch_bundled_jsons.sh"
+sh "$SCRIPT_DIR/update_pods.sh"
