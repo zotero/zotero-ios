@@ -9,10 +9,15 @@
 import Foundation
 
 import CocoaLumberjack
+import RxCocoa
 import RxSwift
 import Zip
 
 typealias TranslatorInfo = [String: Any]
+
+protocol TranslatorsControllerCoordinatorDelegate: class {
+    func showTranslationError(_ error: Error, result: (Bool) -> Void)
+}
 
 class TranslatorsController {
     enum UpdateType: Int {
@@ -23,21 +28,27 @@ class TranslatorsController {
     }
 
     enum Error: Swift.Error {
-        case expired, bundleMissing, cantParseIndexFile
+        case expired
+        case bundleMissing
+        case cantParseIndexFile
+        case incompatibleTranslator
     }
 
-    @UserDefault(key: "TranslatorLastCommitHash", defaultValue: "")
-    private var lastCommitHash: String
+    @UserDefault(key: "TranslatorLastCommitHash", defaultValue: nil)
+    private var lastCommitHash: String?
     @UserDefault(key: "TranslatorLastTimestamp", defaultValue: 0)
     private var lastTimestamp: Double
     private var lastDate: Date {
         return Date(timeIntervalSince1970: self.lastTimestamp)
     }
+    private var isLoading: BehaviorRelay<Bool>
 
     private let apiClient: ApiClient
     private let fileStorage: FileStorage
     private let disposeBag: DisposeBag
     private let dbStorage: DbStorage
+
+    weak var coordinatorDelegate: TranslatorsControllerCoordinatorDelegate?
 
     init(apiClient: ApiClient, fileStorage: FileStorage) {
         do {
@@ -49,19 +60,28 @@ class TranslatorsController {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = RealmDbStorage(url: Files.translatorsDbFile.createUrl())
+        self.isLoading = BehaviorRelay(value: false)
         self.disposeBag = DisposeBag()
     }
 
     func update() {
+        self.isLoading.accept(true)
+        let type: UpdateType = self.lastCommitHash == nil ? .initial : .startup
         self.updateFromBundle()
             .flatMap {
-                return self.updateFromRepo()
+                return self.updateFromRepo(type: type)
             }
             .observeOn(MainScheduler.instance)
-            .subscribe(onSuccess: { _ in
-
-            }, onError: { error in
-
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.isLoading.accept(false)
+            }, onError: { [weak self] error in
+                self?.coordinatorDelegate?.showTranslationError(error, result: { shouldReset in
+                    if shouldReset {
+                        self?.resetToBundle()
+                    } else {
+                        self?.isLoading.accept(false)
+                    }
+                })
             })
             .disposed(by: self.disposeBag)
     }
@@ -72,10 +92,19 @@ class TranslatorsController {
                 subscriber(.error(Error.expired))
                 return Disposables.create()
             }
+            guard let hashPath = Bundle.main.path(forResource: "commit_hash", ofType: "txt"),
+                  let timestampPath = Bundle.main.path(forResource: "timestamp", ofType: "txt"),
+                  let hash = try? String(contentsOf: URL(fileURLWithPath: hashPath)),
+                  let timestamp = (try? String(contentsOf: URL(fileURLWithPath: timestampPath))).flatMap(Double.init) else {
+                subscriber(.error(Error.bundleMissing))
+                return Disposables.create()
+            }
 
             do {
-                if try self.commitHashDidChange() {
+                if self.lastCommitHash != hash {
                     try self.syncTranslatorsWithBundledData()
+                    self.lastCommitHash = hash
+                    self.lastTimestamp = timestamp
                 }
                 subscriber(.success(()))
             } catch let error {
@@ -87,15 +116,27 @@ class TranslatorsController {
     }
 
     private func syncTranslatorsWithBundledData() throws {
+        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
+            throw Error.bundleMissing
+        }
+
         let metadata = try self.loadTranslatorsIndex()
         let (updated, deleted) = try self.dbStorage.createCoordinator().perform(request: SyncTranslatorsDbRequest(metadata: metadata))
-        
-        // TODO: - delete "deleted" filenames from translators folder
+
+        deleted.forEach { filename in
+            try? self.fileStorage.remove(Files.translator(filename: filename))
+        }
 
         guard !updated.isEmpty else { return }
 
-        // TODO: - unzip bundled zip
-        // TODO: - copy "updated" filenames from unzipped folder to translators folder
+        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
+
+        updated.forEach { filename in
+            try? self.fileStorage.move(from: Files.tmpTranslator(filename: filename),
+                                       to: Files.translator(filename: filename))
+        }
+
+        try? self.fileStorage.remove(Files.tmpTranslators)
     }
 
     private func loadTranslatorsIndex() throws -> [TranslatorMetadata] {
@@ -109,27 +150,7 @@ class TranslatorsController {
         return json.compactMap({ TranslatorMetadata(id: $0.key, data: $0.value) })
     }
 
-    private func loadBundledData() throws {
-        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
-            throw Error.bundleMissing
-        }
-        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
-    }
-
-    private func commitHashDidChange() throws -> Bool {
-        if self.lastCommitHash == "" {
-            return true
-        }
-
-        guard let path = Bundle.main.path(forResource: "commit_hash", ofType: "txt"),
-              let hash = try? String(contentsOf: URL(fileURLWithPath: path)) else {
-            throw Error.bundleMissing
-        }
-
-        return hash != self.lastCommitHash
-    }
-
-    func updateFromRepo() -> Single<()> {
+    func updateFromRepo(type: UpdateType) -> Single<()> {
         return Single.just(())
     }
 
@@ -138,137 +159,58 @@ class TranslatorsController {
     }
 
     func translators() -> Single<[TranslatorInfo]> {
-//        if TranslatorsController.needsReload {
-//            return self.download()
-//                       .do(onSuccess: {
-//                           TranslatorsController.needsReload = false
-//                       })
-//                       .flatMap  { [weak self] in
-//                           guard let `self` = self else { return Single.error(Error.expired) }
-//                           return self.loadLocalData()
-//                       }
-//        }
-//
-//        if self.fileStorage.has(Files.translators) {
-//            return self.loadLocalData()
-//        } else {
-//            return self.loadBundledData()
-//        }
-        return Single.just([])
+        if !self.isLoading.value {
+            return self.loadTranslators(from: Files.translators)
+        }
+        return self.isLoading.filter({ !$0 }).first().flatMap { _ in self.loadTranslators(from: Files.translators) }
     }
 
-//    private func download() -> Single<()> {
-//        return self.apiClient.download(request: TranslatorsRequest())
-//                             .flatMap { request in
-//                                return request.rx.response()
-//                             }
-//                             .asSingle()
-//                             .flatMap { [weak self] _ in
-//                                 guard let `self` = self else { return Single.error(Error.expired) }
-//                                 return self.unzipTranslators()
-//                             }
-//    }
-//
-//    /// Unzip translators if possible. This method tries to:
-//    /// 1. Unzip files into temporary directory
-//    /// 2. Remove original translators directory if available
-//    /// 3. Move temporary directory to original destination
-//    /// 4. Cleanup zip file
-//    /// If anything breaks, it tries to cleanup temporary directory and zip file.
-//    /// - returns: Single which reports that translators have been successfully unpacked, Error otherwise.
-//    private func unzipTranslators() -> Single<()> {
-//        let translators = Files.translators
-//        let zip = Files.translatorZip
-//        let unpacked = Files.translatorsUnpacked
-//
-//        do {
-//            try Zip.unzipFile(zip.createUrl(), destination: unpacked.createUrl(), overwrite: true, password: nil)
-//            if self.fileStorage.has(translators) {
-//                try self.fileStorage.remove(translators)
-//            }
-//            // Unzipping creates a folder inside our unpacked folder, find File and move its contents to translators
-//            let unpackedFiles: [File] = try self.fileStorage.contentsOfDirectory(at: unpacked)
-//            if unpackedFiles.isEmpty {
-//                throw Error.unpackedFileEmpty
-//            } else if unpackedFiles.count == 1, let content = unpackedFiles.first {
-//                try self.fileStorage.move(from: content, to: translators)
-//                try self.fileStorage.remove(unpacked)
-//            } else {
-//                if unpackedFiles.contains(where: { $0.ext == "js" }) {
-//                    try self.fileStorage.move(from: unpacked, to: translators)
-//                } else {
-//                    throw Error.unpackedUnknownContent
-//                }
-//            }
-//            try self.fileStorage.remove(zip)
-//            return Single.just(())
-//        } catch let error {
-//            try? self.fileStorage.remove(zip)
-//            try? self.fileStorage.remove(unpacked)
-//            return Single.error(error)
-//        }
-//    }
-//
-//    private func loadLocalData() -> Single<[TranslatorInfo]> {
-//        return self.loadTranslators(from: Files.translators)
-//    }
-//
-//    private func loadBundledData() -> Single<[TranslatorInfo]> {
-//        guard let url = Bundle.main.url(forResource: "translators",
-//                                        withExtension: nil,
-//                                        subdirectory: "translation/modules/zotero") else {
-//            return Single.error(Error.bundleMissing)
-//        }
-//        return self.loadTranslators(from: Files.file(from: url))
-//    }
-//
-//    private func loadTranslators(from file: File) -> Single<[TranslatorInfo]> {
-//        do {
-//            let contents: [File] = try self.fileStorage.contentsOfDirectory(at: file)
-//            let translators = contents.compactMap({ self.loadTranslatorInfo(from: $0) })
-//            return Single.just(translators)
-//        } catch let error {
-//            DDLogError("TranslatorController: error - \(error)")
-//            return Single.error(error)
-//        }
-//    }
-//
-//    private func loadTranslatorInfo(from file: File) -> TranslatorInfo? {
-//        guard file.ext == "js" else { return nil }
-//
-//        do {
-//            let data = try self.fileStorage.read(file)
-//
-//            guard let string = String(data: data, encoding: .utf8),
-//                  let endingIndex = self.metadataIndex(from: string),
-//                  let metadataData = string[string.startIndex..<endingIndex].data(using: .utf8),
-//                  var metadata = try JSONSerialization.jsonObject(with: metadataData,
-//                                                                  options: .allowFragments) as? [String: Any] else {
-//                throw Error.incompatibleString
-//            }
-//
-//            metadata["code"] = string
-//
-//            return metadata
-//        } catch let error {
-//            DDLogError("TranslatorsController: cant' read data from \(file.createUrl()) - \(error)")
-//            return nil
-//        }
-//    }
-//
-//    private func metadataIndex(from string: String) -> String.Index? {
-//        var count = 0
-//        for (index, character) in string.enumerated() {
-//            if character == "{" {
-//                count += 1
-//            } else if character == "}" {
-//                count -= 1
-//            }
-//
-//            if count == 0 {
-//                return string.index(string.startIndex, offsetBy: index + 1)
-//            }
-//        }
-//        return nil
-//    }
+    private func loadTranslators(from file: File) -> Single<[TranslatorInfo]> {
+        do {
+            let contents: [File] = try self.fileStorage.contentsOfDirectory(at: file)
+            let translators = contents.compactMap({ self.loadTranslatorInfo(from: $0) })
+            return Single.just(translators)
+        } catch let error {
+            DDLogError("TranslatorController: error - \(error)")
+            return Single.error(error)
+        }
+    }
+
+    private func loadTranslatorInfo(from file: File) -> TranslatorInfo? {
+        guard file.ext == "js" else { return nil }
+
+        do {
+            let data = try self.fileStorage.read(file)
+
+            guard let string = String(data: data, encoding: .utf8),
+                  let endingIndex = self.metadataIndex(from: string),
+                  let metadataData = string[string.startIndex..<endingIndex].data(using: .utf8),
+                  var metadata = try JSONSerialization.jsonObject(with: metadataData, options: .allowFragments) as? [String: Any] else {
+                throw Error.incompatibleTranslator
+            }
+
+            metadata["code"] = string
+
+            return metadata
+        } catch let error {
+            DDLogError("TranslatorsController: cant' read data from \(file.createUrl()) - \(error)")
+            return nil
+        }
+    }
+
+    private func metadataIndex(from string: String) -> String.Index? {
+        var count = 0
+        for (index, character) in string.enumerated() {
+            if character == "{" {
+                count += 1
+            } else if character == "}" {
+                count -= 1
+            }
+
+            if count == 0 {
+                return string.index(string.startIndex, offsetBy: index + 1)
+            }
+        }
+        return nil
+    }
 }

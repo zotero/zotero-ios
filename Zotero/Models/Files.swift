@@ -70,8 +70,25 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: "", ext: "")
     }
 
+    static func translator(filename: String) -> File {
+        let (name, ext) = self.split(filename: filename)
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: name, ext: ext)
+    }
+
     static var tmpTranslators: File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators_unpacked"], name: "", ext: "")
+    }
+
+    static func tmpTranslator(filename: String) -> File {
+        let (name, ext) = self.split(filename: filename)
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators_unpacked"], name: name, ext: ext)
+    }
+
+    private static func split(filename: String) -> (name: String, ext: String) {
+        let split = filename.split(separator: ".")
+        let name = split.first.flatMap({ String($0) }) ?? filename
+        let ext = split.last.flatMap({ String($0) }) ?? ""
+        return (name, ext)
     }
 
     // MARK: - Share extension
