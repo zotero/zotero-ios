@@ -83,7 +83,7 @@ class WebViewHandler: NSObject {
                    .flatMap { _ -> Single<()> in
                        return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
                    }
-                   .flatMap { _ -> Single<[TranslatorInfo]> in
+                   .flatMap { _ -> Single<[RawTranslator]> in
                        return self.translatorsController.translators()
                    }
                    .flatMap { translators -> Single<Any> in

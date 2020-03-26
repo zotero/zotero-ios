@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct LibrariesView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<LibrariesActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<LibrariesActionHandler>
 
     @Environment(\.dbStorage) private var dbStorage: DbStorage
 

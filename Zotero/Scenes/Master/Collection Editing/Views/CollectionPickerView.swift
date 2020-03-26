@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionPickerView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<CollectionPickerActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<CollectionPickerActionHandler>
 
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
 

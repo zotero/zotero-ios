@@ -11,19 +11,23 @@ import Foundation
 import RealmSwift
 
 struct SyncTranslatorsDbRequest: DbResponseRequest {
-    typealias Response = (updated: [String], deleted: [String])
+    typealias Response = (update: [String], delete: [String])
 
     var needsWrite: Bool { return true }
 
-    let metadata: [TranslatorMetadata]
+    let updateMetadata: [TranslatorMetadata]
+    let deleteIndices: [String]
 
-    func process(in database: Realm) throws -> (updated: [String], deleted: [String]) {
-        let toDelete = database.objects(RTranslatorMetadata.self).filter("id NOT IN %@", self.metadata.map({ $0.id }))
-        var toDeleteFilenames = Array(toDelete.map({ $0.filename }))
-        database.delete(toDelete)
+    func process(in database: Realm) throws -> (update: [String], delete: [String]) {
+        var delete: [String] = []
+        if !self.deleteIndices.isEmpty {
+            let objects = database.objects(RTranslatorMetadata.self).filter("id IN %@", self.deleteIndices)
+            delete = objects.map({ $0.filename })
+            database.delete(objects)
+        }
 
-        var toUpdateFilenames: [String] = []
-        for metadata in self.metadata {
+        var update: [String] = []
+        for metadata in self.updateMetadata {
             let rMetadata: RTranslatorMetadata
 
             if let existing = database.object(ofType: RTranslatorMetadata.self, forPrimaryKey: metadata.id) {
@@ -35,16 +39,12 @@ struct SyncTranslatorsDbRequest: DbResponseRequest {
             }
 
             rMetadata.label = metadata.label
-            if !rMetadata.filename.isEmpty && rMetadata.filename != metadata.filename {
-                // If this is not a new record and a file name of translator changed, delete the old file with old name.
-                toDeleteFilenames.append(rMetadata.filename)
-            }
             rMetadata.filename = metadata.filename
             rMetadata.lastUpdated = metadata.lastUpdated
 
-            toUpdateFilenames.append(metadata.filename)
+            update.append(metadata.filename)
         }
 
-        return (toUpdateFilenames, toDeleteFilenames)
+        return (update, delete)
     }
 }

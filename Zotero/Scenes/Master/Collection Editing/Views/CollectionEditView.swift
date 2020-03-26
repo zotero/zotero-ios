@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionEditView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<CollectionEditActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<CollectionEditActionHandler>
 
     weak var coordinatorDelegate: (CollectionEditingCoordinatorDelegate & Coordinator)?
 

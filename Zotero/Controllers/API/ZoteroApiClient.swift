@@ -53,8 +53,7 @@ class ZoteroApiClient: ApiClient {
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
-                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self,
-                                                                                     from: data)
+                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
                                       return Observable.just((decodedResponse, response.allHeaderFields))
                                   } catch let error {
                                       return Observable.error(error)

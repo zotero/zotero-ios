@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CollectionsPickerView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<CollectionPickerActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<CollectionPickerActionHandler>
 
     @State var selectedKeys: Binding<Set<String>>
     let closeAction: () -> Void

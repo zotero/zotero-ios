@@ -448,6 +448,13 @@
 		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B37147402382B51000AC8758 /* CrashReporter.framework */; };
+		B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
+		B378F4CB242CCBA600B88A05 /* test.xml in Resources */ = {isa = PBXBuildFile; fileRef = B378F4CA242CCBA600B88A05 /* test.xml */; };
+		B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */; };
+		B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
+		B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
+		B378F4D1242D0E4900B88A05 /* TranslatorParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */; };
+		B378F4D2242D0EE700B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B37F7ABC23955031008A51B4 /* CreateItemRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */; };
 		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
 		B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
@@ -839,6 +846,10 @@
 		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
+		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
+		B378F4CA242CCBA600B88A05 /* test.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = test.xml; path = ../../../../Downloads/test.xml; sourceTree = "<group>"; };
+		B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorParserDelegate.swift; sourceTree = "<group>"; };
+		B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
 		B37F7ABB23955031008A51B4 /* CreateItemRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateItemRequest.swift; sourceTree = "<group>"; };
 		B3823B292399302100953F5D /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B3866A572417C1BC006693C4 /* ViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
@@ -984,6 +995,7 @@
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
 				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
+				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -1047,10 +1059,10 @@
 				B305644D23FC051E003304F2 /* StoreNoteDbRequest.swift */,
 				B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */,
 				B305645123FC051E003304F2 /* StoreSettingsDbRequest.swift */,
+				B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */,
 				B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
-				B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1105,6 +1117,7 @@
 				B305649523FC051E003304F2 /* SubmitDeletionsRequest.swift */,
 				B305649023FC051E003304F2 /* UpdatesRequest.swift */,
 				B305649623FC051E003304F2 /* VersionsRequest.swift */,
+				B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1212,6 +1225,7 @@
 				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
 				B3D3F78A240D222C0018F354 /* ItemFetchType.swift */,
 				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
+				B378F4C8242CC8EF00B88A05 /* Translator.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1219,15 +1233,15 @@
 		B305652D23FC051E003304F2 /* Database */ = {
 			isa = PBXGroup;
 			children = (
-				B305652F23FC051E003304F2 /* RTag.swift */,
 				B305653023FC051E003304F2 /* RCollection.swift */,
 				B305653123FC051E003304F2 /* RCreator.swift */,
+				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
+				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653223FC051E003304F2 /* RItem.swift */,
 				B305653323FC051E003304F2 /* RSearch.swift */,
-				B305653423FC051E003304F2 /* RVersions.swift */,
-				B305653523FC051E003304F2 /* RGroup.swift */,
-				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
+				B305652F23FC051E003304F2 /* RTag.swift */,
 				B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */,
+				B305653423FC051E003304F2 /* RVersions.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -1316,6 +1330,7 @@
 				B30D59662206F60500884C4A /* Info.plist */,
 				B3DD9CE92256340400DE6BAA /* licenses.plist */,
 				B30D59582206F60400884C4A /* AppDelegate.swift */,
+				B378F4CA242CCBA600B88A05 /* test.xml */,
 				B39B18E7223947050019F467 /* main.swift */,
 				B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */,
 				B30D59632206F60500884C4A /* LaunchScreen.storyboard */,
@@ -1990,6 +2005,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B3593F46241A61C700760E20 /* ItemsActionSheetViewController.xib in Resources */,
+				B378F4CB242CCBA600B88A05 /* test.xml in Resources */,
 				B3593F33241A61C700760E20 /* ItemDetailNoteCell.xib in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentCell.xib in Resources */,
@@ -2196,6 +2212,7 @@
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
+				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
 				B30565BA23FC051E003304F2 /* StoreCollectionDbRequest.swift in Sources */,
 				B3DCDECB2408F36E0039ED0D /* OnboardingButton.swift in Sources */,
 				B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */,
@@ -2288,6 +2305,7 @@
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
 				B3DCDECD2408F36E0039ED0D /* LoginView.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
+				B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */,
 				B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B30565E123FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
@@ -2429,6 +2447,7 @@
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
 				B3593F1F241A61C700760E20 /* TagPickerAction.swift in Sources */,
 				B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */,
+				B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */,
 				B3593F59241A61C700760E20 /* CollectionsViewController.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
@@ -2542,6 +2561,7 @@
 				B305675123FC09AF003304F2 /* RCustomLibrary.swift in Sources */,
 				B305675223FC09AF003304F2 /* WriteBatch.swift in Sources */,
 				B3593F5E241A621D00760E20 /* CollectionTreeBuilder.swift in Sources */,
+				B378F4D2242D0EE700B88A05 /* Translator.swift in Sources */,
 				B305675323FC09AF003304F2 /* AccessPermissions.swift in Sources */,
 				B305675423FC09AF003304F2 /* Versions.swift in Sources */,
 				B305675523FC09AF003304F2 /* AttachmentUpload.swift in Sources */,
@@ -2639,6 +2659,7 @@
 				B305671F23FC08E6003304F2 /* UpdateVersionsDbRequest.swift in Sources */,
 				B30566EA23FC0828003304F2 /* AttachmentUploadRequest.swift in Sources */,
 				B305671923FC08D8003304F2 /* StoreItemsDbRequest.swift in Sources */,
+				B378F4D1242D0E4900B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B30566DE23FC0804003304F2 /* BackgroundUploader.swift in Sources */,
 				B305671623FC08CF003304F2 /* StoreCollectionsDbRequest.swift in Sources */,
 				B305671323FC08C9003304F2 /* ResolveItemDbRequest.swift in Sources */,
@@ -2671,6 +2692,7 @@
 				B305672E23FC091C003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B30566E923FC0826003304F2 /* VersionsRequest.swift in Sources */,
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
+				B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */,
 				B305672823FC090F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B305677823FC0BF2003304F2 /* UserDefaults+Codable.swift in Sources */,

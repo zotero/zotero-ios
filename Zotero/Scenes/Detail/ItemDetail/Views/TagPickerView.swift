@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct TagPickerView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<TagPickerActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<TagPickerActionHandler>
 
     let saveAction: ([Tag]) -> Void
     let dismiss: () -> Void

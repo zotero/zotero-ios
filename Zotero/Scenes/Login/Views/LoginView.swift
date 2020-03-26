@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<LoginActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<LoginActionHandler>
 
     var body: some View {
         GeometryReader { proxy in

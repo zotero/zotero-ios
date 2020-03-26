@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct DebugSettingsView: View {
-    @EnvironmentObject private(set) var viewModel: ViewModel<SettingsActionHandler>
+    @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
 
     var body: some View {
         Form {
