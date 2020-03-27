@@ -10,33 +10,69 @@ import Foundation
 
 import CocoaLumberjack
 
+struct TranslatorMetadatas {
+    let metadatas: [TranslatorMetadata]
+    let errors: [Error]
+}
+
+extension TranslatorMetadatas: Decodable {
+    init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+
+        var metadatas: [TranslatorMetadata] = []
+        var errors: [Error] = []
+
+        while !container.isAtEnd {
+            do {
+                let metadata = try container.decode(TranslatorMetadata.self)
+                metadatas.append(metadata)
+            } catch let error {
+                errors.append(error)
+            }
+        }
+
+        self.init(metadatas: metadatas, errors: errors)
+    }
+}
+
 struct TranslatorMetadata {
     private static let formatter = createFormatter()
 
     let id: String
-    let label: String
-    let filename: String
     let lastUpdated: Date
+    let filename: String
 
-    init?(id: String, data: [String: Any]) {
-        guard let label = data["label"] as? String,
-              let filename = data["fileName"] as? String,
-              let lastUpdatedRawDate = data["lastUpdated"] as? String,
-              let lastUpdated = TranslatorMetadata.formatter.date(from: lastUpdatedRawDate) else {
-            DDLogError("TranslatorMetadata: can't parse data for \(id)")
-            DDLogError("\(data)")
-            return nil
+    init(id: String, filename: String, rawLastUpdated: String) throws {
+        guard let lastUpdated = TranslatorMetadata.formatter.date(from: rawLastUpdated) else {
+            throw Error.incorrectDateFormat
         }
 
         self.id = id
-        self.label = label
-        self.filename = filename
         self.lastUpdated = lastUpdated
+        self.filename = filename
     }
 
     private static func createFormatter() -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd hh:mm:ss"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return formatter
+    }
+}
+
+extension TranslatorMetadata: Decodable {
+    private enum Keys: String, CodingKey {
+        case id, lastUpdated, fileName
+    }
+
+    enum Error: Swift.Error {
+        case incorrectDateFormat
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: Keys.self)
+        let id = try container.decode(String.self, forKey: .id)
+        let rawLastUpdated = try container.decode(String.self, forKey: .lastUpdated)
+        let filename = try container.decode(String.self, forKey: .fileName)
+        try self.init(id: id, filename: filename, rawLastUpdated: rawLastUpdated)
     }
 }

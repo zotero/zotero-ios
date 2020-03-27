@@ -12,8 +12,6 @@ import RealmSwift
 
 class RTranslatorMetadata: Object {
     @objc dynamic var id: String = ""
-    @objc dynamic var label: String = ""
-    @objc dynamic var filename: String = ""
     @objc dynamic var lastUpdated: Date = Date(timeIntervalSince1970: 0)
 
     // MARK: - Object properties

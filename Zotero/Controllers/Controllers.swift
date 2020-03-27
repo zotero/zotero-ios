@@ -105,6 +105,8 @@ class UserControllers {
     let itemLocaleController: RItemLocaleController
     let backgroundUploader: BackgroundUploader
 
+    private static let schemaVersion: UInt64 = 9
+
     private var disposeBag: DisposeBag
 
     init(userId: Int, controllers: Controllers) {
@@ -170,7 +172,7 @@ class UserControllers {
 
             DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
 
-            return RealmDbStorage(url: file.createUrl())
+            return RealmDbStorage(config: MainDatabase.configuration(url: file.createUrl()))
         } catch let error {
             // TODO: - handle the error a bit more graciously
             fatalError("UserControllers: can't create DB file - \(error)")

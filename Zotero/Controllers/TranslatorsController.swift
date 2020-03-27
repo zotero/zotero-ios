@@ -18,6 +18,7 @@ typealias RawTranslator = [String: Any]
 protocol TranslatorsControllerCoordinatorDelegate: class {
     func showRemoteLoadTranslatorsError(result: (Bool) -> Void)
     func showBundleLoadTranslatorsError(result: (Bool) -> Void)
+    func showResetToBundleError()
 }
 
 class TranslatorsController {
@@ -34,6 +35,7 @@ class TranslatorsController {
         case bundleMissing
         case cantParseIndexFile
         case incompatibleTranslator
+        case incompatibleDeleted
 
         var isBundeLoadingError: Bool {
             switch self {
@@ -70,11 +72,14 @@ class TranslatorsController {
 
         self.apiClient = apiClient
         self.fileStorage = fileStorage
-        self.dbStorage = RealmDbStorage(url: Files.translatorsDbFile.createUrl())
+        self.dbStorage = RealmDbStorage(config: TranslatorDatabase.configuration)
         self.isLoading = BehaviorRelay(value: false)
         self.disposeBag = DisposeBag()
     }
 
+    // MARK: - Actions
+
+    /// Loads bundled translators if needed, then loads remote translators.
     func update() {
         self.isLoading.accept(true)
         let type: UpdateType = self.lastCommitHash == nil ? .initial : .startup
@@ -86,12 +91,71 @@ class TranslatorsController {
             .subscribe(onSuccess: { [weak self] _ in
                 self?.isLoading.accept(false)
             }, onError: { [weak self] error in
-                self?.process(error: error, updateType: type)
+                self?.process(error: error)
             })
             .disposed(by: self.disposeBag)
     }
 
-    private func process(error: Swift.Error, updateType: UpdateType) {
+    /// Update local translators with bundled translators if needed.
+    private func updateFromBundle() -> Single<()> {
+        return Single.create { [weak self] subscriber -> Disposable in
+            guard let `self` = self else {
+                subscriber(.error(Error.bundleLoading(Error.expired)))
+                return Disposables.create()
+            }
+
+            do {
+                let (deletedVersion, deletedIndices) = try self.loadDeleted()
+                let hash = try self.loadLastCommitHash()
+                let timestamp = try self.loadLastTimestamp()
+
+                if self.lastCommitHash != hash {
+                    try self.syncTranslatorsWithBundledData(deletedIndices: deletedIndices)
+                    self.lastCommitHash = hash
+                    self.lastTimestamp = timestamp
+                    self.lastDeleted = deletedVersion
+                }
+
+                subscriber(.success(()))
+            } catch let error {
+                subscriber(.error(Error.bundleLoading(error)))
+            }
+
+            return Disposables.create()
+        }
+    }
+
+    /// Manual update of translators from remote repo.
+    func updateFromRepo() {
+        self.isLoading.accept(true)
+        self._updateFromRepo(type: .manual)
+            .observeOn(MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.isLoading.accept(false)
+            }, onError: { [weak self] error in
+                self?.process(error: error)
+            })
+            .disposed(by: self.disposeBag)
+    }
+
+    /// Loads remote translators and syncs them with local data.
+    /// - parameter type: Type of repo update.
+    /// - returns: Timestamp of repo update.
+    private func _updateFromRepo(type: UpdateType) -> Single<Int> {
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
+        let request = TranslatorsRequest(timestamp: Int(self.lastTimestamp), version: "\(version)-iOS", type: type.rawValue)
+        return self.apiClient.send(request: request)
+                             .flatMap { data, _ -> Single<(Int, [Translator])> in
+                                return Single.just(self.parseXmlTranslators(from: data))
+                             }
+                             .flatMap { timestamp, translators in
+                                return self.syncTranslatorsWithRemote(translators: translators).flatMap({ return Single.just(timestamp) })
+                             }
+    }
+
+    /// Checks whether the error was caused by bundled or remote loading and shows appropriate error.
+    /// - parameter error: Error to check.
+    private func process(error: Swift.Error) {
         // In case of bundle loading error ask user whether we should try to reset.
 
         if (error as? Error)?.isBundeLoadingError == true {
@@ -107,119 +171,38 @@ class TranslatorsController {
 
         self.coordinatorDelegate?.showRemoteLoadTranslatorsError { retry in
             if retry {
-                self.updateFromRepo(type: updateType)
+                self.updateFromRepo()
             } else {
                 self.isLoading.accept(false)
             }
         }
     }
 
-    private func updateFromBundle() -> Single<()> {
-        return Single.create { [weak self] subscriber -> Disposable in
-            guard let `self` = self else {
-                subscriber(.error(Error.bundleLoading(Error.expired)))
-                return Disposables.create()
-            }
-            guard let hashPath = Bundle.main.path(forResource: "commit_hash", ofType: "txt"),
-                  let timestampPath = Bundle.main.path(forResource: "timestamp", ofType: "txt"),
-                  let deletedUrl = Bundle.main.path(forResource: "deleted", ofType: "txt").flatMap({ URL(fileURLWithPath: $0) }),
-                  let (deletedVersion, deletedIndices) = (try? String(contentsOf: deletedUrl)).flatMap({ self.parse(deleted: $0) }),
-                  let hash = try? String(contentsOf: URL(fileURLWithPath: hashPath)),
-                  let timestamp = (try? String(contentsOf: URL(fileURLWithPath: timestampPath))).flatMap(Double.init) else {
-                subscriber(.error(Error.bundleLoading(Error.bundleMissing)))
-                return Disposables.create()
-            }
-
-            do {
-                if self.lastCommitHash != hash {
-                    try self.syncTranslatorsWithBundledData(deletedIndices: deletedIndices)
-                    self.lastCommitHash = hash
-                    self.lastTimestamp = timestamp
-                    self.lastDeleted = deletedVersion
-                }
-                subscriber(.success(()))
-            } catch let error {
-                subscriber(.error(Error.bundleLoading(error)))
-            }
-
-            return Disposables.create()
-        }
-    }
-
+    /// Sync local translators with bundled translators.
     private func syncTranslatorsWithBundledData(deletedIndices: [String]) throws {
-        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
-            throw Error.bundleMissing
-        }
-
-        let metadata = try self.loadTranslatorsIndex()
+        let metadata = try self.loadIndex()
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deletedIndices)
-        let (update, delete) = try self.dbStorage.createCoordinator().perform(request: request)
+        let updated = try self.dbStorage.createCoordinator().perform(request: request)
 
-        delete.forEach { filename in
-            try? self.fileStorage.remove(Files.translator(filename: filename))
+        deletedIndices.forEach { id in
+            try? self.fileStorage.remove(Files.translator(filename: id))
         }
 
-        guard !update.isEmpty else { return }
+        guard !updated.isEmpty else { return }
 
-        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
+        try self.unzipTranslators()
 
-        update.forEach { filename in
+        updated.forEach { (id, filename) in
             try? self.fileStorage.move(from: Files.tmpTranslator(filename: filename),
-                                       to: Files.translator(filename: filename))
+                                       to: Files.translator(filename: id))
         }
 
         try? self.fileStorage.remove(Files.tmpTranslators)
     }
 
-    private func parse(deleted: String) -> (Int, [String])? {
-        let deletedLines = deleted.split(whereSeparator: { $0.isNewline })
-        // TODO: - finish
-        return nil
-    }
-
-    private func loadTranslatorsIndex() throws -> [TranslatorMetadata] {
-        guard let indexFilePath = Bundle.main.path(forResource: "index", ofType: "json") else {
-            throw Error.bundleMissing
-        }
-        let data = try Data(contentsOf: URL(fileURLWithPath: indexFilePath))
-        guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: Any]] else {
-            throw Error.cantParseIndexFile
-        }
-        return json.compactMap({ TranslatorMetadata(id: $0.key, data: $0.value) })
-    }
-
-    func updateFromRepo(type: UpdateType) {
-        self.isLoading.accept(true)
-        self._updateFromRepo(type: type)
-            .observeOn(MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
-                self?.isLoading.accept(false)
-            }, onError: { [weak self] error in
-                self?.process(error: error, updateType: type)
-            })
-            .disposed(by: self.disposeBag)
-    }
-
-    private func _updateFromRepo(type: UpdateType) -> Single<Int> {
-        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
-        let request = TranslatorsRequest(timestamp: Int(self.lastTimestamp), version: "\(version)-iOS", type: type.rawValue)
-        return self.apiClient.send(request: request)
-                             .flatMap { data, _ -> Single<([Translator], Int)> in
-                                 let delegate = TranslatorParserDelegate()
-                                 let parser = XMLParser(data: data)
-                                 parser.delegate = delegate
-                                 if parser.parse() {
-                                     return Single.just((delegate.translators, delegate.timestamp))
-                                 } else {
-                                     return Single.just(([], Int(Date().timeIntervalSince1970)))
-                                 }
-                             }
-                             .flatMap { translators, timestamp in
-                                return self.update(translators: translators).flatMap({ return Single.just(timestamp) })
-                             }
-    }
-
-    private func update(translators: [Translator]) -> Single<()> {
+    /// Sync local translators with remote translators.
+    /// - parameter translators: Translators to be updated or removed.
+    private func syncTranslatorsWithRemote(translators: [Translator]) -> Single<()> {
         do {
             let (updateTranslators, deleteTranslators) = self.split(translators: translators)
             let updateMetadata = updateTranslators.compactMap({ self.metadata(from: $0) })
@@ -234,13 +217,13 @@ class TranslatorsController {
             _ = try self.dbStorage.createCoordinator().perform(request: request)
 
             for metadata in deleteMetadata {
-                try? self.fileStorage.remove(Files.translator(filename: metadata.filename))
+                try? self.fileStorage.remove(Files.translator(filename: metadata.id))
             }
             for (index, metadata) in updateMetadata.enumerated() {
                 guard let data = self.data(from: updateTranslators[index]) else {
                     return Single.error(Error.incompatibleTranslator)
                 }
-                try? self.fileStorage.write(data, to: Files.translator(filename: metadata.filename), options: .atomicWrite)
+                try? self.fileStorage.write(data, to: Files.translator(filename: metadata.id), options: .atomicWrite)
             }
 
             return Single.just(())
@@ -249,55 +232,48 @@ class TranslatorsController {
         }
     }
 
-    private func split(translators: [Translator]) -> (update: [Translator], delete: [Translator]) {
-        var update: [Translator] = []
-        var delete: [Translator] = []
+    /// Manual reset of translators.
+    func resetToBundle() {
+        do {
+            try self._resetToBundle()
+        } catch let error {
+            DDLogError("TranslatorsController: can't reset to bundle - \(error)")
+            self.coordinatorDelegate?.showResetToBundleError()
+        }
+    }
 
-        for translator in translators {
-            guard let priority = translator.metadata["priority"].flatMap(Int.init) else { continue }
-            if priority > 0 {
-                update.append(translator)
-            } else {
-                delete.append(translator)
-            }
+    /// Reset local translators to match bundled translators.
+    private func _resetToBundle() throws {
+        guard let zipUrl = Bundle.main.path(forResource: "bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
+            throw Error.bundleMissing
         }
 
-        return (update, delete)
+        let metadata = try self.loadIndex()
+        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
+        try? self.fileStorage.remove(Files.translators)
+        for data in metadata {
+            try self.fileStorage.move(from: Files.tmpTranslator(filename: data.filename), to: Files.translator(filename: data.id))
+        }
+        try self.dbStorage.createCoordinator().perform(request: ResetTranslatorsDbRequest(metadata: metadata))
     }
 
-    private func metadata(from translator: Translator) -> TranslatorMetadata? {
-        guard let id = translator.metadata["id"],
-              let label = translator.metadata["label"] else { return nil }
-        var metadata = translator.metadata
-        metadata["fileName"] = label + ".js"
-        return TranslatorMetadata(id: id, data: metadata)
-    }
+    // MARK: - Translator loading
 
-    private func data(from translator: Translator) -> Data? {
-        guard let jsonMetadata = try? JSONSerialization.data(withJSONObject: translator.metadata, options: .prettyPrinted),
-              let code = translator.code.data(using: .utf8),
-              let newlines = "\n\n".data(using: .utf8) else { return nil }
-        var data = jsonMetadata
-        data.append(newlines)
-        data.append(code)
-        return data
-    }
-
-    func resetToBundle() {
-//        XMLParser
-    }
-
+    /// Loads raw translators if they are not currently being loaded. Otherwise waits for loading and returns them afterwards.
+    /// - returns: Raw translators.
     func translators() -> Single<[RawTranslator]> {
         if !self.isLoading.value {
-            return self.loadTranslators(from: Files.translators)
+            return self.loadTranslators()
         }
-        return self.isLoading.filter({ !$0 }).first().flatMap { _ in self.loadTranslators(from: Files.translators) }
+        return self.isLoading.filter({ !$0 }).first().flatMap { _ in self.loadTranslators() }
     }
 
-    private func loadTranslators(from file: File) -> Single<[RawTranslator]> {
+    /// Load local raw translators for javascript.
+    /// - returns: Raw translators.
+    private func loadTranslators() -> Single<[RawTranslator]> {
         do {
-            let contents: [File] = try self.fileStorage.contentsOfDirectory(at: file)
-            let translators = contents.compactMap({ self.loadTranslatorInfo(from: $0) })
+            let contents: [File] = try self.fileStorage.contentsOfDirectory(at: Files.translators)
+            let translators = contents.compactMap({ self.loadRawTranslator(from: $0) })
             return Single.just(translators)
         } catch let error {
             DDLogError("TranslatorController: error - \(error)")
@@ -305,7 +281,10 @@ class TranslatorsController {
         }
     }
 
-    private func loadTranslatorInfo(from file: File) -> RawTranslator? {
+    /// Loads raw translator dictionary from translator file.
+    /// - parameter file: File of translator.
+    /// - returns: Raw translator data.
+    private func loadRawTranslator(from file: File) -> RawTranslator? {
         guard file.ext == "js" else { return nil }
 
         do {
@@ -327,6 +306,9 @@ class TranslatorsController {
         }
     }
 
+    /// Finds `endIndex` of metadata part in translator file (translator file consists of json metadata and code).
+    /// - parameter string: Raw translator file string.
+    /// - returns: End index of json metadata.
     private func metadataIndex(from string: String) -> String.Index? {
         var count = 0
         for (index, character) in string.enumerated() {
@@ -341,5 +323,150 @@ class TranslatorsController {
             }
         }
         return nil
+    }
+
+    // MARK: - Helpers
+
+    /// Unzips bundled translators into temporary translator folder.
+    private func unzipTranslators() throws {
+        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
+            throw Error.bundleMissing
+        }
+        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
+    }
+
+    /// Parses version and indices from `deleted.txt` file and
+    /// checks whether deleted version is higher than `lastDeletedVersion`. Returns data accordingly.
+    /// - parameter deleted: Raw `deleted.txt` string.
+    /// - parameter lastDeletedVersion: Version of `deleted.txt` file which was processed last.
+    /// - returns: If `version > lastDeletedVersion` return tuple with `version` and parsed indices.
+    ///            Otherwise return tuple with `lastDeletedVersion` and empty array.
+    private func parse(deleted: String, lastDeletedVersion: Int) -> (Int, [String])? {
+        let deletedLines = deleted.split(whereSeparator: { $0.isNewline })
+        guard !deletedLines.isEmpty,
+              let version = self.parseDeleted(line: deletedLines[0]).flatMap(Int.init) else { return nil }
+
+        if version <= lastDeletedVersion {
+            return (lastDeletedVersion, [])
+        }
+
+        let indices = (1..<deletedLines.count).compactMap({ self.parseDeleted(line: deletedLines[$0]) })
+        return (version, indices)
+    }
+
+    /// Parses value from a line from `deleted.txt` file. Each line contains a value followed by a comment.
+    /// - parameter line: Line to be parsed.
+    /// - returns: Parsed value if comment was found. `nil` otherwise.
+    private func parseDeleted(line: String.SubSequence) -> String? {
+        guard let index = line.firstIndex(of: "#") else { return nil }
+        return String(line[line.startIndex..<index]).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Splits translators returned by repo, which contain both translators to be updated and deleted.
+    /// Translators which need to be deleted have `priority = 0`, other translators have `priority > 0`.
+    /// - parameter translators: Translators returned by repo.
+    /// - returns: Translators split into those which need to be updated and those which need to be deleted.
+    private func split(translators: [Translator]) -> (update: [Translator], delete: [Translator]) {
+        var update: [Translator] = []
+        var delete: [Translator] = []
+
+        for translator in translators {
+            guard let priority = translator.metadata["priority"].flatMap(Int.init) else { continue }
+            if priority > 0 {
+                update.append(translator)
+            } else {
+                delete.append(translator)
+            }
+        }
+
+        return (update, delete)
+    }
+
+    /// Parses metadata from `Translator` and converts them to `TranslatorMetadata`.
+    /// - parameter translator: Translator to be converted.
+    /// - returns: Metadata of given translator.
+    private func metadata(from translator: Translator) -> TranslatorMetadata? {
+        guard let id = translator.metadata["id"],
+              let rawLastUpdated = translator.metadata["lastUpdated"] else { return nil }
+        return try? TranslatorMetadata(id: id, filename: "", rawLastUpdated: rawLastUpdated)
+    }
+
+    /// Converts `Translator` to `Data` which can be written to file.
+    /// - parameter translator: Translator to be converted.
+    /// - returns: Converted data.
+    private func data(from translator: Translator) -> Data? {
+        guard let jsonMetadata = try? JSONSerialization.data(withJSONObject: translator.metadata, options: .prettyPrinted),
+              let code = translator.code.data(using: .utf8),
+              let newlines = "\n\n".data(using: .utf8) else { return nil }
+        var data = jsonMetadata
+        data.append(newlines)
+        data.append(code)
+        return data
+    }
+
+    /// Parse XML response from translator repo.
+    /// - parameter data: Data to be parsed.
+    /// - returns: Tupe, where first value is the "currentTime" and second value is an array of parsed `Translator`s.
+    private func parseXmlTranslators(from data: Data) -> (Int, [Translator]) {
+        let delegate = TranslatorParserDelegate()
+        let parser = XMLParser(data: data)
+        parser.delegate = delegate
+        if parser.parse() {
+            return (delegate.timestamp, delegate.translators)
+        } else {
+            return (Int(Date().timeIntervalSince1970), [])
+        }
+    }
+
+    // MARK: - Bundle loading
+
+    /// Load bundled index file and parse translator metadata.
+    /// - returns: Parsed translator metadata.
+    private func loadIndex() throws -> [TranslatorMetadata] {
+        guard let indexFilePath = Bundle.main.path(forResource: "bundled/translators/index", ofType: "json") else {
+            throw Error.bundleMissing
+        }
+        let data = try Data(contentsOf: URL(fileURLWithPath: indexFilePath))
+        let decoded = try JSONDecoder().decode(TranslatorMetadatas.self, from: data)
+        return decoded.metadatas
+    }
+
+    /// Load bundled deleted.txt file and parse version and indices stored there.
+    /// - returns: Tuple, where first value is the version of deleted file and second value is an array of indices of translators to be deleted.
+    private func loadDeleted() throws -> (Int, [String]) {
+        return try self.loadFromBundle(resource: "bundled/translators/deleted", type: "txt", map: {
+            guard let data = self.parse(deleted: $0, lastDeletedVersion: self.lastDeleted) else {
+                throw Error.incompatibleDeleted
+            }
+            return data
+        })
+    }
+
+    /// Load bundled last timestamp.
+    /// - returns: Last timestamp.
+    private func loadLastTimestamp() throws -> Double {
+        return try self.loadFromBundle(resource: "bundled/translators/timestamp", type: "txt", map: {
+            guard let value = Double($0) else { throw Error.bundleMissing }
+            return value
+        })
+    }
+
+    /// Load bundled last commit hash.
+    /// - returns: Commit hash.
+    private func loadLastCommitHash() throws -> String {
+        return try self.loadFromBundle(resource: "bundled/translators/commit_hash", type: "txt", map: { return $0 })
+    }
+
+    /// Load bundled data and map it to appropriate type.
+    /// - parameter resource: Resource name to load.
+    /// - parameter type: File extension of resource to load.
+    /// - parameter map: Mapping function to convert the raw string to appropriate value.
+    /// - returns: Returns mapped result.
+    private func loadFromBundle<Result>(resource: String, type: String, map: (String) throws -> Result) throws -> Result {
+        guard let url = Bundle.main.path(forResource: resource, ofType: type).flatMap({ URL(fileURLWithPath: $0) }),
+              let rawValue = try? String(contentsOf: url) else {
+            throw Error.bundleMissing
+        }
+        return try map(rawValue)
     }
 }

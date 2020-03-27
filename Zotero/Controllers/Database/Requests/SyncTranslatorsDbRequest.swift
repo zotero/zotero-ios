@@ -11,22 +11,20 @@ import Foundation
 import RealmSwift
 
 struct SyncTranslatorsDbRequest: DbResponseRequest {
-    typealias Response = (update: [String], delete: [String])
+    typealias Response = [(String, String)]
 
     var needsWrite: Bool { return true }
 
     let updateMetadata: [TranslatorMetadata]
     let deleteIndices: [String]
 
-    func process(in database: Realm) throws -> (update: [String], delete: [String]) {
-        var delete: [String] = []
+    func process(in database: Realm) throws -> [(String, String)] {
         if !self.deleteIndices.isEmpty {
             let objects = database.objects(RTranslatorMetadata.self).filter("id IN %@", self.deleteIndices)
-            delete = objects.map({ $0.filename })
             database.delete(objects)
         }
 
-        var update: [String] = []
+        var update: [(String, String)] = []
         for metadata in self.updateMetadata {
             let rMetadata: RTranslatorMetadata
 
@@ -36,15 +34,13 @@ struct SyncTranslatorsDbRequest: DbResponseRequest {
             } else {
                 rMetadata = RTranslatorMetadata()
                 rMetadata.id = metadata.id
+                database.add(rMetadata)
             }
 
-            rMetadata.label = metadata.label
-            rMetadata.filename = metadata.filename
             rMetadata.lastUpdated = metadata.lastUpdated
-
-            update.append(metadata.filename)
+            update.append((metadata.id, metadata.filename))
         }
 
-        return (update, delete)
+        return update
     }
 }

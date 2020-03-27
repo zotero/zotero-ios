@@ -16,21 +16,10 @@ enum RealmDbError: Error {
 }
 
 class RealmDbStorage {
-    private static let schemaVersion: UInt64 = 9
     private let config: Realm.Configuration
 
     init(config: Realm.Configuration) {
         self.config = config
-    }
-
-    convenience init(url: URL) {
-        let config = Realm.Configuration(fileURL: url,
-                                         schemaVersion: RealmDbStorage.schemaVersion,
-                                         migrationBlock: { _, _ in
-            // TODO: Implement when needed
-        })
-//        config.deleteRealmIfMigrationNeeded = true
-        self.init(config: config)
     }
 
     func clear() {
