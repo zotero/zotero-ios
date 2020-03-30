@@ -12,7 +12,7 @@ target 'Zotero' do
     pod 'RxCocoa', '5.0.1'
     pod 'CocoaLumberjack/Core', '3.6.0'
     pod 'CocoaLumberjack/Swift', '3.6.0'
-    pod 'Zip', '1.1.0'
+    pod 'ZIPFoundation', '0.9.11'
     #pspdfkit
 
     target 'ZoteroTests' do

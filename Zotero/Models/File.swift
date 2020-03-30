@@ -15,16 +15,16 @@ protocol File {
     var name: String { get }
     var ext: String { get }
     var mimeType: String { get }
+    var isDirectory: Bool { get }
 
     func createUrl() -> URL
     func createRelativeUrl() -> URL
 }
 
-struct FileData: File {
-    var rootPath: String
-    var relativeComponents: [String]
-    var name: String
-    var ext: String
+extension File {
+    var isDirectory: Bool {
+        return self.name == "" && self.ext == ""
+    }
 
     var mimeType: String {
         if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, self.ext as NSString, nil)?.takeRetainedValue() {
@@ -36,7 +36,7 @@ struct FileData: File {
     }
 
     func createUrl() -> URL {
-        if self.name == "" && self.ext == "" {
+        if self.isDirectory {
             return self.createRelativeUrl()
         }
         return self.createRelativeUrl().appendingPathComponent(self.name).appendingPathExtension(self.ext)
@@ -49,4 +49,11 @@ struct FileData: File {
         }
         return url
     }
+}
+
+struct FileData: File {
+    let rootPath: String
+    let relativeComponents: [String]
+    let name: String
+    let ext: String
 }

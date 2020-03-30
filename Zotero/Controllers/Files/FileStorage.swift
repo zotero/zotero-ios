@@ -34,7 +34,7 @@ class FileStorageController: FileStorage {
     }
 
     func remove(_ file: File) throws {
-        if file.name == "" && file.ext == "" {
+        if file.isDirectory {
             // This File instance is a directory, remove its contents.
             let contents = try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [])
             for url in contents {
@@ -64,11 +64,7 @@ class FileStorageController: FileStorage {
     }
 
     func createDirectories(for file: File) throws {
-        var relativeUrl = file.createRelativeUrl()
-        if file.name == "" && file.ext == "" {
-            // It's a directory, create missing directories up to parent
-            relativeUrl.deleteLastPathComponent()
-        }
+        let relativeUrl = file.createRelativeUrl()
         try self.fileManager.createMissingDirectories(for: relativeUrl)
     }
 

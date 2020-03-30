@@ -11,7 +11,7 @@ import Foundation
 import CocoaLumberjack
 import RxCocoa
 import RxSwift
-import Zip
+import ZIPFoundation
 
 typealias RawTranslator = [String: Any]
 
@@ -110,7 +110,7 @@ class TranslatorsController {
                 let timestamp = try self.loadLastTimestamp()
 
                 if self.lastCommitHash != hash {
-                    try self.syncTranslatorsWithBundledData(deletedIndices: deletedIndices)
+                    try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
                     self.lastCommitHash = hash
                     self.lastTimestamp = timestamp
                     self.lastDeleted = deletedVersion
@@ -179,25 +179,29 @@ class TranslatorsController {
     }
 
     /// Sync local translators with bundled translators.
-    private func syncTranslatorsWithBundledData(deletedIndices: [String]) throws {
+    private func syncTranslatorsWithBundledData(deleteIndices: [String]) throws {
         let metadata = try self.loadIndex()
-        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deletedIndices)
+        let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices)
         let updated = try self.dbStorage.createCoordinator().perform(request: request)
 
-        deletedIndices.forEach { id in
+        deleteIndices.forEach { id in
             try? self.fileStorage.remove(Files.translator(filename: id))
         }
 
-        guard !updated.isEmpty else { return }
+        try self.unzip(translators: updated)
+    }
 
-        try self.unzipTranslators()
-
-        updated.forEach { (id, filename) in
-            try? self.fileStorage.move(from: Files.tmpTranslator(filename: filename),
-                                       to: Files.translator(filename: id))
+    /// Unzip individual translators from bundled zip file to translator location.
+    /// - parameter translators: Array of tuples. Each tuple consists of translator id and translator filename.
+    private func unzip(translators: [(id: String, filename: String)]) throws {
+        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
+              let archive = Archive(url: zipUrl, accessMode: .read) else {
+            throw Error.bundleMissing
         }
-
-        try? self.fileStorage.remove(Files.tmpTranslators)
+        for (id, filename) in translators {
+            guard let entry = archive[filename] else { continue }
+            _ = try archive.extract(entry, to: Files.translator(filename: id).createUrl())
+        }
     }
 
     /// Sync local translators with remote translators.
@@ -244,15 +248,18 @@ class TranslatorsController {
 
     /// Reset local translators to match bundled translators.
     private func _resetToBundle() throws {
-        guard let zipUrl = Bundle.main.path(forResource: "bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
+        guard let zipUrl = Bundle.main.path(forResource: "bundled/translators/translators", ofType: "zip")
+                                      .flatMap({ URL(fileURLWithPath: $0) }),
+              let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }
 
         let metadata = try self.loadIndex()
-        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
         try? self.fileStorage.remove(Files.translators)
+        try self.fileStorage.createDirectories(for: Files.translators)
         for data in metadata {
-            try self.fileStorage.move(from: Files.tmpTranslator(filename: data.filename), to: Files.translator(filename: data.id))
+            guard let entry = archive[data.filename] else { continue }
+            _ = try archive.extract(entry, to: Files.translator(filename: data.id).createUrl())
         }
         try self.dbStorage.createCoordinator().perform(request: ResetTranslatorsDbRequest(metadata: metadata))
     }
@@ -327,14 +334,6 @@ class TranslatorsController {
 
     // MARK: - Helpers
 
-    /// Unzips bundled translators into temporary translator folder.
-    private func unzipTranslators() throws {
-        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }) else {
-            throw Error.bundleMissing
-        }
-        try Zip.unzipFile(zipUrl, destination: Files.tmpTranslators.createUrl(), overwrite: true, password: nil)
-    }
-
     /// Parses version and indices from `deleted.txt` file and
     /// checks whether deleted version is higher than `lastDeletedVersion`. Returns data accordingly.
     /// - parameter deleted: Raw `deleted.txt` string.
@@ -358,8 +357,8 @@ class TranslatorsController {
     /// - parameter line: Line to be parsed.
     /// - returns: Parsed value if comment was found. `nil` otherwise.
     private func parseDeleted(line: String.SubSequence) -> String? {
-        guard let index = line.firstIndex(of: "#") else { return nil }
-        return String(line[line.startIndex..<index]).trimmingCharacters(in: .whitespaces)
+        guard let index = line.firstIndex(where: { $0.isWhitespace || $0.isNewline }) else { return nil }
+        return String(line[line.startIndex..<index])
     }
 
     /// Splits translators returned by repo, which contain both translators to be updated and deleted.

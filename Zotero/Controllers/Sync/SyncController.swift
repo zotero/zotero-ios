@@ -750,16 +750,16 @@ final class SyncController: SynchronizationController {
                                     object: SyncObject, version: Int) -> [DownloadBatch] {
         let maxBatchSize = DownloadBatch.maxCount
         var batchSize = 5
-        var processed = 0
+        var lowerBound = 0
         var batches: [DownloadBatch] = []
 
-        while processed < keys.count {
-            let upperBound = min((keys.count - processed), batchSize) + processed
-            let batchKeys = Array(keys[processed..<upperBound])
+        while lowerBound < keys.count {
+            let upperBound = min((keys.count - lowerBound), batchSize) + lowerBound
+            let batchKeys = Array(keys[lowerBound..<upperBound])
 
             batches.append(DownloadBatch(libraryId: libraryId, object: object, keys: batchKeys, version: version))
 
-            processed += batchSize
+            lowerBound += batchSize
             if batchSize < maxBatchSize {
                 batchSize = min(batchSize * 2, maxBatchSize)
             }

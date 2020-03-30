@@ -34,7 +34,7 @@ class SchemaController {
     }
 
     private func loadBundledData() {
-        guard let schemaPath = Bundle.main.path(forResource: "schema", ofType: "json") else { return }
+        guard let schemaPath = Bundle.main.path(forResource: "bundled/schema", ofType: "json") else { return }
         let url = URL(fileURLWithPath: schemaPath)
 
         guard let schemaData = try? Data(contentsOf: url),
