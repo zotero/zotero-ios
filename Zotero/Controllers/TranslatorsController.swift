@@ -194,7 +194,7 @@ class TranslatorsController {
     /// Unzip individual translators from bundled zip file to translator location.
     /// - parameter translators: Array of tuples. Each tuple consists of translator id and translator filename.
     private func unzip(translators: [(id: String, filename: String)]) throws {
-        guard let zipUrl = Bundle.main.path(forResource: "translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
+        guard let zipUrl = Bundle.main.path(forResource: "bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }

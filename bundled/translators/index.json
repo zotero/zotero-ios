@@ -1,12 +1,2722 @@
 [
-	{
-        "id": "bbf1617b-d836-4665-9aae-45f223264460",
-        "fileName": "A Contra Corriente.js",
-		"lastUpdated": "2016-08-18 20:51:04"
-	},
-	{
-        "id": "f4a5876a-3e53-40e2-9032-d99a30d7a6fc",
-        "fileName": "ACLWeb.js",
-		"lastUpdated": "2019-11-07 17:17:11"	
-	}
+ {
+  "id": "bbf1617b-d836-4665-9aae-45f223264460",
+  "fileName": "A Contra Corriente.js",
+  "lastUpdated": "2016-08-18 20:51:04"
+ },
+ {
+  "id": "f3e31f93-c18d-4ba3-9aa6-1963702b5762",
+  "fileName": "Ab Imperio.js",
+  "lastUpdated": "2013-02-28 14:52:44"
+ },
+ {
+  "id": "60e55b65-08cb-4a8f-8a61-c36338ec8754",
+  "fileName": "Access Medicine.js",
+  "lastUpdated": "2017-01-12 22:14:02"
+ },
+ {
+  "id": "f4a5876a-3e53-40e2-9032-d99a30d7a6fc",
+  "fileName": "ACLWeb.js",
+  "lastUpdated": "2019-11-07 17:17:11"
+ },
+ {
+  "id": "f3f092bf-ae09-4be6-8855-a22ddd817925",
+  "fileName": "ACM Digital Library.js",
+  "lastUpdated": "2020-01-12 22:47:25"
+ },
+ {
+  "id": "938ebe32-2b2e-4349-a5b3-b3a05d3de627",
+  "fileName": "ACS Publications.js",
+  "lastUpdated": "2019-10-07 09:04:25"
+ },
+ {
+  "id": "6044b16f-2452-4ce8-ad02-fab69ef04f13",
+  "fileName": "AEA Web.js",
+  "lastUpdated": "2016-08-27 10:23:44"
+ },
+ {
+  "id": "b8a86e36-c270-48c9-bdd1-22aaa167ef46",
+  "fileName": "Agencia del ISBN.js",
+  "lastUpdated": "2015-06-10 11:33:38"
+ },
+ {
+  "id": "48d3b115-7e09-4134-ad5d-0beda6296761",
+  "fileName": "AIP.js",
+  "lastUpdated": "2015-10-17 17:37:33"
+ },
+ {
+  "id": "e317b4d4-03cf-4356-aa3c-defadc6fd10e",
+  "fileName": "Air University Journals.js",
+  "lastUpdated": "2017-12-11 22:06:13"
+ },
+ {
+  "id": "5f0ca39b-898a-4b1e-b98d-8cd0d6ce9801",
+  "fileName": "Airiti.js",
+  "lastUpdated": "2018-04-17 21:16:52"
+ },
+ {
+  "id": "0a84a653-79ea-4c6a-8a68-da933e3b504a",
+  "fileName": "Alexander Street Press.js",
+  "lastUpdated": "2009-01-08 08:19:07"
+ },
+ {
+  "id": "34B1E0EA-FD02-4069-BAE4-ED4D98674A5E",
+  "fileName": "AllAfrica.js",
+  "lastUpdated": "2016-11-01 18:00:26"
+ },
+ {
+  "id": "ea531652-cdeb-4ec2-940e-627d4b107263",
+  "fileName": "AlterNet.js",
+  "lastUpdated": "2016-11-01 18:04:43"
+ },
+ {
+  "id": "e8fc7ebc-b63d-4eb3-a16c-91da232f7220",
+  "fileName": "Aluka.js",
+  "lastUpdated": "2016-09-27 06:02:24"
+ },
+ {
+  "id": "96b9f483-c44d-5784-cdad-ce21b984fe01",
+  "fileName": "Amazon.js",
+  "lastUpdated": "2019-08-11 10:33:35"
+ },
+ {
+  "id": "75edc5a1-6470-465a-a928-ccb77d95eb72",
+  "fileName": "American Institute of Aeronautics and Astronautics.js",
+  "lastUpdated": "2013-12-12 03:22:14"
+ },
+ {
+  "id": "57fd3205-7211-4b9b-ad39-d2747247d0af",
+  "fileName": "American Prospect.js",
+  "lastUpdated": "2013-01-09 15:36:32"
+ },
+ {
+  "id": "bdaac15c-b0ee-453f-9f1d-f35d00c7a994",
+  "fileName": "AMS Journals.js",
+  "lastUpdated": "2016-09-03 20:50:31"
+ },
+ {
+  "id": "a354331-981b-43de-a61-bc26dd1be3a9",
+  "fileName": "AMS MathSciNet.js",
+  "lastUpdated": "2017-10-20 16:08:00"
+ },
+ {
+  "id": "0dda3f89-15de-4479-987f-cc13f1ba7999",
+  "fileName": "Ancestry.com US Federal Census.js",
+  "lastUpdated": "2015-06-02 10:57:09"
+ },
+ {
+  "id": "5f22bd25-5b70-11e1-bb1d-c4f24aa18c1e",
+  "fileName": "Annual Reviews.js",
+  "lastUpdated": "2017-01-01 15:19:19"
+ },
+ {
+  "id": "68a54283-67e0-4e1c-ad3d-5b699868b194",
+  "fileName": "Antikvarium.hu.js",
+  "lastUpdated": "2017-11-11 15:26:37"
+ },
+ {
+  "id": "1e1e35be-6264-45a0-ad2e-7212040eb984",
+  "fileName": "APA PsycNET.js",
+  "lastUpdated": "2018-05-08 19:12:21"
+ },
+ {
+  "id": "737216af-fc48-4aa5-bfae-560c9cfc5df5",
+  "fileName": "APN.ru.js",
+  "lastUpdated": "2012-03-03 23:38:28"
+ },
+ {
+  "id": "f318ab1e-71c6-4f67-8ac3-4b1144e5bf4e",
+  "fileName": "APS-Physics.js",
+  "lastUpdated": "2013-12-06 17:44:20"
+ },
+ {
+  "id": "2c310a37-a4dd-48d2-82c9-bd29c53c1c76",
+  "fileName": "APS.js",
+  "lastUpdated": "2017-01-14 21:44:41"
+ },
+ {
+  "id": "f6717cbb-2771-4043-bde9-dbae19129bb3",
+  "fileName": "Archeion.js",
+  "lastUpdated": "2018-03-05 07:08:54"
+ },
+ {
+  "id": "7ecb9512-9195-478a-a525-40e71b01f3b0",
+  "fileName": "Archiv fuer Sozialgeschichte.js",
+  "lastUpdated": "2013-05-15 20:05:47"
+ },
+ {
+  "id": "dedcae51-073c-48fb-85ce-2425e97f128d",
+  "fileName": "Archive Ouverte en Sciences de l'Information et de la Communication  (AOSIC).js",
+  "lastUpdated": "2015-06-02 05:58:49"
+ },
+ {
+  "id": "d9a16cf3-8b86-4cab-8610-dbd913ad1a44",
+  "fileName": "Archives Canada-France.js",
+  "lastUpdated": "2012-01-01 01:42:16"
+ },
+ {
+  "id": "18bc329c-51af-497e-a7cf-aa572fae363d",
+  "fileName": "Archives Canada.js",
+  "lastUpdated": "2019-06-13 23:00:25"
+ },
+ {
+  "id": "661fc39a-2500-4710-8285-2d67ddc00a69",
+  "fileName": "Artefacts Canada.js",
+  "lastUpdated": "2013-09-16 00:25:18"
+ },
+ {
+  "id": "72cb2536-3211-41e0-ae8b-974c0385e085",
+  "fileName": "ARTFL Encyclopedie.js",
+  "lastUpdated": "2017-01-01 16:50:31"
+ },
+ {
+  "id": "e765263c-c211-46a8-892b-d0b0237836a7",
+  "fileName": "ARTnews.js",
+  "lastUpdated": "2017-03-12 00:18:33"
+ },
+ {
+  "id": "5278b20c-7c2c-4599-a785-12198ea648bf",
+  "fileName": "ARTstor.js",
+  "lastUpdated": "2016-04-26 18:25:36"
+ },
+ {
+  "id": "ecddda2e-4fc6-4aea-9f17-ef3b56d7377a",
+  "fileName": "arXiv.org.js",
+  "lastUpdated": "2019-10-22 05:31:06"
+ },
+ {
+  "id": "303bdfc5-11b8-4107-bca1-63ca97701a0f",
+  "fileName": "ASCE.js",
+  "lastUpdated": "2017-04-01 14:22:53"
+ },
+ {
+  "id": "03d1aac2-bee2-43f4-8d9c-b96ef31e8c61",
+  "fileName": "ASCO Meeting Library.js",
+  "lastUpdated": "2016-11-01 18:07:21"
+ },
+ {
+  "id": "01322929-5782-4612-81f7-d861fb46d9f2",
+  "fileName": "Atlanta Journal Constitution.js",
+  "lastUpdated": "2013-09-16 00:28:46"
+ },
+ {
+  "id": "ec0628ad-e508-444e-9e4c-e1819766a1ae",
+  "fileName": "ATS International Journal.js",
+  "lastUpdated": "2019-09-10 19:50:28"
+ },
+ {
+  "id": "5af42734-7cd5-4c69-97fc-bc406999bdba",
+  "fileName": "Atypon Journals.js",
+  "lastUpdated": "2019-11-02 15:43:51"
+ },
+ {
+  "id": "5ed5ab01-899f-4a3b-a74c-290fb2a1c9a4",
+  "fileName": "AustLII and NZLII.js",
+  "lastUpdated": "2018-03-02 09:46:09"
+ },
+ {
+  "id": "0aea3026-a246-4201-a4b5-265f75b9a6a7",
+  "fileName": "Australian Dictionary of Biography.js",
+  "lastUpdated": "2016-11-01 18:10:09"
+ },
+ {
+  "id": "e034d9be-c420-42cf-8311-23bca5735a32",
+  "fileName": "Baidu Scholar.js",
+  "lastUpdated": "2019-12-24 12:46:21"
+ },
+ {
+  "id": "5ae63913-669a-4792-9f45-e089a37de9ab",
+  "fileName": "BAILII.js",
+  "lastUpdated": "2014-04-03 16:36:35"
+ },
+ {
+  "id": "777e5ce0-0b16-4a12-8e6c-5a1a2cb33189",
+  "fileName": "BBC Genome.js",
+  "lastUpdated": "2017-09-04 22:38:30"
+ },
+ {
+  "id": "f4130157-93f7-4493-8f24-a7c85549013d",
+  "fileName": "BBC.js",
+  "lastUpdated": "2019-06-10 21:51:43"
+ },
+ {
+  "id": "e8544423-1515-4daf-bb5d-3202bf422b58",
+  "fileName": "beck-online.js",
+  "lastUpdated": "2019-06-03 15:12:35"
+ },
+ {
+  "id": "a571680e-6338-46c2-a740-3cd9eb80fc7f",
+  "fileName": "Beobachter.js",
+  "lastUpdated": "2016-09-07 21:24:35"
+ },
+ {
+  "id": "7500180d-ca99-4ef7-a9a9-3e58bba91d28",
+  "fileName": "Bezneng Gajit.js",
+  "lastUpdated": "2016-11-01 18:22:20"
+ },
+ {
+  "id": "b6e39b57-8942-4d11-8259-342c46ce395f",
+  "fileName": "BibLaTeX.js",
+  "lastUpdated": "2019-12-15 14:26:00"
+ },
+ {
+  "id": "9932d1a7-cc6d-4d83-8462-8f6658b13dc0",
+  "fileName": "Biblio.com.js",
+  "lastUpdated": "2016-09-08 06:09:28"
+ },
+ {
+  "id": "14763d25-8ba0-45df-8f52-b8d1108e7ac9",
+  "fileName": "Bibliontology RDF.js",
+  "lastUpdated": "2019-09-01 13:38:00"
+ },
+ {
+  "id": "1eb5eb03-26ab-4015-bd0d-65487734744a",
+  "fileName": "Bibliotheque et Archives Nationale du Quebec (Pistard).js",
+  "lastUpdated": "2008-08-06 17:00:00"
+ },
+ {
+  "id": "59cce211-9d77-4cdd-876d-6229ea20367f",
+  "fileName": "Bibliotheque et Archives Nationales du Quebec.js",
+  "lastUpdated": "2015-06-29 17:02:02"
+ },
+ {
+  "id": "47533cd7-ccaa-47a7-81bb-71c45e68a74d",
+  "fileName": "Bibliotheque nationale de France.js",
+  "lastUpdated": "2017-07-07 11:47:44"
+ },
+ {
+  "id": "ab961e61-2a8a-4be1-b8a3-044f20d52d78",
+  "fileName": "BIBSYS.js",
+  "lastUpdated": "2014-04-04 10:08:22"
+ },
+ {
+  "id": "9cb70025-a888-4a29-a210-93ec52da40d4",
+  "fileName": "BibTeX.js",
+  "lastUpdated": "2019-12-15 20:11:00"
+ },
+ {
+  "id": "21f62926-4343-4518-b6f2-a284e650e64a",
+  "fileName": "Bioconductor.js",
+  "lastUpdated": "2019-09-17 16:47:07"
+ },
+ {
+  "id": "75ccea3c-fdb8-4473-8203-ceb27f3395f8",
+  "fileName": "BioMed Central.js",
+  "lastUpdated": "2017-06-24 17:55:46"
+ },
+ {
+  "id": "7cb0089b-9551-44b2-abca-eb03cbf586d9",
+  "fileName": "BioOne.js",
+  "lastUpdated": "2014-04-03 16:38:14"
+ },
+ {
+  "id": "e8e10bd4-fd6f-4297-a060-a8e0a479043f",
+  "fileName": "Blaetter.js",
+  "lastUpdated": "2014-04-03 16:42:18"
+ },
+ {
+  "id": "6f9aa90d-6631-4459-81ef-a0758d2e3921",
+  "fileName": "Blogger.js",
+  "lastUpdated": "2016-09-05 23:14:05"
+ },
+ {
+  "id": "a509f675-cf80-4b70-8cbc-2ea8664dd38f",
+  "fileName": "Bloomberg.js",
+  "lastUpdated": "2016-09-08 20:56:54"
+ },
+ {
+  "id": "ecd1b7c6-8d31-4056-8c15-1807b2489254",
+  "fileName": "BOCC.js",
+  "lastUpdated": "2014-04-04 10:08:43"
+ },
+ {
+  "id": "7d03e952-04ad-4d1d-845a-50b9eb545b10",
+  "fileName": "BOFiP-Impots.js",
+  "lastUpdated": "2017-01-01 14:53:42"
+ },
+ {
+  "id": "4e7119e0-02be-4848-86ef-79a64185aad8",
+  "fileName": "Bookmarks.js",
+  "lastUpdated": "2017-12-17 17:43:00"
+ },
+ {
+  "id": "55d28a64-e56e-4d3c-93db-a5fc584776de",
+  "fileName": "Boston Review.js",
+  "lastUpdated": "2015-08-09 19:58:48"
+ },
+ {
+  "id": "f9373e49-e6ac-46f7-aafe-bb24a2fbc3f0",
+  "fileName": "Bracero History Archive.js",
+  "lastUpdated": "2012-01-30 22:52:20"
+ },
+ {
+  "id": "6d087de8-f858-4ac5-9fbd-2bf2b35ee41a",
+  "fileName": "Brill Journals.js",
+  "lastUpdated": "2017-07-27 10:35:13"
+ },
+ {
+  "id": "635c1246-e0c8-40a0-8799-a73a0b013ad8",
+  "fileName": "Bryn Mawr Classical Review.js",
+  "lastUpdated": "2016-08-23 05:51:18"
+ },
+ {
+  "id": "e23afbe8-b5cb-42cc-af90-e915b2c00de2",
+  "fileName": "Bundesgesetzblatt.js",
+  "lastUpdated": "2017-07-22 20:35:31"
+ },
+ {
+  "id": "e8d40f4b-c4c9-41ca-a59f-cf4deb3d3dc5",
+  "fileName": "Business Standard.js",
+  "lastUpdated": "2016-11-01 18:25:24"
+ },
+ {
+  "id": "a29d22b3-c2e4-4cc0-ace4-6c2326144332",
+  "fileName": "CABI - CAB Abstracts.js",
+  "lastUpdated": "2017-06-14 03:41:30"
+ },
+ {
+  "id": "f46cc903-c447-47d6-a2cf-c75ed22dc96b",
+  "fileName": "Cairn.info.js",
+  "lastUpdated": "2018-03-17 13:48:44"
+ },
+ {
+  "id": "850f4c5f-71fb-4669-b7da-7fb7a95500ef",
+  "fileName": "Cambridge Core.js",
+  "lastUpdated": "2019-11-18 23:01:07"
+ },
+ {
+  "id": "4da40f07-904b-4472-93b6-9bea1fe7d4df",
+  "fileName": "Canada.com.js",
+  "lastUpdated": "2012-01-30 22:52:08"
+ },
+ {
+  "id": "a7c8b759-6f8a-4875-9d6e-cc0a99fe8f43",
+  "fileName": "Canadian Letters and Images.js",
+  "lastUpdated": "2016-09-09 19:45:42"
+ },
+ {
+  "id": "2d174277-7651-458f-86dd-20e168d2f1f3",
+  "fileName": "Canadiana.ca.js",
+  "lastUpdated": "2012-07-03 16:44:04"
+ },
+ {
+  "id": "84799379-7bc5-4e55-9817-baf297d129fe",
+  "fileName": "CanLII.js",
+  "lastUpdated": "2019-11-25 22:05:12"
+ },
+ {
+  "id": "d2a9e388-5b79-403a-b4ec-e7099ca1bb7f",
+  "fileName": "CAOD.js",
+  "lastUpdated": "2018-09-08 13:38:50"
+ },
+ {
+  "id": "899d10f5-3f35-40e6-8dfb-f8ee2dfb1849",
+  "fileName": "CCfr (BnF).js",
+  "lastUpdated": "2014-09-18 14:08:05"
+ },
+ {
+  "id": "f26cfb71-efd7-47ae-a28c-d4d8852096bd",
+  "fileName": "Cell Press.js",
+  "lastUpdated": "2017-06-06 22:03:36"
+ },
+ {
+  "id": "e13b0f9d-44ba-4ece-aa22-77993bb26ef2",
+  "fileName": "Chadwyck Literature Online.js",
+  "lastUpdated": "2014-03-31 15:22:07"
+ },
+ {
+  "id": "50d3ca81-3c4c-406b-afb2-0fe8105b9b38",
+  "fileName": "Champlain Society - Collection.js",
+  "lastUpdated": "2012-07-13 07:33:49"
+ },
+ {
+  "id": "04c0db88-a7fc-4d1a-9cf7-471d0990acb1",
+  "fileName": "Christian Science Monitor.js",
+  "lastUpdated": "2016-11-01 18:26:01"
+ },
+ {
+  "id": "fa8f8274-ada5-415a-96dd-a5c19fce7046",
+  "fileName": "Chronicling America.js",
+  "lastUpdated": "2013-03-31 23:29:08"
+ },
+ {
+  "id": "46291dc3-5cbd-47b7-8af4-d009078186f6",
+  "fileName": "CiNii.js",
+  "lastUpdated": "2012-11-24 13:12:41"
+ },
+ {
+  "id": "e7243cef-a709-4a46-ba46-1b1318051bec",
+  "fileName": "Citavi 5 XML.js",
+  "lastUpdated": "2018-08-26 10:46:17"
+ },
+ {
+  "id": "fa396dd4-7d04-4f99-95e1-93d6f355441d",
+  "fileName": "CiteSeer.js",
+  "lastUpdated": "2018-01-28 16:31:16"
+ },
+ {
+  "id": "8917b41c-8527-4ee7-b2dd-bcbc3fa5eabd",
+  "fileName": "CiteULike.js",
+  "lastUpdated": "2018-01-28 22:54:12"
+ },
+ {
+  "id": "8451431a-895f-4732-8339-79eb6756d2f9",
+  "fileName": "Civilization.ca.js",
+  "lastUpdated": "2012-07-13 07:33:49"
+ },
+ {
+  "id": "a6f95213-468c-4558-94a3-59b2436cbcdd",
+  "fileName": "CLACSO.js",
+  "lastUpdated": "2013-02-28 14:47:57"
+ },
+ {
+  "id": "1dd21245-29cf-434d-b5b8-49eae0a6912a",
+  "fileName": "CLASE.js",
+  "lastUpdated": "2013-12-07 15:15:58"
+ },
+ {
+  "id": "a55463ba-e403-415b-80d4-284d5f9b4b15",
+  "fileName": "Clinical Key.js",
+  "lastUpdated": "2017-01-30 08:08:52"
+ },
+ {
+  "id": "5c95b67b-41c5-4f55-b71a-48d5d7183063",
+  "fileName": "CNKI.js",
+  "lastUpdated": "2019-12-05 08:10:19"
+ },
+ {
+  "id": "a326fc49-60c2-405b-8f44-607e5d18b9ad",
+  "fileName": "Code4Lib Journal.js",
+  "lastUpdated": "2018-08-23 11:15:21"
+ },
+ {
+  "id": "05d07af9-105a-4572-99f6-a8e231c0daef",
+  "fileName": "COinS.js",
+  "lastUpdated": "2015-06-04 03:25:10"
+ },
+ {
+  "id": "a75e0594-a9e8-466e-9ce8-c10560ea59fd",
+  "fileName": "Columbia University Press.js",
+  "lastUpdated": "2016-09-10 11:35:07"
+ },
+ {
+  "id": "c3edb423-f267-47a1-a8c2-158c247f87c2",
+  "fileName": "Common-Place.js",
+  "lastUpdated": "2016-09-10 09:34:34"
+ },
+ {
+  "id": "8082115d-5bc6-4517-a4e8-abed1b2a784a",
+  "fileName": "Copernicus.js",
+  "lastUpdated": "2018-03-15 10:41:08"
+ },
+ {
+  "id": "930d49bc-44a1-4c22-9dde-aa6f72fb11e5",
+  "fileName": "Cornell LII.js",
+  "lastUpdated": "2013-02-09 12:09:10"
+ },
+ {
+  "id": "4363275e-5cc5-4627-9a7f-951fb58a02c3",
+  "fileName": "Cornell University Press.js",
+  "lastUpdated": "2016-09-10 11:32:31"
+ },
+ {
+  "id": "93514073-b541-4e02-9180-c36d2f3bb401",
+  "fileName": "Crossref Unixref XML.js",
+  "lastUpdated": "2019-04-27 02:15:00"
+ },
+ {
+  "id": "0a61e167-de9a-4f93-a68a-628b48855909",
+  "fileName": "Crossref-REST.js",
+  "lastUpdated": "2018-06-16 12:00:00"
+ },
+ {
+  "id": "303c2744-ea37-4806-853d-e1ca67be6818",
+  "fileName": "CSIRO Publishing.js",
+  "lastUpdated": "2012-09-04 21:24:38"
+ },
+ {
+  "id": "bc03b4fe-436d-4a1f-ba59-de4d2d7a63f7",
+  "fileName": "CSL JSON.js",
+  "lastUpdated": "2019-01-31 00:12:00"
+ },
+ {
+  "id": "25f4c5e2-d790-4daa-a667-797619c7e2f2",
+  "fileName": "CSV.js",
+  "lastUpdated": "2018-08-10 06:37:30"
+ },
+ {
+  "id": "dbfcaa3e-082a-45a4-9619-9892f49399c1",
+  "fileName": "Cyberpresse.js",
+  "lastUpdated": "2017-06-07 05:11:00"
+ },
+ {
+  "id": "192a29de-3d6e-4850-984f-943764126429",
+  "fileName": "Dagens Nyheter.js",
+  "lastUpdated": "2018-07-19 12:35:38"
+ },
+ {
+  "id": "0526c18d-8dc8-40c9-8314-399e0b743a4d",
+  "fileName": "Dagstuhl Research Online Publication Server.js",
+  "lastUpdated": "2016-08-23 06:54:08"
+ },
+ {
+  "id": "16199bf0-a365-4aad-baeb-225019ae32dc",
+  "fileName": "DAI-Zenon.js",
+  "lastUpdated": "2017-06-02 16:57:10"
+ },
+ {
+  "id": "658f2707-bb46-44eb-af0a-e73a5387fc90",
+  "fileName": "DART-Europe.js",
+  "lastUpdated": "2013-04-17 03:09:28"
+ },
+ {
+  "id": "b5b5808b-1c61-473d-9a02-e1f5ba7b8eef",
+  "fileName": "Datacite JSON.js",
+  "lastUpdated": "2019-01-27 16:34:49"
+ },
+ {
+  "id": "625c6435-e235-4402-a48f-3095a9c1a09c",
+  "fileName": "DBLP Computer Science Bibliography.js",
+  "lastUpdated": "2019-10-16 21:02:38"
+ },
+ {
+  "id": "99be9976-2ff9-40df-96e8-82edfa79d9f3",
+  "fileName": "Defense Technical Information Center.js",
+  "lastUpdated": "2013-01-09 15:36:32"
+ },
+ {
+  "id": "2a5dc3ed-ee5e-4bfb-baad-36ae007e40ce",
+  "fileName": "DeGruyter.js",
+  "lastUpdated": "2017-08-28 07:31:18"
+ },
+ {
+  "id": "16c7d938-5f77-4fb5-99a1-bcec6fdafe84",
+  "fileName": "dejure.org.js",
+  "lastUpdated": "2017-01-16 20:00:51"
+ },
+ {
+  "id": "c4008cc5-9243-4d13-8b35-562cdd184558",
+  "fileName": "Delpher.js",
+  "lastUpdated": "2017-05-21 03:21:00"
+ },
+ {
+  "id": "ed317bdd-0416-4762-856d-435004a9f05c",
+  "fileName": "Demographic Research.js",
+  "lastUpdated": "2018-05-05 11:04:17"
+ },
+ {
+  "id": "4ed446ca-b480-43ee-a8fb-5f9730915edc",
+  "fileName": "Denik CZ.js",
+  "lastUpdated": "2018-01-07 09:27:42"
+ },
+ {
+  "id": "d76fea32-fe20-4c00-b5b9-bea8c688c2b0",
+  "fileName": "DEPATISnet.js",
+  "lastUpdated": "2019-12-07 20:44:27"
+ },
+ {
+  "id": "1ab8b9a4-72b5-4ef4-adc8-4956a50718f7",
+  "fileName": "Der Freitag.js",
+  "lastUpdated": "2016-11-01 18:27:25"
+ },
+ {
+  "id": "d8341c22-8cf4-428f-be3b-ada9fa8933eb",
+  "fileName": "Deutsche Nationalbibliothek.js",
+  "lastUpdated": "2018-05-14 19:08:02"
+ },
+ {
+  "id": "946ddf3a-74ca-4309-9917-85aa30297f4c",
+  "fileName": "dhistory.js",
+  "lastUpdated": "2012-08-27 09:42:02"
+ },
+ {
+  "id": "938ccabb-e297-4092-aa15-22b6511bbd0f",
+  "fileName": "Dialnet.js",
+  "lastUpdated": "2018-03-28 21:36:40"
+ },
+ {
+  "id": "312bbb0e-bfb6-4563-a33c-085445d391ed",
+  "fileName": "Die Zeit.js",
+  "lastUpdated": "2018-11-25 19:35:23"
+ },
+ {
+  "id": "e99bd723-39e6-418c-9524-390dbc583e08",
+  "fileName": "digibib.net.js",
+  "lastUpdated": "2017-06-05 17:35:41"
+ },
+ {
+  "id": "bbad0221-134b-495a-aa56-d77cfaa67ab5",
+  "fileName": "Digital Humanities Quarterly.js",
+  "lastUpdated": "2012-09-20 20:46:53"
+ },
+ {
+  "id": "5e684d82-73a3-9a34-095f-19b112d77bbe",
+  "fileName": "Digital Medievalist.js",
+  "lastUpdated": "2016-12-17 02:55:59"
+ },
+ {
+  "id": "e46830a2-1b19-4b6b-9f1a-e5e9760a0f80",
+  "fileName": "DigiZeitschriften.js",
+  "lastUpdated": "2018-01-07 09:28:38"
+ },
+ {
+  "id": "915e3ae2-afa9-4b1d-9780-28ed3defe0ab",
+  "fileName": "dLibra.js",
+  "lastUpdated": "2016-09-12 06:02:53"
+ },
+ {
+  "id": "b28d0d42-8549-4c6d-83fc-8382874a5cb9",
+  "fileName": "DOI Content Negotiation.js",
+  "lastUpdated": "2019-01-26 18:00:00"
+ },
+ {
+  "id": "c159dcfe-8a53-4301-a499-30f6549c340d",
+  "fileName": "DOI.js",
+  "lastUpdated": "2019-01-27 14:06:07"
+ },
+ {
+  "id": "fc353b26-8911-4c34-9196-f6f567c93901",
+  "fileName": "Douban.js",
+  "lastUpdated": "2019-10-28 20:20:19"
+ },
+ {
+  "id": "117feb72-21bb-4424-a47b-c9ca6b71f979",
+  "fileName": "DPLA.js",
+  "lastUpdated": "2016-09-12 06:17:30"
+ },
+ {
+  "id": "b2a735f3-11ac-4e9f-b22b-00e1b1d3c9f6",
+  "fileName": "DrugBank.ca.js",
+  "lastUpdated": "2017-01-01 16:52:59"
+ },
+ {
+  "id": "7a81d945-7d9c-4f8c-bd7b-4226c1cab40e",
+  "fileName": "Dryad Digital Repository.js",
+  "lastUpdated": "2015-06-23 02:09:11"
+ },
+ {
+  "id": "097c963e-3866-4c6f-a6b4-f5e9d0d15530",
+  "fileName": "DTU Orbit.js",
+  "lastUpdated": "2013-05-15 20:05:47"
+ },
+ {
+  "id": "b86bb082-6310-4772-a93c-913eaa3dfa1b",
+  "fileName": "Early English Books Online.js",
+  "lastUpdated": "2014-04-03 16:50:31"
+ },
+ {
+  "id": "c59896bc-4beb-43ed-8109-a73a13251828",
+  "fileName": "Eastview.js",
+  "lastUpdated": "2018-09-02 23:10:00"
+ },
+ {
+  "id": "2abe2519-2f0a-48c0-ad3a-b87b9c059459",
+  "fileName": "ebrary.js",
+  "lastUpdated": "2015-08-29 22:03:15"
+ },
+ {
+  "id": "d0b1914a-11f1-4dd7-8557-b32fe8a3dd47",
+  "fileName": "EBSCOhost.js",
+  "lastUpdated": "2018-12-26 11:18:52"
+ },
+ {
+  "id": "b7bd798d-e518-46d1-aa13-a69f2864fa91",
+  "fileName": "Edinburgh University Press Journals.js",
+  "lastUpdated": "2016-09-13 21:55:09"
+ },
+ {
+  "id": "7e51d3fb-082e-4063-8601-cda08f6004a3",
+  "fileName": "Education Week.js",
+  "lastUpdated": "2015-06-02 11:18:49"
+ },
+ {
+  "id": "79c3d292-0afc-42a1-bd86-7e706fc35aa5",
+  "fileName": "EIDR.js",
+  "lastUpdated": "2017-06-03 11:41:00"
+ },
+ {
+  "id": "c3b97a6e-4879-4f77-9dbb-18a3fa2b2b81",
+  "fileName": "El Pais.js",
+  "lastUpdated": "2018-01-07 16:59:34"
+ },
+ {
+  "id": "09a9599e-c20e-a405-d10d-35ad4130a426",
+  "fileName": "Electronic Colloquium on Computational Complexity.js",
+  "lastUpdated": "2017-01-05 17:11:41"
+ },
+ {
+  "id": "587709d3-80c5-467d-9fc8-ed41c31e20cf",
+  "fileName": "eLibrary.ru.js",
+  "lastUpdated": "2019-10-19 17:28:01"
+ },
+ {
+  "id": "98ad3ad1-9d43-4b2e-bc36-172cbf00ba1d",
+  "fileName": "eLife.js",
+  "lastUpdated": "2018-09-27 13:36:20"
+ },
+ {
+  "id": "b043e7ed-b921-4444-88af-2fcc39881ee2",
+  "fileName": "Elsevier Health Journals.js",
+  "lastUpdated": "2017-06-07 07:00:39"
+ },
+ {
+  "id": "951c027d-74ac-47d4-a107-9c3069ab7b48",
+  "fileName": "Embedded Metadata.js",
+  "lastUpdated": "2018-11-01 19:46:46"
+ },
+ {
+  "id": "ab88d517-d88c-4a73-a0ad-c94c76cca849",
+  "fileName": "eMedicine.js",
+  "lastUpdated": "2013-04-15 18:04:37"
+ },
+ {
+  "id": "a14301dc-be1c-4f34-bcaa-1b53b08ce80d",
+  "fileName": "Emerald Insight.js",
+  "lastUpdated": "2019-12-25 15:35:07"
+ },
+ {
+  "id": "966a7612-900c-42d9-8780-2a3247548588",
+  "fileName": "eMJA.js",
+  "lastUpdated": "2016-11-01 18:30:00"
+ },
+ {
+  "id": "0689f3e1-f0b4-4c0c-b795-4aebdfea08e0",
+  "fileName": "Encyclopedia of Chicago.js",
+  "lastUpdated": "2016-11-01 18:30:35"
+ },
+ {
+  "id": "eb7059a4-35ec-4961-a915-3cf58eb9784b",
+  "fileName": "Endnote XML.js",
+  "lastUpdated": "2018-06-12 09:00:41"
+ },
+ {
+  "id": "1f40baef-eece-43e4-a1cc-27d20c0ce086",
+  "fileName": "Engineering Village.js",
+  "lastUpdated": "2018-10-07 10:02:04"
+ },
+ {
+  "id": "99f11c5d-4413-4f96-9fc7-72fbd40372ef",
+  "fileName": "EPA National Library Catalog.js",
+  "lastUpdated": "2016-09-14 10:36:08"
+ },
+ {
+  "id": "aee2323e-ce00-4fcc-a949-06eb1becc98f",
+  "fileName": "Epicurious.js",
+  "lastUpdated": "2016-09-14 10:54:06"
+ },
+ {
+  "id": "04a23cbe-5f8b-d6cd-8eb1-2e23bcc8ae8f",
+  "fileName": "ePrint IACR.js",
+  "lastUpdated": "2017-05-18 02:42:48"
+ },
+ {
+  "id": "e4660e05-a935-43ec-8eec-df0347362e4c",
+  "fileName": "ERIC.js",
+  "lastUpdated": "2017-03-17 05:58:32"
+ },
+ {
+  "id": "daad5868-6e6a-414e-b2da-14fa013879fc",
+  "fileName": "Erudit.js",
+  "lastUpdated": "2018-01-02 22:48:58"
+ },
+ {
+  "id": "176948f7-9df8-4afc-ace7-4c1c7318d426",
+  "fileName": "ESpacenet.js",
+  "lastUpdated": "2019-12-08 21:20:32"
+ },
+ {
+  "id": "9d8fb229-a563-489b-b36d-3bdaa69ddf1f",
+  "fileName": "etatar.ru.js",
+  "lastUpdated": "2011-09-13 10:20:59"
+ },
+ {
+  "id": "2e1c09a0-3006-11de-8c30-0800200c9a66",
+  "fileName": "Euclid.js",
+  "lastUpdated": "2014-06-05 07:32:38"
+ },
+ {
+  "id": "bf053edc-a8c3-458c-93db-6d04ead2e636",
+  "fileName": "EUR-Lex.js",
+  "lastUpdated": "2017-12-21 20:27:07"
+ },
+ {
+  "id": "58ae38d2-80d3-4569-81eb-9cefc43ac5b4",
+  "fileName": "EurasiaNet.js",
+  "lastUpdated": "2016-11-01 18:32:28"
+ },
+ {
+  "id": "e570f517-83f2-4735-97d2-44499aee0b21",
+  "fileName": "EurogamerUSgamer.js",
+  "lastUpdated": "2018-07-14 19:42:21"
+ },
+ {
+  "id": "18dd188a-9afc-4cd6-8775-1980c3ce0fbf",
+  "fileName": "Evernote.js",
+  "lastUpdated": "2019-10-11 07:30:00"
+ },
+ {
+  "id": "4b0b42df-76b7-4a61-91aa-b15bc553b77d",
+  "fileName": "Fachportal Padagogik.js",
+  "lastUpdated": "2017-10-14 07:01:47"
+ },
+ {
+  "id": "7bdb79e-a47f-4e3d-b317-ccd5a0a74456",
+  "fileName": "Factiva.js",
+  "lastUpdated": "2015-02-13 21:54:59"
+ },
+ {
+  "id": "5c7892cb-a19e-4b85-8700-d68b547898f9",
+  "fileName": "Fairfax Australia.js",
+  "lastUpdated": "2017-06-07 11:47:30"
+ },
+ {
+  "id": "4883f662-29df-44ad-959e-27c9d036d165",
+  "fileName": "FAO Publications.js",
+  "lastUpdated": "2018-05-21 10:14:37"
+ },
+ {
+  "id": "4f0d0c90-5da0-11df-a08a-0800200c9a66",
+  "fileName": "FAZ.NET.js",
+  "lastUpdated": "2017-11-11 11:24:04"
+ },
+ {
+  "id": "e92c8359-c3fc-468b-bc6a-107b2744fd17",
+  "fileName": "feb-web.ru.js",
+  "lastUpdated": "2017-01-01 16:09:57"
+ },
+ {
+  "id": "ab5983ab-6ad9-4060-aff1-4b455c89a3b3",
+  "fileName": "Figshare.js",
+  "lastUpdated": "2017-06-20 03:57:47"
+ },
+ {
+  "id": "fc9b7700-b3cc-4150-ba89-c7e4443bd96d",
+  "fileName": "Financial Times.js",
+  "lastUpdated": "2016-09-19 22:03:34"
+ },
+ {
+  "id": "c436f3c7-4246-4ed3-a227-a538c8113a0e",
+  "fileName": "fishpond.co.nz.js",
+  "lastUpdated": "2017-06-07 17:26:42"
+ },
+ {
+  "id": "5dd22e9a-5124-4942-9b9e-6ee779f1023e",
+  "fileName": "Flickr.js",
+  "lastUpdated": "2016-09-20 06:21:01"
+ },
+ {
+  "id": "4ab6d49c-d94e-4a9c-ae9a-3310c44ba612",
+  "fileName": "Foreign Affairs.js",
+  "lastUpdated": "2017-06-07 17:30:06"
+ },
+ {
+  "id": "0e7ab798-bb96-4a3a-9a01-8d1d67153908",
+  "fileName": "Foreign Policy.js",
+  "lastUpdated": "2014-01-04 16:38:42"
+ },
+ {
+  "id": "488fe1e0-b7d2-406f-8257-5060418ce9b2",
+  "fileName": "fr-online.de.js",
+  "lastUpdated": "2014-04-03 17:37:43"
+ },
+ {
+  "id": "7bbef39f-8bb9-44d7-826f-47ce75eb15ae",
+  "fileName": "FreeCite.js",
+  "lastUpdated": "2015-03-16 23:13:55"
+ },
+ {
+  "id": "879d738c-bbdd-4fa0-afce-63295764d3b7",
+  "fileName": "FreePatentsOnline.js",
+  "lastUpdated": "2018-03-05 18:54:31"
+ },
+ {
+  "id": "7feb4b6c-05d6-4d61-bf0d-5e7f70c1ef0b",
+  "fileName": "Frieze.js",
+  "lastUpdated": "2019-02-01 01:28:00"
+ },
+ {
+  "id": "cb9e794e-7a65-47cd-90f6-58cdd191e8b0",
+  "fileName": "Frontiers.js",
+  "lastUpdated": "2016-11-13 05:45:42"
+ },
+ {
+  "id": "e3748cf3-36dc-4816-bf86-95a0b63feb03",
+  "fileName": "Gale Databases.js",
+  "lastUpdated": "2019-12-25 09:35:52"
+ },
+ {
+  "id": "04e63564-b92b-41cd-a9d5-366a02056d10",
+  "fileName": "GaleGDC.js",
+  "lastUpdated": "2014-08-26 03:45:45"
+ },
+ {
+  "id": "4ea89035-3dc4-4ae3-b22d-726bc0d83a64",
+  "fileName": "Galegroup.js",
+  "lastUpdated": "2018-10-07 16:06:56"
+ },
+ {
+  "id": "58ab2618-4a25-4b9b-83a7-80cd0259f896",
+  "fileName": "Gallica.js",
+  "lastUpdated": "2016-09-21 09:49:15"
+ },
+ {
+  "id": "8c2c716c-09ba-421a-ae23-a1590d90a95e",
+  "fileName": "Game Studies.js",
+  "lastUpdated": "2016-11-01 18:36:12"
+ },
+ {
+  "id": "9e0bb440-b68d-4743-870c-d57245cfdbda",
+  "fileName": "GameSpot.js",
+  "lastUpdated": "2017-03-11 09:11:19"
+ },
+ {
+  "id": "8afd6209-ef61-4e64-ae6c-3b2d6f71aa50",
+  "fileName": "Gasyrlar Awazy.js",
+  "lastUpdated": "2012-03-03 23:38:39"
+ },
+ {
+  "id": "de0eef58-cb39-4410-ada0-6b39f43383f9",
+  "fileName": "Gemeinsamer Bibliotheksverbund ISBN.js",
+  "lastUpdated": "2018-04-13 13:41:00"
+ },
+ {
+  "id": "cee0cca2-e82a-4618-b6cf-16327970169d",
+  "fileName": "Gene Ontology.js",
+  "lastUpdated": "2014-01-05 11:26:46"
+ },
+ {
+  "id": "a7747ba7-42c6-4a22-9415-1dafae6262a9",
+  "fileName": "GitHub.js",
+  "lastUpdated": "2019-08-29 10:16:28"
+ },
+ {
+  "id": "330f283f-12e9-4421-aa59-e17ec5f4aa37",
+  "fileName": "Glenbow Library.js",
+  "lastUpdated": "2012-03-12 01:00:30"
+ },
+ {
+  "id": "4e9c34ef-89bb-4c7e-97dd-abb61d8b9254",
+  "fileName": "Globes.js",
+  "lastUpdated": "2019-12-21 07:49:34"
+ },
+ {
+  "id": "58a778cc-25e2-4884-95b3-6b22d7571183",
+  "fileName": "Gmail.js",
+  "lastUpdated": "2017-01-01 16:53:13"
+ },
+ {
+  "id": "8d5984e8-3ba9-4faa-8b84-a58adae56439",
+  "fileName": "GMS German Medical Science.js",
+  "lastUpdated": "2018-11-12 15:53:36"
+ },
+ {
+  "id": "3e684d82-73a3-9a34-095f-19b112d88bbf",
+  "fileName": "Google Books.js",
+  "lastUpdated": "2019-12-09 13:35:39"
+ },
+ {
+  "id": "d71e9b6d-2baa-44ed-acb4-13fe2fe592c0",
+  "fileName": "Google Patents.js",
+  "lastUpdated": "2018-05-13 08:27:02"
+ },
+ {
+  "id": "abc89357-6185-4ddd-8583-80034b754832",
+  "fileName": "Google Play.js",
+  "lastUpdated": "2017-06-07 18:01:47"
+ },
+ {
+  "id": "c114f9fd-6387-4387-853d-fcfe5ab3ac0a",
+  "fileName": "Google Presentation.js",
+  "lastUpdated": "2017-08-28 15:33:15"
+ },
+ {
+  "id": "5f1c4a3b-b7cf-4170-a896-e4d82c0621c9",
+  "fileName": "Google Research.js",
+  "lastUpdated": "2020-01-01 19:36:16"
+ },
+ {
+  "id": "57a00950-f0d1-4b41-b6ba-44ff0fc30289",
+  "fileName": "Google Scholar.js",
+  "lastUpdated": "2018-11-16 05:56:18"
+ },
+ {
+  "id": "dede653d-d1f8-411e-911c-44a0219bbdad",
+  "fileName": "GPO Access e-CFR.js",
+  "lastUpdated": "2014-04-03 17:38:54"
+ },
+ {
+  "id": "c41c9c66-8540-4216-b138-7c00532748c9",
+  "fileName": "Gulag Many Days, Many Lives.js",
+  "lastUpdated": "2012-01-30 22:49:27"
+ },
+ {
+  "id": "d6f64d96-aa6f-4fd3-816f-bdef842c7088",
+  "fileName": "Haaretz.js",
+  "lastUpdated": "2016-10-31 17:33:48"
+ },
+ {
+  "id": "f20f91fe-d875-47e7-9656-0abb928be472",
+  "fileName": "HAL Archives Ouvertes.js",
+  "lastUpdated": "2017-12-21 03:11:03"
+ },
+ {
+  "id": "cfbb3e2c-8292-43d0-86d5-e457399107de",
+  "fileName": "Handelszeitung.js",
+  "lastUpdated": "2016-10-31 18:41:26"
+ },
+ {
+  "id": "8e5f8616-05d0-4d33-8554-dad76b20ecbx",
+  "fileName": "Hanrei Watch.js",
+  "lastUpdated": "2012-01-30 22:49:15"
+ },
+ {
+  "id": "36e28164-afac-42c6-9a99-ed757b640002",
+  "fileName": "Harpers.js",
+  "lastUpdated": "2016-11-01 17:35:39"
+ },
+ {
+  "id": "afcd2650-9bdb-4489-b279-ec2274a24962",
+  "fileName": "Harvard Business Review.js",
+  "lastUpdated": "2018-10-11 17:02:23"
+ },
+ {
+  "id": "31da33ad-b4d9-4e99-b9ea-3e1ddad284d8",
+  "fileName": "Hathi Trust.js",
+  "lastUpdated": "2017-11-11 20:05:29"
+ },
+ {
+  "id": "3e375db7-5f6e-4861-ab8b-3ddb0f4accc9",
+  "fileName": "HCSP.js",
+  "lastUpdated": "2016-10-31 19:16:45"
+ },
+ {
+  "id": "3dcbb947-f7e3-4bbd-a4e5-717f3701d624",
+  "fileName": "HeinOnline.js",
+  "lastUpdated": "2019-10-26 13:45:08"
+ },
+ {
+  "id": "9021ee70-1411-45c9-9dd6-f070cc80641a",
+  "fileName": "HighBeam.js",
+  "lastUpdated": "2018-01-07 09:32:09"
+ },
+ {
+  "id": "8c1f42d5-02fa-437b-b2b2-73afc768eb07",
+  "fileName": "HighWire 2.0.js",
+  "lastUpdated": "2016-12-19 05:02:00"
+ },
+ {
+  "id": "5eacdb93-20b9-4c46-a89b-523f62935ae4",
+  "fileName": "HighWire.js",
+  "lastUpdated": "2015-06-02 17:33:54"
+ },
+ {
+  "id": "186efdd2-3621-4703-aac6-3b5e286bdd86",
+  "fileName": "Hindawi Publishers.js",
+  "lastUpdated": "2016-01-06 05:33:07"
+ },
+ {
+  "id": "cc4b1ea4-3349-4bb4-af55-cce5e06e4669",
+  "fileName": "Hispanic-American Periodical Index.js",
+  "lastUpdated": "2018-09-22 17:06:48"
+ },
+ {
+  "id": "9f52911f-e1b5-41f8-be66-b16982269e6a",
+  "fileName": "HLAS (historical).js",
+  "lastUpdated": "2013-06-01 14:47:30"
+ },
+ {
+  "id": "c2f5f114-c255-4cf7-a7b8-d5c95e82291f",
+  "fileName": "Hoovers.js",
+  "lastUpdated": "2016-11-01 17:38:21"
+ },
+ {
+  "id": "36e34937-2ec3-418b-8199-2c8cc3488875",
+  "fileName": "Huff Post.js",
+  "lastUpdated": "2016-10-31 21:35:41"
+ },
+ {
+  "id": "b16d76b4-ce4d-4774-b29c-b6aea71d417b",
+  "fileName": "IBISWorld.js",
+  "lastUpdated": "2014-03-12 04:43:57"
+ },
+ {
+  "id": "271ee1a5-da86-465b-b3a5-eafe7bd3c156",
+  "fileName": "Idref.js",
+  "lastUpdated": "2019-11-21 11:52:29"
+ },
+ {
+  "id": "8d72adbc-376c-4a33-b6be-730bc235190f",
+  "fileName": "IEEE Computer Society.js",
+  "lastUpdated": "2017-06-07 18:52:06"
+ },
+ {
+  "id": "92d4ed84-8d0-4d3c-941f-d4b9124cfbb",
+  "fileName": "IEEE Xplore.js",
+  "lastUpdated": "2019-10-06 21:42:54"
+ },
+ {
+  "id": "d210c5a1-73e1-41ad-a3c9-331d5a3ead48",
+  "fileName": "IGN.js",
+  "lastUpdated": "2016-06-15 16:37:47"
+ },
+ {
+  "id": "a30274ac-d3d1-4977-80f4-5320613226ec",
+  "fileName": "IMDb.js",
+  "lastUpdated": "2020-01-07 00:38:50"
+ },
+ {
+  "id": "88268d51-dc41-4f98-bb93-d13af50ba1ab",
+  "fileName": "In These Times.js",
+  "lastUpdated": "2016-11-01 17:45:07"
+ },
+ {
+  "id": "f4469574-1d96-4a4a-a0ac-1b9f7c49654b",
+  "fileName": "Informationssystem Medienpaedagogik.js",
+  "lastUpdated": "2017-01-01 16:54:04"
+ },
+ {
+  "id": "1fdc31af-065d-4923-9e90-ab4afe5cca8b",
+  "fileName": "Informit Australia.js",
+  "lastUpdated": "2013-12-06 14:04:29"
+ },
+ {
+  "id": "add79dfd-7951-4c72-af1d-ce1d50aa4fb4",
+  "fileName": "informIT database.js",
+  "lastUpdated": "2012-10-15 10:37:49"
+ },
+ {
+  "id": "6773a9af-5375-3224-d148-d32793884dec",
+  "fileName": "InfoTrac.js",
+  "lastUpdated": "2015-06-10 10:51:29"
+ },
+ {
+  "id": "9e306d5d-193f-44ae-9dd6-ace63bf47689",
+  "fileName": "IngentaConnect.js",
+  "lastUpdated": "2014-09-17 04:55:38"
+ },
+ {
+  "id": "abd7c626-6913-42d4-a05f-acc6683c69da",
+  "fileName": "Insignia OPAC.js",
+  "lastUpdated": "2017-01-01 15:21:20"
+ },
+ {
+  "id": "17b1a93f-b342-4b54-ad50-08ecc26e0ac3",
+  "fileName": "INSPIRE.js",
+  "lastUpdated": "2014-08-26 03:46:51"
+ },
+ {
+  "id": "9346ddef-126b-47ec-afef-8809ed1972ab",
+  "fileName": "Institute of Physics.js",
+  "lastUpdated": "2016-11-01 12:54:14"
+ },
+ {
+  "id": "570d4c35-a16d-48f9-aa73-6161d067da79",
+  "fileName": "Integrum.js",
+  "lastUpdated": "2017-12-05 03:14:12"
+ },
+ {
+  "id": "20e87da1-e1c9-410d-b400-a1c27272ae19",
+  "fileName": "Intellixir.js",
+  "lastUpdated": "2017-01-01 16:54:26"
+ },
+ {
+  "id": "0eeb2ac0-fbaf-4994-b98f-203d273eb9fa",
+  "fileName": "Inter-Research Science Center.js",
+  "lastUpdated": "2017-10-22 20:07:17"
+ },
+ {
+  "id": "513a53f5-b95e-4df6-a03e-3348d9ec9f44",
+  "fileName": "Internet Archive Wayback Machine.js",
+  "lastUpdated": "2019-12-07 16:37:13"
+ },
+ {
+  "id": "db0f4858-10fa-4f76-976c-2592c95f029c",
+  "fileName": "Internet Archive.js",
+  "lastUpdated": "2017-06-04 10:03:10"
+ },
+ {
+  "id": "1c0c63d9-4a95-44d4-b441-173cdc1b8688",
+  "fileName": "io-port.js",
+  "lastUpdated": "2014-03-08 16:26:00"
+ },
+ {
+  "id": "8381bf68-11fa-418c-8530-2e00284d3efd",
+  "fileName": "IRIS.js",
+  "lastUpdated": "2013-06-08 12:14:42"
+ },
+ {
+  "id": "43a53465-0354-42fd-aba9-dc1af8be7061",
+  "fileName": "Isidore.js",
+  "lastUpdated": "2017-01-01 15:22:12"
+ },
+ {
+  "id": "29051e64-8eba-4b26-bbf1-0c224bc59497",
+  "fileName": "ISTC.js",
+  "lastUpdated": "2016-12-28 14:39:45"
+ },
+ {
+  "id": "e40a27bc-0eef-4c50-b78b-37274808d7d2",
+  "fileName": "J-Stage.js",
+  "lastUpdated": "2019-06-15 19:04:11"
+ },
+ {
+  "id": "e5e34825-1314-43bd-a9fe-f38f6ab48403",
+  "fileName": "Jahrbuch.js",
+  "lastUpdated": "2017-11-04 10:50:28"
+ },
+ {
+  "id": "b56d756e-934e-4b46-bc58-d61dccc9f32f",
+  "fileName": "Japan Times Online.js",
+  "lastUpdated": "2016-11-01 18:46:38"
+ },
+ {
+  "id": "327cacea-9603-4554-91a8-ed0587e0d83a",
+  "fileName": "JISC Historical Texts.js",
+  "lastUpdated": "2018-10-12 02:32:08"
+ },
+ {
+  "id": "80bc4fd3-747c-4dc2-86e9-da7b251e1407",
+  "fileName": "jmlr.js",
+  "lastUpdated": "2018-01-31 20:33:31"
+ },
+ {
+  "id": "d93c14fb-d327-4540-b60a-327309ea512b",
+  "fileName": "Journal of Electronic Publishing.js",
+  "lastUpdated": "2018-01-31 20:16:13"
+ },
+ {
+  "id": "7e56f792-e96b-42a1-913c-40c69cc9ce40",
+  "fileName": "Journal of Extension.js",
+  "lastUpdated": "2016-11-01 18:47:05"
+ },
+ {
+  "id": "03df2575-dbd9-49aa-9e58-1e6edd86d562",
+  "fileName": "JRC Publications Repository.js",
+  "lastUpdated": "2017-01-01 15:24:49"
+ },
+ {
+  "id": "d921155f-0186-1684-615c-ca57682ced9b",
+  "fileName": "JSTOR.js",
+  "lastUpdated": "2019-12-22 17:00:53"
+ },
+ {
+  "id": "86168097-0ce0-4c77-ba34-8bd57f47a3d3",
+  "fileName": "Juricaf.js",
+  "lastUpdated": "2016-11-01 21:34:45"
+ },
+ {
+  "id": "dc78e210-31da-4fe5-99d6-1ea1a61874ca",
+  "fileName": "jurion.js",
+  "lastUpdated": "2017-01-30 20:15:34"
+ },
+ {
+  "id": "bc2ec385-e60a-4899-96ae-d4f0d6574ad7",
+  "fileName": "Juris.js",
+  "lastUpdated": "2018-08-27 10:42:50"
+ },
+ {
+  "id": "b662c6eb-e478-46bd- bad4-23cdfd0c9d67",
+  "fileName": "JurPC.js",
+  "lastUpdated": "2015-01-02 18:03:03"
+ },
+ {
+  "id": "d3f35d5a-55da-4e07-be7d-b4d2a821279f",
+  "fileName": "KitapYurdu.com.js",
+  "lastUpdated": "2017-09-16 08:49:18"
+ },
+ {
+  "id": "43bc17ed-e994-4fdb-ac28-594c839658ca",
+  "fileName": "Kommersant.js",
+  "lastUpdated": "2017-01-01 16:02:40"
+ },
+ {
+  "id": "b298ca93-0010-48f5-97fb-e9923519a380",
+  "fileName": "KStudy.js",
+  "lastUpdated": "2018-01-03 13:10:00"
+ },
+ {
+  "id": "e04e4bab-64c2-4b9a-b6c2-7fb186281969",
+  "fileName": "L'Annee Philologique.js",
+  "lastUpdated": "2013-04-17 03:09:28"
+ },
+ {
+  "id": "f6279abd-ab60-4aad-bdb0-20137279cd19",
+  "fileName": "La Croix.js",
+  "lastUpdated": "2016-11-03 20:18:42"
+ },
+ {
+  "id": "e4fe1596-a8c4-4d09-945f-120c4d83e580",
+  "fileName": "LA Times.js",
+  "lastUpdated": "2016-11-07 04:08:21"
+ },
+ {
+  "id": "e1356ac2-8254-44d5-8ece-4829827d5bc6",
+  "fileName": "Lagen.nu.js",
+  "lastUpdated": "2016-11-03 20:33:09"
+ },
+ {
+  "id": "d2c0d2f4-42c0-41e0-8021-3b87b52b27d2",
+  "fileName": "Landesbibliographie Baden-Wurttemberg.js",
+  "lastUpdated": "2018-11-01 18:12:21"
+ },
+ {
+  "id": "d1605270-d7dc-459f-9875-74ad8dde1f7d",
+  "fileName": "Le Devoir.js",
+  "lastUpdated": "2017-01-01 15:26:06"
+ },
+ {
+  "id": "80a58db6-7353-4bfa-9f3a-4a44fc903f01",
+  "fileName": "Le Figaro.js",
+  "lastUpdated": "2016-05-29 22:56:59"
+ },
+ {
+  "id": "530cf18c-e80a-4e67-ae9c-9b8c08591610",
+  "fileName": "Le monde diplomatique.js",
+  "lastUpdated": "2016-11-04 22:01:09"
+ },
+ {
+  "id": "6bc635a4-6823-4f95-acaf-b43e8a158144",
+  "fileName": "Le Monde.js",
+  "lastUpdated": "2018-01-13 11:53:25"
+ },
+ {
+  "id": "2dc0b23d-64d8-4933-b629-5c003451ccf7",
+  "fileName": "Legifrance.js",
+  "lastUpdated": "2013-04-17 03:09:28"
+ },
+ {
+  "id": "2bedae3c-bab5-447f-b127-e9babc0e9cfe",
+  "fileName": "Legislative Insight.js",
+  "lastUpdated": "2016-03-14 15:46:49"
+ },
+ {
+  "id": "b047a13c-fe5c-6604-c997-bef15e502b09",
+  "fileName": "LexisNexis.js",
+  "lastUpdated": "2014-03-20 20:48:18"
+ },
+ {
+  "id": "cf87eca8-041d-b954-795a-2d86348999d5",
+  "fileName": "Library Catalog (Aleph).js",
+  "lastUpdated": "2016-12-17 23:52:01"
+ },
+ {
+  "id": "a0a9a45c-cc9e-497c-962e-a366618df985",
+  "fileName": "Library Catalog (Amicus).js",
+  "lastUpdated": "2014-08-26 03:47:57"
+ },
+ {
+  "id": "915c326f-06c5-4833-b7b7-54c63f88b135",
+  "fileName": "Library Catalog (Aquabrowser).js",
+  "lastUpdated": "2014-08-26 03:51:35"
+ },
+ {
+  "id": "5d506fe3-dbde-4424-90e8-d219c63faf72",
+  "fileName": "Library Catalog (BiblioCommons).js",
+  "lastUpdated": "2015-06-02 20:44:02"
+ },
+ {
+  "id": "dc024bfc-2252-4257-b10e-cb95a0f213aa",
+  "fileName": "Library Catalog (Capita Prism).js",
+  "lastUpdated": "2016-07-02 21:37:30"
+ },
+ {
+  "id": "fb12ae9e-f473-cab4-0546-27ab88c64101",
+  "fileName": "Library Catalog (DRA).js",
+  "lastUpdated": "2016-12-04 12:47:41"
+ },
+ {
+  "id": "774d7dc2-3474-2684-392c-f787789ec63d",
+  "fileName": "Library Catalog (Dynix).js",
+  "lastUpdated": "2014-08-26 03:59:09"
+ },
+ {
+  "id": "446764bf-7da6-49ec-b7a7-fefcbafe317f",
+  "fileName": "Library Catalog (Encore).js",
+  "lastUpdated": "2017-11-25 15:51:49"
+ },
+ {
+  "id": "c0e6fda6-0ecd-e4f4-39ca-37a4de436e15",
+  "fileName": "Library Catalog (GEAC).js",
+  "lastUpdated": "2014-08-26 04:00:31"
+ },
+ {
+  "id": "4fd6b89b-2316-2dc4-fd87-61a97dd941e8",
+  "fileName": "Library Catalog (InnoPAC).js",
+  "lastUpdated": "2017-09-26 22:26:13"
+ },
+ {
+  "id": "8e66aa6d-5b2a-4b44-b384-a838e23b8538",
+  "fileName": "Library Catalog (Koha).js",
+  "lastUpdated": "2015-10-17 18:23:11"
+ },
+ {
+  "id": "fa87288d-406b-48cb-a957-7defcf415a64",
+  "fileName": "Library Catalog (Mango).js",
+  "lastUpdated": "2012-09-24 12:32:34"
+ },
+ {
+  "id": "83501b8c-1033-4722-ae50-a77d67271ef7",
+  "fileName": "Library Catalog (OPALS).js",
+  "lastUpdated": "2014-08-26 04:06:03"
+ },
+ {
+  "id": "1b9ed730-69c7-40b0-8a06-517a89a3a278",
+  "fileName": "Library Catalog (PICA).js",
+  "lastUpdated": "2018-01-26 09:57:02"
+ },
+ {
+  "id": "5236e1d6-fcf2-4ed5-9165-cc5f345ce33e",
+  "fileName": "Library Catalog (PICA2).js",
+  "lastUpdated": "2014-08-26 04:07:48"
+ },
+ {
+  "id": "12541207-ed80-4b59-9d46-fafa3aa61f7f",
+  "fileName": "Library Catalog (Polaris).js",
+  "lastUpdated": "2015-02-19 04:55:29"
+ },
+ {
+  "id": "23ba3be6-412d-4dde-9cc1-c4df0cc09378",
+  "fileName": "Library Catalog (SIRSI eLibrary).js",
+  "lastUpdated": "2014-08-26 04:08:13"
+ },
+ {
+  "id": "add7c71c-21f3-ee14-d188-caf9da12728b",
+  "fileName": "Library Catalog (SIRSI).js",
+  "lastUpdated": "2014-08-26 04:09:11"
+ },
+ {
+  "id": "fc3ac6f7-b461-49fe-879c-dd234f9c101c",
+  "fileName": "Library Catalog (SLIMS).js",
+  "lastUpdated": "2014-08-26 04:10:09"
+ },
+ {
+  "id": "0f9fc2fc-306e-5204-1117-25bca009dffc",
+  "fileName": "Library Catalog (TLCYouSeeMore).js",
+  "lastUpdated": "2014-08-26 04:11:42"
+ },
+ {
+  "id": "a81243b5-a9fd-4921-8441-3142a518fdb7",
+  "fileName": "Library Catalog (Voyager 7).js",
+  "lastUpdated": "2014-08-26 04:12:22"
+ },
+ {
+  "id": "88915634-1af6-c134-0171-56fd198235ed",
+  "fileName": "Library Catalog (Voyager).js",
+  "lastUpdated": "2014-08-26 04:12:55"
+ },
+ {
+  "id": "63a0a351-3131-18f4-21aa-f46b9ac51d87",
+  "fileName": "Library Catalog (VTLS).js",
+  "lastUpdated": "2014-08-26 04:13:58"
+ },
+ {
+  "id": "11614156-f421-4e89-8ce0-a5e69ce3ebed",
+  "fileName": "Library Genesis.js",
+  "lastUpdated": "2019-12-09 20:38:23"
+ },
+ {
+  "id": "c070e5a2-4bfd-44bb-9b3c-4be20c50d0d9",
+  "fileName": "Library of Congress ISBN.js",
+  "lastUpdated": "2018-04-13 13:41:00"
+ },
+ {
+  "id": "97930de6-8709-409a-a80c-ed64421a842e",
+  "fileName": "Lippincott Williams and Wilkins.js",
+  "lastUpdated": "2017-09-01 17:23:56"
+ },
+ {
+  "id": "d49e3a67-e2c1-4217-825c-2b22cffd332a",
+  "fileName": "LiveJournal.js",
+  "lastUpdated": "2016-11-04 20:37:13"
+ },
+ {
+  "id": "8a00461c-5b42-4632-8048-339b221ac3a2",
+  "fileName": "London Review of Books.js",
+  "lastUpdated": "2020-01-06 22:53:25"
+ },
+ {
+  "id": "9a0ecbda-c0e9-4a19-84a9-fc8e7c845afa",
+  "fileName": "Lulu.js",
+  "lastUpdated": "2016-11-04 21:18:44"
+ },
+ {
+  "id": "91acf493-0de7-4473-8b62-89fd141e6c74",
+  "fileName": "MAB2.js",
+  "lastUpdated": "2014-05-20 17:57:47"
+ },
+ {
+  "id": "0db1c2d0-eaae-4f3d-94ef-d4b3aa61de16",
+  "fileName": "magazines.russ.ru.js",
+  "lastUpdated": "2016-12-31 10:22:19"
+ },
+ {
+  "id": "6cb92652-6a2b-473e-b976-434f50b15069",
+  "fileName": "Mailman.js",
+  "lastUpdated": "2017-01-01 16:55:04"
+ },
+ {
+  "id": "b56f856e-934e-4b46-bc58-d61dccc9f32f",
+  "fileName": "Mainichi Daily News.js",
+  "lastUpdated": "2019-12-17 20:25:31"
+ },
+ {
+  "id": "a6ee60df-1ddc-4aae-bb25-45e0537be973",
+  "fileName": "MARC.js",
+  "lastUpdated": "2019-07-12 05:44:41"
+ },
+ {
+  "id": "edd87d07-9194-42f8-b2ad-997c4c7deefd",
+  "fileName": "MARCXML.js",
+  "lastUpdated": "2019-07-11 13:12:18"
+ },
+ {
+  "id": "4f7c1422-2eef-4d22-a4be-8e1a78ef7bd2",
+  "fileName": "Matbugat.ru.js",
+  "lastUpdated": "2017-01-01 16:03:35"
+ },
+ {
+  "id": "66928fe3-1e93-45a7-8e11-9df6de0a11b3",
+  "fileName": "Max Planck Institute for the History of Science Virtual Laboratory Library.js",
+  "lastUpdated": "2018-01-31 23:20:18"
+ },
+ {
+  "id": "b51ac026-ed35-4c68-89bb-b42b1e1ce8f2",
+  "fileName": "MCV.js",
+  "lastUpdated": "2018-07-08 13:11:39"
+ },
+ {
+  "id": "acf93a17-a83b-482b-a45e-0c64cfd49bee",
+  "fileName": "MDPI Journals.js",
+  "lastUpdated": "2018-11-01 20:19:32"
+ },
+ {
+  "id": "96a92909-f23c-4f16-ae93-1948c2459932",
+  "fileName": "medes.js",
+  "lastUpdated": "2016-12-27 13:01:58"
+ },
+ {
+  "id": "6c957d6b-a554-474f-81a9-91c178fef65d",
+  "fileName": "Medium.js",
+  "lastUpdated": "2016-12-27 14:13:31"
+ },
+ {
+  "id": "9ec64cfd-bea7-472a-9557-493c0c26b0fb",
+  "fileName": "MEDLINEnbib.js",
+  "lastUpdated": "2015-10-16 18:47:13"
+ },
+ {
+  "id": "d9b57cd5-5a9c-4946-8616-3bdf8edfcbb5",
+  "fileName": "mEDRA.js",
+  "lastUpdated": "2014-05-26 03:50:55"
+ },
+ {
+  "id": "b06d2609-ebca-4125-ac67-6d7a0dba274e",
+  "fileName": "MetaLib.js",
+  "lastUpdated": "2017-01-01 15:26:24"
+ },
+ {
+  "id": "ce5f2849-4500-47cc-8d7d-3fc0a1de9848",
+  "fileName": "Microbiology Society Journals.js",
+  "lastUpdated": "2016-01-06 16:10:00"
+ },
+ {
+  "id": "91c7b393-af05-476c-ae72-ae244d2347f4",
+  "fileName": "Microsoft Academic.js",
+  "lastUpdated": "2018-03-04 19:36:45"
+ },
+ {
+  "id": "86c35e86-3f97-4e80-9356-8209c97737c2",
+  "fileName": "MIDAS Journals.js",
+  "lastUpdated": "2018-04-16 11:27:22"
+ },
+ {
+  "id": "a5998785-222b-4459-9ce8-9c081d599af7",
+  "fileName": "Milli Kutuphane.js",
+  "lastUpdated": "2017-10-01 17:23:23"
+ },
+ {
+  "id": "2e43f4a9-d2e2-4112-a6ef-b3528b39b4d2",
+  "fileName": "MIT Press Journals.js",
+  "lastUpdated": "2017-11-12 11:41:41"
+ },
+ {
+  "id": "0e2235e7-babf-413c-9acf-f27cce5f059c",
+  "fileName": "MODS.js",
+  "lastUpdated": "2019-05-20 09:05:38"
+ },
+ {
+  "id": "22d17fb9-ae32-412e-bcc4-7650ed3359bc",
+  "fileName": "Musee du Louvre.js",
+  "lastUpdated": "2018-03-05 07:35:01"
+ },
+ {
+  "id": "b56d756e-814e-4b46-bc58-d61dccc9f32f",
+  "fileName": "Nagoya University OPAC.js",
+  "lastUpdated": "2012-07-13 07:33:49"
+ },
+ {
+  "id": "7987b420-e8cb-4bea-8ef7-61c2377cd686",
+  "fileName": "NASA ADS.js",
+  "lastUpdated": "2019-11-25 18:11:28"
+ },
+ {
+  "id": "5a697ab5-913a-478a-b4ec-98d019aa5dc6",
+  "fileName": "NASA NTRS.js",
+  "lastUpdated": "2014-04-03 17:46:53"
+ },
+ {
+  "id": "229d4678-4fa0-44f8-95c4-f4cfdb9b254c",
+  "fileName": "National Archive of the UK.js",
+  "lastUpdated": "2017-10-21 10:10:42"
+ },
+ {
+  "id": "50a4cf3f-92ef-4e9f-ab15-815229159b16",
+  "fileName": "National Archives of Australia.js",
+  "lastUpdated": "2017-01-29 10:18:58"
+ },
+ {
+  "id": "5b02e8d4-d8fb-4143-af3d-3576d4c1b49c",
+  "fileName": "National Archives of South Africa.js",
+  "lastUpdated": "2014-03-12 22:00:51"
+ },
+ {
+  "id": "edfa5803-e331-47db-84d1-db3cf8d6f460",
+  "fileName": "National Archives of the United States.js",
+  "lastUpdated": "2014-01-05 11:42:13"
+ },
+ {
+  "id": "99f958ab-0732-483d-833f-6bd8e42f6277",
+  "fileName": "National Bureau of Economic Research.js",
+  "lastUpdated": "2018-02-11 13:50:53"
+ },
+ {
+  "id": "5978580d-c58c-46c8-9755-9481a3e20f3f",
+  "fileName": "National Diet Library Catalogue.js",
+  "lastUpdated": "2015-08-15 16:07:22"
+ },
+ {
+  "id": "ed28758b-9c39-4e1c-af89-ce1c9202b70f",
+  "fileName": "National Gallery of Art - USA.js",
+  "lastUpdated": "2016-12-28 11:55:43"
+ },
+ {
+  "id": "54ac4ec1-9d07-45d3-9d96-48bed3411fb6",
+  "fileName": "National Library of Australia (new catalog).js",
+  "lastUpdated": "2018-01-30 09:40:11"
+ },
+ {
+  "id": "fc410e64-0252-4cd3-acb1-25e584775fa2",
+  "fileName": "National Library of Australia.js",
+  "lastUpdated": "2015-06-02 20:55:32"
+ },
+ {
+  "id": "89592f50-6ae8-491e-8988-969002012b1b",
+  "fileName": "National Library of Belarus.js",
+  "lastUpdated": "2017-01-01 15:28:10"
+ },
+ {
+  "id": "7bd82b70-1ed7-4aaf-bea2-bcbe6429a3ee",
+  "fileName": "National Library of Norway.js",
+  "lastUpdated": "2017-11-29 23:36:00"
+ },
+ {
+  "id": "1c5b122c-7e58-4cd5-932b-93f5ca0b7e1a",
+  "fileName": "National Post.js",
+  "lastUpdated": "2017-05-23 21:23:02"
+ },
+ {
+  "id": "6614a99-479a-4524-8e30-686e4d66663e",
+  "fileName": "Nature Publishing Group.js",
+  "lastUpdated": "2018-10-12 15:27:55"
+ },
+ {
+  "id": "5e385e77-2f51-41b4-a29b-908e23d5d3e8",
+  "fileName": "NCBI Nucleotide.js",
+  "lastUpdated": "2014-11-15 11:25:19"
+ },
+ {
+  "id": "c816f8ad-4c73-4f6d-914e-a6e7212746cf",
+  "fileName": "Neural Information Processing Systems.js",
+  "lastUpdated": "2018-09-17 14:30:14"
+ },
+ {
+  "id": "c7830593-807e-48cb-99f2-c3bed2b148c2",
+  "fileName": "New Zealand Herald.js",
+  "lastUpdated": "2019-06-13 22:55:12"
+ },
+ {
+  "id": "a9f7b277-e134-4d1d-ada6-8f7942be71a6",
+  "fileName": "newshub.co.nz.js",
+  "lastUpdated": "2016-12-28 20:22:36"
+ },
+ {
+  "id": "caecaea0-5d06-11df-a08a-0800200c9a66",
+  "fileName": "NewsnetTamedia.js",
+  "lastUpdated": "2018-04-29 11:03:04"
+ },
+ {
+  "id": "22dd8e35-02da-4968-b306-6efe0779a48d",
+  "fileName": "newspapers.com.js",
+  "lastUpdated": "2019-05-09 03:46:53"
+ },
+ {
+  "id": "a823550b-6475-4b20-8539-a3c416906228",
+  "fileName": "Notre Dame Philosophical Reviews.js",
+  "lastUpdated": "2016-01-04 21:04:49"
+ },
+ {
+  "id": "fc08c878-ac92-40dc-9105-ca36ca20665d",
+  "fileName": "NRC Research Press.js",
+  "lastUpdated": "2016-05-24 13:18:11"
+ },
+ {
+  "id": "ba10b5bc-562f-11e1-b20d-a3084924019b",
+  "fileName": "Nuclear Receptor Signaling.js",
+  "lastUpdated": "2014-03-03 22:02:54"
+ },
+ {
+  "id": "ce7a3727-d184-407f-ac12-52837f3361ff",
+  "fileName": "NYTimes.com.js",
+  "lastUpdated": "2019-06-15 16:21:59"
+ },
+ {
+  "id": "61ffe600-55e0-11df-bed9-0002a5d5c51b",
+  "fileName": "NZZ.ch.js",
+  "lastUpdated": "2016-12-28 20:01:06"
+ },
+ {
+  "id": "838d8849-4ffb-9f44-3d0d-aa8a0a079afe",
+  "fileName": "OCLC WorldCat FirstSearch.js",
+  "lastUpdated": "2017-01-01 15:28:35"
+ },
+ {
+  "id": "8cf74360-e772-4818-8cf1-eda0481c7dfb",
+  "fileName": "OECD.js",
+  "lastUpdated": "2017-01-03 07:41:53"
+ },
+ {
+  "id": "17c974e6-7c4f-4ac8-93af-8d74debca110",
+  "fileName": "OhioLINK.js",
+  "lastUpdated": "2017-01-01 15:28:48"
+ },
+ {
+  "id": "b10bf941-12e9-4188-be04-f6357fa594a0",
+  "fileName": "Old Bailey Online.js",
+  "lastUpdated": "2018-10-12 23:37:03"
+ },
+ {
+  "id": "3d180fcf-8005-4a2b-a0cd-1fe31ba1f996",
+  "fileName": "Open Conf.js",
+  "lastUpdated": "2017-05-26 15:41:56"
+ },
+ {
+  "id": "99b62ba4-065c-4e83-a5c0-d8cc0c75d388",
+  "fileName": "Open Journal Systems.js",
+  "lastUpdated": "2019-09-08 11:33:52"
+ },
+ {
+  "id": "c73a4a8c-3ef1-4ec8-8229-7531ee384cc4",
+  "fileName": "Open WorldCat.js",
+  "lastUpdated": "2017-03-19 23:26:57"
+ },
+ {
+  "id": "4c6b4c5f-7286-45bb-8e99-0c518d177fa7",
+  "fileName": "OpenEdition Books.js",
+  "lastUpdated": "2017-01-03 11:17:56"
+ },
+ {
+  "id": "fe39e97d-7397-4f3f-a5f3-396a1a79213c",
+  "fileName": "OpenJudis - Indian Supreme Court cases.js",
+  "lastUpdated": "2015-06-02 21:03:02"
+ },
+ {
+  "id": "a1a97ad4-493a-45f2-bd46-016069de4162",
+  "fileName": "Optical Society of America.js",
+  "lastUpdated": "2017-01-03 23:20:12"
+ },
+ {
+  "id": "e83248bb-caa4-4dd2-a470-11f4cd164083",
+  "fileName": "ORCID.js",
+  "lastUpdated": "2018-10-12 18:52:49"
+ },
+ {
+  "id": "0cdc6a07-38cf-4ec1-b9d5-7a3c0cc89b15",
+  "fileName": "OSTI Energy Citations.js",
+  "lastUpdated": "2017-07-27 10:41:29"
+ },
+ {
+  "id": "59e7e93e-4ef0-4777-8388-d6eddb3261bf",
+  "fileName": "OVID Tagged.js",
+  "lastUpdated": "2017-06-03 11:41:00"
+ },
+ {
+  "id": "cde4428-5434-437f-9cd9-2281d14dbf9",
+  "fileName": "Ovid.js",
+  "lastUpdated": "2017-01-01 16:18:44"
+ },
+ {
+  "id": "d3ee2368-04d7-4b4d-a8f3-c20c3f5234a9",
+  "fileName": "Oxford English Dictionary.js",
+  "lastUpdated": "2017-01-03 14:46:57"
+ },
+ {
+  "id": "f203db7f-7b7b-4dc4-b018-115b7885fe3b",
+  "fileName": "Oxford Music and Art Online.js",
+  "lastUpdated": "2015-06-02 21:05:15"
+ },
+ {
+  "id": "62415874-b53c-4afd-86e8-814e18a986f6",
+  "fileName": "Oxford Reference.js",
+  "lastUpdated": "2017-06-22 13:47:01"
+ },
+ {
+  "id": "e9989043-fcdf-4f33-93b6-0381828aeb41",
+  "fileName": "Oxford University Press.js",
+  "lastUpdated": "2017-01-08 15:58:04"
+ },
+ {
+  "id": "73be930f-5773-41b2-a7a1-37c0eeade92f",
+  "fileName": "OZON.ru.js",
+  "lastUpdated": "2017-01-04 20:51:33"
+ },
+ {
+  "id": "1b052690-16dd-431d-9828-9dc675eb55f6",
+  "fileName": "Papers Past.js",
+  "lastUpdated": "2017-01-22 00:46:33"
+ },
+ {
+  "id": "b24ee183-58a6-443d-b8f9-c5cd5a3a0f73",
+  "fileName": "Paris Review.js",
+  "lastUpdated": "2017-01-22 12:19:22"
+ },
+ {
+  "id": "1d1a51d4-60bf-44b8-ae28-8b154d1ed721",
+  "fileName": "Pastebin.js",
+  "lastUpdated": "2017-01-22 12:41:39"
+ },
+ {
+  "id": "232e24fe-2f68-44fc-9366-ecd45720ee9e",
+  "fileName": "Patents - USPTO.js",
+  "lastUpdated": "2014-04-04 10:11:27"
+ },
+ {
+  "id": "274284a8-fc91-4f54-be77-bfcb7f9c3d6f",
+  "fileName": "PC Gamer.js",
+  "lastUpdated": "2018-07-07 03:30:20"
+ },
+ {
+  "id": "c216ae06-da95-4fd0-bce8-38de1f6cf17c",
+  "fileName": "Peeters.js",
+  "lastUpdated": "2018-03-27 05:23:49"
+ },
+ {
+  "id": "6871e8c5-f935-4ba1-8305-0ba563ce3941",
+  "fileName": "PEI Archival Information Network.js",
+  "lastUpdated": "2017-01-22 15:45:20"
+ },
+ {
+  "id": "32ad4782-b106-4ccb-8ae1-ff102ba93eef",
+  "fileName": "PEP Web.js",
+  "lastUpdated": "2015-03-20 06:07:35"
+ },
+ {
+  "id": "b0abb562-218c-4bf6-af66-c320fdb8ddd3",
+  "fileName": "Philosopher's Imprint.js",
+  "lastUpdated": "2017-06-03 13:00:06"
+ },
+ {
+  "id": "8df4f61b-0881-4c85-9186-05f457edb4d3",
+  "fileName": "PhilPapers.js",
+  "lastUpdated": "2015-09-25 00:35:34"
+ },
+ {
+  "id": "ce68b0ed-3137-4e38-b691-f3bc49bc1497",
+  "fileName": "Pleade.js",
+  "lastUpdated": "2015-01-30 15:32:05"
+ },
+ {
+  "id": "9575e804-219e-4cd6-813d-9b690cbfc0fc",
+  "fileName": "PLoS Journals.js",
+  "lastUpdated": "2017-01-22 19:28:36"
+ },
+ {
+  "id": "fa7c37b1-fda4-418a-a8b8-2491929411ab",
+  "fileName": "Polygon.js",
+  "lastUpdated": "2015-12-06 18:45:12"
+ },
+ {
+  "id": "9405db4b-be7f-42ab-86ca-430226be9b35",
+  "fileName": "Potsdamer Neueste Nachrichten.js",
+  "lastUpdated": "2014-04-06 16:15:15"
+ },
+ {
+  "id": "cd669d1f-96b8-4040-aa36-48f843248399",
+  "fileName": "Primo 2018.js",
+  "lastUpdated": "2018-06-14 05:49:37"
+ },
+ {
+  "id": "efd737c9-a227-4113-866e-d57fbc0684ca",
+  "fileName": "Primo Normalized XML.js",
+  "lastUpdated": "2019-06-10 08:28:21"
+ },
+ {
+  "id": "1300cd65-d23a-4bbf-93e5-a3c9e00d1066",
+  "fileName": "Primo.js",
+  "lastUpdated": "2019-03-26 01:29:32"
+ },
+ {
+  "id": "095239e7-c18c-4f45-a932-bcf4a9e48c08",
+  "fileName": "Probing the Past.js",
+  "lastUpdated": "2018-01-28 20:46:55"
+ },
+ {
+  "id": "d770e7d2-106c-4396-8c32-b35cdc46376c",
+  "fileName": "Project Gutenberg.js",
+  "lastUpdated": "2014-04-03 18:55:01"
+ },
+ {
+  "id": "c54d1932-73ce-dfd4-a943-109380e06574",
+  "fileName": "Project MUSE.js",
+  "lastUpdated": "2020-01-26 19:38:19"
+ },
+ {
+  "id": "3e9dbe21-10f2-40be-a921-f6ec82760927",
+  "fileName": "ProMED.js",
+  "lastUpdated": "2013-11-19 00:12:31"
+ },
+ {
+  "id": "f2d965fa-5acb-4ba7-90a4-8ecb6cf0c795",
+  "fileName": "ProQuest Ebook Central.js",
+  "lastUpdated": "2017-11-19 21:23:37"
+ },
+ {
+  "id": "948df957-439a-4ac3-bc48-2c6edb069521",
+  "fileName": "ProQuest PolicyFile.js",
+  "lastUpdated": "2013-12-12 03:22:14"
+ },
+ {
+  "id": "fce388a6-a847-4777-87fb-6595e710b7e7",
+  "fileName": "ProQuest.js",
+  "lastUpdated": "2019-10-18 10:39:01"
+ },
+ {
+  "id": "e16095ae-986c-4117-9cb6-20f3b7a52f64",
+  "fileName": "Protein Data Bank.js",
+  "lastUpdated": "2017-06-03 18:51:04"
+ },
+ {
+  "id": "f520b141-9ce8-42f4-93ec-a39e375a9516",
+  "fileName": "Pubget.js",
+  "lastUpdated": "2017-06-03 17:53:26"
+ },
+ {
+  "id": "22d0bede-8db5-4656-9b9a-7d682ec1335d",
+  "fileName": "Publications du Quebec.js",
+  "lastUpdated": "2017-06-03 15:38:52"
+ },
+ {
+  "id": "27ee5b2c-2a5a-4afc-a0aa-d386642d4eed",
+  "fileName": "PubMed Central.js",
+  "lastUpdated": "2019-04-07 17:23:07"
+ },
+ {
+  "id": "fcf41bed-0cbc-3704-85c7-8062a0068a7a",
+  "fileName": "PubMed XML.js",
+  "lastUpdated": "2015-10-17 05:38:38"
+ },
+ {
+  "id": "3d0231ce-fd4b-478c-b1d3-840389e5b68c",
+  "fileName": "PubMed.js",
+  "lastUpdated": "2019-12-28 15:34:11"
+ },
+ {
+  "id": "94a8328a-ec87-4ba0-82b6-cf3000ea1dee",
+  "fileName": "PyPI.js",
+  "lastUpdated": "2018-11-03 08:21:27"
+ },
+ {
+  "id": "24a10ebf-ada1-4b8d-8f76-5a29e24d3e78",
+  "fileName": "R-Packages.js",
+  "lastUpdated": "2018-02-27 07:48:03"
+ },
+ {
+  "id": "b1c90b99-2e1a-4374-a03b-92e45f1afc55",
+  "fileName": "Radio Free Europe  Radio Liberty.js",
+  "lastUpdated": "2014-04-04 10:15:37"
+ },
+ {
+  "id": "5e3ad958-ac79-463d-812b-a86a9235c28f",
+  "fileName": "RDF.js",
+  "lastUpdated": "2019-11-30 20:49:31"
+ },
+ {
+  "id": "d1ac3b4f-1aa7-4a76-a97e-cf3580a41c37",
+  "fileName": "REDALYC.js",
+  "lastUpdated": "2017-06-04 09:52:26"
+ },
+ {
+  "id": "881f60f2-0802-411a-9228-ce5f47b64c7d",
+  "fileName": "ReferBibIX.js",
+  "lastUpdated": "2019-08-07 11:11:24"
+ },
+ {
+  "id": "1a3506da-a303-4b0a-a1cd-f216e6138d86",
+  "fileName": "RefWorks Tagged.js",
+  "lastUpdated": "2016-06-21 08:45:20"
+ },
+ {
+  "id": "f7262c7d-a11c-4679-899c-bab8c21a19c6",
+  "fileName": "Regeringskansliet.js",
+  "lastUpdated": "2013-04-15 18:04:37"
+ },
+ {
+  "id": "411f9a8b-64f3-4465-b7df-a3c988b602f3",
+  "fileName": "RePEc - Econpapers.js",
+  "lastUpdated": "2016-12-27 20:18:46"
+ },
+ {
+  "id": "bd2e6136-d8e5-4f76-906b-0fbcd888dd63",
+  "fileName": "RePEc - IDEAS.js",
+  "lastUpdated": "2017-06-05 07:38:26"
+ },
+ {
+  "id": "89ae6297-c0c4-45f7-943d-5174cf06339c",
+  "fileName": "ResearchGate.js",
+  "lastUpdated": "2019-03-30 15:18:21"
+ },
+ {
+  "id": "feef66bf-4b52-498f-a586-8e9a99dc07a0",
+  "fileName": "Retsinformation.js",
+  "lastUpdated": "2016-02-24 02:31:08"
+ },
+ {
+  "id": "83979786-44af-494a-9ddb-46654e0486ef",
+  "fileName": "Reuters.js",
+  "lastUpdated": "2018-03-05 19:27:07"
+ },
+ {
+  "id": "87766765-919e-4d3b-9071-3dd7efe984c8",
+  "fileName": "Revues.org.js",
+  "lastUpdated": "2014-04-03 18:55:44"
+ },
+ {
+  "id": "32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7",
+  "fileName": "RIS.js",
+  "lastUpdated": "2019-10-19 17:04:49"
+ },
+ {
+  "id": "5a5b1fcd-8491-4c56-84a7-5dba19fe2c02",
+  "fileName": "Rock, Paper, Shotgun.js",
+  "lastUpdated": "2018-07-21 01:56:54"
+ },
+ {
+  "id": "d522149f-b776-413f-8aa4-ced13f59c759",
+  "fileName": "Roll Call.js",
+  "lastUpdated": "2017-06-04 17:53:19"
+ },
+ {
+  "id": "ca0e7488-ef20-4485-8499-9c47e60dcfa7",
+  "fileName": "RSC Publishing.js",
+  "lastUpdated": "2017-06-20 13:43:21"
+ },
+ {
+  "id": "82b534ea-abf0-4527-9d5d-48cd98a89ba5",
+  "fileName": "Sacramento Bee.js",
+  "lastUpdated": "2017-07-09 05:05:18"
+ },
+ {
+  "id": "2c98b8e6-6138-4b60-a999-15e3a7c8cb4b",
+  "fileName": "SAE Papers.js",
+  "lastUpdated": "2017-07-07 05:40:25"
+ },
+ {
+  "id": "ec491fc2-10b1-11e3-99d7-1bd4dc830245",
+  "fileName": "Safari Books Online.js",
+  "lastUpdated": "2017-06-24 09:40:05"
+ },
+ {
+  "id": "908c1ca2-59b6-4ad8-b026-709b7b927bda",
+  "fileName": "SAGE Journals.js",
+  "lastUpdated": "2019-12-10 18:09:17"
+ },
+ {
+  "id": "d21dcd90-c997-4e14-8fe0-353b8e19a47a",
+  "fileName": "SAGE Knowledge.js",
+  "lastUpdated": "2017-06-25 19:38:38"
+ },
+ {
+  "id": "4c272290-7ac4-433e-862d-244884ed285a",
+  "fileName": "sbn.it.js",
+  "lastUpdated": "2019-12-27 16:51:43"
+ },
+ {
+  "id": "5ac0fd37-5578-4f82-8340-0e135b6336ee",
+  "fileName": "Scholars Portal Journals.js",
+  "lastUpdated": "2017-06-24 10:24:20"
+ },
+ {
+  "id": "a8e51f4e-0372-42ad-81a8-bc3dcea6dc03",
+  "fileName": "Schweizer Radio und Fernsehen SRF.js",
+  "lastUpdated": "2017-06-24 22:06:07"
+ },
+ {
+  "id": "3eabecf9-663a-4774-a3e6-0790d2732eed",
+  "fileName": "SciELO.js",
+  "lastUpdated": "2017-06-24 11:53:49"
+ },
+ {
+  "id": "b6d0a7a-d076-48ae-b2f0-b6de28b194e",
+  "fileName": "ScienceDirect.js",
+  "lastUpdated": "2019-11-09 03:35:55"
+ },
+ {
+  "id": "a14ac3eb-64a0-4179-970c-92ecc2fec992",
+  "fileName": "Scopus.js",
+  "lastUpdated": "2018-09-26 16:28:30"
+ },
+ {
+  "id": "276cb34c-6861-4de7-a11d-c2e46fb8af28",
+  "fileName": "Semantic Scholar.js",
+  "lastUpdated": "2020-02-05 15:02:05"
+ },
+ {
+  "id": "fe85e97b-5e2a-4d9e-976e-c336c5350ce9",
+  "fileName": "semantics Visual Library.js",
+  "lastUpdated": "2014-12-29 11:56:09"
+ },
+ {
+  "id": "7448d1d7-57e4-4685-b6e4-d4d9f7046fc2",
+  "fileName": "SFU IPinCH.js",
+  "lastUpdated": "2013-06-19 10:30:31"
+ },
+ {
+  "id": "3bae3a55-f021-4b59-8a14-43701f336adf",
+  "fileName": "Silverchair.js",
+  "lastUpdated": "2014-11-12 10:02:49"
+ },
+ {
+  "id": "d4cccbd1-a92f-4dd8-b636-74eb9e344441",
+  "fileName": "SIRS Knowledge Source.js",
+  "lastUpdated": "2015-02-02 23:47:53"
+ },
+ {
+  "id": "a667ae9e-186f-46d2-b824-d70064614668",
+  "fileName": "Slate.js",
+  "lastUpdated": "2016-12-27 20:28:06"
+ },
+ {
+  "id": "0cc8e259-106e-4793-8c26-6ec8114a9160",
+  "fileName": "SlideShare.js",
+  "lastUpdated": "2017-01-01 15:33:29"
+ },
+ {
+  "id": "83d2ed27-40a5-4dc7-bd87-baddc8fb35da",
+  "fileName": "SORA.js",
+  "lastUpdated": "2017-06-24 15:08:40"
+ },
+ {
+  "id": "eef50507-c756-4081-86fd-700ae4ebf22e",
+  "fileName": "Spiegel Online.js",
+  "lastUpdated": "2017-06-24 17:08:45"
+ },
+ {
+  "id": "b38a44f4-b8af-4553-9edf-fba4d2598d6a",
+  "fileName": "Springer Books.js",
+  "lastUpdated": "2019-10-19 14:21:14"
+ },
+ {
+  "id": "d6c6210a-297c-4b2c-8c43-48cb503cc49e",
+  "fileName": "Springer Link.js",
+  "lastUpdated": "2019-10-19 17:03:34"
+ },
+ {
+  "id": "d2959995-d0a2-4fb7-990f-16b671690e99",
+  "fileName": "SSOAR.js",
+  "lastUpdated": "2016-06-15 21:48:00"
+ },
+ {
+  "id": "b61c224b-34b6-4bfd-8a76-a476e7092d43",
+  "fileName": "SSRN.js",
+  "lastUpdated": "2018-02-16 06:39:03"
+ },
+ {
+  "id": "5aabfa6e-79e6-4791-a9d2-46c9cb137561",
+  "fileName": "Stanford Encyclopedia of Philosophy.js",
+  "lastUpdated": "2014-07-05 10:41:59"
+ },
+ {
+  "id": "2b62db1e-1d49-4e2b-a409-a3f9f1870a41",
+  "fileName": "State Records Office of Western Australia.js",
+  "lastUpdated": "2018-10-09 15:42:45"
+ },
+ {
+  "id": "439c869c-c605-47b4-b330-157a23a4b4f3",
+  "fileName": "Store norske leksikon.js",
+  "lastUpdated": "2017-06-24 20:57:00"
+ },
+ {
+  "id": "631ff0c7-2e64-4279-a9c9-ad9518d40f2b",
+  "fileName": "Stuff.co.nz.js",
+  "lastUpdated": "2014-08-23 05:56:33"
+ },
+ {
+  "id": "2e4ebd19-83ab-4a56-8fa6-bcd52b576470",
+  "fileName": "Sueddeutsche.de.js",
+  "lastUpdated": "2017-06-24 21:03:57"
+ },
+ {
+  "id": "6c61897b-ca44-4ce6-87c1-2da68b44e6f7",
+  "fileName": "Summon 2.js",
+  "lastUpdated": "2017-06-24 21:11:06"
+ },
+ {
+  "id": "7adba17c-7e98-4a13-8325-e19383b09eab",
+  "fileName": "Svenska Dagbladet.js",
+  "lastUpdated": "2018-08-31 11:59:13"
+ },
+ {
+  "id": "caa8f42c-9dbf-446e-963b-6ee18e3133d2",
+  "fileName": "Sveriges radio.js",
+  "lastUpdated": "2019-01-15 13:24:45"
+ },
+ {
+  "id": "4c6d887e-341d-4edb-b651-ea702a8918d7",
+  "fileName": "SVT Nyheter.js",
+  "lastUpdated": "2018-08-13 09:15:36"
+ },
+ {
+  "id": "374ac2a5-dd45-461e-bf1f-bf90c2eb7085",
+  "fileName": "Tagesspiegel.js",
+  "lastUpdated": "2018-01-28 18:07:21"
+ },
+ {
+  "id": "f16931f0-372e-4197-8927-05d2ba7599d8",
+  "fileName": "Talis Aspire.js",
+  "lastUpdated": "2017-06-28 05:41:09"
+ },
+ {
+  "id": "53f8d182-4edc-4eab-b5a1-141698a20202",
+  "fileName": "TalisPrism.js",
+  "lastUpdated": "2014-02-27 23:48:15"
+ },
+ {
+  "id": "f909cbda-2fac-4700-965f-6c0783b77eeb",
+  "fileName": "Tatknigafund.js",
+  "lastUpdated": "2012-08-06 19:23:07"
+ },
+ {
+  "id": "d76d3c94-ad87-4698-9433-6e31d6b3bf68",
+  "fileName": "Tatpressa.ru.js",
+  "lastUpdated": "2017-01-01 16:04:06"
+ },
+ {
+  "id": "dac476e4-401d-430a-8571-a97c31c3b65e",
+  "fileName": "Taylor and Francis+NEJM.js",
+  "lastUpdated": "2017-06-29 05:39:46"
+ },
+ {
+  "id": "d84574f1-e4d6-4337-934f-bf9d01173bf0",
+  "fileName": "taz.de.js",
+  "lastUpdated": "2017-07-10 16:55:04"
+ },
+ {
+  "id": "032ae9b7-ab90-9205-a479-baf81f49184a",
+  "fileName": "TEI.js",
+  "lastUpdated": "2019-01-31 00:12:00"
+ },
+ {
+  "id": "dd2d7c63-0c4b-4da4-b1d8-e72c7445c1e0",
+  "fileName": "Tesis Doctorals en Xarxa.js",
+  "lastUpdated": "2017-03-11 20:42:11"
+ },
+ {
+  "id": "575ba37f-c871-4ee8-8bdb-3e7f954e4e6a",
+  "fileName": "The Atlantic.js",
+  "lastUpdated": "2016-12-27 20:33:39"
+ },
+ {
+  "id": "393afc28-212d-47dd-be87-ec51bc7a58a4",
+  "fileName": "The Australian.js",
+  "lastUpdated": "2017-01-01 16:55:40"
+ },
+ {
+  "id": "1f245496-4c1b-406a-8641-d286b3888231",
+  "fileName": "The Boston Globe.js",
+  "lastUpdated": "2017-06-29 18:49:20"
+ },
+ {
+  "id": "1e6d1529-246f-4429-84e2-1f1b180b250d",
+  "fileName": "The Chronicle of Higher Education.js",
+  "lastUpdated": "2017-06-30 05:37:23"
+ },
+ {
+  "id": "3bdaeab1-2200-4e18-a68a-430d1cd50d21",
+  "fileName": "The Daily Beast.js",
+  "lastUpdated": "2017-06-30 06:10:12"
+ },
+ {
+  "id": "1a9a7ecf-01e9-4d5d-aa19-a7aa4010da83",
+  "fileName": "The Economic Times.js",
+  "lastUpdated": "2017-03-19 15:14:59"
+ },
+ {
+  "id": "6ec8008d-b206-4a4c-8d0a-8ef33807703b",
+  "fileName": "The Economist.js",
+  "lastUpdated": "2017-11-28 13:38:42"
+ },
+ {
+  "id": "0c661209-5ec8-402b-8f18-7dec6ae37d95",
+  "fileName": "The Free Dictionary.js",
+  "lastUpdated": "2017-07-10 15:21:32"
+ },
+ {
+  "id": "e0234bcf-bc56-4577-aa94-fe86a27f6fd6",
+  "fileName": "The Globe and Mail.js",
+  "lastUpdated": "2017-04-29 17:01:57"
+ },
+ {
+  "id": "8e11559d-60f0-4a7f-bb91-99ac0c5a2d63",
+  "fileName": "The Guardian.js",
+  "lastUpdated": "2018-08-11 14:15:22"
+ },
+ {
+  "id": "c9338ed5-b512-4967-8ffe-ab9c973559ef",
+  "fileName": "The Hamilton Spectator.js",
+  "lastUpdated": "2017-07-10 15:23:44"
+ },
+ {
+  "id": "9499c586-d672-42d6-9ec4-ee9594dcc571",
+  "fileName": "The Hindu (old).js",
+  "lastUpdated": "2017-07-10 15:25:23"
+ },
+ {
+  "id": "06142d59-fa9c-48c3-982b-6e7c67d3d6b8",
+  "fileName": "The Hindu.js",
+  "lastUpdated": "2017-07-05 10:59:44"
+ },
+ {
+  "id": "455fe24a-f7e8-4546-81d2-ad4f9aa10487",
+  "fileName": "The Intercept.js",
+  "lastUpdated": "2018-04-15 16:59:35"
+ },
+ {
+  "id": "72dbad15-cd1a-4d52-b2ed-7d67f909cada",
+  "fileName": "The Met.js",
+  "lastUpdated": "2017-07-01 11:39:10"
+ },
+ {
+  "id": "2cd7d362-5fba-423a-887f-579ed343e751",
+  "fileName": "The Microfinance Gateway.js",
+  "lastUpdated": "2017-07-10 15:27:10"
+ },
+ {
+  "id": "0d6f8450-72e8-4d8f-bdc2-b7fa03e6f2c5",
+  "fileName": "The Nation.js",
+  "lastUpdated": "2017-07-01 20:37:00"
+ },
+ {
+  "id": "1bfb4748-3925-4de6-bcb4-5de2967f6d3f",
+  "fileName": "The New Republic.js",
+  "lastUpdated": "2017-07-01 21:10:41"
+ },
+ {
+  "id": "4c164cc8-be7b-4d02-bfbf-37a5622dfd56",
+  "fileName": "The New York Review of Books.js",
+  "lastUpdated": "2017-07-02 14:40:20"
+ },
+ {
+  "id": "0fba73bf-f113-4d36-810f-2c654fa985fb",
+  "fileName": "The New Yorker.js",
+  "lastUpdated": "2017-11-12 22:00:35"
+ },
+ {
+  "id": "96b54986-16c7-45ea-b296-fde962d658b2",
+  "fileName": "The Open Library.js",
+  "lastUpdated": "2017-05-25 13:52:51"
+ },
+ {
+  "id": "40b9ca22-8df4-4f3b-9cb6-8f9b55486d30",
+  "fileName": "The Telegraph.js",
+  "lastUpdated": "2019-06-10 22:56:17"
+ },
+ {
+  "id": "53f8d182-4edc-4eab-b5a1-141698a10101",
+  "fileName": "The Times and Sunday Times.js",
+  "lastUpdated": "2019-06-10 22:58:10"
+ },
+ {
+  "id": "b2d61bb5-5b21-41b7-9c83-1abcbf14639b",
+  "fileName": "TheMarker.js",
+  "lastUpdated": "2017-07-03 10:47:30"
+ },
+ {
+  "id": "558babe7-5fca-47ea-af0f-2d9bb5bc5e53",
+  "fileName": "Theory of Computing.js",
+  "lastUpdated": "2019-06-10 22:52:50"
+ },
+ {
+  "id": "3f73f0aa-f91c-4192-b0d5-907312876cb9",
+  "fileName": "ThesesFR.js",
+  "lastUpdated": "2019-06-10 22:54:53"
+ },
+ {
+  "id": "abb72b5b-f807-4ff5-a324-ae1afea8a95a",
+  "fileName": "Thieme.js",
+  "lastUpdated": "2019-06-10 22:59:37"
+ },
+ {
+  "id": "d9be934c-edb9-490c-a88d-34e2ee106cd7",
+  "fileName": "Time.com.js",
+  "lastUpdated": "2019-10-06 18:12:01"
+ },
+ {
+  "id": "6b0b11a6-9b77-4b49-b768-6b715792aa37",
+  "fileName": "Toronto Star.js",
+  "lastUpdated": "2019-06-10 23:04:25"
+ },
+ {
+  "id": "4ee9dc8f-66d3-4c18-984b-6335408a24af",
+  "fileName": "Treesearch.js",
+  "lastUpdated": "2019-06-10 23:05:56"
+ },
+ {
+  "id": "8efcb7cb-4180-4555-969a-08e8b34066c4",
+  "fileName": "Trove.js",
+  "lastUpdated": "2020-01-05 17:34:52"
+ },
+ {
+  "id": "180a62bf-efdd-4d38-8d85-8971af04dd85",
+  "fileName": "TV by the Numbers.js",
+  "lastUpdated": "2019-04-07 20:02:00"
+ },
+ {
+  "id": "649c2836-a94d-4bbe-8e28-6771f283702f",
+  "fileName": "TVNZ.js",
+  "lastUpdated": "2019-04-07 18:10:37"
+ },
+ {
+  "id": "31659710-d04e-45d0-84ba-8e3f5afc4a54",
+  "fileName": "Twitter.js",
+  "lastUpdated": "2019-11-10 14:10:48"
+ },
+ {
+  "id": "5c11e3bd-caf5-4da6-95d8-e67c57929098",
+  "fileName": "Ubiquity Journals.js",
+  "lastUpdated": "2019-06-10 23:10:24"
+ },
+ {
+  "id": "e7e01cac-1e37-4da6-b078-a0e8343b0e98",
+  "fileName": "unAPI.js",
+  "lastUpdated": "2019-06-10 23:11:21"
+ },
+ {
+  "id": "66782e6a-a8db-4ed2-9a4f-ce4b30372e22",
+  "fileName": "University of Wisconsin-Madison Libraries Catalog.js",
+  "lastUpdated": "2019-06-11 10:25:18"
+ },
+ {
+  "id": "6e372642-ed9d-4934-b5d1-c11ac758ebb7",
+  "fileName": "Unqualified Dublin Core RDF.js",
+  "lastUpdated": "2019-06-11 13:33:25"
+ },
+ {
+  "id": "0abd577b-ec45-4e9f-9081-448737e2fd34",
+  "fileName": "UPCommons.js",
+  "lastUpdated": "2019-06-11 13:35:57"
+ },
+ {
+  "id": "70dc2609-d6fd-415a-822c-a2c04293cb5a",
+  "fileName": "UpToDate References.js",
+  "lastUpdated": "2019-06-11 13:44:39"
+ },
+ {
+  "id": "f8b5501a-1acc-4ffa-a0a5-594add5e6bd3",
+  "fileName": "US National Archives Research Catalog.js",
+  "lastUpdated": "2019-06-11 13:43:26"
+ },
+ {
+  "id": "62f46e1a-4c40-4dbb-82aa-71cdeb14f1bc",
+  "fileName": "Vanity Fair.js",
+  "lastUpdated": "2012-12-13 20:24:18"
+ },
+ {
+  "id": "cdf8269c-86b9-4039-9bc4-9d998c67740e",
+  "fileName": "Verniana-Jules Verne Studies.js",
+  "lastUpdated": "2019-06-17 13:39:01"
+ },
+ {
+  "id": "131310dc-854c-4629-acad-521319ab9f19",
+  "fileName": "Vice.js",
+  "lastUpdated": "2019-06-13 19:09:19"
+ },
+ {
+  "id": "1b0ffe71-1c2f-4a79-b894-40b990b3e491",
+  "fileName": "Vimeo.js",
+  "lastUpdated": "2019-06-11 13:37:31"
+ },
+ {
+  "id": "508e8fb9-8a33-4095-844f-133cba7e7b54",
+  "fileName": "VoxEU.js",
+  "lastUpdated": "2019-06-12 14:39:41"
+ },
+ {
+  "id": "53f8d182-4edc-4eab-b5a1-141698a1303b",
+  "fileName": "Wall Street Journal.js",
+  "lastUpdated": "2019-06-23 22:38:11"
+ },
+ {
+  "id": "eb876bd2-644c-458e-8d05-bf54b10176f3",
+  "fileName": "Wanfang Data.js",
+  "lastUpdated": "2019-06-10 22:46:01"
+ },
+ {
+  "id": "e623eec7-ad54-4201-b709-654bf3fd7f70",
+  "fileName": "Washington Monthly.js",
+  "lastUpdated": "2019-06-10 22:51:06"
+ },
+ {
+  "id": "d1bf1c29-4432-4ada-8893-2e29fc88fd9e",
+  "fileName": "washingtonpost.com.js",
+  "lastUpdated": "2019-05-16 16:24:39"
+ },
+ {
+  "id": "594ebe3c-90a0-4830-83bc-9502825a6810",
+  "fileName": "Web of Science Tagged.js",
+  "lastUpdated": "2015-06-02 21:33:13"
+ },
+ {
+  "id": "88e11bcb-464d-4b6d-a446-8994e3b865c9",
+  "fileName": "Web of Science.js",
+  "lastUpdated": "2015-06-04 04:20:22"
+ },
+ {
+  "id": "f61beec2-1431-4218-a9d3-68063ede6ecd",
+  "fileName": "Welt Online.js",
+  "lastUpdated": "2019-06-11 13:27:17"
+ },
+ {
+  "id": "cd587058-6125-4b33-a876-8c6aae48b5e8",
+  "fileName": "WHO.js",
+  "lastUpdated": "2018-09-02 14:34:27"
+ },
+ {
+  "id": "eaef8d43-2f17-45b3-a5cb-affb49bc5e81",
+  "fileName": "Wikidata.js",
+  "lastUpdated": "2018-12-13 10:42:07"
+ },
+ {
+  "id": "8b73dd9c-b873-4d13-b36a-45922b9f04a1",
+  "fileName": "WikiLeaks PlusD.js",
+  "lastUpdated": "2017-06-17 20:49:34"
+ },
+ {
+  "id": "c70055c3-a525-45db-8e37-726c6c2ad034",
+  "fileName": "Wikimedia Commons.js",
+  "lastUpdated": "2014-01-05 12:45:00"
+ },
+ {
+  "id": "3f50aaac-7acc-4350-acd0-59cb77faf620",
+  "fileName": "Wikipedia Citation Templates.js",
+  "lastUpdated": "2017-03-13 11:45:52"
+ },
+ {
+  "id": "e5dc9733-f8fc-4c00-8c40-e53e0bb14664",
+  "fileName": "Wikipedia.js",
+  "lastUpdated": "2015-02-16 04:51:10"
+ },
+ {
+  "id": "076bd26a-1517-469d-85e9-31316a6f6cb0",
+  "fileName": "Wikisource.js",
+  "lastUpdated": "2016-04-15 06:46:02"
+ },
+ {
+  "id": "b33af0e1-d122-45b2-b144-4b4eedd12d5d",
+  "fileName": "Wildlife Biology in Practice.js",
+  "lastUpdated": "2017-01-01 15:47:15"
+ },
+ {
+  "id": "fe728bc9-595a-4f03-98fc-766f1d8d0936",
+  "fileName": "Wiley Online Library.js",
+  "lastUpdated": "2019-10-02 00:36:24"
+ },
+ {
+  "id": "1d82cbdf-703d-4f96-9ae2-246af21bb96e",
+  "fileName": "Winnipeg Free Press.js",
+  "lastUpdated": "2017-06-17 17:27:13"
+ },
+ {
+  "id": "039338fc-d84f-44bf-99e4-693cc91b569f",
+  "fileName": "WIPO.js",
+  "lastUpdated": "2017-07-27 10:44:58"
+ },
+ {
+  "id": "f054a3d9-d705-4d2e-a96a-258508bebba3",
+  "fileName": "Wired.js",
+  "lastUpdated": "2018-08-11 14:19:06"
+ },
+ {
+  "id": "136d5c30-d8b1-476f-9564-702a41b6126e",
+  "fileName": "wiso.js",
+  "lastUpdated": "2016-06-26 18:54:53"
+ },
+ {
+  "id": "0507797c-9bc4-4374-92ca-9e3763b6922b",
+  "fileName": "World History Connected.js",
+  "lastUpdated": "2014-02-27 23:05:02"
+ },
+ {
+  "id": "bf6b49e3-9198-4fbc-a559-a81fcfcce908",
+  "fileName": "World Shakespeare Bibliography Online.js",
+  "lastUpdated": "2014-06-11 22:48:03"
+ },
+ {
+  "id": "fd8dc5f6-a6dd-42b2-948f-600f5da844ea",
+  "fileName": "WorldCat Discovery Service.js",
+  "lastUpdated": "2019-11-26 22:21:07"
+ },
+ {
+  "id": "24d9f058-3eb3-4d70-b78f-1ba1aef2128d",
+  "fileName": "XML ContextObject.js",
+  "lastUpdated": "2015-05-20 00:05:55"
+ },
+ {
+  "id": "7f45c3f9-e387-4589-9679-225ddcf6f00e",
+  "fileName": "Ynet.js",
+  "lastUpdated": "2017-06-17 15:34:41"
+ },
+ {
+  "id": "d3b1d34c-f8a1-43bb-9dd6-27aa6403b217",
+  "fileName": "YouTube.js",
+  "lastUpdated": "2019-08-11 18:43:54"
+ },
+ {
+  "id": "1d84c107-9dbb-4b87-8208-e3632b87889f",
+  "fileName": "zbMATH.js",
+  "lastUpdated": "2014-06-05 08:12:07"
+ },
+ {
+  "id": "a714cb93-6595-482f-b371-a4ca0be14449",
+  "fileName": "Zenodo.js",
+  "lastUpdated": "2018-03-08 08:11:55"
+ },
+ {
+  "id": "5ccc4cf7-8863-4ee2-9772-c9d0b422f028",
+  "fileName": "ZIPonline.js",
+  "lastUpdated": "2017-01-27 16:22:25"
+ },
+ {
+  "id": "14763d24-8ba0-45df-8f52-b8d1108e7ac9",
+  "fileName": "Zotero RDF.js",
+  "lastUpdated": "2019-08-11 12:58:13"
+ },
+ {
+  "id": "c82c574d-7fe8-49ca-a360-a05d6e34fec0",
+  "fileName": "zotero.org.js",
+  "lastUpdated": "2017-10-20 20:50:32"
+ },
+ {
+  "id": "b7c665ba-173c-4dea-b28e-e866580002a2",
+  "fileName": "ZoteroBib.js",
+  "lastUpdated": "2018-05-14 08:38:18"
+ }
 ]
