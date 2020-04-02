@@ -117,15 +117,16 @@ class ExtensionStore {
     private let webViewHandler: WebViewHandler
     private let disposeBag: DisposeBag
 
-    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader, dbStorage: DbStorage,
-         schemaController: SchemaController, fileStorage: FileStorage, syncController: SyncController) {
+    init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader,
+         dbStorage: DbStorage, schemaController: SchemaController, fileStorage: FileStorage,
+         syncController: SyncController, translatorsController: TranslatorsController) {
         self.syncController = syncController
         self.apiClient = apiClient
         self.backgroundUploader = backgroundUploader
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
-        self.webViewHandler = WebViewHandler(webView: webView, apiClient: apiClient, fileStorage: fileStorage)
+        self.webViewHandler = WebViewHandler(webView: webView, translatorsController: translatorsController)
         self.state = State()
         self.disposeBag = DisposeBag()
 

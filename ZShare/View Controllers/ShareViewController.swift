@@ -32,6 +32,7 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var notLoggedInOverlay: UIView!
     @IBOutlet private weak var webView: WKWebView!
     // Variables
+    private var translatorsController: TranslatorsController!
     private var dbStorage: DbStorage!
     private var debugLogging: DebugLogging!
     private var store: ExtensionStore!
@@ -330,19 +331,27 @@ class ShareViewController: UIViewController {
     }
 
     private func setupControllers(with session: SessionData) {
-        let dbUrl = Files.dbFile(for: session.userId).createUrl()
-        self.dbStorage = RealmDbStorage(config: MainDatabase.configuration(url: dbUrl))
-        self.store = self.createStore(for: session.userId, authToken: session.apiToken, dbStorage: self.dbStorage)
-    }
-
-    private func createStore(for userId: Int, authToken: String, dbStorage: DbStorage) -> ExtensionStore {
         let configuration = URLSessionConfiguration.default
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
         configuration.sharedContainerIdentifier = AppGroup.identifier
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
-        apiClient.set(authToken: authToken)
-
         let fileStorage = FileStorageController()
+        let dbUrl = Files.dbFile(for: session.userId).createUrl()
+        let dbStorage = RealmDbStorage(config: MainDatabase.configuration(url: dbUrl))
+        let translatorsController = TranslatorsController(apiClient: apiClient, fileStorage: fileStorage)
+
+        apiClient.set(authToken: session.apiToken)
+        translatorsController.updateFromRepo()
+
+        self.dbStorage = dbStorage
+        self.translatorsController = translatorsController
+        self.store = self.createStore(for: session.userId, dbStorage: dbStorage,
+                                      apiClient: apiClient, fileStorage: fileStorage,
+                                      translatorsController: translatorsController)
+    }
+
+    private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient,
+                             fileStorage: FileStorage, translatorsController: TranslatorsController) -> ExtensionStore {
         let schemaController = SchemaController()
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
@@ -362,6 +371,7 @@ class ShareViewController: UIViewController {
                               dbStorage: dbStorage,
                               schemaController: schemaController,
                               fileStorage: fileStorage,
-                              syncController: syncController)
+                              syncController: syncController,
+                              translatorsController: translatorsController)
     }
 }

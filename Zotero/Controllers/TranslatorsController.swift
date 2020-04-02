@@ -36,6 +36,7 @@ class TranslatorsController {
         case cantParseIndexFile
         case incompatibleTranslator
         case incompatibleDeleted
+        case cantParseXmlResponse
 
         var isBundeLoadingError: Bool {
             switch self {
@@ -51,9 +52,6 @@ class TranslatorsController {
     private var lastTimestamp: Double
     @UserDefault(key: "TranslatorLastDeletedVersion", defaultValue: 0)
     private var lastDeleted: Int
-    private var lastDate: Date {
-        return Date(timeIntervalSince1970: self.lastTimestamp)
-    }
     private var isLoading: BehaviorRelay<Bool>
 
     private let apiClient: ApiClient
@@ -88,7 +86,8 @@ class TranslatorsController {
                 return self._updateFromRepo(type: type)
             }
             .observeOn(MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
+            .subscribe(onSuccess: { [weak self] timestamp in
+                self?.lastTimestamp = timestamp
                 self?.isLoading.accept(false)
             }, onError: { [weak self] error in
                 self?.process(error: error)
@@ -105,12 +104,14 @@ class TranslatorsController {
             }
 
             do {
-                let (deletedVersion, deletedIndices) = try self.loadDeleted()
                 let hash = try self.loadLastCommitHash()
-                let timestamp = try self.loadLastTimestamp()
 
                 if self.lastCommitHash != hash {
+                    let timestamp = try self.loadLastTimestamp()
+                    let (deletedVersion, deletedIndices) = try self.loadDeleted()
+
                     try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
+                    
                     self.lastCommitHash = hash
                     self.lastTimestamp = timestamp
                     self.lastDeleted = deletedVersion
@@ -130,7 +131,8 @@ class TranslatorsController {
         self.isLoading.accept(true)
         self._updateFromRepo(type: .manual)
             .observeOn(MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
+            .subscribe(onSuccess: { [weak self] timestamp in
+                self?.lastTimestamp = timestamp
                 self?.isLoading.accept(false)
             }, onError: { [weak self] error in
                 self?.process(error: error)
@@ -141,12 +143,17 @@ class TranslatorsController {
     /// Loads remote translators and syncs them with local data.
     /// - parameter type: Type of repo update.
     /// - returns: Timestamp of repo update.
-    private func _updateFromRepo(type: UpdateType) -> Single<Int> {
+    private func _updateFromRepo(type: UpdateType) -> Single<Double> {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let request = TranslatorsRequest(timestamp: Int(self.lastTimestamp), version: "\(version)-iOS", type: type.rawValue)
         return self.apiClient.send(request: request)
-                             .flatMap { data, _ -> Single<(Int, [Translator])> in
-                                return Single.just(self.parseXmlTranslators(from: data))
+                             .flatMap { data, _ -> Single<(Double, [Translator])> in
+                                do {
+                                    let response = try self.parseXmlTranslators(from: data)
+                                    return Single.just(response)
+                                } catch let error {
+                                    return Single.error(error)
+                                }
                              }
                              .flatMap { timestamp, translators in
                                 return self.syncTranslatorsWithRemote(translators: translators).flatMap({ return Single.just(timestamp) })
@@ -292,8 +299,6 @@ class TranslatorsController {
     /// - parameter file: File of translator.
     /// - returns: Raw translator data.
     private func loadRawTranslator(from file: File) -> RawTranslator? {
-        guard file.ext == "js" else { return nil }
-
         do {
             let data = try self.fileStorage.read(file)
 
@@ -406,15 +411,16 @@ class TranslatorsController {
     /// Parse XML response from translator repo.
     /// - parameter data: Data to be parsed.
     /// - returns: Tupe, where first value is the "currentTime" and second value is an array of parsed `Translator`s.
-    private func parseXmlTranslators(from data: Data) -> (Int, [Translator]) {
+    private func parseXmlTranslators(from data: Data) throws -> (Double, [Translator]) {
         let delegate = TranslatorParserDelegate()
         let parser = XMLParser(data: data)
         parser.delegate = delegate
+
         if parser.parse() {
             return (delegate.timestamp, delegate.translators)
-        } else {
-            return (Int(Date().timeIntervalSince1970), [])
         }
+
+        throw Error.cantParseXmlResponse
     }
 
     // MARK: - Bundle loading

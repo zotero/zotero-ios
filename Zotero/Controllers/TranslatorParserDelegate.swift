@@ -10,7 +10,7 @@ import Foundation
 
 class TranslatorParserDelegate: NSObject, XMLParserDelegate {
     private(set) var translators: [Translator]
-    private(set) var timestamp: Int
+    private(set) var timestamp: Double
     private var currentElement: Element?
     private var currentTranslator: Translator?
     private var currentValue: String
@@ -53,7 +53,7 @@ class TranslatorParserDelegate: NSObject, XMLParserDelegate {
         if let element = Element(rawValue: elementName) {
             switch element {
             case .timestamp:
-                self.timestamp = Int(self.currentValue) ?? 0
+                self.timestamp = Double(self.currentValue) ?? 0
             case .translator:
                 if var translator = self.currentTranslator {
                     self.translators.append(translator)

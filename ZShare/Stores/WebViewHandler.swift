@@ -38,7 +38,6 @@ class WebViewHandler: NSObject {
         case jsError(String)
     }
 
-    private let apiClient: ApiClient
     private let translatorsController: TranslatorsController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<WebViewHandler.Action>
@@ -49,11 +48,10 @@ class WebViewHandler: NSObject {
 
     // MARK: - Lifecycle
 
-    init(webView: WKWebView, apiClient: ApiClient, fileStorage: FileStorage) {
+    init(webView: WKWebView, translatorsController: TranslatorsController) {
         self.webView = webView
-        self.apiClient = apiClient
         self.disposeBag = DisposeBag()
-        self.translatorsController = TranslatorsController(apiClient: apiClient, fileStorage: fileStorage)
+        self.translatorsController = translatorsController
         self.observable = PublishSubject()
 
         super.init()
