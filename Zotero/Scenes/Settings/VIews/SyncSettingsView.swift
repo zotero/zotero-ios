@@ -41,10 +41,13 @@ struct SyncSettingsView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
         let state = SettingsState(isSyncing: false,
-                                  isLogging: controllers.debugLogging.isEnabled)
+                                  isLogging: controllers.debugLogging.isEnabled,
+                                  isUpdatingTranslators: controllers.translatorsController.isLoading.value,
+                                  lastTranslatorUpdate: controllers.translatorsController.lastUpdate)
         let handler = SettingsActionHandler(sessionController: controllers.sessionController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
-                                            debugLogging: controllers.debugLogging)
+                                            debugLogging: controllers.debugLogging,
+                                            translatorsController: controllers.translatorsController)
         return SyncSettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

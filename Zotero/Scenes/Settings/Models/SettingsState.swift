@@ -13,10 +13,14 @@ struct SettingsState: ViewModelState {
     var showCollectionItemCount: Bool
     var isSyncing: Bool
     var isLogging: Bool
+    var lastTranslatorUpdate: Date
+    var isUpdatingTranslators: Bool
 
-    init(isSyncing: Bool, isLogging: Bool) {
+    init(isSyncing: Bool, isLogging: Bool, isUpdatingTranslators: Bool, lastTranslatorUpdate: Date) {
         self.isSyncing = isSyncing
         self.isLogging = isLogging
+        self.lastTranslatorUpdate = lastTranslatorUpdate
+        self.isUpdatingTranslators = isUpdatingTranslators
         self.askForSyncPermission = Defaults.shared.askForSyncPermission
         self.showCollectionItemCount = Defaults.shared.showCollectionItemCount
     }

@@ -83,10 +83,13 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     func showSettings() {
         guard let syncScheduler = self.controllers.userControllers?.syncScheduler else { return }
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
-                                  isLogging: self.controllers.debugLogging.isEnabled)
+                                  isLogging: self.controllers.debugLogging.isEnabled,
+                                  isUpdatingTranslators: self.controllers.translatorsController.isLoading.value,
+                                  lastTranslatorUpdate: self.controllers.translatorsController.lastUpdate)
         let handler = SettingsActionHandler(sessionController: self.controllers.sessionController,
                                             syncScheduler: syncScheduler,
-                                            debugLogging: self.controllers.debugLogging)
+                                            debugLogging: self.controllers.debugLogging,
+                                            translatorsController: self.controllers.translatorsController)
         var view = SettingsView()
         view.coordinatorDelegate = self
 

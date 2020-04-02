@@ -14,8 +14,10 @@ enum SettingsAction {
     case startSync
     case cancelSync
     case logout
-    case startObservingSyncChanges
+    case startObserving
     case startImmediateLogging
     case startLoggingOnNextLaunch
     case stopLogging
+    case resetTranslators
+    case updateTranslators
 }

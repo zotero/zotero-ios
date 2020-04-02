@@ -52,7 +52,10 @@ class TranslatorsController {
     private var lastTimestamp: Double
     @UserDefault(key: "TranslatorLastDeletedVersion", defaultValue: 0)
     private var lastDeleted: Int
-    private var isLoading: BehaviorRelay<Bool>
+    private(set) var isLoading: BehaviorRelay<Bool>
+    var lastUpdate: Date {
+        return Date(timeIntervalSince1970: self.lastTimestamp)
+    }
 
     private let apiClient: ApiClient
     private let fileStorage: FileStorage
@@ -261,14 +264,18 @@ class TranslatorsController {
             throw Error.bundleMissing
         }
 
+        let timestamp = try self.loadLastTimestamp()
         let metadata = try self.loadIndex()
+
         try? self.fileStorage.remove(Files.translators)
         try self.fileStorage.createDirectories(for: Files.translators)
         for data in metadata {
             guard let entry = archive[data.filename] else { continue }
             _ = try archive.extract(entry, to: Files.translator(filename: data.id).createUrl())
         }
+
         try self.dbStorage.createCoordinator().perform(request: ResetTranslatorsDbRequest(metadata: metadata))
+        self.lastTimestamp = timestamp
     }
 
     // MARK: - Translator loading

@@ -26,6 +26,10 @@ struct SettingsListView: View {
                     Text("Sync")
                 }
 
+                NavigationLink(destination: TranslatorsSettingsView()) {
+                    Text("Translators")
+                }
+
                 NavigationLink(destination: DebugSettingsView()) {
                     Text("Debug")
                 }
