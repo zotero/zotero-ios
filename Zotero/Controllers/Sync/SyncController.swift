@@ -21,12 +21,22 @@ protocol SyncAction {
     var result: Single<Result> { get }
 }
 
+protocol ConflictReceiver {
+    func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void)
+}
+
+protocol DebugPermissionReceiver {
+    func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void)
+}
+
+typealias ConflictCoordinator = ConflictReceiver & DebugPermissionReceiver
+
 protocol SynchronizationController: class {
     var inProgress: Bool { get }
     var progressObservable: BehaviorRelay<SyncProgress?> { get }
 
     func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
-    func setConflictPresenter(_ presenter: ConflictPresenter)
+    func set(coordinator: ConflictCoordinator?)
     func cancel()
 }
 
@@ -141,7 +151,7 @@ final class SyncController: SynchronizationController {
     // Access permissions for current sync.
     private var accessPermissions: AccessPermissions?
     // Used for conflict resolution when user interaction is needed.
-    private var conflictReceiver: (ConflictReceiver & DebugPermissionReceiver)?
+    private var conflictCoordinator: (ConflictReceiver & DebugPermissionReceiver)?
 
     private var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
@@ -193,12 +203,12 @@ final class SyncController: SynchronizationController {
         return self.progressHandler.observable
     }
 
-    /// Sets presenter for conflict resolution.
-    func setConflictPresenter(_ presenter: ConflictPresenter) {
+    /// Sets coordinator for conflict resolution.
+    func set(coordinator: ConflictCoordinator?) {
         self.accessQueue.async(flags: .barrier) { [weak self] in
-            self?.conflictReceiver = ConflictResolutionController(presenter: presenter)
+            self?.conflictCoordinator = coordinator
 
-            guard let `self` = self, let action = self.processingAction else { return }
+            guard coordinator != nil, let `self` = self, let action = self.processingAction else { return }
             // ConflictReceiver was nil and we are waiting for CR action. Which means it was ignored previously and
             // we need to restart it.
             if action.requiresConflictReceiver || (Defaults.shared.askForSyncPermission && action.requiresDebugPermissionPrompt) {
@@ -456,7 +466,7 @@ final class SyncController: SynchronizationController {
     private func resolve(conflict: Conflict) {
         // If conflict receiver isn't yet assigned, we just wait for it and process current action when it's assigned
         // It's assigned either after login or shortly after app is launched, so we should never stay stuck on this.
-        guard let receiver = self.conflictReceiver else { return }
+        guard let receiver = self.conflictCoordinator else { return }
 
         receiver.resolve(conflict: conflict) { [weak self] resolution in
             self?.accessQueue.async(flags: .barrier) {
@@ -501,7 +511,7 @@ final class SyncController: SynchronizationController {
     private func askForUserPermission(action: Action) {
         // If conflict receiver isn't yet assigned, we just wait for it and process current action when it's assigned
         // It's assigned either after login or shortly after app is launched, so we should never stay stuck on this.
-        guard let receiver = self.conflictReceiver else { return }
+        guard let receiver = self.conflictCoordinator else { return }
         receiver.askForPermission(message: action.debugPermissionMessage) { response in
             switch response {
             case .allowed:

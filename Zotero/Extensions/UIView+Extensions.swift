@@ -1,5 +1,5 @@
 //
-//  UIView+Nibname.swift
+//  UIView+Extensions.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 19/02/2019.

@@ -16,8 +16,8 @@ import ZIPFoundation
 typealias RawTranslator = [String: Any]
 
 protocol TranslatorsControllerCoordinatorDelegate: class {
-    func showRemoteLoadTranslatorsError(result: (Bool) -> Void)
-    func showBundleLoadTranslatorsError(result: (Bool) -> Void)
+    func showRemoteLoadTranslatorsError(result: @escaping (Bool) -> Void)
+    func showBundleLoadTranslatorsError(result: @escaping (Bool) -> Void)
     func showResetToBundleError()
 }
 
@@ -62,7 +62,7 @@ class TranslatorsController {
     private let disposeBag: DisposeBag
     private let dbStorage: DbStorage
 
-    weak var coordinatorDelegate: TranslatorsControllerCoordinatorDelegate?
+    weak var coordinator: TranslatorsControllerCoordinatorDelegate?
 
     init(apiClient: ApiClient, fileStorage: FileStorage) {
         do {
@@ -166,10 +166,14 @@ class TranslatorsController {
     /// Checks whether the error was caused by bundled or remote loading and shows appropriate error.
     /// - parameter error: Error to check.
     private func process(error: Swift.Error) {
-        // In case of bundle loading error ask user whether we should try to reset.
+        guard let delegate = self.coordinator else {
+            self.isLoading.accept(false)
+            return
+        }
 
+        // In case of bundle loading error ask user whether we should try to reset.
         if (error as? Error)?.isBundeLoadingError == true {
-            self.coordinatorDelegate?.showBundleLoadTranslatorsError { [weak self] shouldReset in
+            delegate.showBundleLoadTranslatorsError { [weak self] shouldReset in
                 if shouldReset {
                     self?.resetToBundle()
                 } else {
@@ -179,7 +183,7 @@ class TranslatorsController {
             return
         }
 
-        self.coordinatorDelegate?.showRemoteLoadTranslatorsError { retry in
+        delegate.showRemoteLoadTranslatorsError { retry in
             if retry {
                 self.updateFromRepo()
             } else {
@@ -252,7 +256,7 @@ class TranslatorsController {
             try self._resetToBundle()
         } catch let error {
             DDLogError("TranslatorsController: can't reset to bundle - \(error)")
-            self.coordinatorDelegate?.showResetToBundleError()
+            self.coordinator?.showResetToBundleError()
         }
     }
 

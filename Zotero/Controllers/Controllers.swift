@@ -66,10 +66,6 @@ class Controllers {
                                                    .sink { [weak self] data in
                                                        self?.update(sessionData: data)
                                                    }
-
-        // Controllers are initialized in application(:didFinishLaunchingWithOptions:). willEnterForegound is not called after launching the app for
-        // the first time. But we want to run necessary services initially as well as when entering the foreground.
-        self.willEnterForeground()
     }
 
     func willEnterForeground() {

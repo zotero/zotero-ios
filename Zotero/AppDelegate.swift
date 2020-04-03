@@ -16,91 +16,11 @@ import SwiftUI
 import PSPDFKit
 #endif
 
-// TODO: - remove once API support is added for debug/crash log submission
-extension UIViewController {
-    fileprivate func presentActivityViewController(with items: [Any], completed: @escaping () -> Void) {
-        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        controller.completionWithItemsHandler = { (_, _, _, _) in
-            completed()
-        }
-
-        var topController = self
-        while let presented = topController.presentedViewController {
-            topController = presented
-        }
-        topController = (topController as? MainViewController)?.viewControllers.last ?? topController
-        controller.popoverPresentationController?.sourceView = topController.view
-        topController.present(controller, animated: true, completion: nil)
-    }
-}
-
-extension UIViewController: DebugLoggingCoordinator {
-    func share(logs: [URL], completed: @escaping () -> Void) {
-        self.presentActivityViewController(with: logs, completed: completed)
-    }
-
-    func show(error: DebugLogging.Error) {
-        let message: String
-        switch error {
-        case .start:
-            message = "Can't start debug logging."
-        case .contentReading:
-            message = "Can't find log files."
-        }
-        let controller = UIAlertController(title: "Debugging error", message: message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: "Ok", style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
-    }
-}
-
-extension UIViewController: CrashReporterCoordinator {
-    func report(crash: String, completed: @escaping () -> Void) {
-        let controller = UIAlertController(title: "Crash report", message: "It seems you encountered a crash. Would you like to report it?", preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: "No", style: .cancel, handler: { _ in
-            completed()
-        }))
-        controller.addAction(UIAlertAction(title: "Yes", style: .default, handler: { [weak self] _ in
-            controller.dismiss(animated: true) {
-                self?.presentActivityViewController(with: [crash], completed: completed)
-            }
-        }))
-        self.present(controller, animated: true, completion: nil)
-    }
-}
-
 class AppDelegate: UIResponder {
     var window: UIWindow?
     var controllers: Controllers!
+    private var coordinator: AppCoordinator!
     private var sessionCancellable: AnyCancellable?
-
-    // MARK: - Actions
-
-    private func showMainScreen(isLogged: Bool, animated: Bool) {
-        if !isLogged {
-            let view = OnboardingView()
-                            .environment(\.apiClient, self.controllers.apiClient)
-                            .environment(\.sessionController, self.controllers.sessionController)
-            self.show(viewController: UIHostingController(rootView: view), animated: animated)
-        } else {
-            let controller = MainViewController(controllers: self.controllers)
-            self.show(viewController: controller, animated: animated)
-
-            self.controllers.userControllers?.syncScheduler.syncController.setConflictPresenter(controller)
-        }
-
-        self.controllers.debugLogging.coordinator = self.window?.rootViewController
-        self.controllers.crashReporter.coordinator = self.window?.rootViewController
-    }
-
-    private func show(viewController: UIViewController?, animated: Bool = false) {
-        guard let window = self.window else { return }
-
-        window.rootViewController = viewController
-
-        guard animated else { return }
-
-        UIView.transition(with: window, duration: 0.2, options: .transitionCrossDissolve, animations: {}, completion: { _ in })
-    }
 
     // MARK: - Setups
 
@@ -109,7 +29,7 @@ class AppDelegate: UIResponder {
                                                                     .receive(on: DispatchQueue.main)
                                                                     .dropFirst()
                                                                     .sink { [weak self] isLoggedIn in
-                                                                        self?.showMainScreen(isLogged: isLoggedIn, animated: true)
+                                                                        self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
                                                                     }
     }
 
@@ -122,7 +42,7 @@ class AppDelegate: UIResponder {
         // Change to .warning/.error to disable server logging
         dynamicLogLevel = .info
         #else
-        dynamicLogLevel = .error
+        dynamicLogLevel = .off
         #endif
     }
 
@@ -142,16 +62,21 @@ extension AppDelegate: UIApplicationDelegate {
         }
         #endif
 
+        // Setup logging
         self.setupLogs()
+        // Setup controllers
         self.controllers = Controllers()
-
-        self.setupObservers()
-
+        // Setup window and appearance
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.window?.makeKeyAndVisible()
         self.setupNavigationBarAppearance()
-
-        self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
+        // Setup app coordinator and present initial screen
+        self.coordinator = AppCoordinator(window: self.window, controllers: self.controllers)
+        self.coordinator.start()
+        // Start observing changes
+        self.setupObservers()
+        // `willEnterForegound` is not called after launching the app for the first time.
+        self.controllers.willEnterForeground()
 
         return true
     }

@@ -23,7 +23,7 @@ protocol MainCoordinatorDelegate: class {
     func collectionsChanged(to collections: [Collection])
 }
 
-class MainViewController: UISplitViewController, ConflictPresenter {
+class MainViewController: UISplitViewController {
     // Constants
     private static let minPrimaryColumnWidth: CGFloat = 300
     private static let maxPrimaryColumnFraction: CGFloat = 0.4

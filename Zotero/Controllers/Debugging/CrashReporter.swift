@@ -21,14 +21,7 @@ class CrashReporter {
     private let apiClient: ApiClient
     private let disposeBag: DisposeBag
 
-    private var pendingReport: String?
-    weak var coordinator: CrashReporterCoordinator? {
-        didSet {
-            if let crash = self.pendingReport, let coordinator = self.coordinator {
-                self.report(crash: crash, in: coordinator)
-            }
-        }
-    }
+    weak var coordinator: CrashReporterCoordinator?
 
     init(apiClient: ApiClient) {
         let config = PLCrashReporterConfig(signalHandlerType: .BSD, symbolicationStrategy: .all)
@@ -54,12 +47,9 @@ class CrashReporter {
         do {
             let data = try self.reporter.loadPendingCrashReportDataAndReturnError()
             let report = try PLCrashReport(data: data)
-            if let text = PLCrashReportTextFormatter.stringValue(for: report, with: PLCrashReportTextFormatiOS) {
-                if let coordinator = self.coordinator {
-                    self.report(crash: text, in: coordinator)
-                } else {
-                    self.pendingReport = text
-                }
+            if let text = PLCrashReportTextFormatter.stringValue(for: report, with: PLCrashReportTextFormatiOS),
+               let coordinator = self.coordinator {
+                self.report(crash: text, in: coordinator)
             }
 //            let repeatBehavior: RepeatBehavior = .exponentialDelayed(maxCount: 10, initial: 5, multiplier: 1.5)
 //            self.upload(data: data).retry(repeatBehavior, scheduler: self.scheduler)

@@ -1,5 +1,5 @@
 //
-//  ConflictResolutionController.swift
+//  ConflictCoordinator.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 01/07/2019.
@@ -24,7 +24,7 @@ protocol ConflictReceiver {
     func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void)
 }
 
-protocol ConflictPresenter: UIViewController {
+protocol ConflictPresenter {
     func present(controller: UIAlertController)
 }
 
@@ -36,13 +36,7 @@ protocol DebugPermissionReceiver {
     func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void)
 }
 
-extension ConflictPresenter {
-    func present(controller: UIAlertController) {
-        self.present(controller, animated: true, completion: nil)
-    }
-}
-
-class ConflictResolutionController: ConflictReceiver, DebugPermissionReceiver {
+class ConflictCoordinator: ConflictReceiver, DebugPermissionReceiver {
     private let presenter: ConflictPresenter
 
     init(presenter: ConflictPresenter) {

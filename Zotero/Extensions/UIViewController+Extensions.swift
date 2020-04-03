@@ -1,5 +1,5 @@
 //
-//  UIViewController+Alert.swift
+//  UIViewController+Extensions.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 03/02/2019.
@@ -15,5 +15,13 @@ extension UIViewController {
             cancelled()
         }))
         self.present(controller, animated: true, completion: nil)
+    }
+
+    var topController: UIViewController {
+        var topController = self
+        while let presented = topController.presentedViewController {
+            topController = presented
+        }
+        return topController
     }
 }

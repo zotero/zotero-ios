@@ -125,7 +125,6 @@
 		B305662723FC051F003304F2 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B323FC051E003304F2 /* SyncController.swift */; };
 		B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B423FC051E003304F2 /* SyncScheduler.swift */; };
 		B305662923FC051F003304F2 /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B523FC051E003304F2 /* SyncToolbarController.swift */; };
-		B305662A23FC051F003304F2 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B623FC051E003304F2 /* ConflictResolutionController.swift */; };
 		B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B723FC051E003304F2 /* SyncProgressHandler.swift */; };
 		B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */; };
 		B305667023FC051F003304F2 /* UserDefaults+Codable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650323FC051E003304F2 /* UserDefaults+Codable.swift */; };
@@ -139,10 +138,10 @@
 		B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650B23FC051E003304F2 /* Observable+Completable.swift */; };
 		B305667923FC051F003304F2 /* UserDefault+PropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */; };
 		B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650D23FC051E003304F2 /* PreferenceKeys.swift */; };
-		B305667B23FC051F003304F2 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650E23FC051E003304F2 /* UIViewController+Alert.swift */; };
+		B305667B23FC051F003304F2 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */; };
 		B305667D23FC051F003304F2 /* Color+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305651023FC051E003304F2 /* Color+Extension.swift */; };
 		B305667E23FC051F003304F2 /* Array+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305651123FC051E003304F2 /* Array+Utils.swift */; };
-		B305667F23FC051F003304F2 /* UIView+Nibname.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305651223FC051E003304F2 /* UIView+Nibname.swift */; };
+		B305667F23FC051F003304F2 /* UIView+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305651223FC051E003304F2 /* UIView+Extensions.swift */; };
 		B305669523FC051F003304F2 /* DeletableObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305652C23FC051E003304F2 /* DeletableObject.swift */; };
 		B305669723FC051F003304F2 /* RTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305652F23FC051E003304F2 /* RTag.swift */; };
 		B305669823FC051F003304F2 /* RCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305653023FC051E003304F2 /* RCollection.swift */; };
@@ -280,7 +279,6 @@
 		B305673423FC092A003304F2 /* SyncSettingsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564AC23FC051E003304F2 /* SyncSettingsSyncAction.swift */; };
 		B305673523FC092C003304F2 /* SyncVersionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A723FC051E003304F2 /* SyncVersionsSyncAction.swift */; };
 		B305673623FC092F003304F2 /* UploadAttachmentSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A123FC051E003304F2 /* UploadAttachmentSyncAction.swift */; };
-		B305673723FC0931003304F2 /* ConflictResolutionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B623FC051E003304F2 /* ConflictResolutionController.swift */; };
 		B305673823FC0933003304F2 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B323FC051E003304F2 /* SyncController.swift */; };
 		B305673923FC0936003304F2 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B723FC051E003304F2 /* SyncProgressHandler.swift */; };
 		B305673A23FC0938003304F2 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B423FC051E003304F2 /* SyncScheduler.swift */; };
@@ -358,6 +356,14 @@
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */; };
+		B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */; };
+		B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAE24375D8D00EFF0F5 /* Conflict.swift */; };
+		B325DBB024375D9E00EFF0F5 /* Conflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAE24375D8D00EFF0F5 /* Conflict.swift */; };
+		B325DBB224375DAC00EFF0F5 /* ConflictResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */; };
+		B325DBB324375DB100EFF0F5 /* ConflictResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */; };
+		B325DBB524375DD200EFF0F5 /* DebugPermissionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */; };
+		B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */; };
 		B328037624362B4000FE8453 /* TranslatorsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B328037524362B4000FE8453 /* TranslatorsSettingsView.swift */; };
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
 		B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7497240FE63F003B322B /* DebugSettingsView.swift */; };
@@ -682,7 +688,6 @@
 		B30564B323FC051E003304F2 /* SyncController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		B30564B423FC051E003304F2 /* SyncScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
 		B30564B523FC051E003304F2 /* SyncToolbarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncToolbarController.swift; sourceTree = "<group>"; };
-		B30564B623FC051E003304F2 /* ConflictResolutionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConflictResolutionController.swift; sourceTree = "<group>"; };
 		B30564B723FC051E003304F2 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
 		B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatter.swift; sourceTree = "<group>"; };
 		B305650323FC051E003304F2 /* UserDefaults+Codable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Codable.swift"; sourceTree = "<group>"; };
@@ -696,10 +701,10 @@
 		B305650B23FC051E003304F2 /* Observable+Completable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Observable+Completable.swift"; sourceTree = "<group>"; };
 		B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefault+PropertyWrapper.swift"; sourceTree = "<group>"; };
 		B305650D23FC051E003304F2 /* PreferenceKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreferenceKeys.swift; sourceTree = "<group>"; };
-		B305650E23FC051E003304F2 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
+		B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIViewController+Extensions.swift"; sourceTree = "<group>"; };
 		B305651023FC051E003304F2 /* Color+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Color+Extension.swift"; sourceTree = "<group>"; };
 		B305651123FC051E003304F2 /* Array+Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Array+Utils.swift"; sourceTree = "<group>"; };
-		B305651223FC051E003304F2 /* UIView+Nibname.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+Nibname.swift"; sourceTree = "<group>"; };
+		B305651223FC051E003304F2 /* UIView+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+Extensions.swift"; sourceTree = "<group>"; };
 		B305652C23FC051E003304F2 /* DeletableObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeletableObject.swift; sourceTree = "<group>"; };
 		B305652F23FC051E003304F2 /* RTag.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RTag.swift; sourceTree = "<group>"; };
 		B305653023FC051E003304F2 /* RCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RCollection.swift; sourceTree = "<group>"; };
@@ -767,6 +772,10 @@
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
+		B325DBAE24375D8D00EFF0F5 /* Conflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conflict.swift; sourceTree = "<group>"; };
+		B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolution.swift; sourceTree = "<group>"; };
+		B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPermissionResponse.swift; sourceTree = "<group>"; };
 		B328037524362B4000FE8453 /* TranslatorsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsSettingsView.swift; sourceTree = "<group>"; };
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B33A7497240FE63F003B322B /* DebugSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingsView.swift; sourceTree = "<group>"; };
@@ -1136,7 +1145,6 @@
 			isa = PBXGroup;
 			children = (
 				B30564A023FC051E003304F2 /* SyncActions */,
-				B30564B623FC051E003304F2 /* ConflictResolutionController.swift */,
 				B30564B323FC051E003304F2 /* SyncController.swift */,
 				B30564B723FC051E003304F2 /* SyncProgressHandler.swift */,
 				B30564B423FC051E003304F2 /* SyncScheduler.swift */,
@@ -1186,8 +1194,8 @@
 				B305650423FC051E003304F2 /* Threading+Extras.swift */,
 				B305650923FC051E003304F2 /* UIColor+Custom.swift */,
 				B305650A23FC051E003304F2 /* UIFont+Extensions.swift */,
-				B305651223FC051E003304F2 /* UIView+Nibname.swift */,
-				B305650E23FC051E003304F2 /* UIViewController+Alert.swift */,
+				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
+				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */,
 				B305650323FC051E003304F2 /* UserDefaults+Codable.swift */,
 			);
@@ -1203,6 +1211,7 @@
 				B3DCDEDC2408F5200039ED0D /* Main */,
 				B3593EFA241A61C700760E20 /* Master */,
 				B3DCDEB52408F2A50039ED0D /* Settings */,
+				B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */,
 			);
 			path = Scenes;
 			sourceTree = "<group>";
@@ -1236,6 +1245,9 @@
 				B3D3F78A240D222C0018F354 /* ItemFetchType.swift */,
 				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
 				B378F4C8242CC8EF00B88A05 /* Translator.swift */,
+				B325DBAE24375D8D00EFF0F5 /* Conflict.swift */,
+				B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */,
+				B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2268,6 +2280,7 @@
 				B30565C823FC051E003304F2 /* StoreNoteDbRequest.swift in Sources */,
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
+				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
 				B3593F57241A61C700760E20 /* CollectionRow.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,
@@ -2322,8 +2335,9 @@
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
 				B30565D123FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
+				B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */,
 				B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */,
-				B305667F23FC051F003304F2 /* UIView+Nibname.swift in Sources */,
+				B305667F23FC051F003304F2 /* UIView+Extensions.swift in Sources */,
 				B3593F4C241A61C700760E20 /* LibrariesView.swift in Sources */,
 				B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */,
 				B3DCDEC32408F3180039ED0D /* ProfileView.swift in Sources */,
@@ -2368,11 +2382,12 @@
 				B3DCDEF7240900F70039ED0D /* LoginActionHandler.swift in Sources */,
 				B305660F23FC051E003304F2 /* CrashUploadRequest.swift in Sources */,
 				B305660B23FC051E003304F2 /* SubmitDeletionsRequest.swift in Sources */,
-				B305667B23FC051F003304F2 /* UIViewController+Alert.swift in Sources */,
+				B305667B23FC051F003304F2 /* UIViewController+Extensions.swift in Sources */,
 				B3DCDF0A240912220039ED0D /* SinglePickerAction.swift in Sources */,
 				B3593F38241A61C700760E20 /* ItemDetailDataCreator.swift in Sources */,
 				B30565C723FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */,
 				B305661623FC051E003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
+				B325DBB224375DAC00EFF0F5 /* ConflictResolution.swift in Sources */,
 				B30565D023FC051E003304F2 /* CreateCollectionDbRequest.swift in Sources */,
 				B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
@@ -2413,7 +2428,6 @@
 				B3593F3A241A61C700760E20 /* ItemsAction.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
 				B3DCDF08240912060039ED0D /* ActivityIndicatorView.swift in Sources */,
-				B305662A23FC051F003304F2 /* ConflictResolutionController.swift in Sources */,
 				B30565D323FC051E003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B305669723FC051F003304F2 /* RTag.swift in Sources */,
 				B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */,
@@ -2462,6 +2476,7 @@
 				B3593F1F241A61C700760E20 /* TagPickerAction.swift in Sources */,
 				B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */,
 				B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */,
+				B325DBB524375DD200EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */,
 				B3593F59241A61C700760E20 /* CollectionsViewController.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
@@ -2552,6 +2567,7 @@
 				B305676B23FC0A0B003304F2 /* Tag.swift in Sources */,
 				B305676C23FC0A0B003304F2 /* UpdatableObject.swift in Sources */,
 				B305673D23FC09AF003304F2 /* LibraryResponse.swift in Sources */,
+				B325DBB324375DB100EFF0F5 /* ConflictResolution.swift in Sources */,
 				B305677723FC0BEE003304F2 /* UserDefault+PropertyWrapper.swift in Sources */,
 				B305673E23FC09AF003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B305673F23FC09AF003304F2 /* KeyResponse.swift in Sources */,
@@ -2573,6 +2589,7 @@
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
 				B305674D23FC09AF003304F2 /* RSearch.swift in Sources */,
 				B305674E23FC09AF003304F2 /* RVersions.swift in Sources */,
+				B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */,
 				B305674F23FC09AF003304F2 /* RGroup.swift in Sources */,
 				B305675123FC09AF003304F2 /* RCustomLibrary.swift in Sources */,
 				B305675223FC09AF003304F2 /* WriteBatch.swift in Sources */,
@@ -2626,6 +2643,7 @@
 				B305677423FC0BCD003304F2 /* ItemTitleFormatter.swift in Sources */,
 				B305672423FC0906003304F2 /* AuthorizeUploadSyncAction.swift in Sources */,
 				B305670F23FC08C1003304F2 /* ReadSearchDbRequest.swift in Sources */,
+				B325DBB024375D9E00EFF0F5 /* Conflict.swift in Sources */,
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B30566E123FC080C003304F2 /* BackgroundUpload.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
@@ -2646,7 +2664,6 @@
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B3DCDF19240918E50039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B30566FF23FC0869003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
-				B305673723FC0931003304F2 /* ConflictResolutionController.swift in Sources */,
 				B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */,
 				B30566ED23FC082F003304F2 /* SchemaRequest.swift in Sources */,
 				B30566DA23FC07E0003304F2 /* Library.swift in Sources */,
@@ -2712,6 +2729,7 @@
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */,
 				B305672823FC090F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
+				B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B305677823FC0BF2003304F2 /* UserDefaults+Codable.swift in Sources */,
 				B30566DF23FC0808003304F2 /* BackgroundUploadProcessor.swift in Sources */,
