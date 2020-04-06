@@ -46,8 +46,8 @@ class TranslatorsController {
         }
     }
 
-    @UserDefault(key: "TranslatorLastCommitHash", defaultValue: nil)
-    private var lastCommitHash: String?
+    @UserDefault(key: "TranslatorLastCommitHash", defaultValue: "")
+    private var lastCommitHash: String
     @UserDefault(key: "TranslatorLastTimestamp", defaultValue: 0)
     private var lastTimestamp: Double
     @UserDefault(key: "TranslatorLastDeletedVersion", defaultValue: 0)
@@ -61,19 +61,21 @@ class TranslatorsController {
     private let fileStorage: FileStorage
     private let disposeBag: DisposeBag
     private let dbStorage: DbStorage
+    private let bundle: Bundle
 
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
 
-    init(apiClient: ApiClient, fileStorage: FileStorage) {
+    init(apiClient: ApiClient, indexStorage: DbStorage, fileStorage: FileStorage, bundle: Bundle = Bundle.main) {
         do {
             try fileStorage.createDirectories(for: Files.translatorsDbFile)
         } catch let error {
             fatalError("TranslatorsController: could not create db directories - \(error)")
         }
 
+        self.bundle = bundle
         self.apiClient = apiClient
         self.fileStorage = fileStorage
-        self.dbStorage = RealmDbStorage(config: TranslatorDatabase.configuration)
+        self.dbStorage = indexStorage
         self.isLoading = BehaviorRelay(value: false)
         self.disposeBag = DisposeBag()
     }
@@ -83,7 +85,7 @@ class TranslatorsController {
     /// Loads bundled translators if needed, then loads remote translators.
     func update() {
         self.isLoading.accept(true)
-        let type: UpdateType = self.lastCommitHash == nil ? .initial : .startup
+        let type: UpdateType = self.lastCommitHash == "" ? .initial : .startup
         self.updateFromBundle()
             .flatMap {
                 return self._updateFromRepo(type: type)
@@ -148,7 +150,7 @@ class TranslatorsController {
     /// - returns: Timestamp of repo update.
     private func _updateFromRepo(type: UpdateType) -> Single<Double> {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
-        let request = TranslatorsRequest(timestamp: Int(self.lastTimestamp), version: "\(version)-iOS", type: type.rawValue)
+        let request = TranslatorsRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
         return self.apiClient.send(request: request)
                              .flatMap { data, _ -> Single<(Double, [Translator])> in
                                 do {
@@ -208,7 +210,7 @@ class TranslatorsController {
     /// Unzip individual translators from bundled zip file to translator location.
     /// - parameter translators: Array of tuples. Each tuple consists of translator id and translator filename.
     private func unzip(translators: [(id: String, filename: String)]) throws {
-        guard let zipUrl = Bundle.main.path(forResource: "bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
+        guard let zipUrl = self.bundle.path(forResource: "bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }
@@ -262,7 +264,7 @@ class TranslatorsController {
 
     /// Reset local translators to match bundled translators.
     private func _resetToBundle() throws {
-        guard let zipUrl = Bundle.main.path(forResource: "bundled/translators/translators", ofType: "zip")
+        guard let zipUrl = self.bundle.path(forResource: "bundled/translators/translators", ofType: "zip")
                                       .flatMap({ URL(fileURLWithPath: $0) }),
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
@@ -439,7 +441,7 @@ class TranslatorsController {
     /// Load bundled index file and parse translator metadata.
     /// - returns: Parsed translator metadata.
     private func loadIndex() throws -> [TranslatorMetadata] {
-        guard let indexFilePath = Bundle.main.path(forResource: "bundled/translators/index", ofType: "json") else {
+        guard let indexFilePath = self.bundle.path(forResource: "bundled/translators/index", ofType: "json") else {
             throw Error.bundleMissing
         }
         let data = try Data(contentsOf: URL(fileURLWithPath: indexFilePath))
@@ -479,10 +481,18 @@ class TranslatorsController {
     /// - parameter map: Mapping function to convert the raw string to appropriate value.
     /// - returns: Returns mapped result.
     private func loadFromBundle<Result>(resource: String, type: String, map: (String) throws -> Result) throws -> Result {
-        guard let url = Bundle.main.path(forResource: resource, ofType: type).flatMap({ URL(fileURLWithPath: $0) }),
+        guard let url = self.bundle.path(forResource: resource, ofType: type).flatMap({ URL(fileURLWithPath: $0) }),
               let rawValue = try? String(contentsOf: url) else {
             throw Error.bundleMissing
         }
-        return try map(rawValue)
+        return try map(rawValue.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    // MARK: - Testing
+
+    func setupTest(timestamp: Double, hash: String, deleted: Int) {
+        self.lastTimestamp = timestamp
+        self.lastCommitHash = hash
+        self.lastDeleted = deleted
     }
 }

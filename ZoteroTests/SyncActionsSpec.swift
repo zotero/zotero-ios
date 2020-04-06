@@ -435,7 +435,7 @@ class SyncActionsSpec: QuickSpec {
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
                                                        filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
-                           baseUrl: baseUrl, response: ["exists": 1])
+                           baseUrl: baseUrl, jsonResponse: ["exists": 1])
 
                 waitUntil(timeout: 10, action: { doneAction in
                     UploadAttachmentSyncAction(key: key, file: file, filename: filename, md5: fileMd5, mtime: 123, libraryId: libraryId,
@@ -504,11 +504,11 @@ class SyncActionsSpec: QuickSpec {
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
                                                        filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
-                           baseUrl: baseUrl, response: ["url": "https://www.zotero.org/",
+                           baseUrl: baseUrl, jsonResponse: ["url": "https://www.zotero.org/",
                                                         "uploadKey": "key",
                                                         "params": ["key": "key"]])
                 createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, uploadKey: "key"),
-                           baseUrl: baseUrl, headers: nil, statusCode: 204, response: [:])
+                           baseUrl: baseUrl, headers: nil, statusCode: 204, jsonResponse: [:])
                 stub(condition: { request -> Bool in
                     return request.url?.absoluteString == "https://www.zotero.org/"
                 }, response: { _ -> OHHTTPStubsResponse in

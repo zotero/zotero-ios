@@ -338,7 +338,9 @@ class ShareViewController: UIViewController {
         let fileStorage = FileStorageController()
         let dbUrl = Files.dbFile(for: session.userId).createUrl()
         let dbStorage = RealmDbStorage(config: MainDatabase.configuration(url: dbUrl))
-        let translatorsController = TranslatorsController(apiClient: apiClient, fileStorage: fileStorage)
+        let translatorsController = TranslatorsController(apiClient: apiClient,
+                                                          indexStorage: RealmDbStorage(config: TranslatorDatabase.configuration),
+                                                          fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)
         translatorsController.updateFromRepo()

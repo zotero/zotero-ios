@@ -15,10 +15,19 @@ import OHHTTPStubs
 
 func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
                 baseUrl: URL, headers: [String: Any]? = nil,
-                statusCode: Int32 = 200, response: Any) {
+                statusCode: Int32 = 200, jsonResponse: Any) {
     stub(condition: request.stubCondition(with: baseUrl,
                                           ignorePostParams: ignorePostParams), response: { _ -> OHHTTPStubsResponse in
-        return OHHTTPStubsResponse(jsonObject: response, statusCode: statusCode, headers: headers)
+        return OHHTTPStubsResponse(jsonObject: jsonResponse, statusCode: statusCode, headers: headers)
+    })
+}
+
+func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
+                baseUrl: URL, headers: [String: Any]? = nil,
+                statusCode: Int32 = 200, xmlResponse: String) {
+    stub(condition: request.stubCondition(with: baseUrl,
+                                          ignorePostParams: ignorePostParams), response: { _ -> OHHTTPStubsResponse in
+        return OHHTTPStubsResponse(data: xmlResponse.data(using: .utf8)!, statusCode: statusCode, headers: headers)
     })
 }
 
@@ -26,7 +35,7 @@ extension ApiRequest {
     func stubCondition(with baseUrl: URL, ignorePostParams: Bool = false) -> OHHTTPStubsTestBlock {
         guard let urlRequest = (try? Convertible(request: self, baseUrl: baseUrl, token: nil).asURLRequest()),
               let url = urlRequest.url,
-              let host = baseUrl.host else {
+              let host = url.host else {
             return { _ in false }
         }
 

@@ -525,6 +525,11 @@
 		B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */; };
 		B3DCDF25240946090039ED0D /* CollectionPickerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF24240946090039ED0D /* CollectionPickerError.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
+		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
+		B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C02243B3960004F8B1E /* TestFileStorage.swift */; };
+		B3F47C05243B4BC0004F8B1E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C04243B4BC0004F8B1E /* bundled */; };
+		B3F47C0C243B70EA004F8B1E /* translators.xml in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C0B243B70EA004F8B1E /* translators.xml */; };
+		B3F47C0E243B764F004F8B1E /* translators_delete.xml in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C0D243B764F004F8B1E /* translators_delete.xml */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -925,6 +930,11 @@
 		B3DCDF24240946090039ED0D /* CollectionPickerError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerError.swift; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
 		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
+		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
+		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
+		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
+		B3F47C0B243B70EA004F8B1E /* translators.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators.xml; sourceTree = "<group>"; };
+		B3F47C0D243B764F004F8B1E /* translators_delete.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators_delete.xml; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
 		D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.debug pdf.xcconfig"; sourceTree = "<group>"; };
 		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1364,15 +1374,19 @@
 		B30D596E2206F60500884C4A /* ZoteroTests */ = {
 			isa = PBXGroup;
 			children = (
+				B3F47C04243B4BC0004F8B1E /* bundled */,
 				B307E55C22D49A2700592B3C /* JSONs */,
-				B30D59712206F60500884C4A /* Info.plist */,
+				B3F47C08243B6ED6004F8B1E /* XMLs */,
 				B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */,
+				B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */,
+				B30D59712206F60500884C4A /* Info.plist */,
+				B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */,
 				B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */,
-				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
 				B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */,
 				B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */,
-				B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */,
-				B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */,
+				B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */,
+				B3F47C02243B3960004F8B1E /* TestFileStorage.swift */,
+				B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */,
 			);
 			path = ZoteroTests;
 			sourceTree = "<group>";
@@ -1864,6 +1878,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		B3F47C08243B6ED6004F8B1E /* XMLs */ = {
+			isa = PBXGroup;
+			children = (
+				B3F47C0D243B764F004F8B1E /* translators_delete.xml */,
+				B3F47C0B243B70EA004F8B1E /* translators.xml */,
+			);
+			path = XMLs;
+			sourceTree = "<group>";
+		};
 		CE7653692C34AB4C18E57FBB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -2053,7 +2076,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B3F47C0C243B70EA004F8B1E /* translators.xml in Resources */,
 				B307E55B22D49A1F00592B3C /* test_collection.json in Resources */,
+				B3F47C0E243B764F004F8B1E /* translators_delete.xml in Resources */,
+				B3F47C05243B4BC0004F8B1E /* bundled in Resources */,
 				B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */,
 				B307E55A22D49A1F00592B3C /* test_search.json in Resources */,
 			);
@@ -2532,9 +2558,11 @@
 				B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */,
 				B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */,
 				B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */,
+				B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */,
 				B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */,
 				B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */,
 				B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */,
+				B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */,
 				B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

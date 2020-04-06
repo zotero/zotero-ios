@@ -44,7 +44,9 @@ class Controllers {
         let sessionController = SessionController(secureStorage: secureStorage)
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let schemaController = SchemaController()
-        let translatorsController = TranslatorsController(apiClient: apiClient, fileStorage: fileStorage)
+        let translatorsController = TranslatorsController(apiClient: apiClient,
+                                                          indexStorage: RealmDbStorage(config: TranslatorDatabase.configuration),
+                                                          fileStorage: fileStorage)
 
         self.sessionController = sessionController
         self.apiClient = apiClient

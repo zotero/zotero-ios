@@ -55,7 +55,7 @@ class TranslatorParserDelegate: NSObject, XMLParserDelegate {
             case .timestamp:
                 self.timestamp = Double(self.currentValue) ?? 0
             case .translator:
-                if var translator = self.currentTranslator {
+                if let translator = self.currentTranslator {
                     self.translators.append(translator)
                     self.currentTranslator = nil
                 }
