@@ -216,7 +216,9 @@ class TranslatorsController {
         }
         for (id, filename) in translators {
             guard let entry = archive[filename] else { continue }
-            _ = try archive.extract(entry, to: Files.translator(filename: id).createUrl())
+            let file = Files.translator(filename: id)
+            try? self.fileStorage.remove(file)
+            _ = try archive.extract(entry, to: file.createUrl())
         }
     }
 
