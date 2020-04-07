@@ -74,3 +74,10 @@ fastlane/test_output
 # Licenses
 
 pdf-keys
+
+# Bundled data
+
+bundled/translators/commit_hash.txt
+bundled/translators/deleted.txt
+bundled/translators/index.json
+bundled/translators/translators.zip
