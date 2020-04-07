@@ -9,7 +9,7 @@
 import Foundation
 
 struct TranslatorsRequest: ApiRequest {
-    let timestamp: Double
+    let timestamp: Int
     let version: String
     let type: Int
 

@@ -49,12 +49,12 @@ class TranslatorsController {
     @UserDefault(key: "TranslatorLastCommitHash", defaultValue: "")
     private var lastCommitHash: String
     @UserDefault(key: "TranslatorLastTimestamp", defaultValue: 0)
-    private var lastTimestamp: Double
+    private var lastTimestamp: Int
     @UserDefault(key: "TranslatorLastDeletedVersion", defaultValue: 0)
     private var lastDeleted: Int
     private(set) var isLoading: BehaviorRelay<Bool>
     var lastUpdate: Date {
-        return Date(timeIntervalSince1970: self.lastTimestamp)
+        return Date(timeIntervalSince1970: Double(self.lastTimestamp))
     }
 
     private let apiClient: ApiClient
@@ -150,11 +150,11 @@ class TranslatorsController {
     /// Loads remote translators and syncs them with local data.
     /// - parameter type: Type of repo update.
     /// - returns: Timestamp of repo update.
-    private func _updateFromRepo(type: UpdateType) -> Single<Double> {
+    private func _updateFromRepo(type: UpdateType) -> Single<Int> {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let request = TranslatorsRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
         return self.apiClient.send(request: request)
-                             .flatMap { data, _ -> Single<(Double, [Translator])> in
+                             .flatMap { data, _ -> Single<(Int, [Translator])> in
                                 do {
                                     let response = try self.parseXmlTranslators(from: data)
                                     return Single.just(response)
@@ -428,7 +428,7 @@ class TranslatorsController {
     /// Parse XML response from translator repo.
     /// - parameter data: Data to be parsed.
     /// - returns: Tupe, where first value is the "currentTime" and second value is an array of parsed `Translator`s.
-    private func parseXmlTranslators(from data: Data) throws -> (Double, [Translator]) {
+    private func parseXmlTranslators(from data: Data) throws -> (Int, [Translator]) {
         let delegate = TranslatorParserDelegate()
         let parser = XMLParser(data: data)
         parser.delegate = delegate
@@ -466,9 +466,9 @@ class TranslatorsController {
 
     /// Load bundled last timestamp.
     /// - returns: Last timestamp.
-    private func loadLastTimestamp() throws -> Double {
+    private func loadLastTimestamp() throws -> Int {
         return try self.loadFromBundle(resource: "bundled/translators/timestamp", type: "txt", map: {
-            guard let value = Double($0) else { throw Error.bundleMissing }
+            guard let value = Int($0) else { throw Error.bundleMissing }
             return value
         })
     }
@@ -494,7 +494,8 @@ class TranslatorsController {
 
     // MARK: - Testing
 
-    func setupTest(timestamp: Double, hash: String, deleted: Int) {
+    func setupTest(timestamp: Int,
+                   hash: String, deleted: Int) {
         self.lastTimestamp = timestamp
         self.lastCommitHash = hash
         self.lastDeleted = deleted

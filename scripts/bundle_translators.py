@@ -56,7 +56,7 @@ with open(os.path.join(bundle_dir, "commit_hash.txt"), "w") as f:
     f.write(commit_hash)
 
 # Store timestamp
-timestamp = time.time()
+timestamp = int(time.time())
 with open(os.path.join(bundle_dir, "timestamp.txt"), "w") as f:
     f.write(str(timestamp))
 

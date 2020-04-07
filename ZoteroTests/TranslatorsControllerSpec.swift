@@ -21,11 +21,11 @@ class TranslatorsControllerSpec: QuickSpec {
     private let version = TranslatorsControllerSpec.createVersion()
     private let fileStorage: FileStorageController = FileStorageController()
     private var dbConfig: Realm.Configuration!
-    private let bundledTimestamp: Double = 1585834479
+    private let bundledTimestamp = 1585834479
     private let translatorId = "bbf1617b-d836-4665-9aae-45f223264460"
-    private let bundledTranslatorTimestamp: Double = 1471546264 // 2016-08-18 20:51:04
-    private let remoteTranslatorTimestamp: Double = 1586181600 // 2020-04-06 16:00:00
-    private let remoteTimestamp: Double = 1586182261 // 2020-04-06 16:00:00
+    private let bundledTranslatorTimestamp = 1471546264 // 2016-08-18 20:51:04
+    private let remoteTranslatorTimestamp = 1586181600 // 2020-04-06 16:00:00
+    private let remoteTimestamp = 1586182261 // 2020-04-06 16:00:00
     // We need to retain realm with memory identifier so that data are not deleted
     private var realm: Realm!
     private var controller: TranslatorsController!
@@ -57,14 +57,14 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observeOn(MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
-                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(self.bundledTimestamp))
+                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
                         let realm = try! Realm(configuration: self.dbConfig)
                         realm.refresh()
                         let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
-                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: self.bundledTranslatorTimestamp)))
+                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators()
@@ -101,7 +101,7 @@ class TranslatorsControllerSpec: QuickSpec {
             try! self.realm.write {
                 let translator = RTranslatorMetadata()
                 translator.id = self.translatorId
-                translator.lastUpdated = Date(timeIntervalSince1970: self.bundledTranslatorTimestamp - 100)
+                translator.lastUpdated = Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp - 100))
                 self.realm.add(translator)
             }
 
@@ -113,14 +113,14 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observeOn(MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
-                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(self.bundledTimestamp))
+                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
                         let realm = try! Realm(configuration: self.dbConfig)
                         realm.refresh()
                         let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
-                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: self.bundledTranslatorTimestamp)))
+                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators()
@@ -157,7 +157,7 @@ class TranslatorsControllerSpec: QuickSpec {
             try! self.realm.write {
                 let translator = RTranslatorMetadata()
                 translator.id = self.translatorId
-                translator.lastUpdated = Date(timeIntervalSince1970: self.bundledTranslatorTimestamp + 100)
+                translator.lastUpdated = Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp + 100))
                 self.realm.add(translator)
             }
 
@@ -169,14 +169,14 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observeOn(MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
-                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(self.bundledTimestamp))
+                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
 
                         let realm = try! Realm(configuration: self.dbConfig)
                         realm.refresh()
                         let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
-                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: self.bundledTranslatorTimestamp + 100)))
+                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp + 100))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators()
@@ -215,7 +215,7 @@ class TranslatorsControllerSpec: QuickSpec {
             try! self.realm.write {
                 let translator = RTranslatorMetadata()
                 translator.id = deletedTranslatorId
-                translator.lastUpdated = Date(timeIntervalSince1970: self.remoteTranslatorTimestamp)
+                translator.lastUpdated = Date(timeIntervalSince1970: Double(self.remoteTranslatorTimestamp))
                 self.realm.add(translator)
             }
 
@@ -263,7 +263,7 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.controller.isLoading.skip(1).filter({ !$0 }).first()
                     .observeOn(MainScheduler.instance)
                     .subscribe(onSuccess: { _ in
-                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(self.remoteTimestamp))
+                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.remoteTimestamp)))
 
                         let realm = try! Realm(configuration: self.dbConfig)
                         realm.refresh()
@@ -271,7 +271,7 @@ class TranslatorsControllerSpec: QuickSpec {
                         let translator = realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
                         expect(translator).toNot(beNil())
-                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: self.remoteTranslatorTimestamp)))
+                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.remoteTranslatorTimestamp))))
                         expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
                         self.controller.translators()
@@ -337,7 +337,7 @@ class TranslatorsControllerSpec: QuickSpec {
             try! self.realm.write {
                 let translator = RTranslatorMetadata()
                 translator.id = self.translatorId
-                translator.lastUpdated = Date(timeIntervalSince1970: self.remoteTranslatorTimestamp)
+                translator.lastUpdated = Date(timeIntervalSince1970: Double(self.remoteTranslatorTimestamp))
                 self.realm.add(translator)
             }
 
@@ -350,9 +350,9 @@ class TranslatorsControllerSpec: QuickSpec {
             // Check whether translator was reverted to bundled data
             let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
 
-            expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(self.bundledTimestamp))
+            expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
             expect(translator).toNot(beNil())
-            expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: self.bundledTranslatorTimestamp)))
+            expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
             expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
             waitUntil(timeout: 10) { doneAction in
