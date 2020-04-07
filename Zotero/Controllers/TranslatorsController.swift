@@ -118,7 +118,9 @@ class TranslatorsController {
                     try self.syncTranslatorsWithBundledData(deleteIndices: deletedIndices)
                     
                     self.lastCommitHash = hash
-                    self.lastTimestamp = timestamp
+                    if timestamp > self.lastTimestamp {
+                        self.lastTimestamp = timestamp
+                    }
                     self.lastDeleted = deletedVersion
                 }
 
