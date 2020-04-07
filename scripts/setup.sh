@@ -9,4 +9,3 @@ SCRIPT_DIR=`dirname $SCRIPT_PATH`
 
 sh "$SCRIPT_DIR/fetch_bundled_jsons.sh"
 sh "$SCRIPT_DIR/update_pods.sh"
-python3 "$SCRIPT_DIR/bundle_translators.py"
