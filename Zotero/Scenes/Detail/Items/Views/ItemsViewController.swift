@@ -50,6 +50,7 @@ class ItemsViewController: UIViewController {
                                                       viewModel: self.viewModel,
                                                       dragDropController: self.controllers.dragDropController)
         self.setupToolbar()
+        self.setupSearchController()
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -68,15 +69,6 @@ class ItemsViewController: UIViewController {
                       self?.update(state: state)
                   })
                   .disposed(by: self.disposeBag)
-    }
-
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-
-        // Set the search controller here so that it doesn't appear initially
-        if self.navigationItem.searchController == nil {
-            self.setupSearchController()
-        }
     }
 
     // MARK: - UI state
