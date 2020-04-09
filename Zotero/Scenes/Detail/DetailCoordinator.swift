@@ -47,8 +47,8 @@ class DetailCoordinator: Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
-    private let collection: Collection
-    private let library: Library
+    let collection: Collection
+    let library: Library
     private unowned let controllers: Controllers
     unowned let navigationController: UINavigationController
     private let disposeBag: DisposeBag

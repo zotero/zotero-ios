@@ -14,7 +14,7 @@ protocol MasterLibrariesCoordinatorDelegate: class {
     func showSettings()
 }
 
-protocol MasterCollectionsCoordinatorDelegate: class {
+protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library)
 }
 
@@ -114,20 +114,22 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
-}
 
-extension MasterCoordinator: MasterSettingsCoordinatorDelegate {
-    func dismiss() {
-        self.navigationController.dismiss(animated: true, completion: nil)
-    }
-}
-
-extension MasterCoordinator: MainCoordinatorDelegate {
     func show(collection: Collection, in library: Library) {
         self.mainCoordinatorDelegate.show(collection: collection, in: library)
     }
 
     func collectionsChanged(to collections: [Collection]) {
         self.mainCoordinatorDelegate.collectionsChanged(to: collections)
+    }
+
+    var isSplit: Bool {
+        return self.mainCoordinatorDelegate.isSplit
+    }
+}
+
+extension MasterCoordinator: MasterSettingsCoordinatorDelegate {
+    func dismiss() {
+        self.navigationController.dismiss(animated: true, completion: nil)
     }
 }

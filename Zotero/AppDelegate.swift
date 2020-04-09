@@ -6,7 +6,6 @@
 //  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
 //
 
-import Combine
 import UIKit
 
 import CocoaLumberjack
@@ -19,19 +18,8 @@ import PSPDFKit
 class AppDelegate: UIResponder {
     var window: UIWindow?
     var controllers: Controllers!
-    private var coordinator: AppCoordinator!
-    private var sessionCancellable: AnyCancellable?
 
     // MARK: - Setups
-
-    private func setupObservers() {
-        self.sessionCancellable = self.controllers.sessionController.$isLoggedIn
-                                                                    .receive(on: DispatchQueue.main)
-                                                                    .dropFirst()
-                                                                    .sink { [weak self] isLoggedIn in
-                                                                        self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
-                                                                    }
-    }
 
     private func setupLogs() {
         #if DEBUG
@@ -70,18 +58,10 @@ extension AppDelegate: UIApplicationDelegate {
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.window?.makeKeyAndVisible()
         self.setupNavigationBarAppearance()
-        // Setup app coordinator and present initial screen
-        self.coordinator = AppCoordinator(window: self.window, controllers: self.controllers)
-        self.coordinator.start()
-        // Start observing changes
-        self.setupObservers()
         // `willEnterForegound` is not called after launching the app for the first time.
         self.controllers.willEnterForeground()
 
         return true
-    }
-
-    func applicationWillResignActive(_ application: UIApplication) {
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
@@ -92,12 +72,6 @@ extension AppDelegate: UIApplicationDelegate {
         self.controllers.willEnterForeground()
     }
 
-    func applicationDidBecomeActive(_ application: UIApplication) {
-    }
-
-    func applicationWillTerminate(_ application: UIApplication) {
-    }
-
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         let controllers = self.controllers ?? Controllers()
         if let uploader = controllers.userControllers?.backgroundUploader {
@@ -105,5 +79,12 @@ extension AppDelegate: UIApplicationDelegate {
         } else {
             completionHandler()
         }
+    }
+
+    // MARK: UISceneSession Lifecycle
+
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 }

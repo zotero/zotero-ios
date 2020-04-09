@@ -23,7 +23,7 @@ class CollectionsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var tableViewHandler: CollectionsTableViewHandler!
-    weak var coordinatorDelegate: (MainCoordinatorDelegate & MasterCollectionsCoordinatorDelegate & Coordinator)?
+    weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
 
     init(viewModel: ViewModel<CollectionsActionHandler>, dbStorage: DbStorage, dragDropController: DragDropController) {
         self.viewModel = viewModel
@@ -45,7 +45,8 @@ class CollectionsViewController: UIViewController {
         self.setupNavbarItems()
         self.tableViewHandler = CollectionsTableViewHandler(tableView: self.tableView,
                                                             viewModel: self.viewModel,
-                                                            dragDropController: self.dragDropController)
+                                                            dragDropController: self.dragDropController,
+                                                            splitDelegate: self.coordinatorDelegate)
 
         self.viewModel.process(action: .loadData)
         self.tableViewHandler.update(collections: self.viewModel.state.collections, animated: false)
@@ -62,8 +63,11 @@ class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if UIDevice.current.userInterfaceIdiom == .pad {
+        if self.coordinatorDelegate?.isSplit == true {
             self.coordinatorDelegate?.show(collection: self.viewModel.state.selectedCollection, in: self.viewModel.state.library)
+            if let index = self.viewModel.state.collections.firstIndex(of: self.viewModel.state.selectedCollection) {
+                self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
+            }
         }
     }
 

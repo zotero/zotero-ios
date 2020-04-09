@@ -18,9 +18,13 @@ fileprivate enum PrimaryColumnState {
     case dynamic(CGFloat)
 }
 
-protocol MainCoordinatorDelegate: class {
+protocol MainCoordinatorDelegate: SplitControllerDelegate {
     func show(collection: Collection, in library: Library)
     func collectionsChanged(to collections: [Collection])
+}
+
+protocol SplitControllerDelegate: class {
+    var isSplit: Bool { get }
 }
 
 class MainViewController: UISplitViewController {
@@ -180,16 +184,27 @@ extension MainViewController: UISplitViewControllerDelegate {
 
 extension MainViewController: MainCoordinatorDelegate {
     func show(collection: Collection, in library: Library) {
-        guard let navigationController = self.viewControllers.last as? UINavigationController else { return }
+        guard self.isSplit == false || self.detailCoordinator?.library != library || self.detailCoordinator?.collection != collection else { return }
+
+        let navigationController = UINavigationController()
+
         let coordinator = DetailCoordinator(library: library,
                                             collection: collection,
                                             navigationController: navigationController,
                                             controllers: self.controllers)
         coordinator.start(animated: false)
         self.detailCoordinator = coordinator
+
+        self.showDetailViewController(navigationController, sender: nil)
     }
 
     func collectionsChanged(to collections: [Collection]) {
         self.reloadPrimaryColumnFraction(with: collections, animated: self.didAppear)
+    }
+}
+
+extension MainViewController: SplitControllerDelegate {
+    var isSplit: Bool {
+        return !self.isCollapsed
     }
 }

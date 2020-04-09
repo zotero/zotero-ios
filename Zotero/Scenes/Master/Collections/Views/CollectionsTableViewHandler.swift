@@ -17,11 +17,14 @@ class CollectionsTableViewHandler: NSObject {
     private unowned let dragDropController: DragDropController
 
     private var dataSource: UITableViewDiffableDataSource<Int, Collection>!
+    private weak var splitDelegate: SplitControllerDelegate?
 
-    init(tableView: UITableView, viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController) {
+    init(tableView: UITableView, viewModel: ViewModel<CollectionsActionHandler>,
+         dragDropController: DragDropController, splitDelegate: SplitControllerDelegate?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.dragDropController = dragDropController
+        self.splitDelegate = splitDelegate
 
         super.init()
 
@@ -63,12 +66,9 @@ class CollectionsTableViewHandler: NSObject {
 
     private func setupDataSource() {
         self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView,
-                                                        cellProvider: { [weak self] (tableView, indexPath, object) -> UITableViewCell? in
+                                                        cellProvider: { tableView, indexPath, object -> UITableViewCell? in
             let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsTableViewHandler.cellId, for: indexPath) as? CollectionCell
             cell?.set(collection: object)
-            if UIDevice.current.userInterfaceIdiom == .pad && object == self?.viewModel.state.selectedCollection {
-                tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
-            }
             return cell
         })
     }
@@ -77,15 +77,15 @@ class CollectionsTableViewHandler: NSObject {
 extension CollectionsTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let collection = self.dataSource.itemIdentifier(for: indexPath) {
-           let didChange = collection.id != self.viewModel.state.selectedCollection.id
+            let didChange = self.splitDelegate?.isSplit == false ? true : collection.id != self.viewModel.state.selectedCollection.id
             // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
             // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-            if UIDevice.current.userInterfaceIdiom == .phone || didChange {
+            if didChange {
                 self.viewModel.process(action: .select(collection))
             }
         }
 
-        if UIDevice.current.userInterfaceIdiom != .pad {
+        if self.splitDelegate?.isSplit == false {
             tableView.deselectRow(at: indexPath, animated: true)
         }
     }

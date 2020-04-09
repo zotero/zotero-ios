@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Library {
+struct Library: Equatable {
     let identifier: LibraryIdentifier
     let name: String
     let metadataEditable: Bool
@@ -33,5 +33,9 @@ struct Library {
         self.name = name
         self.metadataEditable = metadataEditable
         self.filesEditable = filesEditable
+    }
+
+    static func ==(lhs: Library, rhs: Library) -> Bool {
+        return lhs.identifier == rhs.identifier
     }
 }
