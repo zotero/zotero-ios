@@ -59,7 +59,7 @@ struct CollectionEditView: View {
             }
 
             if self.viewModel.state.shouldDismiss {
-                EmptyView().onAppear {
+                Text("").onAppear {
                     self.coordinatorDelegate?.dismiss()
                 }
             }
