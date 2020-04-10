@@ -2976,7 +2976,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Michal Rentka";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3013,7 +3013,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Michal Rentka";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -3264,7 +3264,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Michal Rentka";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
