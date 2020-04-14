@@ -493,16 +493,23 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Create initial actions for a sync. All sync will have key/permission sync. Then if a group needs to be synced
+    /// (so libraries are either .all, or .specific contains a group id), then sync group metadata. If only my library is synced, after
+    /// key sync jump straight to .createLibraryActions.
+    /// - parameter libraries: Specifies which libraries need to sync.
+    /// - returns: Initial ations for a new sync.
     private func createInitialActions(for libraries: LibrarySyncType) -> [SyncController.Action] {
         switch libraries {
         case .all:
             return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
         case .specific(let identifiers):
+            // If there is a group to be synced, sync group metadata as well
             for identifier in identifiers {
                 if case .group = identifier {
                     return [.loadKeyPermissions, .syncVersions(.custom(.myLibrary), .group, nil)]
                 }
             }
+            // If only my library is being synced, skip group metadata sync
             return [.loadKeyPermissions, .createLibraryActions(libraries, .automatic)]
         }
     }
@@ -602,8 +609,7 @@ final class SyncController: SynchronizationController {
 
             switch creationOptions {
             case .forceDownloads:
-                allActions.append(contentsOf: self.createDownloadActions(for: libraryId,
-                                                                         versions: libraryData.versions))
+                allActions.append(contentsOf: self.createDownloadActions(for: libraryId, versions: libraryData.versions))
             case .onlyWrites, .automatic:
                 if !libraryData.updates.isEmpty || !libraryData.deletions.isEmpty || libraryData.hasUpload {
                     switch libraryData.identifier {
@@ -628,9 +634,10 @@ final class SyncController: SynchronizationController {
                 }
             }
         }
-        let index: Int? = creationOptions == .automatic ? nil : 0 // Forced downloads or writes are pushed to the beginning
-                                                                  // of the queue, because only currently running action
-                                                                  // can force downloads or writes
+
+        // Forced downloads or writes are pushed to the beginning of the queue, because only currently running action
+        // can force downloads or writes
+        let index: Int? = creationOptions == .automatic ? nil : 0
         return (allActions, index)
     }
 
