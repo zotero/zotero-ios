@@ -20,7 +20,7 @@ import RxSwift
 
 protocol DetailItemsCoordinatorDelegate: class {
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
-    func showItemDetail(for type: ItemDetailState.DetailType)
+    func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showNote(with text: String, save: @escaping (String) -> Void)
     func showActionSheet(viewModel: ViewModel<ItemsActionHandler>, topInset: CGFloat)
 }
@@ -29,7 +29,7 @@ protocol DetailItemActionSheetCoordinatorDelegate: class {
     func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
     func showNoteCreation(save: @escaping (String) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
-    func showItemCreation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
+    func showItemCreation(library: Library, collectionKey: String?)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: class {
@@ -106,7 +106,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
-    func showItemDetail(for type: ItemDetailState.DetailType) {
+    func showItemDetail(for type: ItemDetailState.DetailType, library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         do {
@@ -121,7 +121,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             let data = try ItemDetailDataCreator.createData(from: type,
                                                             schemaController: self.controllers.schemaController,
                                                             fileStorage: self.controllers.fileStorage)
-            let state = ItemDetailState(type: type, userId: Defaults.shared.userId, data: data)
+            let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId, data: data)
             let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
@@ -202,8 +202,8 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
     }
 
 
-    func showItemCreation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool) {
-        self.showItemDetail(for: .creation(libraryId: libraryId, collectionKey: collectionKey, filesEditable: filesEditable))
+    func showItemCreation(library: Library, collectionKey: String?) {
+        self.showItemDetail(for: .creation(collectionKey: collectionKey), library: library)
     }
 }
 

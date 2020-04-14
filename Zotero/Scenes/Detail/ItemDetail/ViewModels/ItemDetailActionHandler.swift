@@ -267,7 +267,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             if !state.isEditing {
                 // Note was edited outside of editing mode, so it needs to be saved immediately
                 do {
-                    try self.saveNoteChanges(note, libraryId: state.libraryId)
+                    try self.saveNoteChanges(note, libraryId: state.library.identifier)
                 } catch let error {
                     DDLogError("ItemDetailStore: can't store note - \(error)")
                     state.error = .cantStoreChanges
@@ -310,13 +310,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             let originalFile = Files.file(from: url)
             let key = KeyGenerator.newKey
             let file = Files.objectFile(for: .item,
-                                        libraryId: viewModel.state.libraryId,
+                                        libraryId: viewModel.state.library.identifier,
                                         key: key,
                                         ext: originalFile.ext)
             let attachment = Attachment(key: key,
                                         title: originalFile.name,
                                         type: .file(file: file, filename: originalFile.name, isLocal: true),
-                                        libraryId: viewModel.state.libraryId)
+                                        libraryId: viewModel.state.library.identifier)
 
             do {
                 try self.fileStorage.move(from: originalFile, to: file)
@@ -373,7 +373,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func cacheFile(_ file: File, key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let request = FileRequest(data: .internal(viewModel.state.libraryId, viewModel.state.userId, key), destination: file)
+        let request = FileRequest(data: .internal(viewModel.state.library.identifier, viewModel.state.userId, key), destination: file)
         self.apiClient.download(request: request)
                       .flatMap { request in
                           return request.rx.progress()
@@ -492,11 +492,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 switch state.type {
                 case .preview(let item):
                     if let snapshot = state.snapshot {
-                        try self.updateItem(key: item.key, libraryId: state.libraryId, data: state.data, snapshot: snapshot)
+                        try self.updateItem(key: item.key, libraryId: state.library.identifier, data: state.data, snapshot: snapshot)
                     }
 
-                case .creation(_, let collectionKey, _), .duplication(_, let collectionKey):
-                    let item = try self.createItem(with: state.libraryId, collectionKey: collectionKey, data: state.data)
+                case .creation(let collectionKey), .duplication(_, let collectionKey):
+                    let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: state.data)
                     newType = .preview(item)
                 }
 

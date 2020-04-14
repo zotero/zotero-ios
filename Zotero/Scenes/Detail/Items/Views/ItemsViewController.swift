@@ -94,7 +94,8 @@ class ItemsViewController: UIViewController {
         }
 
         if let item = state.itemDuplication {
-            self.coordinatorDelegate?.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey))
+            self.coordinatorDelegate?.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey),
+                                                     library: self.viewModel.state.library)
         }
     }
 
@@ -109,7 +110,7 @@ class ItemsViewController: UIViewController {
             })
 
         default:
-            self.coordinatorDelegate?.showItemDetail(for: .preview(item))
+            self.coordinatorDelegate?.showItemDetail(for: .preview(item), library: self.viewModel.state.library)
         }
     }
 

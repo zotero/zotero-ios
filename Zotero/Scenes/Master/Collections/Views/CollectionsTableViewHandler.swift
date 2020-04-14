@@ -91,6 +91,9 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        if !self.viewModel.state.library.metadataEditable {
+            return nil
+        }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
             guard let collection = self?.dataSource.itemIdentifier(for: indexPath),
                   collection.type.isCollection else { return nil }
@@ -116,6 +119,9 @@ extension CollectionsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView,
                    dropSessionDidUpdate session: UIDropSession,
                    withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+        if !self.viewModel.state.library.metadataEditable {
+            return UITableViewDropProposal(operation: .forbidden)
+        }
         // Allow only local drag session
         guard session.localDragSession != nil else { return UITableViewDropProposal(operation: .forbidden) }
 

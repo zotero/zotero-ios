@@ -43,7 +43,9 @@ class ItemDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing)
+        if self.viewModel.state.library.metadataEditable {
+            self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing)
+        }
         self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel)
 
         self.viewModel.stateObservable
@@ -80,7 +82,7 @@ class ItemDetailViewController: UIViewController {
                 self?.viewModel.process(action: .saveNote(key: note?.key, text: text))
             })
         case .openTagPicker:
-            self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.libraryId,
+            self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier,
                                                     selected: Set(self.viewModel.state.data.tags.map({ $0.id })),
                                                     picked: { [weak self] tags in
                                                         self?.viewModel.process(action: .setTags(tags))

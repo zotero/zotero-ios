@@ -121,6 +121,10 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView,
                    dropSessionDidUpdate session: UIDropSession,
                    withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+        if !self.viewModel.state.library.metadataEditable {
+            return UITableViewDropProposal(operation: .forbidden)
+        }
+
         // Allow only local drag session
         guard session.localDragSession != nil else {
             return UITableViewDropProposal(operation: .forbidden)

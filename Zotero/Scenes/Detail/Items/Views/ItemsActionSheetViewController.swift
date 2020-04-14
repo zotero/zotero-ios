@@ -12,14 +12,11 @@ import RxSwift
 
 class ItemsActionSheetViewController: UIViewController {
     @IBOutlet private weak var menuView: UIView!
-    @IBOutlet private weak var editingButton: UIButton!
-    @IBOutlet private weak var sortTypeButton: UIButton!
-    @IBOutlet private weak var sortOrderButton: UIButton!
-    @IBOutlet private weak var newItemButton: UIButton!
-    @IBOutlet private weak var newNoteButton: UIButton!
-    @IBOutlet private weak var uploadButton: UIButton!
+    @IBOutlet private weak var stackView: UIStackView!
     @IBOutlet private weak var containerTop: NSLayoutConstraint!
     @IBOutlet private weak var containerHeight: NSLayoutConstraint!
+    private weak var sortFieldButton: UIButton!
+    private weak var sortOrderButton: UIButton!
 
     private let topOffset: CGFloat
     private let viewModel: ViewModel<ItemsActionHandler>
@@ -43,8 +40,10 @@ class ItemsActionSheetViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupBackgroundGesture()
+        self.setupActions(metadataEditable: self.viewModel.state.library.metadataEditable,
+                          filesEditable: self.viewModel.state.library.filesEditable,
+                          sortType: self.viewModel.state.sortType)
         self.containerTop.constant = self.topOffset
-        self.setupSortButtons(with: self.viewModel.state)
         self.view.layoutIfNeeded()
 
         self.viewModel.stateObservable
@@ -66,14 +65,16 @@ class ItemsActionSheetViewController: UIViewController {
 
     private func update(state: ItemsState) {
         if state.changes.contains(.sortType) {
-            self.setupSortButtons(with: state)
+            let (fieldTitle, orderTitle) = self.sortButtonTitles(for: state.sortType)
+            self.sortFieldButton.setTitle(fieldTitle, for: .normal)
+            self.sortOrderButton.setTitle(orderTitle, for: .normal)
         }
     }
 
-    private func setupSortButtons(with state: ItemsState) {
-        self.sortTypeButton.setTitle("Sort By: \(state.sortType.field.title)", for: .normal)
-        let sortOrderTitle = state.sortType.ascending ? "Ascending" : "Descending"
-        self.sortOrderButton.setTitle("Sort Order: \(sortOrderTitle)", for: .normal)
+    private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
+        let sortOrderTitle = sortType.ascending ? "Ascending" : "Descending"
+        return ("Sort By: \(sortType.field.title)",
+                "Sort Order: \(sortOrderTitle)")
     }
 
     // MARK: - Actions
@@ -91,32 +92,31 @@ class ItemsActionSheetViewController: UIViewController {
                        completion: nil)
     }
 
-    @IBAction private func startEditing() {
+    @objc private func startEditing() {
         self.dismiss(animated: true) {
             self.viewModel.process(action: .startEditing)
         }
     }
 
-    @IBAction private func changeSortType() {
+    @objc private func changeSortField() {
         self.dismiss(animated: true) {
             let binding = self.viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
             self.coordinatorDelegate?.showSortTypePicker(sortBy: binding)
         }
     }
 
-    @IBAction private func toggleSortOrder() {
+    @objc private func changeSortOrder() {
         self.viewModel.process(action: .toggleSortOrder)
     }
 
-    @IBAction private func createNewItem() {
+    @objc private func createNewItem() {
         self.dismiss(animated: true) {
-            self.coordinatorDelegate?.showItemCreation(libraryId: self.viewModel.state.library.identifier,
-                                                       collectionKey: self.viewModel.state.type.collectionKey,
-                                                       filesEditable: self.viewModel.state.library.filesEditable)
+            self.coordinatorDelegate?.showItemCreation(library: self.viewModel.state.library,
+                                                       collectionKey: self.viewModel.state.type.collectionKey)
         }
     }
 
-    @IBAction private func createNewNote() {
+    @objc private func createNewNote() {
         let viewModel = self.viewModel
         self.dismiss(animated: true) {
             self.coordinatorDelegate?.showNoteCreation(save: { text in
@@ -125,7 +125,7 @@ class ItemsActionSheetViewController: UIViewController {
         }
     }
 
-    @IBAction private func uploadAttachment() {
+    @objc private func uploadAttachment() {
         let viewModel = self.viewModel
         self.dismiss(animated: true) {
             self.coordinatorDelegate?.showAttachmentPicker(save: { urls in
@@ -146,5 +146,55 @@ class ItemsActionSheetViewController: UIViewController {
                      })
                      .disposed(by: self.disposeBag)
         self.view.addGestureRecognizer(tapRecognizer)
+    }
+
+    private func setupActions(metadataEditable: Bool, filesEditable: Bool, sortType: ItemsSortType) {
+        var subviews: [UIView] = []
+
+        if metadataEditable {
+            subviews.append(self.createButton(with: "Select Items", selector: #selector(ItemsActionSheetViewController.startEditing)))
+            subviews.append(self.createSeparatorLine())
+        }
+
+        let (sortFieldTitle, sortOrderTitle) = self.sortButtonTitles(for: sortType)
+        let sortFieldButton = self.createButton(with: sortFieldTitle, selector: #selector(ItemsActionSheetViewController.changeSortField))
+        let sortOrderButton = self.createButton(with: sortOrderTitle, selector: #selector(ItemsActionSheetViewController.changeSortOrder))
+        subviews.append(sortFieldButton)
+        subviews.append(sortOrderButton)
+        self.sortFieldButton = sortFieldButton
+        self.sortOrderButton = sortOrderButton
+
+        if metadataEditable {
+            subviews.append(self.createSeparatorLine())
+            subviews.append(self.createButton(with: "New Item", selector: #selector(ItemsActionSheetViewController.createNewItem)))
+            subviews.append(self.createButton(with: "New Standalone Note", selector: #selector(ItemsActionSheetViewController.createNewNote)))
+        }
+
+        if filesEditable {
+            if !metadataEditable {
+                subviews.append(self.createSeparatorLine())
+            }
+            subviews.append(self.createButton(with: "Upload File", selector: #selector(ItemsActionSheetViewController.uploadAttachment)))
+        }
+
+        subviews.forEach({ self.stackView.addArrangedSubview($0) })
+    }
+
+    private func createButton(with title: String, selector: Selector) -> UIButton {
+        let button = UIButton(type: .custom)
+        button.setTitleColor(.systemBlue, for: .normal)
+        button.titleLabel?.font = .preferredFont(forTextStyle: .body)
+        button.contentHorizontalAlignment = .leading
+        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
+        button.setTitle(title, for: .normal)
+        button.addTarget(self, action: selector, for: .touchUpInside)
+        return button
+    }
+
+    private func createSeparatorLine() -> UIView {
+        let view = UIView()
+        view.backgroundColor = .separator
+        view.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        return view
     }
 }

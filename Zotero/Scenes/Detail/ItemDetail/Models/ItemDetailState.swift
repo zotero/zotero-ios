@@ -22,7 +22,7 @@ struct ItemDetailState: ViewModelState {
     }
 
     enum DetailType {
-        case creation(libraryId: LibraryIdentifier, collectionKey: String?, filesEditable: Bool)
+        case creation(collectionKey: String?)
         case duplication(RItem, collectionKey: String?)
         case preview(RItem)
 
@@ -236,10 +236,8 @@ struct ItemDetailState: ViewModelState {
         case web(URL)
     }
 
-    let libraryId: LibraryIdentifier
+    let library: Library
     let userId: Int
-    let metadataEditable: Bool
-    let filesEditable: Bool
 
     var changes: Changes
     var isEditing: Bool
@@ -254,9 +252,10 @@ struct ItemDetailState: ViewModelState {
     var metadataTitleMaxWidth: CGFloat
     var openAttachmentAction: OpenAttachmentAction?
 
-    init(type: DetailType, userId: Int, data: Data, error: ItemDetailError? = nil) {
+    init(type: DetailType, library: Library, userId: Int, data: Data, error: ItemDetailError? = nil) {
         self.changes = []
         self.userId = userId
+        self.library = library
         self.type = type
         self.data = data
         self.downloadProgress = [:]
@@ -265,28 +264,20 @@ struct ItemDetailState: ViewModelState {
         self.error = error
 
         switch type {
-        case .preview(let item), .duplication(let item, _):
+        case .preview, .duplication:
             self.isEditing = type.isCreation
-            self.libraryId = item.libraryObject?.identifier ?? .custom(.myLibrary)
-            // Item has either grouop assigned with canEditMetadata or it's a custom library which is always editable
-            self.metadataEditable = item.group?.canEditMetadata ?? true
-            // Item has either grouop assigned with canEditFiles or it's a custom library which is always editable
-            self.filesEditable = item.group?.canEditFiles ?? true
             if !self.isEditing {
                 // Filter fieldIds to show only non-empty values
                 self.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: self.data.fieldIds, fields: self.data.fields)
             }
-        case .creation(let libraryId, _, let filesEditable):
+        case .creation:
             self.isEditing = true
-            self.libraryId = libraryId
-            // Since we're in creation mode editing must have beeen enabled
-            self.metadataEditable = true
-            self.filesEditable = filesEditable
         }
     }
 
-    init(type: DetailType, userId: Int, error: ItemDetailError) {
+    init(type: DetailType, library: Library, userId: Int, error: ItemDetailError) {
         self.init(type: type,
+                  library: library,
                   userId: userId,
                   data: Data(title: "", type: "", localizedType: "",
                              creators: [:], creatorIds: [],

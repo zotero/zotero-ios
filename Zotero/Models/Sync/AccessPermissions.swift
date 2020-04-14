@@ -24,8 +24,9 @@ struct AccessPermissions {
 extension AccessPermissions.Permissions {
     init(data: [String: Any]?) {
         self.library = (data?["library"] as? Bool) ?? false
-        self.write = (data?["write"] as? Bool) ?? false
-        self.notes = (data?["notes"] as? Bool) ?? false
-        self.files = (data?["files"] as? Bool) ?? false
+        let write = (data?["write"] as? Bool) ?? false
+        self.write = write
+        self.notes = (data?["notes"] as? Bool) ?? write
+        self.files = (data?["files"] as? Bool) ?? write
     }
 }

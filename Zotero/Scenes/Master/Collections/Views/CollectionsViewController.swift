@@ -42,7 +42,9 @@ class CollectionsViewController: UIViewController {
         super.viewDidLoad()
 
         self.navigationItem.title = self.viewModel.state.library.name
-        self.setupNavbarItems()
+        if self.viewModel.state.library.metadataEditable {
+            self.setupAddNavbarItem()
+        }
         self.tableViewHandler = CollectionsTableViewHandler(tableView: self.tableView,
                                                             viewModel: self.viewModel,
                                                             dragDropController: self.dragDropController,
@@ -97,7 +99,7 @@ class CollectionsViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupNavbarItems() {
+    private func setupAddNavbarItem() {
         let item = UIBarButtonItem(image: UIImage(systemName: "plus"),
                                    style: .plain,
                                    target: self,
