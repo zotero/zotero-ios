@@ -29,10 +29,10 @@ struct MoveItemsToParentDbRequest: DbRequest {
                 .forEach { item in
                     item.parent = parent
                     item.changedFields.insert(.parent)
+                    item.changeType = .user
                 }
 
         // Update the parent item, so that it's updated in the item list to show attachment/note marker
-        let title = parent.baseTitle
-        parent.baseTitle = title
+        parent.changeType = .user
     }
 }

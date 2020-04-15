@@ -70,6 +70,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         item.syncState = .synced
         item.syncRetries = 0
         item.lastSyncDate = Date(timeIntervalSince1970: 0)
+        item.changeType = .sync
 
         if self.preferRemoteData {
             item.deleted = false

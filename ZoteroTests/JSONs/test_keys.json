@@ -1,0 +1,39 @@
+{
+    "key": "123key321",
+    "userID": 5487222,
+    "username": "michalrentka",
+    "access": {
+        "user": {
+            "library": true,
+            "files": true,
+            "notes": true,
+            "write": true
+        },
+        "groups": {
+            "all": {
+                "library": true,
+                "write": true
+            },
+            "2288485": {
+                "library": true,
+                "write": true
+            },
+            "2288486": {
+                "library": true,
+                "write": true
+            },
+            "2288489": {
+                "library": true,
+                "write": true
+            },
+            "2308000": {
+                "library": true,
+                "write": true
+            },
+            "2483799": {
+                "library": true,
+                "write": true
+            }
+        }
+    }
+}

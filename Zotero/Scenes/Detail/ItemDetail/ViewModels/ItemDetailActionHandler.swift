@@ -286,7 +286,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func saveNoteChanges(_ note: Note, libraryId: LibraryIdentifier) throws {
-        let request = StoreNoteDbRequest(note: note, libraryId: libraryId)
+        let request = EditNoteDbRequest(note: note, libraryId: libraryId)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -551,7 +551,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func updateItem(key: String, libraryId: LibraryIdentifier, data: ItemDetailState.Data, snapshot: ItemDetailState.Data) throws {
-        let request = StoreItemDetailChangesDbRequest(libraryId: libraryId,
+        let request = EditItemDetailDbRequest(libraryId: libraryId,
                                                       itemKey: key,
                                                       data: data,
                                                       snapshot: snapshot,

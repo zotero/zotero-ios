@@ -24,5 +24,6 @@ struct MarkCollectionAndItemsAsDeletedDbRequest: DbRequest {
         }
         object.items.forEach({ $0.deleted = true })
         object.deleted = true
+        object.changeType = .user
     }
 }

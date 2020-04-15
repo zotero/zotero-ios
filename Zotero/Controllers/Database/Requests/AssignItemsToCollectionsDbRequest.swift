@@ -15,9 +15,7 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
     let itemKeys: Set<String>
     let libraryId: LibraryIdentifier
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
         let collections = database.objects(RCollection.self).filter(.keys(self.collectionKeys, in: self.libraryId))
@@ -27,6 +25,7 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
                 if !item.collections.contains(collection) {
                     item.collections.append(collection)
                     item.changedFields.insert(.collections)
+                    item.changeType = .user
                 }
             }
         }

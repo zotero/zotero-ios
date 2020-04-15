@@ -24,6 +24,15 @@ func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
 
 func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
                 baseUrl: URL, headers: [String: Any]? = nil,
+                statusCode: Int32 = 200, url: URL) {
+    stub(condition: request.stubCondition(with: baseUrl,
+                                          ignorePostParams: ignorePostParams), response: { _ -> OHHTTPStubsResponse in
+        return OHHTTPStubsResponse(fileURL: url, statusCode: statusCode, headers: headers)
+    })
+}
+
+func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
+                baseUrl: URL, headers: [String: Any]? = nil,
                 statusCode: Int32 = 200, xmlResponse: String) {
     stub(condition: request.stubCondition(with: baseUrl,
                                           ignorePostParams: ignorePostParams), response: { _ -> OHHTTPStubsResponse in

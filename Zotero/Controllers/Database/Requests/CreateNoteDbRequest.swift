@@ -27,6 +27,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.syncState = .synced
         item.set(title: self.note.title)
         item.changedFields = [.type, .fields]
+        item.changeType = .user
         item.dateAdded = Date()
         item.dateModified = Date()
 

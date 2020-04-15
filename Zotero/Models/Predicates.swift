@@ -81,8 +81,8 @@ extension NSPredicate {
         return NSPredicate(format: "attachmentNeedsSync = true")
     }
 
-    static var changedOrDeleted: NSPredicate {
-        return NSCompoundPredicate(orPredicateWithSubpredicates: [.changed, .deleted(true)])
+    static var userChanges: NSPredicate {
+        return NSPredicate(format: "rawChangeType = %d", UpdatableChangeType.user.rawValue)
     }
 
     static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {

@@ -1,5 +1,5 @@
 //
-//  StoreCollectionDbRequest.swift
+//  EditCollectionDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 18/03/2019.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct StoreCollectionDbRequest: DbRequest {
+struct EditCollectionDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let key: String
     let name: String
@@ -39,8 +39,7 @@ struct StoreCollectionDbRequest: DbRequest {
             changes.insert(.parent)
         }
 
-        if collection.rawChangedFields != changes.rawValue {
-            collection.changedFields = changes
-        }
+        collection.changedFields = changes
+        collection.changeType = .user
     }
 }

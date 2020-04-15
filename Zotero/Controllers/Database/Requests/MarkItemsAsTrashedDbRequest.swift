@@ -23,6 +23,7 @@ struct MarkItemsAsTrashedDbRequest: DbRequest {
         let items = database.objects(RItem.self).filter(.keys(self.keys, in: self.libraryId))
         items.forEach { item in
             item.trash = self.trashed
+            item.changeType = .user
             item.changedFields.insert(.trash)
         }
     }

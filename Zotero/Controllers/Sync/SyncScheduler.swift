@@ -55,7 +55,9 @@ final class SyncScheduler: SynchronizationScheduler {
                       }
                   }, onError: { [weak self] _ in
                       self?.inProgress = nil
-                      self?.startTimer()
+                      if self?.nextAction != nil {
+                          self?.startTimer()
+                      }
                   })
                   .disposed(by: self.disposeBag)
     }

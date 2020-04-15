@@ -99,6 +99,8 @@ class RItem: Object {
     @objc dynamic var syncRetries: Int = 0
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
+    /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
+    @objc dynamic var rawChangeType: Int = 0
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @objc dynamic var deleted: Bool = false
 
@@ -109,16 +111,6 @@ class RItem: Object {
     }
 
     // MARK: - Sync properties
-
-    var syncState: ObjectSyncState {
-        get {
-            return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced
-        }
-
-        set {
-            self.rawSyncState = newValue.rawValue
-        }
-    }
 
     var changedFields: RItemChanges {
         get {

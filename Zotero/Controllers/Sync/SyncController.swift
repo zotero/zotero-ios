@@ -451,7 +451,7 @@ final class SyncController: SynchronizationController {
             self.revertGroupData(in: libraryId)
         case .markChangesAsResolved(let libraryId):
             self.markChangesAsResolved(in: libraryId)
-        case .resolveConflict(let key, let libraryId):
+        case .resolveConflict://(let key, let libraryId):
             // TODO: - resolve conflict...
             self.processNextAction()
         case .resolveDeletedGroup(let groupId, let name):
@@ -542,6 +542,11 @@ final class SyncController: SynchronizationController {
                   let permissions = AccessPermissions(user: response.user,
                                                       groupDefault: response.defaultGroup,
                                                       groups: response.groups)
+
+                  if !permissions.groupDefault.library || !permissions.groupDefault.write {
+                      return Single.error(SyncError.missingGroupPermissions)
+                  }
+
                   return Single.just((permissions, response.username))
               }
               .subscribe(onSuccess: { [weak self] permissions, username in
@@ -549,7 +554,7 @@ final class SyncController: SynchronizationController {
                   self?.accessPermissions = permissions
                   self?.processNextAction()
               }, onError: { error in
-                  self.abort(error: SyncError.permissionLoadingFailed)
+                  self.abort(error: ((error as? SyncError) ?? SyncError.permissionLoadingFailed))
               })
               .disposed(by: self.disposeBag)
     }
@@ -570,7 +575,7 @@ final class SyncController: SynchronizationController {
         case .failure(let error):
             self.abort(error: SyncError.allLibrariesFetchFailed(error))
 
-        case .success(let data, let options):
+        case .success((let data, let options)):
             var libraryNames: [LibraryIdentifier: String]?
 
             if options == .automatic {
@@ -804,7 +809,7 @@ final class SyncController: SynchronizationController {
     private func finishBatchSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, allKeys: [Any],
                                        result: Result<([String], [Error], [StoreItemsError])>) {
         switch result {
-        case .success(let ids, let parseErrors, let itemConflicts):
+        case .success((let ids, let parseErrors, _))://let itemConflicts)):
             if object == .group {
                 // Groups always sync 1-by-1, so if an error happens it's always reported as .failure, only successful
                 // actions are reported here, so we can directly skip to next action
@@ -890,7 +895,7 @@ final class SyncController: SynchronizationController {
 
     private func finishDeletionsSync(result: Result<[String]>, libraryId: LibraryIdentifier) {
         switch result {
-        case .success(let conflicts):
+        case .success://(let conflicts):
                 // BETA: - no conflicts are created in beta, we prefer remote over everything local, so the conflicts
                 // should be always empty now, but let's comment it just to be sure we don't unnecessarily create conflicts
 //                if !conflicts.isEmpty {
@@ -998,11 +1003,10 @@ final class SyncController: SynchronizationController {
                 self.abort(error: error)
                 return
             }
-        }
 
-        if let error = error {
             self.nonFatalErrors.append(error)
         }
+
         if let version = newVersion {
             self.updateVersionInNextWriteBatch(to: version)
         }

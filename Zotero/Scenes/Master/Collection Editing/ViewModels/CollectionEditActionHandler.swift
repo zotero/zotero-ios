@@ -64,10 +64,10 @@ struct CollectionEditActionHandler: ViewModelActionHandler {
         }
 
         if let key = viewModel.state.key {
-            let request = StoreCollectionDbRequest(libraryId: viewModel.state.library.identifier,
-                                                   key: key,
-                                                   name: viewModel.state.name,
-                                                   parentKey: viewModel.state.parent?.key)
+            let request = EditCollectionDbRequest(libraryId: viewModel.state.library.identifier,
+                                                  key: key,
+                                                  name: viewModel.state.name,
+                                                  parentKey: viewModel.state.parent?.key)
             self.perform(request: request, dismissAfterSuccess: true, in: viewModel)
         } else {
             let request = CreateCollectionDbRequest(libraryId: viewModel.state.library.identifier,

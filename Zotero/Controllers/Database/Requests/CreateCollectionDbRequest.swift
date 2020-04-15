@@ -43,6 +43,7 @@ struct CreateCollectionDbRequest: DbRequest {
         }
 
         collection.changedFields = changes
+        collection.changeType = .user
         database.add(collection)
     }
 }

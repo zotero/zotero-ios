@@ -36,6 +36,8 @@ class RTag: Object {
 
     /// Raw value for OptionSet of changes for this object, indicates which local changes need to be synced to backend
     @objc dynamic var rawChangedFields: Int16 = 0
+    /// Raw value for `UpdatableChangeType`, indicates whether current update of item has been made by user or sync process.
+    @objc dynamic var rawChangeType: Int = 0
 
     // MARK: - Object properties
 

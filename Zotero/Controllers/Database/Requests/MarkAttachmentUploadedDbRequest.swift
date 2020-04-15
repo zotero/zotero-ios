@@ -20,5 +20,6 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
         guard let attachment = database.objects(RItem.self)
                                        .filter(.key(self.key, in: self.libraryId)).first else { return }
         attachment.attachmentNeedsSync = false
+        attachment.changeType = .sync
     }
 }

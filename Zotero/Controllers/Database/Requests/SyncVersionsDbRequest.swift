@@ -19,7 +19,7 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     let syncType: SyncController.SyncType
     let delayIntervals: [Double]
 
-    var needsWrite: Bool { return true }
+    var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> [String] {
         let allKeys = Array(self.versions.keys)
@@ -65,7 +65,7 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     let versions: [Int: Int]
     let syncAll: Bool
 
-    var needsWrite: Bool { return true }
+    var needsWrite: Bool { return false }
 
     func process(in database: Realm) throws -> ([Int], [(Int, String)]) {
         let allKeys = Array(self.versions.keys)

@@ -25,7 +25,7 @@ protocol Syncable: class {
     var customLibrary: RCustomLibrary? { get set }
     var group: RGroup? { get set }
     var version: Int { get set }
-    var syncState: ObjectSyncState { get set }
+    var rawSyncState: Int { get set }
     var lastSyncDate: Date { get set }
     var syncRetries: Int { get set }
 }
@@ -55,6 +55,16 @@ extension Syncable {
             case .group(let object):
                 self.group = object
             }
+        }
+    }
+
+    var syncState: ObjectSyncState {
+        get {
+            return ObjectSyncState(rawValue: self.rawSyncState) ?? .synced
+        }
+
+        set {
+            self.rawSyncState = newValue.rawValue
         }
     }
 }

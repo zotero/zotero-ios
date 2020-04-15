@@ -1,5 +1,5 @@
 //
-//  StoreNoteDbRequest.swift
+//  EditNoteDbRequest.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 07/10/2019.

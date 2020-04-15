@@ -147,7 +147,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         jsonResponse: (objectResponses[object] ?? [:]))
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
@@ -348,7 +348,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         jsonResponse: (objectResponses[object] ?? [:]))
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: myLibrary, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["tagColors" : ["value": [], "version": 2]])
@@ -444,7 +444,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         jsonResponse: [:])
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["tagColors" : ["value": [], "version": 2]])
@@ -570,7 +570,7 @@ class SyncControllerSpec: QuickSpec {
                                             jsonResponse: [:])
                         }
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, keys: itemKey),
                                     baseUrl: baseUrl, headers: header, jsonResponse: itemResponse)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
@@ -647,7 +647,7 @@ class SyncControllerSpec: QuickSpec {
                                             jsonResponse: [:])
                         }
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                         keys: "\(unsyncedItemKey),\(responseItemKey)"),
                                     baseUrl: baseUrl, headers: header, jsonResponse: itemResponse)
@@ -727,7 +727,7 @@ class SyncControllerSpec: QuickSpec {
                                             jsonResponse: [:])
                         }
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                         keys: "\(correctKey),\(incorrectKey)"),
                                     baseUrl: baseUrl, headers: header, jsonResponse: itemResponse)
@@ -862,7 +862,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         jsonResponse: (objectResponses[object] ?? [:]))
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
@@ -1025,7 +1025,7 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header,
                                         jsonResponse: (objectResponses[object] ?? [:]))
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 1]])
@@ -1120,7 +1120,7 @@ class SyncControllerSpec: QuickSpec {
                                                             "data": ["name": "A"]]]
                     let objectResponses: [SyncObject: Any] = [.collection: collectionData]
 
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                                 keys: [collectionKey], version: 1),
                                     baseUrl: baseUrl, headers: header, statusCode: 412, jsonResponse: [:])
@@ -1276,7 +1276,7 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
                     waitUntil(timeout: 10) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
@@ -1386,7 +1386,7 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
                     waitUntil(timeout: 10) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
@@ -1472,7 +1472,7 @@ class SyncControllerSpec: QuickSpec {
                         return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
                     SyncControllerSpec.createNewSyncController()
 
@@ -1516,7 +1516,7 @@ class SyncControllerSpec: QuickSpec {
 
                     let update = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                 params: [], version: oldVersion)
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     // We don't care about specific post params, we just need to catch all updates for given type
                     createStub(for: update, ignorePostParams: true, baseUrl: baseUrl,
                                headers: ["last-modified-version": "\(newVersion)"],
@@ -1564,7 +1564,7 @@ class SyncControllerSpec: QuickSpec {
                         downloadCalled = true
                         return OHHTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
                     })
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["collections": [], "searches": [], "items": [], "tags": []])
@@ -1623,7 +1623,7 @@ class SyncControllerSpec: QuickSpec {
                         realm.add(search)
                     }
 
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: SubmitDeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                                 keys: [collectionKey], version: 0),
                                     baseUrl: baseUrl, headers: header, jsonResponse: [:])
@@ -1735,7 +1735,7 @@ class SyncControllerSpec: QuickSpec {
 
                 createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .group, version: nil),
                                 baseUrl: baseUrl, headers: nil, statusCode: 304, jsonResponse: [:])
-                createStub(for: KeyRequest(), baseUrl: baseUrl, jsonResponse: ["access": ["":""]])
+                createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
                 SyncControllerSpec.createNewSyncController()
 

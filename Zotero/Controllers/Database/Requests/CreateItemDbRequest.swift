@@ -34,6 +34,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         database.add(item)
 
         // Assign library object
+        
         switch self.libraryId {
         case .custom(let type):
             let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
@@ -132,6 +133,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         item.updateDerivedTitles()
         // Update changed fields
         item.changedFields = changes
+        item.changeType = .user
 
         return item
     }

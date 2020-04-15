@@ -30,6 +30,7 @@ struct DeleteItemsFromCollectionDbRequest: DbRequest {
             if let index = item.collections.index(of: collection) {
                 item.collections.remove(at: index)
                 item.changedFields.insert(.collections)
+                item.changeType = .user
             }
         }
     }

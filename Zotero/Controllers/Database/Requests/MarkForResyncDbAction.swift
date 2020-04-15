@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
+struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
     let libraryId: LibraryIdentifier
     let keys: [String]
 
@@ -32,6 +32,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject>: DbRequest {
             }
             object.syncRetries += 1
             object.lastSyncDate = syncDate
+            object.changeType = .sync
             if let index = toCreate.firstIndex(of: object.key) {
                 toCreate.remove(at: index)
             }

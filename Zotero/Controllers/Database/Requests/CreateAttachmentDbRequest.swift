@@ -29,6 +29,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.set(title: self.attachment.title)
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         item.changedFields = [.type, .fields, .tags]
+        item.changeType = .user
         item.attachmentNeedsSync = true
         item.dateAdded = Date()
         item.dateModified = Date()

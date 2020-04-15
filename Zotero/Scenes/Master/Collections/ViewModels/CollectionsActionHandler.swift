@@ -195,9 +195,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func delete<Obj: DeletableObject>(object: Obj.Type,
-                                              keys: [String],
-                                              in viewModel: ViewModel<CollectionsActionHandler>) {
+    private func delete<Obj: DeletableObject&Updatable>(object: Obj.Type,
+                                                        keys: [String],
+                                                        in viewModel: ViewModel<CollectionsActionHandler>) {
         do {
             let request = MarkObjectsAsDeletedDbRequest<Obj>(keys: keys, libraryId: viewModel.state.library.identifier)
             try self.dbStorage.createCoordinator().perform(request: request)

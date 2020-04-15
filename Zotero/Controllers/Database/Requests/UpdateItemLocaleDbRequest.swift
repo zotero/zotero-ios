@@ -24,6 +24,7 @@ struct UpdateItemLocaleDbRequest: DbRequest {
             if let localized = self.locale.itemTypes[item.rawType] {
                 if item.localizedType != localized {
                     item.localizedType = localized
+                    item.changeType = .sync
                 }
             }
         }

@@ -24,11 +24,10 @@
 		B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */; };
 		B30565B623FC051E003304F2 /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */; };
 		B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */; };
-		B30565B823FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643D23FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift */; };
+		B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */; };
 		B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */; };
-		B30565BA23FC051E003304F2 /* StoreCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643F23FC051E003304F2 /* StoreCollectionDbRequest.swift */; };
+		B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */; };
 		B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644023FC051E003304F2 /* ReadItemDbRequest.swift */; };
-		B30565BC23FC051E003304F2 /* ResolveItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644123FC051E003304F2 /* ResolveItemDbRequest.swift */; };
 		B30565BD23FC051E003304F2 /* DeleteGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */; };
 		B30565BE23FC051E003304F2 /* CreateItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644323FC051E003304F2 /* CreateItemDbRequest.swift */; };
 		B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */; };
@@ -36,11 +35,11 @@
 		B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644623FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift */; };
 		B30565C223FC051E003304F2 /* ReadTagsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644723FC051E003304F2 /* ReadTagsDbRequest.swift */; };
 		B30565C323FC051E003304F2 /* ReadAllGroupsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644823FC051E003304F2 /* ReadAllGroupsDbRequest.swift */; };
-		B30565C423FC051E003304F2 /* StoreItemDetailChangesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644923FC051E003304F2 /* StoreItemDetailChangesDbRequest.swift */; };
+		B30565C423FC051E003304F2 /* EditItemDetailDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644923FC051E003304F2 /* EditItemDetailDbRequest.swift */; };
 		B30565C523FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644A23FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift */; };
 		B30565C623FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644B23FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift */; };
 		B30565C723FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644C23FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift */; };
-		B30565C823FC051E003304F2 /* StoreNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644D23FC051E003304F2 /* StoreNoteDbRequest.swift */; };
+		B30565C823FC051E003304F2 /* EditNoteDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */; };
 		B30565C923FC051E003304F2 /* UpdateItemLocaleDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */; };
 		B30565CA23FC051E003304F2 /* PerformDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */; };
 		B30565CB23FC051E003304F2 /* ReadSearchDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305645023FC051E003304F2 /* ReadSearchDbRequest.swift */; };
@@ -61,7 +60,6 @@
 		B30565DA23FC051E003304F2 /* UpdateVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */; };
 		B30565DB23FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646023FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift */; };
 		B30565DC23FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646123FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift */; };
-		B30565DD23FC051E003304F2 /* ResolveReferenceDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646223FC051E003304F2 /* ResolveReferenceDbRequest.swift */; };
 		B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */; };
 		B30565DF23FC051E003304F2 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646423FC051E003304F2 /* ReadSearchesDbRequest.swift */; };
 		B30565E023FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
@@ -233,7 +231,7 @@
 		B305670323FC08A4003304F2 /* PerformDeletionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */; };
 		B305670423FC08A6003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646023FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift */; };
 		B305670523FC08A8003304F2 /* ReadAllGroupsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644823FC051E003304F2 /* ReadAllGroupsDbRequest.swift */; };
-		B305670623FC08AB003304F2 /* ReadAnyChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643D23FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift */; };
+		B305670623FC08AB003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */; };
 		B305670723FC08AF003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */; };
 		B305670823FC08B1003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644523FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift */; };
 		B305670923FC08B3003304F2 /* ReadCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305645E23FC051E003304F2 /* ReadCollectionDbRequest.swift */; };
@@ -246,9 +244,7 @@
 		B305671023FC08C3003304F2 /* ReadSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646423FC051E003304F2 /* ReadSearchesDbRequest.swift */; };
 		B305671123FC08C5003304F2 /* ReadTagsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644723FC051E003304F2 /* ReadTagsDbRequest.swift */; };
 		B305671223FC08C7003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644C23FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift */; };
-		B305671323FC08C9003304F2 /* ResolveItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305644123FC051E003304F2 /* ResolveItemDbRequest.swift */; };
-		B305671423FC08CB003304F2 /* ResolveReferenceDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646223FC051E003304F2 /* ResolveReferenceDbRequest.swift */; };
-		B305671523FC08CD003304F2 /* StoreCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643F23FC051E003304F2 /* StoreCollectionDbRequest.swift */; };
+		B305671523FC08CD003304F2 /* EditCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */; };
 		B305671623FC08CF003304F2 /* StoreCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */; };
 		B305671723FC08D3003304F2 /* StoreGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */; };
 		B305671923FC08D8003304F2 /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */; };
@@ -458,6 +454,7 @@
 		B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F75241A76E600760E20 /* CollectionPickerView.swift */; };
 		B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F76241A76E600760E20 /* CollectionEditView.swift */; };
 		B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */; };
+		B365304E24473F40003C80B1 /* test_keys.json in Resources */ = {isa = PBXBuildFile; fileRef = B365304D24473F40003C80B1 /* test_keys.json */; };
 		B36A988B2428DA5D005D5790 /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
 		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
@@ -593,11 +590,10 @@
 		B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsSyncedDbRequest.swift; sourceTree = "<group>"; };
 		B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemsDbRequest.swift; sourceTree = "<group>"; };
 		B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
-		B305643D23FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadAnyChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
+		B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadUserChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteItemsFromCollectionDbRequest.swift; sourceTree = "<group>"; };
-		B305643F23FC051E003304F2 /* StoreCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreCollectionDbRequest.swift; sourceTree = "<group>"; };
+		B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditCollectionDbRequest.swift; sourceTree = "<group>"; };
 		B305644023FC051E003304F2 /* ReadItemDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadItemDbRequest.swift; sourceTree = "<group>"; };
-		B305644123FC051E003304F2 /* ResolveItemDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResolveItemDbRequest.swift; sourceTree = "<group>"; };
 		B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteGroupDbRequest.swift; sourceTree = "<group>"; };
 		B305644323FC051E003304F2 /* CreateItemDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemDbRequest.swift; sourceTree = "<group>"; };
 		B305644423FC051E003304F2 /* CheckItemIsChangedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CheckItemIsChangedDbRequest.swift; sourceTree = "<group>"; };
@@ -605,11 +601,11 @@
 		B305644623FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsDeletedDbRequest.swift; sourceTree = "<group>"; };
 		B305644723FC051E003304F2 /* ReadTagsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadTagsDbRequest.swift; sourceTree = "<group>"; };
 		B305644823FC051E003304F2 /* ReadAllGroupsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadAllGroupsDbRequest.swift; sourceTree = "<group>"; };
-		B305644923FC051E003304F2 /* StoreItemDetailChangesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemDetailChangesDbRequest.swift; sourceTree = "<group>"; };
+		B305644923FC051E003304F2 /* EditItemDetailDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditItemDetailDbRequest.swift; sourceTree = "<group>"; };
 		B305644A23FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkItemsAsTrashedDbRequest.swift; sourceTree = "<group>"; };
 		B305644B23FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadDeletedObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B305644C23FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadUpdatedObjectUpdateParametersDbRequest.swift; sourceTree = "<group>"; };
-		B305644D23FC051E003304F2 /* StoreNoteDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreNoteDbRequest.swift; sourceTree = "<group>"; };
+		B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditNoteDbRequest.swift; sourceTree = "<group>"; };
 		B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateItemLocaleDbRequest.swift; sourceTree = "<group>"; };
 		B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PerformDeletionsDbRequest.swift; sourceTree = "<group>"; };
 		B305645023FC051E003304F2 /* ReadSearchDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadSearchDbRequest.swift; sourceTree = "<group>"; };
@@ -630,7 +626,6 @@
 		B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateVersionsDbRequest.swift; sourceTree = "<group>"; };
 		B305646023FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadAllCustomLibrariesDbRequest.swift; sourceTree = "<group>"; };
 		B305646123FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AssignItemsToCollectionsDbRequest.swift; sourceTree = "<group>"; };
-		B305646223FC051E003304F2 /* ResolveReferenceDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResolveReferenceDbRequest.swift; sourceTree = "<group>"; };
 		B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncVersionsDbRequest.swift; sourceTree = "<group>"; };
 		B305646423FC051E003304F2 /* ReadSearchesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadAnyChangedObjectsInLibraryDbRequest.swift; sourceTree = "<group>"; };
@@ -868,6 +863,7 @@
 		B3593F75241A76E600760E20 /* CollectionPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionPickerView.swift; sourceTree = "<group>"; };
 		B3593F76241A76E600760E20 /* CollectionEditView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditView.swift; sourceTree = "<group>"; };
 		B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditingCoordinator.swift; sourceTree = "<group>"; };
+		B365304D24473F40003C80B1 /* test_keys.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_keys.json; sourceTree = "<group>"; };
 		B36A988A2428DA5D005D5790 /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
@@ -1053,6 +1049,9 @@
 				B305644223FC051E003304F2 /* DeleteGroupDbRequest.swift */,
 				B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */,
 				B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */,
+				B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */,
+				B305644923FC051E003304F2 /* EditItemDetailDbRequest.swift */,
+				B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */,
 				B305645223FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift */,
 				B305645423FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
 				B305645623FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift */,
@@ -1066,7 +1065,7 @@
 				B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */,
 				B305646023FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift */,
 				B305644823FC051E003304F2 /* ReadAllGroupsDbRequest.swift */,
-				B305643D23FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift */,
+				B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */,
 				B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */,
 				B305644523FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift */,
 				B305645E23FC051E003304F2 /* ReadCollectionDbRequest.swift */,
@@ -1079,21 +1078,16 @@
 				B305646423FC051E003304F2 /* ReadSearchesDbRequest.swift */,
 				B305644723FC051E003304F2 /* ReadTagsDbRequest.swift */,
 				B305644C23FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift */,
-				B305644123FC051E003304F2 /* ResolveItemDbRequest.swift */,
-				B305646223FC051E003304F2 /* ResolveReferenceDbRequest.swift */,
-				B305643F23FC051E003304F2 /* StoreCollectionDbRequest.swift */,
+				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
-				B305644923FC051E003304F2 /* StoreItemDetailChangesDbRequest.swift */,
 				B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */,
-				B305644D23FC051E003304F2 /* StoreNoteDbRequest.swift */,
 				B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */,
 				B305645123FC051E003304F2 /* StoreSettingsDbRequest.swift */,
 				B300B3372429254900C1FE1E /* SyncTranslatorsDbRequest.swift */,
 				B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */,
 				B305644E23FC051E003304F2 /* UpdateItemLocaleDbRequest.swift */,
 				B305645F23FC051E003304F2 /* UpdateVersionsDbRequest.swift */,
-				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
 			);
 			path = Requests;
 			sourceTree = "<group>";
@@ -1322,8 +1316,9 @@
 			isa = PBXGroup;
 			children = (
 				B307E55922D49A1F00592B3C /* test_collection.json */,
-				B307E55822D49A1F00592B3C /* test_search.json */,
 				B3BC05A922D3C00100D45B92 /* test_item.json */,
+				B365304D24473F40003C80B1 /* test_keys.json */,
+				B307E55822D49A1F00592B3C /* test_search.json */,
 			);
 			path = JSONs;
 			sourceTree = "<group>";
@@ -2085,6 +2080,7 @@
 				B3F47C0E243B764F004F8B1E /* translators_delete.xml in Resources */,
 				B3F47C05243B4BC0004F8B1E /* bundled in Resources */,
 				B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */,
+				B365304E24473F40003C80B1 /* test_keys.json in Resources */,
 				B307E55A22D49A1F00592B3C /* test_search.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2284,7 +2280,7 @@
 				B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
-				B30565BA23FC051E003304F2 /* StoreCollectionDbRequest.swift in Sources */,
+				B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */,
 				B3DCDECB2408F36E0039ED0D /* OnboardingButton.swift in Sources */,
 				B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */,
 				B30566BF23FC051F003304F2 /* AttachmentUpload.swift in Sources */,
@@ -2292,7 +2288,6 @@
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
 				B3593F35241A61C700760E20 /* ItemDetailTableViewHandler.swift in Sources */,
-				B30565DD23FC051E003304F2 /* ResolveReferenceDbRequest.swift in Sources */,
 				B3DCDF0C240912370039ED0D /* SinglePickerState.swift in Sources */,
 				B305661D23FC051E003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
 				B30566B223FC051F003304F2 /* UpdatesResponse.swift in Sources */,
@@ -2325,7 +2320,7 @@
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
 				B305660423FC051E003304F2 /* ObservableRequestExtensions.swift in Sources */,
 				B305667D23FC051F003304F2 /* Color+Extension.swift in Sources */,
-				B30565C823FC051E003304F2 /* StoreNoteDbRequest.swift in Sources */,
+				B30565C823FC051E003304F2 /* EditNoteDbRequest.swift in Sources */,
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
@@ -2449,7 +2444,6 @@
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
 				B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */,
 				B30565FF23FC051E003304F2 /* BackgroundUploadProcessor.swift in Sources */,
-				B30565BC23FC051E003304F2 /* ResolveItemDbRequest.swift in Sources */,
 				B3593F3F241A61C700760E20 /* ItemRow.swift in Sources */,
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,
 				B30565E423FC051E003304F2 /* RealmDbStorage.swift in Sources */,
@@ -2484,7 +2478,7 @@
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */,
-				B30565B823FC051E003304F2 /* ReadAnyChangedObjectsDbRequest.swift in Sources */,
+				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B3593F54241A61C700760E20 /* CollectionsError.swift in Sources */,
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,
@@ -2505,7 +2499,7 @@
 				B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3DCDF21240945D80039ED0D /* CollectionPickerState.swift in Sources */,
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
-				B30565C423FC051E003304F2 /* StoreItemDetailChangesDbRequest.swift in Sources */,
+				B30565C423FC051E003304F2 /* EditItemDetailDbRequest.swift in Sources */,
 				B305662023FC051F003304F2 /* SyncSettingsSyncAction.swift in Sources */,
 				B30566A623FC051F003304F2 /* Files.swift in Sources */,
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,
@@ -2702,7 +2696,6 @@
 				B305672523FC0909003304F2 /* DeleteGroupSyncAction.swift in Sources */,
 				B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */,
 				B305670323FC08A4003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
-				B305671423FC08CB003304F2 /* ResolveReferenceDbRequest.swift in Sources */,
 				B30566E823FC0823003304F2 /* SubmitDeletionsRequest.swift in Sources */,
 				B305672C23FC0918003304F2 /* MarkForResyncSyncAction.swift in Sources */,
 				B305672023FC08EC003304F2 /* DbStorage.swift in Sources */,
@@ -2721,7 +2714,7 @@
 				B305677623FC0BE0003304F2 /* CreatorSummaryFormatter.swift in Sources */,
 				B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */,
 				B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */,
-				B305670623FC08AB003304F2 /* ReadAnyChangedObjectsDbRequest.swift in Sources */,
+				B305670623FC08AB003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B305672123FC08EF003304F2 /* RealmDbStorage.swift in Sources */,
 				B30566E223FC0810003304F2 /* DeletionsRequest.swift in Sources */,
 				B305673A23FC0938003304F2 /* SyncScheduler.swift in Sources */,
@@ -2748,7 +2741,6 @@
 				B378F4D1242D0E4900B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B30566DE23FC0804003304F2 /* BackgroundUploader.swift in Sources */,
 				B305671623FC08CF003304F2 /* StoreCollectionsDbRequest.swift in Sources */,
-				B305671323FC08C9003304F2 /* ResolveItemDbRequest.swift in Sources */,
 				B305672923FC0911003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B305670D23FC08BC003304F2 /* ReadItemsDbRequest.swift in Sources */,
 				B30566F723FC0855003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
@@ -2769,7 +2761,7 @@
 				B305671723FC08D3003304F2 /* StoreGroupDbRequest.swift in Sources */,
 				B3027C1E23BDB2B8007F5B26 /* ItemPickerView.swift in Sources */,
 				B305677923FC0C4D003304F2 /* FileManager+Utils.swift in Sources */,
-				B305671523FC08CD003304F2 /* StoreCollectionDbRequest.swift in Sources */,
+				B305671523FC08CD003304F2 /* EditCollectionDbRequest.swift in Sources */,
 				B305677F23FC0D0A003304F2 /* SessionController.swift in Sources */,
 				B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */,
 				B30566F623FC0853003304F2 /* DeleteGroupDbRequest.swift in Sources */,

@@ -12,8 +12,14 @@ import RealmSwift
 
 typealias UpdatableObject = Updatable&Object
 
+enum UpdatableChangeType: Int {
+    case sync = 0
+    case user = 1
+}
+
 protocol Updatable: class {
     var rawChangedFields: Int16 { get set }
+    var rawChangeType: Int { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
 
@@ -22,13 +28,23 @@ protocol Updatable: class {
 
 extension Updatable {
     func resetChanges() {
-        if self.isChanged {
-            self.rawChangedFields = 0
-        }
+        guard self.isChanged else { return }
+        self.rawChangedFields = 0
+        self.rawChangeType = 0
     }
 
     var isChanged: Bool {
         return self.rawChangedFields > 0
+    }
+
+    var changeType: UpdatableChangeType {
+        get {
+            return UpdatableChangeType(rawValue: self.rawChangeType) ?? .sync
+        }
+
+        set {
+            self.rawChangeType = newValue.rawValue
+        }
     }
 }
 
@@ -138,7 +154,10 @@ extension RItem: Updatable {
     }
 
     func resetChanges() {
+        guard self.isChanged else { return }
+
         self.rawChangedFields = 0
+        self.rawChangeType = 0
         self.fields.filter("changed = true").forEach { field in
             field.changed = false
         }

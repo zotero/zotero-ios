@@ -12,7 +12,6 @@ import Alamofire
 
 enum SyncError: Error {
     case cancelled
-    // Abort (fatal) errors
     case noInternetConnection
     case apiError
     case dbError
@@ -21,6 +20,7 @@ enum SyncError: Error {
     case allLibrariesFetchFailed(Error)
     case uploadObjectConflict
     case permissionLoadingFailed
+    case missingGroupPermissions
 }
 
 /// Errors for sync actions

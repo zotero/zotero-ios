@@ -221,7 +221,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     private func saveNote(text: String, key: String, in viewModel: ViewModel<ItemsActionHandler>) {
         let note = Note(key: key, text: text)
-        let request = StoreNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
+        let request = EditNoteDbRequest(note: note, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't save note: \(error)")
