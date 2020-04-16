@@ -44,7 +44,6 @@ class ItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.definesPresentationContext = true
         self.navigationItem.rightBarButtonItem = self.rightNavigationBarItem(for: self.viewModel.state)
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
