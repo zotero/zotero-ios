@@ -13,6 +13,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
     private var coordinator: AppCoordinator!
+    private weak var activityCounter: SceneActivityCounter?
     private var sessionCancellable: AnyCancellable?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -21,6 +22,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let windowScene = scene as? UIWindowScene
         let frame = windowScene?.coordinateSpace.bounds ?? UIScreen.main.bounds
 
+        // Assign activity counter
+        self.activityCounter = delegate
         // Create window for scene
         self.window = UIWindow(frame: frame)
         self.window?.windowScene = windowScene
@@ -30,6 +33,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.coordinator.start()
         // Start observing
         self.setupObservers(controllers: delegate.controllers)
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        self.activityCounter?.sceneWillEnterForeground()
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        self.activityCounter?.sceneDidEnterBackground()
     }
 
     private func setupObservers(controllers: Controllers) {

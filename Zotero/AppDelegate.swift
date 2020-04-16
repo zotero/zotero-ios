@@ -15,9 +15,15 @@ import SwiftUI
 import PSPDFKit
 #endif
 
+protocol SceneActivityCounter: class {
+    func sceneWillEnterForeground()
+    func sceneDidEnterBackground()
+}
+
 class AppDelegate: UIResponder {
     var window: UIWindow?
     var controllers: Controllers!
+    private var foregroundSceneCount = 0
 
     // MARK: - Setups
 
@@ -41,6 +47,24 @@ class AppDelegate: UIResponder {
     }
 }
 
+extension AppDelegate: SceneActivityCounter {
+    func sceneDidEnterBackground() {
+        self.foregroundSceneCount -= 1
+
+        if self.foregroundSceneCount == 0 {
+            self.applicationDidEnterBackground(UIApplication.shared)
+        }
+    }
+
+    func sceneWillEnterForeground() {
+        if self.foregroundSceneCount == 0 {
+            self.applicationWillEnterForeground(UIApplication.shared)
+        }
+
+        self.foregroundSceneCount += 1
+    }
+}
+
 extension AppDelegate: UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -58,8 +82,6 @@ extension AppDelegate: UIApplicationDelegate {
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.window?.makeKeyAndVisible()
         self.setupNavigationBarAppearance()
-        // `willEnterForegound` is not called after launching the app for the first time.
-        self.controllers.willEnterForeground()
 
         return true
     }
