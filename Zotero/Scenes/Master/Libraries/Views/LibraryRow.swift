@@ -17,7 +17,7 @@ struct LibraryRow: View {
                 .renderingMode(.template)
                 .foregroundColor(.blue)
             Text(self.title)
-                .foregroundColor(.black)
+                .foregroundColor(.primary)
                 .lineLimit(1)
         }
     }

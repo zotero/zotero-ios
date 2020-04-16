@@ -30,7 +30,7 @@ class NoteEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = .white
+        self.view.backgroundColor = self.traitCollection.userInterfaceStyle == .light ? .white : .black
         self.setupNavbarItems()
         self.setupWebView()
         self.loadEditor()

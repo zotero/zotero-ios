@@ -25,6 +25,7 @@ class ItemDetailFieldCell: UITableViewCell {
         super.awakeFromNib()
 
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
+        self.valueLabel.textColor = self.traitCollection.userInterfaceStyle == .light ? .black : .white
     }
 
     func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {

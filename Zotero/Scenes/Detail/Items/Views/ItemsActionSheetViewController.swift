@@ -39,6 +39,7 @@ class ItemsActionSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.menuView.backgroundColor = self.traitCollection.userInterfaceStyle == .light ? .white : UIColor.black.withAlphaComponent(0.6)
         self.setupBackgroundGesture()
         self.setupActions(metadataEditable: self.viewModel.state.library.metadataEditable,
                           filesEditable: self.viewModel.state.library.filesEditable,

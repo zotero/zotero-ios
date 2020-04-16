@@ -8,7 +8,8 @@
 <script type="text/javascript">
     tinymce.init({
         selector: "#tinymce",
-        content_css: "css/note-content.css",
+        skin: (window.matchMedia("(prefers-color-scheme: dark)").matches ? "oxide-dark" : ""),
+        content_css: (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "css/note-content.css"),
         height: "100%",
 
         browser_spellcheck: true,

@@ -19,7 +19,7 @@ class ItemDetailTagCell: UITableViewCell {
     }
 
     func setup(with tag: Tag) {
-        self.tagView.backgroundColor = UIColor(hex: tag.color)
+        self.tagView.backgroundColor = TagColorGenerator.uiColor(for: tag.color, style: self.traitCollection.userInterfaceStyle)
         self.label.text = tag.name
     }
 }

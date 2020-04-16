@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct TagCirclesView: View {
+    @Environment(\.colorScheme) var colorScheme
+
     let colors: [String]
     let height: CGFloat
 
@@ -16,7 +18,7 @@ struct TagCirclesView: View {
         ZStack {
             ForEach(self.colors.indices) { index in
                 Circle()
-                    .foregroundColor(Color(hex: self.colors[index]))
+                    .foregroundColor(TagColorGenerator.color(for: self.colors[index], scheme: self.colorScheme))
                     .overlay(
                         Circle()
                             .strokeBorder(style: StrokeStyle(lineWidth: 1))

@@ -150,6 +150,7 @@ class ItemsViewController: UIViewController {
     }
 
     private func updateToolbarItems() {
+        self.traitCollection.userInterfaceStyle
         self.toolbarItems?.forEach({ item in
             switch item.tag {
             case ItemsViewController.barButtonItemEmptyTag:

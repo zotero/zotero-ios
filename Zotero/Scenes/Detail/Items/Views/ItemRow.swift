@@ -29,9 +29,13 @@ struct ItemRow: View {
                     Spacer()
                     if self.item.hasAttachment {
                         Image("indicator_attachment")
+                            .renderingMode(.template)
+                            .foregroundColor(.primary)
                     }
                     if self.item.hasNote {
                         Image("indicator_note")
+                            .renderingMode(.template)
+                            .foregroundColor(.primary)
                     }
                     TagCirclesView(colors: self.item.tagHexColors, height: 16)
                 }

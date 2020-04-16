@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct TagPickerView: View {
+    @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var viewModel: ViewModel<TagPickerActionHandler>
 
     let saveAction: ([Tag]) -> Void
@@ -17,7 +18,7 @@ struct TagPickerView: View {
     var body: some View {
         List(selection: self.viewModel.binding(keyPath: \.selectedTags, action: { .setSelected($0) })) {
             ForEach(self.viewModel.state.tags) { tag in
-                TagView(color: .init(hex: tag.color), name: tag.name)
+                TagView(color: TagColorGenerator.color(for: tag.color, scheme: self.colorScheme), name: tag.name)
             }
         }
         .navigationBarItems(leading: self.leadingBarItems, trailing: self.trailingBarItems)

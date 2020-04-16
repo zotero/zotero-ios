@@ -34,7 +34,7 @@ struct CollectionEditView: View {
                             .renderingMode(.template)
                             .foregroundColor(.blue)
                         Text(self.viewModel.state.parent?.name ?? self.viewModel.state.library.name)
-                            .foregroundColor(.black)
+                            .foregroundColor(.primary)
                         Spacer()
                         Image(systemName: "chevron.right").foregroundColor(.gray)
                     }

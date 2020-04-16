@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct CollectionRow: View {
+    @Environment(\.colorScheme) var colorScheme
+
     static let levelOffset: CGFloat = 20.0
     let data: Collection
 
@@ -19,7 +21,7 @@ struct CollectionRow: View {
                     .renderingMode(.template)
                     .foregroundColor(.blue)
                 Text(self.data.name)
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
                     .lineLimit(1)
 
                 Spacer()
@@ -31,7 +33,7 @@ struct CollectionRow: View {
                         .padding(.horizontal, 8)
                         .background(
                             Rectangle()
-                                .foregroundColor(Color.gray.opacity(0.2))
+                                .foregroundColor(self.badgeBackgroundColor)
                                 .cornerRadius(proxy.size.height/2.0)
                         )
                 }
@@ -63,6 +65,10 @@ struct CollectionRow: View {
     private func inset(for level: Int) -> CGFloat {
         let offset = CollectionRow.levelOffset
         return offset + (CGFloat(level) * offset)
+    }
+
+    private var badgeBackgroundColor: Color {
+        return Color.gray.opacity(self.colorScheme == .dark ? 0.5 : 0.2)
     }
 }
 
