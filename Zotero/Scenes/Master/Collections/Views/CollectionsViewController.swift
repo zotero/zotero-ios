@@ -65,11 +65,9 @@ class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        self.selectCurrentRowIfNeeded()
         if self.coordinatorDelegate?.isSplit == true {
             self.coordinatorDelegate?.show(collection: self.viewModel.state.selectedCollection, in: self.viewModel.state.library)
-            if let index = self.viewModel.state.collections.firstIndex(of: self.viewModel.state.selectedCollection) {
-                self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
-            }
         }
     }
 
@@ -77,17 +75,28 @@ class CollectionsViewController: UIViewController {
 
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
-            self.tableViewHandler.update(collections: state.collections, animated: true)
+            self.tableViewHandler.update(collections: state.collections, animated: true, completed: { [weak self] in
+                self?.selectCurrentRowIfNeeded()
+            })
             self.coordinatorDelegate?.collectionsChanged(to: state.collections)
         }
         if state.changes.contains(.itemCount) {
-            self.tableViewHandler.update(collections: state.collections, animated: false)
+            self.tableViewHandler.update(collections: state.collections, animated: false, completed: { [weak self] in
+                self?.selectCurrentRowIfNeeded()
+            })
         }
         if state.changes.contains(.selection) {
             self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)
         }
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
+        }
+    }
+
+    private func selectCurrentRowIfNeeded() {
+        guard self.coordinatorDelegate?.isSplit == true else { return }
+        if let index = self.viewModel.state.collections.firstIndex(of: self.viewModel.state.selectedCollection) {
+            self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
         }
     }
 

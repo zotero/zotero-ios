@@ -34,11 +34,11 @@ class CollectionsTableViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func update(collections: [Collection], animated: Bool) {
+    func update(collections: [Collection], animated: Bool, completed: (() -> Void)? = nil) {
         var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
         snapshot.appendSections([0])
         snapshot.appendItems(collections, toSection: 0)
-        self.dataSource.apply(snapshot, animatingDifferences: animated, completion: nil)
+        self.dataSource.apply(snapshot, animatingDifferences: animated, completion: completed)
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu {
