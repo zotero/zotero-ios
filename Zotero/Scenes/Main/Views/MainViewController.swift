@@ -151,22 +151,13 @@ class MainViewController: UISplitViewController {
 
     private func setupControllers() {
         let masterController = UINavigationController()
-        let detailController = UINavigationController()
-
         let masterCoordinator = MasterCoordinator(navigationController: masterController,
                                                   mainCoordinatorDelegate: self,
                                                   controllers: self.controllers)
         masterCoordinator.start(animated: false)
         self.masterCoordinator = masterCoordinator
 
-        let detailCoordinator = DetailCoordinator(library: masterCoordinator.defaultLibrary,
-                                                  collection: self.defaultCollection,
-                                                  navigationController: detailController,
-                                                  controllers: self.controllers)
-        detailCoordinator.start(animated: false)
-        self.detailCoordinator = detailCoordinator
-
-        self.viewControllers = [masterController, detailController]
+        self.viewControllers = [masterController]
 
         if let progressObservable = self.controllers.userControllers?.syncScheduler.syncController.progressObservable {
             self.syncToolbarController = SyncToolbarController(parent: masterController, progressObservable: progressObservable)
@@ -178,7 +169,7 @@ extension MainViewController: UISplitViewControllerDelegate {
     func splitViewController(_ splitViewController: UISplitViewController,
                              collapseSecondary secondaryViewController: UIViewController,
                              onto primaryViewController: UIViewController) -> Bool {
-        return true
+        return false
     }
 }
 

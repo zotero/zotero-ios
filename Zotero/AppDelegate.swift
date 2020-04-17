@@ -21,7 +21,6 @@ protocol SceneActivityCounter: class {
 }
 
 class AppDelegate: UIResponder {
-    var window: UIWindow?
     var controllers: Controllers!
     private var foregroundSceneCount = 0
 
@@ -74,13 +73,8 @@ extension AppDelegate: UIApplicationDelegate {
         }
         #endif
 
-        // Setup logging
         self.setupLogs()
-        // Setup controllers
         self.controllers = Controllers()
-        // Setup window and appearance
-        self.window = UIWindow(frame: UIScreen.main.bounds)
-        self.window?.makeKeyAndVisible()
         self.setupNavigationBarAppearance()
 
         return true
