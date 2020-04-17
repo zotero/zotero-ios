@@ -67,14 +67,16 @@ class AppCoordinator {
     }
 
     private func presentActivityViewController(with items: [Any], completed: @escaping () -> Void) {
+        guard let viewController = self.viewController else { return }
+
         let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
         controller.completionWithItemsHandler = { (_, _, _, _) in
             completed()
         }
 
-        let viewController = self.viewController
-        controller.popoverPresentationController?.sourceView = viewController?.view
-        viewController?.present(controller, animated: true, completion: nil)
+        controller.popoverPresentationController?.sourceView = viewController.view
+        controller.popoverPresentationController?.sourceRect = viewController.view.frame.insetBy(dx: 100, dy: 100)
+        viewController.present(controller, animated: true, completion: nil)
     }
 
     private func showAlert(title: String, message: String, actions: [UIAlertAction]) {
