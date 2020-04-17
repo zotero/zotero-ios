@@ -129,6 +129,14 @@ class UserControllers {
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploader = backgroundUploader
         self.disposeBag = DisposeBag()
+
+        do {
+            let coordinator = try dbStorage.createCoordinator()
+            try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
+        } catch let error {
+            // TODO: - handle the error a bit more graciously
+            fatalError("UserControllers: can't create custom user library - \(error)")
+        }
     }
 
     /// Called when user logs out and we need to cleanup stored/cached data
@@ -143,14 +151,6 @@ class UserControllers {
     }
 
     func startObserving() {
-        do {
-            let coordinator = try self.dbStorage.createCoordinator()
-            try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
-        } catch let error {
-            // TODO: - handle the error a bit more graciously
-            fatalError("UserControllers: can't create custom user library - \(error)")
-        }
-
         self.changeObserver.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] changedLibraries in
