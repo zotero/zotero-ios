@@ -77,7 +77,7 @@ struct UploadAttachmentSyncAction: SyncAction {
 
         let response = upload.flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionError>> in
                                  switch result {
-                                 case .success(let uploadRequest, let uploadKey):
+                                 case .success((let uploadRequest, let uploadKey)):
                                       return uploadRequest.rx.data()
                                                              .asSingle()
                                                              .flatMap({ Single.just(.success(($0, uploadKey))) })
@@ -87,7 +87,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                              })
                              .flatMap({ result -> Single<Swift.Result<(Data, ResponseHeaders), SyncActionError>> in
                                  switch result {
-                                 case .success(_, let uploadKey):
+                                 case .success((_, let uploadKey)):
                                      let request = RegisterUploadRequest(libraryId: self.libraryId,
                                                                          userId: self.userId,
                                                                          key: self.key,
@@ -122,7 +122,7 @@ struct UploadAttachmentSyncAction: SyncAction {
         let progress = upload.asObservable()
                              .flatMap({ result -> Observable<RxProgress> in
                                  switch result {
-                                 case .success(let uploadRequest, _):
+                                 case .success((let uploadRequest, _)):
                                      return uploadRequest.rx.progress()
                                  case .failure(let error):
                                      return Observable.error(error)

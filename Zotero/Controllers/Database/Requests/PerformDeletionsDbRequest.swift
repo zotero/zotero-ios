@@ -51,7 +51,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     private func deleteItems(with keys: [String], database: Realm) -> [String] {
         let objects = database.objects(RItem.self).filter(.keys(keys, in: self.libraryId))
 
-        var conflicts: [String] = []
+//        var conflicts: [String] = []
 
         for object in objects {
             // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
@@ -64,7 +64,8 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
 //            }
         }
 
-        return conflicts
+//        return conflicts
+        return []
     }
 
     private func deleteCollections(with keys: [String], database: Realm) {

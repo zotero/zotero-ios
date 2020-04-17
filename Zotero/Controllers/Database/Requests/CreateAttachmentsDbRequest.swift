@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjack
 import RealmSwift
 
 struct CreateAttachmentsDbRequest: DbResponseRequest {
@@ -24,6 +25,7 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
             do {
                 _ = try CreateAttachmentDbRequest(attachment: attachment, localizedType: self.localizedType).process(in: database)
             } catch let error {
+                DDLogError("CreateAttachmentsDbRequest: could not create attachment - \(error)")
                 failedTitles.append(attachment.title)
             }
         }

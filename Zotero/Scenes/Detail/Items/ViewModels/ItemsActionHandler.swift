@@ -183,6 +183,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 self.stopEditing(in: &state)
             }
         } catch let error {
+            DDLogError("ItemsActionHandler: could not read item - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .duplicationLoading
             }

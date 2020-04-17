@@ -34,7 +34,7 @@ struct DebugSettingsView: View {
 
             Section {
                 Button(action: {
-                    var test: String? = nil
+                    let test: String? = nil
                     NSLog(test!)
                 }) {
                     Text("Crash!")

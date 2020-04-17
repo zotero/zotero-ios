@@ -68,7 +68,7 @@ class BackgroundUploader: NSObject {
                                             switch result {
                                             case .failure(let error):
                                                 completion(error)
-                                            case .success(let request, let fileUrl):
+                                            case .success((let request, let fileUrl)):
                                                 self?.startUpload(upload.copy(with: fileUrl), request: request)
                                                 completion(nil)
                                             }

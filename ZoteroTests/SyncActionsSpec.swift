@@ -332,18 +332,21 @@ class SyncActionsSpec: QuickSpec {
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
                                                fileStorage: SyncActionsSpec.fileStorage).result
-                                         .flatMap({ response, _ -> Single<Never> in
-                                             return response.asObservable().asSingle()
-                                         })
-                                         .subscribe(onSuccess: { test in
-                                             fail("Upload didn't fail with unsubmitted item")
-                                             doneAction()
+                                         .subscribe(onSuccess: { response, _ in
+                                             response.subscribe(onCompleted: {
+                                                 fail("Upload didn't fail with unsubmitted item")
+                                                 doneAction()
+                                             }, onError: { error in
+                                                 if let handlerError = error as? SyncActionError {
+                                                     expect(handlerError).to(equal(.attachmentItemNotSubmitted))
+                                                 } else {
+                                                     fail("Unknown error: \(error.localizedDescription)")
+                                                 }
+                                                 doneAction()
+                                             })
+                                             .disposed(by: SyncActionsSpec.disposeBag)
                                          }, onError: { error in
-                                             if let handlerError = error as? SyncActionError {
-                                                 expect(handlerError).to(equal(.attachmentItemNotSubmitted))
-                                             } else {
-                                                 fail("Unknown error: \(error.localizedDescription)")
-                                             }
+                                             fail("Unknown error: \(error.localizedDescription)")
                                              doneAction()
                                          })
                                          .disposed(by: SyncActionsSpec.disposeBag)
