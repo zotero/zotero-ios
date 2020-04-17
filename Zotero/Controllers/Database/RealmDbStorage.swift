@@ -23,7 +23,7 @@ class RealmDbStorage {
     }
 
     func clear() {
-        guard let realmUrl = Realm.Configuration.defaultConfiguration.fileURL else { return }
+        guard let realmUrl = self.config.fileURL else { return }
 
         let realmUrls = [realmUrl,
                          realmUrl.appendingPathExtension("lock"),
