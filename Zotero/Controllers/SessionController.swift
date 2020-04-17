@@ -11,8 +11,8 @@ import Foundation
 typealias SessionData = (userId: Int, apiToken: String)
 
 struct DebugSessionConstants {
-    static let userId: Int? = 5487222//113123
-    static let apiToken: String? = "EG4p735j5tUhixLCtTg37WAs"//"jVvCcLimmkx4SeUD3ET4Xplf"
+    static let userId: Int? = 5487222
+    static let apiToken: String? = "EG4p735j5tUhixLCtTg37WAs"
 }
 
 class SessionController: ObservableObject {
@@ -28,13 +28,17 @@ class SessionController: ObservableObject {
         self.defaults = defaults
         self.secureStorage = secureStorage
 
-        if let debugUserId = DebugSessionConstants.userId,
+        let apiToken = secureStorage.apiToken
+        let userId = defaults.userId
+
+        if (apiToken == nil || userId == 0),
+           let debugUserId = DebugSessionConstants.userId,
            let debugApiToken = DebugSessionConstants.apiToken {
             secureStorage.apiToken = debugApiToken
             defaults.userId = debugUserId
         }
 
-        if let token = secureStorage.apiToken, defaults.userId > 0 {
+        if let token = apiToken, userId > 0 {
             self.sessionData = (defaults.userId, token)
             self.isLoggedIn = true
         } else {
