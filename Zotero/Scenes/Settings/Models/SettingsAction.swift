@@ -13,6 +13,7 @@ enum SettingsAction {
     case setShowCollectionItemCounts(Bool)
     case startSync
     case cancelSync
+    case setLogoutAlertVisible(Bool)
     case logout
     case startObserving
     case startImmediateLogging

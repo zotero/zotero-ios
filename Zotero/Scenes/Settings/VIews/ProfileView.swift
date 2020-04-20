@@ -19,12 +19,20 @@ struct ProfileView: View {
 
             Section {
                 Button(action: {
-                    self.viewModel.process(action: .logout)
+                    self.viewModel.process(action: .setLogoutAlertVisible(true))
                 }) {
                     Text("Log out")
                         .foregroundColor(.red)
                 }
             }
+        }
+        .alert(isPresented: self.viewModel.binding(keyPath: \.logoutAlertVisible, action: { .setLogoutAlertVisible($0) })) {
+            Alert(title: Text("Warning"),
+                  message: Text("Your loca data that were not synced will be deleted. Do you really want to log out?"),
+                  primaryButton: .default(Text("Yes"), action: {
+                      self.viewModel.process(action: .logout)
+                  }),
+                  secondaryButton: .cancel(Text("No")))
         }
     }
 

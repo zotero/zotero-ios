@@ -15,6 +15,7 @@ struct SettingsState: ViewModelState {
     var isLogging: Bool
     var lastTranslatorUpdate: Date
     var isUpdatingTranslators: Bool
+    var logoutAlertVisible: Bool
 
     init(isSyncing: Bool, isLogging: Bool, isUpdatingTranslators: Bool, lastTranslatorUpdate: Date) {
         self.isSyncing = isSyncing
@@ -23,6 +24,7 @@ struct SettingsState: ViewModelState {
         self.isUpdatingTranslators = isUpdatingTranslators
         self.askForSyncPermission = Defaults.shared.askForSyncPermission
         self.showCollectionItemCount = Defaults.shared.showCollectionItemCount
+        self.logoutAlertVisible = false
     }
 
     func cleanup() {}
