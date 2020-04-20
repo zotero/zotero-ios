@@ -63,7 +63,7 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     }
 
     private func retry(maxAttemptCount: Int, retryDelay: @escaping (Error) -> RetryDelay?) -> Observable<Element> {
-        return retryWhen { errors in
+        return self.retryWhen { errors in
             return errors.enumerated().flatMap { attempt, error -> Observable<Void> in
                 guard (attempt + 1) < maxAttemptCount,
                       let delay = retryDelay(error) else {
@@ -78,8 +78,7 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     }
 
     func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<Element> {
-        return self.asObservable()
-                   .do(onNext: { response in
+        return self.do(onNext: { response in
                        self.log(request: request, url: convertible.urlRequest?.url)
                        self.log(responseData: response.1, error: nil, for: request)
                    }, onError: { error in
@@ -107,17 +106,17 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
 }
 
 extension ObservableType where Element == DataRequest {
-    func responseDataWithResponseError() -> Observable<(HTTPURLResponse, Data)> {
-        return self.flatMap { $0.rx.responseDataWithResponseError() }
+    func responseDataWithResponseError(queue: DispatchQueue? = nil) -> Observable<(HTTPURLResponse, Data)> {
+        return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue) }
     }
 }
 
 extension Reactive where Base: DataRequest {
-    fileprivate func responseDataWithResponseError() -> Observable<(HTTPURLResponse, Data)> {
-        return self.responseResultWithResponseError(responseSerializer: DataRequest.dataResponseSerializer())
+    fileprivate func responseDataWithResponseError(queue: DispatchQueue? = nil) -> Observable<(HTTPURLResponse, Data)> {
+        return self.responseResultWithResponseError(queue: queue, responseSerializer: DataRequest.dataResponseSerializer())
     }
 
-    fileprivate func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue? = nil,
+    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue? = nil,
                                                                                     responseSerializer: T)
                                                                   -> Observable<(HTTPURLResponse, T.SerializedObject)> {
         return Observable.create { observer in

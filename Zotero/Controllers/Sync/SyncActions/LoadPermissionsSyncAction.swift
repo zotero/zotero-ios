@@ -14,9 +14,10 @@ struct LoadPermissionsSyncAction: SyncAction {
     typealias Result = KeyResponse
 
     unowned let apiClient: ApiClient
+    let queue: DispatchQueue
 
     var result: Single<KeyResponse> {
-        return self.apiClient.send(request: KeyRequest())
+        return self.apiClient.send(request: KeyRequest(), queue: self.queue)
                              .flatMap { (response, headers) in
                                  do {
                                      let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)

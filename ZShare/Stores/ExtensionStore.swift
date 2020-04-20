@@ -366,7 +366,8 @@ class ExtensionStore {
         self.createItem(item, schemaController: schemaController)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId,
-                                              userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage).result
+                                              userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
+                                              queue: .main).result
             }
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.submission = .ready
@@ -457,12 +458,12 @@ class ExtensionStore {
                    }
                    .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
                     return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
-                                                  apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage).result
+                                                  apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage, queue: .main).result
                                     .flatMap({ _ in Single.just((filesize, md5, mtime)) })
                    }
                    .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
                        return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
-                                                        libraryId: libraryId, userId: userId, apiClient: apiClient).result
+                                                        libraryId: libraryId, userId: userId, apiClient: apiClient, queue: .main).result
                                     .flatMap({ return Single.just(($0, md5)) })
                    }
     }

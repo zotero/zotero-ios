@@ -68,7 +68,10 @@ typealias ResponseHeaders = [AnyHashable: Any]
 protocol ApiClient: class {
     func set(authToken: String?)
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)>
+    func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, ResponseHeaders)>
     func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)>
+    func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, ResponseHeaders)>
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest>
     func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
+    func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
 }

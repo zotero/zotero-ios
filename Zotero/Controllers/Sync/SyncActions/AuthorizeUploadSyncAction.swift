@@ -22,11 +22,12 @@ struct AuthorizeUploadSyncAction: SyncAction {
     let userId: Int
 
     unowned let apiClient: ApiClient
+    let queue: DispatchQueue
 
     var result: Single<AuthorizeUploadResponse> {
         let request = AuthorizeUploadRequest(libraryId: self.libraryId, userId: self.userId, key: self.key, filename: self.filename,
                                              filesize: self.filesize, md5: self.md5, mtime: self.mtime)
-        return self.apiClient.send(request: request).flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
+        return self.apiClient.send(request: request, queue: self.queue).flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
            do {
                let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
                let response = try AuthorizeUploadResponse(from: jsonObject)

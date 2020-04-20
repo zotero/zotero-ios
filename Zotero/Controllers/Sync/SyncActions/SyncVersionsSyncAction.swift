@@ -24,6 +24,7 @@ struct SyncVersionsSyncAction: SyncAction {
 
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<(Int, [Any])> {
         switch object {
@@ -51,7 +52,7 @@ struct SyncVersionsSyncAction: SyncAction {
                                                           syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
         let forcedSinceVersion = syncType == .all ? nil : sinceVersion
         let request = VersionsRequest<String>(libraryId: libraryId, userId: userId, objectType: object, version: forcedSinceVersion)
-        return self.apiClient.send(request: request)
+        return self.apiClient.send(request: request, queue: self.queue)
                              .flatMap { (response: [String: Int], headers) -> Single<(Int, [Any])> in
                                   let newVersion = self.lastVersion(from: headers)
 

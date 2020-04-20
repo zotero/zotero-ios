@@ -20,9 +20,11 @@ struct SyncSettingsSyncAction: SyncAction {
 
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<(Bool, Int)> {
-        return self.apiClient.send(request: SettingsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion))
+        return self.apiClient.send(request: SettingsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion),
+                                   queue: self.queue)
                             .flatMap({ (response: SettingsResponse, headers) in
 
                                 let newVersion = self.lastVersion(from: headers)

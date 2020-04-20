@@ -24,11 +24,12 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     unowned let schemaController: SchemaController
+    let queue: DispatchQueue
 
     var result: Single<([String], [Error], [StoreItemsError])> {
         let keysString = self.keys.map({ "\($0)" }).joined(separator: ",")
         let request = ObjectsRequest(libraryId: libraryId, userId: userId, objectType: object, keys: keysString)
-        return self.apiClient.send(request: request)
+        return self.apiClient.send(request: request, queue: self.queue)
                              .flatMap({ (response, headers) -> Single<([String], [Error], [StoreItemsError])> in
                                  let newVersion = self.lastVersion(from: headers)
 

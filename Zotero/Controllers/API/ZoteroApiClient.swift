@@ -45,10 +45,14 @@ class ZoteroApiClient: ApiClient {
     }
 
     func send<Request: ApiResponseRequest>(request: Request) -> Single<(Request.Response, ResponseHeaders)> {
+        self.send(request: request, queue: .main)
+    }
+
+    func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, ResponseHeaders)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
-                              .responseDataWithResponseError()
+                              .responseDataWithResponseError(queue: queue)
                               .log(request: request, convertible: convertible)
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
@@ -63,10 +67,14 @@ class ZoteroApiClient: ApiClient {
     }
 
     func send(request: ApiRequest) -> Single<(Data, ResponseHeaders)> {
+        self.send(request: request, queue: .main)
+    }
+
+    func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, ResponseHeaders)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
-                              .responseDataWithResponseError()
+                              .responseDataWithResponseError(queue: queue)
                               .log(request: request, convertible: convertible)
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
@@ -83,6 +91,10 @@ class ZoteroApiClient: ApiClient {
     }
 
     func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
+        self.upload(request: request, queue: .main, multipartFormData: multipartFormData)
+    }
+
+    func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
         return Single.create { [weak self] subscriber in
             guard let `self` = self else {
                 subscriber(.error(ZoteroApiError.expired))
@@ -96,6 +108,7 @@ class ZoteroApiClient: ApiClient {
                                 to: convertible,
                                 method: method,
                                 headers: request.headers,
+                                queue: queue,
                                 encodingCompletion: { result in
                 switch result {
                 case .success(let request, _, _):

@@ -20,9 +20,11 @@ struct SyncDeletionsSyncAction: SyncAction {
 
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
+    let queue: DispatchQueue
 
     var result: Single<[String]> {
-        return self.apiClient.send(request: DeletionsRequest(libraryId: libraryId, userId: userId, version: sinceVersion))
+        return self.apiClient.send(request: DeletionsRequest(libraryId: libraryId, userId: userId, version: sinceVersion),
+                                   queue: self.queue)
                              .flatMap { (response: DeletionsResponse, headers) in
                                  let newVersion = self.lastVersion(from: headers)
 

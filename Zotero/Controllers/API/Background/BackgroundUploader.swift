@@ -58,12 +58,14 @@ class BackgroundUploader: NSObject {
                 mimeType: String,
                 parameters: [String: String],
                 headers: [String: String],
+                queue: DispatchQueue? = nil,
                 completion: @escaping (Error?) -> Void) {
         self.createMultipartformRequest(for: upload,
                                         filename: filename,
                                         mimeType: mimeType,
                                         parameters: parameters,
                                         headers: headers,
+                                        queue: queue,
                                         completion: { [weak self] result in
                                             switch result {
                                             case .failure(let error):
@@ -94,11 +96,12 @@ class BackgroundUploader: NSObject {
     ///                         to upload the file and URL pointing to the file which will be uploaded.
     private func createMultipartformRequest(for upload: BackgroundUpload, filename: String, mimeType: String,
                                             parameters: [String: String]?, headers: [String: String]? = nil,
+                                            queue: DispatchQueue? = nil,
                                             completion: @escaping (Swift.Result<(URLRequest, URL), Error>) -> Void) {
         // iOS doesn't provide a simple way to create a multipartform request for uploading the file to backend. Alamofire is used to simplify
         // the process. Normally, Alamofire would encode the request and send it by itself, but it doesn't support background uploads. So we just
         // use it to create a propert multipartform request and file for us, then we copy the request and file and cancel original Alamofire request.
-        Alamofire.upload(multipartFormData: { data in
+        SessionManager.default.upload(multipartFormData: { data in
                              if let parameters = parameters {
                                  // Append parameters to the multipartform request.
                                  parameters.forEach { (key, value) in
@@ -113,7 +116,8 @@ class BackgroundUploader: NSObject {
                          usingThreshold: 0, // set to 0 so that Alamofire doesn't try to stream from memory.
                          to: "http://", // set to "http://" because we don't want Alamofire to automatically send the request and empty string doesn't work
                          method: .post,
-                         headers: headers) { result in
+                         headers: headers,
+                         queue: queue) { result in
                              switch result {
                              case .failure(let error):
                                  completion(.failure(error))

@@ -27,6 +27,7 @@ struct UploadAttachmentSyncAction: SyncAction {
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
+    let queue: DispatchQueue
 
     var result: Single<(Completable, Observable<RxProgress>)> {
         let dbCheck: Single<()> = Single.create { subscriber -> Disposable in
@@ -56,7 +57,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                             .flatMap { filesize -> Single<AuthorizeUploadResponse> in
                                 return AuthorizeUploadSyncAction(key: self.key, filename: self.filename, filesize: filesize,
                                                                  md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
-                                                                 userId: self.userId, apiClient: self.apiClient).result
+                                                                 userId: self.userId, apiClient: self.apiClient, queue: self.queue).result
                             }
                             .flatMap { response -> Single<Swift.Result<(UploadRequest, String), SyncActionError>> in
                                 switch response {
@@ -64,7 +65,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                     return Single.just(.failure(SyncActionError.attachmentAlreadyUploaded))
                                 case .new(let response):
                                     let request = AttachmentUploadRequest(url: response.url)
-                                    return self.apiClient.upload(request: request) { data in
+                                    return self.apiClient.upload(request: request, queue: self.queue) { data in
                                         response.params.forEach({ (key, value) in
                                             if let stringData = value.data(using: .utf8) {
                                                 data.append(stringData, withName: key)
@@ -92,7 +93,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                                                          userId: self.userId,
                                                                          key: self.key,
                                                                          uploadKey: uploadKey)
-                                     return self.apiClient.send(request: request).flatMap({ Single.just(.success($0)) })
+                                     return self.apiClient.send(request: request, queue: self.queue).flatMap({ Single.just(.success($0)) })
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }
