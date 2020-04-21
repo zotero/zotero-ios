@@ -1788,7 +1788,7 @@
 			children = (
 				B3DCDEB72408F2A50039ED0D /* Models */,
 				B3DCDEB62408F2A50039ED0D /* ViewModels */,
-				B3DCDEB82408F2A50039ED0D /* VIews */,
+				B3DCDEB82408F2A50039ED0D /* Views */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1810,7 +1810,7 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		B3DCDEB82408F2A50039ED0D /* VIews */ = {
+		B3DCDEB82408F2A50039ED0D /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				B3DCDEBB2408F3180039ED0D /* GeneralSettingsView.swift */,
@@ -1822,7 +1822,7 @@
 				B33A7497240FE63F003B322B /* DebugSettingsView.swift */,
 				B328037524362B4000FE8453 /* TranslatorsSettingsView.swift */,
 			);
-			path = VIews;
+			path = Views;
 			sourceTree = "<group>";
 		};
 		B3DCDED72408F5150039ED0D /* General */ = {
