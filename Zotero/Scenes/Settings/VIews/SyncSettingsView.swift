@@ -18,19 +18,19 @@ struct SyncSettingsView: View {
                     Button(action: {
                         self.viewModel.process(action: .cancelSync)
                     }) {
-                        Text("Cancel ongoing sync")
+                        Text(L10n.Settings.syncCancel)
                     }
                 } else {
                     Button(action: {
                         self.viewModel.process(action: .startSync)
                     }) {
-                        Text("Sync with zotero.org")
+                        Text(L10n.Settings.sync)
                     }
                 }
             }
             Section {
-                SettingsToggleRow(title: "User Permission",
-                                  subtitle: "Ask for user permission for each write action",
+                SettingsToggleRow(title: L10n.Settings.permission,
+                                  subtitle: L10n.Settings.permissionSubtitle,
                                   value: self.viewModel.binding(keyPath: \.askForSyncPermission, action: { .setAskForSyncPermission($0) }))
             }
         }

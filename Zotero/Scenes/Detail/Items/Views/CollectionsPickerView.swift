@@ -27,14 +27,14 @@ struct CollectionsPickerView: View {
         .navigationBarTitle(Text(self.navBarTitle), displayMode: .inline)
         .navigationBarItems(leading:
                                 Button(action: self.closeAction,
-                                       label: { Text("Cancel") })
+                                       label: { Text(L10n.cancel) })
                             , trailing:
                                 Button(action: {
                                     self.selectedKeys.wrappedValue = self.viewModel.state.selected
                                     self.closeAction()
                                 },
                                 label: {
-                                    Text("Save")
+                                    Text(L10n.save)
                                 })
         )
         .environment(\.editMode, .constant(.active))
@@ -43,11 +43,11 @@ struct CollectionsPickerView: View {
     private var navBarTitle: String {
         switch self.viewModel.state.selected.count {
         case 0:
-            return "Select a Collection"
+            return L10n.Items.zeroCollectionsSelected
         case 1:
-            return "1 Collection Selected"
+            return L10n.Items.oneCollectionsSelected
         default:
-            return "\(self.viewModel.state.selected.count) Collections Selected"
+            return L10n.Items.manyCollectionsSelected(self.viewModel.state.selected.count)
         }
     }
 

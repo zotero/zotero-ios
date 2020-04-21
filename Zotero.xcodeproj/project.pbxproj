@@ -363,6 +363,10 @@
 		B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */; };
 		B328037624362B4000FE8453 /* TranslatorsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B328037524362B4000FE8453 /* TranslatorsSettingsView.swift */; };
 		B33791D723BF7B2A00919210 /* CreateItemWithAttachmentDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */; };
+		B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
+		B337A5AC244F228500AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
+		B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
+		B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
 		B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7497240FE63F003B322B /* DebugSettingsView.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
@@ -781,6 +785,8 @@
 		B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPermissionResponse.swift; sourceTree = "<group>"; };
 		B328037524362B4000FE8453 /* TranslatorsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsSettingsView.swift; sourceTree = "<group>"; };
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
+		B337A5A9244F1DEB00AFD13D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B337A5AB244F228500AFD13D /* Localizable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
 		B33A7497240FE63F003B322B /* DebugSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingsView.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
@@ -996,6 +1002,7 @@
 			children = (
 				B305643323FC051E003304F2 /* Assets.xcassets */,
 				B30566D823FC0769003304F2 /* tinymce */,
+				B337A5AA244F1DEB00AFD13D /* Localizable.strings */,
 			);
 			path = Assets;
 			sourceTree = "<group>";
@@ -1196,6 +1203,7 @@
 				B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */,
 				B305650623FC051E003304F2 /* FileManager+Utils.swift */,
 				B305678D23FC1305003304F2 /* FileStorage+Extension.swift */,
+				B337A5AB244F228500AFD13D /* Localizable.swift */,
 				B305650723FC051E003304F2 /* MD5+Url.swift */,
 				B305650B23FC051E003304F2 /* Observable+Completable.swift */,
 				B305650D23FC051E003304F2 /* PreferenceKeys.swift */,
@@ -1917,6 +1925,7 @@
 				0FB62CEAAA715D1E3F5FC027 /* [CP] Check Pods Manifest.lock */,
 				B3DD9CEB2256342700DE6BAA /* Run Script */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
+				B337A5AD244F229400AFD13D /* ShellScript */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -2069,6 +2078,7 @@
 				B3593F58241A61C700760E20 /* CollectionsViewController.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B36A988B2428DA5D005D5790 /* bundled in Resources */,
+				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 			);
@@ -2099,6 +2109,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
@@ -2191,6 +2202,24 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
+		};
+		B337A5AD244F229400AFD13D /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Pods/SwiftGen/bin/swiftgen",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "$SCRIPT_INPUT_FILE_0 config lint\n$SCRIPT_INPUT_FILE_0 config run\n\n";
 		};
 		B34A85AC243CB1E4003D5638 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2462,6 +2491,7 @@
 				B30565E823FC051E003304F2 /* CreatorSummaryFormatter.swift in Sources */,
 				B30566AB23FC051F003304F2 /* ItemTypes.swift in Sources */,
 				B3DCDF18240917500039ED0D /* ItemTypePickerViewModelCreator.swift in Sources */,
+				B337A5AC244F228500AFD13D /* Localizable.swift in Sources */,
 				B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */,
 				B305669D23FC051F003304F2 /* RGroup.swift in Sources */,
 				B30565CC23FC051E003304F2 /* StoreSettingsDbRequest.swift in Sources */,
@@ -2694,6 +2724,7 @@
 				B305670F23FC08C1003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B325DBB024375D9E00EFF0F5 /* Conflict.swift in Sources */,
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
+				B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */,
 				B30566E123FC080C003304F2 /* BackgroundUpload.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
 				B305676F23FC0A55003304F2 /* ArrayEncoding.swift in Sources */,
@@ -2821,6 +2852,14 @@
 				B311B3212386A39800BCF592 /* Base */,
 			);
 			name = MainInterface.storyboard;
+			sourceTree = "<group>";
+		};
+		B337A5AA244F1DEB00AFD13D /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B337A5A9244F1DEB00AFD13D /* en */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

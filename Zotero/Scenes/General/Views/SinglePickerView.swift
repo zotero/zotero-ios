@@ -29,7 +29,7 @@ struct SinglePickerView: View {
 
     private var leadingItems: some View {
         Button(action: self.closeAction) {
-            Text("Cancel")
+            Text(L10n.cancel)
         }
     }
 
@@ -38,7 +38,7 @@ struct SinglePickerView: View {
             self.closeAction()
             self.saveAction(self.viewModel.state.selectedRow)
         }) {
-            Text("Save")
+            Text(L10n.save)
         }
     }
 }

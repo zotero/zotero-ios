@@ -21,24 +21,23 @@ struct ProfileView: View {
                 Button(action: {
                     self.viewModel.process(action: .setLogoutAlertVisible(true))
                 }) {
-                    Text("Log out")
+                    Text(L10n.Settings.logout)
                         .foregroundColor(.red)
                 }
             }
         }
         .alert(isPresented: self.viewModel.binding(keyPath: \.logoutAlertVisible, action: { .setLogoutAlertVisible($0) })) {
-            Alert(title: Text("Warning"),
-                  message: Text("Your loca data that were not synced will be deleted. Do you really want to log out?"),
-                  primaryButton: .default(Text("Yes"), action: {
+            Alert(title: Text(L10n.warning),
+                  message: Text(L10n.Settings.logoutWarning),
+                  primaryButton: .default(Text(L10n.yes), action: {
                       self.viewModel.process(action: .logout)
                   }),
-                  secondaryButton: .cancel(Text("No")))
+                  secondaryButton: .cancel(Text(L10n.no)))
         }
     }
 
     private var username: String {
-        let username = Defaults.shared.username
-        return username.isEmpty ? "Missing username" : username
+        return Defaults.shared.username
     }
 }
 

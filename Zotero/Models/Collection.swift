@@ -94,11 +94,11 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.level = 0
         switch type {
         case .all:
-            self.name = "All Items"
+            self.name = L10n.Collections.allItems
         case .publications:
-            self.name = "My Publications"
+            self.name = L10n.Collections.myPublications
         case .trash:
-            self.name = "Trash"
+            self.name = L10n.Collections.trash
         }
     }
 

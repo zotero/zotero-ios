@@ -71,9 +71,9 @@ class NoteEditorViewController: UIViewController {
     // MARK: - Setups
 
     private func setupNavbarItems() {
-        let cancelItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(NoteEditorViewController.cancel))
+        let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: self, action: #selector(NoteEditorViewController.cancel))
         self.navigationItem.leftBarButtonItem = cancelItem
-        let saveItem = UIBarButtonItem(title: "Save", style: .done, target: self, action: #selector(NoteEditorViewController.save))
+        let saveItem = UIBarButtonItem(title: L10n.save, style: .done, target: self, action: #selector(NoteEditorViewController.save))
         self.navigationItem.rightBarButtonItem = saveItem
     }
 

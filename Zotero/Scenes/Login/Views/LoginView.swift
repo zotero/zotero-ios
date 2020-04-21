@@ -15,13 +15,13 @@ struct LoginView: View {
         GeometryReader { proxy in
             VStack(spacing: 20) {
                 VStack {
-                    TextField("Username", text: self.viewModel.binding(keyPath: \.username, action: { .setUsername($0) }))
+                    TextField(L10n.Login.username, text: self.viewModel.binding(keyPath: \.username, action: { .setUsername($0) }))
                         .padding([.horizontal, .top])
                     Divider()
                 }
 
                 VStack {
-                    SecureField("Password", text: self.viewModel.binding(keyPath: \.password, action: { .setPassword($0) }))
+                    SecureField(L10n.Login.password, text: self.viewModel.binding(keyPath: \.password, action: { .setPassword($0) }))
                         .padding([.horizontal, .top])
                     Divider()
                 }
@@ -29,7 +29,7 @@ struct LoginView: View {
                 Button(action: {
                     self.viewModel.process(action: .login)
                 }) {
-                    OnboardingButton(title: "Sign in",
+                    OnboardingButton(title: L10n.Login.signIn,
                                      width: proxy.size.width,
                                      isLoading: self.viewModel.state.isLoading)
                 }
@@ -38,7 +38,7 @@ struct LoginView: View {
         }
         .padding()
         .alert(item: self.self.viewModel.binding(keyPath: \.error, action: { .setError($0) })) { error in
-            Alert(title: Text("Error"),
+            Alert(title: Text(L10n.error),
                   message: Text(error.localizedDescription),
                   dismissButton: .cancel())
         }

@@ -13,25 +13,25 @@ struct SettingsListView: View {
         Form {
             Section {
                 NavigationLink(destination: ProfileView()) {
-                    Text("Profile")
+                    Text(L10n.Settings.profile)
                 }
             }
 
             Section {
                 NavigationLink(destination: GeneralSettingsView()) {
-                    Text("General")
+                    Text(L10n.Settings.general)
                 }
 
                 NavigationLink(destination: SyncSettingsView()) {
-                    Text("Sync")
+                    Text(L10n.Settings.sync)
                 }
 
                 NavigationLink(destination: TranslatorsSettingsView()) {
-                    Text("Translators")
+                    Text(L10n.Settings.translators)
                 }
 
                 NavigationLink(destination: DebugSettingsView()) {
-                    Text("Debug")
+                    Text(L10n.Settings.debug)
                 }
             }
         }

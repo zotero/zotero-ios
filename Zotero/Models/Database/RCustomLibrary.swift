@@ -18,7 +18,7 @@ extension RCustomLibraryType {
     var libraryName: String {
         switch self {
         case .myLibrary:
-            return "My Library"
+            return L10n.Libraries.myLibrary
         }
     }
 }

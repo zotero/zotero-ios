@@ -17,19 +17,19 @@ struct RegisterView: View {
         GeometryReader { proxy in
             VStack(spacing: 20) {
                 VStack {
-                    TextField("Email", text: self.$email)
+                    TextField(L10n.Login.email, text: self.$email)
                         .padding([.horizontal, .top])
                     Divider()
                 }
 
                 VStack {
-                    SecureField("Password", text: self.$password)
+                    SecureField(L10n.Login.password, text: self.$password)
                         .padding([.horizontal, .top])
                     Divider()
                 }
 
                 VStack {
-                    SecureField("Repeat password", text: self.$repeatPassword)
+                    SecureField(L10n.Login.repeatPassword, text: self.$repeatPassword)
                         .padding([.horizontal, .top])
                     Divider()
                 }

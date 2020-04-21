@@ -13,8 +13,8 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            SettingsToggleRow(title: "Item count",
-                              subtitle: "Show item count for all collections.",
+            SettingsToggleRow(title: L10n.Settings.itemCount,
+                              subtitle: L10n.Settings.itemCountSubtitle,
                               value: self.viewModel.binding(keyPath: \.showCollectionItemCount, action: { .setShowCollectionItemCounts($0) }))
         }
     }

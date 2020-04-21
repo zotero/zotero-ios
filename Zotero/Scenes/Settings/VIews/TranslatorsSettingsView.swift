@@ -24,14 +24,14 @@ struct TranslatorsSettingsView: View {
         Form {
             Section {
                 if self.viewModel.state.isUpdatingTranslators {
-                    Text("Updating...")
+                    Text(L10n.Settings.translatorsUpdating)
                 } else {
                     Button(action: {
                         self.viewModel.process(action: .updateTranslators)
                     }) {
                         VStack(alignment: .leading) {
-                            Text("Update Translators")
-                            Text("Last Updated: " + TranslatorsSettingsView.formatter.string(from: self.viewModel.state.lastTranslatorUpdate))
+                            Text(L10n.Settings.translatorsUpdate)
+                            Text("\(L10n.lastUpdated): " + TranslatorsSettingsView.formatter.string(from: self.viewModel.state.lastTranslatorUpdate))
                                 .font(.footnote)
                                 .foregroundColor(.gray)
                         }
@@ -40,7 +40,7 @@ struct TranslatorsSettingsView: View {
                     Button(action: {
                         self.viewModel.process(action: .resetTranslators)
                     }) {
-                        Text("Reset to bundled")
+                        Text(L10n.Settings.resetToBundled)
                     }
                 }
             }

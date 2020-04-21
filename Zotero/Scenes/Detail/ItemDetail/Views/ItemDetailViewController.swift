@@ -158,7 +158,7 @@ class ItemDetailViewController: UIViewController {
         self.navigationItem.setHidesBackButton(editing, animated: false)
 
         if !editing {
-            let button = UIBarButtonItem(title: "Edit", style: .plain, target: nil, action: nil)
+            let button = UIBarButtonItem(title: L10n.edit, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                              self?.viewModel.process(action: .startEditing)
                          })
@@ -167,13 +167,13 @@ class ItemDetailViewController: UIViewController {
             return
         }
 
-        let saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: nil)
+        let saveButton = UIBarButtonItem(title: L10n.save, style: .plain, target: nil, action: nil)
         saveButton.rx.tap.subscribe(onNext: { [weak self] _ in
                              self?.viewModel.process(action: .save)
                          })
                          .disposed(by: self.disposeBag)
 
-        let cancelButton = UIBarButtonItem(title: "Cancel", style: .plain, target: nil, action: nil)
+        let cancelButton = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
         cancelButton.rx.tap.subscribe(onNext: { [weak self] _ in
                                self?.cancelEditing()
                            })
@@ -185,11 +185,13 @@ class ItemDetailViewController: UIViewController {
     private func show(error: ItemDetailError) {
         switch error {
         case .droppedFields(let fields):
-            let controller = UIAlertController(title: "Change Item Type", message: self.droppedFieldsMessage(for: fields), preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: "Ok", style: .default, handler: { [weak self] _ in
+            let controller = UIAlertController(title: L10n.ItemDetail.Error.droppedFieldsTitle,
+                                               message: self.droppedFieldsMessage(for: fields),
+                                               preferredStyle: .alert)
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .default, handler: { [weak self] _ in
                 self?.viewModel.process(action: .acceptPrompt)
             }))
-            controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { [weak self] _ in
+            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak self] _ in
                 self?.viewModel.process(action: .cancelPrompt)
             }))
             self.present(controller, animated: true, completion: nil)
@@ -206,10 +208,6 @@ class ItemDetailViewController: UIViewController {
     /// - returns: Error message.
     private func droppedFieldsMessage(for names: [String]) -> String {
         let formattedNames = names.map({ "- \($0)\n" }).joined()
-        return """
-               Are you sure you want to change the item type?
-               The following fields will be lost:
-               \(formattedNames)
-               """
+        return L10n.ItemDetail.Error.droppedFieldsMessage(formattedNames)
     }
 }

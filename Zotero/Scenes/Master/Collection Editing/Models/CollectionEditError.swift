@@ -8,10 +8,29 @@
 
 import Foundation
 
-enum CollectionEditError: Error, Identifiable {
-    case saveFailed, emptyName
+enum CollectionEditError: Error, Identifiable, Hashable {
+    case saveFailed(String)
+    case emptyName
 
     var id: CollectionEditError {
         return self
+    }
+
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .emptyName:
+            hasher.combine(0)
+        case .saveFailed:
+            hasher.combine(1)
+        }
+    }
+
+    var localizedDescription: String {
+        switch self {
+        case .emptyName:
+            return L10n.Collections.Error.emptyName
+        case .saveFailed(let name):
+            return L10n.Collections.Error.saveFailed(name)
+        }
     }
 }

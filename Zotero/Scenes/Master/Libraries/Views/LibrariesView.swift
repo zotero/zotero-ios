@@ -31,7 +31,7 @@ struct LibrariesView: View {
                 }
             }
 
-            Section(header: Text("Group Libraries")) {
+            Section(header: Text(L10n.Libraries.groupLibraries)) {
                 self.viewModel.state.groupLibraries.flatMap { libraries in
                     Section {
                         ForEach(libraries) { library in

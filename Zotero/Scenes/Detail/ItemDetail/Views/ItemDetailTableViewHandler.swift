@@ -227,8 +227,7 @@ class ItemDetailTableViewHandler: NSObject {
             }
         }
 
-        // TODO: - localize
-        let extraFields = ["Item Type", "Date Modified", "Date Added", "Abstract"] + data.creators.values.map({ $0.localizedType })
+        let extraFields = [L10n.itemType, L10n.dateModified, L10n.dateAdded, L10n.abstract] + data.creators.values.map({ $0.localizedType })
         extraFields.forEach { name in
             if name.count > maxTitle.count {
                 maxTitle = name
@@ -338,15 +337,15 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         switch self.sections[section] {
         case .notes:
             let view = tableView.dequeueReusableHeaderFooterView(withIdentifier: ItemDetailTableViewHandler.sectionId) as? ItemDetailSectionView
-            view?.setup(with: "Notes")
+            view?.setup(with: L10n.ItemDetail.notes)
             return view
         case .attachments:
             let view = tableView.dequeueReusableHeaderFooterView(withIdentifier: ItemDetailTableViewHandler.sectionId) as? ItemDetailSectionView
-            view?.setup(with: "Attachments")
+            view?.setup(with: L10n.ItemDetail.attachments)
             return view
         case .tags:
             let view = tableView.dequeueReusableHeaderFooterView(withIdentifier: ItemDetailTableViewHandler.sectionId) as? ItemDetailSectionView
-            view?.setup(with: "Tags")
+            view?.setup(with: L10n.ItemDetail.tags)
             return view
         default:
             return nil
@@ -401,26 +400,26 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                                progress: self.viewModel.state.downloadProgress[attachment.key],
                                error: self.viewModel.state.downloadError[attachment.key])
                 } else if let cell = cell as? ItemDetailAddCell {
-                    cell.setup(with: "Add attachment")
+                    cell.setup(with: L10n.ItemDetail.addAttachment)
                 }
 
         case .notes:
             if let cell = cell as? ItemDetailNoteCell {
                 cell.setup(with: self.viewModel.state.data.notes[indexPath.row])
             } else if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: "Add note")
+                cell.setup(with: L10n.ItemDetail.addNote)
             }
 
         case .tags:
             if let cell = cell as? ItemDetailTagCell {
                 cell.setup(with: self.viewModel.state.data.tags[indexPath.row])
             } else if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: "Add tag")
+                cell.setup(with: L10n.ItemDetail.addTag)
             }
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: self.viewModel.state.data.localizedType, title: "Item Type", titleWidth: self.titleWidth)
+                cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth)
             }
             hasSeparator = false
 
@@ -463,7 +462,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     cell.setup(with: creator, titleWidth: self.titleWidth)
                 }
             } else if let cell = cell as? ItemDetailAddCell {
-                cell.setup(with: "Add creator")
+                cell.setup(with: L10n.ItemDetail.addCreator)
             }
             hasSeparator = false
 
@@ -472,10 +471,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                 switch indexPath.row {
                 case 0:
                     let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateAdded)
-                    cell.setup(with: date, title: "Date Added", titleWidth: self.titleWidth)
+                    cell.setup(with: date, title: L10n.dateAdded, titleWidth: self.titleWidth)
                 case 1:
                     let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateModified)
-                    cell.setup(with: date, title: "Date Modified", titleWidth: self.titleWidth)
+                    cell.setup(with: date, title: L10n.dateModified, titleWidth: self.titleWidth)
                 default: break
                 }
             }

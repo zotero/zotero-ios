@@ -42,13 +42,13 @@ class CollectionsTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu {
-        let edit = UIAction(title: "Edit", image: UIImage(systemName: "pencil")) { [weak self] action in
+        let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] action in
             self?.viewModel.process(action: .startEditing(.edit(collection)))
         }
-        let subcollection = UIAction(title: "New subcollection", image: UIImage(systemName: "folder.badge.plus")) { [weak self] action in
+        let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] action in
             self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
         }
-        let delete = UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
             self?.viewModel.process(action: .deleteCollection(collection.key))
         }
         return UIMenu(title: "", children: [edit, subcollection, delete])

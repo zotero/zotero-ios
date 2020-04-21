@@ -55,6 +55,6 @@ class ItemDetailCreatorEditingCell: UITableViewCell {
         self.firstNameTextField.text = creator.firstName
         self.lastNameTextField.text = creator.lastName
         self.fullTextField.text = creator.fullName
-        self.namePresentationButton.setTitle((isSplit ? "Merge name" : "Split name"), for: .normal)
+        self.namePresentationButton.setTitle((isSplit ? L10n.ItemDetail.mergeName : L10n.ItemDetail.splitName), for: .normal)
     }
 }

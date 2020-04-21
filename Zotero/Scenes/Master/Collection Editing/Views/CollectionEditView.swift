@@ -14,13 +14,13 @@ struct CollectionEditView: View {
     weak var coordinatorDelegate: (CollectionEditingCoordinatorDelegate & Coordinator)?
 
     private var title: Text {
-        return Text(self.viewModel.state.key == nil ? "Create collection" : "Edit collection")
+        return Text(self.viewModel.state.key == nil ? L10n.Collections.createTitle : L10n.Collections.editTitle)
     }
 
     var body: some View {
         Form {
             Section {
-                TextField("Name", text: self.viewModel.binding(keyPath: \.name, action: { .setName($0) }))
+                TextField(L10n.name, text: self.viewModel.binding(keyPath: \.name, action: { .setName($0) }))
             }
 
             Section {
@@ -46,13 +46,13 @@ struct CollectionEditView: View {
                     Button(action: {
                         self.viewModel.process(action: .delete)
                     }) {
-                        Text("Delete Collection")
+                        Text(L10n.Collections.delete)
                             .foregroundColor(Color.red)
                     }
                     Button(action: {
                         self.viewModel.process(action: .deleteWithItems)
                     }) {
-                        Text("Delete Collection and Items")
+                        Text(L10n.Collections.deleteWithItems)
                             .foregroundColor(Color.red)
                     }
                 }
@@ -67,7 +67,7 @@ struct CollectionEditView: View {
         .navigationBarItems(leading: self.leadingItems, trailing: self.trailingItems)
         .navigationBarTitle(self.title, displayMode: .inline)
         .alert(item: self.viewModel.binding(keyPath: \.error, action: { .setError($0) })) { error -> Alert in
-            return Alert(title: Text("Error"), message: Text(self.message(for: error)))
+            return Alert(title: Text(L10n.error), message: Text(error.localizedDescription))
         }
         .disabled(self.viewModel.state.loading)
     }
@@ -76,7 +76,7 @@ struct CollectionEditView: View {
         Button(action: {
             self.coordinatorDelegate?.dismiss()
         }, label: {
-            Text("Cancel")
+            Text(L10n.cancel)
         })
     }
 
@@ -88,18 +88,9 @@ struct CollectionEditView: View {
                 Button(action: {
                     self.viewModel.process(action: .save)
                 }) {
-                    Text("Save")
+                    Text(L10n.save)
                 }
             }
-        }
-    }
-
-    private func message(for error: CollectionEditError) -> String {
-        switch error {
-        case .emptyName:
-            return "You have to fill the name"
-        case .saveFailed:
-            return "Could not save collection '\(self.viewModel.state.name)'. Try again."
         }
     }
 

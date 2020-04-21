@@ -73,9 +73,9 @@ class ItemsActionSheetViewController: UIViewController {
     }
 
     private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
-        let sortOrderTitle = sortType.ascending ? "Ascending" : "Descending"
-        return ("Sort By: \(sortType.field.title)",
-                "Sort Order: \(sortOrderTitle)")
+        let sortOrderTitle = sortType.ascending ? L10n.Items.ascending : L10n.Items.descending
+        return ("\(L10n.Items.sortBy): \(sortType.field.title)",
+            "\(L10n.Items.sortOrder): \(sortOrderTitle)")
     }
 
     // MARK: - Actions
@@ -153,7 +153,7 @@ class ItemsActionSheetViewController: UIViewController {
         var subviews: [UIView] = []
 
         if metadataEditable {
-            subviews.append(self.createButton(with: "Select Items", selector: #selector(ItemsActionSheetViewController.startEditing)))
+            subviews.append(self.createButton(with: L10n.Items.select, selector: #selector(ItemsActionSheetViewController.startEditing)))
             subviews.append(self.createSeparatorLine())
         }
 
@@ -167,15 +167,15 @@ class ItemsActionSheetViewController: UIViewController {
 
         if metadataEditable {
             subviews.append(self.createSeparatorLine())
-            subviews.append(self.createButton(with: "New Item", selector: #selector(ItemsActionSheetViewController.createNewItem)))
-            subviews.append(self.createButton(with: "New Standalone Note", selector: #selector(ItemsActionSheetViewController.createNewNote)))
+            subviews.append(self.createButton(with: L10n.Items.new, selector: #selector(ItemsActionSheetViewController.createNewItem)))
+            subviews.append(self.createButton(with: L10n.Items.newNote, selector: #selector(ItemsActionSheetViewController.createNewNote)))
         }
 
         if filesEditable {
             if !metadataEditable {
                 subviews.append(self.createSeparatorLine())
             }
-            subviews.append(self.createButton(with: "Upload File", selector: #selector(ItemsActionSheetViewController.uploadAttachment)))
+            subviews.append(self.createButton(with: L10n.Items.newFile, selector: #selector(ItemsActionSheetViewController.uploadAttachment)))
         }
 
         subviews.forEach({ self.stackView.addArrangedSubview($0) })

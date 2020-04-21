@@ -21,13 +21,13 @@ struct DebugSettingsView: View {
                         Text("Stop logging")
                     }
 
-                    Text("If you want to debug an issue on launch, kill the app and start it again.")
-                    Text("If you want to debug share extension issue, open the share extension.")
+                    Text(L10n.Settings.loggingDesc1)
+                    Text(L10n.Settings.loggingDesc2)
                 } else {
                     Button(action: {
                         self.viewModel.process(action: .startImmediateLogging)
                     }) {
-                        Text("Start logging")
+                        Text(L10n.Settings.startLogging)
                     }
                 }
             }
@@ -37,7 +37,7 @@ struct DebugSettingsView: View {
                     let test: String? = nil
                     NSLog(test!)
                 }) {
-                    Text("Crash!")
+                    Text(L10n.Settings.crash)
                 }
             }
         }

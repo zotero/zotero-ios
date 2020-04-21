@@ -50,7 +50,7 @@ struct CollectionPickerView: View {
                                           trailing: 0))
             }
         }
-        .navigationBarTitle(Text("Pick parent"))
+        .navigationBarTitle(Text(L10n.Collections.pickerTitle))
     }
 
     private func inset(for level: Int) -> CGFloat {

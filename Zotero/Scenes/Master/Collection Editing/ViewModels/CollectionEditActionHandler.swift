@@ -97,7 +97,7 @@ struct CollectionEditActionHandler: ViewModelActionHandler {
             DDLogError("CollectionEditStore: couldn't save changes - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.loading = false
-                state.error = .saveFailed
+                state.error = .saveFailed(state.name)
             }
         }
     }

@@ -130,7 +130,7 @@ class ItemsViewController: UIViewController {
     private func rightNavigationBarItem(for state: ItemsState) -> UIBarButtonItem {
         let item: UIBarButtonItem
         if self.viewModel.state.isEditing {
-            item = UIBarButtonItem(title: "Done", style: .done, target: nil, action: nil)
+            item = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
         } else {
             item = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), style: .plain, target: nil, action: nil)
         }
@@ -231,7 +231,7 @@ class ItemsViewController: UIViewController {
 
     private func setupSearchController() {
         let controller = UISearchController(searchResultsController: nil)
-        controller.searchBar.placeholder = "Search Items"
+        controller.searchBar.placeholder = L10n.Items.searchTitle
         controller.obscuresBackgroundDuringPresentation = false
         self.navigationItem.searchController = controller
         self.navigationItem.hidesSearchBarWhenScrolling = false

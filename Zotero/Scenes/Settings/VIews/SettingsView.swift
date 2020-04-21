@@ -17,7 +17,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             SettingsListView()
-                .navigationBarTitle("Settings", displayMode: .inline)
+                .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
                 .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() }, label: { Text("Close") }))
             ProfileView()
         }

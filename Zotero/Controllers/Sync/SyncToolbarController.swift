@@ -61,41 +61,39 @@ class SyncToolbarController {
     private func text(for progress: SyncProgress) -> String {
         switch progress {
         case .starting:
-            return "Sync starting"
+            return L10n.SyncToolbar.starting
         case .groups:
-            return "Syncing groups"
+            return L10n.SyncToolbar.groups
         case .library(let name, let type, let data):
-            var message = "Syncing \(self.name(for: type))"
             if let data = data {
-                message += " (\(data.completed) / \(data.total))"
+                return L10n.SyncToolbar.objectWithData(self.name(for: type), data.completed, data.total, name)
             }
-            message += " in \"\(name)\""
-            return message
+            return L10n.SyncToolbar.object(self.name(for: type), name)
         case .finished(let errors):
-            var message = "Finished sync"
-            if !errors.isEmpty {
-                message += " (\(errors.count) issue\(errors.count == 1 ? "" : "s"))"
+            if errors.isEmpty {
+                return L10n.SyncToolbar.finished
             }
-            return message
+            let issues = errors.count == 1 ? L10n.SyncToolbar.oneError : L10n.SyncToolbar.multipleErrors(errors.count)
+            return L10n.SyncToolbar.finishedWithErrors(issues)
         case .deletions(let name):
-            return "Removing unused objects in \(name)"
+            return  L10n.SyncToolbar.deletion(name)
         case .aborted(let error):
-            return "Sync failed (\(error.localizedDescription))"
+            return L10n.SyncToolbar.aborted(error.localizedDescription)
         }
     }
 
     private func name(for object: SyncObject) -> String {
         switch object {
         case .collection:
-            return "collections"
+            return L10n.SyncToolbar.Object.collections
         case .group:
-            return "groups"
+            return L10n.SyncToolbar.Object.groups
         case .item, .trash:
-            return "items"
+            return L10n.SyncToolbar.Object.items
         case .search:
-            return "searches"
+            return L10n.SyncToolbar.Object.searches
         case .tag:
-            return "tags"
+            return L10n.SyncToolbar.Object.tags
         }
     }
 

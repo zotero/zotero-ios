@@ -30,7 +30,7 @@ struct TagPickerView: View {
 
     private var leadingBarItems: some View {
         return Button(action: self.dismiss) {
-            return Text("Cancel")
+            return Text(L10n.cancel)
         }
     }
 
@@ -42,7 +42,7 @@ struct TagPickerView: View {
             self.saveAction(tags)
             self.dismiss()
         }) {
-            return Text("Save")
+            return Text(L10n.save)
         }
     }
 }

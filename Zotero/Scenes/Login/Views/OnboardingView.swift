@@ -19,13 +19,13 @@ struct OnboardingView: View {
             GeometryReader { proxy in
                 HStack(spacing: self.spacing) {
                     NavigationLink(destination: LoginView().environmentObject(self.loginViewModel)) {
-                        OnboardingButton(title: "Sign in",
+                        OnboardingButton(title: L10n.Login.signIn,
                                          width: (proxy.size.width - self.spacing) / 2.0,
                                          isLoading: false)
                     }
 
                     NavigationLink(destination: RegisterView()) {
-                        OnboardingButton(title: "Create account",
+                        OnboardingButton(title: L10n.Login.createAccount,
                                          width: (proxy.size.width - self.spacing) / 2.0,
                                          isLoading: false)
                     }

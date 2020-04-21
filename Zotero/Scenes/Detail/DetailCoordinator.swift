@@ -134,8 +134,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             self.navigationController.pushViewController(controller, animated: true)
         } catch let error {
             DDLogError("DetailCoordinator: could not open item detail - \(error)")
-            let controller = UIAlertController(title: "Error", message: "Can't open item detail. Please try again.", preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: "Ok", style: .cancel, handler: nil))
+            let controller = UIAlertController(title: L10n.error, message: L10n.Items.Error.openDetail, preferredStyle: .alert)
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
             self.navigationController.present(controller, animated: true, completion: nil)
         }
     }
