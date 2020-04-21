@@ -28,6 +28,7 @@ struct UploadAttachmentSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<(Completable, Observable<RxProgress>)> {
         let dbCheck: Single<()> = Single.create { subscriber -> Disposable in
@@ -57,8 +58,10 @@ struct UploadAttachmentSyncAction: SyncAction {
                             .flatMap { filesize -> Single<AuthorizeUploadResponse> in
                                 return AuthorizeUploadSyncAction(key: self.key, filename: self.filename, filesize: filesize,
                                                                  md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
-                                                                 userId: self.userId, apiClient: self.apiClient, queue: self.queue).result
+                                                                 userId: self.userId, apiClient: self.apiClient, queue: self.queue,
+                                                                 scheduler: self.scheduler).result
                             }
+                            .observeOn(self.scheduler)
                             .flatMap { response -> Single<Swift.Result<(UploadRequest, String), SyncActionError>> in
                                 switch response {
                                 case .exists:
@@ -76,7 +79,8 @@ struct UploadAttachmentSyncAction: SyncAction {
                                 }
                             }
 
-        let response = upload.flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionError>> in
+        let response = upload.observeOn(self.scheduler)
+                             .flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let uploadKey)):
                                       return uploadRequest.rx.data()
@@ -98,6 +102,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                      return Single.just(.failure(error))
                                  }
                              })
+                             .observeOn(self.scheduler)
                              .flatMap({ result -> Single<()> in
                                  let markDbAction: () -> Single<()> = {
                                      do {

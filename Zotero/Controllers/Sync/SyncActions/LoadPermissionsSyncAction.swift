@@ -15,9 +15,11 @@ struct LoadPermissionsSyncAction: SyncAction {
 
     unowned let apiClient: ApiClient
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<KeyResponse> {
         return self.apiClient.send(request: KeyRequest(), queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap { (response, headers) in
                                  do {
                                      let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)

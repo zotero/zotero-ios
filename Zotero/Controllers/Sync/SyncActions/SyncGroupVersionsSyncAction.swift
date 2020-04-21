@@ -20,11 +20,13 @@ struct SyncGroupVersionsSyncAction: SyncAction {
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<(Int, [Int], [(Int, String)])> {
         let syncAll = syncType == .all
         let request = VersionsRequest<Int>(libraryId: libraryId, userId: userId, objectType: .group, version: nil)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap { (response: [Int: Int], headers) in
                                  let newVersion = self.lastVersion(from: headers)
                                  let request =  SyncGroupVersionsDbRequest(versions: response, syncAll: syncAll)

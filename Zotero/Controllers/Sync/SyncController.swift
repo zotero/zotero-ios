@@ -111,7 +111,7 @@ final class SyncController: SynchronizationController {
 
     // All actions and access to local variables are performed on this queue.
     private let accessQueue: DispatchQueue
-    private let accessScheduler: SerialDispatchQueueScheduler
+    private let accessScheduler: ConcurrentDispatchQueueScheduler
     // Controllers
     private let apiClient: ApiClient
     private let dbStorage: DbStorage
@@ -170,7 +170,7 @@ final class SyncController: SynchronizationController {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .utility, attributes: .concurrent)
         self.userId = userId
         self.accessQueue = accessQueue
-        self.accessScheduler = SerialDispatchQueueScheduler(queue: accessQueue, internalSerialQueueName: "org.zotero.SyncController.accessScheduler")
+        self.accessScheduler = ConcurrentDispatchQueueScheduler(queue: accessQueue)
         self.observable = PublishSubject()
         self.progressHandler = SyncProgressHandler()
         self.disposeBag = DisposeBag()
@@ -536,7 +536,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processKeyCheckAction() {
-        let result = LoadPermissionsSyncAction(apiClient: self.apiClient, queue: self.accessQueue).result
+        let result = LoadPermissionsSyncAction(apiClient: self.apiClient, queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .flatMap { response -> Single<(AccessPermissions, String)> in
                   let permissions = AccessPermissions(user: response.user,
@@ -683,7 +683,7 @@ final class SyncController: SynchronizationController {
         case .group:
             let result = SyncGroupVersionsSyncAction(libraryId: libraryId, syncType: self.type, userId: userId,
                                                      apiClient: self.apiClient, dbStorage: self.dbStorage,
-                                                     queue: self.accessQueue).result
+                                                     queue: self.accessQueue, scheduler: self.accessScheduler).result
             result.subscribeOn(self.accessScheduler)
                   .subscribe(onSuccess: { [weak self] (version, toUpdate, toRemove) in
                       self?.progressHandler.reportObjectCount(for: .group, count: toUpdate.count)
@@ -697,7 +697,7 @@ final class SyncController: SynchronizationController {
                                                 syncType: self.type, libraryId: libraryId, userId: userId,
                                                 syncDelayIntervals: self.syncDelayIntervals,
                                                 apiClient: self.apiClient, dbStorage: self.dbStorage,
-                                                queue: self.accessQueue).result
+                                                queue: self.accessQueue, scheduler: self.accessScheduler).result
             result.subscribeOn(self.accessScheduler)
                   .subscribe(onSuccess: { [weak self] (version, toUpdate) in
                       self?.progressHandler.reportObjectCount(for: object, count: toUpdate.count)
@@ -795,7 +795,8 @@ final class SyncController: SynchronizationController {
         let result = FetchAndStoreObjectsSyncAction(keys: batch.keys, object: batch.object, version: batch.version,
                                                     libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
                                                     dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                                                    schemaController: self.schemaController, queue: self.accessQueue).result
+                                                    schemaController: self.schemaController,
+                                                    queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] decodingData in
                   self?.finishBatchSyncAction(for: batch.libraryId, object: batch.object,
@@ -884,7 +885,8 @@ final class SyncController: SynchronizationController {
     private func processDeletionsSync(libraryId: LibraryIdentifier, since sinceVersion: Int) {
         let result = SyncDeletionsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: sinceVersion,
                                              libraryId: libraryId, userId: self.userId,
-                                             apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.accessQueue).result
+                                             apiClient: self.apiClient, dbStorage: self.dbStorage,
+                                             queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] conflicts in
                   self?.finishDeletionsSync(result: .success(conflicts), libraryId: libraryId)
@@ -921,7 +923,8 @@ final class SyncController: SynchronizationController {
     private func processSettingsSync(for libraryId: LibraryIdentifier, since version: Int?) {
         let result = SyncSettingsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: version,
                                             libraryId: libraryId, userId: self.userId,
-                                            apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.accessQueue).result
+                                            apiClient: self.apiClient, dbStorage: self.dbStorage,
+                                            queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] (hasNewSettings, version) in
                   if hasNewSettings {
@@ -948,7 +951,8 @@ final class SyncController: SynchronizationController {
     private func processSubmitUpdate(for batch: WriteBatch) {
         let result = SubmitUpdateSyncAction(parameters: batch.parameters, sinceVersion: batch.version, object: batch.object,
                                             libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
-                                            dbStorage: self.dbStorage, fileStorage: self.fileStorage, queue: self.accessQueue).result
+                                            dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+                                            queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] (version, error) in
                   self?.finishSubmission(error: error, newVersion: version,
@@ -964,7 +968,7 @@ final class SyncController: SynchronizationController {
         let result = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5,
                                                 mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId,
                                                 apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                                                queue: self.accessQueue).result
+                                                queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] response, progress in
                   guard let `self` = self else { return }
@@ -984,7 +988,7 @@ final class SyncController: SynchronizationController {
     private func processSubmitDeletion(for batch: DeleteBatch) {
         let result = SubmitDeletionSyncAction(keys: batch.keys, object: batch.object, version: batch.version, libraryId: batch.libraryId,
                                               userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
-                                              queue: self.accessQueue).result
+                                              queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] version in
                   self?.finishSubmission(error: nil, newVersion: version,

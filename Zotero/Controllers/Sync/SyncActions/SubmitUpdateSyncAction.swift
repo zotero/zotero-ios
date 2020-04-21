@@ -25,11 +25,13 @@ struct SubmitUpdateSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<(Int, Error?)> {
         let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object,
                                      params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap({ response, headers -> Single<UpdatesResponse> in
                                  do {
                                      let newVersion = self.lastVersion(from: headers)

@@ -25,11 +25,13 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
     unowned let fileStorage: FileStorage
     unowned let schemaController: SchemaController
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<([String], [Error], [StoreItemsError])> {
         let keysString = self.keys.map({ "\($0)" }).joined(separator: ",")
         let request = ObjectsRequest(libraryId: libraryId, userId: userId, objectType: object, keys: keysString)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap({ (response, headers) -> Single<([String], [Error], [StoreItemsError])> in
                                  let newVersion = self.lastVersion(from: headers)
 

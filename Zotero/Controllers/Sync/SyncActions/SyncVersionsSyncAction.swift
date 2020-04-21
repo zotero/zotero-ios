@@ -25,6 +25,7 @@ struct SyncVersionsSyncAction: SyncAction {
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<(Int, [Any])> {
         switch object {
@@ -53,6 +54,7 @@ struct SyncVersionsSyncAction: SyncAction {
         let forcedSinceVersion = syncType == .all ? nil : sinceVersion
         let request = VersionsRequest<String>(libraryId: libraryId, userId: userId, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap { (response: [String: Int], headers) -> Single<(Int, [Any])> in
                                   let newVersion = self.lastVersion(from: headers)
 

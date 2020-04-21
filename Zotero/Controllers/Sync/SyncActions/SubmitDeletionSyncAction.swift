@@ -22,11 +22,13 @@ struct SubmitDeletionSyncAction: SyncAction {
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
     let queue: DispatchQueue
+    let scheduler: SchedulerType
 
     var result: Single<Int> {
         let request = SubmitDeletionsRequest(libraryId: self.libraryId, userId: self.userId,
                                              objectType: self.object, keys: self.keys, version: self.version)
         return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap({ _, headers -> Single<Int> in
                                 do {
                                     let coordinator = try self.dbStorage.createCoordinator()
