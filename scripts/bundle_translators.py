@@ -55,11 +55,6 @@ commit_hash = commit_hash_from_submodules(submodules)
 with open(os.path.join(bundle_dir, "commit_hash.txt"), "w") as f:
     f.write(commit_hash)
 
-# Store timestamp
-timestamp = int(time.time())
-with open(os.path.join(bundle_dir, "timestamp.txt"), "w") as f:
-    f.write(str(timestamp))
-
 # Copy deleted.txt to bundle
 shutil.copyfile(os.path.join(translators_dir, "deleted.txt"), os.path.join(bundle_dir, "deleted.txt"))
 
