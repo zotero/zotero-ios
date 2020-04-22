@@ -1,5 +1,0 @@
-strings:
-  inputs: Zotero/Assets/Localizable.strings
-  outputs:
-    templateName: structured-swift4
-    output: Localizable.swift
