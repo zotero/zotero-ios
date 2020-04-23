@@ -66,6 +66,3 @@ with open(os.path.join(bundle_dir, "index.json"), "w") as f:
 # Zip translators
 os.chdir(translators_dir)
 subprocess.check_call(['zip', '-r', os.path.join(bundle_dir, "translators.zip"), "."])
-
-# Delete translators submodule
-shutil.rmtree(translators_dir)

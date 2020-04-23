@@ -22,6 +22,3 @@ if not os.path.isdir(translators_dir):
 timestamp = int(time.time())
 with open(os.path.join(bundle_dir, "timestamp.txt"), "w") as f:
     f.write(str(timestamp))
-
-# Delete translators submodule
-shutil.rmtree(translators_dir)
