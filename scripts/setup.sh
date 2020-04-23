@@ -7,5 +7,7 @@ realpath() {
 SCRIPT_PATH=`realpath $0`
 SCRIPT_DIR=`dirname $SCRIPT_PATH`
 
+sh "$SCRIPT_DIR/licenses.sh"
 sh "$SCRIPT_DIR/fetch_bundled_jsons.sh"
 sh "$SCRIPT_DIR/update_pods.sh"
+python3 "$SCRIPT_DIR/update_translators.py"

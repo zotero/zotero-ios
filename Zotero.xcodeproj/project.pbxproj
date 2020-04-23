@@ -1923,7 +1923,6 @@
 			buildConfigurationList = B30D597F2206F60500884C4A /* Build configuration list for PBXNativeTarget "Zotero" */;
 			buildPhases = (
 				0FB62CEAAA715D1E3F5FC027 /* [CP] Check Pods Manifest.lock */,
-				B3DD9CEB2256342700DE6BAA /* Run Script */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
 				B337A5AD244F229400AFD13D /* ShellScript */,
 				B30D59512206F60400884C4A /* Sources */,
@@ -2238,25 +2237,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "python3 $SCRIPT_INPUT_FILE_0\n";
-		};
-		B3DD9CEB2256342700DE6BAA /* Run Script */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Run Script";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/pdf-keys/licenses.plist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ -f \"$SCRIPT_OUTPUT_FILE_0\" ]; then\nexit\nfi\n\nmkdir \"pdf-keys\"\n\ncat > \"$SCRIPT_OUTPUT_FILE_0\" <<EOF\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n<key>pspdfkit</key>\n<string></string>\n</dict>\n</plist>\nEOF\n";
 		};
 		B433DBB4F006A1955D51B03A /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
