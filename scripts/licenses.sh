@@ -27,6 +27,4 @@ cat > "$LICENSES_FILE" <<EOF
 </plist>
 EOF
 
-cat > "$POD_FILE" <<EOF
-pod 'PSPDFKit'
-EOF
+touch "$POD_FILE"
