@@ -4,6 +4,11 @@ import re
 import shutil
 import subprocess
 import time
+
+def commit_hash_from_submodules(array):
+    for line in array:
+        if line.startswith("translators"):
+            return line.split()[1]
         
 def index_json(directory):
     index = []
@@ -34,23 +39,18 @@ bundle_dir = os.path.join(os.path.abspath("."), "bundled" + os.sep + "translator
 if not os.path.isdir(bundle_dir):
     raise Exception(bundle_dir + " is not a directory")
 
-# Get translators directory
-translators_dir = os.path.join(os.path.abspath("."), "translators")
-
-# If translators already exist, remove them
-if os.path.isdir(translators_dir):
-	shutil.rmtree(translators_dir)
-
 # Download translators submodule
-subprocess.check_call(["git", "clone", "https://github.com/zotero/translators.git"])
+subprocess.check_call(["git", "submodule", "update", "--recursive"])
 
-# Check whether translators were downloaded successfully
+# Get translators directory
+translators_dir = os.path.join(os.path.abspath("."), "ZShare" + os.sep + "Assets" + os.sep + "translation" + os.sep + "modules" + os.sep + "zotero" + os.sep + "translators")
+
 if not os.path.isdir(translators_dir):
     raise Exception(translators_dir + " is not a directory")
 
 # Store last commit hash from translators submodule
-os.chdir(translators_dir)
-commit_hash = subprocess.check_output(["git", "log", "--pretty=format:'%H'", "-1"]).decode("utf-8").strip("'")
+submodules = subprocess.check_output(["git", "submodule", "foreach", "--recursive", "echo $path `git rev-parse HEAD`"]).decode("utf-8").splitlines()
+commit_hash = commit_hash_from_submodules(submodules)
 
 with open(os.path.join(bundle_dir, "commit_hash.txt"), "w") as f:
     f.write(commit_hash)
@@ -66,5 +66,3 @@ with open(os.path.join(bundle_dir, "index.json"), "w") as f:
 # Zip translators
 os.chdir(translators_dir)
 subprocess.check_call(['zip', '-r', os.path.join(bundle_dir, "translators.zip"), "."])
-
-shutil.rmtree(translators_dir)

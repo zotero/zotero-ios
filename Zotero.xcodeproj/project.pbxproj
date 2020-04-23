@@ -1988,6 +1988,7 @@
 				B311B3182386A39800BCF592 /* Sources */,
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
+				B3087B87245190F500FF05ED /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -2201,6 +2202,23 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
+		};
+		B3087B87245190F500FF05ED /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# translators file destination\nTRANSLATORS_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/modules/zotero/translators\"\n\nif [ ! -d \"$TRANSLATORS_DIR\" ]; then\nexit\nfi\n\nrm -r $TRANSLATORS_DIR\n";
 		};
 		B337A5AD244F229400AFD13D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
