@@ -238,7 +238,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
     func showPdf(at url: URL) {
         #if PDFENABLED
-        let controller = PSPDFViewController(document: PSPDFDocument(url: url))
+        let controller = PDFViewController(document: Document(url: url))
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController.present(navigationController, animated: true, completion: nil)
