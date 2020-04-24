@@ -69,7 +69,7 @@ extension AppDelegate: UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         #if PDFENABLED
         if let key = Licenses.shared.pspdfkitKey {
-            SDK.setLicenseKey(key)
+            PSPDFKit.SDK.setLicenseKey(key)
         }
         #endif
 

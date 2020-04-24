@@ -12,10 +12,6 @@ import UIKit
 import SafariServices
 import SwiftUI
 
-#if PDFENABLED
-import PSPDFKit
-import PSPDFKitUI
-#endif
 import RxSwift
 
 class ItemDetailViewController: UIViewController {

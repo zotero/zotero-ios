@@ -12,10 +12,6 @@ import SafariServices
 import SwiftUI
 
 import CocoaLumberjack
-#if PDFENABLED
-import PSPDFKit
-import PSPDFKitUI
-#endif
 import RxSwift
 
 protocol DetailItemsCoordinatorDelegate: class {
@@ -238,7 +234,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
     func showPdf(at url: URL) {
         #if PDFENABLED
-        let controller = PDFViewController(document: Document(url: url))
+        let controller = ZPDFViewController(url: url)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController.present(navigationController, animated: true, completion: nil)
