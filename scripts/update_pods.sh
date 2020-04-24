@@ -23,6 +23,10 @@ fi
 PLACEHOLDER="#pspdfkit"
 POD=`cat $LICENSE_FILE`
 
+if [ -z $POD ]; then
+	exit
+fi
+
 cleanup() {
     sed -i "" "s%$POD%$PLACEHOLDER%g" "$POD_FILE"
 }
