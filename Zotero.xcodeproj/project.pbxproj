@@ -535,6 +535,7 @@
 		B3F47C05243B4BC0004F8B1E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C04243B4BC0004F8B1E /* bundled */; };
 		B3F47C0C243B70EA004F8B1E /* translators.xml in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C0B243B70EA004F8B1E /* translators.xml */; };
 		B3F47C0E243B764F004F8B1E /* translators_delete.xml in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C0D243B764F004F8B1E /* translators_delete.xml */; };
+		B3FBAC1924570BDE00AA00C0 /* AnnotationPreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -945,6 +946,7 @@
 		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B3F47C0B243B70EA004F8B1E /* translators.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators.xml; sourceTree = "<group>"; };
 		B3F47C0D243B764F004F8B1E /* translators_delete.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators_delete.xml; sourceTree = "<group>"; };
+		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
 		D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.debug pdf.xcconfig"; sourceTree = "<group>"; };
 		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1036,6 +1038,7 @@
 				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
 				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
 				B36BEC7224485FC700A60552 /* TagColorGenerator.swift */,
+				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -2530,6 +2533,7 @@
 				B305669723FC051F003304F2 /* RTag.swift in Sources */,
 				B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */,
 				B305660123FC051E003304F2 /* BackgroundUpload.swift in Sources */,
+				B3FBAC1924570BDE00AA00C0 /* AnnotationPreviewController.swift in Sources */,
 				B305660323FC051E003304F2 /* ZoteroApiClient.swift in Sources */,
 				B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */,
 				B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */,

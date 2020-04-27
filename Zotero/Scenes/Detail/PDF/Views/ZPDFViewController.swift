@@ -14,6 +14,7 @@ import PSPDFKit
 import PSPDFKitUI
 
 class ZPDFViewController: UIViewController {
+    private static let supportedAnnotations: Annotation.Kind = [.note, .highlight, .square]
     private static let sidebarWidth: CGFloat = 250
     private let url: URL
 
@@ -21,6 +22,8 @@ class ZPDFViewController: UIViewController {
     private weak var pdfController: PDFViewController!
     private weak var annotationsControllerLeft: NSLayoutConstraint!
     private weak var pdfControllerLeft: NSLayoutConstraint!
+
+//    private weak var imgTest: UIImageView!
 
     // MARK: - Lifecycle
 
@@ -37,9 +40,31 @@ class ZPDFViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupNavigationBar()
+
         let document = Document(url: self.url)
+
+        let annotation = NoteAnnotation(contents: "Custom Annotation")
+        annotation.boundingBox = CGRect(x: 30, y: 100, width: 32, height: 32)
+        annotation.pageIndex = 3
+        document.add(annotations: [annotation], options: nil)
+
         self.setupAnnotations(with: document)
         self.setupPdfController(with: document)
+
+
+//        let imageView = UIImageView()
+//        imageView.frame = CGRect(x: 0, y: 0, width: 200, height: 200)
+//        imageView.contentMode = .scaleAspectFit
+//        imageView.backgroundColor = .red
+//        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+//        self.view.addSubview(imageView)
+//        self.imgTest = imageView
+//
+//        if let (_, annotations) = document.allAnnotations(of: .square).first,
+//           let annotation = annotations.first {
+//            let image = annotation.image(size: CGSize(width: 200, height: 200), options: nil)
+//            self.imgTest.image = image
+//        }
     }
 
     // MARK: - Actions
@@ -53,7 +78,7 @@ class ZPDFViewController: UIViewController {
             self.annotationsController.view.isHidden = false
         }
 
-        UIView.animate(withDuration: 0.2, delay: 0,
+        UIView.animate(withDuration: 0.3, delay: 0,
                        usingSpringWithDamping: 1,
                        initialSpringVelocity: 5,
                        options: [.curveEaseOut],
@@ -75,7 +100,7 @@ class ZPDFViewController: UIViewController {
     // MARK: - Setups
 
     private func setupAnnotations(with document: Document) {
-        let controller = AnnotationsViewController(document: document)
+        let controller = AnnotationsViewController(document: document, supportedAnnotations: ZPDFViewController.supportedAnnotations)
         controller.view.isHidden = true
 
         self.addChild(controller)
@@ -99,8 +124,11 @@ class ZPDFViewController: UIViewController {
     }
 
     private func setupPdfController(with document: Document) {
-        let controller = PDFViewController(document: document, configuration: nil)
-        controller.delegate = nil
+        let configuration = PDFConfiguration { builder in
+            builder.scrollDirection = .vertical
+        }
+        let controller = PDFViewController(document: document, configuration: configuration)
+        controller.delegate = self
         controller.formSubmissionDelegate = nil
 
         self.addChild(controller)
@@ -130,6 +158,12 @@ class ZPDFViewController: UIViewController {
                                           style: .plain, target: self,
                                           action: #selector(ZPDFViewController.close))
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
+    }
+}
+
+extension ZPDFViewController: PDFViewControllerDelegate {
+    func pdfViewController(_ pdfController: PDFViewController, shouldSelect annotations: [Annotation], on pageView: PDFPageView) -> [Annotation] {
+        return annotations.filter({ ZPDFViewController.supportedAnnotations.contains($0.type) })
     }
 }
 

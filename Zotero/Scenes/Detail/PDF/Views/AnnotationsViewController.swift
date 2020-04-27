@@ -19,9 +19,9 @@ class AnnotationsViewController: UIViewController {
     private weak var tableView: UITableView!
     private var annotations: [PSPDFDocumentPageNumber: [Annotation]]
 
-    init(document: Document) {
+    init(document: Document, supportedAnnotations: Annotation.Kind) {
         self.document = document
-        self.annotations = document.allAnnotations(of: Annotation.Kind.all)
+        self.annotations = document.allAnnotations(of: supportedAnnotations)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -73,8 +73,16 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource 
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        cell.textLabel?.numberOfLines = 0
         if let annotation = self.annotations[NSNumber(integerLiteral: indexPath.section)]?[indexPath.row] {
-            cell.textLabel?.text = annotation.typeString.rawValue + " - " + (annotation.contents ?? "")
+            var preview: String
+            if let markup = annotation as? TextMarkupAnnotation {
+                preview = markup.markedUpString
+            } else {
+                preview = annotation.contents ?? ""
+            }
+            preview = preview.trimmingCharacters(in: .whitespacesAndNewlines)
+            cell.textLabel?.text = annotation.typeString.rawValue + " - " + preview
         }
         return cell
     }

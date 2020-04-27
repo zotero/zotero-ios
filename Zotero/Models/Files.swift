@@ -75,6 +75,12 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: name, ext: "")
     }
 
+    // MARK: - Annotations
+
+    static func annotationPreview(key: String, documentKey: String) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", documentKey], name: key, ext: "jpg")
+    }
+
     // MARK: - Share extension
 
     static func shareExtensionTmpItem(key: String, ext: String) -> File {
