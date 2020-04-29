@@ -14,6 +14,11 @@ struct Tag: Identifiable, Equatable, Hashable {
 
     var id: String { return self.name }
 
+    init(name: String, color: String) {
+        self.name = name
+        self.color = color
+    }
+
     init(tag: RTag) {
         self.name = tag.name
         self.color = tag.color

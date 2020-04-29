@@ -352,7 +352,6 @@
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		B31941DC24531F6600BF6296 /* ZPDFViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DA24531F6600BF6296 /* ZPDFViewController.swift */; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3231333243F0F0000F1905A /* SceneDelegate.swift */; };
 		B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */; };
@@ -490,6 +489,14 @@
 		B3AB38A9238EC060008A1ABB /* AllCollectionPickerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */; };
 		B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B6238ED023008A1ABB /* Assets.xcassets */; };
 		B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */ = {isa = PBXBuildFile; fileRef = B3AB38B7238ED023008A1ABB /* ExtensionScript.js */; };
+		B3B953C32459780600FC96DB /* Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953C22459780600FC96DB /* Annotation.swift */; };
+		B3B953C8245981A600FC96DB /* PDFReaderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953C7245981A600FC96DB /* PDFReaderState.swift */; };
+		B3B953CA245981AD00FC96DB /* PDFReaderAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953C9245981AD00FC96DB /* PDFReaderAction.swift */; };
+		B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */; };
+		B3B953CE245981DA00FC96DB /* PDFReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */; };
+		B3B953D02459B49B00FC96DB /* AnnotationRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CF2459B49A00FC96DB /* AnnotationRow.swift */; };
+		B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */; };
+		B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D32459B62D00FC96DB /* AnnotationCell.swift */; };
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC05AA22D3C00100D45B92 /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B3BC05A922D3C00100D45B92 /* test_item.json */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
@@ -781,7 +788,6 @@
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B31941DA24531F6600BF6296 /* ZPDFViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ZPDFViewController.swift; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B3231333243F0F0000F1905A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
@@ -902,6 +908,14 @@
 		B3AB38B6238ED023008A1ABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B3AB38B7238ED023008A1ABB /* ExtensionScript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ExtensionScript.js; sourceTree = "<group>"; };
 		B3B8166723880DC900529605 /* ZShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZShare.entitlements; sourceTree = "<group>"; };
+		B3B953C22459780600FC96DB /* Annotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Annotation.swift; sourceTree = "<group>"; };
+		B3B953C7245981A600FC96DB /* PDFReaderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderState.swift; sourceTree = "<group>"; };
+		B3B953C9245981AD00FC96DB /* PDFReaderAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderAction.swift; sourceTree = "<group>"; };
+		B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFReaderActionHandler.swift; sourceTree = "<group>"; };
+		B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFReaderViewController.swift; sourceTree = "<group>"; };
+		B3B953CF2459B49A00FC96DB /* AnnotationRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationRow.swift; sourceTree = "<group>"; };
+		B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableViewCell+SwiftUI.swift"; sourceTree = "<group>"; };
+		B3B953D32459B62D00FC96DB /* AnnotationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCell.swift; sourceTree = "<group>"; };
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC05A922D3C00100D45B92 /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
@@ -1222,6 +1236,7 @@
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */,
 				B305650323FC051E003304F2 /* UserDefaults+Codable.swift */,
+				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1249,13 +1264,17 @@
 				B305656123FC051E003304F2 /* AppGroup.swift */,
 				B305653A23FC051E003304F2 /* Attachment.swift */,
 				B305653B23FC051E003304F2 /* Collection.swift */,
+				B325DBAE24375D8D00EFF0F5 /* Conflict.swift */,
+				B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */,
 				B305654023FC051E003304F2 /* Convertible.swift */,
+				B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */,
 				B305655323FC051E003304F2 /* Defaults.swift */,
 				B305653F23FC051E003304F2 /* DelayIntervals.swift */,
 				B305652C23FC051E003304F2 /* DeletableObject.swift */,
 				B305654223FC051E003304F2 /* FieldKeys.swift */,
 				B305654123FC051E003304F2 /* File.swift */,
 				B305653E23FC051E003304F2 /* Files.swift */,
+				B3D3F78A240D222C0018F354 /* ItemFetchType.swift */,
 				B305654323FC051E003304F2 /* ItemTypes.swift */,
 				B305653823FC051E003304F2 /* KeyedResponse.swift */,
 				B305653923FC051E003304F2 /* Library.swift */,
@@ -1265,13 +1284,9 @@
 				B305656223FC051E003304F2 /* SortType.swift */,
 				B305653D23FC051E003304F2 /* SyncableObject.swift */,
 				B305655F23FC051E003304F2 /* Tag.swift */,
-				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
-				B3D3F78A240D222C0018F354 /* ItemFetchType.swift */,
-				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
 				B378F4C8242CC8EF00B88A05 /* Translator.swift */,
-				B325DBAE24375D8D00EFF0F5 /* Conflict.swift */,
-				B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */,
-				B325DBB424375DD200EFF0F5 /* DebugPermissionResponse.swift */,
+				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
+				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1443,6 +1458,8 @@
 		B31941D824531F6600BF6296 /* PDF */ = {
 			isa = PBXGroup;
 			children = (
+				B3B953C12459780600FC96DB /* Models */,
+				B3B953C42459818200FC96DB /* ViewModels */,
 				B31941D924531F6600BF6296 /* Views */,
 			);
 			path = PDF;
@@ -1451,8 +1468,10 @@
 		B31941D924531F6600BF6296 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B3B953D32459B62D00FC96DB /* AnnotationCell.swift */,
+				B3B953CF2459B49A00FC96DB /* AnnotationRow.swift */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
-				B31941DA24531F6600BF6296 /* ZPDFViewController.swift */,
+				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1490,8 +1509,8 @@
 		B3593EC3241A61C700760E20 /* ItemDetail */ = {
 			isa = PBXGroup;
 			children = (
-				B3593EC4241A61C700760E20 /* ViewModels */,
 				B3593EC7241A61C700760E20 /* Models */,
+				B3593EC4241A61C700760E20 /* ViewModels */,
 				B3593ECE241A61C700760E20 /* Views */,
 				B3593EE6241A61C700760E20 /* ItemDetailDataCreator.swift */,
 			);
@@ -1553,8 +1572,8 @@
 		B3593EE7241A61C700760E20 /* Items */ = {
 			isa = PBXGroup;
 			children = (
-				B3593EE8241A61C700760E20 /* ViewModels */,
 				B3593EEA241A61C700760E20 /* Models */,
+				B3593EE8241A61C700760E20 /* ViewModels */,
 				B3593EEF241A61C700760E20 /* Views */,
 			);
 			path = Items;
@@ -1767,6 +1786,24 @@
 				B3AB38B7238ED023008A1ABB /* ExtensionScript.js */,
 			);
 			path = Assets;
+			sourceTree = "<group>";
+		};
+		B3B953C12459780600FC96DB /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B3B953C22459780600FC96DB /* Annotation.swift */,
+				B3B953C9245981AD00FC96DB /* PDFReaderAction.swift */,
+				B3B953C7245981A600FC96DB /* PDFReaderState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B3B953C42459818200FC96DB /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B3B953CB245981C100FC96DB /* PDFReaderActionHandler.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		B3DCDEB12408F2A50039ED0D /* Login */ = {
@@ -2243,7 +2280,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# translators file destination\nTRANSLATORS_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/modules/zotero/translators\"\n\nif [ ! -d \"$TRANSLATORS_DIR\" ]; then\nexit\nfi\n\nrm -r $TRANSLATORS_DIR\n";
+			shellScript = "# translators file destination\nTRANSLATORS_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/modules/zotero/translators\"\n\nif [ ! -d \"$TRANSLATORS_DIR\" ]; then\nexit\nfi\n\nrm -r \"$TRANSLATORS_DIR\"\n";
 		};
 		B337A5AD244F229400AFD13D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2402,8 +2439,10 @@
 				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B305669823FC051F003304F2 /* RCollection.swift in Sources */,
 				B30566A823FC051F003304F2 /* Convertible.swift in Sources */,
+				B3B953CA245981AD00FC96DB /* PDFReaderAction.swift in Sources */,
 				B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */,
 				B3593F56241A61C700760E20 /* CollectionCell.swift in Sources */,
+				B3B953C8245981A600FC96DB /* PDFReaderState.swift in Sources */,
 				B30565C523FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B30565C323FC051E003304F2 /* ReadAllGroupsDbRequest.swift in Sources */,
 				B30566B723FC051F003304F2 /* GroupResponse.swift in Sources */,
@@ -2425,12 +2464,12 @@
 				B30565DB23FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
 				B30565EA23FC051E003304F2 /* SecureStorage.swift in Sources */,
 				B3DCDECE2408F36E0039ED0D /* RegisterView.swift in Sources */,
+				B3B953D02459B49B00FC96DB /* AnnotationRow.swift in Sources */,
 				B3593F3B241A61C700760E20 /* ItemsError.swift in Sources */,
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
 				B3DCDECD2408F36E0039ED0D /* LoginView.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
 				B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */,
-				B31941DC24531F6600BF6296 /* ZPDFViewController.swift in Sources */,
 				B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B30565E123FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
@@ -2438,6 +2477,7 @@
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */,
 				B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */,
+				B3B953CE245981DA00FC96DB /* PDFReaderViewController.swift in Sources */,
 				B305667F23FC051F003304F2 /* UIView+Extensions.swift in Sources */,
 				B3593F4C241A61C700760E20 /* LibrariesView.swift in Sources */,
 				B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */,
@@ -2451,6 +2491,7 @@
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3593F50241A61C700760E20 /* CollectionsState.swift in Sources */,
+				B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */,
 				B353F205242E52610062EE24 /* TranslatorDatabase.swift in Sources */,
 				B353F204242E52610062EE24 /* MainDatabase.swift in Sources */,
 				B30565E023FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
@@ -2526,6 +2567,7 @@
 				B3593F43241A61C700760E20 /* ItemsActionSheetViewController.swift in Sources */,
 				B30566AD23FC051F003304F2 /* ItemResponse.swift in Sources */,
 				B3593F34241A61C700760E20 /* ItemDetailCreatorEditingCell.swift in Sources */,
+				B3B953C32459780600FC96DB /* Annotation.swift in Sources */,
 				B3593F3A241A61C700760E20 /* ItemsAction.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
 				B3DCDF08240912060039ED0D /* ActivityIndicatorView.swift in Sources */,
@@ -2601,6 +2643,7 @@
 				B3DCDEF3240900AC0039ED0D /* SettingsState.swift in Sources */,
 				B3593F47241A61C700760E20 /* TagCirclesView.swift in Sources */,
 				B3593F2E241A61C700760E20 /* ItemDetailAttachmentCell.swift in Sources */,
+				B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */,
 				B30565FD23FC051E003304F2 /* FileStorage.swift in Sources */,
 				B3DCDEC52408F3180039ED0D /* SettingsListView.swift in Sources */,
 				B30565C023FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
@@ -2624,6 +2667,7 @@
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,
 				B3593F4B241A61C700760E20 /* LibrariesError.swift in Sources */,
 				B305669923FC051F003304F2 /* RCreator.swift in Sources */,
+				B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */,
 				B328037624362B4000FE8453 /* TranslatorsSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

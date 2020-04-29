@@ -1,5 +1,5 @@
 //
-//  ZPDFViewController.swift
+//  PDFReaderViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 24/04/2020.
@@ -12,23 +12,23 @@ import UIKit
 
 import PSPDFKit
 import PSPDFKitUI
+import RxSwift
 
-class ZPDFViewController: UIViewController {
-    private static let supportedAnnotations: Annotation.Kind = [.note, .highlight, .square]
+class PDFReaderViewController: UIViewController {
     private static let sidebarWidth: CGFloat = 250
-    private let url: URL
+    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private let disposeBag: DisposeBag
 
     private weak var annotationsController: AnnotationsViewController!
     private weak var pdfController: PDFViewController!
     private weak var annotationsControllerLeft: NSLayoutConstraint!
     private weak var pdfControllerLeft: NSLayoutConstraint!
 
-//    private weak var imgTest: UIImageView!
-
     // MARK: - Lifecycle
 
-    init(url: URL) {
-        self.url = url
+    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.viewModel = viewModel
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -40,39 +40,28 @@ class ZPDFViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupNavigationBar()
+        self.setupAnnotationsSidebar()
+        self.setupPdfController(with: self.viewModel.state.document)
 
-        let document = Document(url: self.url)
+        self.viewModel.stateObservable
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] state in
+                          self?.update(state: state)
+                      })
+                      .disposed(by: self.disposeBag)
 
-        let annotation = NoteAnnotation(contents: "Custom Annotation")
-        annotation.boundingBox = CGRect(x: 30, y: 100, width: 32, height: 32)
-        annotation.pageIndex = 3
-        document.add(annotations: [annotation], options: nil)
-
-        self.setupAnnotations(with: document)
-        self.setupPdfController(with: document)
-
-
-//        let imageView = UIImageView()
-//        imageView.frame = CGRect(x: 0, y: 0, width: 200, height: 200)
-//        imageView.contentMode = .scaleAspectFit
-//        imageView.backgroundColor = .red
-//        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//        self.view.addSubview(imageView)
-//        self.imgTest = imageView
-//
-//        if let (_, annotations) = document.allAnnotations(of: .square).first,
-//           let annotation = annotations.first {
-//            let image = annotation.image(size: CGSize(width: 200, height: 200), options: nil)
-//            self.imgTest.image = image
-//        }
+        self.viewModel.process(action: .loadAnnotations)
     }
 
     // MARK: - Actions
 
+    private func update(state: PDFReaderState) {
+    }
+
     @objc private func toggleSidebar() {
         let shouldShow = self.pdfControllerLeft.constant == 0
-        self.pdfControllerLeft.constant = shouldShow ? ZPDFViewController.sidebarWidth : 0
-        self.annotationsControllerLeft.constant = shouldShow ? 0 : -ZPDFViewController.sidebarWidth
+        self.pdfControllerLeft.constant = shouldShow ? PDFReaderViewController.sidebarWidth : 0
+        self.annotationsControllerLeft.constant = shouldShow ? 0 : -PDFReaderViewController.sidebarWidth
 
         if shouldShow {
             self.annotationsController.view.isHidden = false
@@ -94,13 +83,14 @@ class ZPDFViewController: UIViewController {
     }
 
     @objc private func close() {
+        self.viewModel.process(action: .cleanupAnnotations)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
     // MARK: - Setups
 
-    private func setupAnnotations(with document: Document) {
-        let controller = AnnotationsViewController(document: document, supportedAnnotations: ZPDFViewController.supportedAnnotations)
+    private func setupAnnotationsSidebar() {
+        let controller = AnnotationsViewController(viewModel: self.viewModel)
         controller.view.isHidden = true
 
         self.addChild(controller)
@@ -111,10 +101,10 @@ class ZPDFViewController: UIViewController {
         NSLayoutConstraint.activate([
             controller.view.topAnchor.constraint(equalTo: self.view.topAnchor),
             controller.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            controller.view.widthAnchor.constraint(equalToConstant: ZPDFViewController.sidebarWidth)
+            controller.view.widthAnchor.constraint(equalToConstant: PDFReaderViewController.sidebarWidth)
         ])
         let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor,
-                                                                constant: -ZPDFViewController.sidebarWidth)
+                                                                constant: -PDFReaderViewController.sidebarWidth)
         leftConstraint.isActive = true
 
         controller.didMove(toParent: self)
@@ -153,17 +143,20 @@ class ZPDFViewController: UIViewController {
     private func setupNavigationBar() {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3"),
                                             style: .plain, target: self,
-                                            action: #selector(ZPDFViewController.toggleSidebar))
+                                            action: #selector(PDFReaderViewController.toggleSidebar))
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
                                           style: .plain, target: self,
-                                          action: #selector(ZPDFViewController.close))
+                                          action: #selector(PDFReaderViewController.close))
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
     }
 }
 
-extension ZPDFViewController: PDFViewControllerDelegate {
-    func pdfViewController(_ pdfController: PDFViewController, shouldSelect annotations: [Annotation], on pageView: PDFPageView) -> [Annotation] {
-        return annotations.filter({ ZPDFViewController.supportedAnnotations.contains($0.type) })
+extension PDFReaderViewController: PDFViewControllerDelegate {
+    func pdfViewController(_ pdfController: PDFViewController,
+                           shouldSelect annotations: [PSPDFKit.Annotation],
+                           on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
+        // Only zotero annotations can be selected
+        return annotations.filter({ ($0.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) == true })
     }
 }
 

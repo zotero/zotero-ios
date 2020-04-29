@@ -12,16 +12,20 @@ import UIKit
 
 import PSPDFKit
 import PSPDFKitUI
+import RxSwift
 
 class AnnotationsViewController: UIViewController {
-    private let document: Document
+    private static let cellId = "AnnotationCell"
+    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
-    private var annotations: [PSPDFDocumentPageNumber: [Annotation]]
 
-    init(document: Document, supportedAnnotations: Annotation.Kind) {
-        self.document = document
-        self.annotations = document.allAnnotations(of: supportedAnnotations)
+    // MARK: - Lifecycle
+
+    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.viewModel = viewModel
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -33,14 +37,29 @@ class AnnotationsViewController: UIViewController {
         super.viewDidLoad()
 
         self.setupTableView()
+
+        self.viewModel.stateObservable
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] state in
+                          self?.update(state: state)
+                      })
+                      .disposed(by: self.disposeBag)
     }
+
+    // MARK: - Actions
+
+    private func update(state: PDFReaderState) {
+        self.tableView.reloadData()
+    }
+
+    // MARK: - Setups
 
     private func setupTableView() {
         let tableView = UITableView(frame: self.view.bounds, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
 
         self.view.addSubview(tableView)
 
@@ -57,34 +76,24 @@ class AnnotationsViewController: UIViewController {
 
 extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return Int(self.document.pageCount)
+        return Int(self.viewModel.state.document.pageCount)
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.annotations[NSNumber(integerLiteral: section)]?.count ?? 0
-    }
-
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if self.annotations[NSNumber(integerLiteral: section)] == nil {
-            return nil
-        }
-        return "Page \(section + 1)"
+        return self.viewModel.state.annotations[section]?.count ?? 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        cell.textLabel?.numberOfLines = 0
-        if let annotation = self.annotations[NSNumber(integerLiteral: indexPath.section)]?[indexPath.row] {
-            var preview: String
-            if let markup = annotation as? TextMarkupAnnotation {
-                preview = markup.markedUpString
-            } else {
-                preview = annotation.contents ?? ""
-            }
-            preview = preview.trimmingCharacters(in: .whitespacesAndNewlines)
-            cell.textLabel?.text = annotation.typeString.rawValue + " - " + preview
+        let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+        if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row],
+           let cell = cell as? AnnotationCell {
+            cell.setup(with: annotation)
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
