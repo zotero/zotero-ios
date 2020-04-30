@@ -13,35 +13,105 @@ struct AnnotationRow: View {
     let annotation: Annotation
 
     var body: some View {
-        VStack {
-            // Header
-            HStack(alignment: .center, spacing: 8) {
-                Rectangle()
-                    .foregroundColor(Color(hex: self.annotation.color))
-                    .cornerRadius(4)
-                    .frame(width: 20, height: 20)
-                Text("Page \(self.annotation.pageLabel)")
-                    .fontWeight(.bold)
+        VStack(alignment: .leading, spacing: 0) {
+            AnnotationRowHeader(annotation: self.annotation)
+            Divider()
+            if self.annotation.type == .highlight ||
+               self.annotation.type == .area {
+                AnnotationRowBody(annotation: self.annotation)
+                Divider()
+            }
+            if !self.annotation.comment.isEmpty || !self.annotation.tags.isEmpty {
+                AnnotationRowFooter(annotation: self.annotation)
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(8)
+        .padding(1)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder()
+                .foregroundColor(Color(hex: "#bcc4d2"))
+        )
+        .padding(6)
+    }
+}
 
-                Spacer()
+struct AnnotationRowHeader: View {
+    let annotation: Annotation
 
-                Text(self.annotation.author)
-                    .alignmentGuide(., computeValue: <#T##(ViewDimensions) -> CGFloat#>)
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Rectangle()
+                .foregroundColor(Color(hex: self.annotation.color))
+                .cornerRadius(4)
+                .frame(width: 15, height: 15)
+            Text("Page \(self.annotation.pageLabel)")
+                .fontWeight(.bold)
+                .font(.system(size: 12))
 
-                Spacer()
+            Spacer()
 
-                if self.annotation.isLocked {
-                    Image(systemName: "lock")
-                        .foregroundColor(.gray)
+            Text(self.annotation.author)
+                .foregroundColor(.gray)
+
+            Spacer()
+            Spacer()
+
+            if self.annotation.isLocked {
+                Image(systemName: "lock")
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(10)
+    }
+}
+
+struct AnnotationRowBody: View {
+    let annotation: Annotation
+
+    var body: some View {
+        Group {
+            if self.annotation.type == .highlight {
+                self.annotation.text.flatMap({ Text($0) })
+            } else {
+                // TODO: - Show image
+                Image(systemName: "xmark.rectangle")
+            }
+        }
+        .padding(10)
+    }
+}
+
+struct AnnotationRowFooter: View {
+    let annotation: Annotation
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(self.annotation.comment)
+                    .padding(10)
+
+                if !self.annotation.tags.isEmpty {
+                    Divider()
+
+                    HStack {
+                        ForEach(self.annotation.tags) { tag in
+                            HStack(spacing: 0) {
+                                Text(tag.name)
+                                    .foregroundColor(Color(hex: tag.color))
+                                if tag.name != self.annotation.tags.last?.name {
+                                    Text(",")
+                                }
+                            }
+                        }
+                    }
+                    .padding(10)
                 }
             }
-
-            // Body
-
-
-            // Footer
+            Spacer()
         }
-        .padding()
+        .background(Color(hex: "#edeff3"))
     }
 }
 
@@ -99,6 +169,5 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  tags: []))
                     .frame(width: 380)
         }
-        .background(Color.black.opacity(0.2))
     }
 }

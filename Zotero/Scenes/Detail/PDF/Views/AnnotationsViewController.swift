@@ -59,6 +59,8 @@ class AnnotationsViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = UIColor(hex: "#d2d8e2")
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
 
         self.view.addSubview(tableView)
@@ -90,10 +92,6 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource 
             cell.setup(with: annotation)
         }
         return cell
-    }
-
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
