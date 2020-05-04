@@ -46,7 +46,7 @@ struct AnnotationRowHeader: View {
                 .foregroundColor(Color(hex: self.annotation.color))
                 .cornerRadius(4)
                 .frame(width: 15, height: 15)
-            Text("Page \(self.annotation.pageLabel)")
+            Text("\(L10n.Pdf.AnnotationsSidebar.page) \(self.annotation.pageLabel)")
                 .fontWeight(.bold)
                 .font(.system(size: 12))
 

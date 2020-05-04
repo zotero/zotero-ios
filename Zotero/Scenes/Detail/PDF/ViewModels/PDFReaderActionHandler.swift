@@ -27,19 +27,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     func process(action: PDFReaderAction, in viewModel: ViewModel<PDFReaderActionHandler>) {
         switch action {
         case .loadAnnotations:
-            /// TMP/TODO: - Import annotations only when needed/requested by user
-            let zoteroAnnotations = self.annotations(from: viewModel.state.document)
-
-            let documentAnnotations = viewModel.state.document.allAnnotations(of: PDFReaderState.supportedAnnotations)
-            let annotations = self.annotations(from: zoteroAnnotations)
-            self.update(viewModel: viewModel) { state in
-                state.annotations = zoteroAnnotations
-
-                // Hide external supported annotations
-                documentAnnotations.values.flatMap({ $0 }).forEach({ $0.isHidden = true })
-                // Add zotero annotations
-                state.document.add(annotations: annotations, options: nil)
-            }
+            self.loadAnnotations(in: viewModel)
 
         case .cleanupAnnotations:
             let zoteroAnnotations = viewModel.state.document.allAnnotations(of: PDFReaderState.supportedAnnotations)
@@ -47,6 +35,65 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                                                             .flatMap({ $0 })
                                                             .filter({ ($0.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) == true })
             viewModel.state.document.remove(annotations: zoteroAnnotations, options: nil)
+
+        case .searchAnnotations(let term):
+            self.searchAnnotations(with: term, in: viewModel)
+
+        }
+    }
+
+    private func searchAnnotations(with term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        if term.isEmpty {
+            self.removeAnnotationFilter(in: viewModel)
+        } else {
+            self.filterAnnotations(with: term, in: viewModel)
+        }
+    }
+
+    private func filterAnnotations(with term: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let snapshot = viewModel.state.annotationsSnapshot ?? viewModel.state.annotations
+        var annotations = snapshot
+        for (page, pageAnnotations) in snapshot {
+            annotations[page] = pageAnnotations.filter({ ann in
+                return ann.author.localizedCaseInsensitiveContains(term) ||
+                       ann.comment.localizedCaseInsensitiveContains(term) ||
+                       (ann.text ?? "").localizedCaseInsensitiveContains(term) ||
+                       ann.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
+            })
+        }
+
+        self.update(viewModel: viewModel) { state in
+            if state.annotationsSnapshot == nil {
+                state.annotationsSnapshot = state.annotations
+            }
+            state.annotations = annotations
+            state.changes.insert(.annotations)
+        }
+    }
+
+    private func removeAnnotationFilter(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let snapshot = viewModel.state.annotationsSnapshot else { return }
+        self.update(viewModel: viewModel) { state in
+            state.annotationsSnapshot = nil
+            state.annotations = snapshot
+            state.changes.insert(.annotations)
+        }
+    }
+
+    private func loadAnnotations(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        /// TMP/TODO: - Import annotations only when needed/requested by user
+        let zoteroAnnotations = self.annotations(from: viewModel.state.document)
+
+        let documentAnnotations = viewModel.state.document.allAnnotations(of: PDFReaderState.supportedAnnotations)
+        let annotations = self.annotations(from: zoteroAnnotations)
+        self.update(viewModel: viewModel) { state in
+            state.annotations = zoteroAnnotations
+            state.changes.insert(.annotations)
+
+            // Hide external supported annotations
+            documentAnnotations.values.flatMap({ $0 }).forEach({ $0.isHidden = true })
+            // Add zotero annotations
+            state.document.add(annotations: annotations, options: nil)
         }
     }
 

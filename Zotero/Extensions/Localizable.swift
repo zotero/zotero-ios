@@ -179,6 +179,15 @@ internal enum L10n {
     }
   }
 
+  internal enum Pdf {
+    internal enum AnnotationsSidebar {
+      /// Page
+      internal static let page = L10n.tr("Localizable", "pdf.annotations_sidebar.page")
+      /// Search Annotations
+      internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
+    }
+  }
+
   internal enum Settings {
     /// Crash!
     internal static let crash = L10n.tr("Localizable", "settings.crash")

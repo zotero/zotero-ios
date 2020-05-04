@@ -17,6 +17,8 @@ struct PDFReaderState: ViewModelState {
         typealias RawValue = UInt8
 
         let rawValue: UInt8
+
+        static let annotations = Changes(rawValue: 1 << 0)
     }
 
     static let supportedAnnotations: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
@@ -25,6 +27,7 @@ struct PDFReaderState: ViewModelState {
     let document: Document
 
     var annotations: [Int: [Annotation]]
+    var annotationsSnapshot: [Int: [Annotation]]?
     var changes: Changes
 
     init(url: URL) {

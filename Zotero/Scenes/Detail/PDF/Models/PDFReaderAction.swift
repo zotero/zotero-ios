@@ -11,4 +11,5 @@ import Foundation
 enum PDFReaderAction {
     case loadAnnotations
     case cleanupAnnotations
+    case searchAnnotations(String)
 }

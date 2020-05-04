@@ -20,6 +20,7 @@ class AnnotationsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
+    private var searchController: UISearchController!
 
     // MARK: - Lifecycle
 
@@ -36,7 +37,9 @@ class AnnotationsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.definesPresentationContext = true
         self.setupTableView()
+        self.setupSearchController()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -49,7 +52,9 @@ class AnnotationsViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
-        self.tableView.reloadData()
+        if state.changes.contains(.annotations) {
+            self.tableView.reloadData()
+        }
     }
 
     // MARK: - Setups
@@ -73,6 +78,22 @@ class AnnotationsViewController: UIViewController {
         ])
 
         self.tableView = tableView
+    }
+
+    private func setupSearchController() {
+        let controller = UISearchController(searchResultsController: nil)
+        controller.searchBar.placeholder = L10n.Pdf.AnnotationsSidebar.searchTitle
+        controller.obscuresBackgroundDuringPresentation = false
+        controller.hidesNavigationBarDuringPresentation = false
+        self.tableView.tableHeaderView = controller.searchBar
+        self.searchController = controller
+
+        controller.searchBar.rx.text.observeOn(MainScheduler.instance)
+                                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                                    .subscribe(onNext: { [weak self] text in
+                                        self?.viewModel.process(action: .searchAnnotations(text ?? ""))
+                                    })
+                                    .disposed(by: self.disposeBag)
     }
 }
 

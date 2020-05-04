@@ -289,8 +289,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func removeResultsFilters(in viewModel: ViewModel<ItemsActionHandler>) {
+        guard viewModel.state.unfilteredResults != nil else { return }
         self.update(viewModel: viewModel) { state in
-            guard state.unfilteredResults != nil else { return }
             state.results = state.unfilteredResults
             state.changes.insert(.results)
             state.unfilteredResults = nil

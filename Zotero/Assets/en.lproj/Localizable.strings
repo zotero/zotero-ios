@@ -99,6 +99,9 @@
 The following fields will be lost:
 %@";
 
+"pdf.annotations_sidebar.page" = "Page";
+"pdf.annotations_sidebar.search_title" = "Search Annotations";
+
 "settings.title" = "Settings";
 "settings.profile" = "Profile";
 "settings.logout" = "Log out";
