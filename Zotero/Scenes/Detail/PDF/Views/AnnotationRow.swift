@@ -11,29 +11,47 @@ import SwiftUI
 
 struct AnnotationRow: View {
     let annotation: Annotation
+    let selected: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             AnnotationRowHeader(annotation: self.annotation)
-            Divider()
             if self.annotation.type == .highlight ||
                self.annotation.type == .area {
+                AnnotationDivider(selected: self.selected)
                 AnnotationRowBody(annotation: self.annotation)
-                Divider()
             }
-            if !self.annotation.comment.isEmpty || !self.annotation.tags.isEmpty {
-                AnnotationRowFooter(annotation: self.annotation)
+            if self.footerVisible {
+                AnnotationDivider(selected: self.selected)
+                AnnotationRowFooter(annotation: self.annotation, selected: self.selected)
             }
         }
-        .background(Color.white)
+        .background(self.backgroundColor)
         .cornerRadius(8)
         .padding(1)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder()
-                .foregroundColor(Color(hex: "#bcc4d2"))
+                .foregroundColor(self.borderColor)
         )
+        .shadow(color: self.shadowColor, radius: 2)
         .padding(6)
+    }
+
+    private var footerVisible: Bool {
+        return self.selected || !self.annotation.comment.isEmpty || !self.annotation.tags.isEmpty
+    }
+
+    private var shadowColor: Color {
+        return self.selected ? Color(hex: "#6d95e0").opacity(0.5) : .clear
+    }
+
+    private var borderColor: Color {
+        return Color(hex: self.selected ? "#6d95e0" : "#bcc4d2")
+    }
+
+    private var backgroundColor: Color {
+        return self.selected ? Color(hex: "#e4ebf9") : Color.white
     }
 }
 
@@ -85,33 +103,64 @@ struct AnnotationRowBody: View {
 
 struct AnnotationRowFooter: View {
     let annotation: Annotation
+    let selected: Bool
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(self.annotation.comment)
-                    .padding(10)
+        VStack(alignment: .leading, spacing: 0) {
+            Text(self.comment)
+                .padding(10)
+                .foregroundColor(self.commentColor)
 
-                if !self.annotation.tags.isEmpty {
-                    Divider()
+            if self.selected || !self.annotation.tags.isEmpty {
+                AnnotationDivider(selected: self.selected)
 
-                    HStack {
-                        ForEach(self.annotation.tags) { tag in
-                            HStack(spacing: 0) {
-                                Text(tag.name)
-                                    .foregroundColor(Color(hex: tag.color))
-                                if tag.name != self.annotation.tags.last?.name {
-                                    Text(",")
+                Group {
+                    if self.annotation.tags.isEmpty {
+                        Text("Add tags")
+                            .foregroundColor(Color(hex: "#6d95e0"))
+                    } else {
+                        HStack {
+                            ForEach(self.annotation.tags) { tag in
+                                HStack(spacing: 0) {
+                                    Text(tag.name)
+                                        .foregroundColor(Color(hex: tag.color))
+                                    if tag.name != self.annotation.tags.last?.name {
+                                        Text(",")
+                                    }
                                 }
                             }
                         }
                     }
-                    .padding(10)
                 }
+                .padding(10)
             }
-            Spacer()
         }
-        .background(Color(hex: "#edeff3"))
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+        .background(self.backgroundColor)
+    }
+
+    private var backgroundColor: Color {
+        return self.selected ? Color(hex: "#dde6f8") : Color(hex: "#edeff3")
+    }
+
+    private var comment: String {
+        return self.annotation.comment.isEmpty ? "Add comment" : self.annotation.comment
+    }
+
+    private var commentColor: Color {
+        return self.annotation.comment.isEmpty ? Color(hex: "#6d95e0") : .black
+    }
+}
+
+struct AnnotationDivider: View {
+    let selected: Bool
+
+    var body: some View {
+        Divider().background(self.color)
+    }
+
+    private var color: Color {
+        return self.selected ? Color(hex: "#6d95e0").opacity(0.4) : Color(hex: "#d7dad7")
     }
 }
 
@@ -132,7 +181,8 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  sortIndex: "",
                                                  dateModified: Date(),
                                                  tags: [Tag(name: "Preview", color: "#123321"),
-                                                        Tag(name: "Random", color: "#000000")]))
+                                                        Tag(name: "Random", color: "#000000")]),
+                          selected: false)
                     .frame(width: 380)
 
 
@@ -144,12 +194,13 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  author: "Michal",
                                                  isAuthor: true,
                                                  color: "#E1AD01",
-                                                 comment: "My comment",
+                                                 comment: "",
                                                  text: nil,
                                                  isLocked: false,
                                                  sortIndex: "",
                                                  dateModified: Date(),
-                                                 tags: []))
+                                                 tags: []),
+                          selected: false)
                     .frame(width: 380)
 
 
@@ -166,7 +217,8 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  isLocked: true,
                                                  sortIndex: "",
                                                  dateModified: Date(),
-                                                 tags: []))
+                                                 tags: []),
+                          selected: false)
                     .frame(width: 380)
         }
     }

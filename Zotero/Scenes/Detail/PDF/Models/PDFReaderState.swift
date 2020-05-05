@@ -23,12 +23,14 @@ struct PDFReaderState: ViewModelState {
 
     static let supportedAnnotations: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
     static let zoteroAnnotationKey = "isZoteroAnnotation"
+    static let zoteroKeyKey = "zoteroKey"
 
     let document: Document
 
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
     var changes: Changes
+    var selectedAnnotation: Annotation?
 
     init(url: URL) {
         self.document = Document(url: url)

@@ -20,8 +20,8 @@ class AnnotationCell: UITableViewCell {
         self.setup()
     }
 
-    func setup(with annotation: Annotation) {
-        self.set(view: AnnotationRow(annotation: annotation))
+    func setup(with annotation: Annotation, selected: Bool) {
+        self.set(view: AnnotationRow(annotation: annotation, selected: selected))
     }
 
     private func setup() {

@@ -29,15 +29,20 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         case .loadAnnotations:
             self.loadAnnotations(in: viewModel)
 
-        case .cleanupAnnotations:
-            let zoteroAnnotations = viewModel.state.document.allAnnotations(of: PDFReaderState.supportedAnnotations)
-                                                            .values
-                                                            .flatMap({ $0 })
-                                                            .filter({ ($0.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) == true })
-            viewModel.state.document.remove(annotations: zoteroAnnotations, options: nil)
-
         case .searchAnnotations(let term):
             self.searchAnnotations(with: term, in: viewModel)
+
+        case .selectAnnotation(let annotation):
+            self.update(viewModel: viewModel) { state in
+                state.selectedAnnotation = annotation
+                state.changes = .annotations
+            }
+
+        case .selectAnnotationFromDocument(let key, let page):
+            self.update(viewModel: viewModel) { state in
+                state.selectedAnnotation = state.annotations[page]?.first(where: { $0.key == key })
+                state.changes = .annotations
+            }
 
         }
     }
@@ -67,7 +72,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.annotationsSnapshot = state.annotations
             }
             state.annotations = annotations
-            state.changes.insert(.annotations)
+            state.changes = .annotations
         }
     }
 
@@ -76,7 +81,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.annotationsSnapshot = nil
             state.annotations = snapshot
-            state.changes.insert(.annotations)
+            state.changes = .annotations
         }
     }
 
@@ -88,7 +93,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let annotations = self.annotations(from: zoteroAnnotations)
         self.update(viewModel: viewModel) { state in
             state.annotations = zoteroAnnotations
-            state.changes.insert(.annotations)
+            state.changes = .annotations
 
             // Hide external supported annotations
             documentAnnotations.values.flatMap({ $0 }).forEach({ $0.isHidden = true })
@@ -182,17 +187,19 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         square.pageIndex = UInt(annotation.page)
         square.boundingBox = annotation.boundingBox
         square.borderColor = UIColor(hex: annotation.color)
-        square.customData = [PDFReaderState.zoteroAnnotationKey: true]
+        square.customData = [PDFReaderState.zoteroAnnotationKey: true,
+                             PDFReaderState.zoteroKeyKey: annotation.key]
         return square
     }
 
     private func highlightAnnotation(from annotation: Annotation) -> HighlightAnnotation {
-        let highlight = HighlightAnnotation()
+        let highlight = ZHighlightAnnotation()
         highlight.pageIndex = UInt(annotation.page)
         highlight.boundingBox = annotation.boundingBox
         highlight.rects = annotation.rects
         highlight.color = UIColor(hex: annotation.color)
-        highlight.customData = [PDFReaderState.zoteroAnnotationKey: true]
+        highlight.customData = [PDFReaderState.zoteroAnnotationKey: true,
+                                PDFReaderState.zoteroKeyKey: annotation.key]
         return highlight
     }
 
@@ -201,8 +208,15 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
         note.boundingBox = CGRect(x: boundingBox.minX, y: boundingBox.minY, width: 32, height: 32)
-        note.customData = [PDFReaderState.zoteroAnnotationKey: true]
+        note.customData = [PDFReaderState.zoteroAnnotationKey: true,
+                           PDFReaderState.zoteroKeyKey: annotation.key]
         return note
+    }
+}
+
+class ZHighlightAnnotation: HighlightAnnotation {
+    override var wantsSelectionBorder: Bool {
+        return true
     }
 }
 

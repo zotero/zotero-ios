@@ -10,6 +10,7 @@ import Foundation
 
 enum PDFReaderAction {
     case loadAnnotations
-    case cleanupAnnotations
     case searchAnnotations(String)
+    case selectAnnotation(Annotation?)
+    case selectAnnotationFromDocument(key: String, page: Int)
 }

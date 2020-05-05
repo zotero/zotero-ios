@@ -83,7 +83,6 @@ class PDFReaderViewController: UIViewController {
     }
 
     @objc private func close() {
-        self.viewModel.process(action: .cleanupAnnotations)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
@@ -157,6 +156,23 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
         // Only zotero annotations can be selected
         return annotations.filter({ ($0.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) == true })
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController,
+                           shouldSave document: Document,
+                           withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
+        return false
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, didTapOn pageView: PDFPageView, at viewPoint: CGPoint) -> Bool {
+        self.viewModel.process(action: .selectAnnotation(nil))
+        return true
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, didSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
+        guard let annotation = annotations.first,
+              let key = annotation.customData?[PDFReaderState.zoteroKeyKey] as? String else { return }
+        self.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(pageView.pageIndex)))
     }
 }
 

@@ -110,9 +110,16 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource 
         let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
         if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row],
            let cell = cell as? AnnotationCell {
-            cell.setup(with: annotation)
+            let selected = annotation.key == self.viewModel.state.selectedAnnotation?.key
+            cell.setup(with: annotation, selected: selected)
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] {
+            self.viewModel.process(action: .selectAnnotation(annotation))
+        }
     }
 }
 
