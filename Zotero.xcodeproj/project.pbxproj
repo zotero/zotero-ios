@@ -482,6 +482,7 @@
 		B39D336823FFD96C00EF2ACB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336723FFD96C00EF2ACB /* Note.swift */; };
 		B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
+		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */; };
 		B3AB38A5238EC02D008A1ABB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */; };
 		B3AB38A6238EC02D008A1ABB /* AllCollectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */; };
@@ -900,6 +901,7 @@
 		B39D336723FFD96C00EF2ACB /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentsDbRequest.swift; sourceTree = "<group>"; };
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
+		B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PSPDFKit+Extensions.swift"; sourceTree = "<group>"; };
 		B3AAD70C23CE16010042C4AB /* CreateBackendItemDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBackendItemDbRequest.swift; sourceTree = "<group>"; };
 		B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllCollectionPickerView.swift; sourceTree = "<group>"; };
@@ -1228,15 +1230,16 @@
 				B305650723FC051E003304F2 /* MD5+Url.swift */,
 				B305650B23FC051E003304F2 /* Observable+Completable.swift */,
 				B305650D23FC051E003304F2 /* PreferenceKeys.swift */,
+				B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */,
 				B305650823FC051E003304F2 /* String+Extensions.swift */,
 				B305650423FC051E003304F2 /* Threading+Extras.swift */,
 				B305650923FC051E003304F2 /* UIColor+Custom.swift */,
 				B305650A23FC051E003304F2 /* UIFont+Extensions.swift */,
+				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */,
 				B305650323FC051E003304F2 /* UserDefaults+Codable.swift */,
-				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -2417,6 +2420,7 @@
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
+				B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */,
 				B3593F57241A61C700760E20 /* CollectionRow.swift in Sources */,
 				B305661323FC051E003304F2 /* ArrayEncoding.swift in Sources */,
 				B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */,

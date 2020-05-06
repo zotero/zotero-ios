@@ -56,6 +56,26 @@ class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if let location = state.focusLocation,
+           let key = state.selectedAnnotation?.key {
+            self.focusAnnotation(at: location, key: key, document: state.document)
+        }
+    }
+
+    private func focusAnnotation(at location: AnnotationLocation, key: String, document: Document) {
+        if location.page != self.pdfController.pageIndex {
+            // Scroll to page, annotation will be selected by delegate
+            self.pdfController.setPageIndex(UInt(location.page), animated: true)
+            return
+        }
+
+        // Page already visible, select annotation
+        guard let pageView = self.pdfController.pageViewForPage(at: UInt(location.page)),
+              let annotation = document.annotation(on: location.page, with: key) else { return }
+
+        if !pageView.selectedAnnotations.contains(annotation) {
+            pageView.selectedAnnotations = [annotation]
+        }
     }
 
     @objc private func toggleSidebar() {
@@ -151,17 +171,30 @@ class PDFReaderViewController: UIViewController {
 }
 
 extension PDFReaderViewController: PDFViewControllerDelegate {
-    func pdfViewController(_ pdfController: PDFViewController,
-                           shouldSelect annotations: [PSPDFKit.Annotation],
-                           on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
-        // Only zotero annotations can be selected
-        return annotations.filter({ ($0.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) == true })
+    func pdfViewController(_ pdfController: PDFViewController, didConfigurePageView pageView: PDFPageView, forPageAt pageIndex: Int) {
+        guard let selected = self.viewModel.state.selectedAnnotation,
+              let annotation = self.viewModel.state.document.annotation(on: pageIndex, with: selected.key) else { return }
+
+        if !pageView.selectedAnnotations.contains(annotation) {
+            pageView.selectedAnnotations = [annotation]
+        }
     }
 
     func pdfViewController(_ pdfController: PDFViewController,
-                           shouldSave document: Document,
-                           withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
-        return false
+                           shouldSelect annotations: [PSPDFKit.Annotation],
+                           on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
+        // Only zotero annotations can be selected, except highlight annotation
+        return annotations.filter({ $0.isZoteroAnnotation && !$0.isHighlightAnnotation })
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, didSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
+        guard let annotation = annotations.first,
+              let key = annotation.key else { return }
+        self.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(pageView.pageIndex)))
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, didDeselect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
+        self.viewModel.process(action: .selectAnnotation(nil))
     }
 
     func pdfViewController(_ pdfController: PDFViewController, didTapOn pageView: PDFPageView, at viewPoint: CGPoint) -> Bool {
@@ -169,10 +202,23 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         return true
     }
 
-    func pdfViewController(_ pdfController: PDFViewController, didSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
-        guard let annotation = annotations.first,
-              let key = annotation.customData?[PDFReaderState.zoteroKeyKey] as? String else { return }
-        self.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(pageView.pageIndex)))
+    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {
+        return false
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController,
+                           shouldShow menuItems: [MenuItem],
+                           atSuggestedTargetRect rect: CGRect,
+                           for annotations: [PSPDFKit.Annotation]?,
+                           in annotationRect: CGRect,
+                           on pageView: PDFPageView) -> [MenuItem] {
+      return []
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController,
+                           shouldSave document: Document,
+                           withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
+        return false
     }
 }
 

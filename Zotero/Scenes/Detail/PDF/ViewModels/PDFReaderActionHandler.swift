@@ -33,16 +33,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.searchAnnotations(with: term, in: viewModel)
 
         case .selectAnnotation(let annotation):
-            self.update(viewModel: viewModel) { state in
-                state.selectedAnnotation = annotation
-                state.changes = .annotations
-            }
+            self.select(annotation: annotation, shouldSelectInDocument: true, in: viewModel)
 
         case .selectAnnotationFromDocument(let key, let page):
-            self.update(viewModel: viewModel) { state in
-                state.selectedAnnotation = state.annotations[page]?.first(where: { $0.key == key })
-                state.changes = .annotations
-            }
+            let annotation = viewModel.state.annotations[page]?.first(where: { $0.key == key })
+            self.select(annotation: annotation, shouldSelectInDocument: false, in: viewModel)
 
         }
     }
@@ -81,6 +76,33 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.annotationsSnapshot = nil
             state.annotations = snapshot
+            state.changes = .annotations
+        }
+    }
+
+    private func select(annotation: Annotation?, shouldSelectInDocument: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.selectedAnnotation = annotation
+
+            if let highlight = state.highlightSelectionAnnotation {
+                state.document.remove(annotations: [highlight], options: nil)
+            }
+
+            if let annotation = annotation {
+                // HighlightAnnotation always needs selection annotation
+                if annotation.type == .highlight {
+                    let selection = self.createHighlightSelectionAnnotation()
+                    selection.pageIndex = UInt(annotation.page)
+                    selection.boundingBox = annotation.boundingBox.insetBy(dx: -5, dy: -5)
+                    state.highlightSelectionAnnotation = selection
+                    state.document.add(annotations: [selection], options: nil)
+                }
+
+                if shouldSelectInDocument {
+                    state.focusLocation = (annotation.page, annotation.boundingBox)
+                }
+            }
+
             state.changes = .annotations
         }
     }
@@ -136,7 +158,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 return Annotation(key: KeyGenerator.newKey,
                                   type: .highlight,
                                   page: Int(annotation.pageIndex),
-                                  pageLabel: "\(annotation.pageIndex)",
+                                  pageLabel: "\(annotation.pageIndex + 1)",
                                   rects: annotation.rects ?? [annotation.boundingBox],
                                   author: "",
                                   isAuthor: true,
@@ -151,7 +173,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 return Annotation(key: KeyGenerator.newKey,
                                   type: .area,
                                   page: Int(annotation.pageIndex),
-                                  pageLabel: "\(annotation.pageIndex)",
+                                  pageLabel: "\(annotation.pageIndex + 1)",
                                   rects: [annotation.boundingBox],
                                   author: "",
                                   isAuthor: true,
@@ -193,7 +215,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func highlightAnnotation(from annotation: Annotation) -> HighlightAnnotation {
-        let highlight = ZHighlightAnnotation()
+        let highlight = HighlightAnnotation()
         highlight.pageIndex = UInt(annotation.page)
         highlight.boundingBox = annotation.boundingBox
         highlight.rects = annotation.rects
@@ -210,13 +232,19 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.boundingBox = CGRect(x: boundingBox.minX, y: boundingBox.minY, width: 32, height: 32)
         note.customData = [PDFReaderState.zoteroAnnotationKey: true,
                            PDFReaderState.zoteroKeyKey: annotation.key]
+        note.borderStyle = .dashed
         return note
     }
-}
 
-class ZHighlightAnnotation: HighlightAnnotation {
-    override var wantsSelectionBorder: Bool {
-        return true
+    private func createHighlightSelectionAnnotation() -> SquareAnnotation {
+        let annotation = SquareAnnotation()
+        annotation.borderColor = UIColor(hex: "#6495ed")
+        annotation.dashArray = [4]
+        annotation.borderStyle = .dashed
+        annotation.lineWidth = 1.8
+        annotation.customData = [PDFReaderState.zoteroAnnotationKey: true,
+                                 PDFReaderState.zoteroHighlightKey: true]
+        return annotation
     }
 }
 

@@ -8,9 +8,11 @@
 
 #if PDFENABLED
 
-import Foundation
+import UIKit
 
 import PSPDFKit
+
+typealias AnnotationLocation = (page: Int, boundingBox: CGRect)
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
@@ -23,6 +25,7 @@ struct PDFReaderState: ViewModelState {
 
     static let supportedAnnotations: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
     static let zoteroAnnotationKey = "isZoteroAnnotation"
+    static let zoteroHighlightKey = "isZoteroHighlight"
     static let zoteroKeyKey = "zoteroKey"
 
     let document: Document
@@ -31,6 +34,8 @@ struct PDFReaderState: ViewModelState {
     var annotationsSnapshot: [Int: [Annotation]]?
     var changes: Changes
     var selectedAnnotation: Annotation?
+    var highlightSelectionAnnotation: SquareAnnotation?
+    var focusLocation: AnnotationLocation?
 
     init(url: URL) {
         self.document = Document(url: url)
@@ -40,6 +45,7 @@ struct PDFReaderState: ViewModelState {
 
     mutating func cleanup() {
         self.changes = []
+        self.focusLocation = nil
     }
 }
 

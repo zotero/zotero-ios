@@ -33,8 +33,8 @@ struct Annotation {
             return boundingBox
         }
 
-        var minX: CGFloat = 0.0
-        var minY: CGFloat = 0.0
+        var minX: CGFloat = .infinity
+        var minY: CGFloat = .infinity
         var maxX: CGFloat = 0.0
         var maxY: CGFloat = 0.0
 
