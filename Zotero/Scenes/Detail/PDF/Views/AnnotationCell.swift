@@ -9,6 +9,7 @@
 import UIKit
 
 class AnnotationCell: UITableViewCell {
+    private var key: String = ""
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -20,8 +21,9 @@ class AnnotationCell: UITableViewCell {
         self.setup()
     }
 
-    func setup(with annotation: Annotation, selected: Bool) {
-        self.set(view: AnnotationRow(annotation: annotation, selected: selected))
+    func setup(with annotation: Annotation, preview: UIImage?, selected: Bool) {
+        self.key = annotation.key
+        self.set(view: AnnotationRow(annotation: annotation, preview: nil, selected: selected))
     }
 
     private func setup() {

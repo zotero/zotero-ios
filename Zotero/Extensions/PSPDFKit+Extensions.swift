@@ -23,8 +23,8 @@ extension PSPDFKit.Annotation {
         return (self.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) ?? false
     }
 
-    var isHighlightAnnotation: Bool {
-        return (self.customData?[PDFReaderState.zoteroHighlightKey] as? Bool) ?? false
+    var isSelectionAnnotation: Bool {
+        return (self.customData?[PDFReaderState.zoteroSelectionKey] as? Bool) ?? false
     }
 
     var key: String? {

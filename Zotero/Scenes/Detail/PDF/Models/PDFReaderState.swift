@@ -12,7 +12,8 @@ import UIKit
 
 import PSPDFKit
 
-typealias AnnotationLocation = (page: Int, boundingBox: CGRect)
+typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
+typealias AnnotationSidebarLocation = (index: Int, page: Int)
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
@@ -25,27 +26,40 @@ struct PDFReaderState: ViewModelState {
 
     static let supportedAnnotations: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
     static let zoteroAnnotationKey = "isZoteroAnnotation"
-    static let zoteroHighlightKey = "isZoteroHighlight"
+    static let zoteroSelectionKey = "isZoteroSelection"
     static let zoteroKeyKey = "zoteroKey"
 
+    let key: String
     let document: Document
+    let previewCache: NSCache<NSString, UIImage>
 
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
     var changes: Changes
     var selectedAnnotation: Annotation?
     var highlightSelectionAnnotation: SquareAnnotation?
-    var focusLocation: AnnotationLocation?
+    /// Location to focus in document
+    var focusDocumentLocation: AnnotationDocumentLocation?
+    /// Annotation key to focus in annotation sidebar
+    var focusSidebarLocation: AnnotationSidebarLocation?
+    /// Annotations that need to be reloaded in sidebar
+    var updatedAnnotationIndexPaths: [IndexPath]?
 
-    init(url: URL) {
+    init(url: URL, key: String) {
+        self.key = key
+        self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]
         self.changes = []
+
+        self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
     }
 
     mutating func cleanup() {
         self.changes = []
-        self.focusLocation = nil
+        self.focusDocumentLocation = nil
+        self.focusSidebarLocation = nil
+        self.updatedAnnotationIndexPaths = nil
     }
 }
 

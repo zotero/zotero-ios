@@ -47,6 +47,8 @@ class AnnotationsViewController: UIViewController {
                           self?.update(state: state)
                       })
                       .disposed(by: self.disposeBag)
+
+        self.viewModel.process(action: .startObservingAnnotationChanges)
     }
 
     // MARK: - Actions
@@ -54,6 +56,15 @@ class AnnotationsViewController: UIViewController {
     private func update(state: PDFReaderState) {
         if state.changes.contains(.annotations) {
             self.tableView.reloadData()
+
+            if let location = state.focusSidebarLocation {
+                let indexPath = IndexPath(row: location.index, section: location.page)
+                self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+            }
+        }
+
+        if let indexPaths = state.updatedAnnotationIndexPaths {
+            self.tableView.reloadRows(at: indexPaths, with: .none)
         }
     }
 
@@ -64,6 +75,7 @@ class AnnotationsViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
+//        tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
         tableView.backgroundColor = UIColor(hex: "#d2d8e2")
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
@@ -97,7 +109,7 @@ class AnnotationsViewController: UIViewController {
     }
 }
 
-extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource {
+extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching {
     func numberOfSections(in tableView: UITableView) -> Int {
         return Int(self.viewModel.state.document.pageCount)
     }
@@ -106,13 +118,32 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource 
         return self.viewModel.state.annotations[section]?.count ?? 0
     }
 
+    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+        let keys = indexPaths.compactMap({ self.viewModel.state.annotations[$0.section]?[$0.row] }).map({ $0.key })
+        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+
         if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row],
            let cell = cell as? AnnotationCell {
             let selected = annotation.key == self.viewModel.state.selectedAnnotation?.key
-            cell.setup(with: annotation, selected: selected)
+            let preview: UIImage?
+
+            if annotation.type != .area {
+                preview = nil
+            } else {
+                preview = self.viewModel.state.previewCache.object(forKey: (annotation.key as NSString))
+
+                if preview == nil {
+                    self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
+                }
+            }
+
+            cell.setup(with: annotation, preview: preview, selected: selected)
         }
+
         return cell
     }
 

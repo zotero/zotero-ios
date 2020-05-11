@@ -362,7 +362,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 switch file.ext {
                 case "pdf":
-                    state.openAttachmentAction = .pdf(file.createUrl())
+                    state.openAttachmentAction = .pdf(url: file.createUrl(), key: attachment.key)
                 default:
                     state.openAttachmentAction = .unknownFile(file.createUrl())
                 }

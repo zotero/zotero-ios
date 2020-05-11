@@ -23,6 +23,7 @@ class Controllers {
     let crashReporter: CrashReporter
     let debugLogging: DebugLogging
     let translatorsController: TranslatorsController
+    let annotationPreviewController: AnnotationPreviewController
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -57,6 +58,7 @@ class Controllers {
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
+        self.annotationPreviewController = AnnotationPreviewController(fileStorage: fileStorage)
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)

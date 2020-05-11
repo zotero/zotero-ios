@@ -11,6 +11,7 @@ import SwiftUI
 
 struct AnnotationRow: View {
     let annotation: Annotation
+    let preview: UIImage?
     let selected: Bool
 
     var body: some View {
@@ -19,7 +20,7 @@ struct AnnotationRow: View {
             if self.annotation.type == .highlight ||
                self.annotation.type == .area {
                 AnnotationDivider(selected: self.selected)
-                AnnotationRowBody(annotation: self.annotation)
+                AnnotationRowBody(annotation: self.annotation, preview: self.preview)
             }
             if self.footerVisible {
                 AnnotationDivider(selected: self.selected)
@@ -87,14 +88,16 @@ struct AnnotationRowHeader: View {
 
 struct AnnotationRowBody: View {
     let annotation: Annotation
+    let preview: UIImage?
 
     var body: some View {
         Group {
             if self.annotation.type == .highlight {
                 self.annotation.text.flatMap({ Text($0) })
             } else {
-                // TODO: - Show image
-                Image(systemName: "xmark.rectangle")
+                // TODO: - Add placeholder image
+                (self.preview.flatMap({ Image(uiImage: $0) }) ?? Image(systemName: "xmark.rectangle"))
+                    .aspectRatio(contentMode: .fit)
             }
         }
         .padding(10)
@@ -182,6 +185,7 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  dateModified: Date(),
                                                  tags: [Tag(name: "Preview", color: "#123321"),
                                                         Tag(name: "Random", color: "#000000")]),
+                          preview: nil,
                           selected: false)
                     .frame(width: 380)
 
@@ -200,6 +204,7 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  sortIndex: "",
                                                  dateModified: Date(),
                                                  tags: []),
+                          preview: nil,
                           selected: false)
                     .frame(width: 380)
 
@@ -218,6 +223,7 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  sortIndex: "",
                                                  dateModified: Date(),
                                                  tags: []),
+                          preview: nil,
                           selected: false)
                     .frame(width: 380)
         }

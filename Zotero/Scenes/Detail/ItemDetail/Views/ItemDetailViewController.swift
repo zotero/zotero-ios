@@ -102,8 +102,8 @@ class ItemDetailViewController: UIViewController {
 
     private func open(attachmentAction: ItemDetailState.OpenAttachmentAction) {
         switch attachmentAction {
-        case .pdf(let url):
-            self.coordinatorDelegate?.showPdf(at: url)
+        case .pdf(let url, let key):
+            self.coordinatorDelegate?.showPdf(at: url, key: key)
 
         case .unknownFile(let url):
             self.coordinatorDelegate?.showUnknownAttachment(at: url)

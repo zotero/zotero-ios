@@ -42,6 +42,7 @@ class PDFReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupAnnotationsSidebar()
         self.setupPdfController(with: self.viewModel.state.document)
+        self.setupObserving()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -50,19 +51,20 @@ class PDFReaderViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
+
         self.viewModel.process(action: .loadAnnotations)
     }
 
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
-        if let location = state.focusLocation,
+        if let location = state.focusDocumentLocation,
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
         }
     }
 
-    private func focusAnnotation(at location: AnnotationLocation, key: String, document: Document) {
+    private func focusAnnotation(at location: AnnotationDocumentLocation, key: String, document: Document) {
         if location.page != self.pdfController.pageIndex {
             // Scroll to page, annotation will be selected by delegate
             self.pdfController.setPageIndex(UInt(location.page), animated: true)
@@ -168,9 +170,24 @@ class PDFReaderViewController: UIViewController {
                                           action: #selector(PDFReaderViewController.close))
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
     }
+
+    private func setupObserving() {
+        NotificationCenter.default.rx
+                                  .notification(.PSPDFAnnotationChanged)
+                                  .observeOn(MainScheduler.instance)
+                                  .subscribe(onNext: { [weak self] notification in
+                                      if let annotation = notification.object as? PSPDFKit.Annotation {
+                                          self?.viewModel.process(action: .annotationChanged(annotation))
+                                      }
+                                  })
+                                  .disposed(by: self.disposeBag)
+    }
 }
 
 extension PDFReaderViewController: PDFViewControllerDelegate {
+    func pdfViewController(_ pdfController: PDFViewController, willScheduleRenderTaskFor pageView: PDFPageView) {
+    }
+
     func pdfViewController(_ pdfController: PDFViewController, didConfigurePageView pageView: PDFPageView, forPageAt pageIndex: Int) {
         guard let selected = self.viewModel.state.selectedAnnotation,
               let annotation = self.viewModel.state.document.annotation(on: pageIndex, with: selected.key) else { return }
@@ -184,7 +201,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            shouldSelect annotations: [PSPDFKit.Annotation],
                            on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
         // Only zotero annotations can be selected, except highlight annotation
-        return annotations.filter({ $0.isZoteroAnnotation && !$0.isHighlightAnnotation })
+        return annotations.filter({ $0.isZoteroAnnotation })
     }
 
     func pdfViewController(_ pdfController: PDFViewController, didSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
@@ -219,6 +236,12 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            shouldSave document: Document,
                            withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
         return false
+    }
+}
+
+class SelectableHighlightAnnotation: HighlightAnnotation {
+    override var wantsSelectionBorder: Bool {
+        return true
     }
 }
 

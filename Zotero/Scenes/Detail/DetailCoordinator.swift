@@ -34,7 +34,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
-    func showPdf(at url: URL)
+    func showPdf(at url: URL, key: String)
     func showUnknownAttachment(at url: URL)
     func showWeb(url: URL)
 }
@@ -232,10 +232,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.presentPicker(viewModel: viewModel, saveAction: picked)
     }
 
-    func showPdf(at url: URL) {
+    func showPdf(at url: URL, key: String) {
         #if PDFENABLED
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url),
-                                                                      handler: PDFReaderActionHandler()))
+        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key),
+                                                                      handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)))
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController.present(navigationController, animated: true, completion: nil)
