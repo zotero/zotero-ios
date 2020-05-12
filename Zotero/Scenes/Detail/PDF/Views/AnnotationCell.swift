@@ -23,7 +23,7 @@ class AnnotationCell: UITableViewCell {
 
     func setup(with annotation: Annotation, preview: UIImage?, selected: Bool) {
         self.key = annotation.key
-        self.set(view: AnnotationRow(annotation: annotation, preview: nil, selected: selected))
+        self.set(view: AnnotationRow(annotation: annotation, preview: preview, selected: selected))
     }
 
     private func setup() {

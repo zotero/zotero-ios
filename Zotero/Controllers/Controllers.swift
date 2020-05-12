@@ -58,7 +58,7 @@ class Controllers {
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
-        self.annotationPreviewController = AnnotationPreviewController(fileStorage: fileStorage)
+        self.annotationPreviewController = AnnotationPreviewController(previewSize: AnnotationsConfig.previewSize, fileStorage: fileStorage)
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)

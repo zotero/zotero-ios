@@ -323,9 +323,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func createHighlightSelectionAnnotation() -> SquareAnnotation {
         let annotation = SquareAnnotation()
         annotation.borderColor = UIColor(hex: "#6495ed")
-        annotation.dashArray = [4]
-        annotation.borderStyle = .dashed
-        annotation.lineWidth = 1.8
+        annotation.lineWidth = 1.0
         annotation.customData = [PDFReaderState.zoteroAnnotationKey: true,
                                  PDFReaderState.zoteroSelectionKey: true]
         return annotation

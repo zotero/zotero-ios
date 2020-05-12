@@ -354,6 +354,7 @@
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3231333243F0F0000F1905A /* SceneDelegate.swift */; };
+		B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */; };
 		B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */; };
 		B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */; };
 		B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325DBAE24375D8D00EFF0F5 /* Conflict.swift */; };
@@ -791,6 +792,7 @@
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B3231333243F0F0000F1905A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationsConfig.swift; sourceTree = "<group>"; };
 		B325DBAB24374F4600EFF0F5 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		B325DBAE24375D8D00EFF0F5 /* Conflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conflict.swift; sourceTree = "<group>"; };
 		B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolution.swift; sourceTree = "<group>"; };
@@ -1038,6 +1040,7 @@
 				B357DEE024165DEE00E06153 /* Debugging */,
 				B305648223FC051E003304F2 /* Files */,
 				B305649F23FC051E003304F2 /* Sync */,
+				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B305647F23FC051E003304F2 /* DragDropController.swift */,
@@ -1051,10 +1054,9 @@
 				B305646B23FC051E003304F2 /* SchemaController.swift */,
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
 				B305646E23FC051E003304F2 /* SessionController.swift */,
-				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
-				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
 				B36BEC7224485FC700A60552 /* TagColorGenerator.swift */,
-				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
+				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
+				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -1264,6 +1266,7 @@
 				B305654523FC051E003304F2 /* API */,
 				B305652D23FC051E003304F2 /* Database */,
 				B305655523FC051E003304F2 /* Sync */,
+				B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */,
 				B305656123FC051E003304F2 /* AppGroup.swift */,
 				B305653A23FC051E003304F2 /* Attachment.swift */,
 				B305653B23FC051E003304F2 /* Collection.swift */,
@@ -2670,6 +2673,7 @@
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
 				B30566B323FC051F003304F2 /* CollectionResponse.swift in Sources */,
 				B3593F4B241A61C700760E20 /* LibrariesError.swift in Sources */,
+				B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */,
 				B305669923FC051F003304F2 /* RCreator.swift in Sources */,
 				B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */,
 				B328037624362B4000FE8453 /* TranslatorsSettingsView.swift in Sources */,

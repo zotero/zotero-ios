@@ -94,13 +94,15 @@ struct AnnotationRowBody: View {
         Group {
             if self.annotation.type == .highlight {
                 self.annotation.text.flatMap({ Text($0) })
+                    .padding(10)
             } else {
                 // TODO: - Add placeholder image
-                (self.preview.flatMap({ Image(uiImage: $0) }) ?? Image(systemName: "xmark.rectangle"))
+                (self.preview.flatMap({ Image(uiImage: $0).resizable() }) ?? Image(systemName: "xmark.rectangle"))
                     .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: 200, alignment: .center)
+                    .clipped()
             }
         }
-        .padding(10)
     }
 }
 
@@ -138,7 +140,7 @@ struct AnnotationRowFooter: View {
                 .padding(10)
             }
         }
-        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(self.backgroundColor)
     }
 
@@ -225,7 +227,7 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  tags: []),
                           preview: nil,
                           selected: false)
-                    .frame(width: 380)
+                    .frame(width: 220)
         }
     }
 }

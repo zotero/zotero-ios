@@ -15,7 +15,6 @@ import PSPDFKitUI
 import RxSwift
 
 class PDFReaderViewController: UIViewController {
-    private static let sidebarWidth: CGFloat = 250
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
@@ -51,7 +50,6 @@ class PDFReaderViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-
         self.viewModel.process(action: .loadAnnotations)
     }
 
@@ -82,8 +80,8 @@ class PDFReaderViewController: UIViewController {
 
     @objc private func toggleSidebar() {
         let shouldShow = self.pdfControllerLeft.constant == 0
-        self.pdfControllerLeft.constant = shouldShow ? PDFReaderViewController.sidebarWidth : 0
-        self.annotationsControllerLeft.constant = shouldShow ? 0 : -PDFReaderViewController.sidebarWidth
+        self.pdfControllerLeft.constant = shouldShow ? AnnotationsConfig.sidebarWidth : 0
+        self.annotationsControllerLeft.constant = shouldShow ? 0 : -AnnotationsConfig.sidebarWidth
 
         if shouldShow {
             self.annotationsController.view.isHidden = false
@@ -122,10 +120,10 @@ class PDFReaderViewController: UIViewController {
         NSLayoutConstraint.activate([
             controller.view.topAnchor.constraint(equalTo: self.view.topAnchor),
             controller.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            controller.view.widthAnchor.constraint(equalToConstant: PDFReaderViewController.sidebarWidth)
+            controller.view.widthAnchor.constraint(equalToConstant: AnnotationsConfig.sidebarWidth)
         ])
         let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor,
-                                                                constant: -PDFReaderViewController.sidebarWidth)
+                                                                constant: -AnnotationsConfig.sidebarWidth)
         leftConstraint.isActive = true
 
         controller.didMove(toParent: self)

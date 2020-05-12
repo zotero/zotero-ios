@@ -17,16 +17,16 @@ import RxSwift
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
 
 class AnnotationPreviewController: NSObject {
-    private static let maxSize = CGSize(width: 200, height: 200)
-
     let observable: PublishSubject<AnnotationPreviewUpdate>
+    private let size: CGSize
     private let queue: DispatchQueue
     private let fileStorage: FileStorage
 
-    init(fileStorage: FileStorage) {
+    init(previewSize: CGSize, fileStorage: FileStorage) {
+        self.size = previewSize
+        self.fileStorage = fileStorage
         self.observable = PublishSubject()
         self.queue = DispatchQueue(label: "org.zotero.AnnotationPreviewController.queue", qos: .userInitiated)
-        self.fileStorage = fileStorage
         super.init()
     }
 
@@ -93,9 +93,9 @@ class AnnotationPreviewController: NSObject {
     /// - parameter rect: Part of page to render.
     private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect) {
         let request = MutableRenderRequest(document: document)
-        request.imageSize = AnnotationPreviewController.maxSize
+        request.imageSize = self.size
         request.pageIndex = pageIndex
-        request.pdfRect = rect
+        request.pdfRect = rect.insetBy(dx: 2, dy: 2)
         request.userInfo["key"] = key
         request.userInfo["parentKey"] = parentKey
 

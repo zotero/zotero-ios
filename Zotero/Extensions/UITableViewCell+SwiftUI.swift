@@ -24,7 +24,8 @@ extension UITableViewCell {
             view.topAnchor.constraint(equalTo: self.contentView.topAnchor),
             view.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor),
             view.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor)
+            view.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor),
+            view.widthAnchor.constraint(equalTo: self.contentView.widthAnchor, multiplier: 1.0)
         ])
     }
 }
