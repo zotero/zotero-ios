@@ -19,16 +19,48 @@ extension Document {
 }
 
 extension PSPDFKit.Annotation {
-    var isZoteroAnnotation: Bool {
-        return (self.customData?[PDFReaderState.zoteroAnnotationKey] as? Bool) ?? false
+    var isZotero: Bool {
+        get {
+            return (self.customData?[AnnotationsConfig.isZoteroKey] as? Bool) ?? false
+        }
+
+        set {
+            if self.customData == nil {
+                self.customData = [AnnotationsConfig.isZoteroKey: newValue]
+            } else {
+                self.customData?[AnnotationsConfig.isZoteroKey] = newValue
+            }
+        }
     }
 
-    var isSelectionAnnotation: Bool {
-        return (self.customData?[PDFReaderState.zoteroSelectionKey] as? Bool) ?? false
+    var isSelection: Bool {
+        get {
+            return (self.customData?[AnnotationsConfig.selectionKey] as? Bool) ?? false
+        }
+
+        set {
+            if self.customData == nil {
+                self.customData = [AnnotationsConfig.selectionKey: newValue]
+            } else {
+                self.customData?[AnnotationsConfig.selectionKey] = newValue
+            }
+        }
     }
 
     var key: String? {
-        return self.customData?[PDFReaderState.zoteroKeyKey] as? String
+        get {
+            return self.customData?[AnnotationsConfig.keyKey] as? String
+        }
+
+        set {
+            if self.customData == nil {
+                if let key = newValue {
+                    self.customData = [AnnotationsConfig.keyKey: key]
+                }
+            } else {
+                self.customData?[AnnotationsConfig.keyKey] = newValue
+            }
+        }
     }
 }
 

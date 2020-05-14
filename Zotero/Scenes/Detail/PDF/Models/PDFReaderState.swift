@@ -24,11 +24,6 @@ struct PDFReaderState: ViewModelState {
         static let annotations = Changes(rawValue: 1 << 0)
     }
 
-    static let supportedAnnotations: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
-    static let zoteroAnnotationKey = "isZoteroAnnotation"
-    static let zoteroSelectionKey = "isZoteroSelection"
-    static let zoteroKeyKey = "zoteroKey"
-
     let key: String
     let document: Document
     let previewCache: NSCache<NSString, UIImage>

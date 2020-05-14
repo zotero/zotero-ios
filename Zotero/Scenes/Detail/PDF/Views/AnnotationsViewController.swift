@@ -56,15 +56,15 @@ class AnnotationsViewController: UIViewController {
     private func update(state: PDFReaderState) {
         if state.changes.contains(.annotations) {
             self.tableView.reloadData()
-
-            if let location = state.focusSidebarLocation {
-                let indexPath = IndexPath(row: location.index, section: location.page)
-                self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
-            }
         }
 
         if let indexPaths = state.updatedAnnotationIndexPaths {
             self.tableView.reloadRows(at: indexPaths, with: .none)
+        }
+
+        if let location = state.focusSidebarLocation {
+            let indexPath = IndexPath(row: location.index, section: location.page)
+            self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
         }
     }
 
@@ -75,7 +75,7 @@ class AnnotationsViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-//        tableView.prefetchDataSource = self
+        tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
         tableView.backgroundColor = UIColor(hex: "#d2d8e2")
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)

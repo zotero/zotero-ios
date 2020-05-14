@@ -30,14 +30,6 @@ class AnnotationPreviewController: NSObject {
         super.init()
     }
 
-    /// Stores preview for given annotation if there is no existing preview.
-    /// - parameter annotation: Area annotation for which the preview is to be cached.
-    /// - parameter parentKey: Key of PDF item. 
-    func storeIfNeeded(for annotation: SquareAnnotation, parentKey: String) {
-        guard let key = annotation.key, !self.fileStorage.has(Files.annotationPreview(annotationKey: key, pdfKey: parentKey)) else { return }
-        self.store(for: annotation, parentKey: parentKey)
-    }
-
     /// Stores preview for given annotation.
     /// - parameter annotation: Area annotation for which the preview is to be cached.
     /// - parameter parentKey: Key of PDF item.

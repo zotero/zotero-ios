@@ -22,6 +22,22 @@ class PDFReaderViewController: UIViewController {
     private weak var pdfController: PDFViewController!
     private weak var annotationsControllerLeft: NSLayoutConstraint!
     private weak var pdfControllerLeft: NSLayoutConstraint!
+    // Annotation toolbar
+    private weak var createNoteButton: CheckboxButton!
+    private weak var createHighlightButton: CheckboxButton!
+    private weak var createAreaButton: CheckboxButton!
+    private var selectedAnnotationButton: CheckboxButton? {
+        if self.createNoteButton.isSelected {
+            return self.createNoteButton
+        }
+        if self.createAreaButton.isSelected {
+            return self.createAreaButton
+        }
+        if self.createHighlightButton.isSelected {
+            return self.createHighlightButton
+        }
+        return nil
+    }
 
     // MARK: - Lifecycle
 
@@ -41,6 +57,7 @@ class PDFReaderViewController: UIViewController {
         self.setupNavigationBar()
         self.setupAnnotationsSidebar()
         self.setupPdfController(with: self.viewModel.state.document)
+        self.setupAnnotationToolbar()
         self.setupObserving()
 
         self.viewModel.stateObservable
@@ -51,6 +68,10 @@ class PDFReaderViewController: UIViewController {
                       .disposed(by: self.disposeBag)
 
         self.viewModel.process(action: .loadAnnotations)
+    }
+
+    deinit {
+        self.pdfController.annotationStateManager.remove(self)
     }
 
     // MARK: - Actions
@@ -123,7 +144,7 @@ class PDFReaderViewController: UIViewController {
             controller.view.widthAnchor.constraint(equalToConstant: AnnotationsConfig.sidebarWidth)
         ])
         let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor,
-                                                                constant: -AnnotationsConfig.sidebarWidth)
+                                                                      constant: -AnnotationsConfig.sidebarWidth)
         leftConstraint.isActive = true
 
         controller.didMove(toParent: self)
@@ -132,13 +153,93 @@ class PDFReaderViewController: UIViewController {
         self.annotationsControllerLeft = leftConstraint
     }
 
-    private func setupPdfController(with document: Document) {
-        let configuration = PDFConfiguration { builder in
-            builder.scrollDirection = .vertical
+    private func setupAnnotationToolbar() {
+        let highlight = CheckboxButton(type: .custom)
+        highlight.setImage(UIImage(systemName: "pencil.tip"), for: .normal)
+        highlight.rx
+                 .controlEvent(.touchDown)
+                 .subscribe(onNext: { [weak self] _ in
+                     if self?.pdfController.annotationStateManager.state == .highlight {
+                         self?.pdfController.annotationStateManager.setState(nil, variant: nil)
+                     } else {
+                         self?.pdfController.annotationStateManager.setState(.highlight, variant: nil)
+                     }
+                 })
+                 .disposed(by: self.disposeBag)
+        self.createHighlightButton = highlight
+
+        let note = CheckboxButton(type: .custom)
+        note.setImage(UIImage(systemName: "doc"), for: .normal)
+        note.rx
+            .controlEvent(.touchDown)
+            .subscribe(onNext: { [weak self] _ in
+                if self?.pdfController.annotationStateManager.state == .note {
+                    self?.pdfController.annotationStateManager.setState(nil, variant: nil)
+                } else {
+                    self?.pdfController.annotationStateManager.setState(.note, variant: nil)
+                }
+            })
+            .disposed(by: self.disposeBag)
+        self.createNoteButton = note
+
+        let area = CheckboxButton(type: .custom)
+        area.setImage(UIImage(systemName: "plus.square"), for: .normal)
+        area.rx
+            .controlEvent(.touchDown)
+            .subscribe(onNext: { [weak self] _ in
+                if self?.pdfController.annotationStateManager.state == .square {
+                    self?.pdfController.annotationStateManager.setState(nil, variant: nil)
+                } else {
+                    self?.pdfController.annotationStateManager.setState(.square, variant: nil)
+                }
+            })
+            .disposed(by: self.disposeBag)
+        self.createAreaButton = area
+
+        [highlight, note, area].forEach { button in
+            button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 0, bottom: 6, right: 0)
+            button.widthAnchor.constraint(equalTo: button.heightAnchor, multiplier: 1, constant: 0).isActive = true
+            button.adjustsImageWhenHighlighted = false
+            button.selectedBackgroundColor = .systemBlue
+            button.selectedTintColor = .white
+            button.layer.cornerRadius = 6
+            button.layer.masksToBounds = true
         }
-        let controller = PDFViewController(document: document, configuration: configuration)
+
+        let toolbar = UIStackView(arrangedSubviews: [highlight, note, area])
+        self.navigationItem.titleView = toolbar
+
+        let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
+        undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
+        undo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.pdfController.undoManager?.undo()
+            })
+            .disposed(by: self.disposeBag)
+
+        let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
+        redo.isEnabled = self.pdfController.undoManager?.canRedo ?? false
+        redo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.pdfController.undoManager?.redo()
+            })
+            .disposed(by: self.disposeBag)
+
+        self.navigationItem.rightBarButtonItems = [redo, undo]
+    }
+
+    private func setupPdfController(with document: Document) {
+        let pdfConfiguration = PDFConfiguration { builder in
+            builder.scrollDirection = .vertical
+            builder.documentLabelEnabled = .NO
+        }
+
+        let controller = PDFViewController(document: document, configuration: pdfConfiguration)
         controller.delegate = self
         controller.formSubmissionDelegate = nil
+        controller.annotationStateManager.add(self)
 
         self.addChild(controller)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
@@ -179,6 +280,26 @@ class PDFReaderViewController: UIViewController {
                                       }
                                   })
                                   .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(.PSPDFAnnotationsAdded)
+                                  .observeOn(MainScheduler.instance)
+                                  .subscribe(onNext: { [weak self] notification in
+                                      if let annotations = notification.object as? [PSPDFKit.Annotation] {
+                                          self?.viewModel.process(action: .annotationsAdded(annotations))
+                                      }
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(.PSPDFAnnotationsRemoved)
+                                  .observeOn(MainScheduler.instance)
+                                  .subscribe(onNext: { [weak self] notification in
+                                      if let annotations = notification.object as? [PSPDFKit.Annotation] {
+                                          self?.viewModel.process(action: .annotationsRemoved(annotations))
+                                      }
+                                  })
+                                  .disposed(by: self.disposeBag)
     }
 }
 
@@ -199,7 +320,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            shouldSelect annotations: [PSPDFKit.Annotation],
                            on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
         // Only zotero annotations can be selected, except highlight annotation
-        return annotations.filter({ $0.isZoteroAnnotation })
+        return annotations.filter({ $0.isZotero })
     }
 
     func pdfViewController(_ pdfController: PDFViewController, didSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
@@ -217,7 +338,10 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         return true
     }
 
-    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {
+    func pdfViewController(_ pdfController: PDFViewController,
+                           shouldShow controller: UIViewController,
+                           options: [String : Any]? = nil,
+                           animated: Bool) -> Bool {
         return false
     }
 
@@ -237,9 +361,40 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
     }
 }
 
-class SelectableHighlightAnnotation: HighlightAnnotation {
-    override var wantsSelectionBorder: Bool {
-        return true
+extension PDFReaderViewController: AnnotationStateManagerDelegate {
+    func annotationStateManager(_ manager: AnnotationStateManager,
+                                didChangeState oldState: PSPDFKit.Annotation.Tool?,
+                                to newState: PSPDFKit.Annotation.Tool?,
+                                variant oldVariant: PSPDFKit.Annotation.Variant?,
+                                to newVariant: PSPDFKit.Annotation.Variant?) {
+        if let state = oldState {
+            switch state {
+            case .note:
+                self.createNoteButton.isSelected = false
+            case .highlight:
+                self.createHighlightButton.isSelected = false
+            case .square:
+                self.createAreaButton.isSelected = false
+                default: break
+            }
+        }
+
+        if let state = newState {
+            switch state {
+            case .note:
+                self.createNoteButton.isSelected = true
+            case .highlight:
+                self.createHighlightButton.isSelected = true
+            case .square:
+                self.createAreaButton.isSelected = true
+            default: break
+            }
+        }
+    }
+
+    func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
+        self.navigationItem.rightBarButtonItems?.first?.isEnabled = redoEnabled
+        self.navigationItem.rightBarButtonItems?.last?.isEnabled = undoEnabled
     }
 }
 

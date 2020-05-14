@@ -370,6 +370,7 @@
 		B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
 		B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
 		B33A7498240FE63F003B322B /* DebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33A7497240FE63F003B322B /* DebugSettingsView.swift */; };
+		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
@@ -802,6 +803,7 @@
 		B337A5A9244F1DEB00AFD13D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B337A5AB244F228500AFD13D /* Localizable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
 		B33A7497240FE63F003B322B /* DebugSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingsView.swift; sourceTree = "<group>"; };
+		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
@@ -1478,6 +1480,7 @@
 				B3B953CF2459B49A00FC96DB /* AnnotationRow.swift */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
+				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2476,6 +2479,7 @@
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
 				B3DCDECD2408F36E0039ED0D /* LoginView.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
+				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,
 				B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */,
 				B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */,
 				B30565E123FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift in Sources */,

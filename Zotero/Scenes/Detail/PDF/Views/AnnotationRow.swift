@@ -87,6 +87,10 @@ struct AnnotationRowHeader: View {
 }
 
 struct AnnotationRowBody: View {
+    private static let maxHeight: CGFloat = 200
+    // 18 = (6 (outer padding) + 2 (shadow) + 1 (border)) * 2
+    private static let maxWidth: CGFloat = AnnotationsConfig.sidebarWidth - 18
+
     let annotation: Annotation
     let preview: UIImage?
 
@@ -94,15 +98,35 @@ struct AnnotationRowBody: View {
         Group {
             if self.annotation.type == .highlight {
                 self.annotation.text.flatMap({ Text($0) })
-                    .padding(10)
+                                    .padding(10)
             } else {
-                // TODO: - Add placeholder image
-                (self.preview.flatMap({ Image(uiImage: $0).resizable() }) ?? Image(systemName: "xmark.rectangle"))
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity, maxHeight: 200, alignment: .center)
-                    .clipped()
+                if self.preview == nil {
+                    ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+                        .foregroundColor(.black)
+                        .frame(width: AnnotationRowBody.maxWidth, height: self.previewHeight, alignment: .center)
+                }
+
+                self.preview.flatMap({
+                    Image(uiImage: $0).resizable()
+                                      .aspectRatio(contentMode: .fit)
+                                      .frame(maxWidth: .infinity,
+                                             maxHeight: AnnotationRowBody.maxHeight,
+                                             alignment: .center)
+                                      .clipped()
+                })
             }
         }
+    }
+
+    var previewHeight: CGFloat {
+        let bounds = self.annotation.boundingBox
+
+        if bounds.height > bounds.width {
+            return AnnotationRowBody.maxHeight
+        }
+
+        let ratio = AnnotationRowBody.maxWidth / bounds.width
+        return bounds.height * ratio
     }
 }
 
@@ -215,7 +239,7 @@ struct AnnotationRow_Previews: PreviewProvider {
                                                  type: .area,
                                                  page: 14,
                                                  pageLabel: "14",
-                                                 rects: [],
+                                                 rects: [CGRect(x: 0, y: 0, width: 400, height: 300)],
                                                  author: "Michal",
                                                  isAuthor: true,
                                                  color: "#E1AD01",
