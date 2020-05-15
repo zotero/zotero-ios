@@ -35,7 +35,11 @@ class AnnotationPreviewController: NSObject {
     /// - parameter parentKey: Key of PDF item.
     func store(for annotation: SquareAnnotation, parentKey: String) {
         guard let key = annotation.key, let document = annotation.document else { return }
-        self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: annotation.boundingBox)
+        self.enqueue(key: key,
+                     parentKey: parentKey,
+                     document: document,
+                     pageIndex: annotation.pageIndex,
+                     rect: annotation.boundingBox.insetBy(dx: (annotation.lineWidth + 1), dy: (annotation.lineWidth + 1)))
     }
 
     /// Deletes cached preview for given annotation.
@@ -87,7 +91,7 @@ class AnnotationPreviewController: NSObject {
         let request = MutableRenderRequest(document: document)
         request.imageSize = self.size
         request.pageIndex = pageIndex
-        request.pdfRect = rect.insetBy(dx: 2, dy: 2)
+        request.pdfRect = rect
         request.userInfo["key"] = key
         request.userInfo["parentKey"] = parentKey
 

@@ -15,6 +15,7 @@ import PSPDFKitUI
 import RxSwift
 
 class PDFReaderViewController: UIViewController {
+    private static let colorPreviewSize = CGSize(width: 15, height: 15)
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
@@ -26,18 +27,7 @@ class PDFReaderViewController: UIViewController {
     private weak var createNoteButton: CheckboxButton!
     private weak var createHighlightButton: CheckboxButton!
     private weak var createAreaButton: CheckboxButton!
-    private var selectedAnnotationButton: CheckboxButton? {
-        if self.createNoteButton.isSelected {
-            return self.createNoteButton
-        }
-        if self.createAreaButton.isSelected {
-            return self.createAreaButton
-        }
-        if self.createHighlightButton.isSelected {
-            return self.createHighlightButton
-        }
-        return nil
-    }
+    private weak var colorPickerbutton: UIButton!
 
     // MARK: - Lifecycle
 
@@ -81,6 +71,18 @@ class PDFReaderViewController: UIViewController {
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
         }
+    }
+
+    private func toggle(annotationTool: PSPDFKit.Annotation.Tool) {
+        if self.pdfController.annotationStateManager.state == annotationTool {
+            self.pdfController.annotationStateManager.setState(nil, variant: nil)
+        } else {
+            self.pdfController.annotationStateManager.setState(annotationTool, variant: nil)
+        }
+    }
+
+    private func showColorPicker() {
+
     }
 
     private func focusAnnotation(at location: AnnotationDocumentLocation, key: String, document: Document) {
@@ -154,16 +156,17 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func setupAnnotationToolbar() {
+        self.navigationItem.titleView = UIStackView(arrangedSubviews: self.createAnnotationToolbarButtons())
+        self.navigationItem.rightBarButtonItems = self.createUndoRedoButtons()
+    }
+
+    private func createAnnotationToolbarButtons() -> [UIButton] {
         let highlight = CheckboxButton(type: .custom)
         highlight.setImage(UIImage(systemName: "pencil.tip"), for: .normal)
         highlight.rx
                  .controlEvent(.touchDown)
                  .subscribe(onNext: { [weak self] _ in
-                     if self?.pdfController.annotationStateManager.state == .highlight {
-                         self?.pdfController.annotationStateManager.setState(nil, variant: nil)
-                     } else {
-                         self?.pdfController.annotationStateManager.setState(.highlight, variant: nil)
-                     }
+                    self?.toggle(annotationTool: .highlight)
                  })
                  .disposed(by: self.disposeBag)
         self.createHighlightButton = highlight
@@ -173,11 +176,7 @@ class PDFReaderViewController: UIViewController {
         note.rx
             .controlEvent(.touchDown)
             .subscribe(onNext: { [weak self] _ in
-                if self?.pdfController.annotationStateManager.state == .note {
-                    self?.pdfController.annotationStateManager.setState(nil, variant: nil)
-                } else {
-                    self?.pdfController.annotationStateManager.setState(.note, variant: nil)
-                }
+                self?.toggle(annotationTool: .note)
             })
             .disposed(by: self.disposeBag)
         self.createNoteButton = note
@@ -187,11 +186,7 @@ class PDFReaderViewController: UIViewController {
         area.rx
             .controlEvent(.touchDown)
             .subscribe(onNext: { [weak self] _ in
-                if self?.pdfController.annotationStateManager.state == .square {
-                    self?.pdfController.annotationStateManager.setState(nil, variant: nil)
-                } else {
-                    self?.pdfController.annotationStateManager.setState(.square, variant: nil)
-                }
+                self?.toggle(annotationTool: .square)
             })
             .disposed(by: self.disposeBag)
         self.createAreaButton = area
@@ -206,9 +201,22 @@ class PDFReaderViewController: UIViewController {
             button.layer.masksToBounds = true
         }
 
-        let toolbar = UIStackView(arrangedSubviews: [highlight, note, area])
-        self.navigationItem.titleView = toolbar
+        let picker = UIButton()
+        if let color = self.pdfController.annotationStateManager.lastUsedColor(forAnnotationString: .highlight) {
+            picker.setImage(color.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
+        }
+        picker.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+        picker.rx.controlEvent(.touchUpInside)
+                 .subscribe(onNext: { [weak self] _ in
+                    self?.showColorPicker()
+                 })
+                 .disposed(by: self.disposeBag)
+        self.colorPickerbutton = picker
 
+        return [highlight, note, area, picker]
+    }
+
+    private func createUndoRedoButtons() -> [UIBarButtonItem] {
         let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
         undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
         undo.rx
@@ -227,7 +235,7 @@ class PDFReaderViewController: UIViewController {
             })
             .disposed(by: self.disposeBag)
 
-        self.navigationItem.rightBarButtonItems = [redo, undo]
+        return [redo, undo]
     }
 
     private func setupPdfController(with document: Document) {
