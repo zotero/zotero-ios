@@ -18,6 +18,7 @@ enum PDFReaderAction {
     case searchAnnotations(String)
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)
+    case removeAnnotation(Annotation)
     case annotationChanged(PSPDFKit.Annotation)
     case annotationsAdded([PSPDFKit.Annotation])
     case annotationsRemoved([PSPDFKit.Annotation])

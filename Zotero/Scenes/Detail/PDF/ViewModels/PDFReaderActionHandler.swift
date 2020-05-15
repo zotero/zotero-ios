@@ -54,12 +54,24 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         case .annotationsRemoved(let annotations):
             self.remove(annotations: annotations, in: viewModel)
 
+        case .removeAnnotation(let annotation):
+            self.remove(annotation: annotation, in: viewModel)
+
         case .requestPreviews(let keys, let notify):
             self.loadPreviews(for: keys, notify: notify, in: viewModel)
         }
     }
 
     // MARK: - Annotation actions
+
+    /// Removes Zotero annotation from document.
+    /// - parameter annotation: Annotation to remove.
+    /// - parameter viewModel: ViewModel.
+    private func remove(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page))
+                                                               .first(where: { $0.key == annotation.key }) else { return }
+        viewModel.state.document.remove(annotations: [documentAnnotation], options: nil)
+    }
 
     /// Searches through annotations and updates view with results.
     /// - parameter term: If empty, search filter is removed. Otherwise applies search filter based on value.
@@ -274,10 +286,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         for annotation in annotations {
             guard annotation.isZotero && !annotation.isSelection,
-                  let annotation = annotation as? SquareAnnotation,
                   let key = annotation.key else { continue }
 
-            self.annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key)
+            if let annotation = annotation as? SquareAnnotation {
+                self.annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key)
+            }
 
             let page = Int(annotation.pageIndex)
             if let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) {

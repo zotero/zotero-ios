@@ -152,6 +152,16 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
             self.viewModel.process(action: .selectAnnotation(annotation))
         }
     }
+
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
+            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                guard let annotation = self?.viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
+                self?.viewModel.process(action: .removeAnnotation(annotation))
+            }
+            return UIMenu(title: "", children: [delete])
+        }
+    }
 }
 
 #endif
