@@ -11,8 +11,13 @@ import Foundation
 typealias SessionData = (userId: Int, apiToken: String)
 
 struct DebugSessionConstants {
+    #if DEBUG
     static let userId: Int? = 5487222
     static let apiToken: String? = "EG4p735j5tUhixLCtTg37WAs"
+    #else
+    static let userId: Int? = nil
+    static let apiToken: String? = nil
+    #endif
 }
 
 class SessionController: ObservableObject {
