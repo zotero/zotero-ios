@@ -17,7 +17,6 @@ struct AnnotationsConfig {
     static let previewSize: CGSize = createPreviewSize()
 
     static let isZoteroKey = "isZoteroAnnotation"
-    static let selectionKey = "isZoteroSelection"
     static let keyKey = "zoteroKey"
 
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]

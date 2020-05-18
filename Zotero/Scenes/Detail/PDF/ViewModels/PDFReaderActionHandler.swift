@@ -38,7 +38,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.searchAnnotations(with: term, in: viewModel)
 
         case .selectAnnotation(let annotation):
-            self.select(annotation: annotation, index: nil, didSelectInDocument: false, in: viewModel)
+            let index = annotation.flatMap({ viewModel.state.annotations[$0.page]?.firstIndex(where: { $0.key == $0.key }) })
+            self.select(annotation: annotation, index: index, didSelectInDocument: false, in: viewModel)
 
         case .selectAnnotationFromDocument(let key, let page):
             guard let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) else { return }
@@ -121,37 +122,30 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     /// Set selected annotation. Also sets `focusSidebarLocation` or `focusDocumentLocation` if needed.
     /// - parameter annotation: Annotation to be selected. Deselects current annotation if `nil`.
-    /// - parameter index: Index of annotation in annotations array on given page. Used only when focusing sidebar annotation.
+    /// - parameter index: Index of annotation in annotations array on given page.
     /// - parameter didSelectInDocument: `true` if annotation was selected in document, false if it was selected in sidebar.
     /// - parameter viewModel: ViewModel.
     private func select(annotation: Annotation?, index: Int?, didSelectInDocument: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            state.selectedAnnotation = annotation
-
-            if let highlight = state.highlightSelectionAnnotation {
-                state.document.remove(annotations: [highlight], options: nil)
+            if let existing = state.selectedAnnotation,
+               let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
+                state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
             }
 
-            if let annotation = annotation {
-                // HighlightAnnotation always needs selection annotation
-                if annotation.type == .highlight {
-                    let selection = self.createHighlightSelectionAnnotation()
-                    selection.pageIndex = UInt(annotation.page)
-                    selection.boundingBox = annotation.boundingBox.insetBy(dx: -5, dy: -5)
-                    state.highlightSelectionAnnotation = selection
-                    state.document.add(annotations: [selection], options: nil)
-                }
-
-                if didSelectInDocument {
-                    if let index = index {
-                        state.focusSidebarLocation = (index, annotation.page)
-                    }
-                } else {
+            if let annotation = annotation, let index = index {
+                if !didSelectInDocument {
                     state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
+                } else {
+                    state.focusSidebarLocation = (index, annotation.page)
                 }
+
+                var indexPaths = state.updatedAnnotationIndexPaths ?? []
+                indexPaths.append(IndexPath(row: index, section: annotation.page))
+                state.updatedAnnotationIndexPaths = indexPaths
             }
 
-            state.changes = .annotations
+            state.selectedAnnotation = annotation
+            state.changes = .selection
         }
     }
 
@@ -244,7 +238,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         for annotation in annotations {
             if annotation.isZotero {
-                guard !annotation.isSelection, let annotation = annotation as? SquareAnnotation else { continue }
+                guard let annotation = annotation as? SquareAnnotation else { continue }
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key)
                 continue
             }
@@ -285,7 +279,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         var toDelete: [(String, Int, Int)] = []
 
         for annotation in annotations {
-            guard annotation.isZotero && !annotation.isSelection,
+            guard annotation.isZotero,
                   let key = annotation.key else { continue }
 
             if let annotation = annotation as? SquareAnnotation {
@@ -303,9 +297,10 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.annotations[location.2]?.remove(at: location.1)
                 if state.selectedAnnotation?.key == location.0 {
                     state.selectedAnnotation = nil
+                    state.changes.insert(.selection)
                 }
             }
-            state.changes = .annotations
+            state.changes.insert(.annotations)
         }
     }
 
@@ -314,7 +309,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func update(annotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = annotation as? SquareAnnotation,
-              annotation.isZotero && !annotation.isSelection else { return }
+              annotation.isZotero else { return }
         // TODO: - check if order changed
         self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key)
     }
@@ -457,16 +452,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.key = annotation.key
         note.borderStyle = .dashed
         return note
-    }
-
-    /// Creates selection annotation.
-    private func createHighlightSelectionAnnotation() -> SquareAnnotation {
-        let annotation = SquareAnnotation()
-        annotation.borderColor = UIColor(hex: "#6495ed")
-        annotation.lineWidth = 1.0
-        annotation.isZotero = true
-        annotation.isSelection = true
-        return annotation
     }
 }
 

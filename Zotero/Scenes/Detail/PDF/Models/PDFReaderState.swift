@@ -22,6 +22,7 @@ struct PDFReaderState: ViewModelState {
         let rawValue: UInt8
 
         static let annotations = Changes(rawValue: 1 << 0)
+        static let selection = Changes(rawValue: 1 << 1)
     }
 
     let key: String
@@ -32,7 +33,6 @@ struct PDFReaderState: ViewModelState {
     var annotationsSnapshot: [Int: [Annotation]]?
     var changes: Changes
     var selectedAnnotation: Annotation?
-    var highlightSelectionAnnotation: SquareAnnotation?
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar

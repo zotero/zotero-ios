@@ -33,20 +33,6 @@ extension PSPDFKit.Annotation {
         }
     }
 
-    var isSelection: Bool {
-        get {
-            return (self.customData?[AnnotationsConfig.selectionKey] as? Bool) ?? false
-        }
-
-        set {
-            if self.customData == nil {
-                self.customData = [AnnotationsConfig.selectionKey: newValue]
-            } else {
-                self.customData?[AnnotationsConfig.selectionKey] = newValue
-            }
-        }
-    }
-
     var key: String? {
         get {
             return self.customData?[AnnotationsConfig.keyKey] as? String

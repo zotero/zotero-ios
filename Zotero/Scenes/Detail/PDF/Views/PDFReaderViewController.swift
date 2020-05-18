@@ -67,9 +67,27 @@ class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if state.changes.contains(.selection),
+           let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
+            self.updateSelection(on: pageView, selectedAnnotation: state.selectedAnnotation, pageIndex: Int(self.pdfController.pageIndex))
+        }
+
         if let location = state.focusDocumentLocation,
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
+        }
+    }
+
+    private func updateSelection(on pageView: PDFPageView, selectedAnnotation: Annotation?, pageIndex: Int) {
+        if let view = pageView.annotationContainerView.subviews.first(where: { $0 is SelectionView }) {
+            view.removeFromSuperview()
+        }
+
+        if let selection = selectedAnnotation,
+           selection.type == .highlight && selection.page == pageIndex {
+            let selectionView = SelectionView()
+            selectionView.frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -4, dy: -4)
+            pageView.annotationContainerView.addSubview(selectionView)
         }
     }
 
@@ -312,15 +330,20 @@ class PDFReaderViewController: UIViewController {
 }
 
 extension PDFReaderViewController: PDFViewControllerDelegate {
-    func pdfViewController(_ pdfController: PDFViewController, willScheduleRenderTaskFor pageView: PDFPageView) {
-    }
-
     func pdfViewController(_ pdfController: PDFViewController, didConfigurePageView pageView: PDFPageView, forPageAt pageIndex: Int) {
         guard let selected = self.viewModel.state.selectedAnnotation,
               let annotation = self.viewModel.state.document.annotation(on: pageIndex, with: selected.key) else { return }
 
         if !pageView.selectedAnnotations.contains(annotation) {
             pageView.selectedAnnotations = [annotation]
+        }
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
+        // Dispatch async on main queue used so that the page can finish displaying before selection view is added. Otherwise the selection view
+        // doesn't show up.
+        DispatchQueue.main.async {
+            self.updateSelection(on: pageView, selectedAnnotation: self.viewModel.state.selectedAnnotation, pageIndex: pageIndex)
         }
     }
 
@@ -403,6 +426,24 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
         self.navigationItem.rightBarButtonItems?.first?.isEnabled = redoEnabled
         self.navigationItem.rightBarButtonItems?.last?.isEnabled = undoEnabled
+    }
+}
+
+class SelectionView: UIView {
+    init() {
+        super.init(frame: CGRect())
+        self.commonSetup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        self.commonSetup()
+    }
+
+    private func commonSetup() {
+        self.backgroundColor = .clear
+        self.layer.borderColor = UIColor.systemBlue.cgColor
+        self.layer.borderWidth = 1
     }
 }
 
