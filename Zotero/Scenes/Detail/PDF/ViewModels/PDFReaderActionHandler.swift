@@ -38,7 +38,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.searchAnnotations(with: term, in: viewModel)
 
         case .selectAnnotation(let annotation):
-            let index = annotation.flatMap({ viewModel.state.annotations[$0.page]?.firstIndex(where: { $0.key == $0.key }) })
+            let index = annotation.flatMap({ annotation in
+                viewModel.state.annotations[annotation.page]?.firstIndex(where: { annotation.key == $0.key })
+            })
             self.select(annotation: annotation, index: index, didSelectInDocument: false, in: viewModel)
 
         case .selectAnnotationFromDocument(let key, let page):
