@@ -85,8 +85,9 @@ class PDFReaderViewController: UIViewController {
 
         if let selection = selectedAnnotation,
            selection.type == .highlight && selection.page == pageIndex {
+            let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -4, dy: -4)
             let selectionView = SelectionView()
-            selectionView.frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -4, dy: -4)
+            selectionView.frame = frame
             pageView.annotationContainerView.addSubview(selectionView)
         }
     }
@@ -442,6 +443,7 @@ class SelectionView: UIView {
 
     private func commonSetup() {
         self.backgroundColor = .clear
+        self.autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
         self.layer.borderColor = UIColor.systemBlue.cgColor
         self.layer.borderWidth = 1
     }
