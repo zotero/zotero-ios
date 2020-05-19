@@ -2289,7 +2289,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# translators file destination\nTRANSLATORS_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/modules/zotero/translators\"\n\nif [ ! -d \"$TRANSLATORS_DIR\" ]; then\nexit\nfi\n\nrm -r \"$TRANSLATORS_DIR\"\n";
+			shellScript = "# translators file destination\nZOTERO_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.appex/translation/modules/zotero\"\n\nif [ ! -d \"$ZOTERO_DIR\" ]; then\nexit\nfi\n\n# Remove translators so that they are not bundled twice\nrm -r \"$ZOTERO_DIR/translators\"\n# Remove scripts to avoid code-signing issues\nrm -r \"$ZOTERO_DIR/resource/redirect.sh\"\nrm -r \"$ZOTERO_DIR/resource/schema/global/scripts\"\nrm -r \"$ZOTERO_DIR/styles/update\"\nrm -r \"$ZOTERO_DIR/test\"\n# Remove unused symlinks\nfind \"$ZOTERO_DIR\" -follow -type l -exec rm -f {} \\;\n";
 		};
 		B337A5AD244F229400AFD13D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2980,8 +2980,10 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -3040,9 +3042,11 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -3073,6 +3077,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -3109,8 +3114,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3130,7 +3136,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -3144,8 +3150,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3154,6 +3162,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
@@ -3166,8 +3176,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3176,6 +3188,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
@@ -3187,8 +3201,10 @@
 			baseConfigurationReference = 16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3197,6 +3213,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Zotero;
@@ -3208,8 +3226,10 @@
 			baseConfigurationReference = 3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3218,6 +3238,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Zotero;
@@ -3229,7 +3251,9 @@
 			baseConfigurationReference = 3A209F5A017E002C874ACECE /* Pods-ZShare.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
@@ -3240,6 +3264,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Share Extension Distribution";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3251,7 +3276,9 @@
 			baseConfigurationReference = 0CF6A9D22C7893D6D8FEB78C /* Pods-ZShare.debug pdf.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
@@ -3262,6 +3289,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Share Extension Distribution";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3273,7 +3301,9 @@
 			baseConfigurationReference = 32FA43D1B9537A16F460F453 /* Pods-ZShare.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
@@ -3284,6 +3314,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Share Extension Distribution";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3323,8 +3354,10 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -3361,6 +3394,7 @@
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -3396,8 +3430,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3406,6 +3442,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Zotero.app/Zotero";
@@ -3417,8 +3455,10 @@
 			baseConfigurationReference = D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 8AQ7YSWBDJ;
+				DEVELOPMENT_TEAM = 8LAYR367YV;
 				INFOPLIST_FILE = ZoteroUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3427,6 +3467,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ZoteroUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Zotero;
