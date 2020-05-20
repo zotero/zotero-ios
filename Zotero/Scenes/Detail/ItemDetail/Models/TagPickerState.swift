@@ -11,12 +11,15 @@ import Foundation
 struct TagPickerState: ViewModelState {
     let libraryId: LibraryIdentifier
     var tags: [Tag]
+    var snapshot: [Tag]?
     var selectedTags: Set<String>
+    var searchTerm: String
     var error: TagPickerError?
 
     init(libraryId: LibraryIdentifier, selectedTags: Set<String>) {
         self.libraryId = libraryId
         self.tags = []
+        self.searchTerm = ""
         self.selectedTags = selectedTags
     }
 

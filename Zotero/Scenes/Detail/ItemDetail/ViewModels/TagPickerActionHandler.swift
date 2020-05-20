@@ -30,6 +30,28 @@ struct TagPickerActionHandler: ViewModelActionHandler {
 
         case .load:
             self.load(in: viewModel)
+
+        case .search(let term):
+            self.search(with: term, in: viewModel)
+        }
+    }
+
+    private func search(with term: String, in viewModel: ViewModel<TagPickerActionHandler>) {
+        if !term.isEmpty {
+            self.update(viewModel: viewModel) { state in
+                if state.snapshot == nil {
+                    state.snapshot = state.tags
+                }
+                state.searchTerm = term
+                state.tags = (state.snapshot ?? state.tags).filter({ $0.name.lowercased().contains(term.lowercased()) })
+            }
+        } else {
+            guard let snapshot = viewModel.state.snapshot else { return }
+            self.update(viewModel: viewModel) { state in
+                state.tags = snapshot
+                state.snapshot = nil
+                state.searchTerm = ""
+            }
         }
     }
 

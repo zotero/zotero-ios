@@ -11,4 +11,5 @@ import Foundation
 enum TagPickerAction {
     case load
     case setSelected(Set<String>)
+    case search(String)
 }

@@ -98,6 +98,7 @@
 "item_detail.error.dropped_fields_message" = "Are you sure you want to change the item type?
 The following fields will be lost:
 %@";
+"item_detail.search_tags" = "Search Tags...";
 
 "pdf.annotations_sidebar.page" = "Page";
 "pdf.annotations_sidebar.search_title" = "Search Annotations";

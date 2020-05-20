@@ -102,6 +102,8 @@ internal enum L10n {
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name")
     /// Notes
     internal static let notes = L10n.tr("Localizable", "item_detail.notes")
+    /// Search Tags...
+    internal static let searchTags = L10n.tr("Localizable", "item_detail.search_tags")
     /// Split name
     internal static let splitName = L10n.tr("Localizable", "item_detail.split_name")
     /// Tags
