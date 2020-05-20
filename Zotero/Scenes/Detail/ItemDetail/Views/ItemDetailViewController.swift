@@ -88,6 +88,14 @@ class ItemDetailViewController: UIViewController {
                                                      picked: { [weak self] type in
                                                          self?.viewModel.process(action: .changeType(type))
                                                      })
+        case .openUrl(let string):
+            if let url = URL(string: string) {
+                self.coordinatorDelegate?.showWeb(url: url)
+            }
+        case .openDoi(let doi):
+            if let url = URL(string: "https://dx.doi.org/\(doi)") {
+                self.coordinatorDelegate?.showWeb(url: url)
+            }
         }
     }
 

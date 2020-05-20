@@ -45,6 +45,10 @@ struct ItemDetailState: ViewModelState {
 
         var id: String { return self.key }
 
+        var isTappable: Bool {
+            return self.key == FieldKeys.url || self.key == FieldKeys.doi
+        }
+
         func hash(into hasher: inout Hasher) {
             hasher.combine(self.key)
             hasher.combine(self.value)

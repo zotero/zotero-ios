@@ -25,7 +25,6 @@ class ItemDetailFieldCell: UITableViewCell {
         super.awakeFromNib()
 
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.valueLabel.textColor = self.traitCollection.userInterfaceStyle == .light ? .black : .white
     }
 
     func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {
@@ -35,6 +34,14 @@ class ItemDetailFieldCell: UITableViewCell {
         self.valueLabel.isHidden = isEditing
         self.valueTextField.isHidden = !isEditing
         self.titleWidth.constant = titleWidth
+
+        if !isEditing {
+            if field.isTappable {
+                self.valueLabel.textColor = .systemBlue
+            } else {
+                self.valueLabel.textColor = self.traitCollection.userInterfaceStyle == .light ? .black : .white
+            }
+        }
     }
 
     func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat) {

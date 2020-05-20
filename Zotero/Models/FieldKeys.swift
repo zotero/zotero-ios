@@ -17,6 +17,7 @@ struct FieldKeys {
     static let court = "court"
     static let publisher = "publisher"
     static let publicationTitle = "publicationTitle"
+    static let doi = "doi"
     // Attachment attributes
     static let linkMode = "linkMode"
     static let contentType = "contentType"

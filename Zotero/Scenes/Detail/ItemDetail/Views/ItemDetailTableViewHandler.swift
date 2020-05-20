@@ -20,6 +20,8 @@ class ItemDetailTableViewHandler: NSObject {
         case openTagPicker
         case openTypePicker
         case openFilePicker
+        case openUrl(String)
+        case openDoi(String)
     }
 
     /// Sections that are shown in `tableView`
@@ -575,7 +577,18 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                     self.observer.on(.next(.openTypePicker))
                 }
             }
-        case .title, .abstract, .fields, .dates: break
+        case .fields:
+            let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
+            if let field = self.viewModel.state.data.fields[fieldId] {
+                switch field.key {
+                case FieldKeys.url:
+                    self.observer.on(.next(.openUrl(field.value)))
+                case FieldKeys.doi:
+                    self.observer.on(.next(.openDoi(field.value)))
+                default: break
+                }
+            }
+        case .title, .abstract, .dates: break
         }
     }
 }
