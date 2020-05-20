@@ -68,11 +68,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
             let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
             let allItems = try coordinator.perform(request: ReadItemsDbRequest(type: .all, libraryId: libraryId))
-            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
+//            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
             let trashItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
 
             var allCollections: [Collection] = [Collection(custom: .all, itemCount: allItems.count),
-                                                Collection(custom: .publications, itemCount: publicationItemsCount),
+               //                                 Collection(custom: .publications, itemCount: publicationItemsCount),
                                                 Collection(custom: .trash, itemCount: trashItemsCount)]
             allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections) +
                                               CollectionTreeBuilder.collections(from: searches),
