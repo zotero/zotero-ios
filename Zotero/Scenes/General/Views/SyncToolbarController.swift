@@ -48,7 +48,7 @@ class SyncToolbarController {
         label.text = text
         label.adjustsFontSizeToFitWidth = true
         label.numberOfLines = 2
-        label.textColor = .black
+        label.textColor = self.viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
         label.textAlignment = .center
 
         var newItems = items
