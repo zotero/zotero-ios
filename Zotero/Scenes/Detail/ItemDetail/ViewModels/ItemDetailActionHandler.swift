@@ -104,7 +104,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.updateCreator(with: id, update: update, in: viewModel)
 
         case .setFieldValue(let id, let value):
-            NSLog("ID - VAL: \(id) - \(value)")
             self.update(viewModel: viewModel) { state in
                 state.data.fields[id]?.value = value
             }
