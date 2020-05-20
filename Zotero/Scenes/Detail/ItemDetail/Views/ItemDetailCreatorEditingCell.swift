@@ -11,7 +11,7 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-class ItemDetailCreatorEditingCell: UITableViewCell {
+class ItemDetailCreatorEditingCell: RxTableViewCell {
     @IBOutlet private weak var titleButton: UIButton!
     @IBOutlet private weak var splitContainer: UIStackView!
     @IBOutlet private weak var firstNameTextField: UITextField!

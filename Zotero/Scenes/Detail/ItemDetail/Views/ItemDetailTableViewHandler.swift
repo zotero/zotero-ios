@@ -392,7 +392,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     if isEditing {
                         self?.viewModel.process(action: .setTitle(title))
                     }
-                }).disposed(by: self.disposeBag)
+                }).disposed(by: cell.newDisposeBag)
             }
 
         case .attachments:
@@ -432,7 +432,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     cell.setup(with: field, isEditing: isEditing, titleWidth: self.titleWidth)
                     cell.textObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
-                    }).disposed(by: self.disposeBag)
+                    }).disposed(by: cell.newDisposeBag)
                 }
             }
             hasSeparator = false
@@ -444,19 +444,19 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     cell.setup(with: creator)
                     cell.typeObservable.subscribe(onNext: { [weak self] _ in
                         self?.observer.on(.next(.openCreatorTypePicker(creator)))
-                    }).disposed(by: self.disposeBag)
+                    }).disposed(by: cell.newDisposeBag)
                     cell.namePresentationObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .updateCreator(creatorId, .namePresentation(value)))
-                    }).disposed(by: self.disposeBag)
+                    }).disposed(by: cell.disposeBag)
                     cell.fullNameObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .updateCreator(creatorId, .fullName(value)))
-                    }).disposed(by: self.disposeBag)
+                    }).disposed(by: cell.disposeBag)
                     cell.firstNameObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .updateCreator(creatorId, .firstName(value)))
-                    }).disposed(by: self.disposeBag)
+                    }).disposed(by: cell.disposeBag)
                     cell.lastNameObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .updateCreator(creatorId, .lastName(value)))
-                    }).disposed(by: self.disposeBag)
+                    }).disposed(by: cell.disposeBag)
                 }
             } else if let cell = cell as? ItemDetailFieldCell {
                 let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
