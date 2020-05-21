@@ -17,7 +17,7 @@ import RxSwift
 protocol DetailItemsCoordinatorDelegate: class {
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
-    func showNote(with text: String, save: @escaping (String) -> Void)
+    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showActionSheet(viewModel: ViewModel<ItemsActionHandler>, topInset: CGFloat)
 }
 
@@ -29,7 +29,7 @@ protocol DetailItemActionSheetCoordinatorDelegate: class {
 }
 
 protocol DetailItemDetailCoordinatorDelegate: class {
-    func showNote(with text: String, save: @escaping (String) -> Void)
+    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
@@ -95,8 +95,8 @@ class DetailCoordinator: Coordinator {
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
-    func showNote(with text: String, save: @escaping (String) -> Void) {
-        let controller = NoteEditorViewController(text: text, saveAction: save)
+    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void) {
+        let controller = NoteEditorViewController(text: text, readOnly: readOnly, saveAction: save)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.isModalInPresentation = true
         self.navigationController.present(navigationController, animated: true, completion: nil)
@@ -180,7 +180,7 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 
 
     func showNoteCreation(save: @escaping (String) -> Void) {
-        self.showNote(with: "", save: save)
+        self.showNote(with: "", readOnly: false, save: save)
     }
 
 

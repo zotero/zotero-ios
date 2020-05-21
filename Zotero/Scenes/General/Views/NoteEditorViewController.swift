@@ -12,13 +12,23 @@ import WebKit
 
 class NoteEditorViewController: UIViewController {
     let text: String
+    let readOnly: Bool
     let saveAction: (String) -> Void
 
     private weak var webView: WKWebView!
     private weak var activityIndicator: UIActivityIndicatorView!
 
-    init(text: String, saveAction: @escaping (String) -> Void) {
+    private var htmlUrl: URL? {
+        if self.readOnly {
+            return Bundle.main.url(forResource: "note", withExtension: "html")
+        } else {
+            return Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "tinymce")
+        }
+    }
+
+    init(text: String, readOnly: Bool, saveAction: @escaping (String) -> Void) {
         self.text = text
+        self.readOnly = readOnly
         self.saveAction = saveAction
         super.init(nibName: nil, bundle: nil)
     }
@@ -49,7 +59,7 @@ class NoteEditorViewController: UIViewController {
     }
 
     private func loadEditor() {
-        guard let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "tinymce"),
+        guard let url = self.htmlUrl,
               var data = try? String(contentsOf: url, encoding: .utf8) else { return }
         data = data.replacingOccurrences(of: "#initialnote", with: self.text)
         self.webView.loadHTMLString(data, baseURL: url)
@@ -73,8 +83,10 @@ class NoteEditorViewController: UIViewController {
     private func setupNavbarItems() {
         let cancelItem = UIBarButtonItem(title: L10n.cancel, style: .plain, target: self, action: #selector(NoteEditorViewController.cancel))
         self.navigationItem.leftBarButtonItem = cancelItem
-        let saveItem = UIBarButtonItem(title: L10n.save, style: .done, target: self, action: #selector(NoteEditorViewController.save))
-        self.navigationItem.rightBarButtonItem = saveItem
+        if !self.readOnly {
+            let saveItem = UIBarButtonItem(title: L10n.save, style: .done, target: self, action: #selector(NoteEditorViewController.save))
+            self.navigationItem.rightBarButtonItem = saveItem
+        }
     }
 
     private func setupWebView() {

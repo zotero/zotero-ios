@@ -74,8 +74,7 @@ class ItemDetailViewController: UIViewController {
                 self?.viewModel.process(action: .addAttachments(urls))
             })
         case .openNoteEditor(let note):
-            guard self.viewModel.state.library.metadataEditable else { return }
-            self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), save: { [weak self] text in
+            self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), readOnly: !self.viewModel.state.library.metadataEditable, save: { [weak self] text in
                 self?.viewModel.process(action: .saveNote(key: note?.key, text: text))
             })
         case .openTagPicker:

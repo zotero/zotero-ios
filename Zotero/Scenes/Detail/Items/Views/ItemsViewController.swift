@@ -104,7 +104,7 @@ class ItemsViewController: UIViewController {
         switch item.rawType {
         case ItemTypes.note:
             guard let note = Note(item: item) else { return }
-            self.coordinatorDelegate?.showNote(with: note.text, save: { [weak self] newText in
+            self.coordinatorDelegate?.showNote(with: note.text, readOnly: !self.viewModel.state.library.metadataEditable, save: { [weak self] newText in
                 self?.viewModel.process(action: .saveNote(note.key, newText))
             })
 
