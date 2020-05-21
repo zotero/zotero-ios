@@ -95,7 +95,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
         let controller = UIHostingController(rootView: view.environmentObject(ViewModel(initialState: state, handler: handler)))
         controller.isModalInPresentation = true
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.navigationController.parent?.present(controller, animated: true, completion: nil)
     }
 }
 
