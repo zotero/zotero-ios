@@ -49,7 +49,7 @@ class ItemsViewController: UIViewController {
                                                       viewModel: self.viewModel,
                                                       dragDropController: self.controllers.dragDropController)
         self.setupToolbar()
-        self.setupSearchController()
+        self.setupSearchBar()
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -229,18 +229,17 @@ class ItemsViewController: UIViewController {
         return [spacer, trashItem, spacer, emptyItem, spacer]
     }
 
-    private func setupSearchController() {
-        let controller = UISearchController(searchResultsController: nil)
-        controller.searchBar.placeholder = L10n.Items.searchTitle
-        controller.obscuresBackgroundDuringPresentation = false
-        self.navigationItem.searchController = controller
-        self.navigationItem.hidesSearchBarWhenScrolling = false
+    private func setupSearchBar() {
+        let searchBar = UISearchBar()
+        searchBar.placeholder = L10n.Items.searchTitle
+        searchBar.showsCancelButton = true
+        self.navigationItem.titleView = searchBar
 
-        controller.searchBar.rx.text.observeOn(MainScheduler.instance)
-                                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                                    .subscribe(onNext: { [weak self] text in
-                                        self?.viewModel.process(action: .search(text ?? ""))
-                                    })
-                                    .disposed(by: self.disposeBag)
+        searchBar.rx.text.observeOn(MainScheduler.instance)
+                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                         .subscribe(onNext: { [weak self] text in
+                             self?.viewModel.process(action: .search(text ?? ""))
+                         })
+                         .disposed(by: self.disposeBag)
     }
 }
