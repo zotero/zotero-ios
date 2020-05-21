@@ -18,7 +18,8 @@ protocol DetailItemsCoordinatorDelegate: class {
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
-    func showActionSheet(viewModel: ViewModel<ItemsActionHandler>, topInset: CGFloat)
+    func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
+    func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
 }
 
 protocol DetailItemActionSheetCoordinatorDelegate: class {
@@ -95,6 +96,62 @@ class DetailCoordinator: Coordinator {
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+    func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.barButtonItem = button
+
+        controller.addAction(UIAlertAction(title: L10n.Items.new, style: .default, handler: { [weak self, weak viewModel] _ in
+            guard let `self` = self, let viewModel = viewModel else { return }
+            self.showItemCreation(library: viewModel.state.library, collectionKey: viewModel.state.type.collectionKey)
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.Items.newNote, style: .default, handler: { [weak self, weak viewModel] _ in
+            self?.showNoteCreation(save: { text in
+                viewModel?.process(action: .saveNote(nil, text))
+            })
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.Items.newFile, style: .default, handler: { [weak self, weak viewModel] _ in
+            self?.showAttachmentPicker(save: { urls in
+                viewModel?.process(action: .addAttachments(urls))
+            })
+        }))
+
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        }
+
+        self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
+        let (fieldTitle, orderTitle) = self.sortButtonTitles(for: viewModel.state.sortType)
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.barButtonItem = button
+
+        controller.addAction(UIAlertAction(title: fieldTitle, style: .default, handler: { [weak self, weak viewModel] _ in
+            guard let `self` = self, let viewModel = viewModel else { return }
+            let binding = viewModel.binding(keyPath: \.sortType.field, action: { .setSortField($0) })
+            self.showSortTypePicker(sortBy: binding)
+        }))
+
+        controller.addAction(UIAlertAction(title: orderTitle, style: .default, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .toggleSortOrder)
+        }))
+
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        }
+
+        self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    private func sortButtonTitles(for sortType: ItemsSortType) -> (field: String, order: String) {
+        let sortOrderTitle = sortType.ascending ? L10n.Items.ascending : L10n.Items.descending
+        return ("\(L10n.Items.sortBy): \(sortType.field.title)",
+                "\(L10n.Items.sortOrder): \(sortOrderTitle)")
+    }
+
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void) {
         let controller = NoteEditorViewController(text: text, readOnly: readOnly, saveAction: save)
         let navigationController = UINavigationController(rootViewController: controller)
@@ -134,14 +191,6 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
             self.navigationController.present(controller, animated: true, completion: nil)
         }
-    }
-
-    func showActionSheet(viewModel: ViewModel<ItemsActionHandler>, topInset: CGFloat) {
-        let controller = ItemsActionSheetViewController(viewModel: viewModel, topOffset: topInset)
-        controller.coordinatorDelegate = self
-        controller.modalPresentationStyle = .overCurrentContext
-        controller.modalTransitionStyle = .crossDissolve
-        self.navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>) {

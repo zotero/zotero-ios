@@ -72,14 +72,14 @@
 "sync_toolbar.object.tags" = "tags";
 
 "items.search_title" = "Search Items";
-"items.select" = "Select Items";
+"items.select" = "Select";
 "items.sort_by" = "Sort By";
 "items.sort_order" = "Sort Order";
 "items.ascending" = "Ascending";
 "items.descending" = "Descending";
 "items.new" = "New Item";
 "items.new_note" = "New Standalone Note";
-"items.new_file" = "Upload File";
+"items.new_file" = "Add File";
 "items.zero_collections_selected" = "Select a Collection";
 "items.one_collections_selected" = "1 Collection Selected";
 "items.many_collections_selected" = "%d Collections Selected";

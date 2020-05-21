@@ -129,7 +129,7 @@ internal enum L10n {
     }
     /// New Item
     internal static let new = L10n.tr("Localizable", "items.new")
-    /// Upload File
+    /// Add File
     internal static let newFile = L10n.tr("Localizable", "items.new_file")
     /// New Standalone Note
     internal static let newNote = L10n.tr("Localizable", "items.new_note")
@@ -137,7 +137,7 @@ internal enum L10n {
     internal static let oneCollectionsSelected = L10n.tr("Localizable", "items.one_collections_selected")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title")
-    /// Select Items
+    /// Select
     internal static let select = L10n.tr("Localizable", "items.select")
     /// Sort By
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")

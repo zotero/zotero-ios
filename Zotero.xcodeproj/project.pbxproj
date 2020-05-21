@@ -429,10 +429,8 @@
 		B3593F40241A61C700760E20 /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF2241A61C700760E20 /* ItemCell.swift */; };
 		B3593F41241A61C700760E20 /* CollectionsPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */; };
 		B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EF4241A61C700760E20 /* ItemsViewController.xib */; };
-		B3593F43241A61C700760E20 /* ItemsActionSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF5241A61C700760E20 /* ItemsActionSheetViewController.swift */; };
 		B3593F44241A61C700760E20 /* ItemsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF6241A61C700760E20 /* ItemsViewController.swift */; };
 		B3593F45241A61C700760E20 /* ItemSortTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */; };
-		B3593F46241A61C700760E20 /* ItemsActionSheetViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EF8241A61C700760E20 /* ItemsActionSheetViewController.xib */; };
 		B3593F47241A61C700760E20 /* TagCirclesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF9241A61C700760E20 /* TagCirclesView.swift */; };
 		B3593F48241A61C700760E20 /* LibrariesActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EFD241A61C700760E20 /* LibrariesActionHandler.swift */; };
 		B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EFF241A61C700760E20 /* LibrariesAction.swift */; };
@@ -860,10 +858,8 @@
 		B3593EF2241A61C700760E20 /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
 		B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsPickerView.swift; sourceTree = "<group>"; };
 		B3593EF4241A61C700760E20 /* ItemsViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
-		B3593EF5241A61C700760E20 /* ItemsActionSheetViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsActionSheetViewController.swift; sourceTree = "<group>"; };
 		B3593EF6241A61C700760E20 /* ItemsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsViewController.swift; sourceTree = "<group>"; };
 		B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemSortTypePickerView.swift; sourceTree = "<group>"; };
-		B3593EF8241A61C700760E20 /* ItemsActionSheetViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemsActionSheetViewController.xib; sourceTree = "<group>"; };
 		B3593EF9241A61C700760E20 /* TagCirclesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagCirclesView.swift; sourceTree = "<group>"; };
 		B3593EFD241A61C700760E20 /* LibrariesActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesActionHandler.swift; sourceTree = "<group>"; };
 		B3593EFF241A61C700760E20 /* LibrariesAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibrariesAction.swift; sourceTree = "<group>"; };
@@ -1618,8 +1614,6 @@
 				B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */,
 				B3593EF2241A61C700760E20 /* ItemCell.swift */,
 				B3593EF1241A61C700760E20 /* ItemRow.swift */,
-				B3593EF5241A61C700760E20 /* ItemsActionSheetViewController.swift */,
-				B3593EF8241A61C700760E20 /* ItemsActionSheetViewController.xib */,
 				B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
 				B3593EF6241A61C700760E20 /* ItemsViewController.swift */,
@@ -2141,7 +2135,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B3593F46241A61C700760E20 /* ItemsActionSheetViewController.xib in Resources */,
 				B3593F33241A61C700760E20 /* ItemDetailNoteCell.xib in Resources */,
 				B3604FF824769F0900669CB7 /* note.html in Resources */,
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
@@ -2587,7 +2580,6 @@
 				B305661123FC051E003304F2 /* AuthorizeUploadRequest.swift in Sources */,
 				B357DEE624165E0B00E06153 /* DebugLogFormatter.swift in Sources */,
 				B30565DF23FC051E003304F2 /* ReadSearchesDbRequest.swift in Sources */,
-				B3593F43241A61C700760E20 /* ItemsActionSheetViewController.swift in Sources */,
 				B30566AD23FC051F003304F2 /* ItemResponse.swift in Sources */,
 				B3593F34241A61C700760E20 /* ItemDetailCreatorEditingCell.swift in Sources */,
 				B3B953C32459780600FC96DB /* Annotation.swift in Sources */,

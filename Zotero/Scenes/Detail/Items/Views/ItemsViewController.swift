@@ -44,12 +44,13 @@ class ItemsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.navigationItem.rightBarButtonItem = self.rightNavigationBarItem(for: self.viewModel.state)
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
                                                       dragDropController: self.controllers.dragDropController)
+        self.setupRightBarButtonItems()
         self.setupToolbar()
         self.setupSearchBar()
+        self.setupTitle()
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -76,7 +77,7 @@ class ItemsViewController: UIViewController {
         if state.changes.contains(.editing) {
             self.tableViewHandler.set(editing: state.isEditing, animated: true)
             self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
-            self.navigationItem.rightBarButtonItem = self.rightNavigationBarItem(for: state)
+            self.updateSelectItem(for: state)
         }
 
         if state.changes.contains(.results),
@@ -99,6 +100,14 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func showAddActions() {
+
+    }
+
+    private func showSortActions() {
+
+    }
 
     private func showItemDetail(for item: RItem) {
         switch item.rawType {
@@ -127,23 +136,32 @@ class ItemsViewController: UIViewController {
         })
     }
 
-    private func rightNavigationBarItem(for state: ItemsState) -> UIBarButtonItem {
-        let item: UIBarButtonItem
-        if self.viewModel.state.isEditing {
-            item = UIBarButtonItem(title: L10n.done, style: .done, target: nil, action: nil)
-        } else {
-            item = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), style: .plain, target: nil, action: nil)
+    private func updateSelectItem(for state: ItemsState) {
+        var items = self.navigationItem.rightBarButtonItems ?? []
+        items[0] = self.createSelectItem(for: state)
+        self.navigationItem.rightBarButtonItems = items
+    }
+
+    private func createSelectItem(for state: ItemsState) -> UIBarButtonItem {
+        let isEditing = state.isEditing
+        let title = isEditing ? L10n.done : L10n.Items.select
+
+        if let selectItem = self.navigationItem.rightBarButtonItems?.first, selectItem.title == title {
+            return selectItem
         }
 
-        item.rx.tap.subscribe(onNext: { [weak self] _ in
-            guard let `self` = self else { return }
-            if self.viewModel.state.isEditing {
-                self.viewModel.process(action: .stopEditing)
-            } else {
-                self.coordinatorDelegate?.showActionSheet(viewModel: self.viewModel, topInset: self.view.safeAreaInsets.top)
-            }
-        })
-        .disposed(by: self.disposeBag)
+        let item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+
+        item.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                if isEditing {
+                    self?.viewModel.process(action: .stopEditing)
+                } else {
+                    self?.viewModel.process(action: .startEditing)
+                }
+            })
+            .disposed(by: self.disposeBag)
 
         return item
     }
@@ -161,6 +179,46 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Setups
+
+    private func setupTitle() {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+
+        switch self.viewModel.state.type {
+        case .all:
+            self.title = L10n.Collections.allItems
+        case .publications:
+            self.title = L10n.Collections.myPublications
+        case .trash:
+            self.title = L10n.Collections.trash
+        case .collection(_, let name):
+            self.title = name
+        case .search(_, let name):
+            self.title = name
+        }
+    }
+
+    private func setupRightBarButtonItems() {
+        let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+        addItem.rx
+               .tap
+               .subscribe(onNext: { [weak self] _ in
+                   guard let `self` = self else { return }
+                   self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: addItem)
+               })
+               .disposed(by: self.disposeBag)
+
+        let sortItem = UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease"), style: .plain, target: nil, action: nil)
+        sortItem.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    guard let `self` = self else { return }
+                    self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: sortItem)
+                })
+                .disposed(by: self.disposeBag)
+
+        let selectItem = self.createSelectItem(for: self.viewModel.state)
+        self.navigationItem.rightBarButtonItems = [selectItem, sortItem, addItem]
+    }
 
     private func setupToolbar() {
         self.toolbarItems = self.viewModel.state.type.isTrash ? self.createTrashToolbarItems() : self.createNormalToolbarItems()
@@ -230,10 +288,20 @@ class ItemsViewController: UIViewController {
     }
 
     private func setupSearchBar() {
-        let searchBar = UISearchBar()
+        let searchBar: UISearchBar
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            searchBar = UISearchBar()
+            self.navigationItem.titleView = searchBar
+        } else {
+            let controller = UISearchController(searchResultsController: nil)
+            searchBar = controller.searchBar
+            controller.obscuresBackgroundDuringPresentation = false
+            self.navigationItem.hidesSearchBarWhenScrolling = false
+            self.navigationItem.searchController = controller
+        }
+
         searchBar.placeholder = L10n.Items.searchTitle
-        searchBar.showsCancelButton = true
-        self.navigationItem.titleView = searchBar
 
         searchBar.rx.text.observeOn(MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
