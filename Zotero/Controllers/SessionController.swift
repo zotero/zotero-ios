@@ -33,18 +33,20 @@ class SessionController: ObservableObject {
         self.defaults = defaults
         self.secureStorage = secureStorage
 
-        let apiToken = secureStorage.apiToken
-        let userId = defaults.userId
+        var apiToken = secureStorage.apiToken
+        var userId = defaults.userId
 
         if (apiToken == nil || userId == 0),
            let debugUserId = DebugSessionConstants.userId,
            let debugApiToken = DebugSessionConstants.apiToken {
+            apiToken = debugApiToken
+            userId = debugUserId
             secureStorage.apiToken = debugApiToken
             defaults.userId = debugUserId
         }
 
         if let token = apiToken, userId > 0 {
-            self.sessionData = (defaults.userId, token)
+            self.sessionData = (userId, token)
             self.isLoggedIn = true
         } else {
             self.sessionData = nil
