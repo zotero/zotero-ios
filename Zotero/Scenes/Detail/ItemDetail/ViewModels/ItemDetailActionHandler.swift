@@ -21,6 +21,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private let fileStorage: FileStorage
     private let dbStorage: DbStorage
     private let schemaController: SchemaController
+    private let saveScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, fileStorage: FileStorage,
@@ -29,6 +30,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
+        self.saveScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetail.save")
         self.disposeBag = DisposeBag()
     }
 
@@ -98,6 +100,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         case .setTitle(let title):
             self.update(viewModel: viewModel) { state in
                 state.data.title = title
+            }
+
+        case .setAbstract(let abstract):
+            self.update(viewModel: viewModel) { state in
+                state.data.abstract = abstract
             }
 
         case .updateCreator(let id, let update):
@@ -454,29 +461,34 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func _saveChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        // TODO: - move to background thread if possible
-        // SWIFTUI BUG: - sync store with environment .editMode so that we can switch edit mode when background task finished
-
-        // TODO: - add loading indicator for saving
+        self.update(viewModel: viewModel) { state in
+            state.isSaving = true
+        }
 
         self.save(state: viewModel.state)
+            .subscribeOn(self.saveScheduler)
             .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] newState in
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
                     state = newState
+                    state.isSaving = false
                 }
             }, onError: { [weak viewModel] error in
                 DDLogError("ItemDetailStore: can't store changes - \(error)")
                 guard let viewModel = viewModel else { return }
                 self.update(viewModel: viewModel) { state in
                     state.error = (error as? ItemDetailError) ?? .cantStoreChanges
+                    state.isSaving = false
                 }
             })
             .disposed(by: self.disposeBag)
     }
 
     private func save(state: ItemDetailState) -> Single<ItemDetailState> {
+        // Preview key has to be assigned here, because the `Single` below can be subscribed on background thread (and currently is),
+        // in which case the app will crash, because RItem in preview has been loaded on main thread.
+        let previewKey = state.type.previewKey
         return Single.create { subscriber -> Disposable in
             do {
                 try self.fileStorage.copyAttachmentFilesIfNeeded(for: state.data.attachments)
@@ -488,13 +500,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 newState.data.dateModified = Date()
 
                 switch state.type {
-                case .preview(let item):
-                    if let snapshot = state.snapshot {
-                        try self.updateItem(key: item.key, libraryId: state.library.identifier, data: state.data, snapshot: snapshot)
+                case .preview:
+                    if let snapshot = state.snapshot, let key = previewKey {
+                        try self.updateItem(key: key, libraryId: state.library.identifier, data: newState.data, snapshot: snapshot)
                     }
 
                 case .creation(let collectionKey), .duplication(_, let collectionKey):
-                    let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: state.data)
+                    let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: newState.data)
                     newType = .preview(item)
                 }
 
@@ -515,7 +527,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func updateDateFieldIfNeeded(in state: inout State) {
-        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.date }) else { return }
+        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.date || $0.key == FieldKeys.date }) else { return }
 
         let date: Date?
 
@@ -550,10 +562,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func updateItem(key: String, libraryId: LibraryIdentifier, data: ItemDetailState.Data, snapshot: ItemDetailState.Data) throws {
         let request = EditItemDetailDbRequest(libraryId: libraryId,
-                                                      itemKey: key,
-                                                      data: data,
-                                                      snapshot: snapshot,
-                                                      schemaController: self.schemaController)
+                                              itemKey: key,
+                                              data: data,
+                                              snapshot: snapshot,
+                                              schemaController: self.schemaController)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 }

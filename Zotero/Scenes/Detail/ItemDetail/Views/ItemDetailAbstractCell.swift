@@ -8,10 +8,16 @@
 
 import UIKit
 
-class ItemDetailAbstractCell: UITableViewCell {
+import RxCocoa
+
+class ItemDetailAbstractCell: RxTableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentLabel: UILabel!
     @IBOutlet private weak var contentTextView: UITextView!
+
+    var textObservable: ControlProperty<String> {
+        return self.contentTextView.rx.text.orEmpty
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()

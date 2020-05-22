@@ -40,6 +40,7 @@ struct EditItemDetailDbRequest: DbRequest {
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
+        item.changeType = .user
     }
 
     private func updateCreators(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) {
@@ -63,7 +64,6 @@ struct EditItemDetailDbRequest: DbRequest {
 
         item.updateCreatorSummary()
         item.changedFields.insert(.creators)
-        item.changeType = .user
     }
 
     private func updateFields(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data,

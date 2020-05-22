@@ -49,7 +49,7 @@ final class RealmObjectChangeObserver: ObjectChangeObserver {
             case .update(let results, _, let insertions, let modifications):
                 let updated = (insertions + modifications).map({ results[$0] })
                 self?.reportChangedLibraries(for: updated)
-            case .initial: break // we ignore the initial change, initially we perform a full sync anyway
+            case .initial: break // ignore the initial change, initially a full sync is performed anyway
             case .error(let error):
                 DDLogError("RealmObjectChangeObserver: \(Obj.self) observing error - \(error)")
             }

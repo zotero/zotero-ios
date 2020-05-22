@@ -26,6 +26,15 @@ struct ItemDetailState: ViewModelState {
         case duplication(RItem, collectionKey: String?)
         case preview(RItem)
 
+        var previewKey: String? {
+            switch self {
+            case .preview(let item):
+                return item.key
+            default:
+                return nil
+            }
+        }
+
         var isCreation: Bool {
             switch self {
             case .preview:
@@ -245,6 +254,7 @@ struct ItemDetailState: ViewModelState {
 
     var changes: Changes
     var isEditing: Bool
+    var isSaving: Bool
     var type: DetailType
     var data: Data
     var snapshot: Data?
@@ -266,6 +276,7 @@ struct ItemDetailState: ViewModelState {
         self.downloadError = [:]
         self.metadataTitleMaxWidth = 0
         self.error = error
+        self.isSaving = false
 
         switch type {
         case .preview, .duplication:

@@ -383,6 +383,11 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         case .abstract:
             if let cell = cell as? ItemDetailAbstractCell {
                 cell.setup(with: (self.viewModel.state.data.abstract ?? ""), isEditing: isEditing)
+                cell.textObservable.subscribe(onNext: { [weak self] abstract in
+                    if isEditing {
+                        self?.viewModel.process(action: .setAbstract(abstract))
+                    }
+                }).disposed(by: cell.newDisposeBag)
             }
 
         case .title:

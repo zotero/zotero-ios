@@ -40,7 +40,7 @@ class ItemDetailViewController: UIViewController {
         super.viewDidLoad()
 
         if self.viewModel.state.library.metadataEditable {
-            self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing)
+            self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing, isSaving: self.viewModel.state.isSaving)
         }
         self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel)
 
@@ -127,7 +127,7 @@ class ItemDetailViewController: UIViewController {
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
         if state.changes.contains(.editing) {
-            self.setNavigationBarEditingButton(toEditing: state.isEditing)
+            self.setNavigationBarEditingButton(toEditing: state.isEditing, isSaving: state.isSaving)
         }
 
         if state.changes.contains(.type) {
@@ -158,7 +158,7 @@ class ItemDetailViewController: UIViewController {
 
     /// Updates navigation bar with appropriate buttons based on editing state.
     /// - parameter isEditing: Current editing state of tableView.
-    private func setNavigationBarEditingButton(toEditing editing: Bool) {
+    private func setNavigationBarEditingButton(toEditing editing: Bool, isSaving: Bool) {
         self.navigationItem.setHidesBackButton(editing, animated: false)
 
         if !editing {
@@ -171,13 +171,22 @@ class ItemDetailViewController: UIViewController {
             return
         }
 
-        let saveButton = UIBarButtonItem(title: L10n.save, style: .plain, target: nil, action: nil)
-        saveButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                             self?.viewModel.process(action: .save)
-                         })
-                         .disposed(by: self.disposeBag)
+        let saveButton: UIBarButtonItem
+
+        if isSaving {
+            let indicator = UIActivityIndicatorView(style: .medium)
+            indicator.color = .gray
+            saveButton = UIBarButtonItem(customView: indicator)
+        } else {
+            saveButton = UIBarButtonItem(title: L10n.save, style: .plain, target: nil, action: nil)
+            saveButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                                 self?.viewModel.process(action: .save)
+                             })
+                             .disposed(by: self.disposeBag)
+        }
 
         let cancelButton = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+        cancelButton.isEnabled = !isSaving
         cancelButton.rx.tap.subscribe(onNext: { [weak self] _ in
                                self?.cancelEditing()
                            })

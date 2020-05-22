@@ -33,6 +33,7 @@ enum ItemDetailAction {
     case setFieldValue(id: String, value: String)
     case setTags([Tag])
     case setTitle(String)
+    case setAbstract(String)
     case save
     case startEditing
     case updateCreator(UUID, CreatorUpdate)
