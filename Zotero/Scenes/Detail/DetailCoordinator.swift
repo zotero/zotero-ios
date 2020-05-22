@@ -155,6 +155,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void) {
         let controller = NoteEditorViewController(text: text, readOnly: readOnly, saveAction: save)
         let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .formSheet
         navigationController.isModalInPresentation = true
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
@@ -212,6 +213,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
         let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
         navigationController.isModalInPresentation = true
+        navigationController.modalPresentationStyle = .formSheet
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 }
@@ -224,6 +226,7 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
                                           })
         let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
         navigationController.isModalInPresentation = true
+        navigationController.modalPresentationStyle = .formSheet
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
@@ -267,6 +270,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
         controller.isModalInPresentation = true
+        controller.modalPresentationStyle = .formSheet
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 
@@ -306,6 +310,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
     func showWeb(url: URL) {
         let controller = SFSafariViewController(url: url)
+        controller.modalPresentationStyle = .fullScreen
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 
@@ -317,6 +322,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
         controller.isModalInPresentation = true
+        controller.modalPresentationStyle = .formSheet
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 }

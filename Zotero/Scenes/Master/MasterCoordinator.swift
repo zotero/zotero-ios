@@ -95,6 +95,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
         let controller = UIHostingController(rootView: view.environmentObject(ViewModel(initialState: state, handler: handler)))
         controller.isModalInPresentation = true
+        controller.modalPresentationStyle = .formSheet
         self.navigationController.parent?.present(controller, animated: true, completion: nil)
     }
 }
@@ -103,6 +104,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library) {
         let navigationController = UINavigationController()
         navigationController.isModalInPresentation = true
+        navigationController.modalPresentationStyle = .formSheet
 
         let coordinator = CollectionEditingCoordinator(data: data,
                                                        library: library,
