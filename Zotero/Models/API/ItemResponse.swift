@@ -35,10 +35,11 @@ struct ItemResponse {
     let tags: [TagResponse]
     let creators: [CreatorResponse]
     let relations: [String: String]
+    let inPublications: Bool
 
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags", "deleted",
-                "collections", "relations", "dateAdded", "dateModified", "parentItem"]
+                "collections", "relations", "dateAdded", "dateModified", "parentItem", "inPublications"]
     }()
 
     init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?,
@@ -59,6 +60,7 @@ struct ItemResponse {
         self.tags = tags
         self.creators = creators
         self.relations = relations
+        self.inPublications = false
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
@@ -101,6 +103,7 @@ struct ItemResponse {
         self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
         self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
         self.relations = (data["relations"] as? [String: String]) ?? [:]
+        self.inPublications = (data["inPublications"] as? Bool) ?? false
         self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, schemaController: schemaController)
     }
 
@@ -128,6 +131,7 @@ struct ItemResponse {
         self.tags = try tagsData.map({ try decoder.decode(TagResponse.self, from: $0) })
         self.creators = try creatorsData.map({ try decoder.decode(CreatorResponse.self, from: $0) })
         self.relations = [:]
+        self.inPublications = false
         // Translator returns some extra fields, which may not be recognized by schema, so we just ignore those
         self.fields = try ItemResponse.parseFields(from: translatorResponse,
                                                    rawType: rawType,
