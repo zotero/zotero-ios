@@ -210,7 +210,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let note = Note(key: KeyGenerator.newKey, text: text)
         let request = CreateNoteDbRequest(note: note,
                                           localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-                                          libraryId: viewModel.state.library.identifier)
+                                          libraryId: viewModel.state.library.identifier,
+                                          collectionKey: viewModel.state.type.collectionKey)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't save new note: \(error)")

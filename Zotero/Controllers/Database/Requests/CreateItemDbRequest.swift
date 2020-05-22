@@ -102,7 +102,8 @@ struct CreateItemDbRequest: DbResponseRequest {
         for note in self.data.notes {
             let rNote = try CreateNoteDbRequest(note: note,
                                                 localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-                                                libraryId: nil).process(in: database)
+                                                libraryId: nil,
+                                                collectionKey: nil).process(in: database)
             rNote.parent = item
             rNote.libraryObject = item.libraryObject
             rNote.changedFields.insert(.parent)

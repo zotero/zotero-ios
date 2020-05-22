@@ -16,6 +16,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
     let note: Note
     let localizedType: String
     let libraryId: LibraryIdentifier?
+    let collectionKey: String?
 
     var needsWrite: Bool { return true }
 
@@ -39,6 +40,14 @@ struct CreateNoteDbRequest: DbResponseRequest {
             case .group(let identifier):
                 let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
                 item.group = group
+            }
+
+            if let key = self.collectionKey,
+               let collection = database.objects(RCollection.self)
+                                        .filter(.key(key, in: libraryId))
+                                        .first {
+                item.collections.append(collection)
+                item.changedFields.insert(.collections)
             }
         }
 

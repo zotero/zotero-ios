@@ -1715,8 +1715,8 @@
 		B3593F6D241A76E600760E20 /* Collection Editing */ = {
 			isa = PBXGroup;
 			children = (
-				B3593F6E241A76E600760E20 /* ViewModels */,
 				B3593F70241A76E600760E20 /* Models */,
+				B3593F6E241A76E600760E20 /* ViewModels */,
 				B3593F74241A76E600760E20 /* Views */,
 				B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */,
 			);
