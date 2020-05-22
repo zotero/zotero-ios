@@ -18,8 +18,8 @@ struct ItemDetailDataCreator {
     /// - returns: Populated data for given type.
     static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController, fileStorage: FileStorage) throws -> ItemDetailState.Data {
         switch type {
-        case .creation:
-            return try creationData(schemaController: schemaController)
+        case .creation(_, let type):
+            return try creationData(itemType: type, schemaController: schemaController)
         case .preview(let item), .duplication(let item, _):
             return try itemData(item: item, schemaController: schemaController, fileStorage: fileStorage)
         }
@@ -28,9 +28,8 @@ struct ItemDetailDataCreator {
     /// Creates data for `ItemDetailState.DetailType.creator`. When creating new item, most data is empty. Only `itemType` is set to first value
     /// and appropriate (empty) fields are added for given type.
     /// - parameter schemaController: Schema controller for fetching item type and localization.
-    private static func creationData(schemaController: SchemaController) throws -> ItemDetailState.Data {
-        guard let itemType = schemaController.itemTypes.sorted().first,
-              let localizedType = schemaController.localized(itemType: itemType) else {
+    private static func creationData(itemType: String, schemaController: SchemaController) throws -> ItemDetailState.Data {
+        guard let localizedType = schemaController.localized(itemType: itemType) else {
             throw ItemDetailError.schemaNotInitialized
         }
 

@@ -505,7 +505,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                         try self.updateItem(key: key, libraryId: state.library.identifier, data: newState.data, snapshot: snapshot)
                     }
 
-                case .creation(let collectionKey), .duplication(_, let collectionKey):
+                case .creation(let collectionKey, _), .duplication(_, let collectionKey):
                     let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: newState.data)
                     newType = .preview(item)
                 }

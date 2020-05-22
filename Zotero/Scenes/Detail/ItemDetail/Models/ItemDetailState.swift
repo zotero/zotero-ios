@@ -22,7 +22,7 @@ struct ItemDetailState: ViewModelState {
     }
 
     enum DetailType {
-        case creation(collectionKey: String?)
+        case creation(collectionKey: String?, type: String)
         case duplication(RItem, collectionKey: String?)
         case preview(RItem)
 

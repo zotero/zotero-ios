@@ -251,7 +251,9 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 
 
     func showItemCreation(library: Library, collectionKey: String?) {
-        self.showItemDetail(for: .creation(collectionKey: collectionKey), library: library)
+        self.showTypePicker(selected: "") { [weak self] type in
+            self?.showItemDetail(for: .creation(collectionKey: collectionKey, type: type), library: library)
+        }
     }
 }
 
