@@ -8,6 +8,8 @@
 
 import Foundation
 
+import CocoaLumberjack
+
 struct FieldKeys {
     static let title = "title"
     static let abstract = "abstractNote"
@@ -17,7 +19,7 @@ struct FieldKeys {
     static let court = "court"
     static let publisher = "publisher"
     static let publicationTitle = "publicationTitle"
-    static let doi = "doi"
+    static let doi = "DOI"
     // Attachment attributes
     static let linkMode = "linkMode"
     static let contentType = "contentType"
@@ -31,5 +33,19 @@ struct FieldKeys {
                 FieldKeys.contentType, FieldKeys.linkMode,
                 FieldKeys.md5, FieldKeys.mtime,
                 FieldKeys.url]
+    }
+
+    static func clean(doi: String) -> String {
+        do {
+            let regex = try NSRegularExpression(pattern: #"10(?:\.[0-9]{4,})?\/[^\s]*[^\s\.,]"#)
+            if let match = regex.firstMatch(in: doi, range: NSRange(doi.startIndex..., in: doi)),
+               let range = Range(match.range, in: doi) {
+                return String(doi[range])
+            }
+            return ""
+        } catch let error {
+            DDLogError("FieldKeys: can't clean DOI - \(error)")
+            return ""
+        }
     }
 }

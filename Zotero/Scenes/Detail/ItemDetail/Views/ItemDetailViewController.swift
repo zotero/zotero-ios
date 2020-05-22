@@ -93,7 +93,8 @@ class ItemDetailViewController: UIViewController {
                 self.coordinatorDelegate?.showWeb(url: url)
             }
         case .openDoi(let doi):
-            if let url = URL(string: "https://dx.doi.org/\(doi)") {
+            guard let encoded = FieldKeys.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
+            if let url = URL(string: "https://doi.org/\(encoded)") {
                 self.coordinatorDelegate?.showWeb(url: url)
             }
         }

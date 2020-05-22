@@ -49,18 +49,40 @@ struct ItemDetailState: ViewModelState {
         let key: String
         let baseField: String?
         var name: String
-        var value: String
+        var value: String {
+            didSet {
+                self.isTappable = Field.isTappable(value: self.value, for: self.key)
+            }
+        }
         let isTitle: Bool
+        var isTappable: Bool
 
         var id: String { return self.key }
 
-        var isTappable: Bool {
-            return self.key == FieldKeys.url || self.key == FieldKeys.doi
+        init(key: String, baseField: String? = nil, name: String, value: String, isTitle: Bool) {
+            self.key = key
+            self.baseField = baseField
+            self.name = name
+            self.value = value
+            self.isTitle = isTitle
+            self.isTappable = Field.isTappable(value: value, for: key)
         }
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(self.key)
             hasher.combine(self.value)
+        }
+
+        private static func isTappable(value: String, for key: String) -> Bool {
+            switch key {
+            case FieldKeys.doi:
+                return !FieldKeys.clean(doi: value).isEmpty
+            case FieldKeys.url:
+                let scheme = URL(string: value)?.scheme?.lowercased()
+                return scheme == "http" || scheme == "https"
+            default:
+                return false
+            }
         }
     }
 
