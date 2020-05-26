@@ -9,38 +9,31 @@
 import UIKit
 import SwiftUI
 
-struct SearchBar: UIViewRepresentable {
+import RxSwift
 
+struct SearchBar: UIViewRepresentable {
     @Binding var text: String
     var placeholder: String
 
-    class Coordinator: NSObject, UISearchBarDelegate {
-
-        @Binding var text: String
-
-        init(text: Binding<String>) {
-            _text = text
-        }
-
-        func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-            text = searchText
-        }
-    }
-
-    func makeCoordinator() -> SearchBar.Coordinator {
-        return Coordinator(text: $text)
-    }
+    private let disposeBag = DisposeBag()
 
     func makeUIView(context: UIViewRepresentableContext<SearchBar>) -> UISearchBar {
         let searchBar = UISearchBar(frame: .zero)
-        searchBar.delegate = context.coordinator
         searchBar.placeholder = placeholder
         searchBar.searchBarStyle = .minimal
         searchBar.autocapitalizationType = .none
+
+        searchBar.rx.text.observeOn(MainScheduler.instance)
+                         .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                         .subscribe(onNext: { text in
+                             self.text = (text ?? "")
+                         })
+                         .disposed(by: self.disposeBag)
+
         return searchBar
     }
 
     func updateUIView(_ uiView: UISearchBar, context: UIViewRepresentableContext<SearchBar>) {
-        uiView.text = text
+        uiView.text = self.text
     }
 }
