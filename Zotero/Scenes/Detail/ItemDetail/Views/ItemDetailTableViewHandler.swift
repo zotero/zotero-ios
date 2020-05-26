@@ -101,10 +101,13 @@ class ItemDetailTableViewHandler: NSObject {
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
     }
 
-    /// Reloads given section in `tableView`
+    /// Reloads given section (without header or footer) in `tableView`.
+    /// - parameter section: Section to reload.
     func reload(section: Section) {
         guard let section = self.sections.firstIndex(of: section) else { return }
-        self.tableView.reloadSections([section], with: .none)
+        let rows = self.tableView(self.tableView, numberOfRowsInSection: section)
+        let indexPaths = (0..<rows).map({ IndexPath(row: $0, section: section) })
+        self.tableView.reloadRows(at: indexPaths, with: .none)
     }
 
     /// Reloads all sections based on given state.

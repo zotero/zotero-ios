@@ -394,9 +394,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak viewModel] progress in
                           guard let viewModel = viewModel else { return }
-                          let progress = progress.totalBytes == 0 ? 0 : Double(progress.bytesWritten) / Double(progress.totalBytes)
                           self.update(viewModel: viewModel) { state in
-                              state.downloadProgress[key] = progress
+                              state.downloadProgress[key] = Double(progress.completed)
                               state.changes.insert(.downloadProgress)
                           }
                       }, onError: { [weak viewModel] error in
@@ -434,8 +433,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.downloadProgress[key] = nil
                 state.changes.insert(.downloadProgress)
                 if let (index, attachment) = state.data.attachments.enumerated().first(where: { $1.key == key }) {
-                    state.data.attachments[index] = attachment.changed(isLocal: true)
-                    self.openAttachment(attachment, in: viewModel)
+                    let newAttachment = attachment.changed(isLocal: true)
+                    state.data.attachments[index] = newAttachment
+                    self.openAttachment(newAttachment, in: viewModel)
                 }
             }
         }
