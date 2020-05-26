@@ -282,12 +282,12 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void) {
         let viewModel = CreatorTypePickerViewModelCreator.create(itemType: itemType, selected: selected,
                                                                  schemaController: self.controllers.schemaController)
-        self.presentPicker(viewModel: viewModel, saveAction: picked)
+        self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: picked)
     }
 
     func showTypePicker(selected: String, picked: @escaping (String) -> Void) {
         let viewModel = ItemTypePickerViewModelCreator.create(selected: selected, schemaController: self.controllers.schemaController)
-        self.presentPicker(viewModel: viewModel, saveAction: picked)
+        self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: picked)
     }
 
     func showPdf(at url: URL, key: String) {
@@ -317,8 +317,8 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 
-    private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, saveAction: @escaping (String) -> Void) {
-        let view = SinglePickerView(saveAction: saveAction) { [weak self] in
+    private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, requiresSaveButton: Bool, saveAction: @escaping (String) -> Void) {
+        let view = SinglePickerView(requiresSaveButton: requiresSaveButton, saveAction: saveAction) { [weak self] in
             self?.navigationController.dismiss(animated: true, completion: nil)
         }
         .environmentObject(viewModel)
