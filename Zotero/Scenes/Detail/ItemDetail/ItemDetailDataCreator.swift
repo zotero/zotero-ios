@@ -15,25 +15,34 @@ struct ItemDetailDataCreator {
     /// - parameter type: Type of item detail screen.
     /// - parameter schemaController: Schema controller.
     /// - parameter fileStorage: File storage.
+    /// - parameter urlDetector: URL detector.
+    /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
-    static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController, fileStorage: FileStorage) throws -> ItemDetailState.Data {
+    static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController,
+                           fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         switch type {
         case .creation(_, let type):
-            return try creationData(itemType: type, schemaController: schemaController)
+            return try creationData(itemType: type, schemaController: schemaController, urlDetector: urlDetector, doiDetector: doiDetector)
         case .preview(let item), .duplication(let item, _):
-            return try itemData(item: item, schemaController: schemaController, fileStorage: fileStorage)
+            return try itemData(item: item, schemaController: schemaController, fileStorage: fileStorage,
+                                urlDetector: urlDetector, doiDetector: doiDetector)
         }
     }
 
     /// Creates data for `ItemDetailState.DetailType.creator`. When creating new item, most data is empty. Only `itemType` is set to first value
     /// and appropriate (empty) fields are added for given type.
     /// - parameter schemaController: Schema controller for fetching item type and localization.
-    private static func creationData(itemType: String, schemaController: SchemaController) throws -> ItemDetailState.Data {
+    /// - parameter urlDetector: URL detector.
+    /// - parameter doiDetector: DOI detector.
+    /// - returns: Data for item detail state.
+    private static func creationData(itemType: String, schemaController: SchemaController,
+                                     urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: itemType) else {
             throw ItemDetailError.schemaNotInitialized
         }
 
-        let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController)
+        let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController,
+                                                            urlDetector: urlDetector, doiDetector: doiDetector)
         let date = Date()
 
         return ItemDetailState.Data(title: "",
@@ -55,7 +64,11 @@ struct ItemDetailDataCreator {
     /// - parameter item: Item to preview.
     /// - parameter schemaController: Schema controller for fetching item type/field data and localizations.
     /// - parameter fileStorage: File storage for checking availability of attachments.
-    private static func itemData(item: RItem, schemaController: SchemaController, fileStorage: FileStorage) throws -> ItemDetailState.Data {
+    /// - parameter urlDetector: URL detector.
+    /// - parameter doiDetector: DOI detector.
+    /// - returns: Data for item detail state.
+    private static func itemData(item: RItem, schemaController: SchemaController, fileStorage: FileStorage,
+                                 urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
         }
@@ -72,7 +85,8 @@ struct ItemDetailDataCreator {
             }
         }
 
-        let (fieldIds, fields, _) = try fieldData(for: item.rawType, schemaController: schemaController, getExistingData: { key, _ in
+        let (fieldIds, fields, _) = try fieldData(for: item.rawType, schemaController: schemaController,
+                                                  urlDetector: urlDetector, doiDetector: doiDetector, getExistingData: { key, _ in
             return (nil, values[key])
         })
 
@@ -128,10 +142,12 @@ struct ItemDetailDataCreator {
     /// Creates field data for given item type with the option of setting values for given fields.
     /// - parameter itemType: Item type for which fields will be created.
     /// - parameter schemaController: Schema controller for checking field data.
+    /// - parameter urlDetector: URL detector.
+    /// - parameter doiDetector: DOI detector.
     /// - parameter getExistingData: Closure for getting available data for given field. It passes the field key and baseField and receives existing
     ///                              field name and value if available.
     /// - returns: Tuple with 3 values: field keys of new fields, actual fields, Bool indicating whether this item type contains an abstract.
-    static func fieldData(for itemType: String, schemaController: SchemaController,
+    static func fieldData(for itemType: String, schemaController: SchemaController, urlDetector: UrlDetector, doiDetector: (String) -> Bool,
                           getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: ItemDetailState.Field], Bool) {
         guard var fieldSchemas = schemaController.fields(for: itemType) else {
             throw ItemDetailError.typeNotSupported
@@ -157,12 +173,14 @@ struct ItemDetailDataCreator {
 
             let name = existingName ?? schemaController.localized(field: key) ?? ""
             let value = existingValue ?? ""
+            let isTappable = ItemDetailDataCreator.isTappable(key: key, value: value, urlDetector: urlDetector, doiDetector: doiDetector)
 
             fields[key] = ItemDetailState.Field(key: key,
                                                 baseField: baseField,
                                                 name: name,
                                                 value: value,
-                                                isTitle: false)
+                                                isTitle: false,
+                                                isTappable: isTappable)
         }
 
         return (fieldKeys, fields, (abstractIndex != nil))
@@ -219,5 +237,22 @@ struct ItemDetailDataCreator {
             }
         }
         return newFieldKeys
+    }
+
+    /// Checks whether field is tappable based on its key and value.
+    /// - parameter key: Key of field.
+    /// - parameter value: Value of field.
+    /// - parameter urlDetector: URL detector.
+    /// - parameter doiDetector: DOIs detector.
+    /// - returns: True if field is tappable, false otherwise.
+    static func isTappable(key: String, value: String, urlDetector: UrlDetector, doiDetector: (String) -> Bool) -> Bool {
+        switch key {
+        case FieldKeys.doi:
+            return doiDetector(value)
+        case FieldKeys.url:
+            return urlDetector.isUrl(string: value)
+        default:
+            return false
+        }
     }
 }

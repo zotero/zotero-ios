@@ -24,6 +24,7 @@ class Controllers {
     let debugLogging: DebugLogging
     let translatorsController: TranslatorsController
     let annotationPreviewController: AnnotationPreviewController
+    let urlDetector: UrlDetector
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -59,6 +60,7 @@ class Controllers {
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
         self.annotationPreviewController = AnnotationPreviewController(previewSize: AnnotationsConfig.previewSize, fileStorage: fileStorage)
+        self.urlDetector = UrlDetector()
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)

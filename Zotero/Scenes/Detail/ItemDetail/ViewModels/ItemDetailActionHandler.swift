@@ -21,15 +21,17 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private let fileStorage: FileStorage
     private let dbStorage: DbStorage
     private let schemaController: SchemaController
+    private let urlDetector: UrlDetector
     private let saveScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, fileStorage: FileStorage,
-         dbStorage: DbStorage, schemaController: SchemaController) {
+         dbStorage: DbStorage, schemaController: SchemaController, urlDetector: UrlDetector) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
+        self.urlDetector = urlDetector
         self.saveScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetail.save")
         self.disposeBag = DisposeBag()
     }
@@ -111,8 +113,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.updateCreator(with: id, update: update, in: viewModel)
 
         case .setFieldValue(let id, let value):
+            guard var field = viewModel.state.data.fields[id] else { return }
+            field.value = value
+            field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value,
+                                                                urlDetector: self.urlDetector, doiDetector: FieldKeys.isDoi)
             self.update(viewModel: viewModel) { state in
-                state.data.fields[id]?.value = value
+                state.data.fields[id] = field
             }
         }
     }
@@ -156,6 +162,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         let (fieldIds, fields, hasAbstract) = try ItemDetailDataCreator.fieldData(for: type,
                                                                                   schemaController: self.schemaController,
+                                                                                  urlDetector: self.urlDetector,
+                                                                                  doiDetector: FieldKeys.isDoi,
                                                                                   getExistingData: { key, baseField -> (String?, String?) in
             if let field = originalData.fields[key] {
                 return (field.name, field.value)

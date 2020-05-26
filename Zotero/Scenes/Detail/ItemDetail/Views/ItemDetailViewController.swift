@@ -90,12 +90,12 @@ class ItemDetailViewController: UIViewController {
                                                      })
         case .openUrl(let string):
             if let url = URL(string: string) {
-                self.coordinatorDelegate?.showWeb(url: url)
+                self.showWeb(for: url)
             }
         case .openDoi(let doi):
             guard let encoded = FieldKeys.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
             if let url = URL(string: "https://doi.org/\(encoded)") {
-                self.coordinatorDelegate?.showWeb(url: url)
+                self.showWeb(for: url)
             }
         }
     }
@@ -118,6 +118,20 @@ class ItemDetailViewController: UIViewController {
             self.coordinatorDelegate?.showUnknownAttachment(at: url)
 
         case .web(let url):
+            self.showWeb(for: url)
+        }
+    }
+
+    private func showWeb(for url: URL) {
+        if url.scheme == "http" || url.scheme == "https" {
+            self.coordinatorDelegate?.showWeb(url: url)
+            return
+        }
+
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
+        components.scheme = "http"
+
+        if let url = components.url {
             self.coordinatorDelegate?.showWeb(url: url)
         }
     }

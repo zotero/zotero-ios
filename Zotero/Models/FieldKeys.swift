@@ -48,4 +48,8 @@ struct FieldKeys {
             return ""
         }
     }
+
+    static func isDoi(_ value: String) -> Bool {
+        return !clean(doi: value).isEmpty
+    }
 }

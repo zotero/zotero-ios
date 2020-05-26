@@ -174,12 +174,15 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
             let data = try ItemDetailDataCreator.createData(from: type,
                                                             schemaController: self.controllers.schemaController,
-                                                            fileStorage: self.controllers.fileStorage)
+                                                            fileStorage: self.controllers.fileStorage,
+                                                            urlDetector: self.controllers.urlDetector,
+                                                            doiDetector: FieldKeys.isDoi)
             let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId, data: data)
             let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
-                                                  schemaController: self.controllers.schemaController)
+                                                  schemaController: self.controllers.schemaController,
+                                                  urlDetector: self.controllers.urlDetector)
             let viewModel = ViewModel(initialState: state, handler: handler)
 
             let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
@@ -311,9 +314,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     func showWeb(url: URL) {
-        let controller = SFSafariViewController(url: url)
-        controller.modalPresentationStyle = .fullScreen
-        self.navigationController.present(controller, animated: true, completion: nil)
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 
     private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, saveAction: @escaping (String) -> Void) {
