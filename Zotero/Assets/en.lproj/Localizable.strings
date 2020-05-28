@@ -30,6 +30,8 @@
 "done" = "Done";
 "ok" = "Ok";
 
+"day_suffixes" = "st,nd,rd,th";
+
 "login.sign_in" = "Sign In";
 "login.create_account" = "Create Account";
 "login.username" = "Username";

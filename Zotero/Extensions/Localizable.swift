@@ -25,6 +25,8 @@ internal enum L10n {
   internal static let dateAdded = L10n.tr("Localizable", "date_added")
   /// Date Modified
   internal static let dateModified = L10n.tr("Localizable", "date_modified")
+  /// st,nd,rd,th
+  internal static let daySuffixes = L10n.tr("Localizable", "day_suffixes")
   /// Delete
   internal static let delete = L10n.tr("Localizable", "delete")
   /// Done

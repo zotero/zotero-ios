@@ -327,11 +327,17 @@ class SyncActionsSpec: QuickSpec {
                 }
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    UploadAttachmentSyncAction(key: key, file: file, filename: "doc.pdf", md5: "aaaaaaaa", mtime: 0, libraryId: libraryId,
+                    UploadAttachmentSyncAction(key: key,
+                                               file: file,
+                                               filename: "doc.pdf",
+                                               md5: "aaaaaaaa", mtime: 0,
+                                               libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
-                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                               fileStorage: SyncActionsSpec.fileStorage,
+                                               queue: DispatchQueue.main,
+                                               scheduler: MainScheduler.instance).result
                                          .subscribe(onSuccess: { response, _ in
                                              response.subscribe(onCompleted: {
                                                  fail("Upload didn't fail with unsubmitted item")
@@ -375,11 +381,17 @@ class SyncActionsSpec: QuickSpec {
                 }
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    UploadAttachmentSyncAction(key: key, file: file, filename: "doc.pdf", md5: "aaaaaaaa", mtime: 0, libraryId: libraryId,
+                    UploadAttachmentSyncAction(key: key,
+                                               file: file,
+                                               filename: "doc.pdf",
+                                               md5: "aaaaaaaa", mtime: 0,
+                                               libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
-                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                               fileStorage: SyncActionsSpec.fileStorage,
+                                               queue: DispatchQueue.main,
+                                               scheduler: MainScheduler.instance).result
                                          .flatMap({ response, _ -> Single<Never> in
                                              return response.asObservable().asSingle()
                                          })
@@ -441,11 +453,18 @@ class SyncActionsSpec: QuickSpec {
                            baseUrl: baseUrl, jsonResponse: ["exists": 1])
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    UploadAttachmentSyncAction(key: key, file: file, filename: filename, md5: fileMd5, mtime: 123, libraryId: libraryId,
+                    UploadAttachmentSyncAction(key: key,
+                                               file: file,
+                                               filename: filename,
+                                               md5: fileMd5,
+                                               mtime: 123,
+                                               libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
-                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                               fileStorage: SyncActionsSpec.fileStorage,
+                                               queue: DispatchQueue.main,
+                                               scheduler: MainScheduler.instance).result
                                          .flatMap({ response, _ -> Single<()> in
                                              return Single.create { subscriber -> Disposable in
                                                 response.subscribe(onCompleted: {
@@ -519,11 +538,18 @@ class SyncActionsSpec: QuickSpec {
                 })
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    UploadAttachmentSyncAction(key: key, file: file, filename: filename, md5: fileMd5, mtime: 123, libraryId: libraryId,
+                    UploadAttachmentSyncAction(key: key,
+                                               file: file,
+                                               filename: filename,
+                                               md5: fileMd5,
+                                               mtime: 123,
+                                               libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
-                                               fileStorage: SyncActionsSpec.fileStorage).result
+                                               fileStorage: SyncActionsSpec.fileStorage,
+                                               queue: DispatchQueue.main,
+                                               scheduler: MainScheduler.instance).result
                                          .flatMap({ response, _ -> Single<()> in
                                              return Single.create { subscriber -> Disposable in
                                                 response.subscribe(onCompleted: {
