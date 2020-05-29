@@ -6,8 +6,6 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import PSPDFKit
@@ -27,5 +25,3 @@ struct AnnotationsConfig {
         return CGSize(width: size, height: size)
     }
 }
-
-#endif

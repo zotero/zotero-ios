@@ -6,12 +6,9 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
-#if PDFENABLED
-
 import UIKit
 
 import CocoaLumberjack
-import PSPDFKit
 import RxSwift
 
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)
@@ -29,7 +26,15 @@ class AnnotationPreviewController: NSObject {
         self.queue = DispatchQueue(label: "org.zotero.AnnotationPreviewController.queue", qos: .userInitiated)
         super.init()
     }
+}
 
+#if PDFENABLED
+
+import PSPDFKit
+
+// MARK: - PSPDFKit
+
+extension AnnotationPreviewController {
     /// Stores preview for given annotation.
     /// - parameter annotation: Area annotation for which the preview is to be cached.
     /// - parameter parentKey: Key of PDF item.
@@ -106,6 +111,8 @@ class AnnotationPreviewController: NSObject {
         }
     }
 }
+
+// MARK: - Render delegatte
 
 extension AnnotationPreviewController: RenderTaskDelegate {
     func renderTaskDidFinish(_ task: RenderTask) {
