@@ -112,7 +112,7 @@ extension AnnotationPreviewController {
     }
 }
 
-// MARK: - Render delegatte
+// MARK: - Render delegate
 
 extension AnnotationPreviewController: RenderTaskDelegate {
     func renderTaskDidFinish(_ task: RenderTask) {
