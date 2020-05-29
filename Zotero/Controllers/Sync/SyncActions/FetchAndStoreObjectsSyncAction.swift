@@ -23,6 +23,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
+    unowned let dateParser: DateParser
     unowned let schemaController: SchemaController
     let queue: DispatchQueue
     let scheduler: SchedulerType
@@ -81,6 +82,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
             let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: items,
                                                                                  schemaController: self.schemaController,
+                                                                                 dateParser: self.dateParser,
                                                                                  preferRemoteData: true))
 
             return (parsedKeys, parseErrors, conflicts)

@@ -69,7 +69,7 @@ class RItem: Object {
     /// first and sort them in any order we want (asd/desc) and all other items later
     @objc dynamic var hasParsedDate: Bool = false
     /// Year that was parsed from "date" field
-    @objc dynamic var parsedYear: String? = nil
+    @objc dynamic var parsedYear: Int = 0
     /// Indicates whether this instance has nonempty parsedYear, helper variable, used in sorting so that we can show items with years
     /// first and sort them in any order we want (asd/desc) and all other items later
     @objc dynamic var hasParsedYear: Bool = false
@@ -154,18 +154,12 @@ class RItem: Object {
         }
     }
 
-    func setDateFieldMetadata(_ date: String?) {
-        let data = date.flatMap { self.parseDate(from: $0) }
-        self.parsedYear = data?.0
-        self.hasParsedYear = self.parsedYear != nil
-        self.parsedDate = data?.1
+    func setDateFieldMetadata(_ date: String?, parser: DateParser) {
+        let components = date.flatMap({ parser.parse(string: $0) })
+        self.parsedYear = components?.year ?? 0
+        self.hasParsedYear = self.parsedYear != 0
+        self.parsedDate = components?.date
         self.hasParsedDate = self.parsedDate != nil
-    }
-
-    private func parseDate(from dateString: String) -> (String, Date)? {
-        guard let date = dateString.parsedDate else { return nil }
-        let year = Calendar.current.component(.year, from: date)
-        return ("\(year)", date)
     }
 
     func updateCreatorSummary() {

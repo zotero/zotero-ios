@@ -125,6 +125,7 @@ class UserControllers {
                                             dbStorage: dbStorage,
                                             fileStorage: controllers.fileStorage,
                                             schemaController: controllers.schemaController,
+                                            dateParser: controllers.dateParser,
                                             backgroundUploader: backgroundUploader,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)

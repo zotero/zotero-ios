@@ -117,6 +117,7 @@ final class SyncController: SynchronizationController {
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
+    private let dateParser: DateParser
     private let backgroundUploader: BackgroundUploader
     // Handler for reporting sync progress to observers.
     private let progressHandler: SyncProgressHandler
@@ -166,7 +167,7 @@ final class SyncController: SynchronizationController {
     // MARK: - Lifecycle
 
     init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
-         backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
+         dateParser: DateParser, backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
         let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .utility, attributes: .concurrent)
         self.userId = userId
         self.accessQueue = accessQueue
@@ -185,6 +186,7 @@ final class SyncController: SynchronizationController {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.dateParser = dateParser
         self.backgroundUploader = backgroundUploader
         self.syncDelayIntervals = syncDelayIntervals
     }
@@ -794,7 +796,7 @@ final class SyncController: SynchronizationController {
     private func processBatchSync(for batch: DownloadBatch) {
         let result = FetchAndStoreObjectsSyncAction(keys: batch.keys, object: batch.object, version: batch.version,
                                                     libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
-                                                    dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+                                                    dbStorage: self.dbStorage, fileStorage: self.fileStorage, dateParser: self.dateParser,
                                                     schemaController: self.schemaController,
                                                     queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
@@ -1055,7 +1057,8 @@ final class SyncController: SynchronizationController {
 
     private func revertGroupData(in libraryId: LibraryIdentifier) {
         let result = RevertLibraryUpdatesSyncAction(libraryId: libraryId, dbStorage: self.dbStorage,
-                                                    fileStorage: self.fileStorage, schemaController: self.schemaController).result
+                                                    fileStorage: self.fileStorage, schemaController: self.schemaController,
+                                                    dateParser: self.dateParser).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] failures in
                   // TODO: - report failures?

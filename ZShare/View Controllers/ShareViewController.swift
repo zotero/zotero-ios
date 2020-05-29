@@ -355,6 +355,7 @@ class ShareViewController: UIViewController {
     private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient,
                              fileStorage: FileStorage, translatorsController: TranslatorsController) -> ExtensionStore {
         let schemaController = SchemaController()
+        let dateParser = DateParser()
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
         let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor)
@@ -363,6 +364,7 @@ class ShareViewController: UIViewController {
                                             dbStorage: dbStorage,
                                             fileStorage: fileStorage,
                                             schemaController: schemaController,
+                                            dateParser: dateParser,
                                             backgroundUploader: backgroundUploader,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
@@ -372,6 +374,7 @@ class ShareViewController: UIViewController {
                               backgroundUploader: backgroundUploader,
                               dbStorage: dbStorage,
                               schemaController: schemaController,
+                              dateParser: dateParser,
                               fileStorage: fileStorage,
                               syncController: syncController,
                               translatorsController: translatorsController)

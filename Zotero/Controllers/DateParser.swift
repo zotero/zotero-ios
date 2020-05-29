@@ -181,7 +181,7 @@ class DateParser {
             }
         }
 
-        if day < 31 && month < 12 {
+        if day <= 31 && month <= 12 {
             // Day and month were either parsed correctly or are missing and will be parsed from remaining parts.
             if let value = preDatePart {
                 parts.append(Part(value: String(value), position: .beginning))

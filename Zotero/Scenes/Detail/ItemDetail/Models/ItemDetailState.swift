@@ -46,14 +46,23 @@ struct ItemDetailState: ViewModelState {
     }
 
     struct Field: Identifiable, Equatable, Hashable {
+        enum AdditionalInfoKey: Hashable {
+            case dateOrder
+        }
+
         let key: String
         let baseField: String?
         var name: String
         var value: String
         let isTitle: Bool
         var isTappable: Bool
+        var additionalInfo: [AdditionalInfoKey: String]?
 
         var id: String { return self.key }
+
+        static func ==(lhs: Field, rhs: Field) -> Bool {
+            return lhs.key == rhs.key && lhs.value == rhs.value
+        }
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(self.key)

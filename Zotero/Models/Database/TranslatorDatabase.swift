@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct TranslatorDatabase {
-    private static let schemaVersion: UInt64 = 1
+    private static let schemaVersion: UInt64 = 2
 
     static var configuration: Realm.Configuration {
         return Realm.Configuration(fileURL: Files.translatorsDbFile.createUrl(),

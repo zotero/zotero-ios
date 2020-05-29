@@ -20,7 +20,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
     typealias Response = [StoreItemsError]
 
     let response: [ItemResponse]
-    let schemaController: SchemaController
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
     let preferRemoteData: Bool
 
     var needsWrite: Bool { return true }
@@ -131,7 +132,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
             }
         }
 
-        item.setDateFieldMetadata(date)
+        item.setDateFieldMetadata(date, parser: self.dateParser)
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
     }

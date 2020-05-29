@@ -50,11 +50,4 @@ extension String {
 
         return nil
     }
-
-    var parsedDate: Date? {
-        let dates = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
-                                                      .matches(in: self, range: NSRange(location: 0, length: self.count))
-                                                      .compactMap({ $0.date })
-        return dates?.first
-    }
 }

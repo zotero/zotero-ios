@@ -14,34 +14,38 @@ struct ItemDetailDataCreator {
     /// Creates `ItemDetailState.Data` for given type.
     /// - parameter type: Type of item detail screen.
     /// - parameter schemaController: Schema controller.
+    /// - parameter dateParser: Date parser.
     /// - parameter fileStorage: File storage.
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
-    static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController,
+    static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController, dateParser: DateParser,
                            fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         switch type {
         case .creation(_, let type):
-            return try creationData(itemType: type, schemaController: schemaController, urlDetector: urlDetector, doiDetector: doiDetector)
+            return try creationData(itemType: type, schemaController: schemaController, dateParser: dateParser,
+                                    urlDetector: urlDetector, doiDetector: doiDetector)
         case .preview(let item), .duplication(let item, _):
-            return try itemData(item: item, schemaController: schemaController, fileStorage: fileStorage,
-                                urlDetector: urlDetector, doiDetector: doiDetector)
+            return try itemData(item: item, schemaController: schemaController, dateParser: dateParser,
+                                fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
         }
     }
 
     /// Creates data for `ItemDetailState.DetailType.creator`. When creating new item, most data is empty. Only `itemType` is set to first value
     /// and appropriate (empty) fields are added for given type.
     /// - parameter schemaController: Schema controller for fetching item type and localization.
+    /// - parameter dateParser: Date parser.
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func creationData(itemType: String, schemaController: SchemaController,
+    private static func creationData(itemType: String, schemaController: SchemaController, dateParser: DateParser,
                                      urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: itemType) else {
             throw ItemDetailError.schemaNotInitialized
         }
 
         let (fieldIds, fields, hasAbstract) = try fieldData(for: itemType, schemaController: schemaController,
+                                                            dateParser: dateParser,
                                                             urlDetector: urlDetector, doiDetector: doiDetector)
         let date = Date()
 
@@ -63,11 +67,12 @@ struct ItemDetailDataCreator {
     /// Creates data for `ItemDetailState.DetailType.preview`. When previewing an item, data needs to be fetched and formatted from given item.
     /// - parameter item: Item to preview.
     /// - parameter schemaController: Schema controller for fetching item type/field data and localizations.
+    /// - parameter dateParser: Date parser.
     /// - parameter fileStorage: File storage for checking availability of attachments.
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
-    private static func itemData(item: RItem, schemaController: SchemaController, fileStorage: FileStorage,
+    private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
                                  urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
@@ -85,7 +90,7 @@ struct ItemDetailDataCreator {
             }
         }
 
-        let (fieldIds, fields, _) = try fieldData(for: item.rawType, schemaController: schemaController,
+        let (fieldIds, fields, _) = try fieldData(for: item.rawType, schemaController: schemaController, dateParser: dateParser,
                                                   urlDetector: urlDetector, doiDetector: doiDetector, getExistingData: { key, _ in
             return (nil, values[key])
         })
@@ -142,12 +147,13 @@ struct ItemDetailDataCreator {
     /// Creates field data for given item type with the option of setting values for given fields.
     /// - parameter itemType: Item type for which fields will be created.
     /// - parameter schemaController: Schema controller for checking field data.
+    /// - parameter dateParser: Date parser.
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - parameter getExistingData: Closure for getting available data for given field. It passes the field key and baseField and receives existing
     ///                              field name and value if available.
-    /// - returns: Tuple with 3 values: field keys of new fields, actual fields, Bool indicating whether this item type contains an abstract.
-    static func fieldData(for itemType: String, schemaController: SchemaController, urlDetector: UrlDetector, doiDetector: (String) -> Bool,
+    /// - returns: Tuple with 3 values: field keys of new fields, actual fields, `Bool` indicating whether this item type contains an abstract.
+    static func fieldData(for itemType: String, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, doiDetector: (String) -> Bool,
                           getExistingData: ((String, String?) -> (String?, String?))? = nil) throws -> ([String], [String: ItemDetailState.Field], Bool) {
         guard var fieldSchemas = schemaController.fields(for: itemType) else {
             throw ItemDetailError.typeNotSupported
@@ -174,13 +180,23 @@ struct ItemDetailDataCreator {
             let name = existingName ?? schemaController.localized(field: key) ?? ""
             let value = existingValue ?? ""
             let isTappable = ItemDetailDataCreator.isTappable(key: key, value: value, urlDetector: urlDetector, doiDetector: doiDetector)
+            var additionalInfo: [ItemDetailState.Field.AdditionalInfoKey: String]?
+
+            if key == FieldKeys.date || baseField == FieldKeys.date,
+               var order = dateParser.parse(string: value)?.order {
+                for index in (1..<order.count).reversed() {
+                    order.insert(" ", at: order.index(order.startIndex, offsetBy: index))
+                }
+                additionalInfo = [.dateOrder: order]
+            }
 
             fields[key] = ItemDetailState.Field(key: key,
                                                 baseField: baseField,
                                                 name: name,
                                                 value: value,
                                                 isTitle: false,
-                                                isTappable: isTappable)
+                                                isTappable: isTappable,
+                                                additionalInfo: additionalInfo)
         }
 
         return (fieldKeys, fields, (abstractIndex != nil))

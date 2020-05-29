@@ -21,16 +21,19 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private let fileStorage: FileStorage
     private let dbStorage: DbStorage
     private let schemaController: SchemaController
+    private let dateParser: DateParser
     private let urlDetector: UrlDetector
     private let saveScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, fileStorage: FileStorage,
-         dbStorage: DbStorage, schemaController: SchemaController, urlDetector: UrlDetector) {
+         dbStorage: DbStorage, schemaController: SchemaController,
+         dateParser: DateParser, urlDetector: UrlDetector) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
+        self.dateParser = dateParser
         self.urlDetector = urlDetector
         self.saveScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetail.save")
         self.disposeBag = DisposeBag()
@@ -162,6 +165,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         let (fieldIds, fields, hasAbstract) = try ItemDetailDataCreator.fieldData(for: type,
                                                                                   schemaController: self.schemaController,
+                                                                                  dateParser: self.dateParser,
                                                                                   urlDetector: self.urlDetector,
                                                                                   doiDetector: FieldKeys.isDoi,
                                                                                   getExistingData: { key, baseField -> (String?, String?) in
@@ -564,7 +568,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         let request = CreateItemDbRequest(libraryId: libraryId,
                                           collectionKey: collectionKey,
                                           data: data,
-                                          schemaController: self.schemaController)
+                                          schemaController: self.schemaController,
+                                          dateParser: self.dateParser)
         return try self.dbStorage.createCoordinator().perform(request: request)
     }
 
@@ -573,7 +578,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                                               itemKey: key,
                                               data: data,
                                               snapshot: snapshot,
-                                              schemaController: self.schemaController)
+                                              schemaController: self.schemaController,
+                                              dateParser: self.dateParser)
         try self.dbStorage.createCoordinator().perform(request: request)
     }
 }

@@ -16,6 +16,8 @@ class ItemDetailFieldCell: RxTableViewCell {
     @IBOutlet private weak var titleWidth: NSLayoutConstraint!
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var valueLabel: UILabel!
+    @IBOutlet private weak var additionalInfoLabel: UILabel!
+    @IBOutlet private weak var additionalInfoOffset: NSLayoutConstraint!
 
     var textObservable: ControlProperty<String> {
         return self.valueTextField.rx.text.orEmpty
@@ -34,6 +36,8 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.valueLabel.isHidden = isEditing
         self.valueTextField.isHidden = !isEditing
         self.titleWidth.constant = titleWidth
+        self.setAdditionalInfo(value: field.additionalInfo?[.dateOrder])
+
 
         if !isEditing {
             if field.isTappable {
@@ -50,6 +54,7 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.valueLabel.isHidden = false
         self.valueTextField.isHidden = true
         self.titleWidth.constant = titleWidth
+        self.setAdditionalInfo(value: nil)
     }
 
     func setup(with date: String, title: String, titleWidth: CGFloat) {
@@ -58,5 +63,15 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.valueLabel.isHidden = false
         self.valueTextField.isHidden = true
         self.titleWidth.constant = titleWidth
+        self.setAdditionalInfo(value: nil)
+    }
+
+    private func setAdditionalInfo(value: String?) {
+        if let value = value {
+            self.additionalInfoLabel.text = value
+        } else {
+            self.additionalInfoLabel.text = nil
+        }
+        self.additionalInfoOffset.constant = value == nil ? 0 : 8
     }
 }

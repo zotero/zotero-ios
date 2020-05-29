@@ -21,6 +21,7 @@ struct EditItemDetailDbRequest: DbRequest {
     let data: ItemDetailState.Data
     let snapshot: ItemDetailState.Data
     let schemaController: SchemaController
+    let dateParser: DateParser
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.itemKey, in: self.libraryId)).first else { return }
@@ -80,7 +81,7 @@ struct EditItemDetailDbRequest: DbRequest {
 
             toRemove.forEach { field in
                 if field.key == FieldKeys.date {
-                    item.setDateFieldMetadata(nil)
+                    item.setDateFieldMetadata(nil, parser: self.dateParser)
                 } else if field.key == FieldKeys.publisher || field.baseKey == FieldKeys.publisher {
                     item.set(publisher: nil)
                 } else if field.key == FieldKeys.publicationTitle || field.baseKey == FieldKeys.publicationTitle {
@@ -118,7 +119,7 @@ struct EditItemDetailDbRequest: DbRequest {
                 if field.isTitle {
                     item.baseTitle = field.value
                 } else if field.key == FieldKeys.date {
-                    item.setDateFieldMetadata(field.value)
+                    item.setDateFieldMetadata(field.value, parser: self.dateParser)
                 } else if field.key == FieldKeys.publisher || field.baseField == FieldKeys.publisher {
                     item.set(publisher: field.value)
                 } else if field.key == FieldKeys.publicationTitle || field.baseField == FieldKeys.publicationTitle {

@@ -484,6 +484,8 @@
 		B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A592417C1C7006693C4 /* Coordinator.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
+		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
+		B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
 		B3972689247D403200A8B469 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
 		B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
@@ -1283,6 +1285,7 @@
 				B305656123FC051E003304F2 /* AppGroup.swift */,
 				B305653A23FC051E003304F2 /* Attachment.swift */,
 				B305653B23FC051E003304F2 /* Collection.swift */,
+				B32A3C77247FB62B009E2C5D /* ComponentDate.swift */,
 				B325DBAE24375D8D00EFF0F5 /* Conflict.swift */,
 				B325DBB124375DAC00EFF0F5 /* ConflictResolution.swift */,
 				B305654023FC051E003304F2 /* Convertible.swift */,
@@ -1306,7 +1309,6 @@
 				B378F4C8242CC8EF00B88A05 /* Translator.swift */,
 				B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */,
 				B305653C23FC051E003304F2 /* UpdatableObject.swift */,
-				B32A3C77247FB62B009E2C5D /* ComponentDate.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2803,6 +2805,7 @@
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B30566EE23FC0831003304F2 /* AuthorizeUploadRequest.swift in Sources */,
+				B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */,
 				B305677323FC0B5D003304F2 /* Array+Utils.swift in Sources */,
 				B305673423FC092A003304F2 /* SyncSettingsSyncAction.swift in Sources */,
 				B30566EC23FC082D003304F2 /* CrashUploadRequest.swift in Sources */,
@@ -2841,6 +2844,7 @@
 				B305673C23FC0988003304F2 /* SettingsResponse.swift in Sources */,
 				B3593F5F241A622100760E20 /* CollectionRow.swift in Sources */,
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
+				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,
 				B3DCDF19240918E50039ED0D /* ActivityIndicatorView.swift in Sources */,
 				B30566FF23FC0869003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */,

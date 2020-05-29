@@ -114,11 +114,12 @@ class ExtensionStore {
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
+    private let dateParser: DateParser
     private let webViewHandler: WebViewHandler
     private let disposeBag: DisposeBag
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader,
-         dbStorage: DbStorage, schemaController: SchemaController, fileStorage: FileStorage,
+         dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
          syncController: SyncController, translatorsController: TranslatorsController) {
         self.syncController = syncController
         self.apiClient = apiClient
@@ -126,6 +127,7 @@ class ExtensionStore {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.dateParser = dateParser
         self.webViewHandler = WebViewHandler(webView: webView, translatorsController: translatorsController)
         self.state = State()
         self.disposeBag = DisposeBag()
@@ -383,7 +385,7 @@ class ExtensionStore {
     /// - parameter schemaController: Schema controller for validating item type and field types.
     /// - returns: `Single` with `updateParameters` of created `RItem`.
     private func createItem(_ item: ItemResponse, schemaController: SchemaController) -> Single<[String: Any]> {
-        let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController)
+        let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: self.dateParser)
         do {
             let item = try self.dbStorage.createCoordinator().perform(request: request)
             return Single.just(item.updateParameters ?? [:])
@@ -535,7 +537,8 @@ class ExtensionStore {
     /// - parameter attachment: Parsed attachment to be created.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
     private func createItems(item: ItemResponse, attachment: Attachment) -> Single<([[String: Any]], String, Int)> {
-        let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment, schemaController: self.schemaController)
+        let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment,
+                                                        schemaController: self.schemaController, dateParser: self.dateParser)
         do {
             let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
 

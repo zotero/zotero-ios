@@ -15,14 +15,18 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
 
     let item: ItemResponse
     let attachment: Attachment
-    let schemaController: SchemaController
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
 
     var needsWrite: Bool {
         return true
     }
 
     func process(in database: Realm) throws -> (RItem, RItem) {
-        _ = try StoreItemsDbRequest(response: [self.item], schemaController: self.schemaController, preferRemoteData: true).process(in: database)
+        _ = try StoreItemsDbRequest(response: [self.item],
+                                    schemaController: self.schemaController,
+                                    dateParser: self.dateParser,
+                                    preferRemoteData: true).process(in: database)
 
         guard let item = database.objects(RItem.self).filter(.key(self.item.key, in: self.attachment.libraryId)).first else {
             throw DbError.objectNotFound

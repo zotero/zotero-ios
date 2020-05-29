@@ -18,6 +18,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
     unowned let dbStorage: DbStorage
     unowned let fileStorage: FileStorage
     unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
 
     var result: Single<[SyncObject : [String]]> {
         return Single.create { subscriber -> Disposable in
@@ -37,6 +38,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
                 let items = try self.loadCachedJsonForItems(in: self.libraryId, coordinator: coordinator)
                 let storeItemsRequest = StoreItemsDbRequest(response: items.responses,
                                                             schemaController: self.schemaController,
+                                                            dateParser: self.dateParser,
                                                             preferRemoteData: true)
                 _ = try coordinator.perform(request: storeItemsRequest)
 

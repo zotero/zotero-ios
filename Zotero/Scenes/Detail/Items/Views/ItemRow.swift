@@ -131,13 +131,13 @@ extension RItem {
     }
 
     fileprivate var subtitle: String? {
-        guard self.creatorSummary != nil || self.parsedYear != nil else { return nil }
+        guard self.creatorSummary != nil || self.parsedYear != 0 else { return nil }
         var result = self.creatorSummary ?? ""
         if !result.isEmpty {
             result += " "
         }
-        if let year = self.parsedYear {
-            result += "(\(year))"
+        if self.parsedYear > 0 {
+            result += "(\(self.parsedYear))"
         }
         return result
     }
@@ -169,12 +169,12 @@ struct ItemRow_Previews: PreviewProvider {
         item2.displayTitle = "Some audio recording"
         item2.rawType = "audioRecording"
         item2.creatorSummary = "Author"
-        item2.parsedYear = "2018"
+        item2.parsedYear = 2018
         let item3 = RItem()
         item3.displayTitle = "Some thesis"
         item3.rawType = "thesis"
         item3.creatorSummary = "Author"
-        item3.parsedYear = "2019"
+        item3.parsedYear = 2019
 
         return List {
             ItemRow(item: item)

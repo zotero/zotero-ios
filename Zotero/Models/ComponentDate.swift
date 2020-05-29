@@ -8,14 +8,15 @@
 
 import Foundation
 
-struct ComponentDate: CustomStringConvertible {
+struct ComponentDate: CustomStringConvertible, Equatable {
     let day: Int
     let month: Int
     let year: Int
     let order: String
 
     var date: Date? {
-        let components = DateComponents(year: self.year, month: self.month, day: self.day)
+        guard self.year > 0 else { return nil }
+        let components = DateComponents(year: self.year, month: max(1, self.month), day: max(1, self.day))
         return Calendar.current.date(from: components)
     }
 

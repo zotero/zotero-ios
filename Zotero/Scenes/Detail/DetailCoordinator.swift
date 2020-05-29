@@ -174,6 +174,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
             let data = try ItemDetailDataCreator.createData(from: type,
                                                             schemaController: self.controllers.schemaController,
+                                                            dateParser: self.controllers.dateParser,
                                                             fileStorage: self.controllers.fileStorage,
                                                             urlDetector: self.controllers.urlDetector,
                                                             doiDetector: FieldKeys.isDoi)
@@ -182,6 +183,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
                                                   schemaController: self.controllers.schemaController,
+                                                  dateParser: self.controllers.dateParser,
                                                   urlDetector: self.controllers.urlDetector)
             let viewModel = ViewModel(initialState: state, handler: handler)
 
