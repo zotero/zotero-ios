@@ -144,6 +144,9 @@ class PDFReaderViewController: UIViewController {
                        })
     }
 
+    private func showSettings() {
+    }
+
     @objc private func close() {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
@@ -176,7 +179,16 @@ class PDFReaderViewController: UIViewController {
 
     private func setupAnnotationToolbar() {
         self.navigationItem.titleView = UIStackView(arrangedSubviews: self.createAnnotationToolbarButtons())
-        self.navigationItem.rightBarButtonItems = self.createUndoRedoButtons()
+
+        let settings = self.pdfController.settingsButtonItem
+        settings.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.showSettings()
+                })
+                .disposed(by: self.disposeBag)
+
+        self.navigationItem.rightBarButtonItems = self.createUndoRedoButtons() + [settings]
     }
 
     private func createAnnotationToolbarButtons() -> [UIButton] {
@@ -259,7 +271,7 @@ class PDFReaderViewController: UIViewController {
 
     private func setupPdfController(with document: Document) {
         let pdfConfiguration = PDFConfiguration { builder in
-            builder.scrollDirection = .vertical
+            builder.scrollDirection = .horizontal
             builder.documentLabelEnabled = .NO
         }
 
