@@ -328,10 +328,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.annotations = zoteroAnnotations
             state.changes = .annotations
 
-            // Hide external supported annotations
-            documentAnnotations.values.flatMap({ $0 }).forEach({ $0.isHidden = true })
-            // Add zotero annotations
-            state.document.add(annotations: annotations, options: nil)
+            UndoController.performWithoutUndo(undoController: state.document.undoController) {
+                // Hide external supported annotations
+                documentAnnotations.values.flatMap({ $0 }).forEach({ $0.isHidden = true })
+                // Add zotero annotations
+                state.document.add(annotations: annotations, options: nil)
+            }
         }
     }
 
