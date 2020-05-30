@@ -82,7 +82,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "REALM_DISABLE_ANALYTICS"
-            value = ""
+            value = "YES"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
