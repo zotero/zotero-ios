@@ -36,7 +36,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
     func showPdf(at url: URL, key: String)
-    func showUnknownAttachment(at url: URL)
+    func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
 }
 
@@ -302,16 +302,14 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         #endif
     }
 
-    func showUnknownAttachment(at url: URL) {
-        guard let view = self.navigationController.visibleViewController?.view else { return }
-
+    func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?) {
         let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = view
-        controller.popoverPresentationController?.sourceRect = CGRect(x: (view.frame.width / 3.0),
-                                                                      y: (view.frame.height * 2.0 / 3.0),
-                                                                      width: (view.frame.width / 3),
-                                                                      height: (view.frame.height / 3))
+        controller.popoverPresentationController?.sourceView = sourceView
+        controller.popoverPresentationController?.sourceRect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0),
+                                                                                    y: (sourceView.frame.height * 2.0 / 3.0),
+                                                                                    width: (sourceView.frame.width / 3),
+                                                                                    height: (sourceView.frame.height / 3))
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 

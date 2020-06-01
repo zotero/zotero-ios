@@ -253,7 +253,7 @@ struct ItemDetailState: ViewModelState {
 
     enum OpenAttachmentAction {
         case pdf(url: URL, key: String)
-        case unknownFile(URL)
+        case unknownFile(URL, IndexPath)
         case web(URL)
     }
 

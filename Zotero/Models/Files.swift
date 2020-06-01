@@ -48,6 +48,11 @@ struct Files {
                         ext: ext)
     }
 
+    static func link(filename: String, key: String) -> File {
+        let (name, ext) = self.split(filename: filename)
+        return FileData(rootPath: self.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
+    }
+
     // MARK: - Database
 
     static func dbFile(for userId: Int) -> File {
@@ -71,7 +76,7 @@ struct Files {
     }
 
     static func translator(filename: String) -> File {
-        let name = filename.split(separator: ".").first.flatMap({ String($0) }) ?? filename
+        let name = self.split(filename: filename).name
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: name, ext: "")
     }
 
@@ -102,6 +107,14 @@ struct Files {
                         relativeComponents: ["uploads"],
                         name: streamUrl.lastPathComponent,
                         ext: streamUrl.pathExtension)
+    }
+
+    private static func split(filename: String) -> (name: String, extension: String) {
+        if let index = filename.lastIndex(of: ".") {
+            return (String(filename[filename.startIndex..<index]),
+                    String(filename[filename.index(index, offsetBy: 1)..<filename.endIndex]))
+        }
+        return (filename, "")
     }
 }
 

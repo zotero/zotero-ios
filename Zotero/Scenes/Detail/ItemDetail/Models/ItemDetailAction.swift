@@ -28,7 +28,7 @@ enum ItemDetailAction {
     case deleteNotes(IndexSet)
     case deleteTags(IndexSet)
     case moveCreators(from: IndexSet, to: Int)
-    case openAttachment(Attachment)
+    case openAttachment(Attachment, IndexPath)
     case saveNote(key: String?, text: String)
     case setFieldValue(id: String, value: String)
     case setTags([Tag])

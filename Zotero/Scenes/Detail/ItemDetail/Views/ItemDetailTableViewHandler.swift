@@ -93,6 +93,10 @@ class ItemDetailTableViewHandler: NSObject {
         return formatter
     }
 
+    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
+        return (self.tableView, self.tableView.cellForRow(at: indexPath)?.frame)
+    }
+
     /// Recalculates title width for current data.
     /// - parameter data: New data that change the title width.
     func reloadTitleWidth(from data: ItemDetailState.Data) {
@@ -562,7 +566,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 }
             } else {
                 let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                self.viewModel.process(action: .openAttachment(attachment))
+                self.viewModel.process(action: .openAttachment(attachment, indexPath))
             }
         case .notes:
             if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.notes.count {

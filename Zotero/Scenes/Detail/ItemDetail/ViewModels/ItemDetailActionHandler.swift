@@ -61,8 +61,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.diff = .attachments(insertions: [], deletions: Array(offsets), reloads: [])
             }
 
-        case .openAttachment(let attachment):
-            self.openAttachment(attachment, in: viewModel)
+        case .openAttachment(let attachment, let indexPath):
+            self.openAttachment(attachment, indexPath: indexPath, in: viewModel)
 
         case .addCreator:
             self.addCreator(in: viewModel)
@@ -366,30 +366,41 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func openAttachment(_ attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func openAttachment(_ attachment: Attachment, indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch attachment.type {
         case .url(let url):
             self.update(viewModel: viewModel) { state in
                 state.openAttachmentAction = .web(url)
             }
-        case .file(let file, _, let isCached):
+        case .file(let file, let filename, let isCached):
             if !isCached {
-                self.cacheFile(file, key: attachment.key, in: viewModel)
+                self.cacheFile(file, key: attachment.key, indexPath: indexPath, in: viewModel)
                 return
             }
 
-            self.update(viewModel: viewModel) { state in
-                switch file.ext {
-                case "pdf":
-                    state.openAttachmentAction = .pdf(url: file.createUrl(), key: attachment.key)
-                default:
-                    state.openAttachmentAction = .unknownFile(file.createUrl())
+            let action: ItemDetailState.OpenAttachmentAction
+
+            switch file.ext {
+            case "pdf":
+                action = .pdf(url: file.createUrl(), key: attachment.key)
+            default:
+                let linkFile = Files.link(filename: filename, key: attachment.key)
+                do {
+                    try self.fileStorage.link(file: file, to: linkFile)
+                    action = .unknownFile(linkFile.createUrl(), indexPath)
+                } catch let error {
+                    DDLogError("ItemDetailActionHandler: can't link file - \(error)")
+                    action = .unknownFile(file.createUrl(), indexPath)
                 }
+            }
+
+            self.update(viewModel: viewModel) { state in
+                state.openAttachmentAction = action
             }
         }
     }
 
-    private func cacheFile(_ file: File, key: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func cacheFile(_ file: File, key: String, indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let request = FileRequest(data: .internal(viewModel.state.library.identifier, viewModel.state.userId, key), destination: file)
         self.apiClient.download(request: request)
                       .flatMap { request in
@@ -404,10 +415,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                           }
                       }, onError: { [weak viewModel] error in
                           guard let viewModel = viewModel else { return }
-                          self.finishCachingFile(for: key, result: .failure(error), in: viewModel)
+                          self.finishCachingFile(for: key, result: .failure(error), indexPath: indexPath, in: viewModel)
                       }, onCompleted: { [weak viewModel] in
                           guard let viewModel = viewModel else { return }
-                          self.finishCachingFile(for: key, result: self.checkFileResponse(for: file), in: viewModel)
+                          self.finishCachingFile(for: key, result: self.checkFileResponse(for: file), indexPath: indexPath, in: viewModel)
                       })
                       .disposed(by: self.disposeBag)
     }
@@ -423,7 +434,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         return .success(())
     }
 
-    private func finishCachingFile(for key: String, result: Swift.Result<(), Error>, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func finishCachingFile(for key: String, result: Swift.Result<(), Error>,
+                                   indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch result {
         case .failure(let error):
             DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
@@ -439,7 +451,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 if let (index, attachment) = state.data.attachments.enumerated().first(where: { $1.key == key }) {
                     let newAttachment = attachment.changed(isLocal: true)
                     state.data.attachments[index] = newAttachment
-                    self.openAttachment(newAttachment, in: viewModel)
+                    self.openAttachment(newAttachment, indexPath: indexPath, in: viewModel)
                 }
             }
         }

@@ -19,6 +19,7 @@ protocol FileStorage: class {
     func createDirectories(for file: File) throws
     func contentsOfDirectory(at file: File) throws -> [URL]
     func contentsOfDirectory(at file: File) throws -> [File]
+    func link(file fromFile: File, to toFile: File) throws
 }
 
 class FileStorageController: FileStorage {
@@ -74,5 +75,14 @@ class FileStorageController: FileStorage {
 
     func contentsOfDirectory(at file: File) throws -> [File] {
         return try self.contentsOfDirectory(at: file).map { Files.file(from: $0) }
+    }
+
+    func link(file fromFile: File, to toFile: File) throws {
+        let toUrl = toFile.createUrl()
+
+        guard !self.fileManager.fileExists(atPath: toUrl.path) else { return }
+
+        try self.createDirectories(for: toFile)
+        try self.fileManager.linkItem(at: fromFile.createUrl(), to: toUrl)
     }
 }

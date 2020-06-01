@@ -114,8 +114,9 @@ class ItemDetailViewController: UIViewController {
         case .pdf(let url, let key):
             self.coordinatorDelegate?.showPdf(at: url, key: key)
 
-        case .unknownFile(let url):
-            self.coordinatorDelegate?.showUnknownAttachment(at: url)
+        case .unknownFile(let url, let indexPath):
+            let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
+            self.coordinatorDelegate?.showUnknownAttachment(at: url, sourceView: sourceView, sourceRect: sourceRect)
 
         case .web(let url):
             self.showWeb(for: url)
