@@ -37,6 +37,7 @@ struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
     }
 
     var headers: [String : String]? {
-        return nil
+        guard let version = self.version else { return nil }
+        return ["If-Modified-Since-Version": "\(version)"]
     }
 }

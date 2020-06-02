@@ -32,6 +32,6 @@ struct DeletionsRequest: ApiResponseRequest {
     }
 
     var headers: [String : String]? {
-        return nil
+        return ["If-Modified-Since-Version": "\(self.version)"]
     }
 }

@@ -76,7 +76,7 @@ struct LoginActionHandler: ViewModelActionHandler {
         let request = LoginRequest(username: viewModel.state.username, password: viewModel.state.password)
         self.apiClient.send(request: request)
                       .observeOn(self.scheduler)
-                      .flatMap { (response, _) -> Single<(Int, String, String)> in
+                      .flatMap { response, _ -> Single<(Int, String, String)> in
                           return Single.just((response.userId, response.name, response.key))
                       }
                       .observeOn(MainScheduler.instance)

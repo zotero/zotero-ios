@@ -13,7 +13,6 @@ import RxSwift
 struct SyncGroupVersionsSyncAction: SyncAction {
     typealias Result = (Int, [Int], [(Int, String)])
 
-    let libraryId: LibraryIdentifier
     let syncType: SyncController.SyncType
     let userId: Int
 
@@ -24,11 +23,11 @@ struct SyncGroupVersionsSyncAction: SyncAction {
 
     var result: Single<(Int, [Int], [(Int, String)])> {
         let syncAll = syncType == .all
-        let request = VersionsRequest<Int>(libraryId: libraryId, userId: userId, objectType: .group, version: nil)
+        let request = VersionsRequest<Int>(libraryId: .custom(.myLibrary), userId: self.userId, objectType: .group, version: nil)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
                              .flatMap { (response: [Int: Int], headers) in
-                                 let newVersion = self.lastVersion(from: headers)
+                                 let newVersion = headers.lastModifiedVersion
                                  let request =  SyncGroupVersionsDbRequest(versions: response, syncAll: syncAll)
                                  do {
                                      let (toUpdate, toRemove) = try self.dbStorage.createCoordinator().perform(request: request)
@@ -37,12 +36,5 @@ struct SyncGroupVersionsSyncAction: SyncAction {
                                      return Single.error(error)
                                  }
                              }
-    }
-
-    private func lastVersion(from headers: ResponseHeaders) -> Int {
-        // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
-        let lowercase = headers["last-modified-version"] as? String
-        let uppercase = headers["Last-Modified-Version"] as? String
-        return (lowercase ?? uppercase).flatMap(Int.init) ?? 0
     }
 }

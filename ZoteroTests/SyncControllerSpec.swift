@@ -24,6 +24,7 @@ class SyncControllerSpec: QuickSpec {
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static let fileStorage = FileStorageController()
     private static let schemaController = SchemaController()
+    private static let dateParser = DateParser()
     private static let userLibraryId: LibraryIdentifier = .custom(.myLibrary)
 
     private static var realmConfig: Realm.Configuration!
@@ -57,6 +58,7 @@ class SyncControllerSpec: QuickSpec {
                                                            dbStorage: dbStorage,
                                                            fileStorage: fileStorage,
                                                            schemaController: schemaController,
+                                                           dateParser: dateParser,
                                                            backgroundUploader: backgroundUploader,
                                                            syncDelayIntervals: [0, 1, 2, 3],
                                                            conflictDelays: [0, 1, 2, 3])
@@ -1731,11 +1733,14 @@ class SyncControllerSpec: QuickSpec {
 
             it("should make only one request if in sync") {
                 let libraryId = SyncControllerSpec.userLibraryId
-                let expected: [SyncController.Action] = [.loadKeyPermissions, .syncVersions(libraryId, .group, nil)]
+                let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
+                                                         .createLibraryActions(.all, .automatic), .syncSettings(libraryId, 0)]
 
-                createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .group, version: nil),
-                                baseUrl: baseUrl, headers: nil, statusCode: 304, jsonResponse: [:])
                 createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                createStub(for: VersionsRequest<String>(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .group, version: nil),
+                           baseUrl: baseUrl, headers: nil, statusCode: 200, jsonResponse: [:])
+                createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
+                           baseUrl: baseUrl, statusCode: 304, jsonResponse: [:])
 
                 SyncControllerSpec.createNewSyncController()
 
@@ -1744,8 +1749,8 @@ class SyncControllerSpec: QuickSpec {
                         switch result {
                         case .success(let data):
                             expect(data.0).to(equal(expected))
-                        default:
-                            fail("Test reported unexpected failure")
+                        case .failure(let error):
+                            fail("Failure: \(error)")
                         }
 
                         doneAction()

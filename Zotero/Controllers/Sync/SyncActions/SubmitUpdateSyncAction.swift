@@ -34,7 +34,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                              .observeOn(self.scheduler)
                              .flatMap({ response, headers -> Single<UpdatesResponse> in
                                  do {
-                                     let newVersion = self.lastVersion(from: headers)
+                                     let newVersion = headers.lastModifiedVersion
                                      let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)
                                      return Single.just((try UpdatesResponse(json: json, newVersion: newVersion)))
                                  } catch let error {
@@ -110,12 +110,5 @@ struct SubmitUpdateSyncAction: SyncAction {
                 DDLogError("FetchAndStoreObjectsSyncAction: can't encode/write item - \(error)\n\(object)")
             }
         }
-    }
-
-    private func lastVersion(from headers: ResponseHeaders) -> Int {
-        // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
-        let lowercase = headers["last-modified-version"] as? String
-        let uppercase = headers["Last-Modified-Version"] as? String
-        return (lowercase ?? uppercase).flatMap(Int.init) ?? 0
     }
 }

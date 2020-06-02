@@ -56,7 +56,7 @@ struct SyncVersionsSyncAction: SyncAction {
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
                              .flatMap { (response: [String: Int], headers) -> Single<(Int, [Any])> in
-                                  let newVersion = self.lastVersion(from: headers)
+                                  let newVersion = headers.lastModifiedVersion
 
                                   if let current = currentVersion, newVersion != current {
                                       return Single.error(SyncError.versionMismatch)
@@ -83,12 +83,5 @@ struct SyncVersionsSyncAction: SyncAction {
                                       return Single.error(error)
                                   }
                              }
-    }
-
-    private func lastVersion(from headers: ResponseHeaders) -> Int {
-        // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
-        let lowercase = headers["last-modified-version"] as? String
-        let uppercase = headers["Last-Modified-Version"] as? String
-        return (lowercase ?? uppercase).flatMap(Int.init) ?? 0
     }
 }

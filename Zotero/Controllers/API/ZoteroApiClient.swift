@@ -23,6 +23,7 @@ enum ZoteroApiError: Error {
     case expired
     case unknownItemType(String)
     case jsonDecoding(Error)
+    case unchanged(version: Int)
 }
 
 class ZoteroApiClient: ApiClient {
@@ -57,6 +58,11 @@ class ZoteroApiClient: ApiClient {
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
+                                      if response.statusCode == 304 {
+                                          let version = request.headers?["If-Modified-Since-Version"].flatMap(Int.init) ?? 0
+                                          return Observable.error(ZoteroApiError.unchanged(version: version))
+                                      }
+
                                       let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
                                       return Observable.just((decodedResponse, response.allHeaderFields))
                                   } catch let error {
@@ -78,6 +84,11 @@ class ZoteroApiClient: ApiClient {
                               .log(request: request, convertible: convertible)
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
+                                  if response.statusCode == 304 {
+                                      let version = response.allHeaderFields.lastModifiedVersion
+                                      return Observable.error(ZoteroApiError.unchanged(version: version))
+                                  }
+
                                   return Observable.just((data, response.allHeaderFields))
                               }
                               .asSingle()
@@ -120,5 +131,13 @@ class ZoteroApiClient: ApiClient {
 
             return Disposables.create()
         }
+    }
+}
+
+extension ResponseHeaders {
+    var lastModifiedVersion: Int {
+        // Workaround for broken headers (stored in case-sensitive dictionary)
+        return ((self["Last-Modified-Version"] as? String) ??
+                (self["last-modified-version"] as? String)).flatMap(Int.init) ?? 0
     }
 }

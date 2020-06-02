@@ -20,7 +20,7 @@ struct LoadPermissionsSyncAction: SyncAction {
     var result: Single<KeyResponse> {
         return self.apiClient.send(request: KeyRequest(), queue: self.queue)
                              .observeOn(self.scheduler)
-                             .flatMap { (response, headers) in
+                             .flatMap { response, _ in
                                  do {
                                      let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)
                                      let keyResponse = try KeyResponse(response: json)

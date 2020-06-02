@@ -42,10 +42,6 @@ extension Error {
         return (self as? SyncError) == .versionMismatch
     }
 
-    var isUnchangedError: Bool {
-        return self.afError.flatMap({ $0.responseCode == 304 }) ?? false
-    }
-
     var preconditionError: PreconditionErrorType? {
         if let error = self as? PreconditionErrorType, error == .objectConflict {
             return error

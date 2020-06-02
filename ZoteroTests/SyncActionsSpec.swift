@@ -23,6 +23,7 @@ class SyncActionsSpec: QuickSpec {
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static let fileStorage = FileStorageController()
     private static let schemaController = SchemaController()
+    private static let dateParser = DateParser()
     private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
     // We need to retain realm with memory identifier so that data are not deleted
     private static let realm = try! Realm(configuration: realmConfig)
@@ -80,6 +81,7 @@ class SyncActionsSpec: QuickSpec {
                 // Store original objects to db
                 _ = try! coordinator.perform(request: StoreItemsDbRequest(response: [itemResponse],
                                                                           schemaController: SyncActionsSpec.schemaController,
+                                                                          dateParser: SyncActionsSpec.dateParser,
                                                                           preferRemoteData: false))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
                 try! coordinator.perform(request: StoreSearchesDbRequest(response: [searchResponse]))
@@ -115,7 +117,8 @@ class SyncActionsSpec: QuickSpec {
                                                                             tags: [],
                                                                             dateModified: Date(),
                                                                             dateAdded: Date()),
-                                                                    schemaController: SyncActionsSpec.schemaController)
+                                                                    schemaController: SyncActionsSpec.schemaController,
+                                                                    dateParser: SyncActionsSpec.dateParser)
                 try! coordinator.perform(request: changeRequest)
 
                 let realm = SyncActionsSpec.realm
@@ -135,7 +138,8 @@ class SyncActionsSpec: QuickSpec {
                     RevertLibraryUpdatesSyncAction(libraryId: .custom(.myLibrary),
                                                    dbStorage: SyncActionsSpec.dbStorage,
                                                    fileStorage: SyncActionsSpec.fileStorage,
-                                                   schemaController: SyncActionsSpec.schemaController).result
+                                                   schemaController: SyncActionsSpec.schemaController,
+                                                   dateParser: SyncActionsSpec.dateParser).result
                                          .subscribe(onSuccess: { failures in
                                              expect(failures[.item]).to(beEmpty())
                                              expect(failures[.collection]).to(beEmpty())
@@ -162,7 +166,8 @@ class SyncActionsSpec: QuickSpec {
                     RevertLibraryUpdatesSyncAction(libraryId: .group(1234123),
                                                    dbStorage: SyncActionsSpec.dbStorage,
                                                    fileStorage: SyncActionsSpec.fileStorage,
-                                                   schemaController: SyncActionsSpec.schemaController).result
+                                                   schemaController: SyncActionsSpec.schemaController,
+                                                   dateParser: SyncActionsSpec.dateParser).result
                                          .subscribe(onSuccess: { failures in
                                              expect(failures[.item]).to(beEmpty())
                                              expect(failures[.collection]).to(beEmpty())
@@ -209,6 +214,7 @@ class SyncActionsSpec: QuickSpec {
                 // Store original objects to db
                 _ = try! coordinator.perform(request: StoreItemsDbRequest(response: [itemResponse],
                                                                           schemaController: SyncActionsSpec.schemaController,
+                                                                          dateParser: SyncActionsSpec.dateParser,
                                                                           preferRemoteData: false))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
 
@@ -243,7 +249,8 @@ class SyncActionsSpec: QuickSpec {
                                                                             tags: [],
                                                                             dateModified: Date(),
                                                                             dateAdded: Date()),
-                                                                    schemaController: SyncActionsSpec.schemaController)
+                                                                    schemaController: SyncActionsSpec.schemaController,
+                                                                    dateParser: SyncActionsSpec.dateParser)
                 try! coordinator.perform(request: changeRequest)
 
                 let realm = SyncActionsSpec.realm

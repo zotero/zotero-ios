@@ -13,7 +13,7 @@ struct SettingsRequest: ApiResponseRequest {
 
     let libraryId: LibraryIdentifier
     let userId: Int
-    let version: Int?
+    let version: Int
 
     var endpoint: ApiEndpoint {
         return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/settings")
@@ -28,11 +28,10 @@ struct SettingsRequest: ApiResponseRequest {
     }
 
     var parameters: [String : Any]? {
-        guard let version = self.version else { return nil }
-        return ["since": version]
+        return ["since": self.version]
     }
 
     var headers: [String : String]? {
-        return nil
+        return ["If-Modified-Since-Version": "\(self.version)"]
     }
 }

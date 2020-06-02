@@ -80,10 +80,10 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
     func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<Element> {
         return self.do(onNext: { response in
                        self.log(request: request, url: convertible.urlRequest?.url)
-                       self.log(responseData: response.1, error: nil, for: request)
+                       self.log(response: response, error: nil, for: request)
                    }, onError: { error in
                        self.log(request: request, url: convertible.urlRequest?.url)
-                       self.log(responseData: nil, error: error, for: request)
+                       self.log(response: nil, error: error, for: request)
                    })
     }
 
@@ -95,10 +95,10 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
         }
     }
 
-    private func log(responseData data: Data?, error: Error?, for request: ApiRequest) {
-        if let data = data,
+    private func log(response: (HTTPURLResponse, Data)?, error: Error?, for request: ApiRequest) {
+        if let data = response?.1,
            let string = String(data: data, encoding: .utf8) {
-            DDLogInfo("\(request.redact(response: string))")
+            DDLogInfo("(\(response?.0.statusCode ?? -1)) \(request.redact(response: string))")
         } else if let error = error {
             DDLogInfo("\(error)")
         }
@@ -108,6 +108,24 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
 extension ObservableType where Element == DataRequest {
     func responseDataWithResponseError(queue: DispatchQueue? = nil) -> Observable<(HTTPURLResponse, Data)> {
         return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue) }
+    }
+
+    func validate() -> Observable<Element> {
+        return self.map { dataRequest in
+            dataRequest.validate(contentType: dataRequest.acceptableContentTypes)
+                       .validate { request, response, _ -> Request.ValidationResult in
+                           if (response.statusCode >= 200 && response.statusCode < 300) || response.statusCode == 304 {
+                               return .success
+                           }
+                           return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)))
+                       }
+        }
+    }
+}
+
+extension DataRequest {
+    var acceptableContentTypes: [String] {
+        return self.request?.value(forHTTPHeaderField: "Accept")?.components(separatedBy: ",") ?? ["*/*"]
     }
 }
 

@@ -34,10 +34,8 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
                              .flatMap({ (response, headers) -> Single<([String], [Error], [StoreItemsError])> in
-                                 let newVersion = self.lastVersion(from: headers)
-
-                                 // Group version sync doesn't return last version, so we ignore them
-                                 if self.object != .group && self.version != newVersion {
+                                 // Group version sync doesn't return last version, ignore errors
+                                 if self.object != .group && self.version != headers.lastModifiedVersion {
                                      return Single.error(SyncError.versionMismatch)
                                  }
 
@@ -128,12 +126,5 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
                 DDLogError("FetchAndStoreObjectsSyncAction: can't encode/write object - \(error)\n\(object)")
             }
         }
-    }
-
-    private func lastVersion(from headers: ResponseHeaders) -> Int {
-        // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
-        let lowercase = headers["last-modified-version"] as? String
-        let uppercase = headers["Last-Modified-Version"] as? String
-        return (lowercase ?? uppercase).flatMap(Int.init) ?? 0
     }
 }

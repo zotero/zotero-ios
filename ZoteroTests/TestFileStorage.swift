@@ -60,4 +60,6 @@ class TestFileStorage: FileStorage {
     func contentsOfDirectory(at file: File) throws -> [URL] {
         return []
     }
+
+    func link(file fromFile: File, to toFile: File) throws {}
 }

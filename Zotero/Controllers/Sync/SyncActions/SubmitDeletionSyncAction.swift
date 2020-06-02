@@ -47,7 +47,7 @@ struct SubmitDeletionSyncAction: SyncAction {
                                         fatalError("SyncActionHandler: deleteObjects unsupported object")
                                     }
 
-                                    let newVersion = self.lastVersion(from: headers)
+                                    let newVersion = headers.lastModifiedVersion
                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
                                     try coordinator.perform(request: updateVersion)
 
@@ -56,12 +56,5 @@ struct SubmitDeletionSyncAction: SyncAction {
                                     return Single.error(error)
                                 }
                              })
-    }
-
-    private func lastVersion(from headers: ResponseHeaders) -> Int {
-        // Workaround for broken headers (stored in case-sensitive dictionary) on iOS
-        let lowercase = headers["last-modified-version"] as? String
-        let uppercase = headers["Last-Modified-Version"] as? String
-        return (lowercase ?? uppercase).flatMap(Int.init) ?? 0
     }
 }
