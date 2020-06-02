@@ -8,8 +8,8 @@
 
 import Foundation
 
-struct VersionsRequest<Key: Decodable&Hashable>: ApiResponseRequest {
-    typealias Response = [Key: Int]
+struct VersionsRequest: ApiResponseRequest {
+    typealias Response = [String: Int]
 
     let libraryId: LibraryIdentifier
     let userId: Int
