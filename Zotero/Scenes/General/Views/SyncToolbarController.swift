@@ -62,13 +62,22 @@ class SyncToolbarController {
         switch progress {
         case .starting:
             return L10n.SyncToolbar.starting
-        case .groups:
-            return L10n.SyncToolbar.groups
-        case .library(let name, let type, let data):
-            if let data = data {
-                return L10n.SyncToolbar.objectWithData(self.name(for: type), data.completed, data.total, name)
+        case .groups(let progress):
+            if let progress = progress {
+                return L10n.SyncToolbar.groupsWithData(progress.completed, progress.total)
             }
-            return L10n.SyncToolbar.object(self.name(for: type), name)
+            return L10n.SyncToolbar.groups
+        case .library(let name):
+            return L10n.SyncToolbar.library(name)
+        case .object(let object, let progress, let library):
+            if let progress = progress {
+                return L10n.SyncToolbar.objectWithData(self.name(for: object), progress.completed, progress.total, library)
+            }
+            return L10n.SyncToolbar.object(self.name(for: object), library)
+        case .changes(let progress):
+            return L10n.SyncToolbar.writes(progress.completed, progress.total)
+        case .uploads(let progress):
+        return L10n.SyncToolbar.uploads(progress.completed, progress.total)
         case .finished(let errors):
             if errors.isEmpty {
                 return L10n.SyncToolbar.finished
@@ -86,8 +95,6 @@ class SyncToolbarController {
         switch object {
         case .collection:
             return L10n.SyncToolbar.Object.collections
-        case .group:
-            return L10n.SyncToolbar.Object.groups
         case .item, .trash:
             return L10n.SyncToolbar.Object.items
         case .search:

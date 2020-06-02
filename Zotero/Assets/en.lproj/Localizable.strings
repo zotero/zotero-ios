@@ -59,14 +59,18 @@
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";
-"sync_toolbar.object_with_data" = "Syncing %@ (%d / %d) in %@";
+"sync_toolbar.groups_with_data" = "Syncing groups (%d / %d)";
+"sync_toolbar.library" = "Syncing %@";
 "sync_toolbar.object" = "Syncing %@ in %@";
+"sync_toolbar.object_with_data" = "Syncing %@ (%d / %d) in %@";
 "sync_toolbar.finished" = "Finished sync";
 "sync_toolbar.finished_with_errors" = "Finished sync (%@)";
 "sync_toolbar.one_error" = "1 issue";
 "sync_toolbar.multiple_errors" = "%d issues";
 "sync_toolbar.deletion" = "Removing unused objects in %@";
 "sync_toolbar.aborted" = "Sync failed (%@)";
+"sync_toolbar.writes" = "Submitting changes (%d / %d)";
+"sync_toolbar.uploads" = "Uploading attachment (%d / %d)";
 "sync_toolbar.object.collections" = "collections";
 "sync_toolbar.object.groups" = "groups";
 "sync_toolbar.object.items" = "items";

@@ -67,7 +67,7 @@ struct SubmitUpdateSyncAction: SyncAction {
                                                                                             keys: syncedKeys,
                                                                                             version: response.newVersion)
                                         try coordinator.perform(request: request)
-                                     case .group, .tag:
+                                     case .tag:
                                          fatalError("SyncActionHandler: unsupported update request")
                                      }
 

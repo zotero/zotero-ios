@@ -69,7 +69,8 @@ final class SyncController: SynchronizationController {
 
     /// Sync action represents a step that the synchronization controller needs to take.
     /// - loadKeyPermissions: Checks current key for access permissions.
-    /// - syncVersions: Fetch versions from API, update DB based on response.
+    /// - syncGroupVersions: Fetch group versions from API, update DB based on response.
+    /// - syncVersions: Fetch `SyncObject` versions from API, update DB based on response.
     /// - createLibraryActions: Loads required libraries, spawns actions for each.
     /// - createUploadActions: Loads items that need upload, spawns actions for each.
     /// - syncBatchToDb: Fetch data and store to db.
@@ -87,6 +88,7 @@ final class SyncController: SynchronizationController {
     /// - markChangesAsResolved: Local changes couldn't be written remotely, but we want to keep them locally anyway.
     /// - deleteGroup: Removes group from db.
     /// - markGroupAsLocalOnly: Marks group as local only (not synced with backend).
+    /// - syncGroupToDb: Fetch group data and store to db.
     enum Action: Equatable {
         case loadKeyPermissions
         case syncGroupVersions
@@ -108,6 +110,7 @@ final class SyncController: SynchronizationController {
         case markChangesAsResolved(LibraryIdentifier)
         case deleteGroup(Int)
         case markGroupAsLocalOnly(Int)
+        case syncGroupToDb(Int)
     }
 
     // All actions and access to local variables are performed on this queue.
@@ -409,19 +412,22 @@ final class SyncController: SynchronizationController {
         case .createUploadActions(let libraryId):
             self.processCreateUploadActions(for: libraryId)
         case .syncGroupVersions:
-            self.progressHandler.reportGroupSync()
+            self.progressHandler.reportGroupsSync()
             self.processSyncGroupVersions()
         case .syncVersions(let libraryId, let objectType, let version):
-            self.progressHandler.reportVersionsSync(for: libraryId, object: objectType)
+            self.progressHandler.reportObjectSync(for: objectType, in: libraryId)
             self.processSyncVersions(libraryId: libraryId, object: objectType, since: version)
         case .syncBatchToDb(let batch):
             self.processBatchSync(for: batch)
+        case .syncGroupToDb(let groupId):
+            self.processGroupSync(groupId: groupId)
         case .storeVersion(let version, let libraryId, let object):
             self.processStoreVersion(libraryId: libraryId, type: .object(object), version: version)
         case .syncDeletions(let libraryId, let version):
             self.progressHandler.reportDeletions(for: libraryId)
             self.processDeletionsSync(libraryId: libraryId, since: version)
         case .syncSettings(let libraryId, let version):
+            self.progressHandler.reportLibrarySync(for: libraryId)
             self.processSettingsSync(for: libraryId, since: version)
         case .storeSettingsVersion(let version, let libraryId):
             self.processStoreVersion(libraryId: libraryId, type: .settings, version: version)
@@ -577,7 +583,7 @@ final class SyncController: SynchronizationController {
             do {
                 let (actions, queueIndex) = try self.createLibraryActions(for: data, creationOptions: options)
                 if let names = libraryNames {
-                    self.progressHandler.reportLibraryNames(data: names)
+                    self.progressHandler.set(libraryNames: names)
                 }
                 self.enqueue(actions: actions, at: queueIndex)
             } catch let error {
@@ -587,8 +593,8 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func createLibraryActions(for data: [LibraryData],
-                                      creationOptions: CreateLibraryActionsOptions) throws -> ([Action], Int?) {
+    private func createLibraryActions(for data: [LibraryData], creationOptions: CreateLibraryActionsOptions) throws -> ([Action], Int?) {
+        var writeCount = 0
         var allActions: [Action] = []
         for libraryData in data {
             let libraryId: LibraryIdentifier
@@ -608,23 +614,31 @@ final class SyncController: SynchronizationController {
                     case .group(let groupId):
                         // We need to check permissions for group
                         if libraryData.canEditMetadata {
-                            allActions.append(contentsOf: self.createUpdateActions(updates: libraryData.updates,
-                                                                                   deletions: libraryData.deletions,
-                                                                                   libraryId: libraryId))
+                            let actions = self.createUpdateActions(updates: libraryData.updates,
+                                                                   deletions: libraryData.deletions,
+                                                                   libraryId: libraryId)
+                            writeCount += actions.count
+                            allActions.append(contentsOf: actions)
                         } else {
                             allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
                         }
                     case .custom:
+                        let actions = self.createUpdateActions(updates: libraryData.updates,
+                                                               deletions: libraryData.deletions,
+                                                               libraryId: libraryId)
+                         writeCount += actions.count
                         // We can always write to custom libraries
-                        allActions.append(contentsOf: self.createUpdateActions(updates: libraryData.updates,
-                                                                               deletions: libraryData.deletions,
-                                                                               libraryId: libraryId))
+                        allActions.append(contentsOf: actions)
                     }
                 } else if creationOptions == .automatic {
                     allActions.append(contentsOf: self.createDownloadActions(for: libraryId,
                                                                              versions: libraryData.versions))
                 }
             }
+        }
+
+        if writeCount > 0 {
+            self.progressHandler.reportWrite(count: writeCount)
         }
 
         // Forced downloads or writes are pushed to the beginning of the queue, because only currently running action
@@ -658,6 +672,7 @@ final class SyncController: SynchronizationController {
         let result = LoadUploadDataSyncAction(libraryId: libraryId, backgroundUploader: self.backgroundUploader, dbStorage: self.dbStorage).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] uploads in
+                  self?.progressHandler.reportUpload(count: uploads.count)
                   self?.enqueue(actions: uploads.map({ .uploadAttachment($0) }), at: 0)
               }, onError: { [weak self] error in
                   self?.finishCompletableAction(error: error)
@@ -670,9 +685,8 @@ final class SyncController: SynchronizationController {
                                                  apiClient: self.apiClient, dbStorage: self.dbStorage,
                                                  queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
-              .subscribe(onSuccess: { [weak self] version, toUpdate, toRemove in
-                  self?.progressHandler.reportObjectCount(for: .group, count: toUpdate.count)
-                  self?.createBatchedGroupActions(updateIds: toUpdate, deleteGroups: toRemove, currentVersion: version)
+              .subscribe(onSuccess: { [weak self] toUpdate, toRemove in
+                  self?.createGroupActions(updateIds: toUpdate, deleteGroups: toRemove)
               }, onError: { [weak self] error in
                   self?.finishFailedSyncGroupVersions(error: error)
               })
@@ -688,12 +702,6 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, since version: Int) {
-        if object == .group { // This should never happen, but just in case, redirect it to proper call
-            DDLogWarn("SyncController: processSyncVersions called with group object!")
-            self.processSyncGroupVersions()
-            return
-        }
-
         let result = SyncVersionsSyncAction(object: object, sinceVersion: version, currentVersion: self.lastReturnedVersion,
                                             syncType: self.type, libraryId: libraryId, userId: self.userId,
                                             syncDelayIntervals: self.syncDelayIntervals,
@@ -701,9 +709,8 @@ final class SyncController: SynchronizationController {
                                             queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] version, toUpdate in
-                  self?.progressHandler.reportObjectCount(for: object, count: toUpdate.count)
-                  self?.createBatchedObjectActions(for: libraryId, object: object,
-                                                   from: toUpdate, currentVersion: version)
+                  self?.progressHandler.reportDownloadCount(for: object, count: toUpdate.count, in: libraryId)
+                  self?.createBatchedObjectActions(for: libraryId, object: object, from: toUpdate, currentVersion: version)
               }, onError: { [weak self] error in
                   self?.finishFailedSyncVersionsAction(libraryId: libraryId, object: object, error: error)
               })
@@ -729,28 +736,29 @@ final class SyncController: SynchronizationController {
         self.enqueue(actions: actions, at: 0)
     }
 
-    private func createBatchedGroupActions(updateIds: [Int], deleteGroups: [(Int, String)], currentVersion: Int) {
-        var idsToBatch: [Int]
+    private func createGroupActions(updateIds: [Int], deleteGroups: [(Int, String)]) {
+        var idsToSync: [Int]
 
         switch self.libraryType {
         case .all:
-            idsToBatch = updateIds
+            idsToSync = updateIds
         case .specific(let libraryIds):
-            idsToBatch = []
+            idsToSync = []
             libraryIds.forEach { libraryId in
                 switch libraryId {
                 case .group(let groupId):
                     if updateIds.contains(groupId) {
-                        idsToBatch.append(groupId)
+                        idsToSync.append(groupId)
                     }
                 case .custom: break
                 }
             }
         }
 
-        let batches = idsToBatch.map({ DownloadBatch(libraryId: .custom(.myLibrary), object: .group, keys: [$0], version: currentVersion) })
+        self.progressHandler.reportGroupCount(count: updateIds.count)
+
         var actions: [Action] = deleteGroups.map({ .resolveDeletedGroup($0.0, $0.1) })
-        actions.append(contentsOf: batches.map({ .syncBatchToDb($0) }))
+        actions.append(contentsOf: idsToSync.map({ .syncGroupToDb($0) }))
         actions.append(.createLibraryActions(self.libraryType, .automatic))
         self.enqueue(actions: actions, at: 0)
     }
@@ -777,6 +785,7 @@ final class SyncController: SynchronizationController {
         return batches
     }
 
+
     private func processBatchSync(for batch: DownloadBatch) {
         let result = FetchAndStoreObjectsSyncAction(keys: batch.keys, object: batch.object, version: batch.version,
                                                     libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
@@ -798,14 +807,7 @@ final class SyncController: SynchronizationController {
                                        result: Result<([String], [Error], [StoreItemsError])>) {
         switch result {
         case .success((let ids, let parseErrors, _))://let itemConflicts)):
-            if object == .group {
-                // Groups always sync 1-by-1, so if an error happens it's always reported as .failure, only successful
-                // actions are reported here, so we can directly skip to next action
-                self.processNextAction()
-                return
-            }
-
-            self.progressHandler.reportBatch(for: object, count: allKeys.count)
+            self.progressHandler.reportDownloadBatchSynced(size: allKeys.count, for: object, in: libraryId)
             self.nonFatalErrors.append(contentsOf: parseErrors)
 
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
@@ -840,14 +842,56 @@ final class SyncController: SynchronizationController {
                 self.abort(error: abortError)
                 return
             }
-            self.progressHandler.reportBatch(for: object, count: allKeys.count)
+            self.progressHandler.reportDownloadBatchSynced(size: allKeys.count, for: object, in: libraryId)
             // We failed to sync the whole batch, mark all for resync and continue with sync
             self.markForResync(keys: allKeys, libraryId: libraryId, object: object)
         }
     }
 
+    private func processGroupSync(groupId: Int) {
+        let result = FetchAndStoreGroupSyncAction(identifier: groupId, userId: self.userId,
+                                                  apiClient: self.apiClient, dbStorage: self.dbStorage,
+                                                  queue: self.accessQueue, scheduler: self.accessScheduler).result
+        result.subscribeOn(self.accessScheduler)
+              .subscribe(onSuccess: { [weak self] result in
+                  self?.finishGroupSyncAction(for: groupId, error: nil)
+              }, onError: { [weak self] error in
+                  self?.finishGroupSyncAction(for: groupId, error: error)
+              })
+              .disposed(by: self.disposeBag)
+    }
+
+    private func finishGroupSyncAction(for identifier: Int, error: Error?) {
+        guard let error = error else {
+            self.progressHandler.reportGroupSynced()
+            self.processNextAction()
+            return
+        }
+
+        DDLogError("--- GROUP SYNC: \(error)")
+        if let abortError = self.errorRequiresAbort(error) {
+            self.abort(error: abortError)
+            return
+        }
+
+        self.progressHandler.reportGroupSynced()
+        // We failed to sync the whole batch, mark all for resync and continue with sync
+        self.markGroupForResync(identifier: identifier)
+    }
+
     private func processStoreVersion(libraryId: LibraryIdentifier, type: UpdateVersionType, version: Int) {
         let result = StoreVersionSyncAction(version: version, type: type, libraryId: libraryId, dbStorage: self.dbStorage).result
+        result.subscribeOn(self.accessScheduler)
+              .subscribe(onSuccess: { [weak self] _ in
+                  self?.finishCompletableAction(error: nil)
+              }, onError: { [weak self] error in
+                  self?.finishCompletableAction(error: error)
+              })
+              .disposed(by: self.disposeBag)
+    }
+
+    private func markGroupForResync(identifier: Int) {
+        let result = MarkGroupForResyncSyncAction(identifier: identifier, dbStorage: self.dbStorage).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] _ in
                   self?.finishCompletableAction(error: nil)
@@ -941,9 +985,11 @@ final class SyncController: SynchronizationController {
                                             queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] (version, error) in
+                  self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
                   self?.finishSubmission(error: error, newVersion: version,
                                          libraryId: batch.libraryId, object: batch.object)
               }, onError: { [weak self] error in
+                  self?.progressHandler.reportWriteBatchSynced(size: batch.parameters.count)
                   self?.finishSubmission(error: error, newVersion: batch.version,
                                          libraryId: batch.libraryId, object: batch.object)
               })
@@ -960,8 +1006,10 @@ final class SyncController: SynchronizationController {
                   guard let `self` = self else { return }
 
                   response.subscribe(onCompleted: { [weak self] in
+                              self?.progressHandler.reportUploaded()
                               self?.finishSubmission(error: nil, newVersion: nil, libraryId: upload.libraryId, object: .item)
                           }, onError: { [weak self] error in
+                              self?.progressHandler.reportUploaded()
                               self?.finishSubmission(error: error, newVersion: nil, libraryId: upload.libraryId, object: .item)
                           })
                           .disposed(by: self.disposeBag)
@@ -977,9 +1025,11 @@ final class SyncController: SynchronizationController {
                                               queue: self.accessQueue, scheduler: self.accessScheduler).result
         result.subscribeOn(self.accessScheduler)
               .subscribe(onSuccess: { [weak self] version in
+                  self?.progressHandler.reportWriteBatchSynced(size: batch.keys.count)
                   self?.finishSubmission(error: nil, newVersion: version,
                                          libraryId: batch.libraryId, object: batch.object)
               }, onError: { [weak self] error in
+                  self?.progressHandler.reportWriteBatchSynced(size: batch.keys.count)
                   self?.finishSubmission(error: error, newVersion: batch.version,
                                          libraryId: batch.libraryId, object: batch.object)
               })
@@ -1225,7 +1275,8 @@ fileprivate extension SyncController.Action {
         case .resolveDeletedGroup(let groupId, _),
              .resolveGroupMetadataWritePermission(let groupId, _),
              .deleteGroup(let groupId),
-             .markGroupAsLocalOnly(let groupId):
+             .markGroupAsLocalOnly(let groupId),
+             .syncGroupToDb(let groupId):
             return .group(groupId)
         case .syncVersions(let libraryId, _, _),
              .storeVersion(_, let libraryId, _),
@@ -1240,17 +1291,6 @@ fileprivate extension SyncController.Action {
         }
     }
 
-    var canSkipWhenUnchanged: Bool {
-        switch self {
-        case .storeSettingsVersion, .storeVersion, .syncBatchToDb, .syncDeletions, .syncSettings, .syncVersions:
-            return true
-        case .createLibraryActions, .createUploadActions, .deleteGroup, .loadKeyPermissions, .markChangesAsResolved, .markGroupAsLocalOnly,
-             .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .revertLibraryToOriginal, .submitDeleteBatch,
-             .submitWriteBatch, .syncGroupVersions, .uploadAttachment:
-            return false
-        }
-    }
-
     var requiresConflictReceiver: Bool {
         switch self {
         case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
@@ -1258,7 +1298,7 @@ fileprivate extension SyncController.Action {
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
-             .createUploadActions, .syncGroupVersions:
+             .createUploadActions, .syncGroupVersions, .syncGroupToDb:
             return false
         }
     }
@@ -1270,7 +1310,8 @@ fileprivate extension SyncController.Action {
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
-             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions:
+             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
+             .syncGroupToDb:
             return false
         }
     }
@@ -1287,7 +1328,7 @@ fileprivate extension SyncController.Action {
              .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
-             .syncGroupVersions:
+             .syncGroupVersions, .syncGroupToDb:
             return "Unknown action"
         }
     }

@@ -9,14 +9,12 @@
 import Foundation
 
 enum SyncObject: CaseIterable, Equatable {
-    case group, collection, search, item, trash, tag
+    case collection, search, item, trash, tag
 }
 
 extension SyncObject {
     var apiPath: String {
         switch self {
-        case .group:
-            return "groups"
         case .collection:
             return "collections"
         case .search:

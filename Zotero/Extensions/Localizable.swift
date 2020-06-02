@@ -256,6 +256,14 @@ internal enum L10n {
     }
     /// Syncing groups
     internal static let groups = L10n.tr("Localizable", "sync_toolbar.groups")
+    /// Syncing groups (%d / %d)
+    internal static func groupsWithData(_ p1: Int, _ p2: Int) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.groups_with_data", p1, p2)
+    }
+    /// Syncing %@
+    internal static func library(_ p1: String) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.library", p1)
+    }
     /// %d issues
     internal static func multipleErrors(_ p1: Int) -> String {
       return L10n.tr("Localizable", "sync_toolbar.multiple_errors", p1)
@@ -272,6 +280,14 @@ internal enum L10n {
     internal static let oneError = L10n.tr("Localizable", "sync_toolbar.one_error")
     /// Sync starting
     internal static let starting = L10n.tr("Localizable", "sync_toolbar.starting")
+    /// Uploading attachment (%d / %d)
+    internal static func uploads(_ p1: Int, _ p2: Int) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.uploads", p1, p2)
+    }
+    /// Submitting changes (%d / %d)
+    internal static func writes(_ p1: Int, _ p2: Int) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.writes", p1, p2)
+    }
     internal enum Object {
       /// collections
       internal static let collections = L10n.tr("Localizable", "sync_toolbar.object.collections")

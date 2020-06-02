@@ -15,9 +15,6 @@ struct ObjectsRequest: ApiRequest {
     let keys: String
 
     var endpoint: ApiEndpoint {
-        if self.objectType == .group {
-            return .zotero(path: "groups/\(self.keys)")
-        }
         return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/\(self.objectType.apiPath)")
     }
 
@@ -31,8 +28,6 @@ struct ObjectsRequest: ApiRequest {
 
     var parameters: [String : Any]? {
         switch self.objectType {
-        case .group:
-            return nil
         case .collection:
             return ["collectionKey": self.keys]
         case .item, .trash:

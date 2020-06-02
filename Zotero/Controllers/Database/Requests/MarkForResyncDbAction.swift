@@ -60,28 +60,16 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
 }
 
 struct MarkGroupForResyncDbAction: DbRequest {
-    let identifiers: [Int]
+    let identifier: Int
 
     var needsWrite: Bool { return true }
 
-    init(identifiers: [Any]) throws {
-        guard let typedIds = identifiers as? [Int] else { throw DbError.primaryKeyWrongType }
-        self.identifiers = typedIds
-    }
-
     func process(in database: Realm) throws {
-        var toCreate: [Int] = self.identifiers
-        let libraries = database.objects(RGroup.self).filter("identifier IN %@", self.identifiers)
-        libraries.forEach { library in
-            if let index = toCreate.firstIndex(of: library.identifier) {
-                toCreate.remove(at: index)
-            }
+        if let library = database.object(ofType: RGroup.self, forPrimaryKey: self.identifier) {
             if library.syncState == .synced {
                 library.syncState = .outdated
             }
-        }
-
-        toCreate.forEach { identifier in
+        } else {
             let library = RGroup()
             library.identifier = identifier
             library.syncState = .dirty

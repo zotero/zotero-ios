@@ -58,8 +58,6 @@ struct UpdateVersionsDbRequest: DbRequest {
             versions.settings = version
         case .object(let object):
             switch object {
-            case .group:
-                throw DbError.objectNotFound
             case .collection:
                 versions.collections = version
             case .item:

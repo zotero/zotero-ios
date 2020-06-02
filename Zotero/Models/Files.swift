@@ -38,8 +38,6 @@ struct Files {
             objectName = "search"
         case .tag:
             objectName = "tag"
-        case .group:
-            objectName = "group"
         }
 
         return FileData(rootPath: Files.appGroupPath,

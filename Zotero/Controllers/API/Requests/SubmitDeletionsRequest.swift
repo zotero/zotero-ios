@@ -30,8 +30,6 @@ struct SubmitDeletionsRequest: ApiRequest {
     var parameters: [String : Any]? {
         let joinedKeys = self.keys.joined(separator: ",")
         switch self.objectType {
-        case .group:
-            return nil
         case .collection:
             return ["collectionKey": joinedKeys]
         case .item, .trash:

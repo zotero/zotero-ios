@@ -30,12 +30,11 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
 
     var result: Single<([String], [Error], [StoreItemsError])> {
         let keysString = self.keys.map({ "\($0)" }).joined(separator: ",")
-        let request = ObjectsRequest(libraryId: libraryId, userId: userId, objectType: object, keys: keysString)
+        let request = ObjectsRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, keys: keysString)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
                              .flatMap({ (response, headers) -> Single<([String], [Error], [StoreItemsError])> in
-                                 // Group version sync doesn't return last version, ignore errors
-                                 if self.object != .group && self.version != headers.lastModifiedVersion {
+                                 if self.version != headers.lastModifiedVersion {
                                      return Single.error(SyncError.versionMismatch)
                                  }
 
@@ -54,10 +53,6 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
         let coordinator = try self.dbStorage.createCoordinator()
 
         switch object {
-        case .group:
-            let decoded = try JSONDecoder().decode(GroupResponse.self, from: data)
-            try coordinator.perform(request: StoreGroupDbRequest(response: decoded, userId: userId))
-            return ([], [], [])
         case .collection:
             let decoded = try JSONDecoder().decode(CollectionsResponse.self, from: data)
 

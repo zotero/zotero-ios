@@ -24,9 +24,6 @@ struct MarkForResyncSyncAction: SyncAction {
         return Single.create { subscriber -> Disposable in
             do {
                 switch self.object {
-                case .group:
-                    let request = try MarkGroupForResyncDbAction(identifiers: self.keys)
-                    try self.dbStorage.createCoordinator().perform(request: request)
                 case .collection:
                     let request = try MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: self.keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
