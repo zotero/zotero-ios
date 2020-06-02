@@ -1207,21 +1207,6 @@ final class SyncController: SynchronizationController {
 
         return true
     }
-
-    /// Removes all download actions for given library from the beginning of the queue.
-    /// - parameter libraryId: Library identifier for which actions will be deleted.
-    private func removeAllDownloadActions(for libraryId: LibraryIdentifier) {
-
-        while !self.queue.isEmpty {
-            guard let action = self.queue.first, action.libraryId == libraryId else { break }
-            switch action {
-            case .storeSettingsVersion, .storeVersion, .syncBatchToDb, .syncDeletions, .syncSettings, .syncVersions:
-                self.queue.removeFirst()
-            default:
-                continue
-            }
-        }
-    }
 }
 
 fileprivate extension SyncController.Action {
