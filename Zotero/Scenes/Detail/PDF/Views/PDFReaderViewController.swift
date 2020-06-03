@@ -29,6 +29,28 @@ class PDFReaderViewController: UIViewController {
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
 
+    private var defaultScrollDirection: ScrollDirection {
+        get {
+            let rawValue = UserDefaults.standard.integer(forKey: "PdfReader.ScrollDirection")
+            return ScrollDirection(rawValue: UInt(rawValue)) ?? .horizontal
+        }
+
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "PdfReader.ScrollDirection")
+        }
+    }
+
+    private var defaultPageTransition: PageTransition {
+        get {
+            let rawValue = UserDefaults.standard.integer(forKey: "PdfReader.PageTransition")
+            return PageTransition(rawValue: UInt(rawValue)) ?? .scrollPerSpread
+        }
+
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "PdfReader.PageTransition")
+        }
+    }
+
     // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -145,6 +167,37 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func showSettings() {
+        let direction = self.pdfController.configuration.scrollDirection
+        let directionTitle = direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
+        let transition = self.pdfController.configuration.pageTransition
+        let transitionTitle = transition == .scrollContinuous ? L10n.Pdf.PageTransition.continuous : L10n.Pdf.PageTransition.jump
+
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.barButtonItem = self.navigationItem.rightBarButtonItems?.last
+        controller.addAction(UIAlertAction(title: L10n.Pdf.scrollDirection(directionTitle), style: .default, handler: { [weak self] _ in
+            self?.toggleScrollDirection(from: direction)
+        }))
+        controller.addAction(UIAlertAction(title: L10n.Pdf.pageTransition(transitionTitle), style: .default, handler: { [weak self] _ in
+            self?.togglePageTransition(from: transition)
+        }))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        self.present(controller, animated: true, completion: nil)
+    }
+
+    private func toggleScrollDirection(from direction: ScrollDirection) {
+        let newDirection: ScrollDirection = direction == .horizontal ? .vertical : .horizontal
+        self.defaultScrollDirection = newDirection
+        self.pdfController.updateConfiguration { builder in
+            builder.scrollDirection = newDirection
+        }
+    }
+
+    private func togglePageTransition(from transition: PageTransition) {
+        let newTransition: PageTransition = transition == .scrollPerSpread ? .scrollContinuous : .scrollPerSpread
+        self.defaultPageTransition = newTransition
+        self.pdfController.updateConfiguration { builder in
+            builder.pageTransition = newTransition
+        }
     }
 
     @objc private func close() {

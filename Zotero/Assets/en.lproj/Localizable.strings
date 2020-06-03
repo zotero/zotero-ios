@@ -105,6 +105,12 @@ The following fields will be lost:
 %@";
 "item_detail.search_tags" = "Search Tags...";
 
+"pdf.scrollDirection" = "Scroll Direction: %@";
+"pdf.scrollDirection.horizontal" = "Horizontal";
+"pdf.scrollDirection.vertical" = "Vertical";
+"pdf.pageTransition" = "Page Transition: %@";
+"pdf.pageTransition.jump" = "Jump";
+"pdf.pageTransition.continuous" = "Continuous";
 "pdf.annotations_sidebar.page" = "Page";
 "pdf.annotations_sidebar.search_title" = "Search Annotations";
 

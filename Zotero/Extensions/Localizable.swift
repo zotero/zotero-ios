@@ -184,11 +184,31 @@ internal enum L10n {
   }
 
   internal enum Pdf {
+    /// Page Transition: %@
+    internal static func pageTransition(_ p1: String) -> String {
+      return L10n.tr("Localizable", "pdf.pageTransition", p1)
+    }
+    /// Scroll Direction: %@
+    internal static func scrollDirection(_ p1: String) -> String {
+      return L10n.tr("Localizable", "pdf.scrollDirection", p1)
+    }
     internal enum AnnotationsSidebar {
       /// Page
       internal static let page = L10n.tr("Localizable", "pdf.annotations_sidebar.page")
       /// Search Annotations
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
+    }
+    internal enum PageTransition {
+      /// Continuous
+      internal static let continuous = L10n.tr("Localizable", "pdf.pageTransition.continuous")
+      /// Jump
+      internal static let jump = L10n.tr("Localizable", "pdf.pageTransition.jump")
+    }
+    internal enum ScrollDirection {
+      /// Horizontal
+      internal static let horizontal = L10n.tr("Localizable", "pdf.scrollDirection.horizontal")
+      /// Vertical
+      internal static let vertical = L10n.tr("Localizable", "pdf.scrollDirection.vertical")
     }
   }
 
