@@ -67,8 +67,6 @@ struct SubmitUpdateSyncAction: SyncAction {
                                                                                             keys: syncedKeys,
                                                                                             version: response.newVersion)
                                         try coordinator.perform(request: request)
-                                     case .tag:
-                                         fatalError("SyncActionHandler: unsupported update request")
                                      }
 
                                      let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,

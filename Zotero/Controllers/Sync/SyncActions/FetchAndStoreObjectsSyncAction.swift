@@ -87,9 +87,6 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
 
             try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
             return (decoded.searches.map({ $0.key }), decoded.errors, [])
-        case .tag: // Tags are not synchronized, this should not be called
-            DDLogError("SyncActionHandler: syncToDb tried to sync tags")
-            return ([], [], [])
         }
     }
 

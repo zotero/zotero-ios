@@ -43,8 +43,6 @@ struct SubmitDeletionSyncAction: SyncAction {
                                     case .search:
                                         let request = DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId)
                                         try coordinator.perform(request: request)
-                                    case .tag:
-                                        fatalError("SyncActionHandler: deleteObjects unsupported object")
                                     }
 
                                     let newVersion = headers.lastModifiedVersion

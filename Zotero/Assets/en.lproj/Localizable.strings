@@ -75,7 +75,6 @@
 "sync_toolbar.object.groups" = "groups";
 "sync_toolbar.object.items" = "items";
 "sync_toolbar.object.searches" = "searches";
-"sync_toolbar.object.tags" = "tags";
 
 "items.search_title" = "Search Items";
 "items.select" = "Select";

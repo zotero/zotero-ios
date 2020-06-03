@@ -9,7 +9,7 @@
 import Foundation
 
 enum SyncObject: CaseIterable, Equatable {
-    case collection, search, item, trash, tag
+    case collection, search, item, trash
 }
 
 extension SyncObject {
@@ -23,8 +23,6 @@ extension SyncObject {
             return "items"
         case .trash:
             return "items/trash"
-        case .tag:
-            return "tags"
         }
     }
 }

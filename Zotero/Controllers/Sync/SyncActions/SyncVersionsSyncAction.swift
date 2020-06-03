@@ -38,9 +38,6 @@ struct SyncVersionsSyncAction: SyncAction {
         case .search:
             return self.synchronizeVersions(for: RSearch.self, libraryId: self.libraryId, userId: self.userId, object: self.object,
                                             since: self.sinceVersion, current: self.currentVersion, syncType: self.syncType)
-        case .tag: // Tags are not synchronized, this should not be called
-            DDLogError("SyncVersionsSyncAction: tried to sync tags type")
-            return Single.just((0, []))
         }
     }
 

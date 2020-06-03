@@ -66,7 +66,6 @@ struct UpdateVersionsDbRequest: DbRequest {
                 versions.trash = version
             case .search:
                 versions.searches = version
-            case .tag: break
             }
         }
     }

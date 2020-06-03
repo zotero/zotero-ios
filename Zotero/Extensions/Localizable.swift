@@ -297,8 +297,6 @@ internal enum L10n {
       internal static let items = L10n.tr("Localizable", "sync_toolbar.object.items")
       /// searches
       internal static let searches = L10n.tr("Localizable", "sync_toolbar.object.searches")
-      /// tags
-      internal static let tags = L10n.tr("Localizable", "sync_toolbar.object.tags")
     }
   }
 }

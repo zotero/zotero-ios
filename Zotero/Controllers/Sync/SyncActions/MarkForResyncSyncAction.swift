@@ -33,9 +33,6 @@ struct MarkForResyncSyncAction: SyncAction {
                 case .search:
                     let request = try MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
-                case .tag: // Tags are not synchronized, this should not be called
-                    DDLogError("SyncActionHandler: markForResync tried to sync tags")
-                    break
                 }
                 subscriber(.success(()))
             } catch let error {

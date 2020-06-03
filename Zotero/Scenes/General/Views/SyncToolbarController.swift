@@ -99,8 +99,6 @@ class SyncToolbarController {
             return L10n.SyncToolbar.Object.items
         case .search:
             return L10n.SyncToolbar.Object.searches
-        case .tag:
-            return L10n.SyncToolbar.Object.tags
         }
     }
 

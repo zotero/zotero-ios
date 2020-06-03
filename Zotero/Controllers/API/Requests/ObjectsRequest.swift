@@ -34,8 +34,6 @@ struct ObjectsRequest: ApiRequest {
             return ["itemKey": self.keys]
         case .search:
             return ["searchKey": self.keys]
-        case .tag:
-            return nil
         }
     }
 
