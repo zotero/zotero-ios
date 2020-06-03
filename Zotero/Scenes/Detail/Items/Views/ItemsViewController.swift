@@ -24,6 +24,7 @@ class ItemsViewController: UIViewController {
 
     private var tableViewHandler: ItemsTableViewHandler!
     private var resultsToken: NotificationToken?
+    private weak var searchBarContainer: SearchBarContainer?
 
     weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
@@ -69,6 +70,18 @@ class ItemsViewController: UIViewController {
                       self?.update(state: state)
                   })
                   .disposed(by: self.disposeBag)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
+        self.searchBarContainer?.freezeWidth()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
+        self.searchBarContainer?.unfreezeWidth()
     }
 
     // MARK: - UI state
@@ -292,7 +305,10 @@ class ItemsViewController: UIViewController {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             searchBar = UISearchBar()
-            self.navigationItem.titleView = searchBar
+            // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
+            let container = SearchBarContainer(searchBar: searchBar)
+            self.navigationItem.titleView = container
+            self.searchBarContainer = container
         } else {
             let controller = UISearchController(searchResultsController: nil)
             searchBar = controller.searchBar
@@ -309,5 +325,62 @@ class ItemsViewController: UIViewController {
                              self?.viewModel.process(action: .search(text ?? ""))
                          })
                          .disposed(by: self.disposeBag)
+    }
+}
+
+///
+/// This is a conainer for `UISearchBar` to fix broken UIKit `titleView` animation in navigation bar.
+/// The `titleView` is assigned an expanding view (`UISearchBar`), so the `titleView` expands to full width on animation to different screen.
+/// For example, if the new screen has fewer `rightBarButtonItems`, the `titleView` width expands and the animation looks as if the search bar is
+/// moving to the right, even though the screen is animating out to the left.
+///
+/// To fix this, the `titleView` needs to have a set width. I didn't want to use hardcoded values and calculate the available `titleView` width
+/// manually, so I created this view.
+///
+/// The point is that this view is expandable (`intrinsicContentSize` width set to `.greatestFiniteMagnitude`). The child `searchBar` has trailing
+/// constraint less or equal than trailing constraint of parent `SearchBarContainer`. But the width constraint of search bar is set to
+/// `.greatestFiniteMagnitude` with low priority. So by default the search bar expands as much as possible, but is limited by parent width.
+/// Then, when parent controller is leaving screen on `viewWillDisappear` it calls `freezeWidth()` to freeze the search bar width by setting width
+/// constraint to current width of search bar. When the animation finishes the parent controller has to call `unfreezeWidth()` to set the width back
+/// to `.greatestFiniteMagnitude`, so that it stretches to appropriate size when needed (for example when the device rotates).
+///
+fileprivate class SearchBarContainer: UIView {
+    private unowned let searchBar: UISearchBar
+    private var widthConstraint: NSLayoutConstraint!
+
+    init(searchBar: UISearchBar) {
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        self.searchBar = searchBar
+
+        super.init(frame: CGRect())
+
+        self.addSubview(searchBar)
+
+        NSLayoutConstraint.activate([
+            searchBar.topAnchor.constraint(equalTo: self.topAnchor),
+            searchBar.bottomAnchor.constraint(equalTo: self.bottomAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            searchBar.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor)
+        ])
+
+        self.widthConstraint = self.searchBar.widthAnchor.constraint(equalToConstant: .greatestFiniteMagnitude)
+        self.widthConstraint.priority = .defaultLow
+        self.widthConstraint.isActive = true
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var intrinsicContentSize: CGSize {
+        return CGSize(width: .greatestFiniteMagnitude, height: self.searchBar.bounds.height)
+    }
+
+    func freezeWidth() {
+        self.widthConstraint.constant = self.searchBar.frame.width
+    }
+
+    func unfreezeWidth() {
+        self.widthConstraint.constant = .greatestFiniteMagnitude
     }
 }
