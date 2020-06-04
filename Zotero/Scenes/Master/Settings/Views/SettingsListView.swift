@@ -30,6 +30,10 @@ struct SettingsListView: View {
                     Text(L10n.Settings.translators)
                 }
 
+                NavigationLink(destination: StorageSettingsView()) {
+                    Text(L10n.Settings.storage)
+                }
+
                 NavigationLink(destination: DebugSettingsView()) {
                     Text(L10n.Settings.debug)
                 }

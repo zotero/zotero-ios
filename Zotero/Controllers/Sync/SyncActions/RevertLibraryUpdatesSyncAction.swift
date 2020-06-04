@@ -73,7 +73,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
 
         items.forEach { item in
             do {
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: "json")
+                let file = Files.jsonCacheFile(for: .item, libraryId: libraryId, key: item.key)
                 let data = try self.fileStorage.read(file)
                 let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
 
@@ -104,8 +104,7 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
 
         objects.forEach({ object in
             do {
-                let file = Files.objectFile(for: objectType, libraryId: libraryId,
-                                            key: object.key, ext: "json")
+                let file = Files.jsonCacheFile(for: objectType, libraryId: libraryId, key: object.key)
                 let data = try self.fileStorage.read(file)
                 let response = try decoder.decode(Response.self, from: data)
                 responses.append(response)

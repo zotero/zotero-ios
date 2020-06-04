@@ -212,7 +212,7 @@ struct ItemDetailDataCreator {
             if let ext = contentType.extensionFromMimeType,
                let libraryId = item.libraryObject?.identifier {
                 let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + ext)
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: item.key, ext: ext)
+                let file = Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
                 let isLocal = fileStorage.has(file)
                 return .file(file: file, filename: filename, isLocal: isLocal)
             } else {

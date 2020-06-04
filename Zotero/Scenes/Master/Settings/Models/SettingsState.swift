@@ -16,6 +16,11 @@ struct SettingsState: ViewModelState {
     var lastTranslatorUpdate: Date
     var isUpdatingTranslators: Bool
     var logoutAlertVisible: Bool
+    var libraries: [Library]
+    var storageData: [LibraryIdentifier: DirectoryData]
+    var totalStorageData: DirectoryData?
+    var showDeleteAllQuestion: Bool
+    var showDeleteLibraryQuestion: Library?
 
     init(isSyncing: Bool, isLogging: Bool, isUpdatingTranslators: Bool, lastTranslatorUpdate: Date) {
         self.isSyncing = isSyncing
@@ -25,6 +30,9 @@ struct SettingsState: ViewModelState {
         self.askForSyncPermission = Defaults.shared.askForSyncPermission
         self.showCollectionItemCount = Defaults.shared.showCollectionItemCount
         self.logoutAlertVisible = false
+        self.libraries = []
+        self.storageData = [:]
+        self.showDeleteAllQuestion = false
     }
 
     func cleanup() {}

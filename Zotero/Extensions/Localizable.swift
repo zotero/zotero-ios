@@ -243,6 +243,8 @@ internal enum L10n {
     internal static let startLogging = L10n.tr("Localizable", "settings.start_logging")
     /// Stop logging
     internal static let stopLogging = L10n.tr("Localizable", "settings.stop_logging")
+    /// Storage
+    internal static let storage = L10n.tr("Localizable", "settings.storage")
     /// Sync
     internal static let sync = L10n.tr("Localizable", "settings.sync")
     /// Cancel ongoing sync
@@ -257,6 +259,24 @@ internal enum L10n {
     internal static let translatorsUpdate = L10n.tr("Localizable", "settings.translators_update")
     /// Updating...
     internal static let translatorsUpdating = L10n.tr("Localizable", "settings.translators_updating")
+    internal enum Storage {
+      /// Delete All Attachments
+      internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")
+      /// Do you really want to delete all attachments?
+      internal static let deleteAllQuestion = L10n.tr("Localizable", "settings.storage.delete_all_question")
+      /// Do you really want to delete all attachments in "%@"?
+      internal static func deleteLibraryQuestion(_ p1: String) -> String {
+        return L10n.tr("Localizable", "settings.storage.delete_library_question", p1)
+      }
+      /// Could not collect storage data
+      internal static let error = L10n.tr("Localizable", "settings.storage.error")
+      /// %d files
+      internal static func multipleFiles(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "settings.storage.multiple_files", p1)
+      }
+      /// 1 file
+      internal static let oneFile = L10n.tr("Localizable", "settings.storage.one_file")
+    }
   }
 
   internal enum SyncToolbar {

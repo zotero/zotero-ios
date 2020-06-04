@@ -8,11 +8,15 @@
 
 import Foundation
 
-struct Library: Equatable {
+struct Library: Equatable, Identifiable {
     let identifier: LibraryIdentifier
     let name: String
     let metadataEditable: Bool
     let filesEditable: Bool
+
+    var id: LibraryIdentifier {
+        return self.identifier
+    }
 
     init(customLibrary: RCustomLibrary) {
         self.identifier = .custom(customLibrary.type)

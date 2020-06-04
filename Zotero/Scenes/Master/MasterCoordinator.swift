@@ -9,6 +9,8 @@
 import UIKit
 import SwiftUI
 
+import RxSwift
+
 protocol MasterLibrariesCoordinatorDelegate: class {
     func showCollections(for library: Library)
     func showSettings()
@@ -30,6 +32,7 @@ class MasterCoordinator: NSObject, Coordinator {
     unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
+    private let disposeBag: DisposeBag
 
     init(navigationController: UINavigationController, mainCoordinatorDelegate: MainCoordinatorDelegate, controllers: Controllers) {
         self.navigationController = navigationController
@@ -40,6 +43,7 @@ class MasterCoordinator: NSObject, Coordinator {
                                       name: RCustomLibraryType.myLibrary.libraryName,
                                       metadataEditable: true,
                                       filesEditable: true)
+        self.disposeBag = DisposeBag()
 
         super.init()
     }
@@ -81,22 +85,73 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     }
 
     func showSettings() {
-        guard let syncScheduler = self.controllers.userControllers?.syncScheduler else { return }
+        guard let syncScheduler = self.controllers.userControllers?.syncScheduler,
+              let dbStorage = self.controllers.userControllers?.dbStorage else { return }
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
                                   isLogging: self.controllers.debugLogging.isEnabled,
                                   isUpdatingTranslators: self.controllers.translatorsController.isLoading.value,
                                   lastTranslatorUpdate: self.controllers.translatorsController.lastUpdate)
-        let handler = SettingsActionHandler(sessionController: self.controllers.sessionController,
+        let handler = SettingsActionHandler(dbStorage: dbStorage,
+                                            fileStorage: self.controllers.fileStorage,
+                                            sessionController: self.controllers.sessionController,
                                             syncScheduler: syncScheduler,
                                             debugLogging: self.controllers.debugLogging,
                                             translatorsController: self.controllers.translatorsController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        // Showing alerts in SwiftUI in this case doesn't work. Observe state here and show appropriate alerts.
+        viewModel.stateObservable
+                 .observeOn(MainScheduler.instance)
+                 .subscribe(onNext: { [weak self, weak viewModel] state in
+                     guard let `self` = self, let viewModel = viewModel else { return }
+
+                     if state.showDeleteAllQuestion {
+                         self.showDeleteAllStorageAlert(viewModel: viewModel)
+                     }
+
+                     if let library = state.showDeleteLibraryQuestion {
+                         self.showDeleteLibraryStorageAlert(for: library, viewModel: viewModel)
+                     }
+                 })
+                 .disposed(by: self.disposeBag)
+
         var view = SettingsView()
         view.coordinatorDelegate = self
 
-        let controller = UIHostingController(rootView: view.environmentObject(ViewModel(initialState: state, handler: handler)))
+        let controller = UIHostingController(rootView: view.environmentObject(viewModel))
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
         self.navigationController.parent?.present(controller, animated: true, completion: nil)
+    }
+
+    private func showDeleteAllStorageAlert(viewModel: ViewModel<SettingsActionHandler>) {
+        let controller = UIAlertController(title: L10n.Settings.Storage.deleteAllQuestion, message: nil, preferredStyle: .alert)
+
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .deleteAllDownloads)
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .showDeleteAllQuestion(false))
+        }))
+
+        // Settings are already presented, so present over them
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+    }
+
+    private func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<SettingsActionHandler>) {
+        let controller = UIAlertController(title: L10n.Settings.Storage.deleteLibraryQuestion(library.name), message: nil, preferredStyle: .alert)
+
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .deleteDownloadsInLibrary(library.identifier))
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .showDeleteLibraryQuestion(nil))
+        }))
+
+        // Settings are already presented, so present over them
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
     }
 }
 

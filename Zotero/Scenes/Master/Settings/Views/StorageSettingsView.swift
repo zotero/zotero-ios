@@ -1,34 +1,31 @@
 //
-//  SettingsView.swift
+//  StorageSettingsView.swift
 //  Zotero
 //
-//  Created by Michal Rentka on 15/10/2019.
-//  Copyright © 2019 Corporation for Digital Scholarship. All rights reserved.
+//  Created by Michal Rentka on 04/06/2020.
+//  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
 import SwiftUI
 
-struct SettingsView: View {
+struct StorageSettingsView: View {
     @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
 
-    // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() doesn't work when presented from UIViewController.
-    weak var coordinatorDelegate: MasterSettingsCoordinatorDelegate?
-
     var body: some View {
-        NavigationView {
-            SettingsListView()
-                .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
-                .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() }, label: { Text("Close") }))
-            ProfileView()
+        Group {
+            if self.viewModel.state.libraries.isEmpty {
+                StorageSettingsEmptyView()
+            } else {
+                StorageSettingsListView()
+            }
         }
-        .navigationViewStyle(DoubleColumnNavigationViewStyle())
         .onAppear {
-            self.viewModel.process(action: .startObserving)
+            self.viewModel.process(action: .loadStorageData)
         }
     }
 }
 
-struct SettingsView_Previews: PreviewProvider {
+struct StorageSettingsView_Previews: PreviewProvider {
     static var previews: some View {
         let controllers = Controllers()
         let state = SettingsState(isSyncing: false,
@@ -41,6 +38,6 @@ struct SettingsView_Previews: PreviewProvider {
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController)
-        return SettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
+        return StorageSettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

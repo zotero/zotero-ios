@@ -17,6 +17,6 @@ struct AttachmentUpload: Equatable {
     let mtime: Int
 
     var file: File {
-        return Files.objectFile(for: .item, libraryId: self.libraryId, key: self.key, ext: self.extension)
+        return Files.attachmentFile(in: self.libraryId, key: self.key, ext: self.extension)
     }
 }

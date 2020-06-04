@@ -21,4 +21,9 @@ enum SettingsAction {
     case stopLogging
     case resetTranslators
     case updateTranslators
+    case loadStorageData
+    case deleteAllDownloads
+    case deleteDownloadsInLibrary(LibraryIdentifier)
+    case showDeleteAllQuestion(Bool)
+    case showDeleteLibraryQuestion(Library?)
 }

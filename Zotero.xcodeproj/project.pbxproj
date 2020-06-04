@@ -489,6 +489,10 @@
 		B37491362488D7040042FF85 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374912B2488D7040042FF85 /* GeneralSettingsView.swift */; };
 		B37491372488D7040042FF85 /* SettingsToggleRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374912C2488D7040042FF85 /* SettingsToggleRow.swift */; };
 		B37491382488D7040042FF85 /* SettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374912D2488D7040042FF85 /* SettingsListView.swift */; };
+		B374913C2488E3D90042FF85 /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913B2488E3D90042FF85 /* StorageSettingsView.swift */; };
+		B374913E2488FC0E0042FF85 /* StorageSettingsEmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913D2488FC0E0042FF85 /* StorageSettingsEmptyView.swift */; };
+		B37491402488FC170042FF85 /* StorageSettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913F2488FC170042FF85 /* StorageSettingsListView.swift */; };
+		B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */; };
 		B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */; };
 		B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
@@ -926,6 +930,10 @@
 		B374912B2488D7040042FF85 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		B374912C2488D7040042FF85 /* SettingsToggleRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsToggleRow.swift; sourceTree = "<group>"; };
 		B374912D2488D7040042FF85 /* SettingsListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsListView.swift; sourceTree = "<group>"; };
+		B374913B2488E3D90042FF85 /* StorageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsView.swift; sourceTree = "<group>"; };
+		B374913D2488FC0E0042FF85 /* StorageSettingsEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsEmptyView.swift; sourceTree = "<group>"; };
+		B374913F2488FC170042FF85 /* StorageSettingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsListView.swift; sourceTree = "<group>"; };
+		B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsRow.swift; sourceTree = "<group>"; };
 		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorParserDelegate.swift; sourceTree = "<group>"; };
 		B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
@@ -1826,6 +1834,10 @@
 				B374912D2488D7040042FF85 /* SettingsListView.swift */,
 				B374912C2488D7040042FF85 /* SettingsToggleRow.swift */,
 				B37491262488D7040042FF85 /* SettingsView.swift */,
+				B374913D2488FC0E0042FF85 /* StorageSettingsEmptyView.swift */,
+				B374913F2488FC170042FF85 /* StorageSettingsListView.swift */,
+				B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */,
+				B374913B2488E3D90042FF85 /* StorageSettingsView.swift */,
 				B37491282488D7040042FF85 /* SyncSettingsView.swift */,
 				B374912A2488D7040042FF85 /* TranslatorsSettingsView.swift */,
 			);
@@ -2424,6 +2436,7 @@
 				B30566BF23FC051F003304F2 /* AttachmentUpload.swift in Sources */,
 				B305662123FC051F003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
+				B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */,
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
 				B3593F35241A61C700760E20 /* ItemDetailTableViewHandler.swift in Sources */,
 				B3DCDF0C240912370039ED0D /* SinglePickerState.swift in Sources */,
@@ -2639,6 +2652,7 @@
 				B37491382488D7040042FF85 /* SettingsListView.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
 				B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */,
+				B374913C2488E3D90042FF85 /* StorageSettingsView.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
 				B3972689247D403200A8B469 /* UrlDetector.swift in Sources */,
 				B305660923FC051E003304F2 /* SettingsRequest.swift in Sources */,
@@ -2646,6 +2660,7 @@
 				B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */,
 				B3593F20241A61C700760E20 /* ItemDetailError.swift in Sources */,
 				B30566A523FC051F003304F2 /* SyncableObject.swift in Sources */,
+				B37491402488FC170042FF85 /* StorageSettingsListView.swift in Sources */,
 				B3593F26241A61C700760E20 /* ItemDetailAbstractCell.swift in Sources */,
 				B30566A223FC051F003304F2 /* Attachment.swift in Sources */,
 				B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */,
@@ -2723,6 +2738,7 @@
 				B3242CCD246ABBAF00D8748F /* AnnotationsConfig.swift in Sources */,
 				B305669923FC051F003304F2 /* RCreator.swift in Sources */,
 				B3B953CC245981C100FC96DB /* PDFReaderActionHandler.swift in Sources */,
+				B374913E2488FC0E0042FF85 /* StorageSettingsEmptyView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

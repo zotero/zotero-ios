@@ -98,7 +98,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
 
             do {
                 let data = try JSONSerialization.data(withJSONObject: object, options: [])
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "json")
+                let file = Files.jsonCacheFile(for: .item, libraryId: libraryId, key: key)
                 try self.fileStorage.write(data, to: file, options: .atomicWrite)
             } catch let error {
                 DDLogError("FetchAndStoreObjectsSyncAction: can't encode/write item - \(error)\n\(object)")
@@ -112,7 +112,7 @@ struct FetchAndStoreObjectsSyncAction: SyncAction {
         for object in objects {
             do {
                 let data = try JSONEncoder().encode(object)
-                let file = Files.objectFile(for: type, libraryId: libraryId, key: object.key, ext: "json")
+                let file = Files.jsonCacheFile(for: type, libraryId: libraryId, key: object.key)
                 try self.fileStorage.write(data, to: file, options: .atomicWrite)
             } catch let error {
                 DDLogError("FetchAndStoreObjectsSyncAction: can't encode/write object - \(error)\n\(object)")

@@ -57,9 +57,3 @@ struct AllCollectionPickerView_Previews: PreviewProvider {
         AllCollectionPickerView(picked: { _, _ in })
     }
 }
-
-extension Library: Identifiable {
-    var id: LibraryIdentifier {
-        return self.identifier
-    }
-}

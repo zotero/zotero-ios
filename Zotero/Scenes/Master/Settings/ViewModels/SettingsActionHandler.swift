@@ -9,20 +9,25 @@
 import Combine
 import Foundation
 
+import CocoaLumberjack
 import RxSwift
 
 struct SettingsActionHandler: ViewModelActionHandler {
     typealias Action = SettingsAction
     typealias State = SettingsState
 
+    private unowned let dbStorage: DbStorage
+    private unowned let fileStorage: FileStorage
     private unowned let sessionController: SessionController
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let debugLogging: DebugLogging
     private unowned let translatorsController: TranslatorsController
     private let disposeBag: DisposeBag
 
-    init(sessionController: SessionController, syncScheduler: SynchronizationScheduler,
-         debugLogging: DebugLogging, translatorsController: TranslatorsController) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController,
+         syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging, translatorsController: TranslatorsController) {
+        self.dbStorage = dbStorage
+        self.fileStorage = fileStorage
         self.sessionController = sessionController
         self.syncScheduler = syncScheduler
         self.debugLogging = debugLogging
@@ -89,7 +94,88 @@ struct SettingsActionHandler: ViewModelActionHandler {
         case .resetTranslators:
             self.translatorsController.resetToBundle()
 
+        case .loadStorageData:
+            self.loadStorageData(in: viewModel)
+
+        case .deleteAllDownloads:
+            self.removeAllDownloads(in: viewModel)
+
+        case .deleteDownloadsInLibrary(let libraryId):
+            self.removeDownloads(for: libraryId, in: viewModel)
+
+        case .showDeleteAllQuestion(let show):
+            self.update(viewModel: viewModel) { state in
+                state.showDeleteAllQuestion = show
+            }
+
+        case .showDeleteLibraryQuestion(let library):
+            self.update(viewModel: viewModel) { state in
+                state.showDeleteLibraryQuestion = library
+            }
         }
+    }
+
+    private func removeAllDownloads(in viewModel: ViewModel<SettingsActionHandler>) {
+        do {
+            try self.fileStorage.remove(Files.downloadDirectory)
+
+            self.update(viewModel: viewModel) { state in
+                for (key, _) in state.storageData {
+                    state.storageData[key] = DirectoryData(fileCount: 0, totalSize: 0)
+                }
+                state.totalStorageData = DirectoryData(fileCount: 0, totalSize: 0)
+                state.showDeleteAllQuestion = false
+            }
+        } catch let error {
+            DDLogError("SettingsActionHandler: can't remove download directory - \(error)")
+            // TODO: - Show error to user
+        }
+    }
+
+    private func removeDownloads(for libraryId: LibraryIdentifier, in viewModel: ViewModel<SettingsActionHandler>) {
+        do {
+            try self.fileStorage.remove(Files.libraryDirectory(for: libraryId))
+            let newTotal = self.fileStorage.directoryData(for: Files.downloadDirectory)
+
+            self.update(viewModel: viewModel) { state in
+                state.storageData[libraryId] = DirectoryData(fileCount: 0, totalSize: 0)
+                state.totalStorageData = newTotal
+                state.showDeleteLibraryQuestion = nil
+            }
+        } catch let error {
+            DDLogError("SettingsActionHandler: can't remove library downloads - \(error)")
+            // TODO: - Show error to user
+        }
+    }
+
+    private func loadStorageData(in viewModel: ViewModel<SettingsActionHandler>) {
+        do {
+            let coordinator = try self.dbStorage.createCoordinator()
+            let libraries = Array((try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())).map(Library.init)) +
+                            (try coordinator.perform(request: ReadAllGroupsDbRequest())).map(Library.init)
+
+            let (storageData, totalData) = self.storageData(for: libraries)
+
+            self.update(viewModel: viewModel) { state in
+                state.libraries = libraries
+                state.storageData = storageData
+                state.totalStorageData = totalData
+            }
+        } catch let error {
+            DDLogError("SettingsActionHandler: can't load libraries - \(error)")
+            // TODO: - Show error to user
+        }
+    }
+
+    private func storageData(for libraries: [Library]) -> (libraryData: [LibraryIdentifier: DirectoryData], totalData: DirectoryData?) {
+        var storageData: [LibraryIdentifier: DirectoryData] = [:]
+        for library in libraries {
+            if let data = self.fileStorage.directoryData(for: Files.libraryDirectory(for: library.identifier)) {
+                storageData[library.identifier] = data
+            }
+        }
+        let totalData = self.fileStorage.directoryData(for: Files.downloadDirectory)
+        return (storageData, totalData)
     }
 
     private func observeTranslatorUpdate(in viewModel: ViewModel<SettingsActionHandler>) {

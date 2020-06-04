@@ -23,12 +23,29 @@ struct Files {
         return NSSearchPathForDirectoriesInDomains(.cachesDirectory, .allDomainsMask, true).first ?? "/"
     }()
 
-    // MARK: - Items
+    // MARK: - Attachments
 
-    static func objectFile(for object: SyncObject, libraryId: LibraryIdentifier,
-                           key: String, ext: String) -> File {
+    static var downloadDirectory: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads"], name: "", ext: "")
+    }
+
+    static func libraryDirectory(for libraryId: LibraryIdentifier) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: "", ext: "")
+    }
+
+    static func attachmentFile(in libraryId: LibraryIdentifier, key: String, ext: String) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, ext: ext)
+    }
+
+    static func link(filename: String, key: String) -> File {
+        let (name, ext) = self.split(filename: filename)
+        return FileData(rootPath: self.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
+    }
+
+    // MARK: - JSON cache
+
+    static func jsonCacheFile(for object: SyncObject, libraryId: LibraryIdentifier, key: String) -> File {
         let objectName: String
-
         switch object {
         case .collection:
             objectName = "collection"
@@ -37,16 +54,8 @@ struct Files {
         case .search:
             objectName = "search"
         }
-
-        return FileData(rootPath: Files.appGroupPath,
-                        relativeComponents: ["downloads"],
-                        name: "library_\(libraryId.fileName)_\(objectName)_\(key)",
-                        ext: ext)
-    }
-
-    static func link(filename: String, key: String) -> File {
-        let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: self.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["jsons"],
+                        name: "\(libraryId.folderName)_\(objectName)_\(key)", ext: "json")
     }
 
     // MARK: - Database
@@ -85,10 +94,7 @@ struct Files {
     // MARK: - Share extension
 
     static func shareExtensionTmpItem(key: String, ext: String) -> File {
-        return FileData(rootPath: Files.appGroupPath,
-                        relativeComponents: ["tmp"],
-                        name: "item_\(key)",
-                        ext: ext)
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["tmp"], name: "item_\(key)", ext: ext)
     }
 
     // MARK: - Helper
@@ -115,7 +121,7 @@ struct Files {
 }
 
 extension LibraryIdentifier {
-    fileprivate var fileName: String {
+    fileprivate var folderName: String {
         switch self {
         case .custom(let type):
             switch type {

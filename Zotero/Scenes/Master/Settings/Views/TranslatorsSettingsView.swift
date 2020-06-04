@@ -55,7 +55,9 @@ struct TranslatorsSettingsView_Previews: PreviewProvider {
                                   isLogging: controllers.debugLogging.isEnabled,
                                   isUpdatingTranslators: controllers.translatorsController.isLoading.value,
                                   lastTranslatorUpdate: controllers.translatorsController.lastUpdate)
-        let handler = SettingsActionHandler(sessionController: controllers.sessionController,
+        let handler = SettingsActionHandler(dbStorage: controllers.userControllers!.dbStorage,
+                                            fileStorage: controllers.fileStorage,
+                                            sessionController: controllers.sessionController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController)

@@ -344,7 +344,7 @@ class ExtensionStore {
         case .downloaded(let item, let attachmentData):
             let newItem = item.copy(libraryId: libraryId, collectionKeys: collectionKeys)
             let filename = attachmentData["title"] ?? self.state.title ?? "Unknown"
-            let file = Files.objectFile(for: .item, libraryId: libraryId, key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+            let file = Files.attachmentFile(in: libraryId, key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
             let attachment = Attachment(key: self.state.attachmentKey,
                                         title: filename,
                                         type: .file(file: file, filename: filename, isLocal: true),
