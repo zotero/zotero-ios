@@ -13,10 +13,16 @@ import RealmSwift
 import RxSwift
 
 class ItemsViewController: UIViewController {
+    private enum SearchBarPosition {
+        case titleView
+        case navigationItem
+    }
+
     @IBOutlet private weak var tableView: UITableView!
 
     private static let barButtonItemEmptyTag = 1
     private static let barButtonItemSingleTag = 2
+    private static let searchBarInTitleViewWindowWidth: CGFloat = 414
 
     private let viewModel: ViewModel<ItemsActionHandler>
     private let controllers: Controllers
@@ -50,8 +56,10 @@ class ItemsViewController: UIViewController {
                                                       dragDropController: self.controllers.dragDropController)
         self.setupRightBarButtonItems()
         self.setupToolbar()
-        self.setupSearchBar()
         self.setupTitle()
+        // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
+        // size is already calculated properly.
+        self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -82,6 +90,11 @@ class ItemsViewController: UIViewController {
         super.viewDidDisappear(animated)
         // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
         self.searchBarContainer?.unfreezeWidth()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        self.setupSearchBar(for: size)
     }
 
     // MARK: - UI state
@@ -300,31 +313,89 @@ class ItemsViewController: UIViewController {
         return [spacer, trashItem, spacer, emptyItem, spacer]
     }
 
-    private func setupSearchBar() {
-        let searchBar: UISearchBar
+    /// Setup `searchBar` for current window size. If there is enough space for the `searchBar` in `titleView`, it's added there, otherwise it's added
+    /// to `navigationItem`, where it appears under `navigationBar`. This is needed because of multitasking on iPad, where the window size can
+    /// change any time. Therefore the `searchBar` needs to be moved based on that size.
+    /// - parameter windowSize: Current window size.
+    private func setupSearchBar(for windowSize: CGSize) {
+        // Detect current position of search bar
+        let current: SearchBarPosition? = self.navigationItem.searchController != nil ? .navigationItem :
+                                                                                        (self.navigationItem.titleView != nil ? .titleView : nil)
 
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            searchBar = UISearchBar()
+        guard UIDevice.current.userInterfaceIdiom == .pad else {
+            // On iPhone the search bar is always in navigation item, so just add it once
+            if current == nil {
+                self.setupSearchBar(in: .navigationItem)
+            }
+            return
+        }
+
+        // On iPad the search bar can change position based on current window size. If the window is too narrow, the search bar appears in
+        // navigationItem, otherwise it can appear in titleView.
+
+        let new: SearchBarPosition = windowSize.width <= ItemsViewController.searchBarInTitleViewWindowWidth ? .navigationItem : .titleView
+
+        // Only change search bar if the position changes.
+        guard current != new else { return }
+
+        self.removeSearchBar()
+        self.setupSearchBar(in: new)
+
+        // This is a workaround for setting a `navigationItem.searchController` after appearance of this controller.
+        // If `searchController` is set after controller appears on screen, it can create visual artifacts (navigation bar shows second row with
+        // nothing in it) or freeze the `tableView` scroll (user has to manually pop back to previous screen and reopen this controller to be able to
+        // scroll). The `navigationItem` is fixed when there is a transition to another `UIViewController`. So we fake a transition by pushing empty
+        // `UIViewController` and popping back to this one without animation, which fixes everything.
+        if current != nil && new == .navigationItem {
+            let controller = UIViewController()
+            self.navigationController?.pushViewController(controller, animated: false)
+            self.navigationController?.popViewController(animated: false)
+        }
+    }
+
+    /// Setup `searchBar` in given position.
+    /// - parameter position: Position of `searchBar`.
+    private func setupSearchBar(in position: SearchBarPosition) {
+        switch position {
+        case .titleView:
+            let searchBar = UISearchBar()
+            self.setup(searchBar: searchBar)
             // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
             let container = SearchBarContainer(searchBar: searchBar)
             self.navigationItem.titleView = container
             self.searchBarContainer = container
-        } else {
+
+        case .navigationItem:
             let controller = UISearchController(searchResultsController: nil)
-            searchBar = controller.searchBar
+            self.setup(searchBar: controller.searchBar)
             controller.obscuresBackgroundDuringPresentation = false
-            self.navigationItem.hidesSearchBarWhenScrolling = false
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                self.navigationItem.hidesSearchBarWhenScrolling = false
+            }
             self.navigationItem.searchController = controller
         }
+    }
 
+    /// Setup `searchBar`, start observing text changes.
+    /// - parameter searchBar: `searchBar` to setup and observe.
+    private func setup(searchBar: UISearchBar) {
         searchBar.placeholder = L10n.Items.searchTitle
-
         searchBar.rx.text.observeOn(MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
                          .subscribe(onNext: { [weak self] text in
                              self?.viewModel.process(action: .search(text ?? ""))
                          })
                          .disposed(by: self.disposeBag)
+    }
+
+    /// Removes `searchBar` from all positions.
+    private func removeSearchBar() {
+        if self.navigationItem.searchController != nil {
+            self.navigationItem.searchController = nil
+        }
+        if self.navigationItem.titleView != nil {
+            self.navigationItem.titleView = nil
+        }
     }
 }
 
