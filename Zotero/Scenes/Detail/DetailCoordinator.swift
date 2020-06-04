@@ -117,9 +117,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             })
         }))
 
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        }
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         self.navigationController.present(controller, animated: true, completion: nil)
     }
@@ -139,9 +137,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             viewModel?.process(action: .toggleSortOrder)
         }))
 
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        }
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
 
         self.navigationController.present(controller, animated: true, completion: nil)
     }
