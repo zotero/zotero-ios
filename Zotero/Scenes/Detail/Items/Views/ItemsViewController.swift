@@ -59,7 +59,8 @@ class ItemsViewController: UIViewController {
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
-        self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
+        let position = self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
+        self.setupTableViewKeyboardDismissMode(for: position)
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -94,7 +95,29 @@ class ItemsViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        self.setupSearchBar(for: size)
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let position = self.setupSearchBar(for: size)
+            self.setupTableViewKeyboardDismissMode(for: position)
+
+            // This is a workaround for setting a `navigationItem.searchController` after appearance of this controller on iPad.
+            // If `searchController` is set after controller appears on screen, it can create visual artifacts (navigation bar shows second row with
+            // nothing in it) or freeze the `tableView` scroll (user has to manually pop back to previous screen and reopen this controller to
+            // be able to scroll). The `navigationItem` is fixed when there is a transition to another `UIViewController`. So we fake a transition
+            // by pushing empty `UIViewController` and popping back to this one without animation, which fixes everything.
+            if position == .navigationItem {
+                let controller = UIViewController()
+                self.navigationController?.pushViewController(controller, animated: false)
+                self.navigationController?.popViewController(animated: false)
+            }
+        } else {
+            var position: SearchBarPosition = .navigationItem
+            coordinator.animate(alongsideTransition: { _ in
+                position = self.setupSearchBar(for: size)
+            }, completion: { _ in
+                self.setupTableViewKeyboardDismissMode(for: position)
+            })
+        }
     }
 
     // MARK: - UI state
@@ -126,14 +149,6 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
-
-    private func showAddActions() {
-
-    }
-
-    private func showSortActions() {
-
-    }
 
     private func showItemDetail(for item: RItem) {
         switch item.rawType {
@@ -313,44 +328,34 @@ class ItemsViewController: UIViewController {
         return [spacer, trashItem, spacer, emptyItem, spacer]
     }
 
+    private func setupTableViewKeyboardDismissMode(for searchBarPosition: SearchBarPosition) {
+        switch searchBarPosition {
+        case .navigationItem:
+            self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
+        case .titleView:
+            self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .onDrag : .none
+        }
+    }
+
     /// Setup `searchBar` for current window size. If there is enough space for the `searchBar` in `titleView`, it's added there, otherwise it's added
-    /// to `navigationItem`, where it appears under `navigationBar`. This is needed because of multitasking on iPad, where the window size can
-    /// change any time. Therefore the `searchBar` needs to be moved based on that size.
+    /// to `navigationItem`, where it appears under `navigationBar`.
     /// - parameter windowSize: Current window size.
-    private func setupSearchBar(for windowSize: CGSize) {
+    /// - returns: New search bar position
+    private func setupSearchBar(for windowSize: CGSize) -> SearchBarPosition {
         // Detect current position of search bar
         let current: SearchBarPosition? = self.navigationItem.searchController != nil ? .navigationItem :
                                                                                         (self.navigationItem.titleView != nil ? .titleView : nil)
-
-        guard UIDevice.current.userInterfaceIdiom == .pad else {
-            // On iPhone the search bar is always in navigation item, so just add it once
-            if current == nil {
-                self.setupSearchBar(in: .navigationItem)
-            }
-            return
-        }
-
-        // On iPad the search bar can change position based on current window size. If the window is too narrow, the search bar appears in
+        // The search bar can change position based on current window size. If the window is too narrow, the search bar appears in
         // navigationItem, otherwise it can appear in titleView.
-
         let new: SearchBarPosition = windowSize.width <= ItemsViewController.searchBarInTitleViewWindowWidth ? .navigationItem : .titleView
 
         // Only change search bar if the position changes.
-        guard current != new else { return }
+        guard current != new else { return new }
 
         self.removeSearchBar()
         self.setupSearchBar(in: new)
 
-        // This is a workaround for setting a `navigationItem.searchController` after appearance of this controller.
-        // If `searchController` is set after controller appears on screen, it can create visual artifacts (navigation bar shows second row with
-        // nothing in it) or freeze the `tableView` scroll (user has to manually pop back to previous screen and reopen this controller to be able to
-        // scroll). The `navigationItem` is fixed when there is a transition to another `UIViewController`. So we fake a transition by pushing empty
-        // `UIViewController` and popping back to this one without animation, which fixes everything.
-        if current != nil && new == .navigationItem {
-            let controller = UIViewController()
-            self.navigationController?.pushViewController(controller, animated: false)
-            self.navigationController?.popViewController(animated: false)
-        }
+        return new
     }
 
     /// Setup `searchBar` in given position.
