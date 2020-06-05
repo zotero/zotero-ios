@@ -16,16 +16,19 @@ class ItemsTableViewHandler: NSObject {
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let dragDropController: DragDropController
     let itemObserver: PublishSubject<RItem>
+    private let disposeBag: DisposeBag
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.dragDropController = dragDropController
         self.itemObserver = PublishSubject()
+        self.disposeBag = DisposeBag()
 
         super.init()
 
         self.setupTableView()
+        self.setupKeyboardObserving()
     }
 
     func set(editing: Bool, animated: Bool) {
@@ -51,8 +54,37 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.dropDelegate = self
         self.tableView.rowHeight = 58
         self.tableView.allowsMultipleSelectionDuringEditing = true
+        self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
 
         self.tableView.register(ItemCell.self, forCellReuseIdentifier: ItemsTableViewHandler.cellId)
+    }
+
+    private func setupTableView(with keyboardData: KeyboardData) {
+        var insets = self.tableView.contentInset
+        insets.bottom = keyboardData.endFrame.height
+        self.tableView.contentInset = insets
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 

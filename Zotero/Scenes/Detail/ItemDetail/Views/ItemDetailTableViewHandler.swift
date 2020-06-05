@@ -85,6 +85,7 @@ class ItemDetailTableViewHandler: NSObject {
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
         self.setupTableView()
+        self.setupKeyboardObserving()
     }
 
     private static func createDateFormatter() -> DateFormatter {
@@ -255,6 +256,7 @@ class ItemDetailTableViewHandler: NSObject {
     private func setupTableView() {
         self.tableView.dataSource = self
         self.tableView.delegate = self
+        self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
 
         Section.allCases.forEach { section in
             let cellId = section.cellId(isEditing: false)
@@ -268,6 +270,34 @@ class ItemDetailTableViewHandler: NSObject {
                                 forCellReuseIdentifier: ItemDetailTableViewHandler.addCellId)
         self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.sectionId, bundle: nil),
                                 forHeaderFooterViewReuseIdentifier: ItemDetailTableViewHandler.sectionId)
+    }
+
+    private func setupTableView(with keyboardData: KeyboardData) {
+        var insets = self.tableView.contentInset
+        insets.bottom = keyboardData.endFrame.height
+        self.tableView.contentInset = insets
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 

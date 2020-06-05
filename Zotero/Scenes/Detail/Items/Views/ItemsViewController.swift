@@ -59,8 +59,7 @@ class ItemsViewController: UIViewController {
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
-        let position = self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
-        self.setupTableViewKeyboardDismissMode(for: position)
+        self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -98,7 +97,6 @@ class ItemsViewController: UIViewController {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             let position = self.setupSearchBar(for: size)
-            self.setupTableViewKeyboardDismissMode(for: position)
 
             // This is a workaround for setting a `navigationItem.searchController` after appearance of this controller on iPad.
             // If `searchController` is set after controller appears on screen, it can create visual artifacts (navigation bar shows second row with
@@ -111,12 +109,9 @@ class ItemsViewController: UIViewController {
                 self.navigationController?.popViewController(animated: false)
             }
         } else {
-            var position: SearchBarPosition = .navigationItem
             coordinator.animate(alongsideTransition: { _ in
-                position = self.setupSearchBar(for: size)
-            }, completion: { _ in
-                self.setupTableViewKeyboardDismissMode(for: position)
-            })
+                self.setupSearchBar(for: size)
+            }, completion: nil)
         }
     }
 
@@ -328,19 +323,11 @@ class ItemsViewController: UIViewController {
         return [spacer, trashItem, spacer, emptyItem, spacer]
     }
 
-    private func setupTableViewKeyboardDismissMode(for searchBarPosition: SearchBarPosition) {
-        switch searchBarPosition {
-        case .navigationItem:
-            self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
-        case .titleView:
-            self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .onDrag : .none
-        }
-    }
-
     /// Setup `searchBar` for current window size. If there is enough space for the `searchBar` in `titleView`, it's added there, otherwise it's added
     /// to `navigationItem`, where it appears under `navigationBar`.
     /// - parameter windowSize: Current window size.
     /// - returns: New search bar position
+    @discardableResult
     private func setupSearchBar(for windowSize: CGSize) -> SearchBarPosition {
         // Detect current position of search bar
         let current: SearchBarPosition? = self.navigationItem.searchController != nil ? .navigationItem :

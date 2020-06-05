@@ -15,6 +15,7 @@ class CollectionsTableViewHandler: NSObject {
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<CollectionsActionHandler>
     private unowned let dragDropController: DragDropController
+    private let disposeBag: DisposeBag
 
     private var dataSource: UITableViewDiffableDataSource<Int, Collection>!
     private weak var splitDelegate: SplitControllerDelegate?
@@ -25,10 +26,12 @@ class CollectionsTableViewHandler: NSObject {
         self.viewModel = viewModel
         self.dragDropController = dragDropController
         self.splitDelegate = splitDelegate
+        self.disposeBag = DisposeBag()
 
         super.init()
 
         self.setupTableView()
+        self.setupKeyboardObserving()
         self.setupDataSource()
     }
 
@@ -71,6 +74,34 @@ class CollectionsTableViewHandler: NSObject {
             cell?.set(collection: object)
             return cell
         })
+    }
+
+    private func setupTableView(with keyboardData: KeyboardData) {
+        var insets = self.tableView.contentInset
+        insets.bottom = keyboardData.endFrame.height
+        self.tableView.contentInset = insets
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 
