@@ -100,6 +100,16 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .loadInitialState:
             self.loadInitialState(in: viewModel)
+
+        case .toggleSelectionState:
+            self.update(viewModel: viewModel) { state in
+                if state.selectedItems.count != state.results?.count {
+                    state.selectedItems = Set(state.results?.map({ $0.key }) ?? [])
+                } else {
+                    state.selectedItems = []
+                }
+                state.changes = [.selection, .selectAll]
+            }
         }
     }
 

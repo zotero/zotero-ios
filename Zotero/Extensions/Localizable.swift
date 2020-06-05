@@ -125,6 +125,8 @@ internal enum L10n {
     internal static let ascending = L10n.tr("Localizable", "items.ascending")
     /// Descending
     internal static let descending = L10n.tr("Localizable", "items.descending")
+    /// Deselect all
+    internal static let deselectAll = L10n.tr("Localizable", "items.deselect_all")
     /// %d Collections Selected
     internal static func manyCollectionsSelected(_ p1: Int) -> String {
       return L10n.tr("Localizable", "items.many_collections_selected", p1)
@@ -141,6 +143,8 @@ internal enum L10n {
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title")
     /// Select
     internal static let select = L10n.tr("Localizable", "items.select")
+    /// Select all
+    internal static let selectAll = L10n.tr("Localizable", "items.select_all")
     /// Sort By
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")
     /// Sort Order

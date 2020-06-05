@@ -21,6 +21,7 @@ enum ItemsAction {
     case saveNote(String?, String)
     case search(String)
     case selectItem(String)
+    case toggleSelectionState
     case setSortField(ItemsSortType.Field)
     case startEditing
     case stopEditing

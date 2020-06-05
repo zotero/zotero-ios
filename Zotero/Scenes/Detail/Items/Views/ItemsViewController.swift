@@ -18,6 +18,15 @@ class ItemsViewController: UIViewController {
         case navigationItem
     }
 
+    private enum RightBarButtonItem: Int {
+        case select
+        case done
+        case selectAll
+        case deselectAll
+        case add
+        case sort
+    }
+
     @IBOutlet private weak var tableView: UITableView!
 
     private static let barButtonItemEmptyTag = 1
@@ -54,7 +63,7 @@ class ItemsViewController: UIViewController {
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
                                                       dragDropController: self.controllers.dragDropController)
-        self.setupRightBarButtonItems()
+        self.setupRightBarButtonItems(for: self.viewModel.state)
         self.setupToolbar()
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
@@ -121,7 +130,7 @@ class ItemsViewController: UIViewController {
         if state.changes.contains(.editing) {
             self.tableViewHandler.set(editing: state.isEditing, animated: true)
             self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
-            self.updateSelectItem(for: state)
+            self.setupRightBarButtonItems(for: state)
         }
 
         if state.changes.contains(.results),
@@ -135,6 +144,15 @@ class ItemsViewController: UIViewController {
 
         if state.changes.contains(.selection) {
             self.updateToolbarItems()
+            self.setupRightBarButtonItems(for: state)
+        }
+
+        if state.changes.contains(.selectAll) {
+            if state.selectedItems.isEmpty {
+                self.tableViewHandler.deselectAll()
+            } else {
+                self.tableViewHandler.selectAll()
+            }
         }
 
         if let item = state.itemDuplication {
@@ -172,36 +190,6 @@ class ItemsViewController: UIViewController {
         })
     }
 
-    private func updateSelectItem(for state: ItemsState) {
-        var items = self.navigationItem.rightBarButtonItems ?? []
-        items[0] = self.createSelectItem(for: state)
-        self.navigationItem.rightBarButtonItems = items
-    }
-
-    private func createSelectItem(for state: ItemsState) -> UIBarButtonItem {
-        let isEditing = state.isEditing
-        let title = isEditing ? L10n.done : L10n.Items.select
-
-        if let selectItem = self.navigationItem.rightBarButtonItems?.first, selectItem.title == title {
-            return selectItem
-        }
-
-        let item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-
-        item.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                if isEditing {
-                    self?.viewModel.process(action: .stopEditing)
-                } else {
-                    self?.viewModel.process(action: .startEditing)
-                }
-            })
-            .disposed(by: self.disposeBag)
-
-        return item
-    }
-
     private func updateToolbarItems() {
         self.toolbarItems?.forEach({ item in
             switch item.tag {
@@ -233,27 +221,77 @@ class ItemsViewController: UIViewController {
         }
     }
 
-    private func setupRightBarButtonItems() {
-        let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
-        addItem.rx
-               .tap
-               .subscribe(onNext: { [weak self] _ in
-                   guard let `self` = self else { return }
-                   self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: addItem)
-               })
-               .disposed(by: self.disposeBag)
+    private func setupRightBarButtonItems(for state: ItemsState) {
+        let currentItems = (self.navigationItem.rightBarButtonItems ?? []).compactMap({ RightBarButtonItem(rawValue: $0.tag) })
+        let expectedItems = self.rightBarButtonItemTypes(for: state)
+        guard currentItems != expectedItems else { return }
+        self.navigationItem.rightBarButtonItems = expectedItems.map({ self.createRightBarButtonItem($0) }).reversed()
+    }
 
-        let sortItem = UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease"), style: .plain, target: nil, action: nil)
-        sortItem.rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    guard let `self` = self else { return }
-                    self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: sortItem)
-                })
-                .disposed(by: self.disposeBag)
+    private func rightBarButtonItemTypes(for state: ItemsState) -> [RightBarButtonItem] {
+        if !state.isEditing {
+            return [.add, .sort, .select]
+        }
+        let allSelected = state.selectedItems.count == (state.results?.count ?? 0)
+        if allSelected {
+            return [.sort, .deselectAll, .done]
+        }
+        return [.sort, .selectAll, .done]
+    }
 
-        let selectItem = self.createSelectItem(for: self.viewModel.state)
-        self.navigationItem.rightBarButtonItems = [selectItem, sortItem, addItem]
+    private func createRightBarButtonItem(_ type: RightBarButtonItem) -> UIBarButtonItem {
+        var image: UIImage?
+        var title: String?
+        let action: (UIBarButtonItem) -> Void
+
+        switch type {
+        case .deselectAll:
+            title = L10n.Items.deselectAll
+            action = { [weak self] _ in
+                self?.viewModel.process(action: .toggleSelectionState)
+            }
+        case .selectAll:
+            title = L10n.Items.selectAll
+            action = { [weak self] _ in
+                self?.viewModel.process(action: .toggleSelectionState)
+            }
+        case .done:
+            title = L10n.done
+            action = { [weak self] _ in
+                self?.viewModel.process(action: .stopEditing)
+            }
+        case .select:
+            title = L10n.Items.select
+            action = { [weak self] _ in
+                self?.viewModel.process(action: .startEditing)
+            }
+        case .sort:
+            image = UIImage(systemName: "line.horizontal.3.decrease")
+            title = nil
+            action = { [weak self] item in
+                guard let `self` = self else { return }
+                self.coordinatorDelegate?.showSortActions(viewModel: self.viewModel, button: item)
+            }
+        case .add:
+            image = UIImage(systemName: "plus")
+            action = { [weak self] item in
+                guard let `self` = self else { return }
+                self.coordinatorDelegate?.showAddActions(viewModel: self.viewModel, button: item)
+            }
+        }
+
+        let item: UIBarButtonItem
+        if let title = title {
+            item = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+        } else if let image = image {
+            item = UIBarButtonItem(image: image, style: .plain, target: nil, action: nil)
+        } else {
+            fatalError("ItemsViewController: you need a title or image!")
+        }
+
+        item.tag = type.rawValue
+        item.rx.tap.subscribe(onNext: { _ in action(item) }).disposed(by: self.disposeBag)
+        return item
     }
 
     private func setupToolbar() {

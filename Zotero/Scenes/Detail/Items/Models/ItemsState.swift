@@ -20,6 +20,7 @@ struct ItemsState: ViewModelState {
         static let editing = Changes(rawValue: 1 << 1)
         static let selection = Changes(rawValue: 1 << 2)
         static let sortType = Changes(rawValue: 1 << 3)
+        static let selectAll = Changes(rawValue: 1 << 4)
     }
 
     let type: ItemFetchType

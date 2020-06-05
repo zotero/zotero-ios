@@ -47,6 +47,19 @@ class ItemsTableViewHandler: NSObject {
         }, completion: nil)
     }
 
+    func selectAll() {
+        let rows = self.tableView(self.tableView, numberOfRowsInSection: 0)
+        (0..<rows).forEach { row in
+            self.tableView.selectRow(at: IndexPath(row: row, section: 0), animated: false, scrollPosition: .none)
+        }
+    }
+
+    func deselectAll() {
+        self.tableView.indexPathsForSelectedRows?.forEach({ indexPath in
+            self.tableView.deselectRow(at: indexPath, animated: false)
+        })
+    }
+
     private func setupTableView() {
         self.tableView.delegate = self
         self.tableView.dataSource = self
@@ -107,7 +120,9 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
         return cell
     }
+}
 
+extension ItemsTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let item = self.viewModel.state.results?[indexPath.row] else { return }
 
@@ -118,9 +133,7 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             self.itemObserver.on(.next(item))
         }
     }
-}
 
-extension ItemsTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         if self.viewModel.state.isEditing,
            let item = self.viewModel.state.results?[indexPath.row] {
