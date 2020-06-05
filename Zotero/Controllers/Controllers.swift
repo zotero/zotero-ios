@@ -158,6 +158,14 @@ class UserControllers {
     }
 
     func startObserving() {
+        self.syncScheduler
+            .syncController
+            .progressObservable.observeOn(MainScheduler.instance)
+            .subscribe(onNext: { progress in
+                UIApplication.shared.isIdleTimerDisabled = progress != nil
+            })
+            .disposed(by: self.disposeBag)
+
         self.changeObserver.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] changedLibraries in
