@@ -127,6 +127,10 @@ extension ItemsTableViewHandler: UITableViewDelegate {
             self.viewModel.process(action: .deselectItem(item.key))
         }
     }
+
+    func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
+        return tableView.isEditing
+    }
 }
 
 extension ItemsTableViewHandler: UITableViewDragDelegate {
