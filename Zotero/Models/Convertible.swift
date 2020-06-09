@@ -11,7 +11,7 @@ import Foundation
 import Alamofire
 
 struct Convertible {
-    private let url: URL
+    let url: URL
     private let token: String?
     private let httpMethod: ApiHttpMethod
     private let encoding: ParameterEncoding

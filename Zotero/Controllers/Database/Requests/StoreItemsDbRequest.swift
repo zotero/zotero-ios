@@ -85,6 +85,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         try self.syncTags(data.tags, libraryId: libraryId, item: item, database: database)
         self.syncCreators(data: data, item: item, database: database)
         self.syncRelations(data: data, item: item, database: database)
+        self.syncLinks(data: data, item: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
@@ -259,5 +260,35 @@ struct StoreItemsDbRequest: DbResponseRequest {
             }
             relation.urlString = data.relations[key] ?? ""
         }
+    }
+
+    private func syncLinks(data: ItemResponse, item: RItem, database: Realm) {
+        database.delete(item.links)
+
+        guard let links = data.links else { return }
+
+        if let link = links.`self` {
+            self.syncLink(data: link, type: LinkType.`self`.rawValue, item: item, database: database)
+        }
+        if let link = links.up {
+            self.syncLink(data: link, type: LinkType.up.rawValue, item: item, database: database)
+        }
+        if let link = links.alternate {
+            self.syncLink(data: link, type: LinkType.alternate.rawValue, item: item, database: database)
+        }
+        if let link = links.enclosure {
+            self.syncLink(data: link, type: LinkType.enclosure.rawValue, item: item, database: database)
+        }
+    }
+
+    private func syncLink(data: LinkResponse, type: String, item: RItem, database: Realm) {
+        let link = RLink()
+        link.type = type
+        link.contentType = data.type
+        link.href = data.href
+        link.title = data.title ?? ""
+        link.length = data.length ?? 0
+        link.item = item
+        database.add(link)
     }
 }

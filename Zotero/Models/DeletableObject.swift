@@ -39,6 +39,9 @@ extension RItem: Deletable {
             child.removeChildren(in: database)
         }
         database.delete(self.children)
+        database.delete(self.links)
+        database.delete(self.relations)
+        database.delete(self.creators)
     }
 }
 

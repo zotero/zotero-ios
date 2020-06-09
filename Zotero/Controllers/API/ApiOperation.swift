@@ -13,14 +13,14 @@ import Alamofire
 class ApiOperation: AsynchronousOperation {
     private var request: DataRequest
 
-    init(request: DataRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) {
+    init(request: DataRequest, apiRequest: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) {
         self.request = request
 
         super.init()
 
         self.request = self.request.responseData(queue: queue) { [weak self] response in
             guard let `self` = self else { return }
-            switch response.result {
+            switch response.log(request: apiRequest).result {
             case .success(let data):
                 completion(.success((data, response.response?.allHeaderFields ?? [:])))
             case .failure(let error):
@@ -32,7 +32,6 @@ class ApiOperation: AsynchronousOperation {
 
     override func main() {
         super.main()
-//        NSLog("Start operation: \(CFAbsoluteTimeGetCurrent())")
         self.request.resume()
     }
 

@@ -170,4 +170,8 @@ extension NSPredicate {
                                                                   creatorPredicate,
                                                                   tagPredicate])
     }
+
+    static func linkType(_ type: LinkType) -> NSPredicate {
+        return NSPredicate(format: "type = %@", type.rawValue)
+    }
 }

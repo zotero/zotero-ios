@@ -54,7 +54,7 @@ class ZoteroApiClient: ApiClient {
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseDataWithResponseError(queue: queue)
-                              .log(request: request, convertible: convertible)
+                              .log(request: request, url: convertible.url)
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
@@ -81,7 +81,7 @@ class ZoteroApiClient: ApiClient {
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .responseDataWithResponseError(queue: queue)
-                              .log(request: request, convertible: convertible)
+                              .log(request: request, url: convertible.url)
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
                                   if response.statusCode == 304 {
@@ -96,7 +96,7 @@ class ZoteroApiClient: ApiClient {
 
     func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-        return ApiOperation(request: self.manager.request(convertible).validate(), queue: queue, completion: completion)
+        return ApiOperation(request: self.manager.request(convertible).validate(), apiRequest: request, queue: queue, completion: completion)
     }
 
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {

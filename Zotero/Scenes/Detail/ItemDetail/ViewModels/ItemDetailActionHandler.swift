@@ -331,7 +331,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, ext: originalFile.ext)
             let attachment = Attachment(key: key,
                                         title: originalFile.name,
-                                        type: .file(file: file, filename: originalFile.name, isLocal: true),
+                                        type: .file(file: file, filename: originalFile.name, isLocal: true, hasRemoteResource: false),
                                         libraryId: viewModel.state.library.identifier)
 
             do {
@@ -369,9 +369,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.openAttachmentAction = .web(url)
             }
-        case .file(let file, let filename, let isCached):
+        case .file(let file, let filename, let isCached, let hasRemoteResource):
             if !isCached {
-                self.cacheFile(file, key: attachment.key, indexPath: indexPath, in: viewModel)
+                if hasRemoteResource {
+                    self.cacheFile(file, key: attachment.key, indexPath: indexPath, in: viewModel)
+                }
                 return
             }
 

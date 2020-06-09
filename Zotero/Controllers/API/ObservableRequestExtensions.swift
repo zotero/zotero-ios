@@ -96,12 +96,12 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
         }
     }
 
-    func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<Element> {
+    func log(request: ApiRequest, url: URL?) -> Observable<Element> {
         return self.do(onNext: { response in
-                   ApiLogger.log(request: request, url: convertible.urlRequest?.url)
+                   ApiLogger.log(request: request, url: (url ?? response.0.url))
                    ApiLogger.log(response: response, error: nil, for: request)
                }, onError: { error in
-                   ApiLogger.log(request: request, url: convertible.urlRequest?.url)
+                   ApiLogger.log(request: request, url: url)
                    ApiLogger.log(response: nil, error: error, for: request)
                })
     }
@@ -132,6 +132,22 @@ extension DataRequest {
 extension DataRequest {
     var acceptableContentTypes: [String] {
         return self.request?.value(forHTTPHeaderField: "Accept")?.components(separatedBy: ",") ?? ["*/*"]
+    }
+}
+
+extension DataResponse where Value == Data {
+    func log(request: ApiRequest) -> Self {
+        guard let response = self.response else { return self }
+
+        ApiLogger.log(request: request, url: self.request?.url)
+        switch self.result {
+        case .success(let data):
+            ApiLogger.log(response: (response, data), error: nil, for: request)
+        case .failure(let error):
+            ApiLogger.log(response: nil, error: error, for: request)
+        }
+
+        return self
     }
 }
 

@@ -9,11 +9,15 @@
 import Foundation
 
 struct LinksResponse: Codable {
-    let main: LinkResponse?
+    let `self`: LinkResponse?
     let alternate: LinkResponse?
+    let up: LinkResponse?
+    let enclosure: LinkResponse?
 }
 
 struct LinkResponse: Codable {
     let href: String
     let type: String
+    let title: String?
+    let length: Int?
 }

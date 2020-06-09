@@ -214,7 +214,8 @@ struct ItemDetailDataCreator {
                 let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + ext)
                 let file = Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
                 let isLocal = fileStorage.has(file)
-                return .file(file: file, filename: filename, isLocal: isLocal)
+                let hasRemote = item.links.filter(.linkType(.enclosure)).first != nil
+                return .file(file: file, filename: filename, isLocal: isLocal, hasRemoteResource: hasRemote)
             } else {
                 DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
                 return nil

@@ -12,14 +12,14 @@ import CocoaLumberjack
 
 struct Attachment: Identifiable, Equatable {
     enum ContentType: Equatable {
-        case file(file: File, filename: String, isLocal: Bool)
+        case file(file: File, filename: String, isLocal: Bool, hasRemoteResource: Bool)
         case url(URL)
 
         static func == (lhs: ContentType, rhs: ContentType) -> Bool {
             switch (lhs, rhs) {
             case (.url(let lUrl), .url(let rUrl)):
                 return lUrl == rUrl
-            case (.file(let lFile, _, _), .file(let rFile, _, _)):
+            case (.file(let lFile, _, _, _), .file(let rFile, _, _, _)):
                 return lFile.createUrl() == rFile.createUrl()
             default:
                 return false
@@ -34,7 +34,7 @@ struct Attachment: Identifiable, Equatable {
 
     var iconName: String {
         switch self.type {
-        case .file(let file, _, _):
+        case .file(let file, _, _, _):
             switch file.ext {
             case "pdf":
                 return "pdf"
@@ -71,10 +71,10 @@ struct Attachment: Identifiable, Equatable {
     func changed(isLocal: Bool) -> Attachment {
         switch type {
         case .url: return self
-        case .file(let file, let filename, _):
+        case .file(let file, let filename, _, let hasRemoteResource):
             return Attachment(key: self.key,
                               title: self.title,
-                              type: .file(file: file, filename: filename, isLocal: isLocal),
+                              type: .file(file: file, filename: filename, isLocal: isLocal, hasRemoteResource: hasRemoteResource),
                               libraryId: self.libraryId)
         }
     }

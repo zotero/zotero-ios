@@ -347,7 +347,7 @@ class ExtensionStore {
             let file = Files.attachmentFile(in: libraryId, key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
             let attachment = Attachment(key: self.state.attachmentKey,
                                         title: filename,
-                                        type: .file(file: file, filename: filename, isLocal: true),
+                                        type: .file(file: file, filename: filename, isLocal: true, hasRemoteResource: false),
                                         libraryId: libraryId)
             self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId,
                         apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)

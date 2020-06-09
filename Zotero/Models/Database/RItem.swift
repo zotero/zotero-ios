@@ -47,6 +47,7 @@ class RItem: Object {
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
     let tags = LinkingObjects(fromType: RTag.self, property: "items")
     let creators = LinkingObjects(fromType: RCreator.self, property: "item")
+    let links = LinkingObjects(fromType: RLink.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
 
     // MARK: - Derived data
@@ -175,10 +176,4 @@ class RItemField: Object {
     @objc dynamic var value: String = ""
     @objc dynamic var item: RItem?
     @objc dynamic var changed: Bool = false
-}
-
-class RRelation: Object {
-    @objc dynamic var type: String = ""
-    @objc dynamic var urlString: String = ""
-    @objc dynamic var item: RItem?
 }

@@ -568,6 +568,12 @@
 		B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */; };
 		B3DCDF25240946090039ED0D /* CollectionPickerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF24240946090039ED0D /* CollectionPickerError.swift */; };
 		B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */ = {isa = PBXBuildFile; fileRef = B3DD9CE92256340400DE6BAA /* licenses.plist */; };
+		B3E4463C248FBBA3007FE8AB /* RLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4463B248FBBA3007FE8AB /* RLink.swift */; };
+		B3E4463D248FBD00007FE8AB /* RLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4463B248FBBA3007FE8AB /* RLink.swift */; };
+		B3E4463F248FBD2E007FE8AB /* RRelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4463E248FBD2E007FE8AB /* RRelation.swift */; };
+		B3E44640248FBD4A007FE8AB /* RRelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E4463E248FBD2E007FE8AB /* RRelation.swift */; };
+		B3E44642248FBE9B007FE8AB /* LinkType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E44641248FBE9B007FE8AB /* LinkType.swift */; };
+		B3E44643248FBF12007FE8AB /* LinkType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E44641248FBE9B007FE8AB /* LinkType.swift */; };
 		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C02243B3960004F8B1E /* TestFileStorage.swift */; };
 		B3F47C05243B4BC0004F8B1E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C04243B4BC0004F8B1E /* bundled */; };
@@ -1006,6 +1012,9 @@
 		B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerAction.swift; sourceTree = "<group>"; };
 		B3DCDF24240946090039ED0D /* CollectionPickerError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionPickerError.swift; sourceTree = "<group>"; };
 		B3DD9CE92256340400DE6BAA /* licenses.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = licenses.plist; path = "pdf-keys/licenses.plist"; sourceTree = SOURCE_ROOT; };
+		B3E4463B248FBBA3007FE8AB /* RLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RLink.swift; sourceTree = "<group>"; };
+		B3E4463E248FBD2E007FE8AB /* RRelation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRelation.swift; sourceTree = "<group>"; };
+		B3E44641248FBE9B007FE8AB /* LinkType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkType.swift; sourceTree = "<group>"; };
 		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
@@ -1342,6 +1351,7 @@
 				B305653823FC051E003304F2 /* KeyedResponse.swift */,
 				B305653923FC051E003304F2 /* Library.swift */,
 				B305656023FC051E003304F2 /* LibraryObject.swift */,
+				B3E44641248FBE9B007FE8AB /* LinkType.swift */,
 				B39D336723FFD96C00EF2ACB /* Note.swift */,
 				B305654423FC051E003304F2 /* Predicates.swift */,
 				B305656223FC051E003304F2 /* SortType.swift */,
@@ -1363,6 +1373,8 @@
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
 				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653223FC051E003304F2 /* RItem.swift */,
+				B3E4463B248FBBA3007FE8AB /* RLink.swift */,
+				B3E4463E248FBD2E007FE8AB /* RRelation.swift */,
 				B305653323FC051E003304F2 /* RSearch.swift */,
 				B305652F23FC051E003304F2 /* RTag.swift */,
 				B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */,
@@ -2452,6 +2464,7 @@
 				B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */,
 				B32B4F972475636600F78A05 /* RxTableViewCell.swift in Sources */,
 				B30566BF23FC051F003304F2 /* AttachmentUpload.swift in Sources */,
+				B3E4463F248FBD2E007FE8AB /* RRelation.swift in Sources */,
 				B305662123FC051F003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
 				B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */,
 				B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */,
@@ -2486,6 +2499,7 @@
 				B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
+				B3E4463C248FBBA3007FE8AB /* RLink.swift in Sources */,
 				B305660423FC051E003304F2 /* ObservableRequestExtensions.swift in Sources */,
 				B305667D23FC051F003304F2 /* Color+Extension.swift in Sources */,
 				B30565C823FC051E003304F2 /* EditNoteDbRequest.swift in Sources */,
@@ -2515,6 +2529,7 @@
 				B30566BE23FC051F003304F2 /* Versions.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
 				B305669823FC051F003304F2 /* RCollection.swift in Sources */,
+				B3E44642248FBE9B007FE8AB /* LinkType.swift in Sources */,
 				B372CEE5248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift in Sources */,
 				B30566A823FC051F003304F2 /* Convertible.swift in Sources */,
 				B37491352488D7040042FF85 /* TranslatorsSettingsView.swift in Sources */,
@@ -2799,6 +2814,7 @@
 				B305676123FC0A0B003304F2 /* Defaults.swift in Sources */,
 				B305676223FC0A0B003304F2 /* DelayIntervals.swift in Sources */,
 				B305676323FC0A0B003304F2 /* DeletableObject.swift in Sources */,
+				B3E4463D248FBD00007FE8AB /* RLink.swift in Sources */,
 				B305676423FC0A0B003304F2 /* FieldKeys.swift in Sources */,
 				B372CEE7248673DF00B423AE /* GroupRequest.swift in Sources */,
 				B305676623FC0A0B003304F2 /* ItemTypes.swift in Sources */,
@@ -2815,6 +2831,7 @@
 				B305673E23FC09AF003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B305673F23FC09AF003304F2 /* KeyResponse.swift in Sources */,
 				B305674023FC09AF003304F2 /* UpdatesResponse.swift in Sources */,
+				B3E44643248FBF12007FE8AB /* LinkType.swift in Sources */,
 				B3593F60241A62C900760E20 /* LibraryRow.swift in Sources */,
 				B305674123FC09AF003304F2 /* CollectionResponse.swift in Sources */,
 				B305674223FC09AF003304F2 /* LinksResponse.swift in Sources */,
@@ -2863,6 +2880,7 @@
 				B305677123FC0A5A003304F2 /* ZoteroApiClient.swift in Sources */,
 				B305677B23FC0C72003304F2 /* Formatter.swift in Sources */,
 				B300B33924292A7F00C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */,
+				B3E44640248FBD4A007FE8AB /* RRelation.swift in Sources */,
 				B30566E723FC0821003304F2 /* RegisterUploadRequest.swift in Sources */,
 				B30566EB23FC082A003304F2 /* ObjectsRequest.swift in Sources */,
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,

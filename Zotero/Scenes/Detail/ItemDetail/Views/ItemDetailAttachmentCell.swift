@@ -22,7 +22,12 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.icon.image = UIImage(named: attachment.iconName)
         self.label.text = attachment.title
 
-        let accessory = self.accessory(for: attachment, progress: progress, error: error)
+        guard let accessory = self.accessory(for: attachment, progress: progress, error: error) else {
+            self.accessory.isHidden = true
+            self.progressView.isHidden = true
+            return
+        }
+
         var isProgress = false
         switch accessory {
         case .disclosureIndicator:
@@ -39,7 +44,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.progressView.isHidden = !isProgress
     }
 
-    private func accessory(for attachment: Attachment, progress: Double?, error: Error?) -> Accessory {
+    private func accessory(for attachment: Attachment, progress: Double?, error: Error?) -> Accessory? {
         if error != nil {
             return .error
         }
@@ -49,8 +54,8 @@ class ItemDetailAttachmentCell: UITableViewCell {
         }
 
         switch attachment.type {
-        case .file(_, _, let isLocal):
-            return isLocal ? .disclosureIndicator : .downloadIcon
+        case .file(_, _, let isLocal, let hasRemoteResource):
+            return isLocal ? .disclosureIndicator : (hasRemoteResource ? .downloadIcon : nil)
         case .url:
             return .disclosureIndicator
         }
