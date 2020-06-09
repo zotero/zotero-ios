@@ -24,6 +24,25 @@ fileprivate enum RetryDelay {
     case progressive(initial: Double, multiplier: Double, maxDelay: Double)
 }
 
+fileprivate struct ApiLogger {
+    static func log(request: ApiRequest, url: URL?) {
+        DDLogInfo("--- API request '\(type(of: request))' ---")
+        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
+        if request.httpMethod != .get, let params = request.parameters {
+            DDLogInfo("\(request.redact(parameters: params))")
+        }
+    }
+
+    static func log(response: (HTTPURLResponse, Data)?, error: Error?, for request: ApiRequest) {
+        if let data = response?.1,
+           let string = String(data: data, encoding: .utf8) {
+            DDLogInfo("(\(response?.0.statusCode ?? -1)) \(request.redact(response: string))")
+        } else if let error = error {
+            DDLogInfo("\(error)")
+        }
+    }
+}
+
 extension RetryDelay {
     func seconds(for attempt: Int) -> Double {
         switch self {
@@ -79,29 +98,12 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
 
     func log(request: ApiRequest, convertible: URLRequestConvertible) -> Observable<Element> {
         return self.do(onNext: { response in
-                       self.log(request: request, url: convertible.urlRequest?.url)
-                       self.log(response: response, error: nil, for: request)
-                   }, onError: { error in
-                       self.log(request: request, url: convertible.urlRequest?.url)
-                       self.log(response: nil, error: error, for: request)
-                   })
-    }
-
-    private func log(request: ApiRequest, url: URL?) {
-        DDLogInfo("--- API request '\(type(of: request))' ---")
-        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
-        if request.httpMethod != .get, let params = request.parameters {
-            DDLogInfo("\(request.redact(parameters: params))")
-        }
-    }
-
-    private func log(response: (HTTPURLResponse, Data)?, error: Error?, for request: ApiRequest) {
-        if let data = response?.1,
-           let string = String(data: data, encoding: .utf8) {
-            DDLogInfo("(\(response?.0.statusCode ?? -1)) \(request.redact(response: string))")
-        } else if let error = error {
-            DDLogInfo("\(error)")
-        }
+                   ApiLogger.log(request: request, url: convertible.urlRequest?.url)
+                   ApiLogger.log(response: response, error: nil, for: request)
+               }, onError: { error in
+                   ApiLogger.log(request: request, url: convertible.urlRequest?.url)
+                   ApiLogger.log(response: nil, error: error, for: request)
+               })
     }
 }
 
@@ -111,15 +113,19 @@ extension ObservableType where Element == DataRequest {
     }
 
     func validate() -> Observable<Element> {
-        return self.map { dataRequest in
-            dataRequest.validate(contentType: dataRequest.acceptableContentTypes)
-                       .validate { request, response, _ -> Request.ValidationResult in
-                           if (response.statusCode >= 200 && response.statusCode < 300) || response.statusCode == 304 {
-                               return .success
-                           }
-                           return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)))
-                       }
-        }
+        return self.map { $0.validate() }
+    }
+}
+
+extension DataRequest {
+    func validate() -> Self {
+       return self.validate(contentType: self.acceptableContentTypes)
+                  .validate { request, response, _ -> Request.ValidationResult in
+                      if (response.statusCode >= 200 && response.statusCode < 300) || response.statusCode == 304 {
+                          return .success
+                      }
+                      return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)))
+                  }
     }
 }
 

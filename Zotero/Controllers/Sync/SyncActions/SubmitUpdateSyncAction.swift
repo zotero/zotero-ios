@@ -55,7 +55,6 @@ struct SubmitUpdateSyncAction: SyncAction {
                                      case .item, .trash:
                                         // Cache JSONs locally for later use (in CR)
                                         self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects,
-                                                                            keys: nil,
                                                                             libraryId: self.libraryId)
 
                                         let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId,
@@ -94,18 +93,18 @@ struct SubmitUpdateSyncAction: SyncAction {
         return indices.compactMap({ Int($0) }).map({ parameters[$0] }).compactMap({ $0["key"] as? String })
     }
 
-    private func storeIndividualItemJsonObjects(from jsonObject: Any, keys: [String]?, libraryId: LibraryIdentifier) {
+    private func storeIndividualItemJsonObjects(from jsonObject: Any, libraryId: LibraryIdentifier) {
         guard let array = jsonObject as? [[String: Any]] else { return }
 
         for object in array {
-            guard let key = object["key"] as? String, (keys?.contains(key) ?? true) else { continue }
+            guard let key = object["key"] as? String else { continue }
 
             do {
                 let data = try JSONSerialization.data(withJSONObject: object, options: [])
                 let file = Files.jsonCacheFile(for: .item, libraryId: libraryId, key: key)
                 try self.fileStorage.write(data, to: file, options: .atomicWrite)
             } catch let error {
-                DDLogError("FetchAndStoreObjectsSyncAction: can't encode/write item - \(error)\n\(object)")
+                DDLogError("SubmitUpdateSyncAction: can't encode/write item - \(error)\n\(object)")
             }
         }
     }

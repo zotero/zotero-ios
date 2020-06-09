@@ -107,7 +107,6 @@
 		B305661723FC051E003304F2 /* AuthorizeUploadSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A323FC051E003304F2 /* AuthorizeUploadSyncAction.swift */; };
 		B305661823FC051E003304F2 /* LoadPermissionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A423FC051E003304F2 /* LoadPermissionsSyncAction.swift */; };
 		B305661923FC051E003304F2 /* SyncDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A523FC051E003304F2 /* SyncDeletionsSyncAction.swift */; };
-		B305661A23FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A623FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift */; };
 		B305661B23FC051E003304F2 /* SyncVersionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A723FC051E003304F2 /* SyncVersionsSyncAction.swift */; };
 		B305661C23FC051E003304F2 /* LoadUploadDataSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A823FC051E003304F2 /* LoadUploadDataSyncAction.swift */; };
 		B305661D23FC051E003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A923FC051E003304F2 /* SyncGroupVersionsSyncAction.swift */; };
@@ -258,7 +257,6 @@
 		B305672323FC08F6003304F2 /* FileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648423FC051E003304F2 /* FileStorage.swift */; };
 		B305672423FC0906003304F2 /* AuthorizeUploadSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A323FC051E003304F2 /* AuthorizeUploadSyncAction.swift */; };
 		B305672523FC0909003304F2 /* DeleteGroupSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564AA23FC051E003304F2 /* DeleteGroupSyncAction.swift */; };
-		B305672623FC090B003304F2 /* FetchAndStoreObjectsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A623FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift */; };
 		B305672823FC090F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B023FC051E003304F2 /* LoadLibraryDataSyncAction.swift */; };
 		B305672923FC0911003304F2 /* LoadPermissionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A423FC051E003304F2 /* LoadPermissionsSyncAction.swift */; };
 		B305672A23FC0914003304F2 /* LoadUploadDataSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564A823FC051E003304F2 /* LoadUploadDataSyncAction.swift */; };
@@ -533,6 +531,12 @@
 		B3BC05A822D3BA5700D45B92 /* CodableModelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */; };
 		B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
+		B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
+		B3C6AB2B248E3EB90009AC96 /* ApiOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */; };
+		B3C6AB2D248E3F840009AC96 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */; };
+		B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */; };
+		B3C6AB2F248E42790009AC96 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */; };
+		B3C6AB30248E6FFA0009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
 		B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB120248A439A00C4228F /* Notification+Extensions.swift */; };
 		B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB122248A44D100C4228F /* KeyboardData.swift */; };
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
@@ -713,7 +717,6 @@
 		B30564A323FC051E003304F2 /* AuthorizeUploadSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthorizeUploadSyncAction.swift; sourceTree = "<group>"; };
 		B30564A423FC051E003304F2 /* LoadPermissionsSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadPermissionsSyncAction.swift; sourceTree = "<group>"; };
 		B30564A523FC051E003304F2 /* SyncDeletionsSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncDeletionsSyncAction.swift; sourceTree = "<group>"; };
-		B30564A623FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FetchAndStoreObjectsSyncAction.swift; sourceTree = "<group>"; };
 		B30564A723FC051E003304F2 /* SyncVersionsSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncVersionsSyncAction.swift; sourceTree = "<group>"; };
 		B30564A823FC051E003304F2 /* LoadUploadDataSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadUploadDataSyncAction.swift; sourceTree = "<group>"; };
 		B30564A923FC051E003304F2 /* SyncGroupVersionsSyncAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncGroupVersionsSyncAction.swift; sourceTree = "<group>"; };
@@ -971,6 +974,9 @@
 		B3BC05A722D3BA5700D45B92 /* CodableModelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableModelSpec.swift; sourceTree = "<group>"; };
 		B3BC25CC247E6BA000AC27B5 /* DateParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateParser.swift; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
+		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
+		B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiOperation.swift; sourceTree = "<group>"; };
+		B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsynchronousOperation.swift; sourceTree = "<group>"; };
 		B3CBB120248A439A00C4228F /* Notification+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extensions.swift"; sourceTree = "<group>"; };
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
@@ -1185,6 +1191,7 @@
 				B305648623FC051E003304F2 /* Background */,
 				B305648E23FC051E003304F2 /* Requests */,
 				B305648B23FC051E003304F2 /* ApiClient.swift */,
+				B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */,
 				B305649D23FC051E003304F2 /* ArrayEncoding.swift */,
 				B305648D23FC051E003304F2 /* ObservableRequestExtensions.swift */,
 				B305648C23FC051E003304F2 /* ZoteroApiClient.swift */,
@@ -1231,6 +1238,7 @@
 			isa = PBXGroup;
 			children = (
 				B30564A023FC051E003304F2 /* SyncActions */,
+				B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */,
 				B30564B323FC051E003304F2 /* SyncController.swift */,
 				B30564B723FC051E003304F2 /* SyncProgressHandler.swift */,
 				B30564B423FC051E003304F2 /* SyncScheduler.swift */,
@@ -1244,7 +1252,6 @@
 				B30564A323FC051E003304F2 /* AuthorizeUploadSyncAction.swift */,
 				B30564AA23FC051E003304F2 /* DeleteGroupSyncAction.swift */,
 				B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */,
-				B30564A623FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift */,
 				B30564B023FC051E003304F2 /* LoadLibraryDataSyncAction.swift */,
 				B30564A423FC051E003304F2 /* LoadPermissionsSyncAction.swift */,
 				B30564A823FC051E003304F2 /* LoadUploadDataSyncAction.swift */,
@@ -1269,6 +1276,7 @@
 			isa = PBXGroup;
 			children = (
 				B305651123FC051E003304F2 /* Array+Utils.swift */,
+				B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */,
 				B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */,
 				B305651023FC051E003304F2 /* Color+Extension.swift */,
 				B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */,
@@ -2596,6 +2604,7 @@
 				B305669A23FC051F003304F2 /* RItem.swift in Sources */,
 				B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */,
 				B30566C823FC051F003304F2 /* SortType.swift in Sources */,
+				B3C6AB2B248E3EB90009AC96 /* ApiOperation.swift in Sources */,
 				B3DCDEF7240900F70039ED0D /* LoginActionHandler.swift in Sources */,
 				B305660F23FC051E003304F2 /* CrashUploadRequest.swift in Sources */,
 				B305660B23FC051E003304F2 /* SubmitDeletionsRequest.swift in Sources */,
@@ -2630,6 +2639,7 @@
 				B30565CA23FC051E003304F2 /* PerformDeletionsDbRequest.swift in Sources */,
 				B3DCDEE72408F89D0039ED0D /* LoginAction.swift in Sources */,
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
+				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,
 				B30565E823FC051E003304F2 /* CreatorSummaryFormatter.swift in Sources */,
 				B30566AB23FC051F003304F2 /* ItemTypes.swift in Sources */,
 				B3DCDF18240917500039ED0D /* ItemTypePickerViewModelCreator.swift in Sources */,
@@ -2689,10 +2699,10 @@
 				B3593F5D241A61C700760E20 /* CollectionTreeBuilder.swift in Sources */,
 				B30565DA23FC051E003304F2 /* UpdateVersionsDbRequest.swift in Sources */,
 				B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */,
+				B3C6AB2D248E3F840009AC96 /* AsynchronousOperation.swift in Sources */,
 				B305662723FC051F003304F2 /* SyncController.swift in Sources */,
 				B30566A323FC051F003304F2 /* Collection.swift in Sources */,
 				B37491362488D7040042FF85 /* GeneralSettingsView.swift in Sources */,
-				B305661A23FC051E003304F2 /* FetchAndStoreObjectsSyncAction.swift in Sources */,
 				B30566A423FC051F003304F2 /* UpdatableObject.swift in Sources */,
 				B3593F2D241A61C700760E20 /* TagView.swift in Sources */,
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
@@ -2821,6 +2831,7 @@
 				B305674B23FC09AF003304F2 /* RCreator.swift in Sources */,
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
 				B305674D23FC09AF003304F2 /* RSearch.swift in Sources */,
+				B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */,
 				B305674E23FC09AF003304F2 /* RVersions.swift in Sources */,
 				B325DBAD24375C7B00EFF0F5 /* UIViewController+Extensions.swift in Sources */,
 				B305674F23FC09AF003304F2 /* RGroup.swift in Sources */,
@@ -2940,7 +2951,6 @@
 				B30566F323FC084C003304F2 /* CreateCollectionDbRequest.swift in Sources */,
 				B305670723FC08AF003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B305673523FC092C003304F2 /* SyncVersionsSyncAction.swift in Sources */,
-				B305672623FC090B003304F2 /* FetchAndStoreObjectsSyncAction.swift in Sources */,
 				B305671E23FC08E4003304F2 /* UpdateItemLocaleDbRequest.swift in Sources */,
 				B305670823FC08B1003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B305678323FC0D6B003304F2 /* SecureStorage.swift in Sources */,
@@ -2960,7 +2970,9 @@
 				B30566F623FC0853003304F2 /* DeleteGroupDbRequest.swift in Sources */,
 				B3AAD70D23CE16010042C4AB /* CreateBackendItemDbRequest.swift in Sources */,
 				B305671123FC08C5003304F2 /* ReadTagsDbRequest.swift in Sources */,
+				B3C6AB30248E6FFA0009AC96 /* SyncBatchProcessor.swift in Sources */,
 				B305672E23FC091C003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
+				B3C6AB2F248E42790009AC96 /* AsynchronousOperation.swift in Sources */,
 				B30566E923FC0826003304F2 /* VersionsRequest.swift in Sources */,
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */,

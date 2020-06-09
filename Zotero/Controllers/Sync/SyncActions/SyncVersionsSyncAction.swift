@@ -12,7 +12,7 @@ import CocoaLumberjack
 import RxSwift
 
 struct SyncVersionsSyncAction: SyncAction {
-    typealias Result = (Int, [Any])
+    typealias Result = (Int, [String])
 
     let object: SyncObject
     let sinceVersion: Int?
@@ -27,7 +27,7 @@ struct SyncVersionsSyncAction: SyncAction {
     let queue: DispatchQueue
     let scheduler: SchedulerType
 
-    var result: Single<(Int, [Any])> {
+    var result: Single<(Int, [String])> {
         switch object {
         case .collection:
             return self.synchronizeVersions(for: RCollection.self, libraryId: self.libraryId, userId: self.userId, object: self.object,
@@ -44,12 +44,12 @@ struct SyncVersionsSyncAction: SyncAction {
     private func synchronizeVersions<Obj: SyncableObject>(for: Obj.Type, libraryId: LibraryIdentifier, userId: Int,
                                                           object: SyncObject, since sinceVersion: Int?,
                                                           current currentVersion: Int?,
-                                                          syncType: SyncController.SyncType) -> Single<(Int, [Any])> {
+                                                          syncType: SyncController.SyncType) -> Single<(Int, [String])> {
         let forcedSinceVersion = syncType == .all ? nil : sinceVersion
         let request = VersionsRequest(libraryId: libraryId, userId: userId, objectType: object, version: forcedSinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
-                             .flatMap { (response: [String: Int], headers) -> Single<(Int, [Any])> in
+                             .flatMap { (response: [String: Int], headers) -> Single<(Int, [String])> in
                                   let newVersion = headers.lastModifiedVersion
 
                                   if let current = currentVersion, newVersion != current {

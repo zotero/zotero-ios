@@ -73,7 +73,7 @@ final class SyncController: SynchronizationController {
     /// - syncVersions: Fetch `SyncObject` versions from API, update DB based on response.
     /// - createLibraryActions: Loads required libraries, spawns actions for each.
     /// - createUploadActions: Loads items that need upload, spawns actions for each.
-    /// - syncBatchToDb: Fetch data and store to db.
+    /// - syncBatchesToDb: Starts `SyncBatchProcessor` which downloads and stores all batches.
     /// - storeVersion: Store new version for given library-object.
     /// - syncDeletions: Synchronize deletions of objects in library.
     /// - syncSettings: Synchronize settings for library.
@@ -95,7 +95,7 @@ final class SyncController: SynchronizationController {
         case syncVersions(LibraryIdentifier, SyncObject, Int)
         case createLibraryActions(LibrarySyncType, CreateLibraryActionsOptions)
         case createUploadActions(LibraryIdentifier)
-        case syncBatchToDb(DownloadBatch)
+        case syncBatchesToDb([DownloadBatch])
         case storeVersion(Int, LibraryIdentifier, SyncObject)
         case syncDeletions(LibraryIdentifier, Int)
         case syncSettings(LibraryIdentifier, Int)
@@ -157,6 +157,8 @@ final class SyncController: SynchronizationController {
     private var accessPermissions: AccessPermissions?
     // Used for conflict resolution when user interaction is needed.
     private var conflictCoordinator: (ConflictReceiver & DebugPermissionReceiver)?
+    // Used for syncing batches of objects in `.syncBatchesToDb` action
+    private var batchProcessor: SyncBatchProcessor?
 
     private var isSyncing: Bool {
         return self.processingAction != nil || !self.queue.isEmpty
@@ -172,7 +174,7 @@ final class SyncController: SynchronizationController {
 
     init(userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
          dateParser: DateParser, backgroundUploader: BackgroundUploader, syncDelayIntervals: [Double], conflictDelays: [Int]) {
-        let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .utility, attributes: .concurrent)
+        let accessQueue = DispatchQueue(label: "org.zotero.SyncController.accessQueue", qos: .userInteractive, attributes: .concurrent)
         self.userId = userId
         self.accessQueue = accessQueue
         self.accessScheduler = ConcurrentDispatchQueueScheduler(queue: accessQueue)
@@ -291,6 +293,7 @@ final class SyncController: SynchronizationController {
         self.conflictRetries = 0
         self.disposeBag = DisposeBag()
         self.accessPermissions = nil
+        self.batchProcessor = nil
     }
 
     // MARK: - Error handling
@@ -417,8 +420,8 @@ final class SyncController: SynchronizationController {
         case .syncVersions(let libraryId, let objectType, let version):
             self.progressHandler.reportObjectSync(for: objectType, in: libraryId)
             self.processSyncVersions(libraryId: libraryId, object: objectType, since: version)
-        case .syncBatchToDb(let batch):
-            self.processBatchSync(for: batch)
+        case .syncBatchesToDb(let batches):
+            self.processBatchesSync(for: batches)
         case .syncGroupToDb(let groupId):
             self.processGroupSync(groupId: groupId)
         case .storeVersion(let version, let libraryId, let object):
@@ -537,7 +540,7 @@ final class SyncController: SynchronizationController {
                                                       groupDefault: response.defaultGroup,
                                                       groups: response.groups)
 
-                  if !permissions.groupDefault.library || !permissions.groupDefault.write {
+                  if let group = permissions.groupDefault, (!group.library || !group.write) {
                       return Single.error(SyncError.missingGroupPermissions)
                   }
                   return Single.just((permissions, response.username))
@@ -726,11 +729,9 @@ final class SyncController: SynchronizationController {
     }
 
     private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: SyncObject,
-                                            from keys: [Any], currentVersion: Int) {
+                                            from keys: [String], currentVersion: Int) {
         let batches = self.createBatchObjects(for: keys, libraryId: libraryId, object: object, version: currentVersion)
-
-        var actions: [Action] = batches.map({ .syncBatchToDb($0) })
-        actions.append(.storeVersion(currentVersion, libraryId, object))
+        let actions: [Action] = [.syncBatchesToDb(batches), .storeVersion(currentVersion, libraryId, object)]
 
         self.lastReturnedVersion = currentVersion
         self.enqueue(actions: actions, at: 0)
@@ -763,10 +764,10 @@ final class SyncController: SynchronizationController {
         self.enqueue(actions: actions, at: 0)
     }
 
-    private func createBatchObjects(for keys: [Any], libraryId: LibraryIdentifier,
+    private func createBatchObjects(for keys: [String], libraryId: LibraryIdentifier,
                                     object: SyncObject, version: Int) -> [DownloadBatch] {
         let maxBatchSize = DownloadBatch.maxCount
-        var batchSize = 5
+        var batchSize = 10
         var lowerBound = 0
         var batches: [DownloadBatch] = []
 
@@ -785,29 +786,34 @@ final class SyncController: SynchronizationController {
         return batches
     }
 
+    private func processBatchesSync(for batches: [DownloadBatch]) {
+        guard let batch = batches.first else {
+            self.processNextAction()
+            return
+        }
 
-    private func processBatchSync(for batch: DownloadBatch) {
-        let result = FetchAndStoreObjectsSyncAction(keys: batch.keys, object: batch.object, version: batch.version,
-                                                    libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
-                                                    dbStorage: self.dbStorage, fileStorage: self.fileStorage, dateParser: self.dateParser,
-                                                    schemaController: self.schemaController,
-                                                    queue: self.accessQueue, scheduler: self.accessScheduler).result
-        result.subscribeOn(self.accessScheduler)
-              .subscribe(onSuccess: { [weak self] decodingData in
-                  self?.finishBatchSyncAction(for: batch.libraryId, object: batch.object,
-                                              allKeys: batch.keys, result: .success(decodingData))
-              }, onError: { [weak self] error in
-                  self?.finishBatchSyncAction(for: batch.libraryId, object: batch.object,
-                                              allKeys: batch.keys, result: .failure(error))
-              })
-              .disposed(by: self.disposeBag)
+        let libraryId = batch.libraryId
+        let object = batch.object
+
+        self.batchProcessor = SyncBatchProcessor(batches: batches, userId: self.userId, apiClient: self.apiClient,
+                                                 dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController,
+                                                 dateParser: self.dateParser, progress: { [weak self] processed in
+                                                    self?.accessQueue.async(flags: .barrier) {
+                                                        self?.progressHandler.reportDownloadBatchSynced(size: processed, for: object, in: libraryId)
+                                                    }
+                                                 },
+                                                 completion: { [weak self] result in
+                                                    self?.accessQueue.async(flags: .barrier) {
+                                                        self?.batchProcessor = nil
+                                                        self?.finishBatchesSyncAction(for: libraryId, object: object, result: result)
+                                                    }
+                                                 })
+        self.batchProcessor?.start()
     }
 
-    private func finishBatchSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, allKeys: [Any],
-                                       result: Result<([String], [Error], [StoreItemsError])>) {
+    private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>) {
         switch result {
-        case .success((let ids, let parseErrors, _))://let itemConflicts)):
-            self.progressHandler.reportDownloadBatchSynced(size: allKeys.count, for: object, in: libraryId)
+        case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
             self.nonFatalErrors.append(contentsOf: parseErrors)
 
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
@@ -824,8 +830,6 @@ final class SyncController: SynchronizationController {
 //                    return .resolveConflict(response.key, library)
 //                }
 //            })
-            let allStringKeys = (allKeys as? [String]) ?? []
-            let failedKeys = allStringKeys.filter({ !ids.contains($0) })
 
             if !conflicts.isEmpty {
                 self.queue.insert(contentsOf: conflicts, at: 0)
@@ -842,9 +846,11 @@ final class SyncController: SynchronizationController {
                 self.abort(error: abortError)
                 return
             }
-            self.progressHandler.reportDownloadBatchSynced(size: allKeys.count, for: object, in: libraryId)
-            // We failed to sync the whole batch, mark all for resync and continue with sync
-            self.markForResync(keys: allKeys, libraryId: libraryId, object: object)
+            // We failed with non-fatal error. When all batches fail to sync, it's most likely a fatal error. Just to be sure, let's skip this library
+            // and continue with sync.
+            self.removeAllActions(for: libraryId)
+            self.nonFatalErrors.append(error)
+            self.processNextAction()
         }
     }
 
@@ -1264,8 +1270,8 @@ fileprivate extension SyncController.Action {
         switch self {
         case .loadKeyPermissions, .createLibraryActions, .syncGroupVersions:
             return nil
-        case .syncBatchToDb(let batch):
-            return batch.libraryId
+        case .syncBatchesToDb(let batches):
+            return batches.first?.libraryId
         case .submitWriteBatch(let batch):
             return batch.libraryId
         case .submitDeleteBatch(let batch):
@@ -1296,9 +1302,9 @@ fileprivate extension SyncController.Action {
         case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
-             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
-             .createUploadActions, .syncGroupVersions, .syncGroupToDb:
+             .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb:
             return false
         }
     }
@@ -1308,10 +1314,10 @@ fileprivate extension SyncController.Action {
         case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
-             .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
-             .syncGroupToDb:
+             .syncGroupToDb, .syncBatchesToDb:
             return false
         }
     }
@@ -1325,10 +1331,10 @@ fileprivate extension SyncController.Action {
         case .uploadAttachment(let upload):
             return "Upload \(upload.filename).\(upload.extension) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
-             .storeVersion, .syncBatchToDb, .syncDeletions, .deleteGroup,
+             .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
-             .syncGroupVersions, .syncGroupToDb:
+             .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb:
             return "Unknown action"
         }
     }

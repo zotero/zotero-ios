@@ -15,7 +15,7 @@ enum KeyResponseError: Error {
 struct KeyResponse {
     let username: String
     let user: AccessPermissions.Permissions
-    let defaultGroup: AccessPermissions.Permissions
+    let defaultGroup: AccessPermissions.Permissions?
     let groups: [Int: AccessPermissions.Permissions]
 
     init(response: Any) throws {
@@ -40,10 +40,10 @@ struct KeyResponse {
                 }
             }
 
-            self.defaultGroup = defaultGroup ?? AccessPermissions.Permissions(data: nil)
+            self.defaultGroup = defaultGroup
             self.groups = groups
         } else {
-            self.defaultGroup = AccessPermissions.Permissions(data: nil)
+            self.defaultGroup = nil
             self.groups = [:]
         }
     }

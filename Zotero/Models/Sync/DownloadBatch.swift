@@ -12,7 +12,7 @@ struct DownloadBatch: Equatable {
     static let maxCount = 50
     let libraryId: LibraryIdentifier
     let object: SyncObject
-    let keys: [Any]
+    let keys: [String]
     let version: Int
 
     // We don't really need equatability in this target, we need it for testing. Swift can't automatically

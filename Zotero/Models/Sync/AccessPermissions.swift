@@ -17,7 +17,7 @@ struct AccessPermissions {
     }
 
     let user: Permissions
-    let groupDefault: Permissions
+    let groupDefault: Permissions?
     let groups: [Int: Permissions]
 }
 

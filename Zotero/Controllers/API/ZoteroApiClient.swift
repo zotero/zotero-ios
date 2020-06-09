@@ -94,6 +94,11 @@ class ZoteroApiClient: ApiClient {
                               .asSingle()
     }
 
+    func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation {
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        return ApiOperation(request: self.manager.request(convertible).validate(), queue: queue, completion: completion)
+    }
+
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.DownloadOptions) in
