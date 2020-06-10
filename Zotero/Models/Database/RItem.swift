@@ -41,6 +41,7 @@ class RItem: Object {
     @objc dynamic var parent: RItem?
     @objc dynamic var customLibrary: RCustomLibrary?
     @objc dynamic var group: RGroup?
+    @objc dynamic var mainAttachment: RItem?
     let collections: List<RCollection> = List()
 
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
@@ -167,6 +168,46 @@ class RItem: Object {
         self.creatorSummary = CreatorSummaryFormatter.summary(for: self.creators.filter("primary = true"))
         self.sortCreatorSummary = self.creatorSummary?.lowercased()
         self.hasCreatorSummary = self.creatorSummary != nil
+    }
+
+    /// Chooses main attachment in the following order:
+    /// - oldest PDF attachment matching parent URL,
+    /// - oldest PDF attachment not matching parent URL,
+    /// - oldest non-PDF attachment matching parent URL,
+    /// - oldest non-PDF attachment not matching parent URL.
+    func updateMainAttachment() {
+        guard self.parent == nil else {
+            self.mainAttachment = nil
+            return
+        }
+
+        var attachments = self.children.filter(.item(type: ItemTypes.attachment))
+
+        guard !attachments.isEmpty else {
+            self.mainAttachment = nil
+            return
+        }
+
+        let url = self.fields.filter(.key(FieldKeys.url)).first?.value
+        let pdfs = attachments.filter(.containsField(with: "application/pdf")).sorted(byKeyPath: "dateAdded", ascending: true)
+
+        if !pdfs.isEmpty {
+            if let url = url, let matchingUrl = pdfs.filter(.containsField(with: url)).first {
+                self.mainAttachment = matchingUrl
+                return
+            }
+
+            self.mainAttachment = pdfs.first
+            return
+        }
+
+        attachments = attachments.sorted(byKeyPath: "dateAdded", ascending: true)
+
+        if let url = url, let matchingUrl = attachments.filter(.containsField(with: url)).first {
+            self.mainAttachment = matchingUrl
+            return
+        }
+        self.mainAttachment = attachments.first
     }
 }
 

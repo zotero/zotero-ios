@@ -62,7 +62,9 @@ class ItemsViewController: UIViewController {
 
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
-                                                      dragDropController: self.controllers.dragDropController)
+                                                      dragDropController: self.controllers.dragDropController,
+                                                      fileStorage: self.controllers.fileStorage,
+                                                      urlDetector: self.controllers.urlDetector)
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.setupToolbar()
         self.setupTitle()
@@ -464,7 +466,8 @@ fileprivate class SearchBarContainer: UIView {
             searchBar.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor)
         ])
 
-        self.widthConstraint = self.searchBar.widthAnchor.constraint(equalToConstant: .greatestFiniteMagnitude)
+        let maxSize = max(UIScreen.main.bounds.size.width, UIScreen.main.bounds.size.height)
+        self.widthConstraint = self.searchBar.widthAnchor.constraint(equalToConstant: maxSize)
         self.widthConstraint.priority = .defaultLow
         self.widthConstraint.isActive = true
     }
@@ -474,7 +477,10 @@ fileprivate class SearchBarContainer: UIView {
     }
 
     override var intrinsicContentSize: CGSize {
-        return CGSize(width: .greatestFiniteMagnitude, height: self.searchBar.bounds.height)
+        // Changed from .greatestFiniteValue to this because of error "This NSLayoutConstraint is being configured with a constant that exceeds
+        // internal limits." This works fine as well and the debugger doesn't show the error anymore.
+        let maxSize = max(UIScreen.main.bounds.size.width, UIScreen.main.bounds.size.height)
+        return CGSize(width: maxSize, height: self.searchBar.bounds.height)
     }
 
     func freezeWidth() {

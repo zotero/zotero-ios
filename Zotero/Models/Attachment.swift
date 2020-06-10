@@ -11,15 +11,19 @@ import Foundation
 import CocoaLumberjack
 
 struct Attachment: Identifiable, Equatable {
+    enum FileLocation {
+        case local, remote
+    }
+
     enum ContentType: Equatable {
-        case file(file: File, filename: String, isLocal: Bool, hasRemoteResource: Bool)
+        case file(file: File, filename: String, location: FileLocation?)
         case url(URL)
 
         static func == (lhs: ContentType, rhs: ContentType) -> Bool {
             switch (lhs, rhs) {
             case (.url(let lUrl), .url(let rUrl)):
                 return lUrl == rUrl
-            case (.file(let lFile, _, _, _), .file(let rFile, _, _, _)):
+            case (.file(let lFile, _, _), .file(let rFile, _, _)):
                 return lFile.createUrl() == rFile.createUrl()
             default:
                 return false
@@ -34,7 +38,7 @@ struct Attachment: Identifiable, Equatable {
 
     var iconName: String {
         switch self.type {
-        case .file(let file, _, _, _):
+        case .file(let file, _, _):
             switch file.ext {
             case "pdf":
                 return "pdf"
@@ -68,13 +72,13 @@ struct Attachment: Identifiable, Equatable {
         self.type = type
     }
 
-    func changed(isLocal: Bool) -> Attachment {
+    func changed(location: FileLocation?) -> Attachment {
         switch type {
         case .url: return self
-        case .file(let file, let filename, _, let hasRemoteResource):
+        case .file(let file, let filename, _):
             return Attachment(key: self.key,
                               title: self.title,
-                              type: .file(file: file, filename: filename, isLocal: isLocal, hasRemoteResource: hasRemoteResource),
+                              type: .file(file: file, filename: filename, location: location),
                               libraryId: self.libraryId)
         }
     }

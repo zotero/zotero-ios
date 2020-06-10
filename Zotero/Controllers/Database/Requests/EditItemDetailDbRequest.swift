@@ -170,10 +170,15 @@ struct EditItemDetailDbRequest: DbRequest {
         let attachmentKeys = data.attachments.map({ $0.key })
         let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
                                                .filter(.key(notIn: attachmentKeys))
+        var hasMainAttachmentChange = false
+
         attachmentsToRemove.forEach {
             $0.trash = true
             $0.changedFields.insert(.trash)
-            // TODO: - check if files need to be deleted
+
+            if !hasMainAttachmentChange {
+                hasMainAttachmentChange = $0.key == item.mainAttachment?.key
+            }
         }
 
         for attachment in data.attachments {
@@ -194,7 +199,12 @@ struct EditItemDetailDbRequest: DbRequest {
                 childItem.libraryObject = item.libraryObject
                 childItem.parent = item
                 childItem.changedFields.insert(.parent)
+                hasMainAttachmentChange = true
             }
+        }
+
+        if hasMainAttachmentChange {
+            item.updateMainAttachment()
         }
     }
 

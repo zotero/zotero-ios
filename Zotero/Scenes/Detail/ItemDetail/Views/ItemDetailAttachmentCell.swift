@@ -54,8 +54,16 @@ class ItemDetailAttachmentCell: UITableViewCell {
         }
 
         switch attachment.type {
-        case .file(_, _, let isLocal, let hasRemoteResource):
-            return isLocal ? .disclosureIndicator : (hasRemoteResource ? .downloadIcon : nil)
+        case .file(_, _, let location):
+            if let location = location {
+                switch location {
+                case .local:
+                    return .disclosureIndicator
+                case .remote:
+                    return .downloadIcon
+                }
+            }
+            return nil
         case .url:
             return .disclosureIndicator
         }

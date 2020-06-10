@@ -115,14 +115,15 @@ struct ItemDetailDataCreator {
                                  .compactMap(Note.init)
         let attachments: [Attachment]
         if item.rawType == ItemTypes.attachment {
-            let attachment = self.attachmentType(for: item, fileStorage: fileStorage).flatMap({ Attachment(item: item, type: $0) })
+            let attachment = AttachmentCreator.attachment(for: item, fileStorage: fileStorage, urlDetector: urlDetector)
             attachments = attachment.flatMap { [$0] } ?? []
         } else {
             let mappedAttachments = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
                                                  .sorted(byKeyPath: "displayTitle")
                                                  .compactMap({ item -> Attachment? in
-                                                     return attachmentType(for: item, fileStorage: fileStorage)
-                                                                        .flatMap({ Attachment(item: item, type: $0) })
+                                                     return AttachmentCreator.attachment(for: item,
+                                                                                         fileStorage: fileStorage,
+                                                                                         urlDetector: urlDetector)
                                                  })
             attachments = Array(mappedAttachments)
         }
@@ -200,35 +201,6 @@ struct ItemDetailDataCreator {
         }
 
         return (fieldKeys, fields, (abstractIndex != nil))
-    }
-
-    /// Returns attachment content type type based on attachment item.
-    /// - parameter item: Attachment item to check.
-    /// - parameter fileStorage: File storage to check availability of local attachment.
-    /// - returns: Attachment content type if recognized. Nil otherwise.
-    private static func attachmentType(for item: RItem, fileStorage: FileStorage) -> Attachment.ContentType? {
-        let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value ?? ""
-        if !contentType.isEmpty { // File attachment
-            if let ext = contentType.extensionFromMimeType,
-               let libraryId = item.libraryObject?.identifier {
-                let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + ext)
-                let file = Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
-                let isLocal = fileStorage.has(file)
-                let hasRemote = item.links.filter(.linkType(.enclosure)).first != nil
-                return .file(file: file, filename: filename, isLocal: isLocal, hasRemoteResource: hasRemote)
-            } else {
-                DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
-                return nil
-            }
-        } else { // Some other attachment (url, etc.)
-            if let urlString = item.fields.filter("key = %@", "url").first?.value,
-               let url = URL(string: urlString) {
-                return .url(url)
-            } else {
-                DDLogError("Attachment: unknown attachment, fields: \(item.fields.map({ $0.key }))")
-                return nil
-            }
-        }
     }
 
     /// Returns all field keys for given item type, except those that should not appear as fields in item detail.

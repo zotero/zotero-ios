@@ -174,4 +174,8 @@ extension NSPredicate {
     static func linkType(_ type: LinkType) -> NSPredicate {
         return NSPredicate(format: "type = %@", type.rawValue)
     }
+
+    static func containsField(with value: String) -> NSPredicate {
+        return NSPredicate(format: "ANY fields.value = %@", value)
+    }
 }

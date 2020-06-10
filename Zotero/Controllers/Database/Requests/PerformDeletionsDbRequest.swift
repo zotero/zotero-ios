@@ -60,6 +60,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
 //                conflicts.append(object.key)
 //            } else {
+                object.willRemove(in: database)
                 database.delete(object)
 //            }
         }
@@ -79,7 +80,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                 // this collection is new and it will be reinserted by sync
 //                object.changedFields = .all
 //            } else {
-                object.removeChildren(in: database)
+                object.willRemove(in: database)
                 database.delete(object)
 //            }
         }
@@ -96,7 +97,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                 // this search is new and it will be reinserted by sync
 //                object.changedFields = .all
 //            } else {
-                object.removeChildren(in: database)
+                object.willRemove(in: database)
                 database.delete(object)
 //            }
         }

@@ -15,13 +15,18 @@ class ItemsTableViewHandler: NSObject {
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let dragDropController: DragDropController
+    private unowned let fileStorage: FileStorage
+    private unowned let urlDetector: UrlDetector
     let itemObserver: PublishSubject<RItem>
     private let disposeBag: DisposeBag
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController) {
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController,
+         fileStorage: FileStorage, urlDetector: UrlDetector) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.dragDropController = dragDropController
+        self.fileStorage = fileStorage
+        self.urlDetector = urlDetector
         self.itemObserver = PublishSubject()
         self.disposeBag = DisposeBag()
 
@@ -69,7 +74,7 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.allowsMultipleSelectionDuringEditing = true
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
 
-        self.tableView.register(ItemCell.self, forCellReuseIdentifier: ItemsTableViewHandler.cellId)
+        self.tableView.register(UINib(nibName: "ItemCell", bundle: nil), forCellReuseIdentifier: ItemsTableViewHandler.cellId)
     }
 
     private func setupTableView(with keyboardData: KeyboardData) {
@@ -115,7 +120,23 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
         if let item = self.viewModel.state.results?[indexPath.row],
            let cell = cell as? ItemCell {
-            cell.set(item: item)
+            let contentType = AttachmentCreator.attachmentContentType(for: item, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
+            cell.set(item: ItemCellModel(item: item, contentType: contentType), tapAction: { [weak self] key, state in
+                switch state {
+                case .downloadable:
+                    // TODO: - Start attachment download
+                    break
+                case .progress:
+                    // TODO: - Stop attachment download
+                    break
+
+                case .failed, .missing:
+                    // TODO: - show message?
+                    break
+
+                case .downloaded: break
+                }
+            })
         }
 
         return cell

@@ -331,7 +331,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, ext: originalFile.ext)
             let attachment = Attachment(key: key,
                                         title: originalFile.name,
-                                        type: .file(file: file, filename: originalFile.name, isLocal: true, hasRemoteResource: false),
+                                        type: .file(file: file, filename: originalFile.name, location: .local),
                                         libraryId: viewModel.state.library.identifier)
 
             do {
@@ -369,33 +369,38 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.openAttachmentAction = .web(url)
             }
-        case .file(let file, let filename, let isCached, let hasRemoteResource):
-            if !isCached {
-                if hasRemoteResource {
-                    self.cacheFile(file, key: attachment.key, indexPath: indexPath, in: viewModel)
-                }
-                return
-            }
+        case .file(let file, let filename, let location):
+            guard let location = location else { return }
 
-            let action: ItemDetailState.OpenAttachmentAction
-
-            switch file.ext {
-            case "pdf":
-                action = .pdf(url: file.createUrl(), key: attachment.key)
-            default:
-                let linkFile = Files.link(filename: filename, key: attachment.key)
-                do {
-                    try self.fileStorage.link(file: file, to: linkFile)
-                    action = .unknownFile(linkFile.createUrl(), indexPath)
-                } catch let error {
-                    DDLogError("ItemDetailActionHandler: can't link file - \(error)")
-                    action = .unknownFile(file.createUrl(), indexPath)
-                }
+            switch location {
+            case .remote:
+                self.cacheFile(file, key: attachment.key, indexPath: indexPath, in: viewModel)
+            case .local:
+                self.openFileAttachment(attachment, file: file, filename: filename, indexPath: indexPath, in: viewModel)
             }
+        }
+    }
 
-            self.update(viewModel: viewModel) { state in
-                state.openAttachmentAction = action
+    private func openFileAttachment(_ attachment: Attachment, file: File, filename: String, indexPath: IndexPath,
+                                    in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let action: ItemDetailState.OpenAttachmentAction
+
+        switch file.ext {
+        case "pdf":
+            action = .pdf(url: file.createUrl(), key: attachment.key)
+        default:
+            let linkFile = Files.link(filename: filename, key: attachment.key)
+            do {
+                try self.fileStorage.link(file: file, to: linkFile)
+                action = .unknownFile(linkFile.createUrl(), indexPath)
+            } catch let error {
+                DDLogError("ItemDetailActionHandler: can't link file - \(error)")
+                action = .unknownFile(file.createUrl(), indexPath)
             }
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.openAttachmentAction = action
         }
     }
 
@@ -448,7 +453,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.downloadProgress[key] = nil
                 state.changes.insert(.downloadProgress)
                 if let (index, attachment) = state.data.attachments.enumerated().first(where: { $1.key == key }) {
-                    let newAttachment = attachment.changed(isLocal: true)
+                    let newAttachment = attachment.changed(location: .local)
                     state.data.attachments[index] = newAttachment
                     self.openAttachment(newAttachment, indexPath: indexPath, in: viewModel)
                 }

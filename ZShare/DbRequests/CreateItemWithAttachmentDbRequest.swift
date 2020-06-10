@@ -41,6 +41,7 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
 
         attachment.parent = item
         attachment.changedFields.insert(.parent)
+        item.updateMainAttachment()
 
         return (item, attachment)
     }

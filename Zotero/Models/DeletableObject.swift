@@ -15,36 +15,43 @@ typealias DeletableObject = Deletable&Object
 protocol Deletable: class {
     var deleted: Bool { get set }
 
-    func removeChildren(in database: Realm)
+    func willRemove(in database: Realm)
 }
 
 extension RCollection: Deletable {
-    func removeChildren(in database: Realm) {
+    func willRemove(in database: Realm) {
         self.items.forEach { item in
-            item.changedFields = .collections
             if let index = item.collections.index(of: self) {
+                item.changedFields = .collections
                 item.collections.remove(at: index)
             }
         }
         self.children.forEach { child in
-            child.removeChildren(in: database)
+            child.willRemove(in: database)
         }
         database.delete(self.children)
     }
 }
 
 extension RItem: Deletable {
-    func removeChildren(in database: Realm) {
+    func willRemove(in database: Realm) {
+        let wasMainAttachment = self.parent?.mainAttachment?.key == self.key
+        let parent = self.parent
+
         self.children.forEach { child in
-            child.removeChildren(in: database)
+            child.willRemove(in: database)
         }
         database.delete(self.children)
         database.delete(self.links)
         database.delete(self.relations)
         database.delete(self.creators)
+
+        if wasMainAttachment {
+            parent?.updateMainAttachment()
+        }
     }
 }
 
 extension RSearch: Deletable {
-    func removeChildren(in database: Realm) {}
+    func willRemove(in database: Realm) {}
 }

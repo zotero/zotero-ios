@@ -21,7 +21,7 @@ struct DeleteObjectsDbRequest<Obj: DeletableObject>: DbRequest {
     func process(in database: Realm) throws {
         let objects = database.objects(Obj.self).filter(.keys(self.keys, in: self.libraryId))
         objects.forEach { object in
-            object.removeChildren(in: database)
+            object.willRemove(in: database)
         }
         database.delete(objects)
     }

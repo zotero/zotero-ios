@@ -341,6 +341,10 @@
 		B305678E23FC1305003304F2 /* FileStorage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678D23FC1305003304F2 /* FileStorage+Extension.swift */; };
 		B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */; };
 		B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
+		B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30B405E2490CAFC00FAAF6D /* ItemCell.xib */; };
+		B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40602490D84300FAAF6D /* ItemCellModel.swift */; };
+		B30B40632490F09400FAAF6D /* AttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* AttachmentView.swift */; };
+		B30B40652491222000FAAF6D /* AttachmentCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40642491222000FAAF6D /* AttachmentCreator.swift */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
@@ -427,7 +431,6 @@
 		B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EED241A61C700760E20 /* ItemsSortType.swift */; };
 		B3593F3D241A61C700760E20 /* ItemsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EEE241A61C700760E20 /* ItemsState.swift */; };
 		B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */; };
-		B3593F3F241A61C700760E20 /* ItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF1241A61C700760E20 /* ItemRow.swift */; };
 		B3593F40241A61C700760E20 /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF2241A61C700760E20 /* ItemCell.swift */; };
 		B3593F41241A61C700760E20 /* CollectionsPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */; };
 		B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593EF4241A61C700760E20 /* ItemsViewController.xib */; };
@@ -807,6 +810,10 @@
 		B305678D23FC1305003304F2 /* FileStorage+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileStorage+Extension.swift"; sourceTree = "<group>"; };
 		B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CollectionDifference+Separated.swift"; sourceTree = "<group>"; };
 		B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionsSpec.swift; sourceTree = "<group>"; };
+		B30B405E2490CAFC00FAAF6D /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
+		B30B40602490D84300FAAF6D /* ItemCellModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCellModel.swift; sourceTree = "<group>"; };
+		B30B40622490F09400FAAF6D /* AttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentView.swift; sourceTree = "<group>"; };
+		B30B40642491222000FAAF6D /* AttachmentCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentCreator.swift; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -889,7 +896,6 @@
 		B3593EED241A61C700760E20 /* ItemsSortType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsSortType.swift; sourceTree = "<group>"; };
 		B3593EEE241A61C700760E20 /* ItemsState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsState.swift; sourceTree = "<group>"; };
 		B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemsTableViewHandler.swift; sourceTree = "<group>"; };
-		B3593EF1241A61C700760E20 /* ItemRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemRow.swift; sourceTree = "<group>"; };
 		B3593EF2241A61C700760E20 /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
 		B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionsPickerView.swift; sourceTree = "<group>"; };
 		B3593EF4241A61C700760E20 /* ItemsViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ItemsViewController.xib; sourceTree = "<group>"; };
@@ -1097,6 +1103,7 @@
 				B305648223FC051E003304F2 /* Files */,
 				B305649F23FC051E003304F2 /* Sync */,
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
+				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
@@ -1676,6 +1683,7 @@
 		B3593EEA241A61C700760E20 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B30B40602490D84300FAAF6D /* ItemCellModel.swift */,
 				B3593EEB241A61C700760E20 /* ItemsAction.swift */,
 				B3593EEC241A61C700760E20 /* ItemsError.swift */,
 				B3593EED241A61C700760E20 /* ItemsSortType.swift */,
@@ -1689,7 +1697,7 @@
 			children = (
 				B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */,
 				B3593EF2241A61C700760E20 /* ItemCell.swift */,
-				B3593EF1241A61C700760E20 /* ItemRow.swift */,
+				B30B405E2490CAFC00FAAF6D /* ItemCell.xib */,
 				B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
 				B3593EF6241A61C700760E20 /* ItemsViewController.swift */,
@@ -2008,6 +2016,7 @@
 			isa = PBXGroup;
 			children = (
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
+				B30B40622490F09400FAAF6D /* AttachmentView.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
@@ -2219,6 +2228,7 @@
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
 				B3593F29241A61C700760E20 /* ItemDetailTitleCell.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldCell.xib in Resources */,
+				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
 				B3593F58241A61C700760E20 /* CollectionsViewController.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
@@ -2471,6 +2481,7 @@
 				B3593F49241A61C700760E20 /* LibrariesAction.swift in Sources */,
 				B3593F35241A61C700760E20 /* ItemDetailTableViewHandler.swift in Sources */,
 				B3DCDF0C240912370039ED0D /* SinglePickerState.swift in Sources */,
+				B30B40652491222000FAAF6D /* AttachmentCreator.swift in Sources */,
 				B305661D23FC051E003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
 				B30566B223FC051F003304F2 /* UpdatesResponse.swift in Sources */,
 				B3593F39241A61C700760E20 /* ItemsActionHandler.swift in Sources */,
@@ -2572,6 +2583,7 @@
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
 				B374912E2488D7040042FF85 /* SettingsActionHandler.swift in Sources */,
 				B30565D123FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
+				B30B40632490F09400FAAF6D /* AttachmentView.swift in Sources */,
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B374912F2488D7040042FF85 /* SettingsState.swift in Sources */,
 				B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */,
@@ -2642,7 +2654,6 @@
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
 				B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */,
 				B30565FF23FC051E003304F2 /* BackgroundUploadProcessor.swift in Sources */,
-				B3593F3F241A61C700760E20 /* ItemRow.swift in Sources */,
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,
 				B30565E423FC051E003304F2 /* RealmDbStorage.swift in Sources */,
 				B305661C23FC051E003304F2 /* LoadUploadDataSyncAction.swift in Sources */,
@@ -2740,6 +2751,7 @@
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
+				B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */,
 				B32A3C78247FB62B009E2C5D /* ComponentDate.swift in Sources */,
 				B305661923FC051E003304F2 /* SyncDeletionsSyncAction.swift in Sources */,
 				B300B3382429254900C1FE1E /* SyncTranslatorsDbRequest.swift in Sources */,

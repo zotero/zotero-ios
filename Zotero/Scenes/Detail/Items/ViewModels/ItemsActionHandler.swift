@@ -255,7 +255,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                               .map({
                                   Attachment(key: KeyGenerator.newKey,
                                              title: $0.name,
-                                             type: .file(file: $0, filename: $0.name, isLocal: true, hasRemoteResource: false),
+                                             type: .file(file: $0, filename: $0.name, location: .local),
                                              libraryId: viewModel.state.library.identifier)
                               })
 

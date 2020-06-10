@@ -51,7 +51,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             field.baseKey = nil
 
             switch self.attachment.type {
-            case .file(let file, let filename, _, _):
+            case .file(let file, let filename, _):
                 switch fieldKey {
                 case FieldKeys.title:
                     field.value = self.attachment.title

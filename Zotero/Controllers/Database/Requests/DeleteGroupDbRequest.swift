@@ -21,12 +21,12 @@ struct DeleteGroupDbRequest: DbRequest {
         guard let object = database.object(ofType: RGroup.self, forPrimaryKey: self.groupId) else { return }
 
         object.items.forEach { item in
-            item.removeChildren(in: database)
+            item.willRemove(in: database)
         }
         database.delete(object.items)
 
         object.collections.forEach { collection in
-            collection.removeChildren(in: database)
+            collection.willRemove(in: database)
         }
         database.delete(object.collections)
 

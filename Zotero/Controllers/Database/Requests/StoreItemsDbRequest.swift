@@ -169,6 +169,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         }
 
         item.parent = parent
+        parent.updateMainAttachment()
     }
 
     private func syncCollections(keys: Set<String>, libraryId: LibraryIdentifier, item: RItem, database: Realm) {

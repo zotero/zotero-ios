@@ -119,6 +119,7 @@ struct CreateItemDbRequest: DbResponseRequest {
             rAttachment.parent = item
             rAttachment.changedFields.insert(.parent)
         }
+        item.updateMainAttachment()
 
         // Create tags
 
