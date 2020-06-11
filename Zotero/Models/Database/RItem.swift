@@ -188,7 +188,7 @@ class RItem: Object {
             return
         }
 
-        var attachments = self.children.filter(.item(type: ItemTypes.attachment))
+        var attachments = self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
 
         guard !attachments.isEmpty else {
             self.mainAttachment = nil

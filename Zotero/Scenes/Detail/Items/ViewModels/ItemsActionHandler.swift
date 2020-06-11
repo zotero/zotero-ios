@@ -16,18 +16,21 @@ struct ItemsActionHandler: ViewModelActionHandler {
     typealias Action = ItemsAction
 
     private static let sortTypeKey = "ItemsSortType"
-    private let dbStorage: DbStorage
-    private let fileStorage: FileStorage
-    private let schemaController: SchemaController
-    private let urlDetector: UrlDetector
-    private let backgroundQueue: DispatchQueue
+    private unowned let dbStorage: DbStorage
+    private unowned let fileStorage: FileStorage
+    private unowned let schemaController: SchemaController
+    private unowned let urlDetector: UrlDetector
+    private unowned let backgroundQueue: DispatchQueue
+    private unowned let fileDownloader: FileDownloader
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
+         urlDetector: UrlDetector, fileDownloader: FileDownloader) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
         self.urlDetector = urlDetector
+        self.fileDownloader = fileDownloader
     }
 
     func process(action: ItemsAction, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -119,6 +122,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .cacheAttachmentUpdates(let results, let deletions, let insertions, let modifications):
             self.cacheAttachmentUpdates(from: results, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
+
+        case .updateDownload(let update):
+            self.process(downloadUpdate: update, in: viewModel)
+
+        case .openAttachment(let index):
+            self.openAttachment(at: index, in: viewModel)
         }
     }
 
@@ -137,14 +146,58 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    // MARK: - Attachment cache
+    // MARK: - Attachments
+
+    private func openAttachment(at index: Int, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let attachment = viewModel.state.attachments[index] else { return }
+
+        switch attachment.contentType {
+        case .url:
+            self.update(viewModel: viewModel) { state in
+                state.openAttachment = (attachment, index)
+            }
+        case .file(let file, _, let location):
+            guard let location = location else { return }
+
+            switch location {
+            case .local:
+                self.update(viewModel: viewModel) { state in
+                    state.openAttachment = (attachment, index)
+                }
+
+            case .remote:
+                let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
+                if progress != nil {
+                    self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+                    return
+                }
+                self.fileDownloader.download(file: file, key: attachment.key, libraryId: attachment.libraryId)
+            }
+        }
+    }
+
+    private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let (index, attachment) = viewModel.state.attachments.first(where: { $0.1.libraryId == update.libraryId &&
+                                                                                   $0.1.key == update.key }) else { return }
+
+        self.update(viewModel: viewModel) { state in
+            if update.kind.isDownloaded {
+                var newAttachment = attachment
+                // If download finished, mark attachment file location as local
+                if attachment.contentType.location == .remote {
+                    newAttachment = attachment.changed(location: .local)
+                    state.attachments[index] = newAttachment
+                }
+                state.openAttachment = (newAttachment, index)
+            }
+            state.updateFileDataIndex = index
+        }
+    }
 
     private func cacheAttachment(for item: RItem, index: Int, in viewModel: ViewModel<ItemsActionHandler>) {
         guard viewModel.state.attachments[index] == nil, let attachment = item.attachment else { return }
-
-        let contentType = AttachmentCreator.attachmentContentType(for: attachment, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
         self.update(viewModel: viewModel) { state in
-            state.attachments[index] = contentType.flatMap({ FileAttachmentViewData(contentType: $0, progress: nil, error: nil) })
+            state.attachments[index] = AttachmentCreator.attachment(for: attachment, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
         }
     }
 
@@ -153,10 +206,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             deletions.forEach({ state.attachments[$0] = nil })
             (modifications + insertions).forEach({ index in
-                let contentType = results[index].attachment.flatMap({ AttachmentCreator.attachmentContentType(for: $0,
-                                                                                                              fileStorage: self.fileStorage,
-                                                                                                              urlDetector: self.urlDetector) })
-                state.attachments[index] = contentType.flatMap({ FileAttachmentViewData(contentType: $0, progress: nil, error: nil) })
+                state.attachments[index] = results[index].attachment.flatMap { AttachmentCreator.attachment(for: $0,
+                                                                                                            fileStorage: self.fileStorage,
+                                                                                                            urlDetector: self.urlDetector) }
             })
         }
     }

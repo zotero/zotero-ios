@@ -41,11 +41,12 @@ class ItemsViewController: UIViewController {
     private var resultsToken: NotificationToken?
     private weak var searchBarContainer: SearchBarContainer?
 
-    weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
+    private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
-    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers) {
+    init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
         self.viewModel = viewModel
         self.controllers = controllers
+        self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
 
         super.init(nibName: "ItemsViewController", bundle: nil)
@@ -62,24 +63,23 @@ class ItemsViewController: UIViewController {
 
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
-                                                      dragDropController: self.controllers.dragDropController,
-                                                      fileStorage: self.controllers.fileStorage,
-                                                      urlDetector: self.controllers.urlDetector)
+                                                      dragDropController: self.controllers.dragDropController)
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.setupToolbar()
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
         self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
+        self.setupFileDownloadObserver()
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
 
-        self.tableViewHandler.itemObserver
+        self.tableViewHandler.tapObserver
                              .observeOn(MainScheduler.instance)
                              .subscribe(onNext: { [weak self] item in
-                                 self?.showItemDetail(for: item)
+                                self?.showItemDetail(for: item)
                              })
                              .disposed(by: self.disposeBag)
 
@@ -157,6 +157,14 @@ class ItemsViewController: UIViewController {
             }
         }
 
+        if let (attachment, index) = state.openAttachment {
+            self.open(attachment: attachment, at: IndexPath(row: index, section: 0))
+        }
+
+        if let index = state.updateFileDataIndex, let attachment = state.attachments[index] {
+            self.updateFileData(at: index, attachment: attachment)
+        }
+
         if let item = state.itemDuplication {
             self.coordinatorDelegate?.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey),
                                                      library: self.viewModel.state.library)
@@ -164,6 +172,18 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func updateFileData(at index: Int, attachment: Attachment) {
+        guard let (progress, error) = self.controllers.userControllers?.fileDownloader.data(for: attachment.key,
+                                                                                            libraryId: attachment.libraryId),
+              let data = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error) else { return }
+        self.tableViewHandler.updateCell(with: data, at: index)
+    }
+
+    private func open(attachment: Attachment, at indexPath: IndexPath) {
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
+        self.coordinatorDelegate?.show(attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+    }
 
     private func showItemDetail(for item: RItem) {
         switch item.rawType {
@@ -207,6 +227,16 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Setups
+
+    private func setupFileDownloadObserver() {
+        guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
+        downloader.observable
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] update in
+                self?.viewModel.process(action: .updateDownload(update))
+            })
+            .disposed(by: self.disposeBag)
+    }
 
     private func setupTitle() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }

@@ -28,13 +28,15 @@ struct ItemsState: ViewModelState {
 
     var sortType: ItemsSortType
     var results: Results<RItem>?
-    var attachments: [Int: FileAttachmentViewData]
+    var attachments: [Int: Attachment]
     var unfilteredResults: Results<RItem>?
     var selectedItems: Set<String>
     var isEditing: Bool
     var changes: Changes
     var error: ItemsError?
     var itemDuplication: RItem?
+    var openAttachment: (Attachment, Int)?
+    var updateFileDataIndex: Int?
 
     init(type: ItemFetchType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
@@ -52,5 +54,7 @@ struct ItemsState: ViewModelState {
         self.error = nil
         self.changes = []
         self.itemDuplication = nil
+        self.openAttachment = nil
+        self.updateFileDataIndex = nil
     }
 }

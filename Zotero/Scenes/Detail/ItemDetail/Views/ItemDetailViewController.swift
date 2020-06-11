@@ -42,7 +42,9 @@ class ItemDetailViewController: UIViewController {
         if self.viewModel.state.library.metadataEditable {
             self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing, isSaving: self.viewModel.state.isSaving)
         }
-        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel)
+        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel,
+                                                           fileDownloader: self.controllers.userControllers?.fileDownloader)
+        self.setupFileDownloadObserver()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -109,18 +111,16 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func open(attachmentAction: ItemDetailState.OpenAttachmentAction) {
-        switch attachmentAction {
-        case .pdf(let url, let key):
-            self.coordinatorDelegate?.showPdf(at: url, key: key)
+    private func open(attachment: Attachment, at indexPath: IndexPath) {
+        var newIndexPath = indexPath
 
-        case .unknownFile(let url, let indexPath):
-            let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
-            self.coordinatorDelegate?.showUnknownAttachment(at: url, sourceView: sourceView, sourceRect: sourceRect)
-
-        case .web(let url):
-            self.showWeb(for: url)
+        // Workaround for unknown section after `FileDownloader` finishes download
+        if indexPath.section == 0 {
+            newIndexPath = IndexPath(row: indexPath.row, section: self.tableViewHandler.attachmentSection)
         }
+
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: newIndexPath)
+        self.coordinatorDelegate?.show(attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
     }
 
     private func showWeb(for url: URL) {
@@ -163,13 +163,24 @@ class ItemDetailViewController: UIViewController {
             self.tableViewHandler.reload(with: diff)
         }
 
+        if let index = state.updateFileDataIndex {
+            self.updateFileData(at: index, attachment: state.data.attachments[index])
+        }
+
         if let error = state.error {
             self.show(error: error)
         }
 
-        if let action = state.openAttachmentAction {
-            self.open(attachmentAction: action)
+        if let (attachment, indexPath) = state.openAttachment {
+            self.open(attachment: attachment, at: indexPath)
         }
+    }
+
+    private func updateFileData(at index: Int, attachment: Attachment) {
+        guard let (progress, error) = self.controllers.userControllers?.fileDownloader.data(for: attachment.key,
+                                                                                            libraryId: attachment.libraryId),
+              let fileData = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error) else { return }
+        self.tableViewHandler.updateAttachmentCell(with: fileData, at: index)
     }
 
     /// Updates navigation bar with appropriate buttons based on editing state.
@@ -228,6 +239,18 @@ class ItemDetailViewController: UIViewController {
             // TODO: - handle other errors
             break
         }
+    }
+
+    // MARK: - Setups
+
+    private func setupFileDownloadObserver() {
+        guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
+        downloader.observable
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] update in
+                self?.viewModel.process(action: .updateDownload(update))
+            })
+            .disposed(by: self.disposeBag)
     }
 
     // MARK: - Helpers

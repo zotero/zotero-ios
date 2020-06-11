@@ -12,7 +12,7 @@ struct FileAttachmentViewData {
     let state: FileAttachmentView.State
     let type: FileAttachmentView.Kind
 
-    init?(contentType: Attachment.ContentType, progress: Double?, error: Error?) {
+    init?(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
         switch contentType {
         case .file(let file, _, let location):
             let (state, type) = FileAttachmentViewData.data(fromFile: file, location: location, progress: progress, error: error)
@@ -23,8 +23,13 @@ struct FileAttachmentViewData {
         }
     }
 
+    init(state: FileAttachmentView.State, type: FileAttachmentView.Kind) {
+        self.state = state
+        self.type = type
+    }
+
     private static func data(fromFile file: File, location: Attachment.FileLocation?,
-                             progress: Double?, error: Error?) -> (FileAttachmentView.State, FileAttachmentView.Kind) {
+                             progress: CGFloat?, error: Error?) -> (FileAttachmentView.State, FileAttachmentView.Kind) {
         let type: FileAttachmentView.Kind
         switch file.ext {
         case "pdf":
@@ -37,7 +42,7 @@ struct FileAttachmentViewData {
             return (.failed, type)
         }
         if let progress = progress {
-            return (.progress(CGFloat(progress)), type)
+            return (.progress(progress), type)
         }
 
         let state: FileAttachmentView.State

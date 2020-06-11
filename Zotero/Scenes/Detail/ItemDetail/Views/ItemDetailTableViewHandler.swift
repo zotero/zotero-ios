@@ -71,10 +71,16 @@ class ItemDetailTableViewHandler: NSObject {
     private var titleWidth: CGFloat {
         return self.viewModel.state.isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
     }
+    private weak var fileDownloader: FileDownloader?
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemDetailActionHandler>) {
+    var attachmentSection: Int {
+        return self.sections.firstIndex(of: .attachments) ?? 0
+    }
+
+    init(tableView: UITableView, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: FileDownloader?) {
         self.tableView = tableView
         self.viewModel = viewModel
+        self.fileDownloader = fileDownloader
         self.observer = PublishSubject()
         self.disposeBag = DisposeBag()
 
@@ -92,6 +98,14 @@ class ItemDetailTableViewHandler: NSObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "M/d/yyyy, h:mm:ss a"
         return formatter
+    }
+
+    func updateAttachmentCell(with fileData: FileAttachmentViewData, at index: Int) {
+        guard let section = self.sections.firstIndex(of: .attachments) else { return }
+        let indexPath = IndexPath(row: index, section: section)
+        if let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAttachmentCell {
+            cell.set(fileData: fileData)
+        }
     }
 
     func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
@@ -257,6 +271,7 @@ class ItemDetailTableViewHandler: NSObject {
         self.tableView.dataSource = self
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
+        self.tableView.tableFooterView = UIView()
 
         Section.allCases.forEach { section in
             let cellId = section.cellId(isEditing: false)
@@ -440,9 +455,8 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         case .attachments:
                 if let cell = cell as? ItemDetailAttachmentCell {
                     let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                    cell.setup(with: attachment,
-                               progress: self.viewModel.state.downloadProgress[attachment.key],
-                               error: self.viewModel.state.downloadError[attachment.key])
+                    let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+                    cell.setup(with: attachment, progress: progress, error: error)
                 } else if let cell = cell as? ItemDetailAddCell {
                     cell.setup(with: L10n.ItemDetail.addAttachment)
                 }
@@ -595,8 +609,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                     self.observer.on(.next(.openFilePicker))
                 }
             } else {
-                let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                self.viewModel.process(action: .openAttachment(attachment, indexPath))
+                self.viewModel.process(action: .openAttachment(indexPath))
             }
         case .notes:
             if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.notes.count {

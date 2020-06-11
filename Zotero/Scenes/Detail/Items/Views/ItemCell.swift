@@ -16,23 +16,20 @@ class ItemCell: UITableViewCell {
     @IBOutlet private weak var noteIcon: UIImageView!
     @IBOutlet private weak var fileView: FileAttachmentView!
 
-    private var key: String = ""
-    private var tapAction: ((String, FileAttachmentView.State) -> Void)?
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        self.fileView.tapAction = nil
+    }
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.fileView.contentInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 15)
-        self.fileView.tapAction = { [weak self] in
-            guard let `self` = self else { return }
-            self.tapAction?(self.key, self.fileView.state)
-        }
     }
 
-    func set(item: ItemCellModel, tapAction: @escaping (String, FileAttachmentView.State) -> Void) {
-        self.tapAction = tapAction
-        self.key = item.key
+    func set(item: ItemCellModel, tapAction: @escaping () -> Void) {
+        self.fileView.tapAction = tapAction
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
         self.titleLabel.text = item.title.isEmpty ? " " : item.title
@@ -53,7 +50,8 @@ class ItemCell: UITableViewCell {
         }
     }
 
-    func update(progress: CGFloat) {
-        self.fileView.set(progress: progress)
+    func set(fileData: FileAttachmentViewData) {
+        self.fileView.set(data: fileData)
+        self.fileView.isHidden = false
     }
 }

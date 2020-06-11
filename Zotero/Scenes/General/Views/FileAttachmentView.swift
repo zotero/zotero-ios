@@ -32,8 +32,6 @@ class FileAttachmentView: UIView {
     private var imageLayer: CALayer!
     private weak var button: UIButton!
 
-    private(set) var state: State
-    private(set) var type: Kind
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
         didSet {
             self.invalidateIntrinsicContentSize()
@@ -51,8 +49,6 @@ class FileAttachmentView: UIView {
     var tapAction: (() -> Void)?
 
     override init(frame: CGRect) {
-        self.state = .downloaded
-        self.type = .pdf
         self.disposeBag = DisposeBag()
 
         super.init(frame: frame)
@@ -61,8 +57,6 @@ class FileAttachmentView: UIView {
     }
 
     required init?(coder: NSCoder) {
-        self.state = .downloaded
-        self.type = .pdf
         self.disposeBag = DisposeBag()
 
         super.init(coder: coder)
@@ -72,8 +66,8 @@ class FileAttachmentView: UIView {
 
 
     override var intrinsicContentSize: CGSize {
-        return CGSize(width: (FileAttachmentView.size + self.contentInsets.left + self.contentInsets.right),
-                      height: (FileAttachmentView.size + self.contentInsets.top + self.contentInsets.bottom))
+        return CGSize(width: (FileAttachmentView.size + self.contentInsets.left + self.contentInsets.right + (self.circleLayer.lineWidth * 2)),
+                      height: (FileAttachmentView.size + self.contentInsets.top + self.contentInsets.bottom + (self.circleLayer.lineWidth * 2)))
     }
 
     override func layoutSubviews() {
@@ -92,34 +86,24 @@ class FileAttachmentView: UIView {
     }
 
     private func set(selected: Bool) {
-        guard !selected || self.state != .downloaded else {
-            self.layer.opacity = 1
-            return
-        }
         self.layer.opacity = selected ? 0.5 : 1
     }
 
     func set(data: FileAttachmentViewData) {
-        self.type = data.type
-        self.state = data.state
-        self.setup(state: self.state, type: self.type)
-    }
-
-    func set(progress: CGFloat) {
-        self.state = .progress(progress)
-        self.setup(state: self.state, type: self.type)
+        self.setup(state: data.state, type: data.type)
     }
 
     private func setup(state: State, type: Kind) {
         var imageName: String
         var inProgress = false
         var borderVisible = true
+        var strokeEnd: CGFloat = 0
 
         switch type {
         case .document:
-            imageName = "document"
+            imageName = "document-attachment"
         case .pdf:
-            imageName = "pdf"
+            imageName = "pdf-attachment"
         }
 
         switch state {
@@ -132,15 +116,16 @@ class FileAttachmentView: UIView {
             borderVisible = false
         case .progress(let progress):
             inProgress = true
-            self.progressLayer.strokeEnd = progress
+            strokeEnd = progress
         case .downloaded:
-            self.progressLayer.strokeEnd = 1
+            strokeEnd = 1
         }
 
         self.stopLayer.isHidden = !inProgress
         self.imageLayer.isHidden = inProgress
         self.circleLayer.isHidden = !borderVisible
         self.progressLayer.isHidden = !borderVisible
+        self.progressLayer.strokeEnd = strokeEnd
 
         if !inProgress, let image = UIImage(named: imageName) {
             self.imageLayer.contents = image.cgImage

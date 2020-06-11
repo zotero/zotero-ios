@@ -83,7 +83,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     deinit {
-        self.pdfController.annotationStateManager.remove(self)
+        self.pdfController?.annotationStateManager.remove(self)
     }
 
     // MARK: - Actions

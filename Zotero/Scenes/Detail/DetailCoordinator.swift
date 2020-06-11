@@ -20,6 +20,7 @@ protocol DetailItemsCoordinatorDelegate: class {
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
+    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?)
 }
 
 protocol DetailItemActionSheetCoordinatorDelegate: class {
@@ -35,8 +36,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
-    func showPdf(at url: URL, key: String)
-    func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?)
+    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
 }
 
@@ -60,21 +60,23 @@ class DetailCoordinator: Coordinator {
     }
 
     func start(animated: Bool) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let controller = self.createItemsViewController(collection: self.collection, library: self.library, dbStorage: dbStorage)
+        guard let userControllers = self.controllers.userControllers else { return }
+        let controller = self.createItemsViewController(collection: self.collection, library: self.library,
+                                                        dbStorage: userControllers.dbStorage, fileDownloader: userControllers.fileDownloader)
         self.navigationController.setViewControllers([controller], animated: animated)
     }
 
-    private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage) -> ItemsViewController {
+    private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage,
+                                           fileDownloader: FileDownloader) -> ItemsViewController {
         let type = self.fetchType(from: collection)
         let state = ItemsState(type: type, library: library, results: nil, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,
-                                         urlDetector: self.controllers.urlDetector)
-        let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers)
-        controller.coordinatorDelegate = self
-        return controller
+                                         urlDetector: self.controllers.urlDetector,
+                                         fileDownloader: fileDownloader)
+        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler),
+                                   controllers: self.controllers, coordinatorDelegate: self)
     }
 
     private func fetchType(from collection: Collection) -> ItemFetchType {
@@ -94,9 +96,57 @@ class DetailCoordinator: Coordinator {
             }
         }
     }
+
+    fileprivate func showPdf(at url: URL, key: String) {
+        #if PDFENABLED
+        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key),
+                                                                      handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)))
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        self.navigationController.present(navigationController, animated: true, completion: nil)
+        #endif
+    }
+
+    fileprivate func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?) {
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        controller.modalPresentationStyle = .pageSheet
+        controller.popoverPresentationController?.sourceView = sourceView
+        controller.popoverPresentationController?.sourceRect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0),
+                                                                                    y: (sourceView.frame.height * 2.0 / 3.0),
+                                                                                    width: (sourceView.frame.width / 3),
+                                                                                    height: (sourceView.frame.height / 3))
+        self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    func showWeb(url: URL) {
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
+    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
+        switch attachment.contentType {
+        case .url(let url):
+            self.showWeb(url: url)
+        case .file(let file, let filename, let location):
+            guard let location = location, location == .local else { return }
+
+            switch file.ext {
+            case "pdf":
+                self.showPdf(at: file.createUrl(), key: attachment.key)
+            default:
+                let linkFile = Files.link(filename: filename, key: attachment.key)
+                do {
+                    try self.controllers.fileStorage.link(file: file, to: linkFile)
+                    self.showUnknownAttachment(at: linkFile.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
+                } catch let error {
+                    DDLogError("DetailCoordinator: can't link file - \(error)")
+                    self.showUnknownAttachment(at: file.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
+                }
+            }
+        }
+    }
+
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button
@@ -158,7 +208,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let dbStorage = self.controllers.userControllers?.dbStorage,
+            let fileDownloader = self.controllers.userControllers?.fileDownloader else { return }
 
         do {
             let hidesBackButton: Bool
@@ -181,7 +232,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                                                   dbStorage: dbStorage,
                                                   schemaController: self.controllers.schemaController,
                                                   dateParser: self.controllers.dateParser,
-                                                  urlDetector: self.controllers.urlDetector)
+                                                  urlDetector: self.controllers.urlDetector,
+                                                  fileDownloader: fileDownloader)
             let viewModel = ViewModel(initialState: state, handler: handler)
 
             let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
@@ -287,31 +339,6 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showTypePicker(selected: String, picked: @escaping (String) -> Void) {
         let viewModel = ItemTypePickerViewModelCreator.create(selected: selected, schemaController: self.controllers.schemaController)
         self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: picked)
-    }
-
-    func showPdf(at url: URL, key: String) {
-        #if PDFENABLED
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key),
-                                                                      handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)))
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController.present(navigationController, animated: true, completion: nil)
-        #endif
-    }
-
-    func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?) {
-        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = sourceView
-        controller.popoverPresentationController?.sourceRect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0),
-                                                                                    y: (sourceView.frame.height * 2.0 / 3.0),
-                                                                                    width: (sourceView.frame.width / 3),
-                                                                                    height: (sourceView.frame.height / 3))
-        self.navigationController.present(controller, animated: true, completion: nil)
-    }
-
-    func showWeb(url: URL) {
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 
     private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, requiresSaveButton: Bool, saveAction: @escaping (String) -> Void) {

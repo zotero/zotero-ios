@@ -251,12 +251,6 @@ struct ItemDetailState: ViewModelState {
         }
     }
 
-    enum OpenAttachmentAction {
-        case pdf(url: URL, key: String)
-        case unknownFile(URL, IndexPath)
-        case web(URL)
-    }
-
     let library: Library
     let userId: Int
 
@@ -268,11 +262,10 @@ struct ItemDetailState: ViewModelState {
     var snapshot: Data?
     var promptSnapshot: Data?
     var diff: Diff?
-    var downloadProgress: [String: Double]
-    var downloadError: [String: ItemDetailError]
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
-    var openAttachmentAction: OpenAttachmentAction?
+    var openAttachment: (Attachment, IndexPath)?
+    var updateFileDataIndex: Int?
 
     init(type: DetailType, library: Library, userId: Int, data: Data, error: ItemDetailError? = nil) {
         self.changes = []
@@ -280,8 +273,6 @@ struct ItemDetailState: ViewModelState {
         self.library = library
         self.type = type
         self.data = data
-        self.downloadProgress = [:]
-        self.downloadError = [:]
         self.metadataTitleMaxWidth = 0
         self.error = error
         self.isSaving = false
@@ -315,6 +306,7 @@ struct ItemDetailState: ViewModelState {
         self.changes = []
         self.error = nil
         self.diff = nil
-        self.openAttachmentAction = nil
+        self.openAttachment = nil
+        self.updateFileDataIndex = nil
     }
 }

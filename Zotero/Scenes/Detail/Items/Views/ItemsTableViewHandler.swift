@@ -15,19 +15,17 @@ class ItemsTableViewHandler: NSObject {
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let dragDropController: DragDropController
-    private unowned let fileStorage: FileStorage
-    private unowned let urlDetector: UrlDetector
-    let itemObserver: PublishSubject<RItem>
+    let tapObserver: PublishSubject<RItem>
     private let disposeBag: DisposeBag
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController,
-         fileStorage: FileStorage, urlDetector: UrlDetector) {
+    private weak var fileDownloader: FileDownloader?
+    private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
+
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.dragDropController = dragDropController
-        self.fileStorage = fileStorage
-        self.urlDetector = urlDetector
-        self.itemObserver = PublishSubject()
+        self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
 
         super.init()
@@ -38,6 +36,12 @@ class ItemsTableViewHandler: NSObject {
 
     func set(editing: Bool, animated: Bool) {
         self.tableView.setEditing(editing, animated: animated)
+    }
+
+    func updateCell(with fileData: FileAttachmentViewData, at index: Int) {
+        if let cell = self.tableView.cellForRow(at: IndexPath(row: index, section: 0)) as? ItemCell {
+            cell.set(fileData: fileData)
+        }
     }
 
     func reload() {
@@ -63,6 +67,10 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.indexPathsForSelectedRows?.forEach({ indexPath in
             self.tableView.deselectRow(at: indexPath, animated: false)
         })
+    }
+
+    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
+        return (self.tableView, self.tableView.cellForRow(at: indexPath)?.frame)
     }
 
     private func setupTableView() {
@@ -123,22 +131,14 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             // Create and cache attachment if needed
             self.viewModel.process(action: .cacheAttachment(item: item, index: indexPath.row))
 
-            let fileData = self.viewModel.state.attachments[indexPath.row]
-            cell.set(item: ItemCellModel(item: item, fileData: fileData), tapAction: { [weak self] key, state in
-                switch state {
-                case .downloadable:
-                    // TODO: - Start attachment download
-                    break
-                case .progress:
-                    // TODO: - Stop attachment download
-                    break
+            var fileData: FileAttachmentViewData?
+            if let attachment = self.viewModel.state.attachments[indexPath.row] {
+                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+                fileData = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error)
+            }
 
-                case .failed, .missing:
-                    // TODO: - show message?
-                    break
-
-                case .downloaded: break
-                }
+            cell.set(item: ItemCellModel(item: item, fileData: fileData), tapAction: { [weak self] in
+                self?.viewModel.process(action: .openAttachment(indexPath.row))
             })
         }
 
@@ -154,7 +154,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
             self.viewModel.process(action: .selectItem(item.key))
         } else {
             tableView.deselectRow(at: indexPath, animated: true)
-            self.itemObserver.on(.next(item))
+            self.tapObserver.on(.next(item))
         }
     }
 

@@ -18,7 +18,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.fileView.tapEnabled = false
     }
 
-    func setup(with attachment: Attachment, progress: Double?, error: Error?) {
+    func setup(with attachment: Attachment, progress: CGFloat?, error: Error?) {
         let data = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error)
         if let data = data {
             self.fileView.set(data: data)
@@ -32,5 +32,11 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.fileView.isHidden = data == nil
         self.attachmentIcon.isHidden = data != nil
         self.label.text = attachment.title
+    }
+
+    func set(fileData: FileAttachmentViewData) {
+        self.fileView.isHidden = false
+        self.attachmentIcon.isHidden = true
+        self.fileView.set(data: fileData)
     }
 }

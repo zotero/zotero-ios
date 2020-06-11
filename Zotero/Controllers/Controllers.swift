@@ -108,6 +108,7 @@ class UserControllers {
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
     let backgroundUploader: BackgroundUploader
+    let fileDownloader: FileDownloader
 
     private static let schemaVersion: UInt64 = 9
 
@@ -129,12 +130,14 @@ class UserControllers {
                                             backgroundUploader: backgroundUploader,
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
+        let fileDownloader = FileDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
 
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
         self.changeObserver = RealmObjectChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploader = backgroundUploader
+        self.fileDownloader = fileDownloader
         self.disposeBag = DisposeBag()
 
         do {

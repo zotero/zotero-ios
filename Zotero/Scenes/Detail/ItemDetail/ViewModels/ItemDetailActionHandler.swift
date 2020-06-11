@@ -17,24 +17,25 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     typealias State = ItemDetailState
     typealias Action = ItemDetailAction
 
-    private let apiClient: ApiClient
-    private let fileStorage: FileStorage
-    private let dbStorage: DbStorage
-    private let schemaController: SchemaController
-    private let dateParser: DateParser
-    private let urlDetector: UrlDetector
+    private unowned let apiClient: ApiClient
+    private unowned let fileStorage: FileStorage
+    private unowned let dbStorage: DbStorage
+    private unowned let schemaController: SchemaController
+    private unowned let dateParser: DateParser
+    private unowned let urlDetector: UrlDetector
+    private unowned let fileDownloader: FileDownloader
     private let saveScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    init(apiClient: ApiClient, fileStorage: FileStorage,
-         dbStorage: DbStorage, schemaController: SchemaController,
-         dateParser: DateParser, urlDetector: UrlDetector) {
+    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController,
+         dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: FileDownloader) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
         self.schemaController = schemaController
         self.dateParser = dateParser
         self.urlDetector = urlDetector
+        self.fileDownloader = fileDownloader
         self.saveScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetail.save")
         self.disposeBag = DisposeBag()
     }
@@ -61,8 +62,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.diff = .attachments(insertions: [], deletions: Array(offsets), reloads: [])
             }
 
-        case .openAttachment(let attachment, let indexPath):
-            self.openAttachment(attachment, indexPath: indexPath, in: viewModel)
+        case .openAttachment(let indexPath):
+            self.openAttachment(at: indexPath, in: viewModel)
 
         case .addCreator:
             self.addCreator(in: viewModel)
@@ -123,6 +124,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.data.fields[id] = field
             }
+
+        case .updateDownload(let update):
+            self.process(downloadUpdate: update, in: viewModel)
         }
     }
 
@@ -321,6 +325,24 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Attachments
 
+    private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard viewModel.state.library.identifier == update.libraryId else { return }
+        guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+        var attachment = viewModel.state.data.attachments[index]
+
+        self.update(viewModel: viewModel) { state in
+            if update.kind.isDownloaded {
+                // If download finished, mark attachment file location as local
+                if attachment.contentType.location == .remote {
+                    attachment = attachment.changed(location: .local)
+                    state.data.attachments[index] = attachment
+                }
+                state.openAttachment = (attachment, IndexPath(row: index, section: 0))
+            }
+            state.updateFileDataIndex = index
+        }
+    }
+
     private func addAttachments(from urls: [URL], in viewModel: ViewModel<ItemDetailActionHandler>) {
         var attachments: [Attachment] = []
         var errors = 0
@@ -363,99 +385,28 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func openAttachment(_ attachment: Attachment, indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func openAttachment(at indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let attachment = viewModel.state.data.attachments[indexPath.row]
         switch attachment.contentType {
-        case .url(let url):
+        case .url:
             self.update(viewModel: viewModel) { state in
-                state.openAttachmentAction = .web(url)
+                state.openAttachment = (attachment, indexPath)
             }
-        case .file(let file, let filename, let location):
+        case .file(let file, _, let location):
             guard let location = location else { return }
 
             switch location {
             case .remote:
-                self.cacheFile(file, key: attachment.key, indexPath: indexPath, in: viewModel)
+                let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
+                if progress != nil {
+                    self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+                    return
+                }
+                self.fileDownloader.download(file: file, key: attachment.key, libraryId: attachment.libraryId)
+
             case .local:
-                self.openFileAttachment(attachment, file: file, filename: filename, indexPath: indexPath, in: viewModel)
-            }
-        }
-    }
-
-    private func openFileAttachment(_ attachment: Attachment, file: File, filename: String, indexPath: IndexPath,
-                                    in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let action: ItemDetailState.OpenAttachmentAction
-
-        switch file.ext {
-        case "pdf":
-            action = .pdf(url: file.createUrl(), key: attachment.key)
-        default:
-            let linkFile = Files.link(filename: filename, key: attachment.key)
-            do {
-                try self.fileStorage.link(file: file, to: linkFile)
-                action = .unknownFile(linkFile.createUrl(), indexPath)
-            } catch let error {
-                DDLogError("ItemDetailActionHandler: can't link file - \(error)")
-                action = .unknownFile(file.createUrl(), indexPath)
-            }
-        }
-
-        self.update(viewModel: viewModel) { state in
-            state.openAttachmentAction = action
-        }
-    }
-
-    private func cacheFile(_ file: File, key: String, indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let request = FileRequest(data: .internal(viewModel.state.library.identifier, viewModel.state.userId, key), destination: file)
-        self.apiClient.download(request: request)
-                      .flatMap { request in
-                          return request.rx.progress()
-                      }
-                      .observeOn(MainScheduler.instance)
-                      .subscribe(onNext: { [weak viewModel] progress in
-                          guard let viewModel = viewModel else { return }
-                          self.update(viewModel: viewModel) { state in
-                              state.downloadProgress[key] = Double(progress.completed)
-                              state.changes.insert(.downloadProgress)
-                          }
-                      }, onError: { [weak viewModel] error in
-                          guard let viewModel = viewModel else { return }
-                          self.finishCachingFile(for: key, result: .failure(error), indexPath: indexPath, in: viewModel)
-                      }, onCompleted: { [weak viewModel] in
-                          guard let viewModel = viewModel else { return }
-                          self.finishCachingFile(for: key, result: self.checkFileResponse(for: file), indexPath: indexPath, in: viewModel)
-                      })
-                      .disposed(by: self.disposeBag)
-    }
-
-    /// Alamofire bug workaround
-    /// When the request returns 404 "Not found" Alamofire download doesn't recognize it and just downloads the file with content "Not found".
-    private func checkFileResponse(for file: File) -> Swift.Result<(), Error> {
-        if self.fileStorage.size(of: file) == 9 &&
-           (try? self.fileStorage.read(file)).flatMap({ String(data: $0, encoding: .utf8) }) == "Not found" {
-            try? self.fileStorage.remove(file)
-            return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 404)))
-        }
-        return .success(())
-    }
-
-    private func finishCachingFile(for key: String, result: Swift.Result<(), Error>,
-                                   indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        switch result {
-        case .failure(let error):
-            DDLogError("ItemDetailStore: show attachment - can't download file - \(error)")
-            self.update(viewModel: viewModel) { state in
-                state.downloadError[key] = .downloadError
-                state.changes.insert(.downloadProgress)
-            }
-
-        case .success:
-            self.update(viewModel: viewModel) { state in
-                state.downloadProgress[key] = nil
-                state.changes.insert(.downloadProgress)
-                if let (index, attachment) = state.data.attachments.enumerated().first(where: { $1.key == key }) {
-                    let newAttachment = attachment.changed(location: .local)
-                    state.data.attachments[index] = newAttachment
-                    self.openAttachment(newAttachment, indexPath: indexPath, in: viewModel)
+                self.update(viewModel: viewModel) { state in
+                    state.openAttachment = (attachment, indexPath)
                 }
             }
         }
