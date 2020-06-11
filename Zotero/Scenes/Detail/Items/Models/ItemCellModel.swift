@@ -17,50 +17,16 @@ struct ItemCellModel {
     let subtitle: String
     let hasNote: Bool
     let tagColors: [UIColor]
-    let attachment: (AttachmentView.AttachmentType, AttachmentView.State)?
+    let fileData: FileAttachmentViewData?
 
-    init(item: RItem, contentType: Attachment.ContentType?) {
+    init(item: RItem, fileData: FileAttachmentViewData?) {
         self.key = item.key
         self.typeIconName = ItemCellModel.iconName(for: item)
         self.title = item.displayTitle
         self.subtitle = ItemCellModel.subtitle(for: item)
         self.hasNote = ItemCellModel.hasNote(item: item)
         self.tagColors = ItemCellModel.tagColors(item: item)
-
-        if let contentType = contentType {
-            switch contentType {
-            case .file(let file, _, let location):
-                self.attachment = ItemCellModel.attachment(from: file, location: location)
-            case .url:
-                self.attachment = nil
-            }
-        } else {
-            self.attachment = nil
-        }
-    }
-
-    private static func attachment(from file: File, location: Attachment.FileLocation?) -> (AttachmentView.AttachmentType, AttachmentView.State) {
-        let type: AttachmentView.AttachmentType
-        switch file.ext {
-        case "pdf":
-            type = .pdf
-        default:
-            type = .document
-        }
-
-        let state: AttachmentView.State
-        if let location = location {
-            switch location {
-            case .local:
-                state = .downloaded
-            case .remote:
-                state = .downloadable
-            }
-        } else {
-            state = .missing
-        }
-
-        return (type, state)
+        self.fileData = fileData
     }
 
     fileprivate static func hasAttachment(item: RItem) -> Bool {

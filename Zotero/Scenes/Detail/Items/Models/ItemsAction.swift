@@ -8,6 +8,8 @@
 
 import Foundation
 
+import RealmSwift
+
 enum ItemsAction {
     case addAttachments([URL])
     case assignSelectedItemsToCollections(Set<String>)
@@ -27,4 +29,6 @@ enum ItemsAction {
     case stopEditing
     case toggleSortOrder
     case trashSelectedItems
+    case cacheAttachment(item: RItem, index: Int)
+    case cacheAttachmentUpdates(results: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
 }

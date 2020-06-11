@@ -1,5 +1,5 @@
 //
-//  AttachmentView.swift
+//  FileAttachmentView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 10/06/2020.
@@ -10,8 +10,8 @@ import UIKit
 
 import RxSwift
 
-class AttachmentView: UIView {
-    enum AttachmentType {
+class FileAttachmentView: UIView {
+    enum Kind {
         case pdf, document
     }
 
@@ -30,12 +30,22 @@ class AttachmentView: UIView {
     private var progressLayer: CAShapeLayer!
     private var stopLayer: CALayer!
     private var imageLayer: CALayer!
+    private weak var button: UIButton!
 
     private(set) var state: State
-    private(set) var type: AttachmentType
+    private(set) var type: Kind
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
         didSet {
             self.invalidateIntrinsicContentSize()
+        }
+    }
+    var tapEnabled: Bool {
+        get {
+            return self.button.isEnabled
+        }
+
+        set {
+            self.button.isEnabled = newValue
         }
     }
     var tapAction: (() -> Void)?
@@ -62,8 +72,8 @@ class AttachmentView: UIView {
 
 
     override var intrinsicContentSize: CGSize {
-        return CGSize(width: (AttachmentView.size + self.contentInsets.left + self.contentInsets.right),
-                      height: (AttachmentView.size + self.contentInsets.top + self.contentInsets.bottom))
+        return CGSize(width: (FileAttachmentView.size + self.contentInsets.left + self.contentInsets.right),
+                      height: (FileAttachmentView.size + self.contentInsets.top + self.contentInsets.bottom))
     }
 
     override func layoutSubviews() {
@@ -72,7 +82,7 @@ class AttachmentView: UIView {
         let x = self.contentInsets.left + ((self.bounds.width - self.contentInsets.left - self.contentInsets.right) / 2)
         let y = self.contentInsets.top + ((self.bounds.height - self.contentInsets.top - self.contentInsets.bottom) / 2)
         let center = CGPoint(x: x, y: y)
-        let path = UIBezierPath(arcCenter: center, radius: (AttachmentView.size / 2), startAngle: -.pi / 2,
+        let path = UIBezierPath(arcCenter: center, radius: (FileAttachmentView.size / 2), startAngle: -.pi / 2,
                                 endAngle: 3 * .pi / 2, clockwise: true).cgPath
 
         self.circleLayer.path = path
@@ -89,9 +99,9 @@ class AttachmentView: UIView {
         self.layer.opacity = selected ? 0.5 : 1
     }
 
-     func set(type: AttachmentType, state: State) {
-        self.type = type
-        self.state = state
+    func set(data: FileAttachmentViewData) {
+        self.type = data.type
+        self.state = data.state
         self.setup(state: self.state, type: self.type)
     }
 
@@ -100,9 +110,10 @@ class AttachmentView: UIView {
         self.setup(state: self.state, type: self.type)
     }
 
-    private func setup(state: State, type: AttachmentType) {
+    private func setup(state: State, type: Kind) {
         var imageName: String
         var inProgress = false
+        var borderVisible = true
 
         switch type {
         case .document:
@@ -118,6 +129,7 @@ class AttachmentView: UIView {
             imageName += "-download-failed"
         case .missing:
             imageName += "-missing"
+            borderVisible = false
         case .progress(let progress):
             inProgress = true
             self.progressLayer.strokeEnd = progress
@@ -127,6 +139,8 @@ class AttachmentView: UIView {
 
         self.stopLayer.isHidden = !inProgress
         self.imageLayer.isHidden = inProgress
+        self.circleLayer.isHidden = !borderVisible
+        self.progressLayer.isHidden = !borderVisible
 
         if !inProgress, let image = UIImage(named: imageName) {
             self.imageLayer.contents = image.cgImage
@@ -159,6 +173,7 @@ class AttachmentView: UIView {
         button.frame = self.bounds
         button.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         self.addSubview(button)
+        self.button = button
 
         button.rx
               .controlEvent(.touchDown)

@@ -120,8 +120,11 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
         if let item = self.viewModel.state.results?[indexPath.row],
            let cell = cell as? ItemCell {
-            let contentType = AttachmentCreator.attachmentContentType(for: item, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
-            cell.set(item: ItemCellModel(item: item, contentType: contentType), tapAction: { [weak self] key, state in
+            // Create and cache attachment if needed
+            self.viewModel.process(action: .cacheAttachment(item: item, index: indexPath.row))
+
+            let fileData = self.viewModel.state.attachments[indexPath.row]
+            cell.set(item: ItemCellModel(item: item, fileData: fileData), tapAction: { [weak self] key, state in
                 switch state {
                 case .downloadable:
                     // TODO: - Start attachment download

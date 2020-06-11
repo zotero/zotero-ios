@@ -183,7 +183,9 @@ class ItemsViewController: UIViewController {
             switch changes {
             case .initial:
                 self?.tableViewHandler.reload()
-            case .update(_, let deletions, let insertions, let modifications):
+            case .update(let results, let deletions, let insertions, let modifications):
+                self?.viewModel.process(action: .cacheAttachmentUpdates(results: results, deletions: deletions,
+                                                                        insertions: insertions, modifications: modifications))
                 self?.tableViewHandler.reload(modifications: modifications, insertions: insertions, deletions: deletions)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")

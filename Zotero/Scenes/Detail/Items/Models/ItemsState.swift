@@ -28,6 +28,7 @@ struct ItemsState: ViewModelState {
 
     var sortType: ItemsSortType
     var results: Results<RItem>?
+    var attachments: [Int: FileAttachmentViewData]
     var unfilteredResults: Results<RItem>?
     var selectedItems: Set<String>
     var isEditing: Bool
@@ -39,6 +40,7 @@ struct ItemsState: ViewModelState {
         self.type = type
         self.library = library
         self.results = results
+        self.attachments = [:]
         self.error = error
         self.isEditing = false
         self.selectedItems = []

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -19,24 +19,25 @@
                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="aSU-og-0l2">
                         <rect key="frame" x="20" y="10" width="280" height="24"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="251" image="note" translatesAutoresizingMaskIntoConstraints="NO" id="KjK-pH-r9E">
-                                <rect key="frame" x="0.0" y="0.0" width="23" height="24"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="web-page" translatesAutoresizingMaskIntoConstraints="NO" id="C5w-yw-d8Z">
+                                <rect key="frame" x="0.0" y="0.0" width="24" height="24"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="C5w-yw-d8Z" secondAttribute="height" multiplier="1:1" id="Usj-jd-L8d"/>
+                                </constraints>
                             </imageView>
+                            <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="RAA-Dr-Cos" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
+                                <rect key="frame" x="36" y="0.0" width="28" height="24"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" placeholder="YES" id="vwP-ib-3zs"/>
+                                </constraints>
+                            </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yy5-No-Wsg">
-                                <rect key="frame" x="35" y="2" width="102" height="20.5"/>
+                                <rect key="frame" x="76" y="2" width="204" height="20.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="square.and.arrow.down" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="oV5-jK-bRf">
-                                <rect key="frame" x="149" y="2" width="19" height="20"/>
-                            </imageView>
-                            <progressView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="750" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="PH7-20-krF">
-                                <rect key="frame" x="180" y="11" width="100" height="2"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="100" id="gcS-TN-4UE"/>
-                                </constraints>
-                            </progressView>
                         </subviews>
                     </stackView>
                 </subviews>
@@ -49,16 +50,14 @@
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
-                <outlet property="accessory" destination="oV5-jK-bRf" id="YMI-lh-GOA"/>
-                <outlet property="icon" destination="KjK-pH-r9E" id="ROR-uc-Mkx"/>
+                <outlet property="attachmentIcon" destination="C5w-yw-d8Z" id="5GE-hR-qbD"/>
+                <outlet property="fileView" destination="RAA-Dr-Cos" id="fOL-pJ-RdW"/>
                 <outlet property="label" destination="Yy5-No-Wsg" id="3eK-Bn-cdL"/>
-                <outlet property="progressView" destination="PH7-20-krF" id="s12-si-M48"/>
             </connections>
             <point key="canvasLocation" x="139" y="84"/>
         </tableViewCell>
     </objects>
     <resources>
-        <image name="note" width="23" height="28"/>
-        <image name="square.and.arrow.down" catalog="system" width="60" height="64"/>
+        <image name="web-page" width="28" height="24"/>
     </resources>
 </document>

@@ -33,22 +33,8 @@ struct Attachment: Identifiable, Equatable {
 
     let key: String
     let title: String
-    let type: ContentType
+    let contentType: ContentType
     let libraryId: LibraryIdentifier
-
-    var iconName: String {
-        switch self.type {
-        case .file(let file, _, _):
-            switch file.ext {
-            case "pdf":
-                return "pdf"
-            default:
-                return "document"
-            }
-        case .url:
-            return "web-page"
-        }
-    }
 
     var id: String { return self.key }
 
@@ -56,7 +42,7 @@ struct Attachment: Identifiable, Equatable {
          libraryId: LibraryIdentifier) {
         self.key = key
         self.title = title
-        self.type = type
+        self.contentType = type
         self.libraryId = libraryId
     }
 
@@ -69,11 +55,11 @@ struct Attachment: Identifiable, Equatable {
         self.libraryId = libraryId
         self.key = item.key
         self.title = item.displayTitle
-        self.type = type
+        self.contentType = type
     }
 
     func changed(location: FileLocation?) -> Attachment {
-        switch type {
+        switch self.contentType {
         case .url: return self
         case .file(let file, let filename, _):
             return Attachment(key: self.key,

@@ -13,7 +13,7 @@ extension FileStorage {
     /// - parameter attachments: Attachments which will be copied if needed
     func copyAttachmentFilesIfNeeded(for attachments: [Attachment]) throws {
         for attachment in attachments {
-            switch attachment.type {
+            switch attachment.contentType {
             case .url: continue
             case .file(let originalFile, _, _):
                 let newFile = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, ext: originalFile.ext)

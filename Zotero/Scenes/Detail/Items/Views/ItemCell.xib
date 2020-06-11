@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
-    <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -61,7 +60,7 @@
                                     </stackView>
                                 </subviews>
                             </stackView>
-                            <view contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="AttachmentView" customModule="Zotero" customModuleProvider="target">
+                            <view contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
                                 <rect key="frame" x="324" y="2" width="58" height="50"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                             </view>
@@ -76,7 +75,7 @@
                 </constraints>
             </tableViewCellContentView>
             <connections>
-                <outlet property="attachmentView" destination="Mcw-7q-2OK" id="osx-zR-ssI"/>
+                <outlet property="fileView" destination="Mcw-7q-2OK" id="osx-zR-ssI"/>
                 <outlet property="noteIcon" destination="z75-Uk-CFi" id="M1g-73-xKO"/>
                 <outlet property="subtitleLabel" destination="X2V-4e-fFg" id="cdv-iV-C0j"/>
                 <outlet property="tagCircles" destination="Z8L-AU-qom" id="mFQ-RF-VPj"/>

@@ -106,6 +106,13 @@ class RItem: Object {
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @objc dynamic var deleted: Bool = false
 
+    var attachment: RItem? {
+        if self.rawType == ItemTypes.attachment {
+            return self
+        }
+        return self.mainAttachment
+    }
+
     // MARK: - Object properties
 
     override class func indexedProperties() -> [String] {

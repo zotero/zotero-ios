@@ -343,7 +343,7 @@
 		B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
 		B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30B405E2490CAFC00FAAF6D /* ItemCell.xib */; };
 		B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40602490D84300FAAF6D /* ItemCellModel.swift */; };
-		B30B40632490F09400FAAF6D /* AttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* AttachmentView.swift */; };
+		B30B40632490F09400FAAF6D /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
 		B30B40652491222000FAAF6D /* AttachmentCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40642491222000FAAF6D /* AttachmentCreator.swift */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
@@ -504,6 +504,7 @@
 		B3823B2A2399302100953F5D /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3823B292399302100953F5D /* WebViewHandler.swift */; };
 		B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A592417C1C7006693C4 /* Coordinator.swift */; };
+		B3886C45249212DF00B7D67B /* FileAttachmentViewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3886C44249212DF00B7D67B /* FileAttachmentViewData.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
@@ -812,7 +813,7 @@
 		B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionsSpec.swift; sourceTree = "<group>"; };
 		B30B405E2490CAFC00FAAF6D /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
 		B30B40602490D84300FAAF6D /* ItemCellModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCellModel.swift; sourceTree = "<group>"; };
-		B30B40622490F09400FAAF6D /* AttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentView.swift; sourceTree = "<group>"; };
+		B30B40622490F09400FAAF6D /* FileAttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachmentView.swift; sourceTree = "<group>"; };
 		B30B40642491222000FAAF6D /* AttachmentCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentCreator.swift; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -959,6 +960,7 @@
 		B3823B292399302100953F5D /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		B3866A572417C1BC006693C4 /* ViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
+		B3886C44249212DF00B7D67B /* FileAttachmentViewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachmentViewData.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
@@ -2016,7 +2018,7 @@
 			isa = PBXGroup;
 			children = (
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
-				B30B40622490F09400FAAF6D /* AttachmentView.swift */,
+				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
@@ -2040,12 +2042,13 @@
 		B3DCDF05240912060039ED0D /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */,
+				B3DCDF24240946090039ED0D /* CollectionPickerError.swift */,
+				B3DCDF20240945D80039ED0D /* CollectionPickerState.swift */,
+				B3886C44249212DF00B7D67B /* FileAttachmentViewData.swift */,
 				B3DCDF09240912220039ED0D /* SinglePickerAction.swift */,
 				B3DCDF11240914F10039ED0D /* SinglePickerModel.swift */,
 				B3DCDF0B240912370039ED0D /* SinglePickerState.swift */,
-				B3DCDF20240945D80039ED0D /* CollectionPickerState.swift */,
-				B3DCDF22240945FA0039ED0D /* CollectionPickerAction.swift */,
-				B3DCDF24240946090039ED0D /* CollectionPickerError.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2560,6 +2563,7 @@
 				B3593F1D241A61C700760E20 /* ItemDetailAction.swift in Sources */,
 				B305678E23FC1305003304F2 /* FileStorage+Extension.swift in Sources */,
 				B305669C23FC051F003304F2 /* RVersions.swift in Sources */,
+				B3886C45249212DF00B7D67B /* FileAttachmentViewData.swift in Sources */,
 				B3DCDF12240914F10039ED0D /* SinglePickerModel.swift in Sources */,
 				B3593F79241A76E600760E20 /* CollectionEditAction.swift in Sources */,
 				B3593F4D241A61C700760E20 /* LibraryRow.swift in Sources */,
@@ -2583,7 +2587,7 @@
 				B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */,
 				B374912E2488D7040042FF85 /* SettingsActionHandler.swift in Sources */,
 				B30565D123FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
-				B30B40632490F09400FAAF6D /* AttachmentView.swift in Sources */,
+				B30B40632490F09400FAAF6D /* FileAttachmentView.swift in Sources */,
 				B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B374912F2488D7040042FF85 /* SettingsState.swift in Sources */,
 				B325DBAC24374F4600EFF0F5 /* AppCoordinator.swift in Sources */,

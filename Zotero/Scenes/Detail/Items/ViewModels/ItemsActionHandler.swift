@@ -9,6 +9,7 @@
 import Foundation
 
 import CocoaLumberjack
+import RealmSwift
 
 struct ItemsActionHandler: ViewModelActionHandler {
     typealias State = ItemsState
@@ -18,13 +19,15 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage
     private let schemaController: SchemaController
+    private let urlDetector: UrlDetector
     private let backgroundQueue: DispatchQueue
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.schemaController = schemaController
+        self.urlDetector = urlDetector
     }
 
     func process(action: ItemsAction, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -110,6 +113,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 }
                 state.changes = [.selection, .selectAll]
             }
+
+        case .cacheAttachment(let item, let index):
+            self.cacheAttachment(for: item, index: index, in: viewModel)
+
+        case .cacheAttachmentUpdates(let results, let deletions, let insertions, let modifications):
+            self.cacheAttachmentUpdates(from: results, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
         }
     }
 
@@ -125,6 +134,30 @@ struct ItemsActionHandler: ViewModelActionHandler {
             state.results = results
             state.sortType = sortType
             state.error = (results == nil ? .dataLoading : nil)
+        }
+    }
+
+    // MARK: - Attachment cache
+
+    private func cacheAttachment(for item: RItem, index: Int, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard viewModel.state.attachments[index] == nil, let attachment = item.attachment else { return }
+
+        let contentType = AttachmentCreator.attachmentContentType(for: attachment, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
+        self.update(viewModel: viewModel) { state in
+            state.attachments[index] = contentType.flatMap({ FileAttachmentViewData(contentType: $0, progress: nil, error: nil) })
+        }
+    }
+
+    private func cacheAttachmentUpdates(from results: Results<RItem>, deletions: [Int], insertions: [Int],
+                                        modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            deletions.forEach({ state.attachments[$0] = nil })
+            (modifications + insertions).forEach({ index in
+                let contentType = results[index].attachment.flatMap({ AttachmentCreator.attachmentContentType(for: $0,
+                                                                                                              fileStorage: self.fileStorage,
+                                                                                                              urlDetector: self.urlDetector) })
+                state.attachments[index] = contentType.flatMap({ FileAttachmentViewData(contentType: $0, progress: nil, error: nil) })
+            })
         }
     }
 

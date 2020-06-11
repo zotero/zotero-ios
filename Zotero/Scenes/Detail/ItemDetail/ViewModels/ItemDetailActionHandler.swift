@@ -364,7 +364,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func openAttachment(_ attachment: Attachment, indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        switch attachment.type {
+        switch attachment.contentType {
         case .url(let url):
             self.update(viewModel: viewModel) { state in
                 state.openAttachmentAction = .web(url)

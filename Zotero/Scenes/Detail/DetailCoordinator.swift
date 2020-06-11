@@ -70,7 +70,8 @@ class DetailCoordinator: Coordinator {
         let state = ItemsState(type: type, library: library, results: nil, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
-                                         schemaController: self.controllers.schemaController)
+                                         schemaController: self.controllers.schemaController,
+                                         urlDetector: self.controllers.urlDetector)
         let controller = ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers)
         controller.coordinatorDelegate = self
         return controller
