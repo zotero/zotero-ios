@@ -42,16 +42,16 @@ class ItemCell: UITableViewCell {
             self.tagCircles.colors = item.tagColors
         }
 
-        if let data = item.fileData {
-            self.fileView.set(data: data)
+        if let (contentType, progress, error) = item.attachment {
+            self.fileView.set(contentType: contentType, progress: progress, error: error)
             self.fileView.isHidden = false
         } else {
             self.fileView.isHidden = true
         }
     }
 
-    func set(fileData: FileAttachmentViewData) {
-        self.fileView.set(data: fileData)
+    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
+        self.fileView.set(contentType: contentType, progress: progress, error: error)
         self.fileView.isHidden = false
     }
 }

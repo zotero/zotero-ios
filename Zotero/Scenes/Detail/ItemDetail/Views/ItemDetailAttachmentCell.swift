@@ -19,24 +19,16 @@ class ItemDetailAttachmentCell: UITableViewCell {
     }
 
     func setup(with attachment: Attachment, progress: CGFloat?, error: Error?) {
-        let data = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error)
-        if let data = data {
-            self.fileView.set(data: data)
-        } else {
-            switch attachment.contentType {
-            case .file: break // handled above
-            case .url:
-                self.attachmentIcon.image = UIImage(named: "web-page")
-            }
+        switch attachment.contentType {
+        case .file:
+            self.fileView.set(contentType: attachment.contentType, progress: progress, error: error)
+            self.fileView.isHidden = false
+            self.attachmentIcon.isHidden = true
+        case .url:
+            self.attachmentIcon.image = UIImage(named: "web-page")
+            self.fileView.isHidden = true
+            self.attachmentIcon.isHidden = false
         }
-        self.fileView.isHidden = data == nil
-        self.attachmentIcon.isHidden = data != nil
         self.label.text = attachment.title
-    }
-
-    func set(fileData: FileAttachmentViewData) {
-        self.fileView.isHidden = false
-        self.attachmentIcon.isHidden = true
-        self.fileView.set(data: fileData)
     }
 }

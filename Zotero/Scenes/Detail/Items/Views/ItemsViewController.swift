@@ -162,7 +162,7 @@ class ItemsViewController: UIViewController {
         }
 
         if let index = state.updateFileDataIndex, let attachment = state.attachments[index] {
-            self.updateFileData(at: index, attachment: attachment)
+            self.tableViewHandler.updateCell(with: attachment, at: index)
         }
 
         if let item = state.itemDuplication {
@@ -172,13 +172,6 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Actions
-
-    private func updateFileData(at index: Int, attachment: Attachment) {
-        guard let (progress, error) = self.controllers.userControllers?.fileDownloader.data(for: attachment.key,
-                                                                                            libraryId: attachment.libraryId),
-              let data = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error) else { return }
-        self.tableViewHandler.updateCell(with: data, at: index)
-    }
 
     private func open(attachment: Attachment, at indexPath: IndexPath) {
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)

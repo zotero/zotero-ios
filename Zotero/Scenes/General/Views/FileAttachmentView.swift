@@ -89,8 +89,44 @@ class FileAttachmentView: UIView {
         self.layer.opacity = selected ? 0.5 : 1
     }
 
-    func set(data: FileAttachmentViewData) {
-        self.setup(state: data.state, type: data.type)
+    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
+        switch contentType {
+        case .file(let file, _, let location):
+            let (state, type) = self.data(fromFile: file, location: location, progress: progress, error: error)
+            self.setup(state: state, type: type)
+        case .url: break
+        }
+    }
+
+    private func data(fromFile file: File, location: Attachment.FileLocation?, progress: CGFloat?, error: Error?) -> (State, Kind) {
+        let type: FileAttachmentView.Kind
+        switch file.ext {
+        case "pdf":
+            type = .pdf
+        default:
+            type = .document
+        }
+
+        if error != nil {
+            return (.failed, type)
+        }
+        if let progress = progress {
+            return (.progress(progress), type)
+        }
+
+        let state: FileAttachmentView.State
+        if let location = location {
+            switch location {
+            case .local:
+                state = .downloaded
+            case .remote:
+                state = .downloadable
+            }
+        } else {
+            state = .missing
+        }
+
+        return (state, type)
     }
 
     private func setup(state: State, type: Kind) {

@@ -100,11 +100,13 @@ class ItemDetailTableViewHandler: NSObject {
         return formatter
     }
 
-    func updateAttachmentCell(with fileData: FileAttachmentViewData, at index: Int) {
+    func updateAttachmentCell(with attachment: Attachment, at index: Int) {
         guard let section = self.sections.firstIndex(of: .attachments) else { return }
         let indexPath = IndexPath(row: index, section: section)
+
         if let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAttachmentCell {
-            cell.set(fileData: fileData)
+            let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            cell.setup(with: attachment, progress: progress, error: error)
         }
     }
 

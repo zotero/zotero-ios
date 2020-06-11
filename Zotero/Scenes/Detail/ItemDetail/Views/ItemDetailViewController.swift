@@ -164,7 +164,7 @@ class ItemDetailViewController: UIViewController {
         }
 
         if let index = state.updateFileDataIndex {
-            self.updateFileData(at: index, attachment: state.data.attachments[index])
+            self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
         }
 
         if let error = state.error {
@@ -174,13 +174,6 @@ class ItemDetailViewController: UIViewController {
         if let (attachment, indexPath) = state.openAttachment {
             self.open(attachment: attachment, at: indexPath)
         }
-    }
-
-    private func updateFileData(at index: Int, attachment: Attachment) {
-        guard let (progress, error) = self.controllers.userControllers?.fileDownloader.data(for: attachment.key,
-                                                                                            libraryId: attachment.libraryId),
-              let fileData = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error) else { return }
-        self.tableViewHandler.updateAttachmentCell(with: fileData, at: index)
     }
 
     /// Updates navigation bar with appropriate buttons based on editing state.

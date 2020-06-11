@@ -38,9 +38,10 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.setEditing(editing, animated: animated)
     }
 
-    func updateCell(with fileData: FileAttachmentViewData, at index: Int) {
+    func updateCell(with attachment: Attachment, at index: Int) {
         if let cell = self.tableView.cellForRow(at: IndexPath(row: index, section: 0)) as? ItemCell {
-            cell.set(fileData: fileData)
+            let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            cell.set(contentType: attachment.contentType, progress: progress, error: error)
         }
     }
 
@@ -131,13 +132,13 @@ extension ItemsTableViewHandler: UITableViewDataSource {
             // Create and cache attachment if needed
             self.viewModel.process(action: .cacheAttachment(item: item, index: indexPath.row))
 
-            var fileData: FileAttachmentViewData?
-            if let attachment = self.viewModel.state.attachments[indexPath.row] {
+            let attachment = self.viewModel.state.attachments[indexPath.row]
+            let attachmentData: ItemCellAttachmentData? = attachment.flatMap({ attachment in
                 let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-                fileData = FileAttachmentViewData(contentType: attachment.contentType, progress: progress, error: error)
-            }
+                return (attachment.contentType, progress, error)
+            })
 
-            cell.set(item: ItemCellModel(item: item, fileData: fileData), tapAction: { [weak self] in
+            cell.set(item: ItemCellModel(item: item, attachment: attachmentData), tapAction: { [weak self] in
                 self?.viewModel.process(action: .openAttachment(indexPath.row))
             })
         }
