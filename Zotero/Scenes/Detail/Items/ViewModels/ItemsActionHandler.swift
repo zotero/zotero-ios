@@ -184,7 +184,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             if update.kind.isDownloaded {
                 var newAttachment = attachment
                 // If download finished, mark attachment file location as local
-                if attachment.contentType.location == .remote {
+                if attachment.contentType.fileLocation == .remote {
                     newAttachment = attachment.changed(location: .local)
                     state.attachments[index] = newAttachment
                 }

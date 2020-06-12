@@ -19,16 +19,16 @@ struct Attachment: Identifiable, Equatable {
         case file(file: File, filename: String, location: FileLocation?)
         case url(URL)
 
-        var file: File? {
+        var fileData: (File, String, FileLocation?)? {
             switch self {
-            case .file(let file, _, _):
-                return file
+            case .file(let file, let filename, let location):
+                return (file, filename, location)
             default:
                 return nil
             }
         }
 
-        var location: FileLocation? {
+        var fileLocation: FileLocation? {
             switch self {
             case .file(_, _, let location):
                 return location

@@ -11,18 +11,6 @@ import UIKit
 import RxSwift
 
 class FileAttachmentView: UIView {
-    enum Kind {
-        case pdf, document
-    }
-
-    enum State: Equatable {
-        case downloadable
-        case progress(CGFloat)
-        case downloaded
-        case failed
-        case missing
-    }
-
     private static let size: CGFloat = 28
     private let disposeBag: DisposeBag
 
@@ -47,6 +35,8 @@ class FileAttachmentView: UIView {
         }
     }
     var tapAction: (() -> Void)?
+
+    // MARK: - Lifecycle
 
     override init(frame: CGRect) {
         self.disposeBag = DisposeBag()
@@ -85,76 +75,42 @@ class FileAttachmentView: UIView {
         self.imageLayer.position = center
     }
 
+    // MARK: - Actions
+
     private func set(selected: Bool) {
         self.layer.opacity = selected ? 0.5 : 1
     }
 
     func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
-        switch contentType {
-        case .file(let file, _, let location):
-            let (state, type) = self.data(fromFile: file, location: location, progress: progress, error: error)
-            self.setup(state: state, type: type)
-        case .url: break
-        }
-    }
+        guard let (file, _, location) = contentType.fileData else { return }
 
-    private func data(fromFile file: File, location: Attachment.FileLocation?, progress: CGFloat?, error: Error?) -> (State, Kind) {
-        let type: FileAttachmentView.Kind
-        switch file.ext {
-        case "pdf":
-            type = .pdf
-        default:
-            type = .document
-        }
-
-        if error != nil {
-            return (.failed, type)
-        }
-        if let progress = progress {
-            return (.progress(progress), type)
-        }
-
-        let state: FileAttachmentView.State
-        if let location = location {
-            switch location {
-            case .local:
-                state = .downloaded
-            case .remote:
-                state = .downloadable
-            }
-        } else {
-            state = .missing
-        }
-
-        return (state, type)
-    }
-
-    private func setup(state: State, type: Kind) {
         var imageName: String
         var inProgress = false
         var borderVisible = true
         var strokeEnd: CGFloat = 0
 
-        switch type {
-        case .document:
-            imageName = "document-attachment"
-        case .pdf:
+        switch file.ext {
+        case "pdf":
             imageName = "pdf-attachment"
+        default:
+            imageName = "document-attachment"
         }
 
-        switch state {
-        case .downloadable:
-            imageName += "-download"
-        case .failed:
-            imageName += "-download-failed"
-        case .missing:
-            imageName += "-missing"
-            borderVisible = false
-        case .progress(let progress):
+        if let progress = progress {
             inProgress = true
             strokeEnd = progress
-        case .downloaded:
-            strokeEnd = 1
+        } else if error != nil {
+            imageName += "-download-failed"
+        } else if let location = location {
+            switch location {
+            case .local:
+                strokeEnd = 1
+            case .remote:
+                imageName += "-download"
+            }
+        } else {
+            imageName += "-missing"
+            borderVisible = false
         }
 
         self.stopLayer.isHidden = !inProgress
@@ -167,6 +123,8 @@ class FileAttachmentView: UIView {
             self.imageLayer.contents = image.cgImage
         }
     }
+
+    // MARK: - Setup
 
     private func setup() {
         self.translatesAutoresizingMaskIntoConstraints = false

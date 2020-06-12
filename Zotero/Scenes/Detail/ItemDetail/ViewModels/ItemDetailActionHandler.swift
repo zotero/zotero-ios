@@ -333,7 +333,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             if update.kind.isDownloaded {
                 // If download finished, mark attachment file location as local
-                if attachment.contentType.location == .remote {
+                if attachment.contentType.fileLocation == .remote {
                     attachment = attachment.changed(location: .local)
                     state.data.attachments[index] = attachment
                 }
