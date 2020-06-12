@@ -20,3 +20,7 @@ extension Notification {
         }
     }
 }
+
+extension Notification.Name {
+    static let attachmentFileDeleted = Notification.Name("org.zotero.AttachmentFileDeleted")
+}

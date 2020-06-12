@@ -72,13 +72,13 @@ class FileDownloader {
 
         let request = FileRequest(data: .internal(libraryId, self.userId, key), destination: file)
         self.apiClient.download(request: request)
+                      .observeOn(MainScheduler.instance)
                       .do(onNext: { [weak self] request in
                           self?.requests[download] = request
                       })
                       .flatMap { request in
                           return request.rx.progress()
                       }
-                      .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in
                           guard let `self` = self else { return }
                           let progress = CGFloat(progress.completed)

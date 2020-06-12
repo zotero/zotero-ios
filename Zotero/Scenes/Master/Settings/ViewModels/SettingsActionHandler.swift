@@ -126,6 +126,8 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.totalStorageData = DirectoryData(fileCount: 0, totalSize: 0)
                 state.showDeleteAllQuestion = false
             }
+
+            NotificationCenter.default.post(name: .attachmentFileDeleted, object: AttachmentFileDeletedNotification.all)
         } catch let error {
             DDLogError("SettingsActionHandler: can't remove download directory - \(error)")
             // TODO: - Show error to user
@@ -142,6 +144,8 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.totalStorageData = newTotal
                 state.showDeleteLibraryQuestion = nil
             }
+
+            NotificationCenter.default.post(name: .attachmentFileDeleted, object: AttachmentFileDeletedNotification.library(libraryId))
         } catch let error {
             DDLogError("SettingsActionHandler: can't remove library downloads - \(error)")
             // TODO: - Show error to user

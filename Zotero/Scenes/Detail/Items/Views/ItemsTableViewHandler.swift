@@ -21,10 +21,11 @@ class ItemsTableViewHandler: NSObject {
     private weak var fileDownloader: FileDownloader?
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController) {
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.dragDropController = dragDropController
+        self.fileDownloader = fileDownloader
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
 
@@ -38,10 +39,14 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.setEditing(editing, animated: animated)
     }
 
-    func updateCell(with attachment: Attachment, at index: Int) {
-        if let cell = self.tableView.cellForRow(at: IndexPath(row: index, section: 0)) as? ItemCell {
+    func updateCell(with attachment: Attachment?, at index: Int) {
+        guard let cell = self.tableView.cellForRow(at: IndexPath(row: index, section: 0)) as? ItemCell else { return }
+
+        if let attachment = attachment {
             let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
             cell.set(contentType: attachment.contentType, progress: progress, error: error)
+        } else {
+            cell.clearAttachment()
         }
     }
 

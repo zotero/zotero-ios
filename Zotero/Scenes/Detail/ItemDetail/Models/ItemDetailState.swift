@@ -19,6 +19,7 @@ struct ItemDetailState: ViewModelState {
         static let editing = Changes(rawValue: 1 << 0)
         static let type = Changes(rawValue: 1 << 1)
         static let downloadProgress = Changes(rawValue: 1 << 2)
+        static let attachmentFilesRemoved = Changes(rawValue: 1 << 3)
     }
 
     enum DetailType {
@@ -264,8 +265,8 @@ struct ItemDetailState: ViewModelState {
     var diff: Diff?
     var error: ItemDetailError?
     var metadataTitleMaxWidth: CGFloat
-    var openAttachment: (Attachment, IndexPath)?
-    var updateFileDataIndex: Int?
+    var openAttachment: (Attachment, Int)?
+    var updateAttachmentIndex: Int?
 
     init(type: DetailType, library: Library, userId: Int, data: Data, error: ItemDetailError? = nil) {
         self.changes = []
@@ -307,6 +308,6 @@ struct ItemDetailState: ViewModelState {
         self.error = nil
         self.diff = nil
         self.openAttachment = nil
-        self.updateFileDataIndex = nil
+        self.updateAttachmentIndex = nil
     }
 }

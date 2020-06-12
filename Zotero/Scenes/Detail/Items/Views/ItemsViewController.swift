@@ -63,14 +63,15 @@ class ItemsViewController: UIViewController {
 
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
-                                                      dragDropController: self.controllers.dragDropController)
+                                                      dragDropController: self.controllers.dragDropController,
+                                                      fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.setupToolbar()
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
         self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
-        self.setupFileDownloadObserver()
+        self.setupFileObservers()
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -157,12 +158,21 @@ class ItemsViewController: UIViewController {
             }
         }
 
+        if state.changes.contains(.attachmentsRemoved) {
+            self.tableViewHandler.reload()
+        }
+
         if let (attachment, index) = state.openAttachment {
             self.open(attachment: attachment, at: IndexPath(row: index, section: 0))
         }
 
-        if let index = state.updateFileDataIndex, let attachment = state.attachments[index] {
+        if let index = state.updateAttachmentIndex {
+            let attachment = state.attachments[index]
             self.tableViewHandler.updateCell(with: attachment, at: index)
+        }
+
+        if let index = state.reloadIndex {
+            self.tableViewHandler.reload(modifications: [index], insertions: [], deletions: [])
         }
 
         if let item = state.itemDuplication {
@@ -221,8 +231,20 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupFileDownloadObserver() {
+    private func setupFileObservers() {
+        NotificationCenter.default
+                          .rx
+                          .notification(.attachmentFileDeleted)
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let notification = notification.object as? AttachmentFileDeletedNotification {
+                                  self?.viewModel.process(action: .updateAttachments(notification))
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
+
         downloader.observable
             .observeOn(MainScheduler.instance)
             .subscribe(onNext: { [weak self] update in

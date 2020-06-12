@@ -128,6 +128,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .openAttachment(let index):
             self.openAttachment(at: index, in: viewModel)
+
+        case .updateAttachments(let notification):
+            self.updateDeletedAttachments(notification, in: viewModel)
         }
     }
 
@@ -147,6 +150,28 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     // MARK: - Attachments
+
+    private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            // Simply remove deleted attachments from cache, they will be re-cached on demand with proper settings
+            switch notification {
+            case .all:
+                state.attachments = [:]
+                state.changes = .attachmentsRemoved
+            case .library(let libraryId):
+                if libraryId == state.library.identifier {
+                    state.attachments = [:]
+                    state.changes = .attachmentsRemoved
+                }
+            case .individual(let key, let libraryId):
+                if let (index, _) = state.attachments.first(where: { $0.value.key == key && $0.value.libraryId == libraryId }) {
+                    state.attachments[index] = nil
+                    // This cell needs to be reloaded so that attachment is cached in cellForRow.
+                    state.reloadIndex = index
+                }
+            }
+        }
+    }
 
     private func openAttachment(at index: Int, in viewModel: ViewModel<ItemsActionHandler>) {
         guard let attachment = viewModel.state.attachments[index] else { return }
@@ -190,7 +215,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 }
                 state.openAttachment = (newAttachment, index)
             }
-            state.updateFileDataIndex = index
+            state.updateAttachmentIndex = index
         }
     }
 

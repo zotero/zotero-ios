@@ -21,6 +21,7 @@ struct ItemsState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 2)
         static let sortType = Changes(rawValue: 1 << 3)
         static let selectAll = Changes(rawValue: 1 << 4)
+        static let attachmentsRemoved = Changes(rawValue: 1 << 5)
     }
 
     let type: ItemFetchType
@@ -36,7 +37,10 @@ struct ItemsState: ViewModelState {
     var error: ItemsError?
     var itemDuplication: RItem?
     var openAttachment: (Attachment, Int)?
-    var updateFileDataIndex: Int?
+    // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
+    var updateAttachmentIndex: Int?
+    // Used to indicate which row should reload.
+    var reloadIndex: Int?
 
     init(type: ItemFetchType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
@@ -55,6 +59,7 @@ struct ItemsState: ViewModelState {
         self.changes = []
         self.itemDuplication = nil
         self.openAttachment = nil
-        self.updateFileDataIndex = nil
+        self.updateAttachmentIndex = nil
+        self.reloadIndex = nil
     }
 }

@@ -100,6 +100,17 @@ class ItemDetailTableViewHandler: NSObject {
         return formatter
     }
 
+    private func createContextMenu(for attachment: Attachment) -> UIMenu {
+        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .deleteAttachmentFile(attachment)) 
+        }
+        return UIMenu(title: "", children: [delete])
+    }
+
+    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
+        return (self.tableView, self.tableView.cellForRow(at: indexPath)?.frame)
+    }
+
     func updateAttachmentCell(with attachment: Attachment, at index: Int) {
         guard let section = self.sections.firstIndex(of: .attachments) else { return }
         let indexPath = IndexPath(row: index, section: section)
@@ -108,10 +119,6 @@ class ItemDetailTableViewHandler: NSObject {
             let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
             cell.setup(with: attachment, progress: progress, error: error)
         }
-    }
-
-    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
-        return (self.tableView, self.tableView.cellForRow(at: indexPath)?.frame)
     }
 
     /// Recalculates title width for current data.
@@ -566,6 +573,15 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             return false
         }
     }
+
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard self.sections[indexPath.section] == .attachments else { return nil }
+
+        let attachment = self.viewModel.state.data.attachments[indexPath.row]
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
+            return self?.createContextMenu(for: attachment)
+        }
+    }
 }
 
 extension ItemDetailTableViewHandler: UITableViewDelegate {
@@ -611,7 +627,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                     self.observer.on(.next(.openFilePicker))
                 }
             } else {
-                self.viewModel.process(action: .openAttachment(indexPath))
+                self.viewModel.process(action: .openAttachment(indexPath.row))
             }
         case .notes:
             if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.notes.count {

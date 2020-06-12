@@ -494,6 +494,7 @@
 		B374913E2488FC0E0042FF85 /* StorageSettingsEmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913D2488FC0E0042FF85 /* StorageSettingsEmptyView.swift */; };
 		B37491402488FC170042FF85 /* StorageSettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913F2488FC170042FF85 /* StorageSettingsListView.swift */; };
 		B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */; };
+		B377F29E2493587900022943 /* AttachmentFileDeletedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */; };
 		B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */; };
 		B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
@@ -953,6 +954,7 @@
 		B374913D2488FC0E0042FF85 /* StorageSettingsEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsEmptyView.swift; sourceTree = "<group>"; };
 		B374913F2488FC170042FF85 /* StorageSettingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsListView.swift; sourceTree = "<group>"; };
 		B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsRow.swift; sourceTree = "<group>"; };
+		B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileDeletedNotification.swift; sourceTree = "<group>"; };
 		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorParserDelegate.swift; sourceTree = "<group>"; };
 		B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
@@ -1343,6 +1345,7 @@
 				B3242CCC246ABBAF00D8748F /* AnnotationsConfig.swift */,
 				B305656123FC051E003304F2 /* AppGroup.swift */,
 				B305653A23FC051E003304F2 /* Attachment.swift */,
+				B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */,
 				B305653B23FC051E003304F2 /* Collection.swift */,
 				B32A3C77247FB62B009E2C5D /* ComponentDate.swift */,
 				B325DBAE24375D8D00EFF0F5 /* Conflict.swift */,
@@ -2019,8 +2022,8 @@
 			isa = PBXGroup;
 			children = (
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
-				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
+				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
 				B32B4F9224754E3600F78A05 /* SearchBar.swift */,
@@ -2494,6 +2497,7 @@
 				B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */,
 				B3593F41241A61C700760E20 /* CollectionsPickerView.swift in Sources */,
 				B3593F44241A61C700760E20 /* ItemsViewController.swift in Sources */,
+				B377F29E2493587900022943 /* AttachmentFileDeletedNotification.swift in Sources */,
 				B3593F3D241A61C700760E20 /* ItemsState.swift in Sources */,
 				B305667023FC051F003304F2 /* UserDefaults+Codable.swift in Sources */,
 				B30566AE23FC051F003304F2 /* SettingsResponse.swift in Sources */,

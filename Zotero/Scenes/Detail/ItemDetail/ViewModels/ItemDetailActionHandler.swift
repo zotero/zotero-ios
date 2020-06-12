@@ -62,8 +62,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.diff = .attachments(insertions: [], deletions: Array(offsets), reloads: [])
             }
 
-        case .openAttachment(let indexPath):
-            self.openAttachment(at: indexPath, in: viewModel)
+        case .openAttachment(let index):
+            self.openAttachment(at: index, in: viewModel)
 
         case .addCreator:
             self.addCreator(in: viewModel)
@@ -127,6 +127,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
+
+        case .updateAttachments(let notification):
+            self.updateDeletedAttachments(notification, in: viewModel)
+
+        case .deleteAttachmentFile(let attachment):
+            self.deleteFile(of: attachment)
         }
     }
 
@@ -325,6 +331,45 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Attachments
 
+    private func deleteFile(of attachment: Attachment) {
+        guard let (file, _, _) = attachment.contentType.fileData else { return }
+        do {
+            try self.fileStorage.remove(file)
+            NotificationCenter.default.post(name: .attachmentFileDeleted,
+                                            object: AttachmentFileDeletedNotification.individual(attachment.key, attachment.libraryId))
+        } catch let error {
+            DDLogError("ItemDetailActionHandler: can't remove attachment file - \(error)")
+            // TODO: - Show error to user
+        }
+    }
+
+    private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            // Set all affected attachments to remote. Since everything is cached here and the original `RItem` is not available, let's assume
+            // that once downloaded attachment is still available remotely. In the worst case, it was deleted in the meanwhile. The only fallback is
+            // that the user tries to download again without leaving the screen and will get an error message.
+            switch notification {
+            case .all:
+                for (index, attachment) in state.data.attachments.enumerated() {
+                    state.data.attachments[index] = attachment.changed(location: .remote)
+                }
+                state.changes = .attachmentFilesRemoved
+            case .library(let libraryId):
+                if libraryId == state.library.identifier {
+                    for (index, attachment) in state.data.attachments.enumerated() {
+                        state.data.attachments[index] = attachment.changed(location: .remote)
+                    }
+                    state.changes = .attachmentFilesRemoved
+                }
+            case .individual(let key, let libraryId):
+                if let index = state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) {
+                    state.data.attachments[index] = state.data.attachments[index].changed(location: .remote)
+                    state.updateAttachmentIndex = index
+                }
+            }
+        }
+    }
+
     private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
         guard viewModel.state.library.identifier == update.libraryId else { return }
         guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
@@ -337,9 +382,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     attachment = attachment.changed(location: .local)
                     state.data.attachments[index] = attachment
                 }
-                state.openAttachment = (attachment, IndexPath(row: index, section: 0))
+                state.openAttachment = (attachment, index)
             }
-            state.updateFileDataIndex = index
+            state.updateAttachmentIndex = index
         }
     }
 
@@ -385,12 +430,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func openAttachment(at indexPath: IndexPath, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        let attachment = viewModel.state.data.attachments[indexPath.row]
+    private func openAttachment(at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let attachment = viewModel.state.data.attachments[index]
         switch attachment.contentType {
         case .url:
             self.update(viewModel: viewModel) { state in
-                state.openAttachment = (attachment, indexPath)
+                state.openAttachment = (attachment, index)
             }
         case .file(let file, _, let location):
             guard let location = location else { return }
@@ -406,7 +451,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
             case .local:
                 self.update(viewModel: viewModel) { state in
-                    state.openAttachment = (attachment, indexPath)
+                    state.openAttachment = (attachment, index)
                 }
             }
         }

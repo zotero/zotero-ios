@@ -44,7 +44,7 @@ class ItemDetailViewController: UIViewController {
         }
         self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel,
                                                            fileDownloader: self.controllers.userControllers?.fileDownloader)
-        self.setupFileDownloadObserver()
+        self.setupFileObservers()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -111,15 +111,9 @@ class ItemDetailViewController: UIViewController {
         }
     }
 
-    private func open(attachment: Attachment, at indexPath: IndexPath) {
-        var newIndexPath = indexPath
-
-        // Workaround for unknown section after `FileDownloader` finishes download
-        if indexPath.section == 0 {
-            newIndexPath = IndexPath(row: indexPath.row, section: self.tableViewHandler.attachmentSection)
-        }
-
-        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: newIndexPath)
+    private func open(attachment: Attachment, at index: Int) {
+        let indexPath = IndexPath(row: index, section: self.tableViewHandler.attachmentSection)
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
         self.coordinatorDelegate?.show(attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
     }
 
@@ -159,11 +153,15 @@ class ItemDetailViewController: UIViewController {
             self.tableViewHandler.reload(section: .attachments)
         }
 
+        if state.changes.contains(.attachmentFilesRemoved) {
+            self.tableViewHandler.reload(section: .attachments)
+        }
+
         if let diff = state.diff {
             self.tableViewHandler.reload(with: diff)
         }
 
-        if let index = state.updateFileDataIndex {
+        if let index = state.updateAttachmentIndex {
             self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
         }
 
@@ -171,8 +169,8 @@ class ItemDetailViewController: UIViewController {
             self.show(error: error)
         }
 
-        if let (attachment, indexPath) = state.openAttachment {
-            self.open(attachment: attachment, at: indexPath)
+        if let (attachment, index) = state.openAttachment {
+            self.open(attachment: attachment, at: index)
         }
     }
 
@@ -236,8 +234,20 @@ class ItemDetailViewController: UIViewController {
 
     // MARK: - Setups
 
-    private func setupFileDownloadObserver() {
+    private func setupFileObservers() {
+        NotificationCenter.default
+                          .rx
+                          .notification(.attachmentFileDeleted)
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let notification = notification.object as? AttachmentFileDeletedNotification {
+                                  self?.viewModel.process(action: .updateAttachments(notification))
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
         guard let downloader = self.controllers.userControllers?.fileDownloader else { return }
+
         downloader.observable
             .observeOn(MainScheduler.instance)
             .subscribe(onNext: { [weak self] update in

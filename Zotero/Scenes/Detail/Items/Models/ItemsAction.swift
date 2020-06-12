@@ -31,6 +31,7 @@ enum ItemsAction {
     case trashSelectedItems
     case cacheAttachment(item: RItem, index: Int)
     case cacheAttachmentUpdates(results: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
+    case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(FileDownloader.Update)
     case openAttachment(Int)
 }

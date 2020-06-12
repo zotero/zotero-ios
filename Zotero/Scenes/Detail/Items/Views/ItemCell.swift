@@ -54,4 +54,8 @@ class ItemCell: UITableViewCell {
         self.fileView.set(contentType: contentType, progress: progress, error: error)
         self.fileView.isHidden = false
     }
+
+    func clearAttachment() {
+        self.fileView.isHidden = true
+    }
 }
