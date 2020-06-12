@@ -495,6 +495,11 @@
 		B37491402488FC170042FF85 /* StorageSettingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B374913F2488FC170042FF85 /* StorageSettingsListView.swift */; };
 		B37491422488FC3D0042FF85 /* StorageSettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */; };
 		B377F29E2493587900022943 /* AttachmentFileDeletedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */; };
+		B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40642491222000FAAF6D /* AttachmentCreator.swift */; };
+		B377F2A02493725E00022943 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
+		B377F2A2249373A400022943 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F2A1249373A400022943 /* Notifications.swift */; };
+		B377F2A3249373AB00022943 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F2A1249373A400022943 /* Notifications.swift */; };
+		B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */; };
 		B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4C8242CC8EF00B88A05 /* Translator.swift */; };
 		B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */; };
 		B378F4CF242D0CC200B88A05 /* TranslatorsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */; };
@@ -955,6 +960,8 @@
 		B374913F2488FC170042FF85 /* StorageSettingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsListView.swift; sourceTree = "<group>"; };
 		B37491412488FC3D0042FF85 /* StorageSettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsRow.swift; sourceTree = "<group>"; };
 		B377F29D2493587900022943 /* AttachmentFileDeletedNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileDeletedNotification.swift; sourceTree = "<group>"; };
+		B377F2A1249373A400022943 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileCleanupController.swift; sourceTree = "<group>"; };
 		B378F4C8242CC8EF00B88A05 /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorParserDelegate.swift; sourceTree = "<group>"; };
 		B378F4CE242D0CC200B88A05 /* TranslatorsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsRequest.swift; sourceTree = "<group>"; };
@@ -1108,6 +1115,7 @@
 				B305649F23FC051E003304F2 /* Sync */,
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
+				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
@@ -1366,6 +1374,7 @@
 				B305656023FC051E003304F2 /* LibraryObject.swift */,
 				B3E44641248FBE9B007FE8AB /* LinkType.swift */,
 				B39D336723FFD96C00EF2ACB /* Note.swift */,
+				B377F2A1249373A400022943 /* Notifications.swift */,
 				B305654423FC051E003304F2 /* Predicates.swift */,
 				B305656223FC051E003304F2 /* SortType.swift */,
 				B305653D23FC051E003304F2 /* SyncableObject.swift */,
@@ -2728,6 +2737,7 @@
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,
 				B3593F53241A61C700760E20 /* CollectionsAction.swift in Sources */,
 				B3593F1C241A61C700760E20 /* ItemDetailState.swift in Sources */,
+				B377F2A2249373A400022943 /* Notifications.swift in Sources */,
 				B305661723FC051E003304F2 /* AuthorizeUploadSyncAction.swift in Sources */,
 				B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */,
 				B3593F5D241A61C700760E20 /* CollectionTreeBuilder.swift in Sources */,
@@ -2752,6 +2762,7 @@
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
+				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
 				B305661823FC051E003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */,
 				B3DCDF102409127A0039ED0D /* CreatorTypePickerViewModelCreator.swift in Sources */,
@@ -2866,6 +2877,7 @@
 				B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */,
 				B305674A23FC09AF003304F2 /* RCollection.swift in Sources */,
 				B305674B23FC09AF003304F2 /* RCreator.swift in Sources */,
+				B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */,
 				B305674C23FC09AF003304F2 /* RItem.swift in Sources */,
 				B305674D23FC09AF003304F2 /* RSearch.swift in Sources */,
 				B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */,
@@ -3015,11 +3027,13 @@
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */,
 				B305672823FC090F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
+				B377F2A3249373AB00022943 /* Notifications.swift in Sources */,
 				B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
 				B305677823FC0BF2003304F2 /* UserDefaults+Codable.swift in Sources */,
 				B30566DF23FC0808003304F2 /* BackgroundUploadProcessor.swift in Sources */,
 				B30566FC23FC0862003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
+				B377F2A02493725E00022943 /* UrlDetector.swift in Sources */,
 				B305670A23FC08B5003304F2 /* ReadCollectionsDbRequest.swift in Sources */,
 				B305672A23FC0914003304F2 /* LoadUploadDataSyncAction.swift in Sources */,
 			);

@@ -49,6 +49,10 @@ extension RItem: Deletable {
         if wasMainAttachment {
             parent?.updateMainAttachment()
         }
+
+        if self.rawType == ItemTypes.attachment, let file = AttachmentCreator.file(for: self) {
+            NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+        }
     }
 }
 

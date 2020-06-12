@@ -26,6 +26,7 @@ class Controllers {
     let annotationPreviewController: AnnotationPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
+    let fileCleanupController: AttachmentFileCleanupController
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -50,6 +51,7 @@ class Controllers {
         let translatorsController = TranslatorsController(apiClient: apiClient,
                                                           indexStorage: RealmDbStorage(config: TranslatorDatabase.configuration),
                                                           fileStorage: fileStorage)
+        let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage)
 
         self.sessionController = sessionController
         self.apiClient = apiClient
@@ -63,6 +65,7 @@ class Controllers {
         self.annotationPreviewController = AnnotationPreviewController(previewSize: AnnotationsConfig.previewSize, fileStorage: fileStorage)
         self.urlDetector = UrlDetector()
         self.dateParser = DateParser()
+        self.fileCleanupController = fileCleanupController
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)

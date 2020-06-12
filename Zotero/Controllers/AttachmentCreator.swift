@@ -33,6 +33,19 @@ struct AttachmentCreator {
         return urlAttachmentType(for: item, urlDetector: urlDetector)
     }
 
+    static func file(for item: RItem) -> File? {
+        guard let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value, !contentType.isEmpty else { return nil }
+        guard let ext = contentType.extensionFromMimeType?.lowercased() else {
+            DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
+            return nil
+        }
+        guard let libraryId = item.libraryObject?.identifier else {
+            DDLogError("Attachment: missing library for item (\(item.key))")
+            return nil
+        }
+        return Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
+    }
+
     private static func fileAttachmentType(for item: RItem, contentType: String, fileStorage: FileStorage) -> Attachment.ContentType? {
         guard let ext = contentType.extensionFromMimeType?.lowercased() else {
             DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")

@@ -56,8 +56,7 @@ struct Attachment: Identifiable, Equatable {
 
     var id: String { return self.key }
 
-    init(key: String, title: String, type: ContentType,
-         libraryId: LibraryIdentifier) {
+    init(key: String, title: String, type: ContentType, libraryId: LibraryIdentifier) {
         self.key = key
         self.title = title
         self.contentType = type
