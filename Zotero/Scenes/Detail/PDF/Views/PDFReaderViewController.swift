@@ -17,6 +17,7 @@ import RxSwift
 class PDFReaderViewController: UIViewController {
     private static let colorPreviewSize = CGSize(width: 15, height: 15)
     private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let pageController: PdfPageController
     private let disposeBag: DisposeBag
 
     private weak var annotationsController: AnnotationsViewController!
@@ -53,8 +54,9 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, pageController: PdfPageController) {
         self.viewModel = viewModel
+        self.pageController = pageController
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -332,6 +334,7 @@ class PDFReaderViewController: UIViewController {
         controller.delegate = self
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
+        controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
 
         self.addChild(controller)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
@@ -411,6 +414,9 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         DispatchQueue.main.async {
             self.updateSelection(on: pageView, selectedAnnotation: self.viewModel.state.selectedAnnotation, pageIndex: pageIndex)
         }
+        
+        // Save current page
+        self.pageController.store(page: pageIndex, for: self.viewModel.state.key)
     }
 
     func pdfViewController(_ pdfController: PDFViewController,

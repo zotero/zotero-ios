@@ -87,6 +87,10 @@ extension AppDelegate: UIApplicationDelegate {
     func applicationWillEnterForeground(_ application: UIApplication) {
         self.controllers.willEnterForeground()
     }
+    
+    func applicationWillTerminate(_ application: UIApplication) {
+        self.controllers.willTerminate()
+    }
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         let controllers = self.controllers ?? Controllers()

@@ -27,6 +27,7 @@ class Controllers {
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let fileCleanupController: AttachmentFileCleanupController
+    let pageController: PdfPageController
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -66,6 +67,7 @@ class Controllers {
         self.urlDetector = UrlDetector()
         self.dateParser = DateParser()
         self.fileCleanupController = fileCleanupController
+        self.pageController = PdfPageController()
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)
@@ -88,9 +90,14 @@ class Controllers {
     }
 
     func didEnterBackground() {
+        self.pageController.save()
         self.userControllers?.itemLocaleController.storeLocale()
         self.userControllers?.syncScheduler.cancelSync()
         self.userControllers?.stopObserving()
+    }
+    
+    func willTerminate() {
+        self.pageController.save()
     }
 
     private func update(sessionData: SessionData?) {
