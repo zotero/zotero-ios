@@ -14,6 +14,7 @@ target 'Zotero' do
     pod 'CocoaLumberjack/Swift', '3.6.0'
     pod 'ZIPFoundation', '0.9.11'
     pod 'SwiftGen', '6.1.0'
+    pod 'SwiftyGif', '5.3.0'
     #pspdfkit
 
     target 'ZoteroTests' do

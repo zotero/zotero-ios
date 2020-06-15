@@ -35,30 +35,23 @@ struct AttachmentCreator {
 
     static func file(for item: RItem) -> File? {
         guard let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value, !contentType.isEmpty else { return nil }
-        guard let ext = contentType.extensionFromMimeType?.lowercased() else {
-            DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
-            return nil
-        }
         guard let libraryId = item.libraryObject?.identifier else {
             DDLogError("Attachment: missing library for item (\(item.key))")
             return nil
         }
-        return Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
+        return Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
     }
 
     private static func fileAttachmentType(for item: RItem, contentType: String, fileStorage: FileStorage) -> Attachment.ContentType? {
-        guard let ext = contentType.extensionFromMimeType?.lowercased() else {
-            DDLogError("Attachment: mimeType/extension unknown (\(contentType)) for item (\(item.key))")
-            return nil
-        }
         guard let libraryId = item.libraryObject?.identifier else {
             DDLogError("Attachment: missing library for item (\(item.key))")
             return nil
         }
 
-        let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + ext)
-        let file = Files.attachmentFile(in: libraryId, key: item.key, ext: ext)
+        let file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+        let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + file.ext)
         let location: Attachment.FileLocation?
+
         if fileStorage.has(file) {
             location = .local
         } else if item.links.filter(.linkType(.enclosure)).first != nil {

@@ -12,11 +12,11 @@ struct AttachmentUpload: Equatable {
     let libraryId: LibraryIdentifier
     let key: String
     let filename: String
-    let `extension`: String
+    let contentType: String
     let md5: String
     let mtime: Int
 
     var file: File {
-        return Files.attachmentFile(in: self.libraryId, key: self.key, ext: self.extension)
+        return Files.attachmentFile(in: self.libraryId, key: self.key, contentType: self.contentType)
     }
 }

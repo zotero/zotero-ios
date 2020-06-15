@@ -8,19 +8,12 @@
 
 import Foundation
 import CoreServices
+
 import CocoaLumberjack
 
 private let stripCharacters = CharacterSet(charactersIn: "\t")
 
 extension String {
-    var extensionFromMimeType: String? {
-        guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, self as CFString, nil),
-              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
-            return nil
-        }
-        return ext.takeRetainedValue() as String
-    }
-
     /// Creates preview/title for a Note. Strips HTML characters (by using NSAttributedString). Removes any tabs for readability.
     /// Returns only first line from whole string and limits it to 200 characters.
     var notePreview: String? {

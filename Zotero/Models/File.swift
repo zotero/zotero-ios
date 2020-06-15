@@ -23,16 +23,7 @@ protocol File {
 
 extension File {
     var isDirectory: Bool {
-        return self.name == "" && self.ext == ""
-    }
-
-    var mimeType: String {
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, self.ext as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
-        }
-        return "application/octet-stream"
+        return self.name.isEmpty && self.ext.isEmpty && self.mimeType.isEmpty
     }
 
     func createUrl() -> URL {
@@ -52,8 +43,62 @@ extension File {
 }
 
 struct FileData: File {
+    enum ContentType {
+        case contentType(String)
+        case ext(String)
+        case directory
+    }
+
     let rootPath: String
     let relativeComponents: [String]
     let name: String
     let ext: String
+    let mimeType: String
+
+    init(rootPath: String, relativeComponents: [String], name: String, type: ContentType) {
+        self.rootPath = rootPath
+        self.relativeComponents = relativeComponents
+        self.name = name
+
+        switch type {
+        case .contentType(let contentType):
+            self.mimeType = contentType
+            self.ext = FileData.ext(from: contentType)
+        case .ext(let ext):
+            self.mimeType = FileData.mimeType(from: ext)
+            self.ext = ext
+        case .directory:
+            self.mimeType = ""
+            self.ext = ""
+        }
+    }
+
+    init(rootPath: String, relativeComponents: [String], name: String, ext: String) {
+        self.init(rootPath: rootPath, relativeComponents: relativeComponents, name: name, type: .ext(ext))
+    }
+
+    init(rootPath: String, relativeComponents: [String], name: String, contentType: String) {
+        self.init(rootPath: rootPath, relativeComponents: relativeComponents, name: name, type: .contentType(contentType))
+    }
+
+    static func directory(rootPath: String, relativeComponents: [String]) -> FileData {
+        return FileData(rootPath: rootPath, relativeComponents: relativeComponents, name: "", type: .directory)
+    }
+
+    private static func mimeType(from ext: String) -> String {
+        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, ext as NSString, nil)?.takeRetainedValue() {
+            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
+                return mimetype as String
+            }
+        }
+        return "application/octet-stream"
+    }
+
+    private static func ext(from mimeType: String) -> String {
+        guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType as CFString, nil),
+              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
+            return ""
+        }
+        return ext.takeRetainedValue() as String
+    }
 }

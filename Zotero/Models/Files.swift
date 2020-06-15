@@ -26,11 +26,15 @@ struct Files {
     // MARK: - Attachments
 
     static var downloadDirectory: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads"], name: "", ext: "")
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads"])
     }
 
     static func libraryDirectory(for libraryId: LibraryIdentifier) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: "", ext: "")
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName])
+    }
+
+    static func attachmentFile(in libraryId: LibraryIdentifier, key: String, contentType: String) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName], name: key, contentType: contentType)
     }
 
     static func attachmentFile(in libraryId: LibraryIdentifier, key: String, ext: String) -> File {

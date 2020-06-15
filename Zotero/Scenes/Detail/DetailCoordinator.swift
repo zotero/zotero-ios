@@ -6,6 +6,7 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import AVKit
 import MobileCoreServices
 import UIKit
 import SafariServices
@@ -13,6 +14,7 @@ import SwiftUI
 
 import CocoaLumberjack
 import RxSwift
+import SwiftyGif
 
 protocol DetailItemsCoordinatorDelegate: class {
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
@@ -97,7 +99,52 @@ class DetailCoordinator: Coordinator {
         }
     }
 
-    fileprivate func showPdf(at url: URL, key: String) {
+    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
+        switch attachment.contentType {
+        case .url(let url):
+            self.showWeb(url: url)
+
+        case .file(let file, let filename, let location):
+            guard let location = location, location == .local else { return }
+
+            let url = file.createUrl()
+
+            if file.mimeType == "application/pdf" {
+                self.showPdf(at: url, key: attachment.key)
+                return
+            } else if AVURLAsset(url: url).isPlayable {
+                self.showVideo(for: url)
+                return
+            } else if file.mimeType.contains("image") {
+                let image = (file.mimeType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
+                                                             UIImage(contentsOfFile: url.path)
+                if let image = image {
+                    self.show(image: image, title: filename)
+                    return
+                }
+            }
+
+            self.showUnknownAttachment(for: file, filename: filename, attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+        }
+    }
+
+    private func show(image: UIImage, title: String) {
+        let controller = ImagePreviewViewController(image: image, title: title)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .fullScreen
+        self.navigationController.present(navigationController, animated: true, completion: nil)
+    }
+
+    private func showVideo(for url: URL) {
+        let player = AVPlayer(url: url)
+        let controller = AVPlayerViewController()
+        controller.player = player
+        self.navigationController.present(controller, animated: true) {
+            player.play()
+        }
+    }
+
+    private func showPdf(at url: URL, key: String) {
         #if PDFENABLED
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key),
                                                                       handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)))
@@ -107,7 +154,18 @@ class DetailCoordinator: Coordinator {
         #endif
     }
 
-    fileprivate func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?) {
+    private func showUnknownAttachment(for file: File, filename: String, attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
+        let linkFile = Files.link(filename: filename, key: attachment.key)
+        do {
+            try self.controllers.fileStorage.link(file: file, to: linkFile)
+            self.showUnknownAttachment(at: linkFile.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
+        } catch let error {
+            DDLogError("DetailCoordinator: can't link file - \(error)")
+            self.showUnknownAttachment(at: file.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
+        }
+    }
+
+    private func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?) {
         let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
         controller.popoverPresentationController?.sourceView = sourceView
@@ -124,29 +182,6 @@ class DetailCoordinator: Coordinator {
 }
 
 extension DetailCoordinator: DetailItemsCoordinatorDelegate {
-    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
-        switch attachment.contentType {
-        case .url(let url):
-            self.showWeb(url: url)
-        case .file(let file, let filename, let location):
-            guard let location = location, location == .local else { return }
-
-            switch file.ext {
-            case "pdf":
-                self.showPdf(at: file.createUrl(), key: attachment.key)
-            default:
-                let linkFile = Files.link(filename: filename, key: attachment.key)
-                do {
-                    try self.controllers.fileStorage.link(file: file, to: linkFile)
-                    self.showUnknownAttachment(at: linkFile.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
-                } catch let error {
-                    DDLogError("DetailCoordinator: can't link file - \(error)")
-                    self.showUnknownAttachment(at: file.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
-                }
-            }
-        }
-    }
-
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.barButtonItem = button

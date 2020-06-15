@@ -1429,7 +1429,7 @@ fileprivate extension SyncController.Action {
         case .submitWriteBatch(let batch):
             return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
         case .uploadAttachment(let upload):
-            return "Upload \(upload.filename).\(upload.extension) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
+            return "Upload \(upload.filename) (\(upload.contentType)) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,

@@ -377,6 +377,7 @@
 		B337A5AC244F228500AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
 		B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B337A5AA244F1DEB00AFD13D /* Localizable.strings */; };
 		B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
+		B33979D12493ACA800A923C3 /* ImagePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */; };
 		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
@@ -547,6 +548,7 @@
 		B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */; };
 		B3C6AB2F248E42790009AC96 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */; };
 		B3C6AB30248E6FFA0009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
+		B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */; };
 		B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB120248A439A00C4228F /* Notification+Extensions.swift */; };
 		B3CBB123248A44D100C4228F /* KeyboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB122248A44D100C4228F /* KeyboardData.swift */; };
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
@@ -854,6 +856,7 @@
 		B33791D623BF7B2900919210 /* CreateItemWithAttachmentDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateItemWithAttachmentDbRequest.swift; sourceTree = "<group>"; };
 		B337A5A9244F1DEB00AFD13D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B337A5AB244F228500AFD13D /* Localizable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
+		B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewViewController.swift; sourceTree = "<group>"; };
 		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
@@ -1000,6 +1003,7 @@
 		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
 		B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiOperation.swift; sourceTree = "<group>"; };
 		B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsynchronousOperation.swift; sourceTree = "<group>"; };
+		B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ImagePreviewViewController.xib; sourceTree = "<group>"; };
 		B3CBB120248A439A00C4228F /* Notification+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extensions.swift"; sourceTree = "<group>"; };
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
@@ -2033,6 +2037,8 @@
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
+				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
+				B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
 				B32B4F9224754E3600F78A05 /* SearchBar.swift */,
@@ -2251,6 +2257,7 @@
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
+				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2512,6 +2519,7 @@
 				B30566AE23FC051F003304F2 /* SettingsResponse.swift in Sources */,
 				B3593F45241A61C700760E20 /* ItemSortTypePickerView.swift in Sources */,
 				B305661523FC051E003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
+				B33979D12493ACA800A923C3 /* ImagePreviewViewController.swift in Sources */,
 				B3886C47249234D600B7D67B /* FileDownloader.swift in Sources */,
 				B3593F2B241A61C700760E20 /* TagPickerView.swift in Sources */,
 				B305667E23FC051F003304F2 /* Array+Utils.swift in Sources */,
