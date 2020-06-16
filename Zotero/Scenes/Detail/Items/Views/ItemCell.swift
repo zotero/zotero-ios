@@ -21,6 +21,7 @@ class ItemCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.fileView.tapAction = nil
+        self.key = ""
     }
 
     override func awakeFromNib() {
