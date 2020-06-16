@@ -162,17 +162,13 @@ class ItemsViewController: UIViewController {
             self.tableViewHandler.reload()
         }
 
-        if let (attachment, index) = state.openAttachment {
-            self.open(attachment: attachment, at: IndexPath(row: index, section: 0))
+        if let (attachment, parentKey) = state.openAttachment {
+            self.open(attachment: attachment, parentKey: parentKey)
         }
 
-        if let index = state.updateAttachmentIndex {
-            let attachment = state.attachments[index]
-            self.tableViewHandler.updateCell(with: attachment, at: index)
-        }
-
-        if let index = state.reloadIndex {
-            self.tableViewHandler.reload(modifications: [index], insertions: [], deletions: [])
+        if let key = state.updateItemKey {
+            let attachment = state.attachments[key]
+            self.tableViewHandler.updateCell(with: attachment, parentKey: key)
         }
 
         if let item = state.itemDuplication {
@@ -183,8 +179,8 @@ class ItemsViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func open(attachment: Attachment, at indexPath: IndexPath) {
-        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
+    private func open(attachment: Attachment, parentKey: String) {
+        let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: parentKey)
         self.coordinatorDelegate?.show(attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
     }
 
@@ -207,8 +203,7 @@ class ItemsViewController: UIViewController {
             case .initial:
                 self?.tableViewHandler.reload()
             case .update(let results, let deletions, let insertions, let modifications):
-                self?.viewModel.process(action: .cacheAttachmentUpdates(results: results, deletions: deletions,
-                                                                        insertions: insertions, modifications: modifications))
+                self?.viewModel.process(action: .cacheAttachmentUpdates(results: results, updates: (insertions + modifications)))
                 self?.tableViewHandler.reload(modifications: modifications, insertions: insertions, deletions: deletions)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")

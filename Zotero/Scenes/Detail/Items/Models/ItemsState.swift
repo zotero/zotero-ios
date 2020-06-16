@@ -29,18 +29,18 @@ struct ItemsState: ViewModelState {
 
     var sortType: ItemsSortType
     var results: Results<RItem>?
-    var attachments: [Int: Attachment]
+    // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item,
+    // or item if it's a standalone attachment.
+    var attachments: [String: Attachment]
     var unfilteredResults: Results<RItem>?
     var selectedItems: Set<String>
     var isEditing: Bool
     var changes: Changes
     var error: ItemsError?
     var itemDuplication: RItem?
-    var openAttachment: (Attachment, Int)?
+    var openAttachment: (Attachment, String)?
     // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
-    var updateAttachmentIndex: Int?
-    // Used to indicate which row should reload.
-    var reloadIndex: Int?
+    var updateItemKey: String?
 
     init(type: ItemFetchType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
@@ -59,7 +59,6 @@ struct ItemsState: ViewModelState {
         self.changes = []
         self.itemDuplication = nil
         self.openAttachment = nil
-        self.updateAttachmentIndex = nil
-        self.reloadIndex = nil
+        self.updateItemKey = nil
     }
 }

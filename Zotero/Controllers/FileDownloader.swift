@@ -29,11 +29,26 @@ class FileDownloader {
         }
 
         let key: String
+        let parentKey: String?
         let libraryId: LibraryIdentifier
         let kind: Kind
+        
+        init(key: String, parentKey: String?, libraryId: LibraryIdentifier, kind: Kind) {
+            self.key = key
+            self.parentKey = parentKey
+            self.libraryId = libraryId
+            self.kind = kind
+        }
+        
+        fileprivate init(download: Download, parentKey: String?, kind: Kind) {
+            self.key = download.key
+            self.parentKey = parentKey
+            self.libraryId = download.libraryId
+            self.kind = kind
+        }
     }
 
-    private struct Download: Hashable {
+    fileprivate struct Download: Hashable {
         let key: String
         let libraryId: LibraryIdentifier
     }
@@ -59,7 +74,7 @@ class FileDownloader {
         self.disposeBag = DisposeBag()
     }
 
-    func download(file: File, key: String, libraryId: LibraryIdentifier) {
+    func download(file: File, key: String, parentKey: String?, libraryId: LibraryIdentifier) {
         let download = Download(key: key, libraryId: libraryId)
 
         guard self.requests[download] == nil else { return }
@@ -68,7 +83,7 @@ class FileDownloader {
         self.progresses[download] = 0
 
         // Send first update to immediately reflect new state
-        self.observable.on(.next(Update(key: download.key, libraryId: download.libraryId, kind: .progress(0))))
+        self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(0))))
 
         let request = FileRequest(data: .internal(libraryId, self.userId, key), destination: file)
         self.apiClient.download(request: request)
@@ -83,11 +98,11 @@ class FileDownloader {
                           guard let `self` = self else { return }
                           let progress = CGFloat(progress.completed)
                           self.progresses[download] = progress
-                          self.observable.on(.next(Update(key: download.key, libraryId: download.libraryId, kind: .progress(progress))))
+                          self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: .progress(progress))))
                       }, onError: { [weak self] error in
-                          self?.didFinish(download: download, error: error)
+                          self?.didFinish(download: download, parentKey: parentKey, error: error)
                       }, onCompleted: { [weak self] in
-                          self?.didFinish(download: download, error: self?.checkFileResponse(for: file))
+                          self?.didFinish(download: download, parentKey: parentKey, error: self?.checkFileResponse(for: file))
                       })
                       .disposed(by: self.disposeBag)
     }
@@ -103,7 +118,7 @@ class FileDownloader {
         return nil
     }
 
-    private func didFinish(download: Download, error: Error?) {
+    private func didFinish(download: Download, parentKey: String?, error: Error?) {
         let isCancelError = error.flatMap({ ($0 as NSError).code == NSURLErrorCancelled }) == true
 
         self.requests[download] = nil
@@ -121,7 +136,7 @@ class FileDownloader {
             updateKind = .downloaded
         }
 
-        self.observable.on(.next(Update(key: download.key, libraryId: download.libraryId, kind: updateKind)))
+        self.observable.on(.next(Update(download: download, parentKey: parentKey, kind: updateKind)))
     }
 
     func cancel(key: String, libraryId: LibraryIdentifier) {

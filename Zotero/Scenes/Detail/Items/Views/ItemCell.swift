@@ -15,6 +15,8 @@ class ItemCell: UITableViewCell {
     @IBOutlet private weak var tagCircles: TagCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
     @IBOutlet private weak var fileView: FileAttachmentView!
+    
+    var key: String = ""
 
     override func prepareForReuse() {
         super.prepareForReuse()
@@ -29,6 +31,7 @@ class ItemCell: UITableViewCell {
     }
 
     func set(item: ItemCellModel, tapAction: @escaping () -> Void) {
+        self.key = item.key
         self.fileView.tapAction = tapAction
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
