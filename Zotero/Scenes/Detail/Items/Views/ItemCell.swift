@@ -87,7 +87,7 @@ class ItemCell: UITableViewCell {
         }
 
         if let (contentType, progress, error) = item.attachment {
-            self.fileView.set(contentType: contentType, progress: progress, error: error)
+            self.fileView.set(contentType: contentType, progress: progress, error: error, style: .borderAlwaysVisible)
             self.fileView.isHidden = false
         } else {
             self.fileView.isHidden = true
@@ -95,7 +95,7 @@ class ItemCell: UITableViewCell {
     }
 
     func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
-        self.fileView.set(contentType: contentType, progress: progress, error: error)
+        self.fileView.set(contentType: contentType, progress: progress, error: error, style: .borderAlwaysVisible)
         self.fileView.isHidden = false
     }
 

@@ -450,7 +450,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
                     return
                 }
-                self.fileDownloader.download(file: file, key: attachment.key, parentKey: nil, libraryId: attachment.libraryId)
+                self.fileDownloader.download(file: file,
+                                             key: attachment.key,
+                                             parentKey: viewModel.state.type.previewKey,
+                                             libraryId: attachment.libraryId)
 
             case .local:
                 self.update(viewModel: viewModel) { state in

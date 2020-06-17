@@ -11,6 +11,11 @@ import UIKit
 import RxSwift
 
 class FileAttachmentView: UIView {
+    enum Style {
+        case borderAlwaysVisible
+        case borderVisibleInProgress
+    }
+    
     private static let size: CGFloat = 28
     private static let badgeBorderWidth: CGFloat = 1.5
     private static let badgeSize: CGFloat = 11
@@ -90,9 +95,8 @@ class FileAttachmentView: UIView {
     }
 
     // MARK: - Actions
-    
+
     func set(backgroundColor: UIColor?) {
-        self.backgroundColor = backgroundColor
         self.badgeBorder?.borderColor = backgroundColor?.cgColor
     }
 
@@ -103,33 +107,29 @@ class FileAttachmentView: UIView {
         self.stopLayer.opacity = opacity
     }
 
-    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
-        guard let (file, _, location) = contentType.fileData else { return }
+    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) {
+        guard let data = self.layerData(contentType: contentType, progress: progress, error: error, style: style) else { return }
+        let progressVisible = progress != nil
+
+        self.circleLayer.isHidden = !data.borderVisible
+        self.progressLayer.isHidden = !progressVisible
+        self.progressLayer.strokeEnd = progress ?? 0
+
+        self.stopLayer.isHidden = !progressVisible
+        self.imageLayer.contents = data.imageName.flatMap({ UIImage(named: $0) })?.cgImage
+        self.imageLayer.isHidden = progressVisible
+
+        self.badgeLayer.contents = data.badgeName.flatMap({ UIImage(named: $0) })?.cgImage
+        self.badgeLayer.isHidden = data.badgeName == nil
+        self.badgeBorder.isHidden = data.badgeName == nil
+    }
+
+    private func layerData(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) -> (imageName: String?, badgeName: String?, borderVisible: Bool)? {
+        guard let (file, _, location) = contentType.fileData else { return nil }
 
         var imageName: String?
-        var badgeName: String?
-        var inProgress = false
-        var borderVisible = true
-        var strokeEnd: CGFloat = 0
-        
-        if let progress = progress {
-            inProgress = true
-            strokeEnd = progress
-        } else if error != nil {
-            badgeName = "attachment-failed"
-        } else if let location = location {
-            switch location {
-            case .local:
-                strokeEnd = 1
-            case .remote:
-                badgeName = "attachment-download"
-            }
-        } else {
-            badgeName = "attachment-missing"
-            borderVisible = false
-        }
 
-        if !inProgress {
+        if progress == nil {
             switch file.ext {
             case "pdf":
                 imageName = "attachment-pdf"
@@ -138,19 +138,27 @@ class FileAttachmentView: UIView {
             }
         }
 
-        self.stopLayer.isHidden = !inProgress
-        self.imageLayer.isHidden = inProgress
-        self.badgeLayer.isHidden = inProgress
-        self.circleLayer.isHidden = !borderVisible
-        self.progressLayer.isHidden = !borderVisible
-        self.progressLayer.strokeEnd = strokeEnd
-        self.imageLayer.contents = imageName.flatMap({ UIImage(named: $0) })?.cgImage
-        self.badgeLayer.contents = badgeName.flatMap({ UIImage(named: $0) })?.cgImage
+        if progress != nil {
+            return (imageName, nil, true)
+        }
+        if error != nil {
+            return (imageName, "attachment-failed", (style == .borderAlwaysVisible))
+        }
+        if let location = location {
+            switch location {
+            case .local:
+                return (imageName, nil, (style == .borderAlwaysVisible))
+            case .remote:
+                return (imageName, "attachment-download", (style == .borderAlwaysVisible))
+            }
+        }
+        return (imageName, "attachment-missing", false)
     }
 
     // MARK: - Setup
 
     private func setup() {
+        self.backgroundColor = .clear
         self.translatesAutoresizingMaskIntoConstraints = false
 
         let circleLayer = self.createCircleLayer()
