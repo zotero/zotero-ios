@@ -28,7 +28,47 @@ class ItemCell: UITableViewCell {
         super.awakeFromNib()
 
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.fileView.contentInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 15)
+        self.fileView.contentInsets = UIEdgeInsets(top: 7, left: 8, bottom: 7, right: 15)
+        
+        let highlightView = UIView()
+        highlightView.backgroundColor = .cellHighlighted
+        self.selectedBackgroundView = highlightView
+
+        let selectionView = UIView()
+        selectionView.backgroundColor = .cellSelected
+        self.multipleSelectionBackgroundView = selectionView
+    }
+    
+    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
+        super.setHighlighted(highlighted, animated: animated)
+        
+        if highlighted {
+            self.fileView.set(backgroundColor: (self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
+                                                                 self.selectedBackgroundView?.backgroundColor))
+        } else {
+            self.fileView.set(backgroundColor: self.backgroundColor)
+        }
+    }
+    
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+
+        if selected {
+            self.fileView.set(backgroundColor: (self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
+                                                                 self.selectedBackgroundView?.backgroundColor))
+        } else {
+            self.fileView.set(backgroundColor: self.backgroundColor)
+        }
+    }
+    
+    private func string(from color: UIColor) -> String {
+        var r:CGFloat = 0
+        var g:CGFloat = 0
+        var b:CGFloat = 0
+        var a:CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        let rgb:Int = (Int)(r*255)<<16 | (Int)(g*255)<<8 | (Int)(b*255)<<0
+        return String(format:"#%06x; %.2f", rgb, a)
     }
 
     func set(item: ItemCellModel, tapAction: @escaping () -> Void) {
