@@ -20,6 +20,8 @@ class ItemsTableViewHandler: NSObject {
 
     private weak var fileDownloader: FileDownloader?
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
+    private var canReload: Bool
+    private var hasPendingReloads: Bool
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
         self.tableView = tableView
@@ -28,11 +30,26 @@ class ItemsTableViewHandler: NSObject {
         self.fileDownloader = fileDownloader
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
+        self.canReload = true
+        self.hasPendingReloads = false
 
         super.init()
 
         self.setupTableView()
         self.setupKeyboardObserving()
+    }
+    
+    func pauseReloading() {
+        self.canReload = false
+    }
+    
+    func resumeReloading() {
+        self.canReload = true
+        
+        if self.hasPendingReloads {
+            self.tableView.reloadData()
+            self.hasPendingReloads = false
+        }
     }
 
     func set(editing: Bool, animated: Bool) {
@@ -55,6 +72,11 @@ class ItemsTableViewHandler: NSObject {
     }
 
     func reload(modifications: [Int], insertions: [Int], deletions: [Int]) {
+        guard self.canReload else {
+            self.hasPendingReloads = true
+            return
+        }
+
         self.tableView.performBatchUpdates({
             self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
             self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)

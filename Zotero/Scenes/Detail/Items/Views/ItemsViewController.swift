@@ -96,12 +96,18 @@ class ItemsViewController: UIViewController {
         super.viewWillDisappear(animated)
         // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
         self.searchBarContainer?.freezeWidth()
+        self.tableViewHandler.pauseReloading()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
         self.searchBarContainer?.unfreezeWidth()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.tableViewHandler.resumeReloading()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
