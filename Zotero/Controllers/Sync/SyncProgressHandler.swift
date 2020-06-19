@@ -26,9 +26,7 @@ enum SyncProgress {
 }
 
 final class SyncProgressHandler {
-    let observable: BehaviorRelay<SyncProgress?>
-    private let finishVisibilityTime: RxTimeInterval = .seconds(2)
-    private let errorVisibilityTime: RxTimeInterval = .milliseconds(3500)
+    let observable: PublishSubject<SyncProgress>
 
     private var libraryNames: [LibraryIdentifier: String]?
     private var currentDone: Int
@@ -38,7 +36,7 @@ final class SyncProgressHandler {
     private(set) var inProgress: Bool
 
     init() {
-        self.observable = BehaviorRelay(value: nil)
+        self.observable = PublishSubject()
         self.currentDone = 0
         self.currentTotal = 0
         self.inProgress = false
@@ -54,11 +52,11 @@ final class SyncProgressHandler {
     func reportNewSync() {
         self.cleanup()
         self.inProgress = true
-        self.observable.accept(.starting)
+        self.observable.on(.next(.starting))
     }
 
     func reportGroupsSync() {
-        self.observable.accept(.groups(nil))
+        self.observable.on(.next(.groups(nil)))
     }
 
     func reportGroupCount(count: Int) {
@@ -74,12 +72,12 @@ final class SyncProgressHandler {
 
     func reportLibrarySync(for libraryId: LibraryIdentifier) {
         guard let name = self.libraryNames?[libraryId] else { return }
-        self.observable.accept(.library(name))
+        self.observable.on(.next(.library(name)))
     }
 
     func reportObjectSync(for object: SyncObject, in libraryId: LibraryIdentifier) {
         guard let name = self.libraryNames?[libraryId] else { return }
-        self.observable.accept(.object(object: object, progress: nil, library: name))
+        self.observable.on(.next(.object(object: object, progress: nil, library: name)))
     }
 
     func reportDownloadCount(for object: SyncObject, count: Int, in libraryId: LibraryIdentifier) {
@@ -91,7 +89,7 @@ final class SyncProgressHandler {
     func reportWrite(count: Int) {
         self.currentDone = 0
         self.currentTotal = count
-        self.observable.accept(.changes(progress: (self.currentDone, self.currentTotal)))
+        self.observable.on(.next(.changes(progress: (self.currentDone, self.currentTotal))))
     }
 
     func reportDownloadBatchSynced(size: Int, for object: SyncObject, in libraryId: LibraryIdentifier) {
@@ -101,32 +99,31 @@ final class SyncProgressHandler {
 
     func reportWriteBatchSynced(size: Int) {
         self.addDone(size)
-        self.observable.accept(.changes(progress: (self.currentDone, self.currentTotal)))
+        self.observable.on(.next(.changes(progress: (self.currentDone, self.currentTotal))))
     }
 
     func reportUpload(count: Int) {
         self.currentTotal = count
         self.currentDone = 0
-        self.observable.accept(.uploads(progress: (self.currentDone, self.currentTotal)))
+        self.observable.on(.next(.uploads(progress: (self.currentDone, self.currentTotal))))
     }
 
     func reportUploaded() {
         self.addDone(1)
-        self.observable.accept(.uploads(progress: (self.currentDone, self.currentTotal)))
+        self.observable.on(.next(.uploads(progress: (self.currentDone, self.currentTotal))))
     }
 
     func reportDeletions(for libraryId: LibraryIdentifier) {
         guard let name = self.libraryNames?[libraryId] else { return }
-        self.observable.accept(.deletions(library: name))
+        self.observable.on(.next(.deletions(library: name)))
     }
 
     func reportFinish(with errors: [Error]) {
-        let timeout = errors.isEmpty ? self.finishVisibilityTime : self.errorVisibilityTime
-        self.finish(with: .finished(errors), timeout: timeout)
+        self.finish(with: .finished(errors))
     }
 
     func reportAbort(with error: Error) {
-        self.finish(with: .aborted(error), timeout: self.errorVisibilityTime)
+        self.finish(with: .aborted(error))
     }
 
     // MARK: - Helpers
@@ -136,23 +133,17 @@ final class SyncProgressHandler {
     }
 
     private func reportGroupProgress() {
-        self.observable.accept(.groups((self.currentDone, self.currentTotal)))
+        self.observable.on(.next(.groups((self.currentDone, self.currentTotal))))
     }
 
     private func reportDownloadObjectProgress(for object: SyncObject, libraryId: LibraryIdentifier) {
         guard let name =  self.libraryNames?[libraryId] else { return }
-        self.observable.accept(.object(object: object, progress: (self.currentDone, self.currentTotal), library: name))
+        self.observable.on(.next(.object(object: object, progress: (self.currentDone, self.currentTotal), library: name)))
     }
 
-    private func finish(with state: SyncProgress, timeout: RxTimeInterval) {
+    private func finish(with state: SyncProgress) {
         self.cleanup()
-        self.observable.accept(state)
-
-        Single<Int>.timer(timeout, scheduler: MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self] _ in
-                       self?.observable.accept(nil)
-                   })
-                   .disposed(by: self.timerDisposeBag)
+        self.observable.on(.next(state))
     }
 
     private func cleanup() {

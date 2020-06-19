@@ -8,18 +8,18 @@
 
 import UIKit
 
-import RxCocoa
 import RxSwift
 
 class SyncToolbarController {
+    private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
     private unowned let viewController: UINavigationController
     private let disposeBag: DisposeBag
 
-    init(parent: UINavigationController, progressObservable: BehaviorRelay<SyncProgress?>) {
+    private var pendingErrors: [Error]?
+
+    init(parent: UINavigationController, progressObservable: PublishSubject<SyncProgress>) {
         self.viewController = parent
         self.disposeBag = DisposeBag()
-
-        self.setupToolbar(in: parent)
 
         progressObservable.observeOn(MainScheduler.instance)
                           .subscribe(onNext: { [weak self] progress in
@@ -31,32 +31,73 @@ class SyncToolbarController {
 
     // MARK: - Actions
 
-    private func update(progress: SyncProgress?, in controller: UINavigationController) {
-        if let progress = progress {
+    private func update(progress: SyncProgress, in controller: UINavigationController) {
+        self.set(progress: progress, in: controller)
+
+        if controller.isToolbarHidden {
             controller.setToolbarHidden(false, animated: true)
-            self.set(text: self.text(for: progress), in: controller)
-        } else {
-            controller.setToolbarHidden(true, animated: true)
+        }
+
+        if case .aborted(let error) = progress {
+            self.pendingErrors = [error]
+        } else if case .finished(let errors) = progress {
+            if errors.isEmpty {
+                self.hideToolbarWithDelay(in: controller)
+            } else {
+                self.pendingErrors = errors
+            }
         }
     }
 
-    private func set(text: String, in controller: UINavigationController) {
-        guard let items = controller.toolbarItems else { return }
-
-        let label = UILabel(frame: UIScreen.main.bounds)
-        label.font = .preferredFont(forTextStyle: .body)
-        label.text = text
-        label.adjustsFontSizeToFitWidth = true
-        label.numberOfLines = 2
-        label.textColor = self.viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
-        label.textAlignment = .center
-
-        var newItems = items
-        newItems[1] = UIBarButtonItem(customView: label)
-        controller.toolbar.setItems(newItems, animated: false)
+    private func showErrorAlert(with errors: [Error]) {
+        let controller = UIAlertController(title: L10n.error, message: self.alertMessage(from: errors), preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
+            self?.pendingErrors = nil
+        }))
+        self.viewController.present(controller, animated: true, completion: nil)
+        self.viewController.setToolbarHidden(true, animated: true)
     }
 
-    // MARK: - Helpers
+    private func alertMessage(from errors: [Error]) -> String {
+        return "Unknown error"
+    }
+
+    private func hideToolbarWithDelay(in controller: UINavigationController) {
+        Single<Int>.timer(SyncToolbarController.finishVisibilityTime,
+                          scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak controller] _ in
+                       controller?.setToolbarHidden(true, animated: true)
+                   })
+                   .disposed(by: self.disposeBag)
+    }
+
+    private func set(progress: SyncProgress, in controller: UINavigationController) {
+        let item = UIBarButtonItem(customView: self.toolbarView(with: self.text(for: progress)))
+        controller.toolbar.setItems([item], animated: false)
+    }
+
+    private func toolbarView(with text: String) -> UIView {
+        let textColor: UIColor = self.viewController.traitCollection.userInterfaceStyle == .light ? .black : .white
+        let button = UIButton(frame: UIScreen.main.bounds)
+        button.titleLabel?.font = .preferredFont(forTextStyle: .body)
+        button.titleLabel?.adjustsFontSizeToFitWidth = true
+        button.titleLabel?.numberOfLines = 2
+        button.setTitleColor(textColor, for: .normal)
+        button.contentHorizontalAlignment = .center
+        button.contentVerticalAlignment = .center
+        button.setTitle(text, for: .normal)
+
+        button.rx
+              .tap
+              .observeOn(MainScheduler.instance)
+              .subscribe(onNext: { [weak self] _ in
+                  guard let errors = self?.pendingErrors else { return }
+                  self?.showErrorAlert(with: errors)
+              })
+              .disposed(by: self.disposeBag)
+
+        return button
+    }
 
     private func text(for progress: SyncProgress) -> String {
         switch progress {
@@ -100,13 +141,5 @@ class SyncToolbarController {
         case .search:
             return L10n.SyncToolbar.Object.searches
         }
-    }
-
-    // MARK: - Setups
-
-    private func setupToolbar(in controller: UINavigationController) {
-        let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-        spacer.width = 20
-        controller.toolbarItems = [spacer, spacer, spacer]
     }
 }

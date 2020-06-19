@@ -33,7 +33,7 @@ typealias ConflictCoordinator = ConflictReceiver & DebugPermissionReceiver
 
 protocol SynchronizationController: class {
     var inProgress: Bool { get }
-    var progressObservable: BehaviorRelay<SyncProgress?> { get }
+    var progressObservable: PublishSubject<SyncProgress> { get }
 
     func start(type: SyncController.SyncType, libraries: SyncController.LibrarySyncType)
     func set(coordinator: ConflictCoordinator?)
@@ -210,7 +210,7 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    var progressObservable: BehaviorRelay<SyncProgress?> {
+    var progressObservable: PublishSubject<SyncProgress> {
         return self.progressHandler.observable
     }
 
