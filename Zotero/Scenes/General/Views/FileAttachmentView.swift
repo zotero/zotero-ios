@@ -11,13 +11,23 @@ import UIKit
 import RxSwift
 
 class FileAttachmentView: UIView {
+    enum Style {
+        case borderAlwaysVisible
+        case borderVisibleInProgress
+    }
+    
     private static let size: CGFloat = 28
+    private static let badgeBorderWidth: CGFloat = 1.5
+    private static let badgeSize: CGFloat = 11
+    private static let progressCircleWidth: CGFloat = 1.5
     private let disposeBag: DisposeBag
 
     private var circleLayer: CAShapeLayer!
     private var progressLayer: CAShapeLayer!
     private var stopLayer: CALayer!
     private var imageLayer: CALayer!
+    private var badgeLayer: CALayer!
+    private var badgeBorder: CALayer!
     private weak var button: UIButton!
 
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
@@ -56,8 +66,8 @@ class FileAttachmentView: UIView {
 
 
     override var intrinsicContentSize: CGSize {
-        return CGSize(width: (FileAttachmentView.size + self.contentInsets.left + self.contentInsets.right + (self.circleLayer.lineWidth * 2)),
-                      height: (FileAttachmentView.size + self.contentInsets.top + self.contentInsets.bottom + (self.circleLayer.lineWidth * 2)))
+        return CGSize(width: (FileAttachmentView.size + self.contentInsets.left + self.contentInsets.right),
+                      height: (FileAttachmentView.size + self.contentInsets.top + self.contentInsets.bottom))
     }
 
     override func layoutSubviews() {
@@ -66,71 +76,90 @@ class FileAttachmentView: UIView {
         let x = self.contentInsets.left + ((self.bounds.width - self.contentInsets.left - self.contentInsets.right) / 2)
         let y = self.contentInsets.top + ((self.bounds.height - self.contentInsets.top - self.contentInsets.bottom) / 2)
         let center = CGPoint(x: x, y: y)
-        let path = UIBezierPath(arcCenter: center, radius: (FileAttachmentView.size / 2), startAngle: -.pi / 2,
-                                endAngle: 3 * .pi / 2, clockwise: true).cgPath
+        // CAShapeLayer draws from center of path, so radius needs to be smaller to achieve outer size of `FileAttachmentView.size`
+        let path = UIBezierPath(arcCenter: center,
+                                radius: ((FileAttachmentView.size - FileAttachmentView.progressCircleWidth) / 2),
+                                startAngle: -.pi / 2,
+                                endAngle: 3 * .pi / 2,
+                                clockwise: true).cgPath
 
         self.circleLayer.path = path
         self.progressLayer.path = path
         self.stopLayer.position = center
         self.imageLayer.position = center
+        // Badge is supposed to be at bottom right with outer border, so badgeLayer needs to be moved outside of bounds a bit
+        self.badgeLayer.position = CGPoint(x: (self.bounds.width - self.contentInsets.right),
+                                           y: (self.bounds.height - self.contentInsets.bottom))
+        self.badgeBorder.position = CGPoint(x: self.badgeLayer.position.x + FileAttachmentView.badgeBorderWidth,
+                                            y: self.badgeLayer.position.y + FileAttachmentView.badgeBorderWidth)
     }
 
     // MARK: - Actions
 
-    private func set(selected: Bool) {
-        self.layer.opacity = selected ? 0.5 : 1
+    func set(backgroundColor: UIColor?) {
+        self.badgeBorder?.borderColor = backgroundColor?.cgColor
     }
 
-    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) {
-        guard let (file, _, location) = contentType.fileData else { return }
+    private func set(selected: Bool) {
+        let opacity: Float = selected ? 0.5 : 1
+        self.imageLayer.opacity = opacity
+        self.badgeLayer.opacity = opacity
+        self.stopLayer.opacity = opacity
+    }
 
-        var imageName: String
-        var inProgress = false
-        var borderVisible = true
-        var strokeEnd: CGFloat = 0
+    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) {
+        guard let data = self.layerData(contentType: contentType, progress: progress, error: error, style: style) else { return }
+        let progressVisible = progress != nil
 
-        switch file.ext {
-        case "pdf":
-            imageName = "pdf-attachment"
-        default:
-            imageName = "document-attachment"
+        self.circleLayer.isHidden = !data.borderVisible
+        self.progressLayer.isHidden = !progressVisible
+        self.progressLayer.strokeEnd = progress ?? 0
+
+        self.stopLayer.isHidden = !progressVisible
+        self.imageLayer.contents = data.imageName.flatMap({ UIImage(named: $0) })?.cgImage
+        self.imageLayer.isHidden = progressVisible
+
+        self.badgeLayer.contents = data.badgeName.flatMap({ UIImage(named: $0) })?.cgImage
+        self.badgeLayer.isHidden = data.badgeName == nil
+        self.badgeBorder.isHidden = data.badgeName == nil
+    }
+
+    private func layerData(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) -> (imageName: String?, badgeName: String?, borderVisible: Bool)? {
+        guard let (file, _, location) = contentType.fileData else { return nil }
+
+        var imageName: String?
+
+        if progress == nil {
+            switch file.ext {
+            case "pdf":
+                imageName = "attachment-pdf"
+            default:
+                imageName = "attachment-document"
+            }
         }
 
-        if let progress = progress {
-            inProgress = true
-            strokeEnd = progress
-        } else if error != nil {
-            imageName += "-download-failed"
-        } else if let location = location {
+        if progress != nil {
+            return (imageName, nil, true)
+        }
+        if error != nil {
+            return (imageName, "attachment-failed", (style == .borderAlwaysVisible))
+        }
+        if let location = location {
             switch location {
             case .local:
-                strokeEnd = 1
+                return (imageName, nil, (style == .borderAlwaysVisible))
             case .remote:
-                imageName += "-download"
+                return (imageName, "attachment-download", (style == .borderAlwaysVisible))
             }
-        } else {
-            imageName += "-missing"
-            borderVisible = false
         }
-
-        self.stopLayer.isHidden = !inProgress
-        self.imageLayer.isHidden = inProgress
-        self.circleLayer.isHidden = !borderVisible
-        self.progressLayer.isHidden = !borderVisible
-        self.progressLayer.strokeEnd = strokeEnd
-
-        if !inProgress, let image = UIImage(named: imageName) {
-            self.imageLayer.contents = image.cgImage
-        }
+        return (imageName, "attachment-missing", false)
     }
 
     // MARK: - Setup
 
     private func setup() {
-        self.translatesAutoresizingMaskIntoConstraints = false
-        self.layer.masksToBounds = true
-        self.layer.backgroundColor = UIColor.clear.cgColor
         self.backgroundColor = .clear
+        self.translatesAutoresizingMaskIntoConstraints = false
 
         let circleLayer = self.createCircleLayer()
         self.layer.addSublayer(circleLayer)
@@ -147,6 +176,14 @@ class FileAttachmentView: UIView {
         let imageLayer = self.createImageLayer()
         self.layer.addSublayer(imageLayer)
         self.imageLayer = imageLayer
+        
+        let badgeLayer = self.createBadgeLayer()
+        self.layer.addSublayer(badgeLayer)
+        self.badgeLayer = badgeLayer
+        
+        let badgeBorder = self.createBadgeBorderLayer()
+        self.layer.addSublayer(badgeBorder)
+        self.badgeBorder = badgeBorder
 
         let button = UIButton()
         button.frame = self.bounds
@@ -181,6 +218,29 @@ class FileAttachmentView: UIView {
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.frame = CGRect(x: 0, y: 0, width: 24, height: 24)
         layer.contentsGravity = .resizeAspect
+        return layer
+    }
+    
+    private func createBadgeLayer()  -> CALayer {
+        let layer = CALayer()
+        layer.anchorPoint = CGPoint(x: 1, y: 1)
+        layer.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.badgeSize, height: FileAttachmentView.badgeSize)
+        layer.contentsGravity = .resizeAspect
+        return layer
+    }
+    
+    private func createBadgeBorderLayer() -> CALayer {
+        let size = FileAttachmentView.badgeSize + (FileAttachmentView.badgeBorderWidth * 2)
+        
+        let layer = CALayer()
+        layer.anchorPoint = CGPoint(x: 1, y: 1)
+        layer.frame = CGRect(x: 0, y: 0, width: size, height: size)
+        layer.borderWidth = FileAttachmentView.badgeBorderWidth
+        layer.cornerRadius = size / 2
+        layer.masksToBounds = true
+        layer.borderColor = self.backgroundColor?.cgColor
+        // Disable color animation
+        layer.actions = ["borderColor": NSNull()]
         return layer
     }
 

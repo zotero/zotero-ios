@@ -16,12 +16,13 @@ struct ItemSortTypePickerView: View {
     var body: some View {
         List {
             ForEach(ItemsSortType.Field.allCases) { sortType in
-                SortTypeRow(title: sortType.title,
-                            isSelected: (self.sortBy == sortType))
-                    .onTapGesture {
-                        self.sortBy = sortType
-                        self.closeAction()
-                    }
+                Button(action: {
+                    self.sortBy = sortType
+                    self.closeAction()
+                }) {
+                    SortTypeRow(title: sortType.title,
+                                isSelected: (self.sortBy == sortType))
+                }
             }
         }
         .navigationBarTitle(Text(L10n.Items.sortBy), displayMode: .inline)

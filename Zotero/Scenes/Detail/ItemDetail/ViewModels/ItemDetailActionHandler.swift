@@ -132,7 +132,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.updateDeletedAttachments(notification, in: viewModel)
 
         case .deleteAttachmentFile(let attachment):
-            self.deleteFile(of: attachment)
+            self.deleteFile(of: attachment, in: viewModel)
         }
     }
 
@@ -331,12 +331,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Attachments
 
-    private func deleteFile(of attachment: Attachment) {
+    private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
         guard let (file, _, _) = attachment.contentType.fileData else { return }
         do {
             try self.fileStorage.remove(file)
-            NotificationCenter.default.post(name: .attachmentFileDeleted,
-                                            object: AttachmentFileDeletedNotification.individual(attachment.key, attachment.libraryId))
+            
+            let deletionType = AttachmentFileDeletedNotification.individual(key: attachment.key,
+                                                                            parentKey: viewModel.state.type.previewKey,
+                                                                            libraryId: attachment.libraryId)
+            NotificationCenter.default.post(name: .attachmentFileDeleted, object: deletionType)
         } catch let error {
             DDLogError("ItemDetailActionHandler: can't remove attachment file - \(error)")
             // TODO: - Show error to user
@@ -361,7 +364,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     }
                     state.changes = .attachmentFilesRemoved
                 }
-            case .individual(let key, let libraryId):
+            case .individual(let key, _, let libraryId):
                 if let index = state.data.attachments.firstIndex(where: { $0.key == key && $0.libraryId == libraryId }) {
                     state.data.attachments[index] = state.data.attachments[index].changed(location: .remote)
                     state.updateAttachmentIndex = index
@@ -447,7 +450,10 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
                     return
                 }
-                self.fileDownloader.download(file: file, key: attachment.key, libraryId: attachment.libraryId)
+                self.fileDownloader.download(file: file,
+                                             key: attachment.key,
+                                             parentKey: viewModel.state.type.previewKey,
+                                             libraryId: attachment.libraryId)
 
             case .local:
                 self.update(viewModel: viewModel) { state in

@@ -12,6 +12,14 @@ extension UIColor {
     static var redButton: UIColor {
         return .red
     }
+    
+    static var cellSelected: UIColor {
+        return UIColor(hex: "#f2f2f7")
+    }
+    
+    static var cellHighlighted: UIColor {
+        return UIColor(hex: "#d1d1d6")
+    }
 
     convenience init(hex: String) {
         let hexInt = UIColor.intFromHexString(hexStr: hex)

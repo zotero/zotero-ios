@@ -29,9 +29,9 @@ enum ItemsAction {
     case stopEditing
     case toggleSortOrder
     case trashSelectedItems
-    case cacheAttachment(item: RItem, index: Int)
-    case cacheAttachmentUpdates(results: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
+    case cacheAttachment(item: RItem)
+    case cacheAttachmentUpdates(results: Results<RItem>, updates: [Int])
     case updateAttachments(AttachmentFileDeletedNotification)
     case updateDownload(FileDownloader.Update)
-    case openAttachment(Int)
+    case openAttachment(key: String, parentKey: String)
 }

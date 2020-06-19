@@ -117,17 +117,17 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.changes = [.selection, .selectAll]
             }
 
-        case .cacheAttachment(let item, let index):
-            self.cacheAttachment(for: item, index: index, in: viewModel)
+        case .cacheAttachment(let item):
+            self.cacheAttachment(for: item, in: viewModel)
 
-        case .cacheAttachmentUpdates(let results, let deletions, let insertions, let modifications):
-            self.cacheAttachmentUpdates(from: results, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
+        case .cacheAttachmentUpdates(let results, let updates):
+            self.cacheAttachmentUpdates(from: results, updates: updates, in: viewModel)
 
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
 
-        case .openAttachment(let index):
-            self.openAttachment(at: index, in: viewModel)
+        case .openAttachment(let key, let parentKey):
+            self.openAttachment(for: key, parentKey: parentKey, in: viewModel)
 
         case .updateAttachments(let notification):
             self.updateDeletedAttachments(notification, in: viewModel)
@@ -163,23 +163,27 @@ struct ItemsActionHandler: ViewModelActionHandler {
                     state.attachments = [:]
                     state.changes = .attachmentsRemoved
                 }
-            case .individual(let key, let libraryId):
-                if let (index, _) = state.attachments.first(where: { $0.value.key == key && $0.value.libraryId == libraryId }) {
-                    state.attachments[index] = nil
-                    // This cell needs to be reloaded so that attachment is cached in cellForRow.
-                    state.reloadIndex = index
+            case .individual(_, let parentKey, let libraryId):
+                // Find item whose mainAttachment has the `key`, for which the file was deleted. If the item was found, new `Attachment`
+                // (with updated content type and availability) is created from items `attachment`.
+                if libraryId == state.library.identifier, let parentKey = parentKey {
+                    // Clear attachment so that it's re-cached when needed.
+                    state.attachments[parentKey] = state.results?.filter(.key(parentKey)).first.flatMap({ $0.attachment }).flatMap({
+                        AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
+                    })
+                    state.updateItemKey = parentKey
                 }
             }
         }
     }
 
-    private func openAttachment(at index: Int, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let attachment = viewModel.state.attachments[index] else { return }
+    private func openAttachment(for key: String, parentKey: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let attachment = viewModel.state.attachments[parentKey] else { return }
 
         switch attachment.contentType {
         case .url:
             self.update(viewModel: viewModel) { state in
-                state.openAttachment = (attachment, index)
+                state.openAttachment = (attachment, parentKey)
             }
         case .file(let file, _, let location):
             guard let location = location else { return }
@@ -187,7 +191,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             switch location {
             case .local:
                 self.update(viewModel: viewModel) { state in
-                    state.openAttachment = (attachment, index)
+                    state.openAttachment = (attachment, parentKey)
                 }
 
             case .remote:
@@ -196,14 +200,13 @@ struct ItemsActionHandler: ViewModelActionHandler {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
                     return
                 }
-                self.fileDownloader.download(file: file, key: attachment.key, libraryId: attachment.libraryId)
+                self.fileDownloader.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
             }
         }
     }
 
     private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let (index, attachment) = viewModel.state.attachments.first(where: { $0.1.libraryId == update.libraryId &&
-                                                                                   $0.1.key == update.key }) else { return }
+        guard let parentKey = update.parentKey, let attachment = viewModel.state.attachments[parentKey] else { return }
 
         self.update(viewModel: viewModel) { state in
             if update.kind.isDownloaded {
@@ -211,30 +214,38 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 // If download finished, mark attachment file location as local
                 if attachment.contentType.fileLocation == .remote {
                     newAttachment = attachment.changed(location: .local)
-                    state.attachments[index] = newAttachment
+                    state.attachments[parentKey] = newAttachment
                 }
-                state.openAttachment = (newAttachment, index)
+                state.openAttachment = (newAttachment, parentKey)
             }
-            state.updateAttachmentIndex = index
+            state.updateItemKey = parentKey
         }
     }
 
-    private func cacheAttachment(for item: RItem, index: Int, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard viewModel.state.attachments[index] == nil, let attachment = item.attachment else { return }
-        self.update(viewModel: viewModel) { state in
-            state.attachments[index] = AttachmentCreator.attachment(for: attachment, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
+    private func cacheAttachment(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
+        // Item has attachment, which is not cached, cache it.
+        if let attachment = item.attachment {
+            guard viewModel.state.attachments[item.key] == nil else { return }
+            self.update(viewModel: viewModel) { state in
+                state.attachments[item.key] = AttachmentCreator.attachment(for: attachment, fileStorage: self.fileStorage, urlDetector: self.urlDetector)
+            }
+            return
+        }
+        
+        // Item doesn't have attachment, but there is something in cache, clear it.
+        if viewModel.state.attachments[item.key] != nil {
+            self.update(viewModel: viewModel) { state in
+                state.attachments[item.key] = nil
+            }
         }
     }
 
-    private func cacheAttachmentUpdates(from results: Results<RItem>, deletions: [Int], insertions: [Int],
-                                        modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
+    private func cacheAttachmentUpdates(from results: Results<RItem>, updates: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            deletions.forEach({ state.attachments[$0] = nil })
-            (modifications + insertions).forEach({ index in
-                state.attachments[index] = results[index].attachment.flatMap { AttachmentCreator.attachment(for: $0,
-                                                                                                            fileStorage: self.fileStorage,
-                                                                                                            urlDetector: self.urlDetector) }
-            })
+            for index in updates {
+                let item = results[index]
+                state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
+            }
         }
     }
 

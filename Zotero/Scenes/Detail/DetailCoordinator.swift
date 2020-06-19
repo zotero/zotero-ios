@@ -147,7 +147,8 @@ class DetailCoordinator: Coordinator {
     private func showPdf(at url: URL, key: String) {
         #if PDFENABLED
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key),
-                                                                      handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)))
+                                                                      handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)),
+                                                 pageController: self.controllers.pageController)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController.present(navigationController, animated: true, completion: nil)

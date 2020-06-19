@@ -20,6 +20,8 @@ class ItemsTableViewHandler: NSObject {
 
     private weak var fileDownloader: FileDownloader?
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
+    private var canReload: Bool
+    private var hasPendingReloads: Bool
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
         self.tableView = tableView
@@ -28,19 +30,34 @@ class ItemsTableViewHandler: NSObject {
         self.fileDownloader = fileDownloader
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
+        self.canReload = true
+        self.hasPendingReloads = false
 
         super.init()
 
         self.setupTableView()
         self.setupKeyboardObserving()
     }
+    
+    func pauseReloading() {
+        self.canReload = false
+    }
+    
+    func resumeReloading() {
+        self.canReload = true
+        
+        if self.hasPendingReloads {
+            self.tableView.reloadData()
+            self.hasPendingReloads = false
+        }
+    }
 
     func set(editing: Bool, animated: Bool) {
         self.tableView.setEditing(editing, animated: animated)
     }
 
-    func updateCell(with attachment: Attachment?, at index: Int) {
-        guard let cell = self.tableView.cellForRow(at: IndexPath(row: index, section: 0)) as? ItemCell else { return }
+    func updateCell(with attachment: Attachment?, parentKey: String) {
+        guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == parentKey }) as? ItemCell else { return }
 
         if let attachment = attachment {
             let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
@@ -55,6 +72,11 @@ class ItemsTableViewHandler: NSObject {
     }
 
     func reload(modifications: [Int], insertions: [Int], deletions: [Int]) {
+        guard self.canReload else {
+            self.hasPendingReloads = true
+            return
+        }
+
         self.tableView.performBatchUpdates({
             self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
             self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
@@ -75,8 +97,9 @@ class ItemsTableViewHandler: NSObject {
         })
     }
 
-    func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
-        return (self.tableView, self.tableView.cellForRow(at: indexPath)?.frame)
+    func sourceDataForCell(for key: String) -> (UIView, CGRect?) {
+        let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key })
+        return (self.tableView, cell?.frame)
     }
 
     private func setupTableView() {
@@ -135,16 +158,18 @@ extension ItemsTableViewHandler: UITableViewDataSource {
         if let item = self.viewModel.state.results?[indexPath.row],
            let cell = cell as? ItemCell {
             // Create and cache attachment if needed
-            self.viewModel.process(action: .cacheAttachment(item: item, index: indexPath.row))
+            self.viewModel.process(action: .cacheAttachment(item: item))
 
-            let attachment = self.viewModel.state.attachments[indexPath.row]
+            let parentKey = item.key
+            let attachment = self.viewModel.state.attachments[parentKey]
             let attachmentData: ItemCellAttachmentData? = attachment.flatMap({ attachment in
                 let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
                 return (attachment.contentType, progress, error)
             })
 
             cell.set(item: ItemCellModel(item: item, attachment: attachmentData), tapAction: { [weak self] in
-                self?.viewModel.process(action: .openAttachment(indexPath.row))
+                guard let key = attachment?.key else { return }
+                self?.viewModel.process(action: .openAttachment(key: key, parentKey: parentKey))
             })
         }
 
