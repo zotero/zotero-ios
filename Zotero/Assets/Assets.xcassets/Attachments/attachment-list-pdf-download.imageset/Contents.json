@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "attachment-list-pdf-download.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "attachment-list-pdf-download@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "attachment-list-pdf-download@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

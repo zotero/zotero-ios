@@ -10,10 +10,26 @@ import UIKit
 
 import RxSwift
 
+fileprivate struct LayerData {
+    enum Border {
+        case borderLine
+        case progressLine(CGFloat)
+    }
+
+    enum Content {
+        case stopSign
+        case image(String)
+    }
+
+    let border: Border?
+    let content: Content
+    let badgeName: String?
+}
+
 class FileAttachmentView: UIView {
     enum Style {
-        case borderAlwaysVisible
-        case borderVisibleInProgress
+        case list
+        case detail
     }
     
     private static let size: CGFloat = 28
@@ -109,50 +125,88 @@ class FileAttachmentView: UIView {
 
     func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) {
         guard let data = self.layerData(contentType: contentType, progress: progress, error: error, style: style) else { return }
-        let progressVisible = progress != nil
 
-        self.circleLayer.isHidden = !data.borderVisible
-        self.progressLayer.isHidden = !progressVisible
-        self.progressLayer.strokeEnd = progress ?? 0
+        if let border = data.border {
+            switch border {
+            case .borderLine:
+                self.progressLayer.isHidden = true
+                self.circleLayer.isHidden = false
+            case .progressLine(let progress):
+                self.progressLayer.strokeEnd = progress
+                self.progressLayer.isHidden = false
+                self.circleLayer.isHidden = false
+            }
+        } else {
+            self.progressLayer.isHidden = true
+            self.circleLayer.isHidden = true
+        }
 
-        self.stopLayer.isHidden = !progressVisible
-        self.imageLayer.contents = data.imageName.flatMap({ UIImage(named: $0) })?.cgImage
-        self.imageLayer.isHidden = progressVisible
+        switch data.content {
+        case .stopSign:
+            self.stopLayer.isHidden = false
+            self.imageLayer.isHidden = true
 
-        self.badgeLayer.contents = data.badgeName.flatMap({ UIImage(named: $0) })?.cgImage
+        case .image(let name):
+            let image = UIImage(named: name)
+            let size = image?.size ?? CGSize()
+
+            self.stopLayer.isHidden = true
+            self.imageLayer.isHidden = false
+            self.imageLayer.contents = image?.cgImage
+
+            if size.width != self.imageLayer.frame.width || size.height != self.imageLayer.frame.height {
+                self.imageLayer.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
+                self.setNeedsLayout()
+            }
+        }
+
         self.badgeLayer.isHidden = data.badgeName == nil
         self.badgeBorder.isHidden = data.badgeName == nil
+        if let name = data.badgeName {
+            self.badgeLayer.contents = UIImage(named: name)?.cgImage
+        }
     }
 
-    private func layerData(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) -> (imageName: String?, badgeName: String?, borderVisible: Bool)? {
+    private func layerData(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) -> LayerData? {
         guard let (file, _, location) = contentType.fileData else { return nil }
 
-        var imageName: String?
-
-        if progress == nil {
-            switch file.ext {
-            case "pdf":
-                imageName = "attachment-pdf"
-            default:
-                imageName = "attachment-document"
-            }
+        if let progress = progress {
+            return LayerData(border: .progressLine(progress), content: .stopSign, badgeName: nil)
         }
 
-        if progress != nil {
-            return (imageName, nil, true)
+        var documentType: String = ""
+        var state: String = ""
+
+        switch file.ext {
+        case "pdf":
+            documentType = "pdf"
+        default:
+            documentType = "document"
         }
+
         if error != nil {
-            return (imageName, "attachment-failed", (style == .borderAlwaysVisible))
-        }
-        if let location = location {
+            state = "download-failed"
+        } else if let location = location {
             switch location {
             case .local:
-                return (imageName, nil, (style == .borderAlwaysVisible))
+                state = ""
             case .remote:
-                return (imageName, "attachment-download", (style == .borderAlwaysVisible))
+                state = "download"
             }
+        } else {
+            state = "missing"
         }
-        return (imageName, "attachment-missing", false)
+
+        switch style {
+        case .list:
+            return LayerData(border: .borderLine,
+                             content: .image("attachment-list-" + documentType + (state.isEmpty ? "" : "-" + state)),
+                             badgeName: nil)
+        case .detail:
+            return LayerData(border: nil,
+                             content: .image("attachment-detail-" + documentType),
+                             badgeName: (state.isEmpty ? nil : "attachment-detail-" + state))
+        }
     }
 
     // MARK: - Setup
@@ -216,7 +270,6 @@ class FileAttachmentView: UIView {
     private func createImageLayer() -> CALayer {
         let layer = CALayer()
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        layer.frame = CGRect(x: 0, y: 0, width: 24, height: 24)
         layer.contentsGravity = .resizeAspect
         return layer
     }
