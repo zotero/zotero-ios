@@ -86,6 +86,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         self.syncCreators(data: data, item: item, database: database)
         self.syncRelations(data: data, item: item, database: database)
         self.syncLinks(data: data, item: item, database: database)
+        self.syncUsers(createdBy: data.createdBy, lastModifiedBy: data.lastModifiedBy, item: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
@@ -292,4 +293,68 @@ struct StoreItemsDbRequest: DbResponseRequest {
         link.item = item
         database.add(link)
     }
+
+    private func syncUsers(createdBy: UserResponse?, lastModifiedBy: UserResponse?, item: RItem, database: Realm) {
+        if item.createdBy?.identifier != createdBy?.id {
+            let user = item.createdBy
+
+            item.createdBy = createdBy.flatMap({ self.createUser(from: $0, in: database) })
+
+            if let user = user, user.createdBy.isEmpty && user.modifiedBy.isEmpty {
+                database.delete(user)
+            }
+        }
+
+        if item.lastModifiedBy?.identifier != lastModifiedBy?.id {
+            let user = item.lastModifiedBy
+            
+            item.lastModifiedBy = lastModifiedBy.flatMap({ self.createUser(from: $0, in: database) })
+
+            if let user = user, user.createdBy.isEmpty && user.modifiedBy.isEmpty {
+                database.delete(user)
+            }
+        }
+    }
+
+    private func createUser(from response: UserResponse, in database: Realm) -> RUser {
+        if let user = database.object(ofType: RUser.self, forPrimaryKey: response.id) {
+            return user
+        }
+
+        let user = RUser()
+        user.identifier = response.id
+        user.name = response.name
+        database.add(user)
+        return user
+    }
+
+//    private func syncUser(user: UserResponse, type: RUser.Kind, item: RItem, database: Realm) {
+//        let existingUser = item.users.filter(.user(type: type)).first
+//
+//        guard existingUser?.identifier != user.id else { return }
+//
+//        if let user = existingUser {
+//            if let index = user.items.index(of: item) {
+//                user.items.remove(at: index)
+//            }
+//
+//            if user.items.isEmpty {
+//                database.delete(user)
+//            }
+//        }
+//
+//        let newUser: RUser
+//
+//        if let user = database.object(ofType: RUser.self, forPrimaryKey: user.id) {
+//            newUser = user
+//        } else {
+//            newUser = RUser()
+//            newUser.identifier = user.id
+//            newUser.name = user.name
+//            newUser.type = type
+//            database.add(newUser)
+//        }
+//
+//        newUser.items.append(item)
+//    }
 }

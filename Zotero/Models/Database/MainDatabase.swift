@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct MainDatabase {
-    private static let schemaVersion: UInt64 = 13
+    private static let schemaVersion: UInt64 = 14
 
     static func configuration(url: URL) -> Realm.Configuration {
         return Realm.Configuration(fileURL: url,

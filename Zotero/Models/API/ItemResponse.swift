@@ -36,6 +36,8 @@ struct ItemResponse {
     let creators: [CreatorResponse]
     let relations: [String: String]
     let inPublications: Bool
+    let createdBy: UserResponse?
+    let lastModifiedBy: UserResponse?
 
     private static var notFieldKeys: Set<String> = {
         return ["creators", "itemType", "version", "key", "tags", "deleted",
@@ -44,7 +46,7 @@ struct ItemResponse {
 
     init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?,
          parsedDate: String?, isTrash: Bool, version: Int, dateModified: Date, dateAdded: Date, fields: [String: String], tags: [TagResponse],
-         creators: [CreatorResponse], relations: [String: String]) {
+         creators: [CreatorResponse], relations: [String: String], createdBy: UserResponse?, lastModifiedBy: UserResponse?) {
         self.rawType = rawType
         self.key = key
         self.library = library
@@ -61,6 +63,8 @@ struct ItemResponse {
         self.creators = creators
         self.relations = relations
         self.inPublications = false
+        self.createdBy = createdBy
+        self.lastModifiedBy = lastModifiedBy
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
@@ -88,6 +92,9 @@ struct ItemResponse {
         let tagsData = try tagsDictionaries.map({ try JSONSerialization.data(withJSONObject: $0) })
         let creatorsDictionary = (data["creators"] as? [[String: Any]]) ?? []
         let creatorsData = try creatorsDictionary.map({ try JSONSerialization.data(withJSONObject: $0) })
+        let meta = apiResponse["meta"] as? [String: Any]
+        let createdByData = try (meta?["createdByUser"] as? [String: Any]).map({ try JSONSerialization.data(withJSONObject: $0) })
+        let lastModifiedByData = try (meta?["lastModifiedByUser"] as? [String: Any]).map({ try JSONSerialization.data(withJSONObject: $0) })
 
         self.rawType = rawType
         self.key = try ItemResponse.parse(key: "key", from: apiResponse)
@@ -96,7 +103,7 @@ struct ItemResponse {
         self.parentKey = data["parentItem"] as? String
         self.dateAdded = (data["dateAdded"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = (data["dateModified"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
-        self.parsedDate = (apiResponse["meta"] as? [String: Any])?["parsedDate"] as? String
+        self.parsedDate = meta?["parsedDate"] as? String
         self.isTrash = (data["deleted"] as? Int) == 1
         self.library = try decoder.decode(LibraryResponse.self, from: libraryData)
         self.links = try linksData.flatMap { try decoder.decode(LinksResponse.self, from: $0) }
@@ -105,6 +112,8 @@ struct ItemResponse {
         self.relations = (data["relations"] as? [String: String]) ?? [:]
         self.inPublications = (data["inPublications"] as? Bool) ?? false
         self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, schemaController: schemaController)
+        self.createdBy = try createdByData.flatMap { try decoder.decode(UserResponse.self, from: $0) }
+        self.lastModifiedBy = try lastModifiedByData.flatMap { try decoder.decode(UserResponse.self, from: $0) }
     }
 
     private init(translatorResponse: [String: Any], schemaController: SchemaController) throws {
@@ -137,6 +146,8 @@ struct ItemResponse {
                                                    rawType: rawType,
                                                    schemaController: schemaController,
                                                    ignoreUnknownFields: true)
+        self.createdBy = nil
+        self.lastModifiedBy = nil
     }
 
     func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>) -> ItemResponse {
@@ -163,7 +174,9 @@ struct ItemResponse {
                             fields: self.fields,
                             tags: self.tags,
                             creators: self.creators,
-                            relations: self.relations)
+                            relations: self.relations,
+                            createdBy: self.createdBy,
+                            lastModifiedBy: self.lastModifiedBy)
     }
 
     private static func parseFields(from data: [String: Any],
@@ -257,4 +270,9 @@ struct CreatorResponse: Decodable {
 
 struct RelationResponse: Decodable {
 
+}
+
+struct UserResponse: Decodable {
+    let id: Int
+    let name: String
 }

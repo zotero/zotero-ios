@@ -42,6 +42,8 @@ class RItem: Object {
     @objc dynamic var customLibrary: RCustomLibrary?
     @objc dynamic var group: RGroup?
     @objc dynamic var mainAttachment: RItem?
+    @objc dynamic var createdBy: RUser?
+    @objc dynamic var lastModifiedBy: RUser?
     let collections: List<RCollection> = List()
 
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
