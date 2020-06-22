@@ -22,7 +22,7 @@ struct CollectionPickerView: View {
                 self.presentationMode.wrappedValue.dismiss()
             }) {
                 HStack {
-                    LibraryRow(title: self.viewModel.state.library.name)
+                    LibraryRow(title: self.viewModel.state.library.name, isReadOnly: !self.viewModel.state.library.metadataEditable)
                     if self.viewModel.state.selected.contains(self.viewModel.state.library.name) {
                         Spacer()
                         Image(systemName: "checkmark")

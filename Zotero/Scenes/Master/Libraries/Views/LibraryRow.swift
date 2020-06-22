@@ -10,10 +10,11 @@ import SwiftUI
 
 struct LibraryRow: View {
     let title: String
+    let isReadOnly: Bool
 
     var body: some View {
         HStack {
-            Image("icon_cell_library")
+            Image(self.isReadOnly ? "icon_cell_library_readonly" : "icon_cell_library")
                 .renderingMode(.template)
                 .foregroundColor(.blue)
             Text(self.title)
@@ -27,7 +28,7 @@ struct LibraryRow_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             List {
-                LibraryRow(title: "My library")
+                LibraryRow(title: "My library", isReadOnly: false)
             }
         }.navigationViewStyle(StackNavigationViewStyle())
     }

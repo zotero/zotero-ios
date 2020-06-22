@@ -33,7 +33,7 @@ fileprivate struct ListView: View {
     var body: some View {
         List {
             ForEach(self.store.state.libraries) { library in
-                LibraryRow(title: library.name)
+                LibraryRow(title: library.name, isReadOnly: !library.metadataEditable)
 
                 CollectionRow(data: Collection(custom: .all))
                     .onTapGesture {

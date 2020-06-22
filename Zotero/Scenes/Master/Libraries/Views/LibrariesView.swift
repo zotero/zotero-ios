@@ -24,7 +24,7 @@ struct LibrariesView: View {
                             Button(action: {
                                 self.coordinatorDelegate?.showCollections(for: Library(customLibrary: library))
                             }) {
-                                LibraryRow(title: library.type.libraryName)
+                                LibraryRow(title: library.type.libraryName, isReadOnly: false)
                             }
                         }
                     }
@@ -38,7 +38,7 @@ struct LibrariesView: View {
                             Button(action: {
                                 self.coordinatorDelegate?.showCollections(for: Library(group: library))
                             }) {
-                                LibraryRow(title: library.name)
+                                LibraryRow(title: library.name, isReadOnly: !library.canEditMetadata)
                             }
                         }
                     }
