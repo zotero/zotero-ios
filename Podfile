@@ -5,7 +5,7 @@ target 'Zotero' do
 
     pod 'Alamofire', '4.8.0'
     pod 'KeychainSwift', '18.0.0'
-    pod 'RealmSwift', '4.1.1'
+    pod 'RealmSwift', '5.1.0'
     pod 'RxAlamofire', '5.1.0'
     pod 'RxSwift', '5.1.1'
     pod 'RxSwiftExt', '5.2.0'
