@@ -275,4 +275,5 @@ struct RelationResponse: Decodable {
 struct UserResponse: Decodable {
     let id: Int
     let name: String
+    let username: String
 }

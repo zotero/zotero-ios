@@ -46,6 +46,13 @@ extension RItem: Deletable {
         database.delete(self.relations)
         database.delete(self.creators)
 
+        if let user = self.createdBy, user.createdBy.count == 1 && user.modifiedBy.isEmpty {
+            database.delete(user)
+        }
+        if let user = self.lastModifiedBy, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
+            database.delete(user)
+        }
+
         if wasMainAttachment {
             parent?.updateMainAttachment()
         }

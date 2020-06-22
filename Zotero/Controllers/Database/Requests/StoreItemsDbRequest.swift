@@ -323,38 +323,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
 
         let user = RUser()
         user.identifier = response.id
-        user.name = response.name
+        user.name = response.name.isEmpty ? response.username : response.name
         database.add(user)
         return user
     }
-
-//    private func syncUser(user: UserResponse, type: RUser.Kind, item: RItem, database: Realm) {
-//        let existingUser = item.users.filter(.user(type: type)).first
-//
-//        guard existingUser?.identifier != user.id else { return }
-//
-//        if let user = existingUser {
-//            if let index = user.items.index(of: item) {
-//                user.items.remove(at: index)
-//            }
-//
-//            if user.items.isEmpty {
-//                database.delete(user)
-//            }
-//        }
-//
-//        let newUser: RUser
-//
-//        if let user = database.object(ofType: RUser.self, forPrimaryKey: user.id) {
-//            newUser = user
-//        } else {
-//            newUser = RUser()
-//            newUser.identifier = user.id
-//            newUser.name = user.name
-//            newUser.type = type
-//            database.add(newUser)
-//        }
-//
-//        newUser.items.append(item)
-//    }
 }

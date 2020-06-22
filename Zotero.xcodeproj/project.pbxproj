@@ -1420,19 +1420,19 @@
 		B305654523FC051E003304F2 /* API */ = {
 			isa = PBXGroup;
 			children = (
-				B305654623FC051E003304F2 /* ItemResponse.swift */,
-				B305654723FC051E003304F2 /* SettingsResponse.swift */,
-				B305654823FC051E003304F2 /* LibraryResponse.swift */,
 				B305654923FC051E003304F2 /* AuthorizeUploadResponse.swift */,
-				B305654A23FC051E003304F2 /* KeyResponse.swift */,
-				B305654B23FC051E003304F2 /* UpdatesResponse.swift */,
 				B305654C23FC051E003304F2 /* CollectionResponse.swift */,
-				B305654D23FC051E003304F2 /* LinksResponse.swift */,
-				B305654E23FC051E003304F2 /* LoginResponse.swift */,
 				B305654F23FC051E003304F2 /* DeletionsResponse.swift */,
 				B305655023FC051E003304F2 /* GroupResponse.swift */,
-				B305655123FC051E003304F2 /* SearchesResponse.swift */,
+				B305654623FC051E003304F2 /* ItemResponse.swift */,
+				B305654A23FC051E003304F2 /* KeyResponse.swift */,
+				B305654823FC051E003304F2 /* LibraryResponse.swift */,
+				B305654D23FC051E003304F2 /* LinksResponse.swift */,
+				B305654E23FC051E003304F2 /* LoginResponse.swift */,
 				B305655223FC051E003304F2 /* SchemaResponse.swift */,
+				B305655123FC051E003304F2 /* SearchesResponse.swift */,
+				B305654723FC051E003304F2 /* SettingsResponse.swift */,
+				B305654B23FC051E003304F2 /* UpdatesResponse.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
