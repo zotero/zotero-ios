@@ -28,7 +28,7 @@ enum ZoteroApiError: Error {
 
 class ZoteroApiClient: ApiClient {
     private let url: URL
-    private let manager: SessionManager
+    private let manager: Alamofire.Session
 
     private var token: String?
 
@@ -38,7 +38,7 @@ class ZoteroApiClient: ApiClient {
         }
 
         self.url = url
-        self.manager = SessionManager(configuration: configuration)
+        self.manager = Alamofire.Session(configuration: configuration)
     }
 
     func set(authToken: String?) {
@@ -101,7 +101,7 @@ class ZoteroApiClient: ApiClient {
 
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-        return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.DownloadOptions) in
+        return self.manager.rx.download(convertible) { _, _ -> (destinationURL: URL, options: DownloadRequest.Options) in
                                   return (request.downloadUrl, [.createIntermediateDirectories, .removePreviousFile])
                               }
     }
@@ -111,31 +111,13 @@ class ZoteroApiClient: ApiClient {
     }
 
     func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
-        return Single.create { [weak self] subscriber in
-            guard let `self` = self else {
-                subscriber(.error(ZoteroApiError.expired))
-                return Disposables.create()
-            }
-
-            let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-
-            let method = HTTPMethod(rawValue: request.httpMethod.rawValue)!
-            self.manager.upload(multipartFormData: multipartFormData,
-                                to: convertible,
-                                method: method,
-                                headers: request.headers,
-                                queue: queue,
-                                encodingCompletion: { result in
-                switch result {
-                case .success(let request, _, _):
-                    subscriber(.success(request))
-                case .failure(let error):
-                    subscriber(.error(error))
-                }
-            })
-
-            return Disposables.create()
-        }
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
+        return self.manager.rx.upload(multipartFormData: multipartFormData,
+                                      to: convertible,
+                                      method: method,
+                                      headers: request.headers.flatMap(HTTPHeaders.init))
+                              .asSingle()
     }
 }
 

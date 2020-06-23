@@ -28,7 +28,7 @@ fileprivate struct ApiLogger {
     static func log(request: ApiRequest, url: URL?) {
         DDLogInfo("--- API request '\(type(of: request))' ---")
         DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
-        if request.httpMethod != .get, let params = request.parameters {
+        if let params = request.parameters {
             DDLogInfo("\(request.redact(parameters: params))")
         }
     }
@@ -108,7 +108,7 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
 }
 
 extension ObservableType where Element == DataRequest {
-    func responseDataWithResponseError(queue: DispatchQueue? = nil) -> Observable<(HTTPURLResponse, Data)> {
+    func responseDataWithResponseError(queue: DispatchQueue) -> Observable<(HTTPURLResponse, Data)> {
         return self.flatMap { $0.rx.responseDataWithResponseError(queue: queue) }
     }
 
@@ -122,7 +122,7 @@ extension DataRequest {
        return self.validate(contentType: self.acceptableContentTypes)
                   .validate { request, response, _ -> Request.ValidationResult in
                       if (response.statusCode >= 200 && response.statusCode < 300) || response.statusCode == 304 {
-                          return .success
+                          return .success(())
                       }
                       return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)))
                   }
@@ -135,7 +135,7 @@ extension DataRequest {
     }
 }
 
-extension DataResponse where Value == Data {
+extension DataResponse where Success == Data {
     func log(request: ApiRequest) -> Self {
         guard let response = self.response else { return self }
 
@@ -152,11 +152,11 @@ extension DataResponse where Value == Data {
 }
 
 extension Reactive where Base: DataRequest {
-    fileprivate func responseDataWithResponseError(queue: DispatchQueue? = nil) -> Observable<(HTTPURLResponse, Data)> {
-        return self.responseResultWithResponseError(queue: queue, responseSerializer: DataRequest.dataResponseSerializer())
+    fileprivate func responseDataWithResponseError(queue: DispatchQueue) -> Observable<(HTTPURLResponse, Data)> {
+        return self.responseResultWithResponseError(queue: queue, responseSerializer: DataResponseSerializer(emptyResponseCodes: [200, 204, 304]))
     }
 
-    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue? = nil,
+    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue,
                                                                                     responseSerializer: T)
                                                                   -> Observable<(HTTPURLResponse, T.SerializedObject)> {
         return Observable.create { observer in
@@ -167,21 +167,17 @@ extension Reactive where Base: DataRequest {
                             observer.on(.next((httpResponse, result)))
                             observer.on(.completed)
                         } else {
-                            let error = AFResponseError(error: AFError.responseSerializationFailed(reason: .inputDataNil),
+                            let error = AFResponseError(error: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength),
                                                         headers: response.response?.allHeaderFields,
                                                         response: "")
                             observer.on(.error(error))
                         }
                     case .failure(let error):
-                        if let alamoError = error as? AFError {
-                            let responseString = response.data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
-                            let responseError = AFResponseError(error: alamoError,
-                                                                headers: response.response?.allHeaderFields,
-                                                                response: responseString)
-                            observer.on(.error(responseError))
-                        } else {
-                            observer.on(.error(error))
-                        }
+                        let responseString = response.data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
+                        let responseError = AFResponseError(error: error,
+                                                            headers: response.response?.allHeaderFields,
+                                                            response: responseString)
+                        observer.on(.error(responseError))
                     }
             }
 

@@ -3685,7 +3685,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 4.9.1;
+				version = 5.2.1;
 			};
 		};
 		B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
@@ -3749,7 +3749,7 @@
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxAlamofire";
 			requirement = {
 				kind = exactVersion;
-				version = 5.1.0;
+				version = 5.5.0;
 			};
 		};
 		B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */ = {

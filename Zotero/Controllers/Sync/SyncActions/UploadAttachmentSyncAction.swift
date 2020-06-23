@@ -80,19 +80,19 @@ struct UploadAttachmentSyncAction: SyncAction {
                             }
 
         let response = upload.observeOn(self.scheduler)
-                             .flatMap({ result -> Single<Swift.Result<(Data, String), SyncActionError>> in
+                             .flatMap({ result -> Single<Swift.Result<String, SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let uploadKey)):
-                                      return uploadRequest.rx.data()
-                                                             .asSingle()
-                                                             .flatMap({ Single.just(.success(($0, uploadKey))) })
+                                     return uploadRequest.rx.responseData()
+                                                            .asSingle()
+                                                            .flatMap({ _ in Single.just(.success(uploadKey)) })
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }
                              })
                              .flatMap({ result -> Single<Swift.Result<(Data, ResponseHeaders), SyncActionError>> in
                                  switch result {
-                                 case .success((_, let uploadKey)):
+                                 case .success(let uploadKey):
                                      let request = RegisterUploadRequest(libraryId: self.libraryId,
                                                                          userId: self.userId,
                                                                          key: self.key,

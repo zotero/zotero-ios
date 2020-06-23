@@ -66,21 +66,21 @@ class BackgroundUploader: NSObject {
                 headers: [String: String],
                 queue: DispatchQueue? = nil,
                 completion: @escaping (Error?) -> Void) {
-        self.createMultipartformRequest(for: upload,
-                                        filename: filename,
-                                        mimeType: mimeType,
-                                        parameters: parameters,
-                                        headers: headers,
-                                        queue: queue,
-                                        completion: { [weak self] result in
-                                            switch result {
-                                            case .failure(let error):
-                                                completion(error)
-                                            case .success((let request, let fileUrl)):
-                                                self?.startUpload(upload.copy(with: fileUrl), request: request)
-                                                completion(nil)
-                                            }
-                                        })
+//        self.createMultipartformRequest(for: upload,
+//                                        filename: filename,
+//                                        mimeType: mimeType,
+//                                        parameters: parameters,
+//                                        headers: headers,
+//                                        queue: queue,
+//                                        completion: { [weak self] result in
+//                                            switch result {
+//                                            case .failure(let error):
+//                                                completion(error)
+//                                            case .success((let request, let fileUrl)):
+//                                                self?.startUpload(upload.copy(with: fileUrl), request: request)
+//                                                completion(nil)
+//                                            }
+//                                        })
     }
 
     // MARK: - Uploading
@@ -102,64 +102,114 @@ class BackgroundUploader: NSObject {
     ///                         to upload the file and URL pointing to the file which will be uploaded.
     private func createMultipartformRequest(for upload: BackgroundUpload, filename: String, mimeType: String,
                                             parameters: [String: String]?, headers: [String: String]? = nil,
-                                            queue: DispatchQueue? = nil,
+                                            queue: DispatchQueue,
                                             completion: @escaping (Swift.Result<(URLRequest, URL), Error>) -> Void) {
+//        let request = Alamofire.Session.default.upload(multipartFormData: { data in
+//            if let parameters = parameters {
+//                // Append parameters to the multipartform request.
+//                parameters.forEach { (key, value) in
+//                    if let stringData = value.data(using: .utf8) {
+//                        data.append(stringData, withName: key)
+//                    }
+//                }
+//            }
+//            // Append a file url to the multipartform request. For background uploads we have to use file for uploading.
+//            data.append(upload.fileUrl, withName: "file", fileName: filename, mimeType: mimeType)
+//        }, to: "http://", usingThreshold: 0, method: .post, headers: headers.flatMap(HTTPHeaders.init))
+//        request.
+//        request.response(queue: queue, responseSerializer: DataResponseSerializer()) { response in
+//            switch response.result {
+//            case .failure(let error):
+//                completion(.failure(error))
+//
+//            case .success(let request, _, let streamFileURL):
+//                // Suspend the original request so that it doesn't continue. We cancel it in defer, because cancelling the request
+//                // delete the file in streamFileURL and we wouldn't be able to copy it.
+//                request.suspend()
+//                defer { request.cancel() }
+//
+//                guard let fileUrl = streamFileURL else {
+//                   completion(.failure(AFError.multipartEncodingFailed(reason: .bodyPartURLInvalid(url: upload.fileUrl))))
+//                   return
+//                }
+//
+//                do {
+//                    // Move the file to a location controlled by us, so that it doesn't get deleted before upload.
+//                    let file = Files.file(from: fileUrl)
+//                    let newFile = Files.uploadFile(from: fileUrl)
+//                    try self.fileStorage.move(from: file, to: newFile)
+//                    // Create a new request with correct URL
+//                    var newRequest = URLRequest(url: upload.remoteUrl)
+//                    newRequest.httpMethod = "POST"
+//                    // Copy request headers generated by Alamofire
+//                    if let headers = request.request?.allHTTPHeaderFields {
+//                        for (key, value) in headers {
+//                            newRequest.addValue(value, forHTTPHeaderField: key)
+//                        }
+//                    }
+//
+//                   completion(.success((newRequest, newFile.createUrl())))
+//                } catch let error {
+//                   completion(.failure(error))
+//                }
+//            }
+//        }
         // iOS doesn't provide a simple way to create a multipartform request for uploading the file to backend. Alamofire is used to simplify
         // the process. Normally, Alamofire would encode the request and send it by itself, but it doesn't support background uploads. So we just
         // use it to create a propert multipartform request and file for us, then we copy the request and file and cancel original Alamofire request.
-        SessionManager.default.upload(multipartFormData: { data in
-                             if let parameters = parameters {
-                                 // Append parameters to the multipartform request.
-                                 parameters.forEach { (key, value) in
-                                     if let stringData = value.data(using: .utf8) {
-                                         data.append(stringData, withName: key)
-                                     }
-                                 }
-                             }
-                             // Append a file url to the multipartform request. For background uploads we have to use file for uploading.
-                             data.append(upload.fileUrl, withName: "file", fileName: filename, mimeType: mimeType)
-                         },
-                         usingThreshold: 0, // set to 0 so that Alamofire doesn't try to stream from memory.
-                         to: "http://", // set to "http://" because we don't want Alamofire to automatically send the request and empty string doesn't work
-                         method: .post,
-                         headers: headers,
-                         queue: queue) { result in
-                             switch result {
-                             case .failure(let error):
-                                 completion(.failure(error))
-
-                             case .success(let request, _, let streamFileURL):
-                                 // Suspend the original request so that it doesn't continue. We cancel it in defer, because cancelling the request
-                                 // delete the file in streamFileURL and we wouldn't be able to copy it.
-                                 request.suspend()
-                                 defer { request.cancel() }
-
-                                 guard let fileUrl = streamFileURL else {
-                                    completion(.failure(AFError.multipartEncodingFailed(reason: .bodyPartURLInvalid(url: upload.fileUrl))))
-                                    return
-                                 }
-
-                                 do {
-                                     // Move the file to a location controlled by us, so that it doesn't get deleted before upload.
-                                     let file = Files.file(from: fileUrl)
-                                     let newFile = Files.uploadFile(from: fileUrl)
-                                     try self.fileStorage.move(from: file, to: newFile)
-                                     // Create a new request with correct URL
-                                     var newRequest = URLRequest(url: upload.remoteUrl)
-                                     newRequest.httpMethod = "POST"
-                                     // Copy request headers generated by Alamofire
-                                     if let headers = request.request?.allHTTPHeaderFields {
-                                         for (key, value) in headers {
-                                             newRequest.addValue(value, forHTTPHeaderField: key)
-                                         }
-                                     }
-
-                                    completion(.success((newRequest, newFile.createUrl())))
-                                 } catch let error {
-                                    completion(.failure(error))
-                                 }
-                             }
-                         }
+//        SessionManager.default.upload(multipartFormData: { data in
+//                             if let parameters = parameters {
+//                                 // Append parameters to the multipartform request.
+//                                 parameters.forEach { (key, value) in
+//                                     if let stringData = value.data(using: .utf8) {
+//                                         data.append(stringData, withName: key)
+//                                     }
+//                                 }
+//                             }
+//                             // Append a file url to the multipartform request. For background uploads we have to use file for uploading.
+//                             data.append(upload.fileUrl, withName: "file", fileName: filename, mimeType: mimeType)
+//                         },
+//                         usingThreshold: 0, // set to 0 so that Alamofire doesn't try to stream from memory.
+//                         to: "http://", // set to "http://" because we don't want Alamofire to automatically send the request and empty string doesn't work
+//                         method: .post,
+//                         headers: headers,
+//                         queue: queue) { result in
+//                             switch result {
+//                             case .failure(let error):
+//                                 completion(.failure(error))
+//
+//                             case .success(let request, _, let streamFileURL):
+//                                 // Suspend the original request so that it doesn't continue. We cancel it in defer, because cancelling the request
+//                                 // delete the file in streamFileURL and we wouldn't be able to copy it.
+//                                 request.suspend()
+//                                 defer { request.cancel() }
+//
+//                                 guard let fileUrl = streamFileURL else {
+//                                    completion(.failure(AFError.multipartEncodingFailed(reason: .bodyPartURLInvalid(url: upload.fileUrl))))
+//                                    return
+//                                 }
+//
+//                                 do {
+//                                     // Move the file to a location controlled by us, so that it doesn't get deleted before upload.
+//                                     let file = Files.file(from: fileUrl)
+//                                     let newFile = Files.uploadFile(from: fileUrl)
+//                                     try self.fileStorage.move(from: file, to: newFile)
+//                                     // Create a new request with correct URL
+//                                     var newRequest = URLRequest(url: upload.remoteUrl)
+//                                     newRequest.httpMethod = "POST"
+//                                     // Copy request headers generated by Alamofire
+//                                     if let headers = request.request?.allHTTPHeaderFields {
+//                                         for (key, value) in headers {
+//                                             newRequest.addValue(value, forHTTPHeaderField: key)
+//                                         }
+//                                     }
+//
+//                                    completion(.success((newRequest, newFile.createUrl())))
+//                                 } catch let error {
+//                                    completion(.failure(error))
+//                                 }
+//                             }
+//                         }
     }
 
     // MARK: - Finishing upload

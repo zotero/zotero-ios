@@ -169,7 +169,7 @@ final class SyncController: SynchronizationController {
 
     // MARK: - Testing
 
-    var reportFinish: ((Result<([Action], [Error])>) -> Void)?
+    var reportFinish: ((Result<([Action], [Error]), Error>) -> Void)?
     var reportDelay: ((Int) -> Void)?
     private var allActions: [Action] = []
 
@@ -583,7 +583,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishCreateLibraryActions(with result: Result<([LibraryData], CreateLibraryActionsOptions)>) {
+    private func finishCreateLibraryActions(with result: Result<([LibraryData], CreateLibraryActionsOptions), Error>) {
         switch result {
         case .failure(let error):
             self.accessQueue.async(flags: .barrier) { [weak self] in
@@ -995,7 +995,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[String]>, libraryId: LibraryIdentifier) {
+    private func finishDeletionsSync(result: Result<[String], Error>, libraryId: LibraryIdentifier) {
         switch result {
         case .success://(let conflicts):
                 // BETA: - no conflicts are created in beta, we prefer remote over everything local, so the conflicts
@@ -1037,7 +1037,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSettingsSync(result: Result<(Bool, Int)>, libraryId: LibraryIdentifier) {
+    private func finishSettingsSync(result: Result<(Bool, Int), Error>, libraryId: LibraryIdentifier) {
         switch result {
         case .success(let (hasNewSettings, version)):
             if hasNewSettings {
@@ -1276,12 +1276,14 @@ final class SyncController: SynchronizationController {
             switch reason {
             case .unacceptableStatusCode(let code):
                 return (code >= 400 && code <= 499 && code != 403) ? SyncError.apiError : nil
-            case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType:
+            case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
                 return SyncError.apiError
             }
-        case .multipartEncodingFailed, .parameterEncodingFailed, .invalidURL:
+        case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed,
+             .requestAdaptationFailed, .requestRetryFailed, .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated,
+             .urlRequestValidationFailed, .sessionTaskFailed:
             return SyncError.apiError
-        case .responseSerializationFailed:
+        case .responseSerializationFailed, .createUploadableFailed, .downloadedFileMoveFailed, .explicitlyCancelled:
             return nil
         }
     }
