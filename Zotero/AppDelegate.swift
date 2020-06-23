@@ -8,7 +8,7 @@
 
 import UIKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import SwiftUI
 
 #if PDFENABLED
@@ -29,7 +29,9 @@ class AppDelegate: UIResponder {
     private func setupLogs() {
         #if DEBUG
         // Enable console logs only for debug mode
-        DDLog.add(DDTTYLogger.sharedInstance)
+        if let logger = DDTTYLogger.sharedInstance {
+            DDLog.add(logger)
+        }
 
         // Change to .info to enable server logging
         // Change to .warning/.error to disable server logging

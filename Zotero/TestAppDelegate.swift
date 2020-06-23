@@ -8,11 +8,13 @@
 
 import UIKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 class TestAppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidFinishLaunching(_ application: UIApplication) {
-        DDLog.add(DDTTYLogger.sharedInstance)
+        if let logger = DDTTYLogger.sharedInstance {
+            DDLog.add(logger)
+        }
         dynamicLogLevel = .info
     }
 }

@@ -3,8 +3,7 @@
 
 import Foundation
 
-// swiftlint:disable superfluous_disable_command
-// swiftlint:disable file_length
+// swiftlint:disable superfluous_disable_command file_length implicit_return
 
 // MARK: - Strings
 
@@ -83,8 +82,8 @@ internal enum L10n {
       /// You have to fill the name
       internal static let emptyName = L10n.tr("Localizable", "collections.error.empty_name")
       /// Could not save collection %@. Try again.
-      internal static func saveFailed(_ p1: String) -> String {
-        return L10n.tr("Localizable", "collections.error.save_failed", p1)
+      internal static func saveFailed(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "collections.error.save_failed", String(describing: p1))
       }
     }
   }
@@ -112,8 +111,8 @@ internal enum L10n {
     internal static let tags = L10n.tr("Localizable", "item_detail.tags")
     internal enum Error {
       /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
-      internal static func droppedFieldsMessage(_ p1: String) -> String {
-        return L10n.tr("Localizable", "item_detail.error.dropped_fields_message", p1)
+      internal static func droppedFieldsMessage(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "item_detail.error.dropped_fields_message", String(describing: p1))
       }
       /// Change Item Type
       internal static let droppedFieldsTitle = L10n.tr("Localizable", "item_detail.error.dropped_fields_title")
@@ -189,12 +188,12 @@ internal enum L10n {
 
   internal enum Pdf {
     /// Page Transition: %@
-    internal static func pageTransition(_ p1: String) -> String {
-      return L10n.tr("Localizable", "pdf.pageTransition", p1)
+    internal static func pageTransition(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "pdf.pageTransition", String(describing: p1))
     }
     /// Scroll Direction: %@
-    internal static func scrollDirection(_ p1: String) -> String {
-      return L10n.tr("Localizable", "pdf.scrollDirection", p1)
+    internal static func scrollDirection(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "pdf.scrollDirection", String(describing: p1))
     }
     internal enum AnnotationsSidebar {
       /// Page
@@ -269,8 +268,8 @@ internal enum L10n {
       /// Do you really want to delete all attachments?
       internal static let deleteAllQuestion = L10n.tr("Localizable", "settings.storage.delete_all_question")
       /// Do you really want to delete all attachments in "%@"?
-      internal static func deleteLibraryQuestion(_ p1: String) -> String {
-        return L10n.tr("Localizable", "settings.storage.delete_library_question", p1)
+      internal static func deleteLibraryQuestion(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1))
       }
       /// Could not collect storage data
       internal static let error = L10n.tr("Localizable", "settings.storage.error")
@@ -285,18 +284,18 @@ internal enum L10n {
 
   internal enum SyncToolbar {
     /// Sync failed (%@)
-    internal static func aborted(_ p1: String) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.aborted", p1)
+    internal static func aborted(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.aborted", String(describing: p1))
     }
     /// Removing unused objects in %@
-    internal static func deletion(_ p1: String) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.deletion", p1)
+    internal static func deletion(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.deletion", String(describing: p1))
     }
     /// Finished sync
     internal static let finished = L10n.tr("Localizable", "sync_toolbar.finished")
     /// Finished sync (%@)
-    internal static func finishedWithErrors(_ p1: String) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.finished_with_errors", p1)
+    internal static func finishedWithErrors(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.finished_with_errors", String(describing: p1))
     }
     /// Syncing groups
     internal static let groups = L10n.tr("Localizable", "sync_toolbar.groups")
@@ -305,20 +304,20 @@ internal enum L10n {
       return L10n.tr("Localizable", "sync_toolbar.groups_with_data", p1, p2)
     }
     /// Syncing %@
-    internal static func library(_ p1: String) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.library", p1)
+    internal static func library(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.library", String(describing: p1))
     }
     /// %d issues
     internal static func multipleErrors(_ p1: Int) -> String {
       return L10n.tr("Localizable", "sync_toolbar.multiple_errors", p1)
     }
     /// Syncing %@ in %@
-    internal static func object(_ p1: String, _ p2: String) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.object", p1, p2)
+    internal static func object(_ p1: Any, _ p2: Any) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.object", String(describing: p1), String(describing: p2))
     }
     /// Syncing %@ (%d / %d) in %@
-    internal static func objectWithData(_ p1: String, _ p2: Int, _ p3: Int, _ p4: String) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.object_with_data", p1, p2, p3, p4)
+    internal static func objectWithData(_ p1: Any, _ p2: Int, _ p3: Int, _ p4: Any) -> String {
+      return L10n.tr("Localizable", "sync_toolbar.object_with_data", String(describing: p1), p2, p3, String(describing: p4))
     }
     /// 1 issue
     internal static let oneError = L10n.tr("Localizable", "sync_toolbar.one_error")
@@ -351,10 +350,15 @@ internal enum L10n {
 
 extension L10n {
   private static func tr(_ table: String, _ key: String, _ args: CVarArg...) -> String {
-    // swiftlint:disable:next nslocalizedstring_key
-    let format = NSLocalizedString(key, tableName: table, bundle: Bundle(for: BundleToken.self), comment: "")
+    let format = BundleToken.bundle.localizedString(forKey: key, value: nil, table: table)
     return String(format: format, locale: Locale.current, arguments: args)
   }
 }
 
-private final class BundleToken {}
+// swiftlint:disable convenience_type
+private final class BundleToken {
+  static let bundle: Bundle = {
+    Bundle(for: BundleToken.self)
+  }()
+}
+// swiftlint:enable convenience_type

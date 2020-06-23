@@ -12,7 +12,7 @@ import UIKit
 import SafariServices
 import SwiftUI
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import RxSwift
 import SwiftyGif
 

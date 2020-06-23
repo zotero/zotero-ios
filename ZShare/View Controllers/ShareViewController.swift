@@ -12,7 +12,7 @@ import SwiftUI
 import UIKit
 import WebKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 class ShareViewController: UIViewController {
     // Outlets
@@ -45,7 +45,9 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        DDLog.add(DDTTYLogger.sharedInstance)
+        if let logger = DDTTYLogger.sharedInstance {
+            DDLog.add(logger)
+        }
 
         self.debugLogging = DebugLogging(fileStorage: FileStorageController())
         self.debugLogging.startLoggingOnLaunchIfNeeded()

@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct Attachment: Identifiable, Equatable {
     enum FileLocation {

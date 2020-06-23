@@ -3,14 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		024482B9A22ED01888004186 /* Pods_ZShare.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF0432CA5370F185A0E7987D /* Pods_ZShare.framework */; };
-		2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */; };
 		2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */; };
-		9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */; };
 		B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */; };
 		B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
 		B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */; };
@@ -473,7 +470,6 @@
 		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36BEC7224485FC700A60552 /* TagColorGenerator.swift */; };
-		B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B37147402382B51000AC8758 /* CrashReporter.framework */; };
 		B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
 		B372CEE1248650D600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
 		B372CEE32486512500B423AE /* GroupRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE22486512500B423AE /* GroupRequest.swift */; };
@@ -517,6 +513,28 @@
 		B3886C47249234D600B7D67B /* FileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3886C46249234D600B7D67B /* FileDownloader.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
+		B38D3C7924A1DCFB005289EF /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C7824A1DCFB005289EF /* RealmSwift */; };
+		B38D3C7F24A1DD25005289EF /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C7E24A1DD25005289EF /* RealmSwift */; };
+		B38D3C8224A1E025005289EF /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8124A1E025005289EF /* Alamofire */; };
+		B38D3C8424A1E037005289EF /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8324A1E037005289EF /* Alamofire */; };
+		B38D3C8724A1E0B5005289EF /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8624A1E0B5005289EF /* KeychainSwift */; };
+		B38D3C8924A1E0C2005289EF /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8824A1E0C2005289EF /* KeychainSwift */; };
+		B38D3C8C24A1E157005289EF /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8B24A1E157005289EF /* ZIPFoundation */; };
+		B38D3C8E24A1E164005289EF /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8D24A1E164005289EF /* ZIPFoundation */; };
+		B38D3C9124A1E1BA005289EF /* SwiftyGif in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9024A1E1BA005289EF /* SwiftyGif */; };
+		B38D3C9724A1E344005289EF /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9624A1E344005289EF /* CocoaLumberjackSwift */; };
+		B38D3C9D24A1E350005289EF /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */; };
+		B38D3CA024A1E39F005289EF /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9F24A1E39F005289EF /* Quick */; };
+		B38D3CA324A1E3D7005289EF /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CA224A1E3D7005289EF /* Nimble */; };
+		B38D3CAA24A1E430005289EF /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CA924A1E430005289EF /* OHHTTPStubs */; };
+		B38D3CAC24A1E430005289EF /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */; };
+		B38D3CAF24A1E4A8005289EF /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAE24A1E4A8005289EF /* RxAlamofire */; };
+		B38D3CB124A1E4B1005289EF /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB024A1E4B1005289EF /* RxAlamofire */; };
+		B38D3CB424A1E4FA005289EF /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB324A1E4FA005289EF /* RxCocoa */; };
+		B38D3CB624A1E4FA005289EF /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB524A1E4FA005289EF /* RxSwift */; };
+		B38D3CB924A1E57A005289EF /* RxSwiftExt in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB824A1E57A005289EF /* RxSwiftExt */; };
+		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
+		B38D3CCB24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
 		B3902DF824811DC3007EE48E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
@@ -634,15 +652,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0CF6A9D22C7893D6D8FEB78C /* Pods-ZShare.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZShare.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-ZShare/Pods-ZShare.debug pdf.xcconfig"; sourceTree = "<group>"; };
-		15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZoteroTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.debug.xcconfig"; sourceTree = "<group>"; };
-		32FA43D1B9537A16F460F453 /* Pods-ZShare.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZShare.release.xcconfig"; path = "Pods/Target Support Files/Pods-ZShare/Pods-ZShare.release.xcconfig"; sourceTree = "<group>"; };
-		39682C248A657BEC127C91A7 /* Pods-ZoteroTests.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug pdf.xcconfig"; sourceTree = "<group>"; };
-		3A209F5A017E002C874ACECE /* Pods-ZShare.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZShare.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZShare/Pods-ZShare.debug.xcconfig"; sourceTree = "<group>"; };
-		3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.release.xcconfig"; sourceTree = "<group>"; };
-		4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.release.xcconfig"; sourceTree = "<group>"; };
-		5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZoteroUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.release.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.release.xcconfig"; sourceTree = "<group>"; };
 		A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug pdf.xcconfig"; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -945,7 +954,6 @@
 		B36A988A2428DA5D005D5790 /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B36BEC7224485FC700A60552 /* TagColorGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorGenerator.swift; sourceTree = "<group>"; };
-		B37147402382B51000AC8758 /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
@@ -979,6 +987,7 @@
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
 		B3886C46249234D600B7D67B /* FileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloader.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
+		B38D3CC924A1F420005289EF /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -1047,9 +1056,6 @@
 		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 		B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug.xcconfig"; sourceTree = "<group>"; };
-		D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroUITests.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroUITests/Pods-ZoteroUITests.debug pdf.xcconfig"; sourceTree = "<group>"; };
-		E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZoteroTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests.debug.xcconfig"; sourceTree = "<group>"; };
-		EF0432CA5370F185A0E7987D /* Pods_ZShare.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ZShare.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Zotero.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -1058,8 +1064,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B38D3C8724A1E0B5005289EF /* KeychainSwift in Frameworks */,
+				B38D3C8224A1E025005289EF /* Alamofire in Frameworks */,
+				B38D3CB924A1E57A005289EF /* RxSwiftExt in Frameworks */,
+				B38D3CB424A1E4FA005289EF /* RxCocoa in Frameworks */,
+				B38D3C7924A1DCFB005289EF /* RealmSwift in Frameworks */,
 				2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */,
-				B37147412382B51000AC8758 /* CrashReporter.framework in Frameworks */,
+				B38D3CB624A1E4FA005289EF /* RxSwift in Frameworks */,
+				B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */,
+				B38D3C9724A1E344005289EF /* CocoaLumberjackSwift in Frameworks */,
+				B38D3C9124A1E1BA005289EF /* SwiftyGif in Frameworks */,
+				B38D3CAF24A1E4A8005289EF /* RxAlamofire in Frameworks */,
+				B38D3C8C24A1E157005289EF /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1067,7 +1083,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9C2C56CF7D763E14BAFEF60E /* Pods_ZoteroTests.framework in Frameworks */,
+				B38D3CA324A1E3D7005289EF /* Nimble in Frameworks */,
+				B38D3CA024A1E39F005289EF /* Quick in Frameworks */,
+				B38D3CAC24A1E430005289EF /* OHHTTPStubsSwift in Frameworks */,
+				B38D3CAA24A1E430005289EF /* OHHTTPStubs in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1075,7 +1094,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2A0D27619E1F7EFA4ADD70AF /* Pods_ZoteroUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1083,7 +1101,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				024482B9A22ED01888004186 /* Pods_ZShare.framework in Frameworks */,
+				B38D3CCB24A1F420005289EF /* CrashReporter.framework in Frameworks */,
+				B38D3C7F24A1DD25005289EF /* RealmSwift in Frameworks */,
+				B38D3C8424A1E037005289EF /* Alamofire in Frameworks */,
+				B38D3C8924A1E0C2005289EF /* KeychainSwift in Frameworks */,
+				B38D3CB124A1E4B1005289EF /* RxAlamofire in Frameworks */,
+				B38D3C9D24A1E350005289EF /* CocoaLumberjackSwift in Frameworks */,
+				B38D3C8E24A1E164005289EF /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1093,11 +1117,8 @@
 		9A5CCE075B69890E36482447 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				B37147402382B51000AC8758 /* CrashReporter.framework */,
+				B38D3CC924A1F420005289EF /* CrashReporter.framework */,
 				FE4638CC97DB774B6EFBB7D2 /* Pods_Zotero.framework */,
-				15889059ABDD68FF40EBCC95 /* Pods_ZoteroTests.framework */,
-				5AC50F22031C6E31D9A867D7 /* Pods_ZoteroUITests.framework */,
-				EF0432CA5370F185A0E7987D /* Pods_ZShare.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2083,16 +2104,7 @@
 			children = (
 				B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */,
 				8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */,
-				E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */,
-				4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */,
-				16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */,
-				3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */,
 				A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */,
-				39682C248A657BEC127C91A7 /* Pods-ZoteroTests.debug pdf.xcconfig */,
-				D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */,
-				3A209F5A017E002C874ACECE /* Pods-ZShare.debug.xcconfig */,
-				0CF6A9D22C7893D6D8FEB78C /* Pods-ZShare.debug pdf.xcconfig */,
-				32FA43D1B9537A16F460F453 /* Pods-ZShare.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -2110,8 +2122,8 @@
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
-				1B975E5CF8CBCF9F9B9B0C61 /* [CP] Embed Pods Frameworks */,
 				B311B3272386A39800BCF592 /* Embed App Extensions */,
+				34C562C88E45D9F4FE43967E /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -2119,6 +2131,18 @@
 				B311B3252386A39800BCF592 /* PBXTargetDependency */,
 			);
 			name = Zotero;
+			packageProductDependencies = (
+				B38D3C7824A1DCFB005289EF /* RealmSwift */,
+				B38D3C8124A1E025005289EF /* Alamofire */,
+				B38D3C8624A1E0B5005289EF /* KeychainSwift */,
+				B38D3C8B24A1E157005289EF /* ZIPFoundation */,
+				B38D3C9024A1E1BA005289EF /* SwiftyGif */,
+				B38D3C9624A1E344005289EF /* CocoaLumberjackSwift */,
+				B38D3CAE24A1E4A8005289EF /* RxAlamofire */,
+				B38D3CB324A1E4FA005289EF /* RxCocoa */,
+				B38D3CB524A1E4FA005289EF /* RxSwift */,
+				B38D3CB824A1E57A005289EF /* RxSwiftExt */,
+			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
 			productType = "com.apple.product-type.application";
@@ -2127,11 +2151,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B30D59822206F60500884C4A /* Build configuration list for PBXNativeTarget "ZoteroTests" */;
 			buildPhases = (
-				1607D66B943AFB3F3BF59D23 /* [CP] Check Pods Manifest.lock */,
 				B30D59672206F60500884C4A /* Sources */,
 				B30D59682206F60500884C4A /* Frameworks */,
 				B30D59692206F60500884C4A /* Resources */,
-				DAB944863DC41137352E6D69 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -2139,6 +2161,12 @@
 				B30D596D2206F60500884C4A /* PBXTargetDependency */,
 			);
 			name = ZoteroTests;
+			packageProductDependencies = (
+				B38D3C9F24A1E39F005289EF /* Quick */,
+				B38D3CA224A1E3D7005289EF /* Nimble */,
+				B38D3CA924A1E430005289EF /* OHHTTPStubs */,
+				B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */,
+			);
 			productName = ZoteroTests;
 			productReference = B30D596B2206F60500884C4A /* ZoteroTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -2147,7 +2175,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B30D59852206F60500884C4A /* Build configuration list for PBXNativeTarget "ZoteroUITests" */;
 			buildPhases = (
-				B433DBB4F006A1955D51B03A /* [CP] Check Pods Manifest.lock */,
 				B30D59722206F60500884C4A /* Sources */,
 				B30D59732206F60500884C4A /* Frameworks */,
 				B30D59742206F60500884C4A /* Resources */,
@@ -2166,7 +2193,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B311B32B2386A39800BCF592 /* Build configuration list for PBXNativeTarget "ZShare" */;
 			buildPhases = (
-				B13F0A8105F3D0A86523C51E /* [CP] Check Pods Manifest.lock */,
 				B311B3182386A39800BCF592 /* Sources */,
 				B311B3192386A39800BCF592 /* Frameworks */,
 				B311B31A2386A39800BCF592 /* Resources */,
@@ -2177,6 +2203,14 @@
 			dependencies = (
 			);
 			name = ZShare;
+			packageProductDependencies = (
+				B38D3C7E24A1DD25005289EF /* RealmSwift */,
+				B38D3C8324A1E037005289EF /* Alamofire */,
+				B38D3C8824A1E0C2005289EF /* KeychainSwift */,
+				B38D3C8D24A1E164005289EF /* ZIPFoundation */,
+				B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */,
+				B38D3CB024A1E4B1005289EF /* RxAlamofire */,
+			);
 			productName = ZShare;
 			productReference = B311B31C2386A39800BCF592 /* ZShare.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -2227,6 +2261,20 @@
 				Base,
 			);
 			mainGroup = B30D594C2206F60400884C4A;
+			packageReferences = (
+				B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */,
+				B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */,
+				B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */,
+				B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				B38D3C8F24A1E1BA005289EF /* XCRemoteSwiftPackageReference "SwiftyGif" */,
+				B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
+				B38D3C9E24A1E39F005289EF /* XCRemoteSwiftPackageReference "Quick" */,
+				B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */,
+				B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
+				B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */,
+				B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */,
+				B38D3CB724A1E57A005289EF /* XCRemoteSwiftPackageReference "RxSwiftExt" */,
+			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -2327,29 +2375,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		1607D66B943AFB3F3BF59D23 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-ZoteroTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		1B975E5CF8CBCF9F9B9B0C61 /* [CP] Embed Pods Frameworks */ = {
+		34C562C88E45D9F4FE43967E /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -2364,28 +2390,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		B13F0A8105F3D0A86523C51E /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-ZShare-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		B3087B87245190F500FF05ED /* ShellScript */ = {
@@ -2440,45 +2444,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "python3 $SCRIPT_INPUT_FILE_0\n";
-		};
-		B433DBB4F006A1955D51B03A /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-ZoteroUITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		DAB944863DC41137352E6D69 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ZoteroTests/Pods-ZoteroTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3234,6 +3199,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -3257,6 +3223,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3273,6 +3241,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
@@ -3295,6 +3264,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -3304,7 +3275,6 @@
 		};
 		B30D59832206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E81A6C592E0BB231FB732931 /* Pods-ZoteroTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -3330,7 +3300,6 @@
 		};
 		B30D59842206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4A56172A652513E3BE1B9052 /* Pods-ZoteroTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -3356,7 +3325,6 @@
 		};
 		B30D59862206F60500884C4A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 16DB9B3831515E8F7D5A7495 /* Pods-ZoteroUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3381,7 +3349,6 @@
 		};
 		B30D59872206F60500884C4A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3F9A16373969520A5387CDEC /* Pods-ZoteroUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3406,13 +3373,17 @@
 		};
 		B311B3282386A39800BCF592 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3A209F5A017E002C874ACECE /* Pods-ZShare.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = ZShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3423,7 +3394,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Share Extension Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Share Extension Development";
 				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -3431,13 +3404,17 @@
 		};
 		B311B3292386A39800BCF592 /* Debug PDF */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0CF6A9D22C7893D6D8FEB78C /* Pods-ZShare.debug pdf.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = ZShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3448,7 +3425,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Share Extension Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Share Extension Development";
 				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -3456,13 +3435,17 @@
 		};
 		B311B32A2386A39800BCF592 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 32FA43D1B9537A16F460F453 /* Pods-ZShare.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZShare/ZShare.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = ZShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3473,7 +3456,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero.ZShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Share Extension Distribution";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Share Extension Development";
 				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -3551,6 +3536,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -3574,6 +3560,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -3584,7 +3572,6 @@
 		};
 		B3DD9CE022562A1600DE6BAA /* Debug PDF */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 39682C248A657BEC127C91A7 /* Pods-ZoteroTests.debug pdf.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -3610,7 +3597,6 @@
 		};
 		B3DD9CE122562A1600DE6BAA /* Debug PDF */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D98BFE20A63241EA21D6AAEF /* Pods-ZoteroUITests.debug pdf.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3687,6 +3673,208 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-cocoa";
+			requirement = {
+				kind = exactVersion;
+				version = 5.1.0;
+			};
+		};
+		B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = exactVersion;
+				version = 4.9.1;
+			};
+		};
+		B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/evgenyneu/keychain-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 19.0.0;
+			};
+		};
+		B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = exactVersion;
+				version = 0.9.11;
+			};
+		};
+		B38D3C8F24A1E1BA005289EF /* XCRemoteSwiftPackageReference "SwiftyGif" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kirualex/SwiftyGif";
+			requirement = {
+				kind = exactVersion;
+				version = 5.3.0;
+			};
+		};
+		B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CocoaLumberjack/CocoaLumberjack";
+			requirement = {
+				kind = exactVersion;
+				version = 3.6.1;
+			};
+		};
+		B38D3C9E24A1E39F005289EF /* XCRemoteSwiftPackageReference "Quick" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Quick/Quick";
+			requirement = {
+				kind = exactVersion;
+				version = 3.0.0;
+			};
+		};
+		B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Quick/Nimble";
+			requirement = {
+				kind = exactVersion;
+				version = 8.1.1;
+			};
+		};
+		B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AliSoftware/OHHTTPStubs";
+			requirement = {
+				kind = exactVersion;
+				version = 9.0.0;
+			};
+		};
+		B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxAlamofire";
+			requirement = {
+				kind = exactVersion;
+				version = 5.1.0;
+			};
+		};
+		B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactiveX/RxSwift";
+			requirement = {
+				kind = exactVersion;
+				version = 5.1.1;
+			};
+		};
+		B38D3CB724A1E57A005289EF /* XCRemoteSwiftPackageReference "RxSwiftExt" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxSwiftExt";
+			requirement = {
+				kind = exactVersion;
+				version = 5.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B38D3C7824A1DCFB005289EF /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			productName = RealmSwift;
+		};
+		B38D3C7E24A1DD25005289EF /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			productName = RealmSwift;
+		};
+		B38D3C8124A1E025005289EF /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		B38D3C8324A1E037005289EF /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		B38D3C8624A1E0B5005289EF /* KeychainSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			productName = KeychainSwift;
+		};
+		B38D3C8824A1E0C2005289EF /* KeychainSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			productName = KeychainSwift;
+		};
+		B38D3C8B24A1E157005289EF /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		B38D3C8D24A1E164005289EF /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		B38D3C9024A1E1BA005289EF /* SwiftyGif */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C8F24A1E1BA005289EF /* XCRemoteSwiftPackageReference "SwiftyGif" */;
+			productName = SwiftyGif;
+		};
+		B38D3C9624A1E344005289EF /* CocoaLumberjackSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			productName = CocoaLumberjackSwift;
+		};
+		B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			productName = CocoaLumberjackSwift;
+		};
+		B38D3C9F24A1E39F005289EF /* Quick */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3C9E24A1E39F005289EF /* XCRemoteSwiftPackageReference "Quick" */;
+			productName = Quick;
+		};
+		B38D3CA224A1E3D7005289EF /* Nimble */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */;
+			productName = Nimble;
+		};
+		B38D3CA924A1E430005289EF /* OHHTTPStubs */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			productName = OHHTTPStubs;
+		};
+		B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			productName = OHHTTPStubsSwift;
+		};
+		B38D3CAE24A1E4A8005289EF /* RxAlamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */;
+			productName = RxAlamofire;
+		};
+		B38D3CB024A1E4B1005289EF /* RxAlamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */;
+			productName = RxAlamofire;
+		};
+		B38D3CB324A1E4FA005289EF /* RxCocoa */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxCocoa;
+		};
+		B38D3CB524A1E4FA005289EF /* RxSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxSwift;
+		};
+		B38D3CB824A1E57A005289EF /* RxSwiftExt */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B38D3CB724A1E57A005289EF /* XCRemoteSwiftPackageReference "RxSwiftExt" */;
+			productName = RxSwiftExt;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B30D594D2206F60400884C4A /* Project object */;
 }

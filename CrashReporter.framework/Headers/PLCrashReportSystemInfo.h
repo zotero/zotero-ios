@@ -27,6 +27,8 @@
  */
 
 #import <Foundation/Foundation.h>
+#include "PLCrashMacros.h"
+@class PLCrashReportProcessorInfo;
 
 /**
  * @ingroup constants
@@ -48,14 +50,20 @@ typedef enum {
     
     /** Unknown operating system */
     PLCrashReportOperatingSystemUnknown = 3,
+  
+    /** Apple tvOS */
+    PLCrashReportOperatingSystemAppleTVOS = 4,
+  
 } PLCrashReportOperatingSystem;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
 /**
  * @ingroup constants
  *
  * Indicates the architecture under which a Crash Log was generated.
  *
- * @deprecated The architecture value has been deprecated in v1.1 and later crash reports. All new reports
+ * @note The architecture value has been deprecated in v1.1 and later crash reports. All new reports
  * will make use of the new PLCrashReportProcessorInfo CPU type encodings.
  *
  * @internal
@@ -77,7 +85,7 @@ typedef enum {
      * values.
      * @sa PLCrashReportArchitectureARMv6
      */
-    PLCrashReportArchitectureARM = PLCrashReportArchitectureARMv6,
+    PLCrashReportArchitectureARM PLCR_DEPRECATED = PLCrashReportArchitectureARMv6,
 
     /** PPC */
     PLCrashReportArchitecturePPC = 3,
@@ -91,10 +99,12 @@ typedef enum {
     /** Unknown */
     PLCrashReportArchitectureUnknown = 6
 } PLCrashReportArchitecture;
-
+#pragma clang diagnostic pop
 
 extern PLCrashReportOperatingSystem PLCrashReportHostOperatingSystem;
-extern PLCrashReportArchitecture PLCrashReportHostArchitecture;
+PLCR_EXTERNAL_DEPRECATED_NOWARN_PUSH();
+extern PLCrashReportArchitecture PLCrashReportHostArchitecture PLCR_EXTERNAL_DEPRECATED;
+PLCR_EXTERNAL_DEPRECATED_NOWARN_PUSH();
 
 @interface PLCrashReportSystemInfo : NSObject {
 @private
@@ -102,44 +112,60 @@ extern PLCrashReportArchitecture PLCrashReportHostArchitecture;
     PLCrashReportOperatingSystem _operatingSystem;
     
     /** Operating system version */
-    NSString *_osVersion;
+    __strong NSString *_osVersion;
     
     /** OS build. May be nil. */
-    NSString *_osBuild;
+    __strong NSString *_osBuild;
     
     /** Architecture */
     PLCrashReportArchitecture _architecture;
     
     /** Date crash report was generated. May be nil if the date is unknown. */
-    NSDate *_timestamp;
+    __strong NSDate *_timestamp;
+
+    /** Processor information. */
+    __strong PLCrashReportProcessorInfo *_processorInfo;
 }
 
 - (id) initWithOperatingSystem: (PLCrashReportOperatingSystem) operatingSystem 
         operatingSystemVersion: (NSString *) operatingSystemVersion
                   architecture: (PLCrashReportArchitecture) architecture
-                     timestamp: (NSDate *) timestamp;
+                     timestamp: (NSDate *) timestamp PLCR_DEPRECATED;
 
 - (id) initWithOperatingSystem: (PLCrashReportOperatingSystem) operatingSystem 
         operatingSystemVersion: (NSString *) operatingSystemVersion
           operatingSystemBuild: (NSString *) operatingSystemBuild
                   architecture: (PLCrashReportArchitecture) architecture
+                     timestamp: (NSDate *) timestamp PLCR_DEPRECATED;
+
+- (id) initWithOperatingSystem: (PLCrashReportOperatingSystem) operatingSystem
+        operatingSystemVersion: (NSString *) operatingSystemVersion
+          operatingSystemBuild: (NSString *) operatingSystemBuild
+                  architecture: (PLCrashReportArchitecture) architecture
+                 processorInfo: (PLCrashReportProcessorInfo *) processorInfo
                      timestamp: (NSDate *) timestamp;
 
 /** The operating system. */
 @property(nonatomic, readonly) PLCrashReportOperatingSystem operatingSystem;
 
 /** The operating system's release version. */
-@property(nonatomic, readonly) NSString *operatingSystemVersion;
+@property(nonatomic, readonly, strong) NSString *operatingSystemVersion;
 
 /** The operating system's build identifier (eg, 10J869). This may be unavailable, and this property will be nil. */
-@property(nonatomic, readonly) NSString *operatingSystemBuild;
+@property(nonatomic, readonly, strong) NSString *operatingSystemBuild;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
 /** Architecture. @deprecated The architecture value has been deprecated in v1.1 and later crash reports. All new reports
  * include the CPU type as part of the crash report's machine info structure, using the PLCrashReportProcessorInfo
  * extensible encoding. */
-@property(nonatomic, readonly) PLCrashReportArchitecture architecture;
+@property(nonatomic, readonly) PLCrashReportArchitecture architecture PLCR_DEPRECATED;
 
 /** Date and time that the crash report was generated. This may be unavailable, and this property will be nil. */
-@property(nonatomic, readonly) NSDate *timestamp;
+@property(nonatomic, readonly, strong) NSDate *timestamp;
+
+/** The processor type. For v1.2 reports and later, this is an alias to the machine info's processorInfo.
+  * For earlier reports, this will be synthesized from the deprecated architecture property.  */
+@property(nonatomic, readonly, strong) PLCrashReportProcessorInfo *processorInfo;
 
 @end

@@ -9,7 +9,7 @@
 import Combine
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import RxSwift
 
 /// Global controllers which don't need user session

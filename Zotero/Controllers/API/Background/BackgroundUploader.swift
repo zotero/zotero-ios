@@ -20,8 +20,11 @@ class BackgroundUploader: NSObject {
     private var session: URLSession!
     private var finishedUploads: [BackgroundUpload]
     private var uploadsFinishedProcessing: Bool
-    private var backgroundTaskId: UIBackgroundTaskIdentifier
     private var disposeBag: DisposeBag
+
+    #if MAINAPP
+    private var backgroundTaskId: UIBackgroundTaskIdentifier
+    #endif
 
     var backgroundCompletionHandler: (() -> Void)?
 
@@ -31,8 +34,11 @@ class BackgroundUploader: NSObject {
         self.uploadProcessor = uploadProcessor
         self.finishedUploads = []
         self.uploadsFinishedProcessing = true
-        self.backgroundTaskId = .invalid
         self.disposeBag = DisposeBag()
+
+        #if MAINAPP
+        self.backgroundTaskId = .invalid
+        #endif
 
         super.init()
 

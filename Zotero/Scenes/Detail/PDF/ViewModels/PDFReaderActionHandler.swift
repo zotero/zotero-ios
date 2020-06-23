@@ -10,7 +10,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import PSPDFKit
 import RxSwift
 

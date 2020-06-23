@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct ItemDetailDataCreator {
     /// Creates `ItemDetailState.Data` for given type.

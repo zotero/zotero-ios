@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 protocol DebugLoggingCoordinator: class {
     func share(logs: [URL], completed: @escaping () -> Void)

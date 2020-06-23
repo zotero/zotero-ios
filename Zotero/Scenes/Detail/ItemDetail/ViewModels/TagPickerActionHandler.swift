@@ -9,7 +9,7 @@
 import Combine
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct TagPickerActionHandler: ViewModelActionHandler {
     typealias Action = TagPickerAction

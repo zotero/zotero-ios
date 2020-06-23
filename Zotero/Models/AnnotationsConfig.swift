@@ -8,7 +8,9 @@
 
 import UIKit
 
+#if PDFENABLED
 import PSPDFKit
+#endif
 
 struct AnnotationsConfig {
     static let sidebarWidth: CGFloat = 250
@@ -17,7 +19,9 @@ struct AnnotationsConfig {
     static let isZoteroKey = "isZoteroAnnotation"
     static let keyKey = "zoteroKey"
 
+    #if PDFENABLED
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
+    #endif
 
     private static func createPreviewSize() -> CGSize {
         let scale = UIScreen.main.scale

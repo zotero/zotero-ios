@@ -9,7 +9,7 @@
 import Foundation
 import WebKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import RxSwift
 
 class WebViewHandler: NSObject {
