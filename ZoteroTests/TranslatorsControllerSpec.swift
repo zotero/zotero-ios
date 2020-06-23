@@ -12,6 +12,7 @@ import Foundation
 
 import Nimble
 import OHHTTPStubs
+import OHHTTPStubsSwift
 import RxSwift
 import RealmSwift
 import Quick
@@ -38,7 +39,7 @@ class TranslatorsControllerSpec: QuickSpec {
             self.controller = TranslatorsControllerSpec.createController(dbConfig: self.dbConfig)
             self.disposeBag = DisposeBag()
             try? self.fileStorage.remove(Files.translators)
-            OHHTTPStubs.removeAllStubs()
+            HTTPStubs.removeAllStubs()
         }
 
         it("Loads bundled data") {

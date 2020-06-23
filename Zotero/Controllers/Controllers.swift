@@ -175,7 +175,12 @@ class UserControllers {
             .syncController
             .progressObservable.observeOn(MainScheduler.instance)
             .subscribe(onNext: { progress in
-                UIApplication.shared.isIdleTimerDisabled = progress != nil
+                switch progress {
+                case .aborted, .finished:
+                    UIApplication.shared.isIdleTimerDisabled = false
+                default:
+                    UIApplication.shared.isIdleTimerDisabled = true
+                }
             })
             .disposed(by: self.disposeBag)
 

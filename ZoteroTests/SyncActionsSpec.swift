@@ -14,6 +14,7 @@ import Alamofire
 import CocoaLumberjackSwift
 import Nimble
 import OHHTTPStubs
+import OHHTTPStubsSwift
 import RealmSwift
 import RxSwift
 import Quick
@@ -35,7 +36,7 @@ class SyncActionsSpec: QuickSpec {
             let url = URL(fileURLWithPath: Files.documentsRootPath).appendingPathComponent("downloads")
             try? FileManager.default.removeItem(at: url)
 
-            OHHTTPStubs.removeAllStubs()
+            HTTPStubs.removeAllStubs()
 
             let realm = SyncActionsSpec.realm
             try! realm.write {
@@ -64,12 +65,12 @@ class SyncActionsSpec: QuickSpec {
                 }
 
                 // Write original json files to directory folder for SyncActionHandler to use when reverting
-                let collectionFile = Files.objectFile(for: .collection, libraryId: .group(1234123), key: "BBBBBBBB", ext: "json")
+                let collectionFile = Files.jsonCacheFile(for: .collection, libraryId: .group(1234123), key: "BBBBBBBB")
                 try! FileManager.default.createMissingDirectories(for: collectionFile.createUrl().deletingLastPathComponent())
                 try! collectionData.write(to: collectionFile.createUrl())
-                let searchFile = Files.objectFile(for: .search, libraryId: .custom(.myLibrary), key: "CCCCCCCC", ext: "json")
+                let searchFile = Files.jsonCacheFile(for: .search, libraryId: .custom(.myLibrary), key: "CCCCCCCC")
                 try! searchData.write(to: searchFile.createUrl())
-                let itemFile = Files.objectFile(for: .item, libraryId: .custom(.myLibrary), key: "AAAAAAAA", ext: "json")
+                let itemFile = Files.jsonCacheFile(for: .item, libraryId: .custom(.myLibrary), key: "AAAAAAAA")
                 try! itemData.write(to: itemFile.createUrl())
 
                 // Create response models
@@ -315,7 +316,7 @@ class SyncActionsSpec: QuickSpec {
             it("fails when item metadata not submitted") {
                 let key = "AAAAAAAA"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "pdf")
+                let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
 
                 let realm = SyncActionsSpec.realm
 
@@ -369,7 +370,7 @@ class SyncActionsSpec: QuickSpec {
             it("fails when file is not available") {
                 let key = "AAAAAAAA"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "pdf")
+                let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
 
                 let realm = SyncActionsSpec.realm
 
@@ -421,7 +422,7 @@ class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "txt")
+                let file = Files.attachmentFile(in: libraryId, key: key, ext: "txt")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
@@ -497,7 +498,7 @@ class SyncActionsSpec: QuickSpec {
                 let key = "AAAAAAAA"
                 let filename = "doc.txt"
                 let libraryId = LibraryIdentifier.group(1)
-                let file = Files.objectFile(for: .item, libraryId: libraryId, key: key, ext: "txt")
+                let file = Files.attachmentFile(in: libraryId, key: key, ext: "txt")
 
                 let data = "test string".data(using: .utf8)!
                 try! FileStorageController().write(data, to: file, options: .atomicWrite)
@@ -540,8 +541,8 @@ class SyncActionsSpec: QuickSpec {
                            baseUrl: baseUrl, headers: nil, statusCode: 204, jsonResponse: [:])
                 stub(condition: { request -> Bool in
                     return request.url?.absoluteString == "https://www.zotero.org/"
-                }, response: { _ -> OHHTTPStubsResponse in
-                    return OHHTTPStubsResponse(jsonObject: [:], statusCode: 201, headers: nil)
+                }, response: { _ -> HTTPStubsResponse in
+                    return HTTPStubsResponse(jsonObject: [:], statusCode: 201, headers: nil)
                 })
 
                 waitUntil(timeout: 10, action: { doneAction in

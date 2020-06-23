@@ -29,9 +29,7 @@ class AppDelegate: UIResponder {
     private func setupLogs() {
         #if DEBUG
         // Enable console logs only for debug mode
-        if let logger = DDTTYLogger.sharedInstance {
-            DDLog.add(logger)
-        }
+        DDLog.add(DDOSLogger.sharedInstance)
 
         // Change to .info to enable server logging
         // Change to .warning/.error to disable server logging

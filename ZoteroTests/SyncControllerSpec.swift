@@ -14,6 +14,7 @@ import Alamofire
 import CocoaLumberjackSwift
 import Nimble
 import OHHTTPStubs
+import OHHTTPStubsSwift
 import RealmSwift
 import RxAlamofire
 import RxSwift
@@ -67,7 +68,7 @@ class SyncControllerSpec: QuickSpec {
     override func spec() {
 
         beforeEach {
-            OHHTTPStubs.removeAllStubs()
+            HTTPStubs.removeAllStubs()
             Defaults.shared.userId = SyncControllerSpec.userId
 
             SyncControllerSpec.realmConfig = nil
@@ -95,7 +96,6 @@ class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["AAAAAAAA": 3]
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
-                        case .tag: break
                         }
                     }
 
@@ -133,7 +133,6 @@ class SyncControllerSpec: QuickSpec {
                                                                  "parentItem": "AAAAAAAA",
                                                                  "itemType": "note",
                                                                  "deleted": 1]]]
-                        case .tag: break
                         }
                     }
 
@@ -270,7 +269,6 @@ class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["AAAAAAAA": 3]
                         case .trash:
                             versionResponses[object] = ["BBBBBBBB": 3]
-                        case .tag: break
                         }
                     }
 
@@ -308,7 +306,6 @@ class SyncControllerSpec: QuickSpec {
                                                                  "parentItem": "AAAAAAAA",
                                                                  "itemType": "note",
                                                                  "deleted": 1]]]
-                        case .tag: break
                         }
                     }
 
@@ -488,10 +485,10 @@ class SyncControllerSpec: QuickSpec {
 //                    let request = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, params: [], version: 0)
 //                    // We don't care about specific post params here, we just want to track all update requests
 //                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
-//                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
+//                    stub(condition: condition, response: { _ -> HTTPStubsResponse in
 //                        let code = statusCode
 //                        statusCode = 200
-//                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
+//                        return HTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
 //                    })
 //                    objects.forEach { object in
 //                        let version: Int? = object == .group ? nil : 0
@@ -668,9 +665,9 @@ class SyncControllerSpec: QuickSpec {
                                 let actions = data.0
                                 let itemAction = actions.filter({ action -> Bool in
                                     switch action {
-                                    case .syncBatchToDb(let batch):
-                                        guard batch.object == .item,
-                                            let strKeys = batch.keys as? [String] else { return false }
+                                    case .syncBatchesToDb(let batches):
+                                        guard batches.first?.object == .item,
+                                            let strKeys = batches.first?.keys else { return false }
                                         return strKeys.contains(unsyncedItemKey) && strKeys.contains(responseItemKey)
                                     default:
                                         return false
@@ -784,7 +781,7 @@ class SyncControllerSpec: QuickSpec {
                             versionResponses[object] = ["DDDDDDDD": 1,
                                                         "EEEEEEEE": 1,
                                                         "FFFFFFFF": 1]
-                        case .tag, .trash: break
+                        case .trash: break
                         }
                     }
 
@@ -845,7 +842,7 @@ class SyncControllerSpec: QuickSpec {
                                                         "library": ["id": 0, "type": "user", "name": "A"],
                                                         "data": ["note": "This is a note", "itemType": "note",
                                                                  "tags": [], "parentItem": "EEEEEEEE"]]]
-                        case .tag, .trash: break
+                        case .trash: break
                         }
                     }
 
@@ -1251,22 +1248,22 @@ class SyncControllerSpec: QuickSpec {
                                                           params: [], version: oldVersion)
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let collectionConditions = collectionUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
-                    stub(condition: collectionConditions, response: { request -> OHHTTPStubsResponse in
+                    stub(condition: collectionConditions, response: { request -> HTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
                         let firstParams = params?.first ?? [:]
                         expect(firstParams["key"] as? String).to(equal(collectionKey))
                         expect(firstParams["version"] as? Int).to(equal(oldVersion))
                         expect(firstParams["name"] as? String).to(equal("New name"))
-                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                   statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                                                 statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
 
                     let itemUpdate = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                     params: [], version: oldVersion)
                     // We don't care about specific params, we just want to catch update for all objecfts of this type
                     let itemConditions = itemUpdate.stubCondition(with: baseUrl, ignorePostParams: true)
-                    stub(condition: itemConditions, response: { request -> OHHTTPStubsResponse in
+                    stub(condition: itemConditions, response: { request -> HTTPStubsResponse in
                         let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) })
                         expect(params?.count).to(equal(1))
                         let firstParams = params?.first ?? [:]
@@ -1275,8 +1272,8 @@ class SyncControllerSpec: QuickSpec {
                         expect(firstParams["title"] as? String).to(equal("New item"))
                         expect(firstParams["numPages"] as? String).to(equal("1"))
                         expect(firstParams["callNumber"]).to(beNil())
-                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
-                                                   statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                                                 statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
 
@@ -1372,7 +1369,7 @@ class SyncControllerSpec: QuickSpec {
                     let update = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item,
                                                 params: [], version: oldVersion)
                     let conditions = update.stubCondition(with: baseUrl)
-                    stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
+                    stub(condition: conditions, response: { request -> HTTPStubsResponse in
                         guard let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) }) else {
                             fail("parameters not found")
                             fatalError()
@@ -1385,7 +1382,7 @@ class SyncControllerSpec: QuickSpec {
                         expect(childPos).toNot(equal(-1))
                         expect(parentPos).to(beLessThan(childPos))
 
-                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -1460,7 +1457,7 @@ class SyncControllerSpec: QuickSpec {
                     let update = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .collection,
                                                 params: [], version: oldVersion)
                     let conditions = update.stubCondition(with: baseUrl)
-                    stub(condition: conditions, response: { request -> OHHTTPStubsResponse in
+                    stub(condition: conditions, response: { request -> HTTPStubsResponse in
                         guard let params = request.httpBodyStream.flatMap({ self.jsonParameters(from: $0) }) else {
                             fail("parameters not found")
                             fatalError()
@@ -1471,7 +1468,7 @@ class SyncControllerSpec: QuickSpec {
                         expect(params[1]["key"] as? String).to(equal(secondKey))
                         expect(params[2]["key"] as? String).to(equal(thirdKey))
 
-                        return OHHTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
+                        return HTTPStubsResponse(jsonObject: ["success": ["0": [:]], "unchanged": [], "failed": []],
                                                    statusCode: 200, headers: ["last-modified-version": "\(newVersion)"])
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
@@ -1550,10 +1547,10 @@ class SyncControllerSpec: QuickSpec {
 
                     var statusCode: Int32 = 412
                     let request = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, params: [], version: 0)
-                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> OHHTTPStubsResponse in
+                    stub(condition: request.stubCondition(with: baseUrl), response: { _ -> HTTPStubsResponse in
                         let code = statusCode
                         statusCode = 200
-                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
+                        return HTTPStubsResponse(jsonObject: [:], statusCode: code, headers: header)
                     })
                     createStub(for: GroupVersionsRequest(userId: SyncControllerSpec.userId),
                                baseUrl: baseUrl, headers: header, jsonResponse: [:])
@@ -1563,9 +1560,9 @@ class SyncControllerSpec: QuickSpec {
                                         baseUrl: baseUrl, headers: header, jsonResponse: [:])
                     }
                     stub(condition: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0).stubCondition(with: baseUrl),
-                         response: { _ -> OHHTTPStubsResponse in
+                         response: { _ -> HTTPStubsResponse in
                         downloadCalled = true
-                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
+                        return HTTPStubsResponse(jsonObject: [:], statusCode: 200, headers: header)
                     })
                     createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                     createStub(for: DeletionsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
@@ -1686,9 +1683,9 @@ class SyncControllerSpec: QuickSpec {
 //                    let request = UpdatesRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: .item, params: [], version: 0)
 //                    // We don't care about specific params, we just need to count all update requests
 //                    let condition = request.stubCondition(with: baseUrl, ignorePostParams: true)
-//                    stub(condition: condition, response: { _ -> OHHTTPStubsResponse in
+//                    stub(condition: condition, response: { _ -> HTTPStubsResponse in
 //                        retryCount += 1
-//                        return OHHTTPStubsResponse(jsonObject: [:], statusCode: (retryCount <= 2 ? 412 : 200), headers: header)
+//                        return HTTPStubsResponse(jsonObject: [:], statusCode: (retryCount <= 2 ? 412 : 200), headers: header)
 //                    })
 //                    objects.forEach { object in
 //                        let version: Int? = object == .group ? nil : 0

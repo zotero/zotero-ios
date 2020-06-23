@@ -12,9 +12,7 @@ import CocoaLumberjackSwift
 
 class TestAppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidFinishLaunching(_ application: UIApplication) {
-        if let logger = DDTTYLogger.sharedInstance {
-            DDLog.add(logger)
-        }
+        DDLog.add(DDOSLogger.sharedInstance)
         dynamicLogLevel = .info
     }
 }

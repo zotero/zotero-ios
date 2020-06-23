@@ -62,4 +62,8 @@ class TestFileStorage: FileStorage {
     }
 
     func link(file fromFile: File, to toFile: File) throws {}
+
+    func directoryData(for file: File) -> DirectoryData? {
+        return nil
+    }
 }

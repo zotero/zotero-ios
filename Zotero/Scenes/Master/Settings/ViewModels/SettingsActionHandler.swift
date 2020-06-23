@@ -200,7 +200,12 @@ struct SettingsActionHandler: ViewModelActionHandler {
                                          .subscribe(onNext: { [weak viewModel] progress in
                                              guard let viewModel = viewModel else { return }
                                              self.update(viewModel: viewModel) { state in
-                                                 state.isSyncing = progress != nil
+                                                switch progress {
+                                                case .aborted, .finished:
+                                                    state.isSyncing = false
+                                                default:
+                                                    state.isSyncing = true
+                                                }
                                              }
                                          })
                                          .disposed(by: self.disposeBag)

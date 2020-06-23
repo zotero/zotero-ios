@@ -45,9 +45,7 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if let logger = DDTTYLogger.sharedInstance {
-            DDLog.add(logger)
-        }
+        DDLog.add(DDOSLogger.sharedInstance)
 
         self.debugLogging = DebugLogging(fileStorage: FileStorageController())
         self.debugLogging.startLoggingOnLaunchIfNeeded()

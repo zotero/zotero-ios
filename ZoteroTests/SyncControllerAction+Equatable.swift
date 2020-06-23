@@ -62,15 +62,7 @@ extension DownloadBatch {
             return false
         }
         for i in 0..<lhs.keys.count {
-            if let lInt = lhs.keys[i] as? Int, let rInt = rhs.keys[i] as? Int {
-                if lInt != rInt {
-                    return false
-                }
-            } else if let lStr = lhs.keys[i] as? String, let rStr = rhs.keys[i] as? String {
-                if lStr != rStr {
-                    return false
-                }
-            } else {
+            if lhs.keys[i] != rhs.keys[i] {
                 return false
             }
         }

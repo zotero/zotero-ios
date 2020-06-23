@@ -526,7 +526,6 @@
 		B38D3C9D24A1E350005289EF /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */; };
 		B38D3CA024A1E39F005289EF /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9F24A1E39F005289EF /* Quick */; };
 		B38D3CA324A1E3D7005289EF /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CA224A1E3D7005289EF /* Nimble */; };
-		B38D3CAA24A1E430005289EF /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CA924A1E430005289EF /* OHHTTPStubs */; };
 		B38D3CAC24A1E430005289EF /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */; };
 		B38D3CAF24A1E4A8005289EF /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAE24A1E4A8005289EF /* RxAlamofire */; };
 		B38D3CB124A1E4B1005289EF /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB024A1E4B1005289EF /* RxAlamofire */; };
@@ -1086,7 +1085,6 @@
 				B38D3CA324A1E3D7005289EF /* Nimble in Frameworks */,
 				B38D3CA024A1E39F005289EF /* Quick in Frameworks */,
 				B38D3CAC24A1E430005289EF /* OHHTTPStubsSwift in Frameworks */,
-				B38D3CAA24A1E430005289EF /* OHHTTPStubs in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2164,7 +2162,6 @@
 			packageProductDependencies = (
 				B38D3C9F24A1E39F005289EF /* Quick */,
 				B38D3CA224A1E3D7005289EF /* Nimble */,
-				B38D3CA924A1E430005289EF /* OHHTTPStubs */,
 				B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */,
 			);
 			productName = ZoteroTests;
@@ -3224,7 +3221,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
-				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3265,7 +3262,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
-				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -3561,7 +3558,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
-				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -3838,11 +3835,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */;
 			productName = Nimble;
-		};
-		B38D3CA924A1E430005289EF /* OHHTTPStubs */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
-			productName = OHHTTPStubs;
 		};
 		B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */ = {
 			isa = XCSwiftPackageProductDependency;
