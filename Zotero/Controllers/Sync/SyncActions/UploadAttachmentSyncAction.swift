@@ -85,7 +85,9 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  case .success((let uploadRequest, let uploadKey)):
                                      return uploadRequest.rx.responseData()
                                                             .asSingle()
-                                                            .flatMap({ _ in Single.just(.success(uploadKey)) })
+                                                            .flatMap({ response in
+                                                                Single.just(.success(uploadKey))
+                                                            })
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }

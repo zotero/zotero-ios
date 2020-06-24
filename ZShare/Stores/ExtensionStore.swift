@@ -496,7 +496,8 @@ class ExtensionStore {
                                   filename: filename,
                                   mimeType: ExtensionStore.defaultMimetype,
                                   parameters: params,
-                                  headers: ["If-None-Match": "*"]) { [weak self] error in
+                                  headers: ["If-None-Match": "*"],
+                                  queue: .main) { [weak self] error in
                                       if let error = error {
                                           DDLogError("ExtensionStore: can't start upload - \(error)")
                                           self?.state.submission = .error(.unknown)

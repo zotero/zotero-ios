@@ -192,7 +192,7 @@ class RItem: Object {
 
         var attachments = self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
 
-        guard !attachments.isEmpty else {
+        guard attachments.count > 0 else {
             self.mainAttachment = nil
             return
         }
@@ -200,7 +200,7 @@ class RItem: Object {
         let url = self.fields.filter(.key(FieldKeys.url)).first?.value
         let pdfs = attachments.filter(.containsField(with: "application/pdf")).sorted(byKeyPath: "dateAdded", ascending: true)
 
-        if !pdfs.isEmpty {
+        if pdfs.count > 0 {
             if let url = url, let matchingUrl = pdfs.filter(.containsField(with: url)).first {
                 self.mainAttachment = matchingUrl
                 return

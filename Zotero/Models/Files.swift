@@ -46,6 +46,10 @@ struct Files {
         return FileData(rootPath: self.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
     }
 
+    static var uploadFile: File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, ext: "")
+    }
+
     // MARK: - JSON cache
 
     static func jsonCacheFile(for object: SyncObject, libraryId: LibraryIdentifier, key: String) -> File {
@@ -106,13 +110,6 @@ struct Files {
     static func file(from url: URL) -> File {
         return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],
                         name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension.lowercased())
-    }
-
-    static func uploadFile(from streamUrl: URL) -> File {
-        return FileData(rootPath: Files.appGroupPath,
-                        relativeComponents: ["uploads"],
-                        name: streamUrl.lastPathComponent,
-                        ext: streamUrl.pathExtension)
     }
 
     private static func split(filename: String) -> (name: String, extension: String) {
