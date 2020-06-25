@@ -46,7 +46,7 @@ struct Files {
         return FileData(rootPath: self.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
     }
 
-    static var uploadFile: File {
+    static var temporaryUploadFile: File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["uploads"], name: UUID().uuidString, ext: "")
     }
 

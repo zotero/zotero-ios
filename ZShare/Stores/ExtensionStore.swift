@@ -79,7 +79,7 @@ class ExtensionStore {
         /// - error: The submission process failed.
         enum Submission: Equatable {
             enum Error: Swift.Error, Equatable {
-                case expired, fileMissing, unknown
+                case expired, fileMissing, unknown, missingBackgroundUploader
             }
 
             case preparing
@@ -116,11 +116,14 @@ class ExtensionStore {
     private let schemaController: SchemaController
     private let dateParser: DateParser
     private let webViewHandler: WebViewHandler
+    private let backgroundQueue: DispatchQueue
+    private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(webView: WKWebView, apiClient: ApiClient, backgroundUploader: BackgroundUploader,
          dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
          syncController: SyncController, translatorsController: TranslatorsController) {
+        let queue = DispatchQueue(label: "org.zotero.ZShare.BackgroundQueue", qos: .userInteractive)
         self.syncController = syncController
         self.apiClient = apiClient
         self.backgroundUploader = backgroundUploader
@@ -129,6 +132,8 @@ class ExtensionStore {
         self.schemaController = schemaController
         self.dateParser = dateParser
         self.webViewHandler = WebViewHandler(webView: webView, translatorsController: translatorsController)
+        self.backgroundQueue = queue
+        self.backgroundScheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.ZShare.BackgroundScheduler")
         self.state = State()
         self.disposeBag = DisposeBag()
 
@@ -285,6 +290,7 @@ class ExtensionStore {
         let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
         let request = FileRequest(data: .external(url), destination: file)
         self.apiClient.download(request: request)
+                      .subscribeOn(self.backgroundScheduler)
                       .flatMap { request in
                           return request.rx.progress()
                       }
@@ -366,11 +372,13 @@ class ExtensionStore {
     private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int,
                         apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
         self.createItem(item, schemaController: schemaController)
+            .subscribeOn(self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId,
                                               userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
-                                              queue: .main, scheduler: MainScheduler.instance).result
+                                              queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
             }
+            .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.submission = .ready
             }, onError: { [weak self] error in
@@ -408,24 +416,29 @@ class ExtensionStore {
                         apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
         self.prepareUpload(item: item, attachment: attachment, file: file, filename: filename,
                        libraryId: libraryId, userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-            .subscribe(onSuccess: { [weak self] response, md5 in
-                guard let `self` = self else { return }
+            .flatMap { [weak self] response, md5 -> Single<()> in
+                guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
 
                 switch response {
                 case .exists:
-                    self.state.submission = .ready
-
+                    return Single.just(())
                 case .new(let response):
-                    self.startBackgroundUpload(to: response.url,
-                                               filename: filename,
-                                               file: file,
-                                               params: response.params,
-                                               key: attachment.key,
-                                               uploadKey: response.uploadKey,
-                                               md5: md5,
-                                               libraryId: libraryId,
-                                               userId: userId)
+                    guard let backgroundUploader = self.backgroundUploader else {
+                        return Single.error(State.Submission.Error.missingBackgroundUploader)
+                    }
+                    let upload = BackgroundUpload(key: attachment.key, libraryId: libraryId, userId: userId, remoteUrl: response.url,
+                                                  fileUrl: file.createUrl(), uploadKey: response.uploadKey, md5: md5)
+                    return backgroundUploader.start(upload: upload, filename: filename, mimeType: ExtensionStore.defaultMimetype,
+                                                    parameters: response.params, headers: ["If-None-Match": "*"])
                 }
+            }
+            .observeOn(MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] _ in
+                // The `backgroundUploader` is set to `nil` so that the `URLSession` delegate no longer exists for the share extension.
+                // This way the URLSession delegate will always be called in the main (container) app, where additional upload
+                // processing is performed.
+                self?.backgroundUploader = nil
+                self?.state.submission = .ready
             }, onError: { [weak self] error in
                 let error = (error as? State.Submission.Error) ?? .unknown
                 self?.state.submission = .error(error)
@@ -448,6 +461,7 @@ class ExtensionStore {
     private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
         return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
+                   .subscribeOn(self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
                        guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
                        return self.createItems(item: item, attachment: attachment)
@@ -459,56 +473,17 @@ class ExtensionStore {
                                   })
                    }
                    .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
-                    return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
-                                                  apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
-                                                  queue: .main, scheduler: MainScheduler.instance).result
+                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+                                                     apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
+                                                     queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just((filesize, md5, mtime)) })
                    }
                    .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
                        return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
                                                         libraryId: libraryId, userId: userId, apiClient: apiClient,
-                                                        queue: .main, scheduler: MainScheduler.instance).result
+                                                        queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ return Single.just(($0, md5)) })
                    }
-    }
-
-    /// Enqueues a `BackgroundUpload` in `BackgroundUploader`.
-    /// - parameter url: `URL` of file to upload.
-    /// - parameter filename: Filename of file to upload.
-    /// - parameter file: File to upload.
-    /// - parameter params: Parameters returned by Zotero API which need to be included in the upload request.
-    /// - parameter key: Attachment key in Zotero API.
-    /// - parameter uploadKey: Upload key returned by authorization request.
-    /// - parameter md5: MD5 hash of file.
-    /// - parameter libraryId: Id of library of attachment.
-    /// - parameter userId: Id of current user.
-    private func startBackgroundUpload(to url: URL, filename: String, file: File, params: [String: String],
-                                       key: String, uploadKey: String, md5: String, libraryId: LibraryIdentifier, userId: Int) {
-        guard let backgroundUploader = self.backgroundUploader else { return }
-        let upload = BackgroundUpload(key: key,
-                                      libraryId: libraryId,
-                                      userId: userId,
-                                      remoteUrl: url,
-                                      fileUrl: file.createUrl(),
-                                      uploadKey: uploadKey,
-                                      md5: md5)
-        backgroundUploader.upload(upload,
-                                  filename: filename,
-                                  mimeType: ExtensionStore.defaultMimetype,
-                                  parameters: params,
-                                  headers: ["If-None-Match": "*"],
-                                  queue: .main) { [weak self] error in
-                                      if let error = error {
-                                          DDLogError("ExtensionStore: can't start upload - \(error)")
-                                          self?.state.submission = .error(.unknown)
-                                      } else {
-                                          // The uploader is set to nil so that the URLSession delegate no longer exists for the share extension. This
-                                          // way the URLSession delegate will always be called in the main (container) app, where additional upload
-                                          // processing is performed.
-                                          self?.backgroundUploader = nil
-                                          self?.state.submission = .ready
-                                      }
-                                  }
     }
 
     /// Moves downloaded file from temporary folder to file appropriate for given attachment item.
@@ -517,19 +492,24 @@ class ExtensionStore {
     /// - parameter libraryId: Id of library of new attachment.
     /// - returns: `Single` with size of file.
     private func moveTmpFile(with key: String, to file: File, libraryId: LibraryIdentifier) -> Single<UInt64> {
-        let tmpFile = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
+        return Single.create { subscriber -> Disposable in
+            let tmpFile = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
 
-        do {
-            let size = self.fileStorage.size(of: tmpFile)
-            if size == 0 {
-                return Single.error(State.Submission.Error.fileMissing)
+            do {
+                let size = self.fileStorage.size(of: tmpFile)
+                if size == 0 {
+                    subscriber(.error(State.Submission.Error.fileMissing))
+                    return Disposables.create()
+                }
+                try self.fileStorage.move(from: tmpFile, to: file)
+                subscriber(.success(size))
+            } catch {
+                // If tmp file couldn't be moved, remove it if it's there
+                try? self.fileStorage.remove(tmpFile)
+                subscriber(.error(State.Submission.Error.fileMissing))
             }
-            try self.fileStorage.move(from: tmpFile, to: file)
-            return Single.just(size)
-        } catch {
-            // If tmp file couldn't be moved, remove it if it's there
-            try? self.fileStorage.remove(tmpFile)
-            return Single.error(State.Submission.Error.fileMissing)
+
+            return Disposables.create()
         }
     }
 
@@ -538,25 +518,30 @@ class ExtensionStore {
     /// - parameter attachment: Parsed attachment to be created.
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
     private func createItems(item: ItemResponse, attachment: Attachment) -> Single<([[String: Any]], String, Int)> {
-        let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment,
-                                                        schemaController: self.schemaController, dateParser: self.dateParser)
-        do {
-            let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
+        return Single.create { subscriber -> Disposable in
+            let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment,
+                                                            schemaController: self.schemaController, dateParser: self.dateParser)
 
-            let mtime = attachment.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-            let md5 = attachment.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+            do {
+                let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
 
-            var parameters: [[String: Any]] = []
-            if let updateParameters = item.updateParameters {
-                parameters.append(updateParameters)
+                let mtime = attachment.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+                let md5 = attachment.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+
+                var parameters: [[String: Any]] = []
+                if let updateParameters = item.updateParameters {
+                    parameters.append(updateParameters)
+                }
+                if let updateParameters = attachment.updateParameters {
+                    parameters.append(updateParameters)
+                }
+
+                subscriber(.success((parameters, md5, mtime)))
+            } catch let error {
+                subscriber(.error(error))
             }
-            if let updateParameters = attachment.updateParameters {
-                parameters.append(updateParameters)
-            }
 
-            return Single.just((parameters, md5, mtime))
-        } catch let error {
-            return Single.error(error)
+            return Disposables.create()
         }
     }
 

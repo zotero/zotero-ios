@@ -8,7 +8,6 @@
 
 import Foundation
 
-import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 import RxCocoa
@@ -19,7 +18,6 @@ class BackgroundUploader: NSObject {
     }
 
     private let context: BackgroundUploaderContext
-    private let fileStorage: FileStorage
     private let uploadProcessor: BackgroundUploadProcessor
 
     private var session: URLSession!
@@ -35,7 +33,6 @@ class BackgroundUploader: NSObject {
 
     init(uploadProcessor: BackgroundUploadProcessor) {
         self.context = BackgroundUploaderContext()
-        self.fileStorage = FileStorageController()
         self.uploadProcessor = uploadProcessor
         self.finishedUploads = []
         self.uploadsFinishedProcessing = true
@@ -64,28 +61,13 @@ class BackgroundUploader: NSObject {
         return self.context.activeUploads.map({ $0.md5 })
     }
 
-    func upload(_ upload: BackgroundUpload,
-                filename: String,
-                mimeType: String,
-                parameters: [String: String],
-                headers: [String: String],
-                queue: DispatchQueue,
-                completion: @escaping (Swift.Error?) -> Void) {
-        self.createMultipartformRequest(for: upload,
-                                        filename: filename,
-                                        mimeType: mimeType,
-                                        parameters: parameters,
-                                        headers: headers,
-                                        queue: queue,
-                                        completion: { [weak self] result in
-                                            switch result {
-                                            case .failure(let error):
-                                                completion(error)
-                                            case .success((let request, let fileUrl)):
-                                                self?.startUpload(upload.copy(with: fileUrl), request: request)
-                                                completion(nil)
-                                            }
-                                        })
+    func start(upload: BackgroundUpload, filename: String, mimeType: String, parameters: [String: String], headers: [String: String]) -> Single<()> {
+        return self.uploadProcessor.createMultipartformRequest(for: upload, filename: filename, mimeType: mimeType,
+                                                               parameters: parameters, headers: headers)
+                                   .flatMap({ [weak self] request, url in
+                                       self?.startUpload(upload.copy(with: url), request: request)
+                                       return Single.just(())
+                                   })
     }
 
     // MARK: - Uploading
@@ -94,46 +76,6 @@ class BackgroundUploader: NSObject {
         let task = self.session.uploadTask(with: request, fromFile: upload.fileUrl)
         self.context.saveUpload(upload, taskId: task.taskIdentifier)
         task.resume()
-    }
-
-    /// Creates a multipartform request for a file upload. The original file is copied to another folder so that it can be streamed from it.
-    /// It needs to be deleted once the upload finishes (successful or not).
-    /// - parameter upload: Backgroud upload to prepare
-    /// - parameter filename: Filename for file to upload
-    /// - parameter mimeType: Mimetype of file to upload
-    /// - parameter parameters: Extra parameters for upload
-    /// - parameter headers: Headers to be sent with the upload request
-    /// - parameter completion: Completion containing a result of multipartform encoding. Successful encoding provides a URLRequest that can be used
-    ///                         to upload the file and URL pointing to the file which will be uploaded.
-    private func createMultipartformRequest(for upload: BackgroundUpload, filename: String, mimeType: String,
-                                            parameters: [String: String]?, headers: [String: String]? = nil,
-                                            queue: DispatchQueue,
-                                            completion: @escaping (Swift.Result<(URLRequest, URL), Swift.Error>) -> Void) {
-        let formData = MultipartFormData(fileManager: FileManager.default)
-        if let parameters = parameters {
-            // Append parameters to the multipartform request.
-            parameters.forEach { (key, value) in
-                if let stringData = value.data(using: .utf8) {
-                    formData.append(stringData, withName: key)
-                }
-            }
-        }
-        formData.append(upload.fileUrl, withName: "file", fileName: filename, mimeType: mimeType)
-
-        let newFile = Files.uploadFile
-        let newFileUrl = newFile.createUrl()
-
-        do {
-            try self.fileStorage.createDirectories(for: newFile)
-            try formData.writeEncodedData(to: newFileUrl)
-            var request = try URLRequest(url: upload.remoteUrl, method: .post, headers: headers.flatMap(HTTPHeaders.init))
-            request.setValue(formData.contentType, forHTTPHeaderField: "Content-Type")
-            try request.validate()
-            completion(.success((request, newFileUrl)))
-        } catch let error {
-            DDLogError("BackgroundUploader: error - \(error)")
-            completion(.failure(error))
-        }
     }
 
     // MARK: - Finishing upload

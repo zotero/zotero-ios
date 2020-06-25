@@ -159,7 +159,9 @@ class ShareViewController: UIViewController {
 
             switch error {
             case .fileMissing:
-                self.showError(message: "Could not find file to upload")
+                self.showError(message: "Could not find file to upload.")
+            case .missingBackgroundUploader:
+                self.showError(message: "Background uploader not initialized.")
             case .unknown:
                 self.showError(message: "Unknown error. Can't upload file.")
             case .expired: break

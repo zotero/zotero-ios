@@ -19,6 +19,7 @@ struct DirectoryData {
 }
 
 protocol FileStorage: class {
+    var fileManager: FileManager { get }
     func read(_ file: File) throws -> Data
     func write(_ data: Data, to file: File, options: Data.WritingOptions) throws
     func remove(_ file: File) throws
@@ -34,7 +35,7 @@ protocol FileStorage: class {
 }
 
 class FileStorageController: FileStorage {
-    private let fileManager: FileManager = .default
+    let fileManager: FileManager = .default
 
     func read(_ file: File) throws -> Data {
         return try Data(contentsOf: file.createUrl())
