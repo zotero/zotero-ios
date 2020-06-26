@@ -21,12 +21,12 @@ extension UIColor {
         return UIColor(hex: "#d1d1d6")
     }
 
-    convenience init(hex: String) {
+    convenience init(hex: String, alpha: CGFloat = 1) {
         let hexInt = UIColor.intFromHexString(hexStr: hex)
         self.init(red: CGFloat((hexInt >> 16) & 0xff) / 0xff,
                   green: CGFloat((hexInt >> 8) & 0xff) / 0xff,
                   blue: CGFloat(hexInt & 0xff) / 0xff,
-                  alpha: 1)
+                  alpha: alpha)
     }
 
     private static func intFromHexString(hexStr: String) -> UInt64 {

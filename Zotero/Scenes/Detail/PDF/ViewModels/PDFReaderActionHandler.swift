@@ -122,7 +122,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    /// Set selected annotation. Also sets `focusSidebarLocation` or `focusDocumentLocation` if needed.
+    /// Set selected annotation. Also sets `focusSidebarIndexPath` or `focusDocumentLocation` if needed.
     /// - parameter annotation: Annotation to be selected. Deselects current annotation if `nil`.
     /// - parameter index: Index of annotation in annotations array on given page.
     /// - parameter didSelectInDocument: `true` if annotation was selected in document, false if it was selected in sidebar.
@@ -138,7 +138,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 if !didSelectInDocument {
                     state.focusDocumentLocation = (annotation.page, annotation.boundingBox)
                 } else {
-                    state.focusSidebarLocation = (index, annotation.page)
+                    state.focusSidebarIndexPath = IndexPath(row: index, section: annotation.page)
                 }
 
                 var indexPaths = state.updatedAnnotationIndexPaths ?? []
@@ -162,7 +162,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                                             guard let viewModel = viewModel, viewModel.state.key == parentKey else { return }
                                             self.update(viewModel: viewModel) { state in
                                                 state.previewCache.setObject(image, forKey: (annotationKey as NSString))
-                                                state.changes = .annotations
+                                                state.loadedPreviewImageAnnotationKeys = [annotationKey]
                                             }
                                         })
                                         .disposed(by: self.disposeBag)
@@ -197,37 +197,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         group.notify(queue: .main) { [weak viewModel] in
             guard let viewModel = viewModel else { return }
             self.update(viewModel: viewModel) { state in
-                state.updatedAnnotationIndexPaths = self.indexPaths(for: loadedKeys, in: viewModel.state.annotations)
+                state.loadedPreviewImageAnnotationKeys = loadedKeys
             }
         }
-    }
-
-    /// Finds index paths for given keys in annotations.
-    /// - parameter keys: Keys for which index paths are needed.
-    /// - parameter annotations: All annotations in document.
-    /// - returns: Found index paths.
-    private func indexPaths(for keys: Set<String>, in annotations: [Int: [Annotation]]) -> [IndexPath] {
-        var indexPaths: [IndexPath] = []
-        var remainingKeys = keys
-
-        for (page, pageAnnotations) in annotations {
-            for (index, annotation) in pageAnnotations.enumerated() {
-                guard remainingKeys.contains(annotation.key) else { continue }
-
-                indexPaths.append(IndexPath(row: index, section: page))
-                remainingKeys.remove(annotation.key)
-
-                if remainingKeys.isEmpty {
-                    break
-                }
-            }
-
-            if remainingKeys.isEmpty {
-                return indexPaths
-            }
-        }
-
-        return indexPaths
     }
 
     // MARK: - Annotation management
@@ -257,19 +229,25 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         }
 
         self.update(viewModel: viewModel) { state in
-            var focus: AnnotationSidebarLocation?
+            var focus: IndexPath?
 
             for annotation in newZoteroAnnotations {
-                guard let index = state.annotations[annotation.page]?.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex }) else { return }
+                let index: Int
 
-                state.annotations[annotation.page]?.insert(annotation, at: index)
+                if let annotations = state.annotations[annotation.page] {
+                    index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+                    state.annotations[annotation.page]?.insert(annotation, at: index)
+                } else {
+                    index = 0
+                    state.annotations[annotation.page] = [annotation]
+                }
 
                 if focus == nil {
-                    focus = (index, annotation.page)
+                    focus = IndexPath(row: index, section: annotation.page)
                 }
             }
 
-            state.focusSidebarLocation = focus
+            state.focusSidebarIndexPath = focus
             state.changes = .annotations
         }
     }
@@ -310,10 +288,81 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotation: Updated PSPDFKit annotation.
     /// - parameter viewModel: ViewModel.
     private func update(annotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let annotation = annotation as? SquareAnnotation,
-              annotation.isZotero else { return }
-        // TODO: - check if order changed
-        self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key)
+        guard let key = annotation.key else { return }
+        guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations) else {
+            // Annotation not found, add it
+            self.add(annotations: [annotation], in: viewModel)
+            return
+        }
+
+        let newSection = Int(annotation.pageIndex)
+
+        self.update(viewModel: viewModel) { state in
+            // Move annotation to appropriate page and position if needed
+            if newSection != indexPath.section {
+                // Annotation changed page, move it
+                guard var zoteroAnnotation = state.annotations[indexPath.section]?.remove(at: indexPath.row) else {
+                    DDLogError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
+                    fatalError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
+                }
+
+                // Update bounding box
+                zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox])
+
+                // TODO: - calculate new sortIndex
+
+                // Find new index on new page based on sortIndex
+                let index: Int
+                if let annotations = state.annotations[newSection] {
+                    index = annotations.index(of: zoteroAnnotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+                } else {
+                    state.annotations[newSection] = []
+                    index = 0
+                }
+
+                state.annotations[newSection]?.insert(zoteroAnnotation, at: index)
+                state.removedAnnotationIndexPaths = [indexPath]
+                state.insertedAnnotationIndexPaths = [IndexPath(row: index, section: newSection)]
+            } else {
+                guard var zoteroAnnotation = state.annotations[indexPath.section]?[indexPath.row] else {
+                    DDLogError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
+                    fatalError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
+                }
+
+                // TODO: - calculate new sortIndex, move annotation if needed
+
+                // Update bounding box of annotation if needed
+                let zoteroAnnotationBoundingBox = zoteroAnnotation.boundingBox
+                if annotation.boundingBox.size != zoteroAnnotationBoundingBox.size {
+                    zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox])
+                    state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
+
+                    // If it's a `SquareAnnotation`, reload cell if aspect ratio of preview changed
+                    if annotation is SquareAnnotation &&
+                        zoteroAnnotationBoundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
+                        // TODO: - don't update if sortIndex changed, it will be moved
+                        state.updatedAnnotationIndexPaths = [indexPath]
+                    }
+                }
+            }
+
+            // Remove annotation preview from cache, if `SquareAnnotation` changed, then preview image changed as well
+            state.previewCache.removeObject(forKey: (key as NSString))
+        }
+
+        if let annotation = annotation as? SquareAnnotation {
+            // Load new image for `SquareAnnotation`
+            self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key)
+        }
+    }
+
+    private func indexPath(for key: String, in annotations: [Int: [Annotation]]) -> IndexPath? {
+        for (page, annotations) in annotations {
+            if let index = annotations.firstIndex(where: { $0.key == key }) {
+                return IndexPath(row: index, section: page)
+            }
+        }
+        return nil
     }
 
     /// Loads annotations from DB (TODO), converts them to Zotero annotations and adds matching PSPDFKit annotations to document.

@@ -196,6 +196,10 @@ internal enum L10n {
       return L10n.tr("Localizable", "pdf.scrollDirection", String(describing: p1))
     }
     internal enum AnnotationsSidebar {
+      /// Add comment
+      internal static let addComment = L10n.tr("Localizable", "pdf.annotations_sidebar.add_comment")
+      /// Add tags
+      internal static let addTags = L10n.tr("Localizable", "pdf.annotations_sidebar.add_tags")
       /// Page
       internal static let page = L10n.tr("Localizable", "pdf.annotations_sidebar.page")
       /// Search Annotations

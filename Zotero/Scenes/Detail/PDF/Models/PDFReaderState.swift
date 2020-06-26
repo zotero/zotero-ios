@@ -13,7 +13,6 @@ import UIKit
 import PSPDFKit
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
-typealias AnnotationSidebarLocation = (index: Int, page: Int)
 
 struct PDFReaderState: ViewModelState {
     struct Changes: OptionSet {
@@ -36,9 +35,13 @@ struct PDFReaderState: ViewModelState {
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
-    var focusSidebarLocation: AnnotationSidebarLocation?
-    /// Annotations that need to be reloaded in sidebar
+    var focusSidebarIndexPath: IndexPath?
+    /// Annotations that need to be reloaded/inserted/removed in sidebar
     var updatedAnnotationIndexPaths: [IndexPath]?
+    var insertedAnnotationIndexPaths: [IndexPath]?
+    var removedAnnotationIndexPaths: [IndexPath]?
+    /// Annotations that loaded their preview images and need to show them
+    var loadedPreviewImageAnnotationKeys: Set<String>?
 
     init(url: URL, key: String) {
         self.key = key
@@ -53,7 +56,7 @@ struct PDFReaderState: ViewModelState {
     mutating func cleanup() {
         self.changes = []
         self.focusDocumentLocation = nil
-        self.focusSidebarLocation = nil
+        self.focusSidebarIndexPath = nil
         self.updatedAnnotationIndexPaths = nil
     }
 }

@@ -115,6 +115,8 @@ The following fields will be lost:
 "pdf.pageTransition.continuous" = "Continuous";
 "pdf.annotations_sidebar.page" = "Page";
 "pdf.annotations_sidebar.search_title" = "Search Annotations";
+"pdf.annotations_sidebar.add_comment" = "Add comment";
+"pdf.annotations_sidebar.add_tags" = "Add tags";
 
 "settings.title" = "Settings";
 "settings.profile" = "Profile";

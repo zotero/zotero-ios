@@ -54,18 +54,59 @@ class AnnotationsViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        self.reloadIfNeeded(from: state) {
+            if let keys = state.loadedPreviewImageAnnotationKeys {
+                self.updatePreviewsIfVisible(for: keys)
+            }
+
+            if let indexPath = state.focusSidebarIndexPath {
+                self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+            }
+        }
+    }
+
+    /// Updates `UIImage` of `SquareAnnotation` preview if the cell is currently on screen.
+    /// - parameter keys: Set of keys to update.
+    private func updatePreviewsIfVisible(for keys: Set<String>) {
+        let cells = self.tableView.visibleCells.compactMap({ $0 as? AnnotationCell }).filter({ keys.contains($0.key) })
+
+        for cell in cells {
+            let image = self.viewModel.state.previewCache.object(forKey: (cell.key as NSString))
+            cell.updatePreview(image: image)
+        }
+    }
+
+    /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
+    /// - parameter state: Current state.
+    /// - parameter completion: Called after reload was performed or even if there was no reload.
+    private func reloadIfNeeded(from state: PDFReaderState, completion: @escaping () -> Void) {
         if state.changes.contains(.annotations) {
             self.tableView.reloadData()
+            completion()
+            return
         }
 
+
+        guard state.insertedAnnotationIndexPaths != nil ||
+              state.removedAnnotationIndexPaths != nil ||
+              state.updatedAnnotationIndexPaths != nil else {
+            completion()
+            return
+        }
+
+        self.tableView.beginUpdates()
+        if let indexPaths = state.insertedAnnotationIndexPaths {
+            self.tableView.insertRows(at: indexPaths, with: .automatic)
+        }
+        if let indexPaths = state.removedAnnotationIndexPaths {
+            self.tableView.deleteRows(at: indexPaths, with: .automatic)
+        }
         if let indexPaths = state.updatedAnnotationIndexPaths {
             self.tableView.reloadRows(at: indexPaths, with: .none)
         }
+        self.tableView.endUpdates()
 
-        if let location = state.focusSidebarLocation {
-            let indexPath = IndexPath(row: location.index, section: location.page)
-            self.tableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
-        }
+        completion()
     }
 
     // MARK: - Setups
@@ -78,7 +119,7 @@ class AnnotationsViewController: UIViewController {
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
         tableView.backgroundColor = UIColor(hex: "#d2d8e2")
-        tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
+        tableView.register(UINib(nibName: "AnnotationCell", bundle: nil), forCellReuseIdentifier: AnnotationsViewController.cellId)
 
         self.view.addSubview(tableView)
 
@@ -141,7 +182,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
                 }
             }
 
-            cell.setup(with: annotation, preview: preview, selected: selected)
+            cell.setup(with: annotation, preview: preview, selected: selected, availableWidth: AnnotationsConfig.sidebarWidth)
         }
 
         return cell

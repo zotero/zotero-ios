@@ -55,4 +55,21 @@ struct Annotation {
 
         return CGRect(x: minX, y: minY, width: (maxX - minX), height: (maxY - minY))
     }
+
+    func copy(rects: [CGRect]) -> Annotation {
+        return Annotation(key: self.key,
+                          type: self.type,
+                          page: self.page,
+                          pageLabel: self.pageLabel,
+                          rects: rects,
+                          author: self.author,
+                          isAuthor: self.isAuthor,
+                          color: self.color,
+                          comment: self.comment,
+                          text: self.text,
+                          isLocked: self.isLocked,
+                          sortIndex: self.sortIndex,
+                          dateModified: self.dateModified,
+                          tags: self.tags)
+    }
 }
