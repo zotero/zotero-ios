@@ -120,13 +120,23 @@
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
+                                            <button opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dum-7b-JPv">
+                                                <rect key="frame" x="0.0" y="1" width="402" height="30"/>
+                                                <connections>
+                                                    <action selector="updateComment" destination="lZ1-SH-e3i" eventType="touchUpInside" id="TDo-28-TSi"/>
+                                                </connections>
+                                            </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
                                             <constraint firstAttribute="bottom" secondItem="1ni-AA-0kQ" secondAttribute="bottom" constant="6" id="5OE-o4-tlV"/>
+                                            <constraint firstAttribute="trailing" secondItem="dum-7b-JPv" secondAttribute="trailing" id="8J2-ak-Wb6"/>
+                                            <constraint firstItem="dum-7b-JPv" firstAttribute="top" secondItem="lrl-mT-sYR" secondAttribute="top" id="CdW-pG-4bv"/>
                                             <constraint firstItem="1ni-AA-0kQ" firstAttribute="leading" secondItem="lrl-mT-sYR" secondAttribute="leading" constant="10" id="DRh-wU-023"/>
+                                            <constraint firstItem="dum-7b-JPv" firstAttribute="leading" secondItem="lrl-mT-sYR" secondAttribute="leading" id="MLe-BO-VWE"/>
                                             <constraint firstAttribute="trailing" secondItem="1ni-AA-0kQ" secondAttribute="trailing" constant="10" id="ayH-Tr-Hlh"/>
                                             <constraint firstItem="1ni-AA-0kQ" firstAttribute="top" secondItem="lrl-mT-sYR" secondAttribute="top" constant="6" id="hLT-Jv-b4a"/>
+                                            <constraint firstAttribute="bottom" secondItem="dum-7b-JPv" secondAttribute="bottom" id="kTJ-ev-7Gm"/>
                                         </constraints>
                                     </view>
                                     <view hidden="YES" contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="mD4-Mk-OmK">
@@ -137,6 +147,9 @@
                                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                                 <inset key="contentEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
                                                 <state key="normal" title="Add comment"/>
+                                                <connections>
+                                                    <action selector="updateComment" destination="lZ1-SH-e3i" eventType="touchUpInside" id="1OA-db-cY0"/>
+                                                </connections>
                                             </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -163,12 +176,22 @@
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
+                                            <button opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bUe-Rb-Uc5">
+                                                <rect key="frame" x="0.0" y="0.0" width="402" height="32.5"/>
+                                                <connections>
+                                                    <action selector="updateTags" destination="lZ1-SH-e3i" eventType="touchUpInside" id="uZG-iW-TUt"/>
+                                                </connections>
+                                            </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
+                                            <constraint firstAttribute="trailing" secondItem="bUe-Rb-Uc5" secondAttribute="trailing" id="4ju-qb-XnB"/>
                                             <constraint firstItem="UUD-pj-5VC" firstAttribute="top" secondItem="pj5-NP-qgu" secondAttribute="top" constant="6" id="RIh-Gh-Vzl"/>
+                                            <constraint firstAttribute="bottom" secondItem="bUe-Rb-Uc5" secondAttribute="bottom" id="bv3-G4-zDG"/>
+                                            <constraint firstItem="bUe-Rb-Uc5" firstAttribute="top" secondItem="pj5-NP-qgu" secondAttribute="top" id="d1j-Y4-yXC"/>
                                             <constraint firstItem="UUD-pj-5VC" firstAttribute="leading" secondItem="pj5-NP-qgu" secondAttribute="leading" constant="10" id="jKk-eb-FYk"/>
                                             <constraint firstAttribute="trailing" secondItem="UUD-pj-5VC" secondAttribute="trailing" constant="10" id="jnr-Xk-fIy"/>
+                                            <constraint firstItem="bUe-Rb-Uc5" firstAttribute="leading" secondItem="pj5-NP-qgu" secondAttribute="leading" id="oZa-CE-oQ4"/>
                                             <constraint firstAttribute="bottom" secondItem="UUD-pj-5VC" secondAttribute="bottom" constant="6" id="pAq-4A-rDc"/>
                                         </constraints>
                                     </view>
@@ -180,6 +203,9 @@
                                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                                 <inset key="contentEdgeInsets" minX="10" minY="10" maxX="10" maxY="10"/>
                                                 <state key="normal" title="Add tags"/>
+                                                <connections>
+                                                    <action selector="updateTags" destination="lZ1-SH-e3i" eventType="touchUpInside" id="t8t-Tc-TKI"/>
+                                                </connections>
                                             </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

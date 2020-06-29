@@ -72,4 +72,38 @@ struct Annotation {
                           dateModified: self.dateModified,
                           tags: self.tags)
     }
+
+    func copy(comment: String) -> Annotation {
+        return Annotation(key: self.key,
+                          type: self.type,
+                          page: self.page,
+                          pageLabel: self.pageLabel,
+                          rects: self.rects,
+                          author: self.author,
+                          isAuthor: self.isAuthor,
+                          color: self.color,
+                          comment: comment,
+                          text: self.text,
+                          isLocked: self.isLocked,
+                          sortIndex: self.sortIndex,
+                          dateModified: self.dateModified,
+                          tags: self.tags)
+    }
+
+    func copy(tags: [Tag]) -> Annotation {
+        return Annotation(key: self.key,
+                          type: self.type,
+                          page: self.page,
+                          pageLabel: self.pageLabel,
+                          rects: self.rects,
+                          author: self.author,
+                          isAuthor: self.isAuthor,
+                          color: self.color,
+                          comment: self.comment,
+                          text: self.text,
+                          isLocked: self.isLocked,
+                          sortIndex: self.sortIndex,
+                          dateModified: self.dateModified,
+                          tags: tags)
+    }
 }

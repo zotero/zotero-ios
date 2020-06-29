@@ -16,6 +16,11 @@ import CocoaLumberjackSwift
 import RxSwift
 import SwiftyGif
 
+protocol DetailPdfCoordinatorDelegate: class {
+    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+}
+
 protocol DetailItemsCoordinatorDelegate: class {
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
@@ -110,7 +115,7 @@ class DetailCoordinator: Coordinator {
             let url = file.createUrl()
 
             if file.mimeType == "application/pdf" {
-                self.showPdf(at: url, key: attachment.key)
+                self.showPdf(at: url, key: attachment.key, libraryId: attachment.libraryId)
                 return
             } else if AVURLAsset(url: url).isPlayable {
                 self.showVideo(for: url)
@@ -144,11 +149,12 @@ class DetailCoordinator: Coordinator {
         }
     }
 
-    private func showPdf(at url: URL, key: String) {
+    private func showPdf(at url: URL, key: String, libraryId: LibraryIdentifier) {
         #if PDFENABLED
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key),
+        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key, libraryId: libraryId),
                                                                       handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)),
                                                  pageController: self.controllers.pageController)
+        controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
         self.navigationController.present(navigationController, animated: true, completion: nil)
@@ -240,7 +246,9 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .formSheet
         navigationController.isModalInPresentation = true
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+
+        let presentingController = self.navigationController.presentedViewController ?? self.navigationController
+        presentingController.present(navigationController, animated: true, completion: nil)
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library) {
@@ -356,14 +364,16 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         let view = TagPickerView(saveAction: picked,
                                  dismiss: { [weak self] in
-                                     self?.navigationController.dismiss(animated: true, completion: nil)
+                                     self?.navigationController.presentedViewController?.dismiss(animated: true, completion: nil)
                                  })
                                  .environmentObject(ViewModel(initialState: state, handler: handler))
 
         let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
-        self.navigationController.present(controller, animated: true, completion: nil)
+
+        let presentingController = self.navigationController.presentedViewController ?? self.navigationController
+        presentingController.present(controller, animated: true, completion: nil)
     }
 
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void) {

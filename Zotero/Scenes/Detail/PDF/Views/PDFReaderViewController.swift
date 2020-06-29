@@ -30,6 +30,8 @@ class PDFReaderViewController: UIViewController {
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
 
+    weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
+
     private var defaultScrollDirection: ScrollDirection {
         get {
             let rawValue = UserDefaults.standard.integer(forKey: "PdfReader.ScrollDirection")
@@ -96,9 +98,28 @@ class PDFReaderViewController: UIViewController {
             self.updateSelection(on: pageView, selectedAnnotation: state.selectedAnnotation, pageIndex: Int(self.pdfController.pageIndex))
         }
 
+        if state.focusSidebarIndexPath != nil {
+            self.openSidebarIfClosed()
+        }
+
         if let location = state.focusDocumentLocation,
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
+        }
+
+        if let indexPath = state.annotationIndexPathForCommentEdit,
+           let annotation = state.annotations[indexPath.section]?[indexPath.row] {
+            self.coordinatorDelegate?.showNote(with: annotation.comment, readOnly: false, save: { [weak self] comment in
+                self?.viewModel.process(action: .setComment(comment, indexPath))
+            })
+        }
+
+        if let indexPath = state.annotationIndexPathForTagEdit,
+           let annotation = state.annotations[indexPath.section]?[indexPath.row] {
+            let selected = Set(annotation.tags.map({ $0.name }))
+            self.coordinatorDelegate?.showTagPicker(libraryId: state.libraryId, selected: selected, picked: { [weak self] tags in
+                self?.viewModel.process(action: .setTags(tags, indexPath))
+            })
         }
     }
 
@@ -142,6 +163,11 @@ class PDFReaderViewController: UIViewController {
         if !pageView.selectedAnnotations.contains(annotation) {
             pageView.selectedAnnotations = [annotation]
         }
+    }
+
+    private func openSidebarIfClosed() {
+        guard self.annotationsControllerLeft.constant != 0 else { return }
+        self.toggleSidebar()
     }
 
     @objc private func toggleSidebar() {

@@ -25,6 +25,7 @@ struct PDFReaderState: ViewModelState {
     }
 
     let key: String
+    let libraryId: LibraryIdentifier
     let document: Document
     let previewCache: NSCache<NSString, UIImage>
 
@@ -42,9 +43,14 @@ struct PDFReaderState: ViewModelState {
     var removedAnnotationIndexPaths: [IndexPath]?
     /// Annotations that loaded their preview images and need to show them
     var loadedPreviewImageAnnotationKeys: Set<String>?
+    /// Index path pointing to annotation for which the comment is being changed
+    var annotationIndexPathForCommentEdit: IndexPath?
+    /// Index path pointing to annotation for which tags are being changed
+    var annotationIndexPathForTagEdit: IndexPath?
 
-    init(url: URL, key: String) {
+    init(url: URL, key: String, libraryId: LibraryIdentifier) {
         self.key = key
+        self.libraryId = libraryId
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]

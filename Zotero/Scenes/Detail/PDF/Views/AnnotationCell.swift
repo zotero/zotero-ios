@@ -38,6 +38,9 @@ class AnnotationCell: UITableViewCell {
 
     private(set) var key: String = ""
 
+    var editComment: (() -> Void)?
+    var editTags: (() -> Void)?
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
@@ -59,6 +62,14 @@ class AnnotationCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.key = ""
+    }
+
+    @IBAction private func updateComment() {
+        self.editComment?()
+    }
+
+    @IBAction private func updateTags() {
+        self.editTags?()
     }
 
     func updatePreview(image: UIImage?) {

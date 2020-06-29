@@ -183,6 +183,12 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
             }
 
             cell.setup(with: annotation, preview: preview, selected: selected, availableWidth: AnnotationsConfig.sidebarWidth)
+            cell.editComment = { [weak self] in
+                self?.viewModel.process(action: .editComment(indexPath))
+            }
+            cell.editTags = { [weak self] in
+                self?.viewModel.process(action: .editTags(indexPath))
+            }
         }
 
         return cell

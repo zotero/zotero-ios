@@ -23,6 +23,10 @@ enum PDFReaderAction {
     case annotationsAdded([PSPDFKit.Annotation])
     case annotationsRemoved([PSPDFKit.Annotation])
     case requestPreviews(keys: [String], notify: Bool)
+    case editComment(IndexPath)
+    case editTags(IndexPath)
+    case setComment(String, IndexPath)
+    case setTags([Tag], IndexPath)
 }
 
 #endif

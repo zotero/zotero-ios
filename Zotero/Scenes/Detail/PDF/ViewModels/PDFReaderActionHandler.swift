@@ -62,10 +62,34 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         case .requestPreviews(let keys, let notify):
             self.loadPreviews(for: keys, notify: notify, in: viewModel)
+
+        case .editTags(let indexPath):
+            self.update(viewModel: viewModel) { state in
+                state.annotationIndexPathForTagEdit = indexPath
+            }
+
+        case .editComment(let indexPath):
+            self.update(viewModel: viewModel) { state in
+                state.annotationIndexPathForCommentEdit = indexPath
+            }
+
+        case .setComment(let comment, let indexPath):
+            self.update(annotation: { $0.copy(comment: comment) }, at: indexPath, in: viewModel)
+
+        case .setTags(let tags, let indexPath):
+            self.update(annotation: { $0.copy(tags: tags) }, at: indexPath, in: viewModel)
         }
     }
 
     // MARK: - Annotation actions
+
+    private func update(annotation annotationChange: (Annotation) -> Annotation, at indexPath: IndexPath, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
+        self.update(viewModel: viewModel) { state in
+            state.annotations[indexPath.section]?[indexPath.row] = annotationChange(annotation)
+            state.updatedAnnotationIndexPaths = [indexPath]
+        }
+    }
 
     /// Removes Zotero annotation from document.
     /// - parameter annotation: Annotation to remove.
