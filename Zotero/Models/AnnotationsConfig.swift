@@ -13,8 +13,11 @@ import PSPDFKit
 #endif
 
 struct AnnotationsConfig {
-    static let sidebarWidth: CGFloat = 250
+    static let sidebarWidth: CGFloat = 300
     static let previewSize: CGSize = createPreviewSize()
+    static let areaLineWidth: CGFloat = 2
+    static let defaultActiveColor = UIColor(hex: "#ffff00")
+    static let colors: [String] = ["#ff6666", "#ff8c19", "#5fb236", "#2ea8e5", "#a28ae5"]
 
     static let isZoteroKey = "isZoteroAnnotation"
     static let keyKey = "zoteroKey"

@@ -19,6 +19,7 @@ import SwiftyGif
 protocol DetailPdfCoordinatorDelegate: class {
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
 }
 
 protocol DetailItemsCoordinatorDelegate: class {
@@ -397,5 +398,35 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
         self.navigationController.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension DetailCoordinator: DetailPdfCoordinatorDelegate {
+    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.sourceView = sender
+
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak self, weak viewModel] _ in
+            guard let `self` = self, let viewModel = viewModel else { return }
+            self.confirmAnnotationDeletion(annotation, viewModel: viewModel)
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+
+        /// Pdf controller is presented modally, alert needs to be presented on top of it
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+    }
+
+    private func confirmAnnotationDeletion(_ annotation: Annotation, viewModel: ViewModel<PDFReaderActionHandler>) {
+        let controller = UIAlertController(title: L10n.warning, message: "Do you really want to delete this annotation?", preferredStyle: .alert)
+
+        controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .removeAnnotation(annotation))
+        }))
+
+        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
+
+        /// Pdf controller is presented modally, alert needs to be presented on top of it
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
     }
 }

@@ -24,6 +24,8 @@ struct PDFReaderState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 1)
     }
 
+    private static let activeColorKey = "PDFReaderState.activeColor"
+
     let key: String
     let libraryId: LibraryIdentifier
     let document: Document
@@ -31,6 +33,8 @@ struct PDFReaderState: ViewModelState {
 
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
+    var activeColor: UIColor
+    var currentFilter: String?
     var changes: Changes
     var selectedAnnotation: Annotation?
     /// Location to focus in document
@@ -54,6 +58,8 @@ struct PDFReaderState: ViewModelState {
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]
+        self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
+                                                .flatMap({ UIColor(hex: $0) }) ?? AnnotationsConfig.defaultActiveColor
         self.changes = []
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
@@ -64,6 +70,8 @@ struct PDFReaderState: ViewModelState {
         self.focusDocumentLocation = nil
         self.focusSidebarIndexPath = nil
         self.updatedAnnotationIndexPaths = nil
+        self.annotationIndexPathForCommentEdit = nil
+        self.annotationIndexPathForTagEdit = nil
     }
 }
 

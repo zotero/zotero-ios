@@ -8,14 +8,20 @@
 
 import UIKit
 
+typealias AnnotationCellAction = (AnnotationCell.Action, UIButton) -> Void
+
 class AnnotationCell: UITableViewCell {
+    enum Action {
+        case comment, tags, options
+    }
+
     @IBOutlet private weak var roundedContainer: UIView!
     // Header
     @IBOutlet private weak var annotationIcon: UIImageView!
     @IBOutlet private weak var pageLabel: UILabel!
     @IBOutlet private weak var authorLabel: UILabel!
-    @IBOutlet private weak var lockIcon: UIImageView!
     @IBOutlet private weak var firstSeparator: UIView!
+    @IBOutlet private weak var headerButton: UIButton!
     // Content
     @IBOutlet private weak var annotationContainer: UIView!
     @IBOutlet private weak var annotationTextContainer: UIStackView!
@@ -24,6 +30,7 @@ class AnnotationCell: UITableViewCell {
     @IBOutlet private weak var annotationImageView: UIImageView!
     @IBOutlet private weak var commentContainer: UIView!
     @IBOutlet private weak var commentLabel: UILabel!
+    @IBOutlet private weak var commentButton: UIButton!
     @IBOutlet private weak var addCommentContainer: UIView!
     @IBOutlet private weak var addCommentButton: UIButton!
     @IBOutlet private weak var secondSeparator: UIView!
@@ -31,6 +38,7 @@ class AnnotationCell: UITableViewCell {
     // Footer
     @IBOutlet private weak var tagsContainer: UIView!
     @IBOutlet private weak var tagsLabel: UILabel!
+    @IBOutlet private weak var tagsButton: UIButton!
     @IBOutlet private weak var addTagsContainer: UIView!
     @IBOutlet private weak var addTagsButton: UIButton!
 
@@ -38,14 +46,12 @@ class AnnotationCell: UITableViewCell {
 
     private(set) var key: String = ""
 
-    var editComment: (() -> Void)?
-    var editTags: (() -> Void)?
+    var performAction: AnnotationCellAction?
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.selectionStyle = .none
-        self.contentView.backgroundColor = UIColor(hex: "#d2d8e2")
 
         self.roundedContainer.layer.cornerRadius = 8
         self.roundedContainer.layer.borderWidth = 1
@@ -64,12 +70,16 @@ class AnnotationCell: UITableViewCell {
         self.key = ""
     }
 
-    @IBAction private func updateComment() {
-        self.editComment?()
+    @IBAction private func updateComment(sender: UIButton) {
+        self.performAction?(.comment, sender)
     }
 
-    @IBAction private func updateTags() {
-        self.editTags?()
+    @IBAction private func updateTags(sender: UIButton) {
+        self.performAction?(.tags, sender)
+    }
+
+    @IBAction private func showOptions(sender: UIButton) {
+        self.performAction?(.options, sender)
     }
 
     func updatePreview(image: UIImage?) {
@@ -104,7 +114,14 @@ class AnnotationCell: UITableViewCell {
         self.annotationIcon.tintColor = color
         self.pageLabel.text = "\(L10n.Pdf.AnnotationsSidebar.page) \(annotation.pageLabel)"
         self.authorLabel.text = annotation.author
-        self.lockIcon.isHidden = !annotation.isLocked
+        self.headerButton.isEnabled = !annotation.isLocked
+        self.headerButton.tintColor = annotation.isLocked ? .black : .systemBlue
+        self.headerButton.setImage(UIImage(systemName: annotation.isLocked ? "lock" : "ellipsis.circle"), for: .normal)
+        self.headerButton.isHidden = !annotation.isLocked && !selected
+        self.headerButton.contentEdgeInsets = UIEdgeInsets(top: 0,
+                                                           left: self.headerButton.isHidden ? 0 : 10,
+                                                           bottom: 0,
+                                                           right: 10)
         // Annotation
         switch annotation.type {
         case .highlight:
@@ -122,6 +139,11 @@ class AnnotationCell: UITableViewCell {
         self.commentLabel.text = annotation.comment
         // Tags
         self.tagsLabel.attributedText = self.attributedString(from: annotation.tags)
+
+        self.commentButton.isEnabled = selected
+        self.addCommentButton.isEnabled = selected
+        self.tagsButton.isEnabled = selected
+        self.addTagsButton.isEnabled = selected
     }
 
     private func image(for type: Annotation.Kind) -> UIImage? {

@@ -30,7 +30,7 @@ class PDFReaderViewController: UIViewController {
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
 
-    weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
+    weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
 
     private var defaultScrollDirection: ScrollDirection {
         get {
@@ -70,9 +70,11 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.view.backgroundColor = .secondarySystemBackground
         self.setupNavigationBar()
         self.setupAnnotationsSidebar()
         self.setupPdfController(with: self.viewModel.state.document)
+        self.setupBorder()
         self.setupAnnotationToolbar()
         self.setupObserving()
 
@@ -232,11 +234,19 @@ class PDFReaderViewController: UIViewController {
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
+    private func set(toolColor: UIColor, in stateManager: AnnotationStateManager) {
+        stateManager.setLastUsedColor(toolColor, annotationString: .highlight)
+        stateManager.setLastUsedColor(toolColor, annotationString: .note)
+        stateManager.setLastUsedColor(toolColor, annotationString: .square)
+    }
+
     // MARK: - Setups
 
     private func setupAnnotationsSidebar() {
         let controller = AnnotationsViewController(viewModel: self.viewModel)
+        controller.view.backgroundColor = self.view.backgroundColor
         controller.view.isHidden = true
+        controller.coordinatorDelegate = self.coordinatorDelegate
 
         self.addChild(controller)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
@@ -314,9 +324,8 @@ class PDFReaderViewController: UIViewController {
         }
 
         let picker = UIButton()
-        if let color = self.pdfController.annotationStateManager.lastUsedColor(forAnnotationString: .highlight) {
-            picker.setImage(color.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
-        }
+        let color = self.viewModel.state.activeColor
+        picker.setImage(color.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
         picker.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         picker.rx.controlEvent(.touchUpInside)
                  .subscribe(onNext: { [weak self] _ in
@@ -361,6 +370,7 @@ class PDFReaderViewController: UIViewController {
         controller.formSubmissionDelegate = nil
         controller.annotationStateManager.add(self)
         controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
+        self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)
 
         self.addChild(controller)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
@@ -379,6 +389,20 @@ class PDFReaderViewController: UIViewController {
 
         self.pdfController = controller
         self.pdfControllerLeft = leftConstraint
+    }
+
+    private func setupBorder() {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .separator
+        self.view.addSubview(view)
+
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: 1),
+            view.leadingAnchor.constraint(equalTo: self.annotationsController.view.trailingAnchor),
+            view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        ])
     }
 
     private func setupNavigationBar() {

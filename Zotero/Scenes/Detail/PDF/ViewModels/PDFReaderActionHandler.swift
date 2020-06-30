@@ -118,12 +118,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let snapshot = viewModel.state.annotationsSnapshot ?? viewModel.state.annotations
         var annotations = snapshot
         for (page, pageAnnotations) in snapshot {
-            annotations[page] = pageAnnotations.filter({ ann in
-                return ann.author.localizedCaseInsensitiveContains(term) ||
-                       ann.comment.localizedCaseInsensitiveContains(term) ||
-                       (ann.text ?? "").localizedCaseInsensitiveContains(term) ||
-                       ann.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
-            })
+            annotations[page] = pageAnnotations.filter({ self.filter(annotation: $0, with: term) })
         }
 
         self.update(viewModel: viewModel) { state in
@@ -131,8 +126,16 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.annotationsSnapshot = state.annotations
             }
             state.annotations = annotations
+            state.currentFilter = term
             state.changes = .annotations
         }
+    }
+
+    private func filter(annotation: Annotation, with term: String) -> Bool {
+        return annotation.author.localizedCaseInsensitiveContains(term) ||
+               annotation.comment.localizedCaseInsensitiveContains(term) ||
+               (annotation.text ?? "").localizedCaseInsensitiveContains(term) ||
+               annotation.tags.contains(where: { $0.name.localizedCaseInsensitiveContains(term) })
     }
 
     /// Removes search filter.
@@ -256,18 +259,26 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             var focus: IndexPath?
 
             for annotation in newZoteroAnnotations {
-                let index: Int
+                if var snapshot = state.annotationsSnapshot {
+                    // Search is active, add new annotation to snapshot so that it's visible when search is cancelled
+                    self.add(annotation: annotation, to: &snapshot)
+                    state.annotationsSnapshot = snapshot
 
-                if let annotations = state.annotations[annotation.page] {
-                    index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
-                    state.annotations[annotation.page]?.insert(annotation, at: index)
+                    // If new annotation passes filter, add it to current filtered list as well
+                    if let filter = state.currentFilter, self.filter(annotation: annotation, with: filter) {
+                        let index = self.add(annotation: annotation, to: &state.annotations)
+
+                        if focus == nil {
+                            focus = IndexPath(row: index, section: annotation.page)
+                        }
+                    }
                 } else {
-                    index = 0
-                    state.annotations[annotation.page] = [annotation]
-                }
+                    // Search not active, just insert it to the list and focus
+                    let index = self.add(annotation: annotation, to: &state.annotations)
 
-                if focus == nil {
-                    focus = IndexPath(row: index, section: annotation.page)
+                    if focus == nil {
+                        focus = IndexPath(row: index, section: annotation.page)
+                    }
                 }
             }
 
@@ -276,36 +287,73 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
+    @discardableResult
+    private func add(annotation: Annotation, to allAnnotations: inout [Int: [Annotation]]) -> Int {
+        let index: Int
+        if let annotations = allAnnotations[annotation.page] {
+            index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+            allAnnotations[annotation.page]?.insert(annotation, at: index)
+        } else {
+            index = 0
+            allAnnotations[annotation.page] = [annotation]
+        }
+        return index
+    }
+
     /// Updates annotations based on deletions of PSPDFKit annotations in document.
     /// - parameter annotations: Annotations that were deleted in document.
     /// - parameter viewModel: ViewModel.
     private func remove(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
-        var toDelete: [(String, Int, Int)] = []
-
-        for annotation in annotations {
-            guard annotation.isZotero,
-                  let key = annotation.key else { continue }
-
-            if let annotation = annotation as? SquareAnnotation {
-                self.annotationPreviewController.delete(for: annotation, parentKey: viewModel.state.key)
-            }
-
-            let page = Int(annotation.pageIndex)
-            if let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) {
-                toDelete.append((key, index, page))
-            }
-        }
-
         self.update(viewModel: viewModel) { state in
-            for location in toDelete {
-                state.annotations[location.2]?.remove(at: location.1)
-                if state.selectedAnnotation?.key == location.0 {
-                    state.selectedAnnotation = nil
-                    state.changes.insert(.selection)
-                }
+            let deletedKeys: Set<String>
+
+            if var snapshot = state.annotationsSnapshot {
+                // Search is active, delete annotation from snapshot so that it doesn't re-appear when search is cancelled
+                deletedKeys = self.remove(annotations: annotations, from: &snapshot, parentKey: state.key,
+                                          annotationPreviewController: self.annotationPreviewController)
+                state.annotationsSnapshot = snapshot
+                // Remove annotations from search result as well
+                self.remove(annotations: annotations, from: &state.annotations, parentKey: state.key,
+                            annotationPreviewController: self.annotationPreviewController)
+            } else {
+                // Search not active, just remove annotations and deselect if needed
+                deletedKeys = self.remove(annotations: annotations, from: &state.annotations, parentKey: state.key,
+                                          annotationPreviewController: self.annotationPreviewController)
+            }
+
+            if let selectedKey = state.selectedAnnotation?.key, deletedKeys.contains(selectedKey) {
+                state.selectedAnnotation = nil
+                state.changes.insert(.selection)
             }
             state.changes.insert(.annotations)
         }
+    }
+
+    @discardableResult
+    private func remove(annotations: [PSPDFKit.Annotation], from zoteroAnnotations: inout [Int: [Annotation]], parentKey: String,
+                        annotationPreviewController: AnnotationPreviewController) -> Set<String> {
+        var toDelete: [(Int, Int)] = []
+        var keys: Set<String> = []
+
+        for annotation in annotations {
+            guard annotation.isZotero, let key = annotation.key else { continue }
+
+            if let annotation = annotation as? SquareAnnotation {
+                annotationPreviewController.delete(for: annotation, parentKey: parentKey)
+            }
+
+            let page = Int(annotation.pageIndex)
+            if let index = zoteroAnnotations[page]?.firstIndex(where: { $0.key == key }) {
+                toDelete.append((index, page))
+                keys.insert(key)
+            }
+        }
+
+        for location in toDelete {
+            zoteroAnnotations[location.1]?.remove(at: location.0)
+        }
+
+        return keys
     }
 
     /// Updates corresponding Zotero annotation to updated PSPDFKit annotation in document.

@@ -22,6 +22,8 @@ class AnnotationsViewController: UIViewController {
     private weak var tableView: UITableView!
     private var searchController: UISearchController!
 
+    weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
+
     // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -109,6 +111,18 @@ class AnnotationsViewController: UIViewController {
         completion()
     }
 
+    private func perform(cellAction: AnnotationCell.Action, indexPath: IndexPath, sender: UIButton) {
+        switch cellAction {
+        case .comment:
+            self.viewModel.process(action: .editComment(indexPath))
+        case .tags:
+            self.viewModel.process(action: .editTags(indexPath))
+        case .options:
+            guard let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
+            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender, viewModel: self.viewModel)
+        }
+    }
+
     // MARK: - Setups
 
     private func setupTableView() {
@@ -118,7 +132,7 @@ class AnnotationsViewController: UIViewController {
         tableView.dataSource = self
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
-        tableView.backgroundColor = UIColor(hex: "#d2d8e2")
+        tableView.backgroundColor = self.view.backgroundColor
         tableView.register(UINib(nibName: "AnnotationCell", bundle: nil), forCellReuseIdentifier: AnnotationsViewController.cellId)
 
         self.view.addSubview(tableView)
@@ -166,6 +180,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+        cell.contentView.backgroundColor = self.view.backgroundColor
 
         if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row],
            let cell = cell as? AnnotationCell {
@@ -183,11 +198,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
             }
 
             cell.setup(with: annotation, preview: preview, selected: selected, availableWidth: AnnotationsConfig.sidebarWidth)
-            cell.editComment = { [weak self] in
-                self?.viewModel.process(action: .editComment(indexPath))
-            }
-            cell.editTags = { [weak self] in
-                self?.viewModel.process(action: .editTags(indexPath))
+            cell.performAction = { [weak self] action, sender in
+                self?.perform(cellAction: action, indexPath: indexPath, sender: sender)
             }
         }
 
@@ -197,16 +209,6 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] {
             self.viewModel.process(action: .selectAnnotation(annotation))
-        }
-    }
-
-    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                guard let annotation = self?.viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
-                self?.viewModel.process(action: .removeAnnotation(annotation))
-            }
-            return UIMenu(title: "", children: [delete])
         }
     }
 }

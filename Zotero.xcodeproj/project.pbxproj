@@ -120,7 +120,6 @@
 		B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B423FC051E003304F2 /* SyncScheduler.swift */; };
 		B305662B23FC051F003304F2 /* SyncProgressHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B723FC051E003304F2 /* SyncProgressHandler.swift */; };
 		B305662D23FC051F003304F2 /* ItemTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */; };
-		B305667023FC051F003304F2 /* UserDefaults+Codable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650323FC051E003304F2 /* UserDefaults+Codable.swift */; };
 		B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
 		B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */; };
 		B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650623FC051E003304F2 /* FileManager+Utils.swift */; };
@@ -129,7 +128,7 @@
 		B305667623FC051F003304F2 /* UIColor+Custom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650923FC051E003304F2 /* UIColor+Custom.swift */; };
 		B305667723FC051F003304F2 /* UIFont+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650A23FC051E003304F2 /* UIFont+Extensions.swift */; };
 		B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650B23FC051E003304F2 /* Observable+Completable.swift */; };
-		B305667923FC051F003304F2 /* UserDefault+PropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */; };
+		B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */; };
 		B305667A23FC051F003304F2 /* PreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650D23FC051E003304F2 /* PreferenceKeys.swift */; };
 		B305667B23FC051F003304F2 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */; };
 		B305667D23FC051F003304F2 /* Color+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305651023FC051E003304F2 /* Color+Extension.swift */; };
@@ -327,8 +326,7 @@
 		B305677423FC0BCD003304F2 /* ItemTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */; };
 		B305677523FC0BD6003304F2 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650823FC051E003304F2 /* String+Extensions.swift */; };
 		B305677623FC0BE0003304F2 /* CreatorSummaryFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */; };
-		B305677723FC0BEE003304F2 /* UserDefault+PropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */; };
-		B305677823FC0BF2003304F2 /* UserDefaults+Codable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650323FC051E003304F2 /* UserDefaults+Codable.swift */; };
+		B305677723FC0BEE003304F2 /* UserDefault+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */; };
 		B305677923FC0C4D003304F2 /* FileManager+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650623FC051E003304F2 /* FileManager+Utils.swift */; };
 		B305677B23FC0C72003304F2 /* Formatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648123FC051E003304F2 /* Formatter.swift */; };
 		B305677C23FC0C7B003304F2 /* KeyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305648023FC051E003304F2 /* KeyGenerator.swift */; };
@@ -764,7 +762,6 @@
 		B30564B423FC051E003304F2 /* SyncScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncScheduler.swift; sourceTree = "<group>"; };
 		B30564B723FC051E003304F2 /* SyncProgressHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncProgressHandler.swift; sourceTree = "<group>"; };
 		B30564B923FC051E003304F2 /* ItemTitleFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatter.swift; sourceTree = "<group>"; };
-		B305650323FC051E003304F2 /* UserDefaults+Codable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Codable.swift"; sourceTree = "<group>"; };
 		B305650423FC051E003304F2 /* Threading+Extras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Threading+Extras.swift"; sourceTree = "<group>"; };
 		B305650523FC051E003304F2 /* Controllers+EnvironmentValues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Controllers+EnvironmentValues.swift"; sourceTree = "<group>"; };
 		B305650623FC051E003304F2 /* FileManager+Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FileManager+Utils.swift"; sourceTree = "<group>"; };
@@ -773,7 +770,7 @@
 		B305650923FC051E003304F2 /* UIColor+Custom.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIColor+Custom.swift"; sourceTree = "<group>"; };
 		B305650A23FC051E003304F2 /* UIFont+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIFont+Extensions.swift"; sourceTree = "<group>"; };
 		B305650B23FC051E003304F2 /* Observable+Completable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Observable+Completable.swift"; sourceTree = "<group>"; };
-		B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefault+PropertyWrapper.swift"; sourceTree = "<group>"; };
+		B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefault+Extensions.swift"; sourceTree = "<group>"; };
 		B305650D23FC051E003304F2 /* PreferenceKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreferenceKeys.swift; sourceTree = "<group>"; };
 		B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIViewController+Extensions.swift"; sourceTree = "<group>"; };
 		B305651023FC051E003304F2 /* Color+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Color+Extension.swift"; sourceTree = "<group>"; };
@@ -1359,8 +1356,7 @@
 				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
-				B305650C23FC051E003304F2 /* UserDefault+PropertyWrapper.swift */,
-				B305650323FC051E003304F2 /* UserDefaults+Codable.swift */,
+				B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */,
 				B340692324A60D83009ECE48 /* CGRect+Extensions.swift */,
 			);
 			path = Extensions;
@@ -2491,7 +2487,6 @@
 				B3593F44241A61C700760E20 /* ItemsViewController.swift in Sources */,
 				B377F29E2493587900022943 /* AttachmentFileDeletedNotification.swift in Sources */,
 				B3593F3D241A61C700760E20 /* ItemsState.swift in Sources */,
-				B305667023FC051F003304F2 /* UserDefaults+Codable.swift in Sources */,
 				B30566AE23FC051F003304F2 /* SettingsResponse.swift in Sources */,
 				B3593F45241A61C700760E20 /* ItemSortTypePickerView.swift in Sources */,
 				B305661523FC051E003304F2 /* UploadAttachmentSyncAction.swift in Sources */,
@@ -2772,7 +2767,7 @@
 				B30565FD23FC051E003304F2 /* FileStorage.swift in Sources */,
 				B30565C023FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift in Sources */,
 				B30566AA23FC051F003304F2 /* FieldKeys.swift in Sources */,
-				B305667923FC051F003304F2 /* UserDefault+PropertyWrapper.swift in Sources */,
+				B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B37491332488D7040042FF85 /* SyncSettingsView.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
 				B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */,
@@ -2845,7 +2840,7 @@
 				B305676C23FC0A0B003304F2 /* UpdatableObject.swift in Sources */,
 				B305673D23FC09AF003304F2 /* LibraryResponse.swift in Sources */,
 				B325DBB324375DB100EFF0F5 /* ConflictResolution.swift in Sources */,
-				B305677723FC0BEE003304F2 /* UserDefault+PropertyWrapper.swift in Sources */,
+				B305677723FC0BEE003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B305673E23FC09AF003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B305673F23FC09AF003304F2 /* KeyResponse.swift in Sources */,
 				B305674023FC09AF003304F2 /* UpdatesResponse.swift in Sources */,
@@ -3018,7 +3013,6 @@
 				B377F2A3249373AB00022943 /* Notifications.swift in Sources */,
 				B325DBB624375DD500EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B305672D23FC091A003304F2 /* MarkGroupAsLocalOnlySyncAction.swift in Sources */,
-				B305677823FC0BF2003304F2 /* UserDefaults+Codable.swift in Sources */,
 				B30566DF23FC0808003304F2 /* BackgroundUploadProcessor.swift in Sources */,
 				B30566FC23FC0862003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B377F2A02493725E00022943 /* UrlDetector.swift in Sources */,
