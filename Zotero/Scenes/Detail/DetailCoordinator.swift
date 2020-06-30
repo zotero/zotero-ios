@@ -17,7 +17,7 @@ import RxSwift
 import SwiftyGif
 
 protocol DetailPdfCoordinatorDelegate: class {
-    func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
+    func showComment(with text: String, imageLoader: Single<UIImage>, save: @escaping (String) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
 }
@@ -154,6 +154,7 @@ class DetailCoordinator: Coordinator {
         #if PDFENABLED
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key, libraryId: libraryId),
                                                                       handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController)),
+                                                 annotationPreviewController: self.controllers.annotationPreviewController,
                                                  pageController: self.controllers.pageController)
         controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
@@ -247,9 +248,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .formSheet
         navigationController.isModalInPresentation = true
-
-        let presentingController = self.navigationController.presentedViewController ?? self.navigationController
-        presentingController.present(navigationController, animated: true, completion: nil)
+        self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library) {
@@ -402,6 +401,16 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
+    func showComment(with text: String, imageLoader: Single<UIImage>, save: @escaping (String) -> Void) {
+        let controller = PDFPreviewTextEditorViewController(text: text, imageLoader: imageLoader, saveAction: save)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .formSheet
+        navigationController.isModalInPresentation = true
+
+        /// Pdf controller is presented modally, controller needs to be presented on top of it
+        self.navigationController.presentedViewController?.present(navigationController, animated: true, completion: nil)
+    }
+
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.sourceView = sender

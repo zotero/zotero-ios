@@ -70,8 +70,11 @@ struct PDFReaderState: ViewModelState {
         self.focusDocumentLocation = nil
         self.focusSidebarIndexPath = nil
         self.updatedAnnotationIndexPaths = nil
+        self.insertedAnnotationIndexPaths = nil
+        self.removedAnnotationIndexPaths = nil
         self.annotationIndexPathForCommentEdit = nil
         self.annotationIndexPathForTagEdit = nil
+        self.loadedPreviewImageAnnotationKeys = nil
     }
 }
 

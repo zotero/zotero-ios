@@ -17,6 +17,7 @@ import RxSwift
 class PDFReaderViewController: UIViewController {
     private static let colorPreviewSize = CGSize(width: 15, height: 15)
     private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let pageController: PdfPageController
     private let disposeBag: DisposeBag
 
@@ -56,8 +57,10 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, pageController: PdfPageController) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, annotationPreviewController: AnnotationPreviewController,
+         pageController: PdfPageController) {
         self.viewModel = viewModel
+        self.annotationPreviewController = annotationPreviewController
         self.pageController = pageController
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -111,7 +114,12 @@ class PDFReaderViewController: UIViewController {
 
         if let indexPath = state.annotationIndexPathForCommentEdit,
            let annotation = state.annotations[indexPath.section]?[indexPath.row] {
-            self.coordinatorDelegate?.showNote(with: annotation.comment, readOnly: false, save: { [weak self] comment in
+            let loader = self.annotationPreviewController.render(document: state.document,
+                                                                 page: UInt(annotation.page),
+                                                                 rect: self.previewRect(for: annotation),
+                                                                 key: annotation.key,
+                                                                 parentKey: state.key)
+            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: loader, save: { [weak self] comment in
                 self?.viewModel.process(action: .setComment(comment, indexPath))
             })
         }
@@ -123,6 +131,18 @@ class PDFReaderViewController: UIViewController {
                 self?.viewModel.process(action: .setTags(tags, indexPath))
             })
         }
+    }
+
+    private func previewRect(for annotation: Annotation) -> CGRect {
+        let boundingBox = annotation.boundingBox
+
+        guard let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else {
+            return boundingBox
+        }
+
+        var viewCoordinatesBoundingBox = pageView.convert(boundingBox, from: pageView.pdfCoordinateSpace)
+        viewCoordinatesBoundingBox = viewCoordinatesBoundingBox.insetBy(dx: -10, dy: -40)
+        return pageView.convert(viewCoordinatesBoundingBox, to: pageView.pdfCoordinateSpace)
     }
 
     private func updateSelection(on pageView: PDFPageView, selectedAnnotation: Annotation?, pageIndex: Int) {

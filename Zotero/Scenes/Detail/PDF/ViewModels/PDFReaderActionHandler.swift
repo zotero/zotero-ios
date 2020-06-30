@@ -18,7 +18,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
-    private let annotationPreviewController: AnnotationPreviewController
+    private unowned let annotationPreviewController: AnnotationPreviewController
     private let disposeBag: DisposeBag
 
     init(annotationPreviewController: AnnotationPreviewController) {

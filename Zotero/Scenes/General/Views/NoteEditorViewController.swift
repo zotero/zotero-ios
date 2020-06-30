@@ -69,7 +69,7 @@ class NoteEditorViewController: UIViewController {
         self.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
-    @objc private func save() {
+    @objc func save() {
         self.webView.evaluateJavaScript("tinymce.get(\"tinymce\").getContent()") { [weak self] result, error in
             guard let `self` = self else { return }
             let newText = (result as? String) ?? ""
