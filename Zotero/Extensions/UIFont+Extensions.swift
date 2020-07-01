@@ -15,4 +15,13 @@ extension UIFont {
         let font = UIFont.systemFont(ofSize: desc.pointSize, weight: weight)
         return metrics.scaledFont(for: font)
     }
+
+    func withTraits(_ traits: UIFontDescriptor.SymbolicTraits) -> UIFont {
+        guard let descriptor = self.fontDescriptor.withSymbolicTraits(traits) else { return self }
+        return UIFont(descriptor: descriptor, size: self.pointSize)
+    }
+
+    func size(_ size: CGFloat) -> UIFont {
+        return UIFont(descriptor: self.fontDescriptor, size: size)
+    }
 }
