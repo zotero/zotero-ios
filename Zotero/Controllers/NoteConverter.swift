@@ -10,23 +10,19 @@ import UIKit
 
 class NoteConverter {
     private struct Attribute {
-        fileprivate enum Kind {
-            case b, i, sup, sub
-        }
-
-        let type: Kind
+        let type: StringAttribute
         let index: Int
         let isClosing: Bool
     }
 
     private struct AttributedContent {
-        let attributes: [Attribute.Kind]
+        let attributes: [StringAttribute]
         let startIndex: Int
         let length: Int
     }
 
     private struct Tag {
-        let type: Attribute.Kind
+        let type: StringAttribute
         let startIndex: Int
         let endIndex: Int
         let deletedCount: Int
@@ -114,7 +110,7 @@ class NoteConverter {
 
         // Split overlaying ranges into unique ranges with multiple attribute kinds
         var splitRanges: [AttributedContent] = []
-        var activeAttributes: [Attribute.Kind] = []
+        var activeAttributes: [StringAttribute] = []
 
         for (index, attribute) in attributes.enumerated() {
             guard index < attributes.count - 1 else { break }
@@ -141,8 +137,8 @@ class NoteConverter {
         // Create mutable attributed string, apply attributed content
         let attributedString = NSMutableAttributedString(string: strippedComment, attributes: [.font: baseFont])
         for content in splitRanges {
-            attributedString.addAttributes(self.attributes(from: content.attributes, baseFont: baseFont),
-                                           range: NSMakeRange(content.startIndex, content.length))
+            let nsStringAttributes = StringAttribute.nsStringAttributes(from: content.attributes, baseFont: baseFont)
+            attributedString.addAttributes(nsStringAttributes, range: NSMakeRange(content.startIndex, content.length))
         }
 
         return attributedString
@@ -160,58 +156,18 @@ class NoteConverter {
         return nil
     }
 
-    private func attributeType(from tag: Substring) -> Attribute.Kind? {
+    private func attributeType(from tag: Substring) -> StringAttribute? {
         switch tag {
         case "b":
-            return .b
+            return .bold
         case "i":
-            return .i
+            return .italic
         case "sup":
-            return .sup
+            return .superscript
         case "sub":
-            return .sub
+            return .subscript
         default:
             return nil
         }
-    }
-
-    private func attributes(from attributeTypes: [Attribute.Kind], baseFont: UIFont) -> [NSAttributedString.Key: Any] {
-        var allKeys: [NSAttributedString.Key: Any] = [:]
-        var font = baseFont
-        var traits: UIFontDescriptor.SymbolicTraits = []
-
-        for attribute in attributeTypes {
-            switch attribute {
-            case .b:
-                if !traits.contains(.traitBold) {
-                    traits.insert(.traitBold)
-                }
-
-            case .i:
-                if !traits.contains(.traitItalic) {
-                    traits.insert(.traitItalic)
-                }
-
-            case .sub:
-                let offset = font.pointSize * 0.2
-                font = font.size(font.pointSize * 0.75)
-                let baseline = (allKeys[.baselineOffset] as? CGFloat) ?? 0
-                allKeys[.baselineOffset] = baseline - offset
-
-            case .sup:
-                let offset = font.pointSize * 0.4
-                font = font.size(font.pointSize * 0.75)
-                let baseline = (allKeys[.baselineOffset] as? CGFloat) ?? 0
-                allKeys[.baselineOffset] = baseline + offset
-            }
-        }
-
-        if traits.isEmpty {
-            allKeys[.font] = font
-        } else {
-            allKeys[.font] = font.withTraits(traits)
-        }
-
-        return allKeys
     }
 }

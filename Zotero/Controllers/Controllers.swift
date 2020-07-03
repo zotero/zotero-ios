@@ -28,6 +28,7 @@ class Controllers {
     let dateParser: DateParser
     let fileCleanupController: AttachmentFileCleanupController
     let pageController: PdfPageController
+    let noteConverter: NoteConverter
 
     var userControllers: UserControllers?
     private var sessionCancellable: AnyCancellable?
@@ -68,6 +69,7 @@ class Controllers {
         self.dateParser = DateParser()
         self.fileCleanupController = fileCleanupController
         self.pageController = PdfPageController()
+        self.noteConverter = NoteConverter()
 
         if let userId = sessionController.sessionData?.userId {
             self.userControllers = UserControllers(userId: userId, controllers: self)

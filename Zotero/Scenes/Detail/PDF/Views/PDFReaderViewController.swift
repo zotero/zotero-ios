@@ -114,11 +114,16 @@ class PDFReaderViewController: UIViewController {
 
         if let indexPath = state.annotationIndexPathForCommentEdit,
            let annotation = state.annotations[indexPath.section]?[indexPath.row] {
-            let loader = self.annotationPreviewController.render(document: state.document,
+            let loader: Single<UIImage>?
+            if annotation.type == .note {
+                loader = nil
+            } else {
+                loader = self.annotationPreviewController.render(document: state.document,
                                                                  page: UInt(annotation.page),
                                                                  rect: self.previewRect(for: annotation),
                                                                  key: annotation.key,
                                                                  parentKey: state.key)
+            }
             self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: loader, save: { [weak self] comment in
                 self?.viewModel.process(action: .setComment(comment, indexPath))
             })

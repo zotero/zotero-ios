@@ -1,5 +1,5 @@
 //
-//  PDFPreviewTextEditorViewController.swift
+//  AnnotationPreviewCommentEditorViewController.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 30/06/2020.
@@ -10,22 +10,25 @@ import UIKit
 
 import RxSwift
 
-class PDFPreviewTextEditorViewController: UIViewController {
-    private let imageLoadSingle: Single<UIImage>
+class AnnotationPreviewCommentEditorViewController: UIViewController {
+    private let imageLoadSingle: Single<UIImage>?
     private let text: String
+    private unowned let converter: NoteConverter
     private let saveAction: (String) -> Void
     private let disposeBag: DisposeBag
 
     private weak var activityIndicator: UIActivityIndicatorView?
     private weak var imageView: UIImageView?
     private weak var imageHeightConstraint: NSLayoutConstraint?
-    private weak var noteEditorController: NoteEditorViewController?
+    private weak var commentEditorController: AnnotationCommentEditorViewController?
 
     // MARK: - Lifecycle
 
-    init(text: String, imageLoader: Single<UIImage>, saveAction: @escaping (String) -> Void) {
+    init(text: String, imageLoader: Single<UIImage>?, converter: NoteConverter,
+         saveAction: @escaping (String) -> Void) {
         self.text = text
         self.imageLoadSingle = imageLoader
+        self.converter = converter
         self.saveAction = saveAction
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
@@ -47,17 +50,21 @@ class PDFPreviewTextEditorViewController: UIViewController {
     // MARK: - Actions
 
     private func loadPreview() {
-        self.imageLoadSingle
-            .observeOn(MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] image in
-                self?.set(preview: image)
-            }, onError: { [weak self] _ in
-                self?.set(preview: nil)
-            })
-            .disposed(by: self.disposeBag)
+        guard let imageLoader = self.imageLoadSingle else {
+            self.set(preview: nil, animated: false)
+            return
+        }
+
+        imageLoader.observeOn(MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] image in
+                       self?.set(preview: image, animated: true)
+                   }, onError: { [weak self] _ in
+                       self?.set(preview: nil, animated: true)
+                   })
+                   .disposed(by: self.disposeBag)
     }
 
-    private func set(preview: UIImage?) {
+    private func set(preview: UIImage?, animated: Bool) {
         self.imageView?.image = preview
 
         if preview == nil {
@@ -91,14 +98,14 @@ class PDFPreviewTextEditorViewController: UIViewController {
         activityIndicator.hidesWhenStopped = true
         self.activityIndicator = activityIndicator
 
-        let noteEditor = NoteEditorViewController(text: self.text, readOnly: false, saveAction: self.saveAction)
-        noteEditor.view.translatesAutoresizingMaskIntoConstraints = false
-        self.noteEditorController = noteEditor
+        let commentEditor = AnnotationCommentEditorViewController(text: self.text, converter: self.converter, saveAction: self.saveAction)
+        commentEditor.view.translatesAutoresizingMaskIntoConstraints = false
+        self.commentEditorController = commentEditor
 
-        noteEditor.willMove(toParent: self)
-        self.addChild(noteEditor)
-        self.view.addSubview(noteEditor.view)
-        noteEditor.didMove(toParent: self)
+        commentEditor.willMove(toParent: self)
+        self.addChild(commentEditor)
+        self.view.addSubview(commentEditor.view)
+        commentEditor.didMove(toParent: self)
 
         self.view.addSubview(imageView)
         self.view.addSubview(activityIndicator)
@@ -107,11 +114,11 @@ class PDFPreviewTextEditorViewController: UIViewController {
             imageView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
             imageView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: noteEditor.view.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: commentEditor.view.topAnchor),
             imageView.heightAnchor.constraint(lessThanOrEqualToConstant: 200),
-            noteEditor.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            noteEditor.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
-            noteEditor.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            commentEditor.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            commentEditor.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            commentEditor.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: imageView.centerYAnchor),
             activityIndicator.centerXAnchor.constraint(equalTo: imageView.centerXAnchor)
         ])
@@ -125,11 +132,11 @@ class PDFPreviewTextEditorViewController: UIViewController {
 
     private func setupNavigationBar() {
         let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: self,
-                                     action: #selector(PDFPreviewTextEditorViewController.cancel))
+                                     action: #selector(AnnotationPreviewCommentEditorViewController.cancel))
         self.navigationItem.leftBarButtonItem = cancel
 
-        let save = UIBarButtonItem(title: L10n.save, style: .done, target: self.noteEditorController,
-                                   action: #selector(noteEditorController?.save))
+        let save = UIBarButtonItem(title: L10n.save, style: .done, target: self.commentEditorController,
+                                   action: #selector(AnnotationCommentEditorViewController.save))
         self.navigationItem.rightBarButtonItem = save
     }
 }
