@@ -87,7 +87,7 @@ class AnnotationCell: UITableViewCell {
         self.annotationImageView.image = image
     }
 
-    func setup(with annotation: Annotation, preview: UIImage?, selected: Bool, availableWidth: CGFloat) {
+    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat) {
         self.key = annotation.key
 
         // Setup visuals
@@ -136,7 +136,11 @@ class AnnotationCell: UITableViewCell {
         case .note: break
         }
         // Comment
-        self.commentLabel.text = annotation.comment
+        if let string = attributedComment {
+            self.commentLabel.attributedText = string
+        } else {
+            self.commentLabel.text = annotation.comment
+        }
         // Tags
         self.tagsLabel.attributedText = self.attributedString(from: annotation.tags)
 

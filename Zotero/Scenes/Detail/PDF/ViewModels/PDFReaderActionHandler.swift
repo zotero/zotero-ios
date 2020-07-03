@@ -19,10 +19,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     typealias State = PDFReaderState
 
     private unowned let annotationPreviewController: AnnotationPreviewController
+    private unowned let noteConverter: NoteConverter
     private let disposeBag: DisposeBag
 
-    init(annotationPreviewController: AnnotationPreviewController) {
+    init(annotationPreviewController: AnnotationPreviewController, noteConverter: NoteConverter) {
         self.annotationPreviewController = annotationPreviewController
+        self.noteConverter = noteConverter
         self.disposeBag = DisposeBag()
     }
 
@@ -74,20 +76,25 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
 
         case .setComment(let comment, let indexPath):
-            self.update(annotation: { $0.copy(comment: comment) }, at: indexPath, in: viewModel)
+            self.update(annotation: { $0.copy(comment: comment) }, reloadComment: true, at: indexPath, in: viewModel)
 
         case .setTags(let tags, let indexPath):
-            self.update(annotation: { $0.copy(tags: tags) }, at: indexPath, in: viewModel)
+            self.update(annotation: { $0.copy(tags: tags) }, reloadComment: false, at: indexPath, in: viewModel)
         }
     }
 
     // MARK: - Annotation actions
 
-    private func update(annotation annotationChange: (Annotation) -> Annotation, at indexPath: IndexPath, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func update(annotation annotationChange: (Annotation) -> Annotation, reloadComment: Bool, at indexPath: IndexPath, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
         self.update(viewModel: viewModel) { state in
-            state.annotations[indexPath.section]?[indexPath.row] = annotationChange(annotation)
+            let newAnnotation = annotationChange(annotation)
+            state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
             state.updatedAnnotationIndexPaths = [indexPath]
+
+            if reloadComment {
+                state.comments[newAnnotation.key] = self.noteConverter.convert(comment: newAnnotation.comment, baseFont: state.commentFont)
+            }
         }
     }
 
@@ -370,7 +377,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let newSection = Int(annotation.pageIndex)
 
         self.update(viewModel: viewModel) { state in
-            // Move annotation to appropriate page and position if needed
             if newSection != indexPath.section {
                 // Annotation changed page, move it
                 guard var zoteroAnnotation = state.annotations[indexPath.section]?.remove(at: indexPath.row) else {
@@ -403,18 +409,15 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
                 // TODO: - calculate new sortIndex, move annotation if needed
 
-                // Update bounding box of annotation if needed
-                let zoteroAnnotationBoundingBox = zoteroAnnotation.boundingBox
-                if annotation.boundingBox.size != zoteroAnnotationBoundingBox.size {
-                    zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox])
-                    state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
+                // Update bounding box of annotation
+                zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox])
+                state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
 
-                    // If it's a `SquareAnnotation`, reload cell if aspect ratio of preview changed
-                    if annotation is SquareAnnotation &&
-                        zoteroAnnotationBoundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
-                        // TODO: - don't update if sortIndex changed, it will be moved
-                        state.updatedAnnotationIndexPaths = [indexPath]
-                    }
+                // If it's a `SquareAnnotation`, reload cell if aspect ratio of preview changed
+                if annotation is SquareAnnotation &&
+                    zoteroAnnotation.boundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
+                    // TODO: - don't update if sortIndex changed, it will be moved
+                    state.updatedAnnotationIndexPaths = [indexPath]
                 }
             }
 
@@ -440,13 +443,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// Loads annotations from DB (TODO), converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadAnnotations(in viewModel: ViewModel<PDFReaderActionHandler>) {
         /// TMP/TODO: - Import annotations only when needed/requested by user
-        let zoteroAnnotations = self.annotations(from: viewModel.state.document)
+        let (zoteroAnnotations, comments) = self.annotationsAndComments(from: viewModel.state.document, baseFont: viewModel.state.commentFont)
 
         let documentAnnotations = viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported)
         let annotations = self.annotations(from: zoteroAnnotations)
 
         self.update(viewModel: viewModel) { state in
             state.annotations = zoteroAnnotations
+            state.comments = comments
             state.changes = .annotations
 
             UndoController.performWithoutUndo(undoController: state.document.undoController) {
@@ -460,13 +464,18 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     /// Temporary extraction of original annotations and converting them to zotero annotations. This will actually happen only when the user
     /// imports annotations manually, with some changes.
-    private func annotations(from document: Document) -> [Int: [Annotation]] {
+    private func annotationsAndComments(from document: Document, baseFont: UIFont) -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString]) {
         let annotations = document.allAnnotations(of: AnnotationsConfig.supported)
         var zoteroAnnotations: [Int: [Annotation]] = [:]
+        var comments: [String: NSAttributedString] = [:]
         for (page, annotations) in annotations {
-            zoteroAnnotations[page.intValue] = annotations.compactMap { self.zoteroAnnotation(from: $0) }.sorted(by: { $0.sortIndex > $1.sortIndex })
+            let pageAnnotations = annotations.compactMap { self.zoteroAnnotation(from: $0) }.sorted(by: { $0.sortIndex > $1.sortIndex })
+            zoteroAnnotations[page.intValue] = pageAnnotations
+            for annotation in pageAnnotations {
+                comments[annotation.key] = self.noteConverter.convert(comment: annotation.comment, baseFont: baseFont)
+            }
         }
-        return zoteroAnnotations
+        return (zoteroAnnotations, comments)
     }
 
     /// Create Zotero annotation from existing PSPDFKit annotation.

@@ -88,7 +88,6 @@ class AnnotationsViewController: UIViewController {
             return
         }
 
-
         guard state.insertedAnnotationIndexPaths != nil ||
               state.removedAnnotationIndexPaths != nil ||
               state.updatedAnnotationIndexPaths != nil else {
@@ -184,6 +183,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
 
         if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row],
            let cell = cell as? AnnotationCell {
+            let comment = self.viewModel.state.comments[annotation.key]
             let selected = annotation.key == self.viewModel.state.selectedAnnotation?.key
             let preview: UIImage?
 
@@ -197,7 +197,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
                 }
             }
 
-            cell.setup(with: annotation, preview: preview, selected: selected, availableWidth: AnnotationsConfig.sidebarWidth)
+            cell.setup(with: annotation, attributedComment: comment, preview: preview,
+                       selected: selected, availableWidth: AnnotationsConfig.sidebarWidth)
             cell.performAction = { [weak self] action, sender in
                 self?.perform(cellAction: action, indexPath: indexPath, sender: sender)
             }

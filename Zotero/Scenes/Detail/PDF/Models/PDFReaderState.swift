@@ -30,9 +30,11 @@ struct PDFReaderState: ViewModelState {
     let libraryId: LibraryIdentifier
     let document: Document
     let previewCache: NSCache<NSString, UIImage>
+    let commentFont: UIFont
 
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
+    var comments: [String: NSAttributedString]
     var activeColor: UIColor
     var currentFilter: String?
     var changes: Changes
@@ -58,6 +60,8 @@ struct PDFReaderState: ViewModelState {
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]
+        self.comments = [:]
+        self.commentFont = UIFont.preferredFont(forTextStyle: .body)
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
                                                 .flatMap({ UIColor(hex: $0) }) ?? AnnotationsConfig.defaultActiveColor
         self.changes = []

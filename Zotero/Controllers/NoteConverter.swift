@@ -21,15 +21,15 @@ class NoteConverter {
         let length: Int
     }
 
-    private struct Tag {
+    private struct HtmlTag {
         let type: StringAttribute
         let startIndex: Int
         let endIndex: Int
         let deletedCount: Int
         let closed: Bool
 
-        func copy(closed: Bool) -> Tag {
-            return Tag(type: self.type,
+        func copy(closed: Bool) -> HtmlTag {
+            return HtmlTag(type: self.type,
                        startIndex: self.startIndex,
                        endIndex: self.endIndex,
                        deletedCount: self.deletedCount,
@@ -38,14 +38,65 @@ class NoteConverter {
     }
 
     func convert(attributedString: NSAttributedString) -> String {
-        // TODO
-        return ""
+        var attributes: [Attribute] = []
+
+        attributedString.enumerateAttributes(in: NSRange(location: 0, length: attributedString.length), options: []) { nsAttributes, range, _ in
+            // Currently active attributes
+            let active = StringAttribute.attributes(from: nsAttributes)
+            // Opened attributes so far
+            let opened = self.openedAttributes(from: attributes)
+            // Close opened attributes if they are not active anymore
+            for openedAttribute in opened {
+                if !active.contains(openedAttribute) {
+                    attributes.insert(Attribute(type: openedAttribute, index: range.location, isClosing: true), at: 0)
+                }
+            }
+            // Open new attributes
+            for activeAttribute in active {
+                if !opened.contains(activeAttribute) {
+                    attributes.insert(Attribute(type: activeAttribute, index: range.location, isClosing: false), at: 0)
+                }
+            }
+        }
+
+        // Close remaining attributes
+        for openedAttribute in self.openedAttributes(from: attributes) {
+            attributes.insert(Attribute(type: openedAttribute, index: attributedString.length, isClosing: true), at: 0)
+        }
+
+        // Generate new string with html tags
+        var newString = attributedString.string
+        for attribute in attributes {
+            newString.insert(contentsOf: self.htmlTag(from: attribute.type, isClosing: attribute.isClosing),
+                             at: newString.index(newString.startIndex, offsetBy: attribute.index))
+        }
+        return newString
+    }
+
+    private func openedAttributes(from attributes: [Attribute]) -> [StringAttribute] {
+        let allCount = StringAttribute.allCases.count
+        var opened: [StringAttribute] = []
+        var closed: [StringAttribute] = []
+
+        for attribute in attributes {
+            if attribute.isClosing {
+                closed.append(attribute.type)
+            } else if !closed.contains(attribute.type) {
+                opened.append(attribute.type)
+            }
+
+            if (opened.count + closed.count) == allCount {
+                break
+            }
+        }
+
+        return opened
     }
 
     func convert(comment: String, baseFont: UIFont) -> NSAttributedString {
         var tagStart: Int?
         var deletedCharacters = 0
-        var tags: [Tag] = []
+        var tags: [HtmlTag] = []
         var attributes: [Attribute] = []
 
         // Find tags and attributed content
@@ -71,7 +122,7 @@ class NoteConverter {
 
             guard strippedTag != nil else {
                 // Opening tag
-                tags.insert(Tag(type: type, startIndex: start, endIndex: index, deletedCount: deletedCharacters, closed: false), at: 0)
+                tags.insert(HtmlTag(type: type, startIndex: start, endIndex: index, deletedCount: deletedCharacters, closed: false), at: 0)
                 deletedCharacters += tag.count + 2 // + '<', '>'
                 tagStart = nil
                 continue
@@ -86,7 +137,7 @@ class NoteConverter {
             }
 
             let openingTag = tags[openingTagIndex].copy(closed: true)
-            let closingTag = Tag(type: type, startIndex: start, endIndex: index, deletedCount: deletedCharacters, closed: true)
+            let closingTag = HtmlTag(type: type, startIndex: start, endIndex: index, deletedCount: deletedCharacters, closed: true)
 
             tags[openingTagIndex] = openingTag
             tags.insert(closingTag, at: 0)
@@ -169,5 +220,20 @@ class NoteConverter {
         default:
             return nil
         }
+    }
+
+    private func htmlTag(from attributeType: StringAttribute, isClosing: Bool) -> String {
+        let tag: String
+        switch attributeType {
+        case .bold:
+            tag = "b"
+        case .italic:
+            tag = "i"
+        case .subscript:
+            tag = "sub"
+        case .superscript:
+            tag = "sup"
+        }
+        return "<\(isClosing ? "/" : "")\(tag)>"
     }
 }

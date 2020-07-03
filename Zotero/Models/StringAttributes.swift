@@ -8,7 +8,7 @@
 
 import UIKit
 
-enum StringAttribute {
+enum StringAttribute: CaseIterable {
     case bold
     case italic
     case superscript
