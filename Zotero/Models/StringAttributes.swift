@@ -18,6 +18,36 @@ enum StringAttribute: CaseIterable {
     static let superscriptFontOffset: CGFloat = 0.4
     static let subOrSuperScriptFontSizeRatio: CGFloat = 0.75
 
+    init?(tag: Substring) {
+        switch tag {
+        case "b":
+            self = .bold
+        case "i":
+            self = .italic
+        case "sup":
+            self = .superscript
+        case "sub":
+            self = .subscript
+        default:
+            return nil
+        }
+    }
+
+    func htmlTag(isClosing: Bool) -> String {
+        let tag: String
+        switch self {
+        case .bold:
+            tag = "b"
+        case .italic:
+            tag = "i"
+        case .subscript:
+            tag = "sub"
+        case .superscript:
+            tag = "sup"
+        }
+        return "<\(isClosing ? "/" : "")\(tag)>"
+    }
+
     static func attributes(from nsStringAttributes: [NSAttributedString.Key: Any]) -> [StringAttribute] {
         var actions: [StringAttribute] = []
 

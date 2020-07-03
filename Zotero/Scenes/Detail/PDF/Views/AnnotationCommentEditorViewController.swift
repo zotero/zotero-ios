@@ -42,7 +42,7 @@ class AnnotationCommentEditorViewController: UIViewController {
     private let font: UIFont
     private let text: String
     private let saveAction: (String) -> Void
-    private unowned let converter: NoteConverter
+    private unowned let converter: HtmlAttributedStringConverter
     private let disposeBag: DisposeBag
 
     private var ignoreSelectionChange: Bool
@@ -58,7 +58,7 @@ class AnnotationCommentEditorViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(text: String, converter: NoteConverter, saveAction: @escaping (String) -> Void) {
+    init(text: String, converter: HtmlAttributedStringConverter, saveAction: @escaping (String) -> Void) {
         self.text = text
         self.converter = converter
         self.saveAction = saveAction

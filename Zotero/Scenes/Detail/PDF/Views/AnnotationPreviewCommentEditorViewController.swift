@@ -13,7 +13,7 @@ import RxSwift
 class AnnotationPreviewCommentEditorViewController: UIViewController {
     private let imageLoadSingle: Single<UIImage>?
     private let text: String
-    private unowned let converter: NoteConverter
+    private unowned let converter: HtmlAttributedStringConverter
     private let saveAction: (String) -> Void
     private let disposeBag: DisposeBag
 
@@ -24,7 +24,7 @@ class AnnotationPreviewCommentEditorViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(text: String, imageLoader: Single<UIImage>?, converter: NoteConverter,
+    init(text: String, imageLoader: Single<UIImage>?, converter: HtmlAttributedStringConverter,
          saveAction: @escaping (String) -> Void) {
         self.text = text
         self.imageLoadSingle = imageLoader

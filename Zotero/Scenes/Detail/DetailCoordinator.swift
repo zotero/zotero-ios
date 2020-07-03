@@ -154,7 +154,7 @@ class DetailCoordinator: Coordinator {
         #if PDFENABLED
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key, libraryId: libraryId),
                                                                       handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController,
-                                                                                                      noteConverter: self.controllers.noteConverter)),
+                                                                                                      htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter)),
                                                  annotationPreviewController: self.controllers.annotationPreviewController,
                                                  pageController: self.controllers.pageController)
         controller.coordinatorDelegate = self
@@ -404,7 +404,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
         let controller = AnnotationPreviewCommentEditorViewController(text: text, imageLoader: imageLoader,
-                                                                      converter: self.controllers.noteConverter, saveAction: save)
+                                                                      converter: self.controllers.htmlAttributedStringConverter, saveAction: save)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .formSheet
         navigationController.isModalInPresentation = true

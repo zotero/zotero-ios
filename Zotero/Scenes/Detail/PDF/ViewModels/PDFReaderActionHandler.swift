@@ -19,12 +19,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     typealias State = PDFReaderState
 
     private unowned let annotationPreviewController: AnnotationPreviewController
-    private unowned let noteConverter: NoteConverter
+    private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private let disposeBag: DisposeBag
 
-    init(annotationPreviewController: AnnotationPreviewController, noteConverter: NoteConverter) {
+    init(annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
         self.annotationPreviewController = annotationPreviewController
-        self.noteConverter = noteConverter
+        self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.disposeBag = DisposeBag()
     }
 
@@ -93,7 +93,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.updatedAnnotationIndexPaths = [indexPath]
 
             if reloadComment {
-                state.comments[newAnnotation.key] = self.noteConverter.convert(comment: newAnnotation.comment, baseFont: state.commentFont)
+                state.comments[newAnnotation.key] = self.htmlAttributedStringConverter.convert(comment: newAnnotation.comment, baseFont: state.commentFont)
             }
         }
     }
@@ -472,7 +472,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             let pageAnnotations = annotations.compactMap { self.zoteroAnnotation(from: $0) }.sorted(by: { $0.sortIndex > $1.sortIndex })
             zoteroAnnotations[page.intValue] = pageAnnotations
             for annotation in pageAnnotations {
-                comments[annotation.key] = self.noteConverter.convert(comment: annotation.comment, baseFont: baseFont)
+                comments[annotation.key] = self.htmlAttributedStringConverter.convert(comment: annotation.comment, baseFont: baseFont)
             }
         }
         return (zoteroAnnotations, comments)
