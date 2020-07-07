@@ -65,15 +65,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         case .requestPreviews(let keys, let notify):
             self.loadPreviews(for: keys, notify: notify, in: viewModel)
 
-        case .editTags(let indexPath):
-            self.update(viewModel: viewModel) { state in
-                state.annotationIndexPathForTagEdit = indexPath
-            }
-
-        case .editComment(let indexPath):
-            self.update(viewModel: viewModel) { state in
-                state.annotationIndexPathForCommentEdit = indexPath
-            }
+        case .setHighlight(let highlight, let indexPath):
+            self.update(annotation: { $0.copy(text: highlight) }, reloadComment: false, at: indexPath, in: viewModel)
 
         case .setComment(let comment, let indexPath):
             self.update(annotation: { $0.copy(comment: comment) }, reloadComment: true, at: indexPath, in: viewModel)

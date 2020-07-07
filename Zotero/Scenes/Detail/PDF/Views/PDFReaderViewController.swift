@@ -111,43 +111,6 @@ class PDFReaderViewController: UIViewController {
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
         }
-
-        if let indexPath = state.annotationIndexPathForCommentEdit,
-           let annotation = state.annotations[indexPath.section]?[indexPath.row] {
-            let loader: Single<UIImage>?
-            if annotation.type == .note {
-                loader = nil
-            } else {
-                loader = self.annotationPreviewController.render(document: state.document,
-                                                                 page: UInt(annotation.page),
-                                                                 rect: self.previewRect(for: annotation),
-                                                                 key: annotation.key,
-                                                                 parentKey: state.key)
-            }
-            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: loader, save: { [weak self] comment in
-                self?.viewModel.process(action: .setComment(comment, indexPath))
-            })
-        }
-
-        if let indexPath = state.annotationIndexPathForTagEdit,
-           let annotation = state.annotations[indexPath.section]?[indexPath.row] {
-            let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.libraryId, selected: selected, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(tags, indexPath))
-            })
-        }
-    }
-
-    private func previewRect(for annotation: Annotation) -> CGRect {
-        let boundingBox = annotation.boundingBox
-
-        guard let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else {
-            return boundingBox
-        }
-
-        var viewCoordinatesBoundingBox = pageView.convert(boundingBox, from: pageView.pdfCoordinateSpace)
-        viewCoordinatesBoundingBox = viewCoordinatesBoundingBox.insetBy(dx: -10, dy: -40)
-        return pageView.convert(viewCoordinatesBoundingBox, to: pageView.pdfCoordinateSpace)
     }
 
     private func updateSelection(on pageView: PDFPageView, selectedAnnotation: Annotation?, pageIndex: Int) {
@@ -272,6 +235,7 @@ class PDFReaderViewController: UIViewController {
         controller.view.backgroundColor = self.view.backgroundColor
         controller.view.isHidden = true
         controller.coordinatorDelegate = self.coordinatorDelegate
+        controller.previewLoader = self
 
         self.addChild(controller)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
@@ -573,6 +537,29 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
         self.navigationItem.rightBarButtonItems?.first?.isEnabled = redoEnabled
         self.navigationItem.rightBarButtonItems?.last?.isEnabled = undoEnabled
+    }
+}
+
+extension PDFReaderViewController: PdfPreviewLoader {
+    func createPreviewLoader(for annotation: Annotation, parentKey: String, document: Document) -> Single<UIImage>? {
+        guard annotation.type != .note else { return nil }
+
+        let boundingBox = annotation.boundingBox
+        let previewRect: CGRect
+
+        if let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) {
+            var viewCoordinatesBoundingBox = pageView.convert(boundingBox, from: pageView.pdfCoordinateSpace)
+            viewCoordinatesBoundingBox = viewCoordinatesBoundingBox.insetBy(dx: -10, dy: -40)
+            previewRect = pageView.convert(viewCoordinatesBoundingBox, to: pageView.pdfCoordinateSpace)
+        } else {
+            previewRect = boundingBox
+        }
+
+        return self.annotationPreviewController.render(document: document,
+                                                       page: UInt(annotation.page),
+                                                       rect: previewRect,
+                                                       key: annotation.key,
+                                                       parentKey: parentKey)
     }
 }
 

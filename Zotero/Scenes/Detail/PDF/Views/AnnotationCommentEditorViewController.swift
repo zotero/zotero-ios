@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 
 class AnnotationCommentEditorViewController: UIViewController {
-    enum ToolbarAction: Int, CaseIterable {
+    private enum ToolbarAction: Int, CaseIterable {
         case b = 1
         case i = 2
         case sup = 3
@@ -38,11 +38,13 @@ class AnnotationCommentEditorViewController: UIViewController {
 
     @IBOutlet private weak var textView: UITextView!
     @IBOutlet private weak var buttonToolbar: UIStackView!
+    @IBOutlet private weak var buttonToolbarHeight: NSLayoutConstraint!
+    @IBOutlet private weak var buttonToolbarSeparator: UIView!
 
     private let font: UIFont
     private let text: String
     private let saveAction: (String) -> Void
-    private unowned let converter: HtmlAttributedStringConverter
+    private unowned let converter: HtmlAttributedStringConverter?
     private let disposeBag: DisposeBag
 
     private var ignoreSelectionChange: Bool
@@ -58,7 +60,7 @@ class AnnotationCommentEditorViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(text: String, converter: HtmlAttributedStringConverter, saveAction: @escaping (String) -> Void) {
+    init(text: String, converter: HtmlAttributedStringConverter? = nil, saveAction: @escaping (String) -> Void) {
         self.text = text
         self.converter = converter
         self.saveAction = saveAction
@@ -75,15 +77,18 @@ class AnnotationCommentEditorViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setupToolbarButtons()
+        self.setupToolbar()
         self.setupTextView()
     }
 
     // MARK: - Actions
 
     @objc func save() {
-        guard let attributedString = self.textView.attributedText, !attributedString.string.isEmpty else { return }
-        self.saveAction(self.converter.convert(attributedString: attributedString))
+        if let converter = self.converter, let attributedString = self.textView.attributedText {
+            self.saveAction(converter.convert(attributedString: attributedString))
+        } else {
+            self.saveAction(self.textView.text)
+        }
         self.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
@@ -129,6 +134,8 @@ class AnnotationCommentEditorViewController: UIViewController {
     // MARK: - Text selection
 
     private func selectActiveButtons(in range: NSRange) {
+        guard !self.buttonToolbar.isHidden else { return }
+
         if range.length == 0 {
             // If selected range is 0, just check current typing attributes
             self.selectButtons(from: self.textView.typingAttributes)
@@ -231,6 +238,17 @@ class AnnotationCommentEditorViewController: UIViewController {
 
     // MARK: - Setups
 
+    private func setupToolbar() {
+        let isHidden = self.converter == nil
+
+        if !isHidden {
+            self.setupToolbarButtons()
+        }
+        self.buttonToolbar.isHidden = isHidden
+        self.buttonToolbarHeight.constant = isHidden ? 0 : 44
+        self.buttonToolbarSeparator.isHidden = isHidden
+    }
+
     private func setupToolbarButtons() {
         let buttons = ToolbarAction.allCases.map { action -> CheckboxButton in
             let imageName: String
@@ -277,8 +295,13 @@ class AnnotationCommentEditorViewController: UIViewController {
 
     private func setupTextView() {
         self.textView.font = self.font
-        self.textView.attributedText = self.converter.convert(comment: self.text, baseFont: self.font)
         self.textView.delegate = self
+
+        if let converter = self.converter {
+            self.textView.attributedText = converter.convert(comment: self.text, baseFont: self.font)
+        } else {
+            self.textView.text = self.text
+        }
     }
 }
 

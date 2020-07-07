@@ -18,6 +18,7 @@ import SwiftyGif
 
 protocol DetailPdfCoordinatorDelegate: class {
     func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
+    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
 }
@@ -403,8 +404,16 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
-        let controller = AnnotationPreviewCommentEditorViewController(text: text, imageLoader: imageLoader,
-                                                                      converter: self.controllers.htmlAttributedStringConverter, saveAction: save)
+        self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: self.controllers.htmlAttributedStringConverter, save: save)
+    }
+
+    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
+        self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: nil, save: save)
+    }
+
+    private func showAnnotationPreviewEditor(with text: String, imageLoader: Single<UIImage>?,
+                                             converter: HtmlAttributedStringConverter?, save: @escaping (String) -> Void) {
+        let controller = AnnotationPreviewCommentEditorViewController(text: text, imageLoader: imageLoader, converter: converter, saveAction: save)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .formSheet
         navigationController.isModalInPresentation = true

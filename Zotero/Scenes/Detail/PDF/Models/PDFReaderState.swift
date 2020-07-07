@@ -49,10 +49,6 @@ struct PDFReaderState: ViewModelState {
     var removedAnnotationIndexPaths: [IndexPath]?
     /// Annotations that loaded their preview images and need to show them
     var loadedPreviewImageAnnotationKeys: Set<String>?
-    /// Index path pointing to annotation for which the comment is being changed
-    var annotationIndexPathForCommentEdit: IndexPath?
-    /// Index path pointing to annotation for which tags are being changed
-    var annotationIndexPathForTagEdit: IndexPath?
 
     init(url: URL, key: String, libraryId: LibraryIdentifier) {
         self.key = key
@@ -76,8 +72,6 @@ struct PDFReaderState: ViewModelState {
         self.updatedAnnotationIndexPaths = nil
         self.insertedAnnotationIndexPaths = nil
         self.removedAnnotationIndexPaths = nil
-        self.annotationIndexPathForCommentEdit = nil
-        self.annotationIndexPathForTagEdit = nil
         self.loadedPreviewImageAnnotationKeys = nil
     }
 }

@@ -103,21 +103,31 @@
                                                     </label>
                                                 </subviews>
                                             </stackView>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Pm1-Ws-jST">
+                                                <rect key="frame" x="0.0" y="0.0" width="402" height="32.5"/>
+                                                <connections>
+                                                    <action selector="updateHighlightWithSender:" destination="lZ1-SH-e3i" eventType="touchUpInside" id="NgN-3e-KqF"/>
+                                                </connections>
+                                            </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
+                                            <constraint firstAttribute="bottom" secondItem="Pm1-Ws-jST" secondAttribute="bottom" id="3Ul-eU-nno"/>
                                             <constraint firstAttribute="trailing" secondItem="2HF-9u-BQp" secondAttribute="trailing" constant="10" id="8Qi-Q5-fzf"/>
+                                            <constraint firstAttribute="trailing" secondItem="Pm1-Ws-jST" secondAttribute="trailing" id="CiA-Hk-Zvq"/>
+                                            <constraint firstItem="Pm1-Ws-jST" firstAttribute="top" secondItem="Gcj-ML-T6V" secondAttribute="top" id="FCz-ia-CaP"/>
                                             <constraint firstItem="2HF-9u-BQp" firstAttribute="top" secondItem="Gcj-ML-T6V" secondAttribute="top" constant="6" id="GTG-qs-HqI"/>
                                             <constraint firstAttribute="trailing" secondItem="R2N-bj-FDI" secondAttribute="trailing" constant="10" id="Icw-u8-VrO"/>
                                             <constraint firstItem="R2N-bj-FDI" firstAttribute="leading" secondItem="Gcj-ML-T6V" secondAttribute="leading" constant="10" id="mzd-nl-lwx"/>
                                             <constraint firstAttribute="bottom" secondItem="R2N-bj-FDI" secondAttribute="bottom" constant="6" id="ova-Rd-zRM"/>
+                                            <constraint firstItem="Pm1-Ws-jST" firstAttribute="leading" secondItem="Gcj-ML-T6V" secondAttribute="leading" id="tsK-an-VMI"/>
                                             <constraint firstItem="2HF-9u-BQp" firstAttribute="leading" secondItem="Gcj-ML-T6V" secondAttribute="leading" constant="10" id="u72-23-EIA"/>
                                             <constraint firstAttribute="bottom" secondItem="2HF-9u-BQp" secondAttribute="bottom" constant="6" id="wSr-wk-BqT"/>
                                             <constraint firstItem="R2N-bj-FDI" firstAttribute="top" secondItem="Gcj-ML-T6V" secondAttribute="top" constant="6" id="zFg-5c-as4"/>
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="lrl-mT-sYR">
-                                        <rect key="frame" x="0.0" y="73.5" width="402" height="13"/>
+                                        <rect key="frame" x="0.0" y="73.5" width="402" height="32.5"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" ambiguous="YES" text="Comment" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1ni-AA-0kQ">
                                                 <rect key="frame" x="10" y="6" width="382" height="20.5"/>
@@ -145,7 +155,7 @@
                                         </constraints>
                                     </view>
                                     <view hidden="YES" contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="mD4-Mk-OmK">
-                                        <rect key="frame" x="0.0" y="86.5" width="402" height="41"/>
+                                        <rect key="frame" x="0.0" y="106" width="402" height="41"/>
                                         <subviews>
                                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="aYV-da-fem">
                                                 <rect key="frame" x="0.0" y="0.0" width="402" height="41"/>
@@ -166,14 +176,14 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cu7-37-bNn">
-                                        <rect key="frame" x="0.0" y="86.5" width="402" height="1"/>
+                                        <rect key="frame" x="0.0" y="106" width="402" height="1"/>
                                         <color key="backgroundColor" systemColor="systemGray3Color" red="0.78039215689999997" green="0.78039215689999997" blue="0.80000000000000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="1" id="BF7-DE-cyh"/>
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pj5-NP-qgu">
-                                        <rect key="frame" x="0.0" y="87.5" width="402" height="32.5"/>
+                                        <rect key="frame" x="0.0" y="107" width="402" height="13"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" ambiguous="YES" text="tags, ..." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UUD-pj-5VC">
                                                 <rect key="frame" x="10" y="6" width="382" height="20.5"/>
@@ -248,6 +258,7 @@
                 <outlet property="annotationContainer" destination="Gcj-ML-T6V" id="7yb-hz-e3m"/>
                 <outlet property="annotationIcon" destination="uVz-D3-SIV" id="MD9-0Q-a29"/>
                 <outlet property="annotationImageView" destination="R2N-bj-FDI" id="ZCs-79-1S2"/>
+                <outlet property="annotationTextButton" destination="Pm1-Ws-jST" id="3B5-Ky-XOG"/>
                 <outlet property="annotationTextContainer" destination="2HF-9u-BQp" id="nCl-ct-czT"/>
                 <outlet property="annotationTextHighlightView" destination="bx3-Ga-lvU" id="Fuj-m9-I53"/>
                 <outlet property="annotationTextLabel" destination="7px-r3-oA8" id="GQd-Cb-PLQ"/>

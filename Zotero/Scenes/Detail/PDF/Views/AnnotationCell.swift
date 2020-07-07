@@ -12,7 +12,7 @@ typealias AnnotationCellAction = (AnnotationCell.Action, UIButton) -> Void
 
 class AnnotationCell: UITableViewCell {
     enum Action {
-        case comment, tags, options
+        case comment, tags, options, highlight
     }
 
     @IBOutlet private weak var roundedContainer: UIView!
@@ -28,6 +28,7 @@ class AnnotationCell: UITableViewCell {
     @IBOutlet private weak var annotationTextHighlightView: UIView!
     @IBOutlet private weak var annotationTextLabel: UILabel!
     @IBOutlet private weak var annotationImageView: UIImageView!
+    @IBOutlet private weak var annotationTextButton: UIButton!
     @IBOutlet private weak var commentContainer: UIView!
     @IBOutlet private weak var commentLabel: UILabel!
     @IBOutlet private weak var commentButton: UIButton!
@@ -68,6 +69,10 @@ class AnnotationCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         self.key = ""
+    }
+
+    @IBAction private func updateHighlight(sender: UIButton) {
+        self.performAction?(.highlight, sender)
     }
 
     @IBAction private func updateComment(sender: UIButton) {
@@ -144,6 +149,7 @@ class AnnotationCell: UITableViewCell {
         // Tags
         self.tagsLabel.attributedText = self.attributedString(from: annotation.tags)
 
+        self.annotationTextButton.isEnabled = selected && annotation.type == .highlight
         self.commentButton.isEnabled = selected
         self.addCommentButton.isEnabled = selected
         self.tagsButton.isEnabled = selected

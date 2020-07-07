@@ -10,6 +10,8 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="AnnotationCommentEditorViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="buttonToolbar" destination="y6q-0N-Wsj" id="gAy-G9-kbf"/>
+                <outlet property="buttonToolbarHeight" destination="xiQ-ch-Nje" id="cVz-3V-QQa"/>
+                <outlet property="buttonToolbarSeparator" destination="cbg-IO-brj" id="UDH-DB-qzN"/>
                 <outlet property="textView" destination="UFq-Bh-N5F" id="l28-ZI-TDw"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>

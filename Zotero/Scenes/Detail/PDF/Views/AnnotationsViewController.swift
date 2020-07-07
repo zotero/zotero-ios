@@ -14,6 +14,10 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
+protocol PdfPreviewLoader: class {
+    func createPreviewLoader(for annotation: Annotation, parentKey: String, document: Document) -> Single<UIImage>?
+}
+
 class AnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private let viewModel: ViewModel<PDFReaderActionHandler>
@@ -21,8 +25,8 @@ class AnnotationsViewController: UIViewController {
 
     private weak var tableView: UITableView!
     private var searchController: UISearchController!
-
     weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
+    weak var previewLoader: PdfPreviewLoader?
 
     // MARK: - Lifecycle
 
@@ -111,13 +115,30 @@ class AnnotationsViewController: UIViewController {
     }
 
     private func perform(cellAction: AnnotationCell.Action, indexPath: IndexPath, sender: UIButton) {
+        let state = self.viewModel.state
+        guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }
+
         switch cellAction {
         case .comment:
-            self.viewModel.process(action: .editComment(indexPath))
+            let loader = self.previewLoader?.createPreviewLoader(for: annotation, parentKey: state.key, document: state.document)
+            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: loader, save: { [weak self] comment in
+                self?.viewModel.process(action: .setComment(comment, indexPath))
+            })
+
         case .tags:
-            self.viewModel.process(action: .editTags(indexPath))
+            let selected = Set(annotation.tags.map({ $0.name }))
+            self.coordinatorDelegate?.showTagPicker(libraryId: state.libraryId, selected: selected, picked: { [weak self] tags in
+                self?.viewModel.process(action: .setTags(tags, indexPath))
+            })
+
+        case .highlight:
+            guard annotation.type == .highlight else { return }
+            let loader = self.previewLoader?.createPreviewLoader(for: annotation, parentKey: state.key, document: state.document)
+            self.coordinatorDelegate?.showHighlight(with: (annotation.text ?? ""), imageLoader: loader, save: { [weak self] highlight in
+                self?.viewModel.process(action: .setHighlight(highlight, indexPath))
+            })
+
         case .options:
-            guard let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
             self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender, viewModel: self.viewModel)
         }
     }
