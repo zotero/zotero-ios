@@ -352,11 +352,15 @@ class PDFReaderViewController: UIViewController {
         let pdfConfiguration = PDFConfiguration { builder in
             builder.scrollDirection = .horizontal
             builder.documentLabelEnabled = .NO
+            builder.allowedAppearanceModes = [.night]
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
         controller.delegate = self
         controller.formSubmissionDelegate = nil
+        if self.traitCollection.userInterfaceStyle == .dark {
+            controller.appearanceModeManager.appearanceMode = .night
+        }
         controller.annotationStateManager.add(self)
         controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
         self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)

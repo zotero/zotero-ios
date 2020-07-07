@@ -187,6 +187,9 @@ class AnnotationCell: UITableViewCell {
     }
 
     private func contentBackgroundColor(selected: Bool) -> UIColor {
-        return selected ? UIColor(hex: "#e4ebf9") : .white
+        if selected {
+            return UIColor(hex: "#e4ebf9")
+        }
+        return self.traitCollection.userInterfaceStyle == .dark ? .black : .white
     }
 }
