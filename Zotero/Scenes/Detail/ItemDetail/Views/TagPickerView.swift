@@ -19,7 +19,7 @@ struct TagPickerView: View {
         List(selection: self.viewModel.binding(keyPath: \.selectedTags, action: { .setSelected($0) })) {
             SearchBar(text: self.viewModel.binding(keyPath: \.searchTerm, action: { .search($0) }), placeholder: L10n.ItemDetail.searchTags)
             ForEach(self.viewModel.state.tags) { tag in
-                TagView(color: TagColorGenerator.color(for: tag.color, scheme: self.colorScheme), name: tag.name)
+                TagView(color: TagColorGenerator.color(for: tag.color, scheme: self.colorScheme), name: tag.name, circleFilled: !tag.color.isEmpty)
             }
         }
         .navigationBarItems(leading: self.leadingBarItems, trailing: self.trailingBarItems)

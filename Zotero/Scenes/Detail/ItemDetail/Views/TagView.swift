@@ -9,13 +9,19 @@
 import SwiftUI
 
 struct TagView: View {
-    let color: Color?
+    let color: Color
     let name: String
+    let circleFilled: Bool
 
     var body: some View {
         HStack {
-            self.color.flatMap {
-                Circle().foregroundColor($0)
+            if self.circleFilled {
+                Circle().foregroundColor(self.color)
+                        .aspectRatio(1.0, contentMode: .fit)
+                        .frame(maxHeight: 16)
+            } else {
+                Circle().stroke(self.color, lineWidth: 1)
+                        .foregroundColor(.clear)
                         .aspectRatio(1.0, contentMode: .fit)
                         .frame(maxHeight: 16)
             }
@@ -28,7 +34,7 @@ struct TagView: View {
 
 struct TagView_Previews: PreviewProvider {
     static var previews: some View {
-        TagView(color: .red, name: "Books")
+        TagView(color: .red, name: "Books", circleFilled: true)
             .previewLayout(.fixed(width: 320, height: 44))
     }
 }

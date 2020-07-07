@@ -11,10 +11,16 @@ import SwiftUI
 
 struct TagColorGenerator {
     static func color(for hex: String, scheme: ColorScheme) -> Color {
+        if hex.isEmpty {
+            return .gray
+        }
         return Color(hex: self.hex(for: hex, isDark: (scheme == .dark)))
     }
 
     static func uiColor(for hex: String, style: UIUserInterfaceStyle) -> UIColor {
+        if hex.isEmpty {
+            return .gray
+        }
         return UIColor(hex: self.hex(for: hex, isDark: (style == .dark)))
     }
 
