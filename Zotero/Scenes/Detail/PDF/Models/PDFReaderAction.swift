@@ -19,13 +19,15 @@ enum PDFReaderAction {
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)
     case removeAnnotation(Annotation)
-    case annotationChanged(PSPDFKit.Annotation)
-    case annotationsAdded([PSPDFKit.Annotation])
+    case annotationChanged(PSPDFKit.Annotation, isDark: Bool)
+    case annotationsAdded([PSPDFKit.Annotation], isDark: Bool)
     case annotationsRemoved([PSPDFKit.Annotation])
-    case requestPreviews(keys: [String], notify: Bool)
+    case requestPreviews(keys: [String], notify: Bool, isDark: Bool)
     case setComment(String, IndexPath)
     case setTags([Tag], IndexPath)
     case setHighlight(String, IndexPath)
+    case userInterfaceStyleChanged
+    case updateAnnotationPreviews(userInterfaceIsDark: Bool)
 }
 
 #endif

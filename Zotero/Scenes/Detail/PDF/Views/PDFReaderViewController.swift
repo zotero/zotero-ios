@@ -95,9 +95,21 @@ class PDFReaderViewController: UIViewController {
         self.pdfController?.annotationStateManager.remove(self)
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+
+        self.viewModel.process(action: .userInterfaceStyleChanged)
+    }
+
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if state.changes.contains(.darkMode) {
+            self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
+        }
+
         if state.changes.contains(.selection),
            let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
             self.updateSelection(on: pageView, selectedAnnotation: state.selectedAnnotation, pageIndex: Int(self.pdfController.pageIndex))
@@ -413,8 +425,10 @@ class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationChanged)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
+                                      guard let `self` = self else { return }
+                                      let isDark = self.traitCollection.userInterfaceStyle == .dark
                                       if let annotation = notification.object as? PSPDFKit.Annotation {
-                                          self?.viewModel.process(action: .annotationChanged(annotation))
+                                          self.viewModel.process(action: .annotationChanged(annotation, isDark: isDark))
                                       }
                                   })
                                   .disposed(by: self.disposeBag)
@@ -423,8 +437,10 @@ class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationsAdded)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
+                                      guard let `self` = self else { return }
+                                      let isDark = self.traitCollection.userInterfaceStyle == .dark
                                       if let annotations = notification.object as? [PSPDFKit.Annotation] {
-                                          self?.viewModel.process(action: .annotationsAdded(annotations))
+                                          self.viewModel.process(action: .annotationsAdded(annotations, isDark: isDark))
                                       }
                                   })
                                   .disposed(by: self.disposeBag)
@@ -436,6 +452,16 @@ class PDFReaderViewController: UIViewController {
                                       if let annotations = notification.object as? [PSPDFKit.Annotation] {
                                           self?.viewModel.process(action: .annotationsRemoved(annotations))
                                       }
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UIApplication.didBecomeActiveNotification)
+                                  .observeOn(MainScheduler.instance)
+                                  .subscribe(onNext: { [weak self] notification in
+                                      guard let `self` = self else { return }
+                                      let isDark = self.traitCollection.userInterfaceStyle == .dark
+                                      self.viewModel.process(action: .updateAnnotationPreviews(userInterfaceIsDark: isDark))
                                   })
                                   .disposed(by: self.disposeBag)
     }

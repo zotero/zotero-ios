@@ -22,6 +22,7 @@ struct PDFReaderState: ViewModelState {
 
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
+        static let darkMode = Changes(rawValue: 1 << 2)
     }
 
     private static let activeColorKey = "PDFReaderState.activeColor"
@@ -49,6 +50,9 @@ struct PDFReaderState: ViewModelState {
     var removedAnnotationIndexPaths: [IndexPath]?
     /// Annotations that loaded their preview images and need to show them
     var loadedPreviewImageAnnotationKeys: Set<String>?
+    /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
+    /// if they are not available.
+    var shouldStoreAnnotationPreviewsIfNeeded: Bool
 
     init(url: URL, key: String, libraryId: LibraryIdentifier) {
         self.key = key
@@ -57,6 +61,7 @@ struct PDFReaderState: ViewModelState {
         self.document = Document(url: url)
         self.annotations = [:]
         self.comments = [:]
+        self.shouldStoreAnnotationPreviewsIfNeeded = false
         self.commentFont = UIFont.preferredFont(forTextStyle: .body)
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
                                                 .flatMap({ UIColor(hex: $0) }) ?? AnnotationsConfig.defaultActiveColor

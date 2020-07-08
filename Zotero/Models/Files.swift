@@ -95,8 +95,9 @@ struct Files {
 
     // MARK: - Annotations
 
-    static func annotationPreview(annotationKey: String, pdfKey: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", pdfKey], name: annotationKey, ext: "jpg")
+    static func annotationPreview(annotationKey: String, pdfKey: String, isDark: Bool) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", pdfKey],
+                        name: annotationKey + (isDark ? "_dark" : ""), ext: "jpg")
     }
 
     // MARK: - Share extension

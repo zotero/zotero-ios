@@ -19,6 +19,12 @@ fileprivate struct SubscriberKey: Hashable {
 }
 
 class AnnotationPreviewController: NSObject {
+    enum PreviewType: Int {
+        case temporary
+        case dark
+        case light
+    }
+
     let observable: PublishSubject<AnnotationPreviewUpdate>
     private let size: CGSize
     private let queue: DispatchQueue
@@ -59,7 +65,7 @@ extension AnnotationPreviewController {
                 self.subscribers[SubscriberKey(key: key, parentKey: parentKey)] = subscriber
             }
 
-            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: page, rect: rect, temporary: true)
+            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: page, rect: rect, type: .temporary)
 
             return Disposables.create()
         }
@@ -68,14 +74,15 @@ extension AnnotationPreviewController {
     /// Stores preview for given annotation.
     /// - parameter annotation: Area annotation for which the preview is to be cached.
     /// - parameter parentKey: Key of PDF item.
-    func store(for annotation: SquareAnnotation, parentKey: String) {
+    /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
+    func store(for annotation: SquareAnnotation, parentKey: String, isDark: Bool) {
         guard let key = annotation.key, let document = annotation.document else { return }
         self.enqueue(key: key,
                      parentKey: parentKey,
                      document: document,
                      pageIndex: annotation.pageIndex,
                      rect: annotation.boundingBox.insetBy(dx: (annotation.lineWidth + 1), dy: (annotation.lineWidth + 1)),
-                     temporary: false)
+                     type: isDark ? .dark : .light)
     }
 
     /// Deletes cached preview for given annotation.
@@ -88,28 +95,44 @@ extension AnnotationPreviewController {
             guard let `self` = self else { return }
 
             do {
-                try self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey))
+                try self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: true))
             } catch let error {
-                DDLogError("AnnotationPreviewController: can't remove file - \(error)")
+                DDLogWarn("AnnotationPreviewController: can't remove dark file - \(error)")
+            }
+
+            do {
+                try self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: false))
+            } catch let error {
+                DDLogWarn("AnnotationPreviewController: can't remove light file - \(error)")
             }
         }
+    }
+
+    /// Checks whether preview is available for given annotation.
+    /// - parameter key: Key of annotation.
+    /// - parameter parentKey: Key of PDF item.
+    /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
+    /// - returns: `true` if preview is available, `false` otherwise.
+    func hasPreview(for key: String, parentKey: String, isDark: Bool) -> Bool {
+        return self.fileStorage.has(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: isDark))
     }
 
     /// Loads cached preview for given annotation.
     /// - parameter key: Key of annotation.
     /// - parameter parentKey: Key of PDF item.
+    /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     /// - parameter completed: Completion handler which contains loaded preview or `nil` if loading wasn't successful.
-    func preview(for key: String, parentKey: String, completed: @escaping (UIImage?) -> Void) {
+    func preview(for key: String, parentKey: String, isDark: Bool, completed: @escaping (UIImage?) -> Void) {
         self.queue.async { [weak self] in
             guard let `self` = self else { return }
 
             do {
-                let data = try self.fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey))
+                let data = try self.fileStorage.read(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: isDark))
                 DispatchQueue.main.async {
                     completed(UIImage(data: data))
                 }
             } catch let error {
-                DDLogError("AnnotationPreviewController: can't read preview - \(error)")
+                DDLogWarn("AnnotationPreviewController: can't read preview - \(error)")
                 DispatchQueue.main.async {
                     completed(nil)
                 }
@@ -123,16 +146,16 @@ extension AnnotationPreviewController {
     /// - parameter document: Document to render.
     /// - parameter pageIndex: Page to render.
     /// - parameter rect: Part of page to render.
-    /// - parameter temporary: True if requested image is temporary and is returned as `Single<UIImage>`. False when image should be cached and
-    ///                        reported globally with PublishSubject.
-    private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, temporary: Bool) {
+    /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
+    ///                   cached locally and reported through `PublishSubject`.
+    private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, type: PreviewType) {
         let request = MutableRenderRequest(document: document)
         request.imageSize = self.size
         request.pageIndex = pageIndex
         request.pdfRect = rect
         request.userInfo["key"] = key
         request.userInfo["parentKey"] = parentKey
-        request.userInfo["temporary"] = temporary
+        request.userInfo["type"] = type.rawValue
 
         do {
             let task = try RenderTask(request: request)
@@ -158,7 +181,8 @@ extension AnnotationPreviewController: RenderTaskDelegate {
     func renderTaskDidFinish(_ task: RenderTask) {
         guard let key = task.request.userInfo["key"] as? String,
               let parentKey = task.request.userInfo["parentKey"] as? String,
-              let temporary = task.request.userInfo["temporary"] as? Bool,
+              let rawType = task.request.userInfo["type"] as? Int,
+              let type = PreviewType(rawValue: rawType),
               let image = task.image else {
             DDLogInfo("AnnotationPreviewController: missing task info - key: \(task.request.userInfo["key"] ?? "")" +
                       "; parentKey: \(task.request.userInfo["parentKey"] ?? ""); image: \(task.image?.size ?? CGSize())")
@@ -168,7 +192,7 @@ extension AnnotationPreviewController: RenderTaskDelegate {
         self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
 
-            if temporary {
+            if type == .temporary {
                 // If image is temporary it's returned as `Single<UIImage>`, so find its subscriber and report image.
                 self.perform(event: .success(image), key: key, parentKey: parentKey)
                 return
@@ -177,9 +201,12 @@ extension AnnotationPreviewController: RenderTaskDelegate {
             // If image is not temporary, cache it and report globally.
             self.observable.on(.next((key, parentKey, image)))
 
+            let isDark = type == .dark
+
             do {
                 if let data = image.jpegData(compressionQuality: 0.8) {
-                    try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: parentKey), options: .atomicWrite)
+                    try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: isDark),
+                                               options: .atomicWrite)
                 }
             } catch let error {
                 DDLogError("AnnotationPreviewController: can't store preview - \(error)")
@@ -193,7 +220,8 @@ extension AnnotationPreviewController: RenderTaskDelegate {
         // Report failure for temporary render requests.
         guard let key = task.request.userInfo["key"] as? String,
               let parentKey = task.request.userInfo["parentKey"] as? String,
-              let temporary = task.request.userInfo["temporary"] as? Bool, temporary else { return }
+              let rawType = task.request.userInfo["type"] as? Int,
+              let type = PreviewType(rawValue: rawType), type == .temporary else { return }
 
         self.queue.async(flags: .barrier) { [weak self] in
             self?.perform(event: .error(error), key: key, parentKey: parentKey)

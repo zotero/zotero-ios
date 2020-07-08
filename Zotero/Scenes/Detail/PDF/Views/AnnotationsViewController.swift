@@ -86,7 +86,7 @@ class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(from state: PDFReaderState, completion: @escaping () -> Void) {
-        if state.changes.contains(.annotations) {
+        if state.changes.contains(.annotations) || state.changes.contains(.darkMode) {
             self.tableView.reloadData()
             completion()
             return
@@ -195,7 +195,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
 
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ self.viewModel.state.annotations[$0.section]?[$0.row] }).map({ $0.key })
-        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
+        let isDark = self.traitCollection.userInterfaceStyle == .dark
+        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false, isDark: isDark))
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -214,7 +215,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
                 preview = self.viewModel.state.previewCache.object(forKey: (annotation.key as NSString))
 
                 if preview == nil {
-                    self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
+                    let isDark = self.traitCollection.userInterfaceStyle == .dark
+                    self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true, isDark: isDark))
                 }
             }
 
