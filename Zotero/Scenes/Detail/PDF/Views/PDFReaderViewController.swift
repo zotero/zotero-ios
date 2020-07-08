@@ -15,6 +15,11 @@ import PSPDFKitUI
 import RxSwift
 
 class PDFReaderViewController: UIViewController {
+    private enum NavigationBarButton: Int {
+        case redo = 1
+        case undo = 2
+    }
+
     private static let colorPreviewSize = CGSize(width: 15, height: 15)
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let annotationPreviewController: AnnotationPreviewController
@@ -74,11 +79,11 @@ class PDFReaderViewController: UIViewController {
         super.viewDidLoad()
 
         self.view.backgroundColor = .secondarySystemBackground
-        self.setupNavigationBar()
         self.setupAnnotationsSidebar()
         self.setupPdfController(with: self.viewModel.state.document)
-        self.setupBorder()
-        self.setupAnnotationToolbar()
+        self.setupSidebarBorder()
+        self.setupNavigationBar()
+        self.navigationItem.titleView = UIStackView(arrangedSubviews: self.createAnnotationToolbarButtons())
         self.setupObserving()
 
         self.viewModel.stateObservable
@@ -196,6 +201,15 @@ class PDFReaderViewController: UIViewController {
                        })
     }
 
+    private func showSearch(sender: UIBarButtonItem) {
+        let viewController = PDFSearchViewController(controller: self.pdfController, searchSelected: { [weak self] result in
+            // TODO: - select text
+        })
+        viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        viewController.popoverPresentationController?.barButtonItem = sender
+        self.present(viewController, animated: true, completion: nil)
+    }
+
     private func showSettings() {
         let direction = self.pdfController.configuration.scrollDirection
         let directionTitle = direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
@@ -269,20 +283,6 @@ class PDFReaderViewController: UIViewController {
         self.annotationsControllerLeft = leftConstraint
     }
 
-    private func setupAnnotationToolbar() {
-        self.navigationItem.titleView = UIStackView(arrangedSubviews: self.createAnnotationToolbarButtons())
-
-        let settings = self.pdfController.settingsButtonItem
-        settings.rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.showSettings()
-                })
-                .disposed(by: self.disposeBag)
-
-        self.navigationItem.rightBarButtonItems = self.createUndoRedoButtons() + [settings]
-    }
-
     private func createAnnotationToolbarButtons() -> [UIButton] {
         let highlight = CheckboxButton(type: .custom)
         highlight.setImage(UIImage(systemName: "pencil.tip"), for: .normal)
@@ -338,28 +338,6 @@ class PDFReaderViewController: UIViewController {
         return [highlight, note, area, picker]
     }
 
-    private func createUndoRedoButtons() -> [UIBarButtonItem] {
-        let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
-        undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
-        undo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.pdfController.undoManager?.undo()
-            })
-            .disposed(by: self.disposeBag)
-
-        let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
-        redo.isEnabled = self.pdfController.undoManager?.canRedo ?? false
-        redo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.pdfController.undoManager?.redo()
-            })
-            .disposed(by: self.disposeBag)
-
-        return [redo, undo]
-    }
-
     private func setupPdfController(with document: Document) {
         let pdfConfiguration = PDFConfiguration { builder in
             builder.scrollDirection = .horizontal
@@ -396,7 +374,7 @@ class PDFReaderViewController: UIViewController {
         self.pdfControllerLeft = leftConstraint
     }
 
-    private func setupBorder() {
+    private func setupSidebarBorder() {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .separator
@@ -418,6 +396,44 @@ class PDFReaderViewController: UIViewController {
                                           style: .plain, target: self,
                                           action: #selector(PDFReaderViewController.close))
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
+
+        let settings = self.pdfController.settingsButtonItem
+        settings.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.showSettings()
+                })
+                .disposed(by: self.disposeBag)
+
+        let search = self.pdfController.searchButtonItem
+        search.rx
+              .tap
+              .subscribe(onNext: { [weak self] _ in
+                  self?.showSearch(sender: search)
+              })
+              .disposed(by: self.disposeBag)
+
+        let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
+        undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
+        undo.tag = NavigationBarButton.undo.rawValue
+        undo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.pdfController.undoManager?.undo()
+            })
+            .disposed(by: self.disposeBag)
+
+        let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
+        redo.isEnabled = self.pdfController.undoManager?.canRedo ?? false
+        redo.tag = NavigationBarButton.redo.rawValue
+        redo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.pdfController.undoManager?.redo()
+            })
+            .disposed(by: self.disposeBag)
+
+        self.navigationItem.rightBarButtonItems = [redo, undo, settings, search]
     }
 
     private func setupObserving() {
@@ -565,8 +581,8 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
     }
 
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
-        self.navigationItem.rightBarButtonItems?.first?.isEnabled = redoEnabled
-        self.navigationItem.rightBarButtonItems?.last?.isEnabled = undoEnabled
+        self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.redo.rawValue })?.isEnabled = redoEnabled
+        self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.undo.rawValue })?.isEnabled = undoEnabled
     }
 }
 

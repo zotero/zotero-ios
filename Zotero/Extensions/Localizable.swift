@@ -217,6 +217,18 @@ internal enum L10n {
       /// Vertical
       internal static let vertical = L10n.tr("Localizable", "pdf.scrollDirection.vertical")
     }
+    internal enum Search {
+      /// Search failed
+      internal static let failed = L10n.tr("Localizable", "pdf.search.failed")
+      /// Found %d matches
+      internal static func multipleMatches(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "pdf.search.multiple_matches", p1)
+      }
+      /// Found 1 match
+      internal static let oneMatch = L10n.tr("Localizable", "pdf.search.one_match")
+      /// Search in Document
+      internal static let title = L10n.tr("Localizable", "pdf.search.title")
+    }
   }
 
   internal enum Settings {

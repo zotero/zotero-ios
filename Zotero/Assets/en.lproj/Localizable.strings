@@ -117,6 +117,10 @@ The following fields will be lost:
 "pdf.annotations_sidebar.search_title" = "Search Annotations";
 "pdf.annotations_sidebar.add_comment" = "Add comment";
 "pdf.annotations_sidebar.add_tags" = "Add tags";
+"pdf.search.title" = "Search in Document";
+"pdf.search.failed" = "Search failed";
+"pdf.search.one_match" = "Found 1 match";
+"pdf.search.multiple_matches" = "Found %d matches";
 
 "settings.title" = "Settings";
 "settings.profile" = "Profile";
