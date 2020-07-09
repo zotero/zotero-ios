@@ -164,16 +164,12 @@ internal enum L10n {
   }
 
   internal enum Login {
-    /// Create Account
-    internal static let createAccount = L10n.tr("Localizable", "login.create_account")
     /// Email
     internal static let email = L10n.tr("Localizable", "login.email")
     /// Password
     internal static let password = L10n.tr("Localizable", "login.password")
     /// Repeat password
     internal static let repeatPassword = L10n.tr("Localizable", "login.repeat_password")
-    /// Sign In
-    internal static let signIn = L10n.tr("Localizable", "login.sign_in")
     /// Username
     internal static let username = L10n.tr("Localizable", "login.username")
     internal enum Error {
@@ -184,6 +180,21 @@ internal enum L10n {
       /// Could not log in
       internal static let unknown = L10n.tr("Localizable", "login.error.unknown")
     }
+  }
+
+  internal enum Onboarding {
+    /// Organize your research any way you want. Sort items into collections and tag them with keywords.
+    internal static let access = L10n.tr("Localizable", "onboarding.access")
+    /// Highlight and take notes directly in your PDFs as you read them.
+    internal static let annotate = L10n.tr("Localizable", "onboarding.annotate")
+    /// Create Account
+    internal static let createAccount = L10n.tr("Localizable", "onboarding.create_account")
+    /// Tap to collect articles and books directly from the web, including their PDFs and full citations.
+    internal static let share = L10n.tr("Localizable", "onboarding.share")
+    /// Sign In
+    internal static let signIn = L10n.tr("Localizable", "onboarding.sign_in")
+    /// Synchronize work across devices, keeping your reading and notes seamlessly up to date.
+    internal static let sync = L10n.tr("Localizable", "onboarding.sync")
   }
 
   internal enum Pdf {

@@ -44,10 +44,11 @@ class AppCoordinator {
     private func showMainScreen(isLogged: Bool, animated: Bool) {
         let viewController: UIViewController
         if !isLogged {
-            let view = OnboardingView()
-                            .environment(\.apiClient, self.controllers.apiClient)
-                            .environment(\.sessionController, self.controllers.sessionController)
-            viewController = UIHostingController(rootView: view)
+//            let view = OnboardingView()
+//                            .environment(\.apiClient, self.controllers.apiClient)
+//                            .environment(\.sessionController, self.controllers.sessionController)
+//            viewController = UIHostingController(rootView: view)
+            viewController = OnboardingViewController()
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
             viewController = MainViewController(controllers: self.controllers)

@@ -382,6 +382,10 @@
 		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
 		B340692224A60D6A009ECE48 /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */; };
 		B340692424A60D83009ECE48 /* CGRect+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692324A60D83009ECE48 /* CGRect+Extensions.swift */; };
+		B34A44CE24B759DB000B378A /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A44CC24B759DB000B378A /* OnboardingViewController.swift */; };
+		B34A44CF24B759DB000B378A /* OnboardingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34A44CD24B759DB000B378A /* OnboardingViewController.xib */; };
+		B34A44D324B75D96000B378A /* OnboardingPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A44D224B75D96000B378A /* OnboardingPageView.swift */; };
+		B34A44D524B76056000B378A /* OnboardingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A44D424B76056000B378A /* OnboardingButton.swift */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
@@ -582,8 +586,6 @@
 		B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */; };
 		B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
-		B3DCDECB2408F36E0039ED0D /* OnboardingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEC72408F36E0039ED0D /* OnboardingButton.swift */; };
-		B3DCDECC2408F36E0039ED0D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEC82408F36E0039ED0D /* OnboardingView.swift */; };
 		B3DCDECD2408F36E0039ED0D /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEC92408F36E0039ED0D /* LoginView.swift */; };
 		B3DCDECE2408F36E0039ED0D /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDECA2408F36E0039ED0D /* RegisterView.swift */; };
 		B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEE02408F5200039ED0D /* MainViewController.swift */; };
@@ -884,6 +886,10 @@
 		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
 		B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
 		B340692324A60D83009ECE48 /* CGRect+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Extensions.swift"; sourceTree = "<group>"; };
+		B34A44CC24B759DB000B378A /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
+		B34A44CD24B759DB000B378A /* OnboardingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = OnboardingViewController.xib; sourceTree = "<group>"; };
+		B34A44D224B75D96000B378A /* OnboardingPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPageView.swift; sourceTree = "<group>"; };
+		B34A44D424B76056000B378A /* OnboardingButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingButton.swift; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
@@ -1039,8 +1045,6 @@
 		B3CBB122248A44D100C4228F /* KeyboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardData.swift; sourceTree = "<group>"; };
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
 		B3D3F78A240D222C0018F354 /* ItemFetchType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFetchType.swift; sourceTree = "<group>"; };
-		B3DCDEC72408F36E0039ED0D /* OnboardingButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingButton.swift; sourceTree = "<group>"; };
-		B3DCDEC82408F36E0039ED0D /* OnboardingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B3DCDEC92408F36E0039ED0D /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B3DCDECA2408F36E0039ED0D /* RegisterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		B3DCDEE02408F5200039ED0D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -2051,8 +2055,10 @@
 			isa = PBXGroup;
 			children = (
 				B3DCDEC92408F36E0039ED0D /* LoginView.swift */,
-				B3DCDEC72408F36E0039ED0D /* OnboardingButton.swift */,
-				B3DCDEC82408F36E0039ED0D /* OnboardingView.swift */,
+				B34A44D424B76056000B378A /* OnboardingButton.swift */,
+				B34A44D224B75D96000B378A /* OnboardingPageView.swift */,
+				B34A44CC24B759DB000B378A /* OnboardingViewController.swift */,
+				B34A44CD24B759DB000B378A /* OnboardingViewController.xib */,
 				B3DCDECA2408F36E0039ED0D /* RegisterView.swift */,
 			);
 			path = Views;
@@ -2340,6 +2346,7 @@
 				B36A988B2428DA5D005D5790 /* bundled in Resources */,
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
+				B34A44CF24B759DB000B378A /* OnboardingViewController.xib in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
 			);
@@ -2491,7 +2498,6 @@
 				B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
 				B378F4C9242CC8EF00B88A05 /* Translator.swift in Sources */,
 				B30565BA23FC051E003304F2 /* EditCollectionDbRequest.swift in Sources */,
-				B3DCDECB2408F36E0039ED0D /* OnboardingButton.swift in Sources */,
 				B305662823FC051F003304F2 /* SyncScheduler.swift in Sources */,
 				B37491372488D7040042FF85 /* SettingsToggleRow.swift in Sources */,
 				B3CBB121248A439A00C4228F /* Notification+Extensions.swift in Sources */,
@@ -2537,6 +2543,7 @@
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,
 				B3E4463C248FBBA3007FE8AB /* RLink.swift in Sources */,
+				B34A44D524B76056000B378A /* OnboardingButton.swift in Sources */,
 				B305660423FC051E003304F2 /* ObservableRequestExtensions.swift in Sources */,
 				B305667D23FC051F003304F2 /* Color+Extension.swift in Sources */,
 				B340692424A60D83009ECE48 /* CGRect+Extensions.swift in Sources */,
@@ -2640,6 +2647,7 @@
 				B30565E723FC051E003304F2 /* ObjectChangeObserver.swift in Sources */,
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
+				B34A44D324B75D96000B378A /* OnboardingPageView.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
 				B37491322488D7040042FF85 /* ProfileView.swift in Sources */,
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
@@ -2677,7 +2685,6 @@
 				B30565C123FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift in Sources */,
 				B39D336823FFD96C00EF2ACB /* Note.swift in Sources */,
 				B30566B623FC051F003304F2 /* DeletionsResponse.swift in Sources */,
-				B3DCDECC2408F36E0039ED0D /* OnboardingView.swift in Sources */,
 				B30566C423FC051F003304F2 /* DeleteBatch.swift in Sources */,
 				B305669523FC051F003304F2 /* DeletableObject.swift in Sources */,
 				B305660823FC051E003304F2 /* KeyRequest.swift in Sources */,
@@ -2733,6 +2740,7 @@
 				B37491382488D7040042FF85 /* SettingsListView.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
 				B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */,
+				B34A44CE24B759DB000B378A /* OnboardingViewController.swift in Sources */,
 				B374913C2488E3D90042FF85 /* StorageSettingsView.swift in Sources */,
 				B30565FB23FC051E003304F2 /* Formatter.swift in Sources */,
 				B3972689247D403200A8B469 /* UrlDetector.swift in Sources */,

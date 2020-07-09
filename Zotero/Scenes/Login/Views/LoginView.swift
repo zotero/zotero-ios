@@ -26,14 +26,14 @@ struct LoginView: View {
                     Divider()
                 }
 
-                Button(action: {
-                    self.viewModel.process(action: .login)
-                }) {
-                    OnboardingButton(title: L10n.Login.signIn,
-                                     width: proxy.size.width,
-                                     isLoading: self.viewModel.state.isLoading)
-                }
-                .disabled(self.viewModel.state.isLoading)
+//                Button(action: {
+//                    self.viewModel.process(action: .login)
+//                }) {
+//                    OnboardingButton(title: L10n.Login.signIn,
+//                                     width: proxy.size.width,
+//                                     isLoading: self.viewModel.state.isLoading)
+//                }
+//                .disabled(self.viewModel.state.isLoading)
             }
         }
         .padding()

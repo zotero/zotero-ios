@@ -32,8 +32,13 @@
 
 "day_suffixes" = "st,nd,rd,th";
 
-"login.sign_in" = "Sign In";
-"login.create_account" = "Create Account";
+
+"onboarding.access" = "Organize your research any way you want. Sort items into collections and tag them with keywords.";
+"onboarding.sync" = "Synchronize work across devices, keeping your reading and notes seamlessly up to date.";
+"onboarding.annotate" = "Highlight and take notes directly in your PDFs as you read them.";
+"onboarding.share" = "Tap to collect articles and books directly from the web, including their PDFs and full citations.";
+"onboarding.sign_in" = "Sign In";
+"onboarding.create_account" = "Create Account";
 "login.username" = "Username";
 "login.password" = "Password";
 "login.error.invalid_password" = "Invalid password";
