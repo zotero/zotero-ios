@@ -199,8 +199,8 @@ class ShareViewController: UIViewController {
             self.itemPickerButton.isEnabled = false
         } else {
             self.itemPickerLabel.text = "Pick an item"
-            self.itemPickerLabel.textColor = .systemBlue
-            self.itemPickerChevron.tintColor = .systemBlue
+            self.itemPickerLabel.textColor = Asset.Colors.zoteroBlue.color
+            self.itemPickerChevron.tintColor = Asset.Colors.zoteroBlue.color
             self.itemPickerButton.isEnabled = true
         }
     }

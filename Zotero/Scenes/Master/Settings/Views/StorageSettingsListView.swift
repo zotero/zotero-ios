@@ -30,7 +30,7 @@ struct StorageSettingsListView: View {
                     Button(action: {
                         self.viewModel.process(action: .showDeleteAllQuestion(true))
                     }) {
-                        Text(L10n.Settings.Storage.deleteAll)
+                        Text(L10n.Settings.Storage.deleteAll).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 }
             }

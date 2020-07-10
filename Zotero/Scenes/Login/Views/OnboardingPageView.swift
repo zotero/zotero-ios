@@ -13,7 +13,7 @@ class OnboardingPageView: UIView {
     unowned let spacer: UIView
     unowned let imageView: UIImageView
 
-    init(attributedString: NSAttributedString, imageName: String) {
+    init(attributedString: NSAttributedString, image: UIImage) {
         let textLabel = UILabel()
         textLabel.font = UIFont.preferredFont(forTextStyle: .body)
         textLabel.attributedText = attributedString
@@ -26,7 +26,7 @@ class OnboardingPageView: UIView {
         spacer.backgroundColor = .clear
         self.spacer = spacer
 
-        let imageView = UIImageView(image: UIImage(named: imageName))
+        let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
         self.imageView = imageView
 

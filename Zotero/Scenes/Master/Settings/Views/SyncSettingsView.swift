@@ -18,13 +18,13 @@ struct SyncSettingsView: View {
                     Button(action: {
                         self.viewModel.process(action: .cancelSync)
                     }) {
-                        Text(L10n.Settings.syncCancel)
+                        Text(L10n.Settings.syncCancel).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 } else {
                     Button(action: {
                         self.viewModel.process(action: .startSync)
                     }) {
-                        Text(L10n.Settings.sync)
+                        Text(L10n.Settings.sync).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 }
             }

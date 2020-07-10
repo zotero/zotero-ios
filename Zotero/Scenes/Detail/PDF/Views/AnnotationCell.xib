@@ -3,6 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -46,6 +47,7 @@
                                             </label>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SOR-ku-5Xr">
                                                 <rect key="frame" x="362" y="0.0" width="40" height="40"/>
+                                                <color key="tintColor" name="zoteroBlue"/>
                                                 <inset key="contentEdgeInsets" minX="10" minY="0.0" maxX="10" maxY="0.0"/>
                                                 <state key="normal" image="ellipsis.circle" catalog="system"/>
                                                 <connections>
@@ -281,5 +283,8 @@
     <resources>
         <image name="annotation_area" width="12" height="12"/>
         <image name="ellipsis.circle" catalog="system" width="128" height="121"/>
+        <namedColor name="zoteroBlue">
+            <color red="0.25098039215686274" green="0.44705882352941179" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
     </resources>
 </document>

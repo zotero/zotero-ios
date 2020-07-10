@@ -118,7 +118,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.updatedAnnotationIndexPaths = [indexPath]
 
             if reloadComment {
-                state.comments[newAnnotation.key] = self.htmlAttributedStringConverter.convert(comment: newAnnotation.comment, baseFont: state.commentFont)
+                state.comments[newAnnotation.key] = self.htmlAttributedStringConverter.convert(text: newAnnotation.comment, baseFont: state.commentFont)
             }
         }
     }
@@ -500,7 +500,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             let pageAnnotations = annotations.compactMap { self.zoteroAnnotation(from: $0) }.sorted(by: { $0.sortIndex > $1.sortIndex })
             zoteroAnnotations[page.intValue] = pageAnnotations
             for annotation in pageAnnotations {
-                comments[annotation.key] = self.htmlAttributedStringConverter.convert(comment: annotation.comment, baseFont: baseFont)
+                comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: baseFont)
             }
         }
         return (zoteroAnnotations, comments)

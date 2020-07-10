@@ -14,9 +14,9 @@ struct LibraryRow: View {
 
     var body: some View {
         HStack {
-            Image(self.isReadOnly ? "icon_cell_library_readonly" : "icon_cell_library")
+            Image(self.isReadOnly ? Asset.Images.Cells.libraryReadonly.name : Asset.Images.Cells.library.name)
                 .renderingMode(.template)
-                .foregroundColor(.blue)
+                .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
             Text(self.title)
                 .foregroundColor(.primary)
                 .lineLimit(1)

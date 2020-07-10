@@ -62,81 +62,81 @@ struct ItemCellModel {
     private static func iconName(for item: RItem) -> String {
         switch item.rawType {
         case "artwork":
-            return "artwork"
+            return Asset.Images.ItemTypes.artwork.name
         case "attachment":
             let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value ?? ""
             if contentType.contains("pdf") {
-                return "pdf"
+                return Asset.Images.ItemTypes.pdf.name
             }
-            return "document"
+            return Asset.Images.ItemTypes.document.name
         case "audioRecording":
-            return "audio-recording"
+            return Asset.Images.ItemTypes.audioRecording.name
         case "book":
-            return "book"
+            return Asset.Images.ItemTypes.book.name
         case "bookSection":
-            return "book-section"
+            return Asset.Images.ItemTypes.bookSection.name
         case "bill":
-            return "bill"
+            return Asset.Images.ItemTypes.bill.name
         case "blogPost":
-            return "blog-post"
+            return Asset.Images.ItemTypes.blogPost.name
         case "case":
-            return "case"
+            return Asset.Images.ItemTypes.case.name
         case "computerProgram":
-            return "computer-program"
+            return Asset.Images.ItemTypes.computerProgram.name
         case "conferencePaper":
-            return "conference-paper"
+            return Asset.Images.ItemTypes.conferencePaper.name
         case "dictionaryEntry":
-            return "dictionary-entry"
+            return Asset.Images.ItemTypes.dictionaryEntry.name
         case "document":
-            return "document"
+            return Asset.Images.ItemTypes.document.name
         case "email":
-            return "email"
+            return Asset.Images.ItemTypes.email.name
         case "encyclopediaArticle":
-            return "encyclopedia-article"
+            return Asset.Images.ItemTypes.encyclopediaArticle.name
         case "film":
-            return "film"
+            return Asset.Images.ItemTypes.film.name
         case "forumPost":
-            return "forum-post"
+            return Asset.Images.ItemTypes.forumPost.name
         case "hearing":
-            return "hearing"
+            return Asset.Images.ItemTypes.hearing.name
         case "instantMessage":
-            return "instant-message"
+            return Asset.Images.ItemTypes.instantMessage.name
         case "interview":
-            return "interview"
+            return Asset.Images.ItemTypes.interview.name
         case "journalArticle":
-            return "journal-article"
+            return Asset.Images.ItemTypes.journalArticle.name
         case "letter":
-            return "letter"
+            return Asset.Images.ItemTypes.letter.name
         case "magazineArticle":
-            return "magazine-article"
+            return Asset.Images.ItemTypes.magazineArticle.name
         case "map":
-            return "map"
+            return Asset.Images.ItemTypes.map.name
         case "manuscript":
-            return "manuscript"
+            return Asset.Images.ItemTypes.manuscript.name
         case "note":
-            return "note"
+            return Asset.Images.ItemTypes.note.name
         case "newspaperArticle":
-            return "newspaper-article"
+            return Asset.Images.ItemTypes.newspaperArticle.name
         case "patent":
-            return "patent"
+            return Asset.Images.ItemTypes.patent.name
         case "podcast":
-            return "podcast"
+            return Asset.Images.ItemTypes.podcast.name
         case "presentation":
-            return "presentation"
+            return Asset.Images.ItemTypes.presentation.name
         case "radioBroadcast":
-            return "radio-broadcast"
+            return Asset.Images.ItemTypes.radioBroadcast.name
         case "report":
-            return "report"
+            return Asset.Images.ItemTypes.report.name
         case "statute":
-            return "statute"
+            return Asset.Images.ItemTypes.statute.name
         case "thesis":
-            return "thesis"
+            return Asset.Images.ItemTypes.thesis.name
         case "tvBroadcast":
-            return "tv-broadcast"
+            return Asset.Images.ItemTypes.tvBroadcast.name
         case "videoRecording":
-            return "video-recording"
+            return Asset.Images.ItemTypes.videoRecording.name
         case "webpage":
-            return "web-page"
+            return Asset.Images.ItemTypes.webPage.name
         default:
             return "unknown"
         }

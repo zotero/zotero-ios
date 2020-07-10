@@ -41,7 +41,7 @@ class ItemDetailFieldCell: RxTableViewCell {
 
         if !isEditing {
             if field.isTappable {
-                self.valueLabel.textColor = .systemBlue
+                self.valueLabel.textColor = Asset.Colors.zoteroBlue.color
             } else {
                 self.valueLabel.textColor = self.traitCollection.userInterfaceStyle == .light ? .black : .white
             }

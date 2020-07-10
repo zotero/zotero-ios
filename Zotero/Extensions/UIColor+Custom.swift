@@ -9,18 +9,6 @@
 import UIKit
 
 extension UIColor {
-    static var redButton: UIColor {
-        return .red
-    }
-    
-    static var cellSelected: UIColor {
-        return UIColor(hex: "#f2f2f7")
-    }
-    
-    static var cellHighlighted: UIColor {
-        return UIColor(hex: "#d1d1d6")
-    }
-
     convenience init(hex: String, alpha: CGFloat = 1) {
         let hexInt = UIColor.intFromHexString(hexStr: hex)
         self.init(red: CGFloat((hexInt >> 16) & 0xff) / 0xff,

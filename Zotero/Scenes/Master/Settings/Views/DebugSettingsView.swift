@@ -18,7 +18,7 @@ struct DebugSettingsView: View {
                     Button(action: {
                         self.viewModel.process(action: .stopLogging)
                     }) {
-                        Text("Stop logging")
+                        Text("Stop logging").foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
 
                     Text(L10n.Settings.loggingDesc1)
@@ -27,7 +27,7 @@ struct DebugSettingsView: View {
                     Button(action: {
                         self.viewModel.process(action: .startImmediateLogging)
                     }) {
-                        Text(L10n.Settings.startLogging)
+                        Text(L10n.Settings.startLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 }
             }
@@ -37,7 +37,7 @@ struct DebugSettingsView: View {
                     let test: String? = nil
                     NSLog(test!)
                 }) {
-                    Text(L10n.Settings.crash)
+                    Text(L10n.Settings.crash).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                 }
             }
         }

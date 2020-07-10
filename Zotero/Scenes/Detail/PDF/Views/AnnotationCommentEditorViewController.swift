@@ -267,7 +267,7 @@ class AnnotationCommentEditorViewController: UIViewController {
             button.tag = action.rawValue
             button.setImage(UIImage(systemName: imageName), for: .normal)
             button.deselectedTintColor = .black
-            button.selectedTintColor = .systemBlue
+            button.selectedTintColor = Asset.Colors.zoteroBlue.color
             button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
             button.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -298,7 +298,7 @@ class AnnotationCommentEditorViewController: UIViewController {
         self.textView.delegate = self
 
         if let converter = self.converter {
-            self.textView.attributedText = converter.convert(comment: self.text, baseFont: self.font)
+            self.textView.attributedText = converter.convert(text: self.text, baseFont: self.font)
         } else {
             self.textView.text = self.text
         }

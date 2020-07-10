@@ -58,15 +58,15 @@ struct Collection: Identifiable, Equatable, Hashable {
     var iconName: String {
         switch self.type {
         case .collection:
-            return "icon_cell_collection"
+            return Asset.Images.Cells.collection.name
         case .search:
-            return "icon_cell_document"
+            return Asset.Images.Cells.document.name
         case .custom(let type):
             switch type {
             case .all, .publications:
-                return "icon_cell_document"
+                return Asset.Images.Cells.document.name
             case .trash:
-                return "icon_cell_trash"
+                return Asset.Images.Cells.trash.name
             }
         }
     }

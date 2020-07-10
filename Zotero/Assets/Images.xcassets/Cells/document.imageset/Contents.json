@@ -1,23 +1,23 @@
 {
   "images" : [
     {
+      "filename" : "icon_cell_document.png",
       "idiom" : "universal",
-      "filename" : "navbar_options.png",
       "scale" : "1x"
     },
     {
+      "filename" : "icon_cell_document@2x.png",
       "idiom" : "universal",
-      "filename" : "navbar_options@2x.png",
       "scale" : "2x"
     },
     {
+      "filename" : "icon_cell_document@3x.png",
       "idiom" : "universal",
-      "filename" : "navbar_options@3x.png",
       "scale" : "3x"
     }
   ],
   "info" : {
-    "version" : 1,
-    "author" : "xcode"
+    "author" : "xcode",
+    "version" : 1
   }
 }

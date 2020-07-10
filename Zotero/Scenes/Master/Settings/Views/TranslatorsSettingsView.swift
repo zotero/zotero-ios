@@ -40,7 +40,7 @@ struct TranslatorsSettingsView: View {
                     Button(action: {
                         self.viewModel.process(action: .resetTranslators)
                     }) {
-                        Text(L10n.Settings.resetToBundled)
+                        Text(L10n.Settings.resetToBundled).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
                 }
             }

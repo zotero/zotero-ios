@@ -39,10 +39,18 @@ class AppDelegate: UIResponder {
         #endif
     }
 
-    private func setupNavigationBarAppearance() {
+    private func setupAppearance() {
+        // Navigation bars
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        // Toolbars
+        UIToolbar.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        // Buttons
+        UIButton.appearance().tintColor = Asset.Colors.zoteroBlue.color
+        // Search bar
+        UISearchBar.appearance().tintColor = Asset.Colors.zoteroBlue.color
     }
 }
 
@@ -78,7 +86,7 @@ extension AppDelegate: UIApplicationDelegate {
 
         self.setupLogs()
         self.controllers = Controllers()
-        self.setupNavigationBarAppearance()
+        self.setupAppearance()
 
         return true
     }

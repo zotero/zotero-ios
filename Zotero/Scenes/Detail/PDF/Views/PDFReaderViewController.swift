@@ -224,14 +224,14 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func showSettings() {
+    private func showSettings(sender: UIBarButtonItem) {
         let direction = self.pdfController.configuration.scrollDirection
         let directionTitle = direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
         let transition = self.pdfController.configuration.pageTransition
         let transitionTitle = transition == .scrollContinuous ? L10n.Pdf.PageTransition.continuous : L10n.Pdf.PageTransition.jump
 
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.barButtonItem = self.navigationItem.rightBarButtonItems?.last
+        controller.popoverPresentationController?.barButtonItem = sender
         controller.addAction(UIAlertAction(title: L10n.Pdf.scrollDirection(directionTitle), style: .default, handler: { [weak self] _ in
             self?.toggleScrollDirection(from: direction)
         }))
@@ -332,7 +332,7 @@ class PDFReaderViewController: UIViewController {
             button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 0, bottom: 6, right: 0)
             button.widthAnchor.constraint(equalTo: button.heightAnchor, multiplier: 1, constant: 0).isActive = true
             button.adjustsImageWhenHighlighted = false
-            button.selectedBackgroundColor = .systemBlue
+            button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
             button.layer.cornerRadius = 6
             button.layer.masksToBounds = true
@@ -415,7 +415,7 @@ class PDFReaderViewController: UIViewController {
         settings.rx
                 .tap
                 .subscribe(onNext: { [weak self] _ in
-                    self?.showSettings()
+                    self?.showSettings(sender: settings)
                 })
                 .disposed(by: self.disposeBag)
 
@@ -643,7 +643,7 @@ class SelectionView: UIView {
     private func commonSetup() {
         self.backgroundColor = .clear
         self.autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
-        self.layer.borderColor = UIColor.systemBlue.cgColor
+        self.layer.borderColor = Asset.Colors.zoteroBlue.color.cgColor
         self.layer.borderWidth = 1
     }
 }

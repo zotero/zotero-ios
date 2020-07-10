@@ -33,7 +33,7 @@ class CheckboxButton: UIButton {
         }
     }
 
-    var deselectedTintColor: UIColor = .systemBlue {
+    var deselectedTintColor: UIColor = Asset.Colors.zoteroBlue.color {
         didSet {
             if !self.isSelected {
                 self.tintColor = self.deselectedTintColor

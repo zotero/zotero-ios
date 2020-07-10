@@ -394,14 +394,14 @@ class ItemsViewController: UIViewController {
 
     private func createTrashToolbarItems() -> [UIBarButtonItem] {
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let trashItem = UIBarButtonItem(image: UIImage(named: "restore_trash"), style: .plain, target: nil, action: nil)
+        let trashItem = UIBarButtonItem(image: Asset.Images.restoreTrash.image, style: .plain, target: nil, action: nil)
         trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
             self?.viewModel.process(action: .restoreSelectedItems)
         })
         .disposed(by: self.disposeBag)
         trashItem.tag = ItemsViewController.barButtonItemEmptyTag
 
-        let emptyItem = UIBarButtonItem(image: UIImage(named: "empty_trash"), style: .plain, target: nil, action: nil)
+        let emptyItem = UIBarButtonItem(image: Asset.Images.emptyTrash.image, style: .plain, target: nil, action: nil)
         emptyItem.rx.tap.subscribe(onNext: { [weak self] _ in
             self?.viewModel.process(action: .deleteSelectedItems)
         })

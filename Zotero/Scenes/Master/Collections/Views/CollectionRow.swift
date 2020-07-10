@@ -19,7 +19,7 @@ struct CollectionRow: View {
             HStack {
                 Image(self.data.iconName)
                     .renderingMode(.template)
-                    .foregroundColor(.blue)
+                    .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                 Text(self.data.name)
                     .foregroundColor(.primary)
                     .lineLimit(1)

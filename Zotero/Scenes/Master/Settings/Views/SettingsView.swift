@@ -11,7 +11,6 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var viewModel: ViewModel<SettingsActionHandler>
 
-    // SWIFTUI BUG: - presentationMode.wrappedValule.dismiss() doesn't work when presented from UIViewController.
     weak var coordinatorDelegate: MasterSettingsCoordinatorDelegate?
 
     var body: some View {

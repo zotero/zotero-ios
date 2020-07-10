@@ -32,7 +32,7 @@ struct CollectionEditView: View {
                                 "icon_cell_library" :
                                 "icon_cell_collection")
                             .renderingMode(.template)
-                            .foregroundColor(.blue)
+                            .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                         Text(self.viewModel.state.parent?.name ?? self.viewModel.state.library.name)
                             .foregroundColor(.primary)
                         Spacer()

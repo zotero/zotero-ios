@@ -309,7 +309,7 @@ class FileAttachmentView: UIView {
         let layer = CAShapeLayer()
         layer.fillColor = UIColor.clear.cgColor
         layer.lineWidth = 1.5
-        layer.strokeColor = UIColor.systemBlue.cgColor
+        layer.strokeColor = Asset.Colors.zoteroBlue.color.cgColor
         layer.strokeStart = 0
         layer.strokeEnd = 0
         return layer
@@ -321,7 +321,7 @@ class FileAttachmentView: UIView {
         layer.frame = CGRect(x: 0, y: 0, width: 8, height: 8)
         layer.cornerRadius = 2
         layer.masksToBounds = true
-        layer.backgroundColor = UIColor.systemBlue.cgColor
+        layer.backgroundColor = Asset.Colors.zoteroBlue.color.cgColor
         return layer
     }
 }

@@ -3,13 +3,17 @@
     <device id="ipad11_0rounded" orientation="portrait" layout="fullscreen" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="OnboardingViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
+                <outlet property="createAccountButton" destination="3eu-Zz-3t3" id="Sfx-qR-NqH"/>
+                <outlet property="pageControl" destination="bvA-YW-oOq" id="Gw8-Jq-KEz"/>
                 <outlet property="scrollView" destination="U1Z-u5-m5x" id="zlt-vo-INS"/>
+                <outlet property="signInButton" destination="fP5-W2-mpS" id="Q6I-4R-DgJ"/>
                 <outlet property="spacer" destination="SeZ-Gu-wcs" id="zci-gF-ZZP"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
@@ -19,35 +23,63 @@
             <rect key="frame" x="0.0" y="0.0" width="834" height="1194"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <view hidden="YES" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SeZ-Gu-wcs">
-                    <rect key="frame" x="0.0" y="0.0" width="834" height="100"/>
+                <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SeZ-Gu-wcs">
+                    <rect key="frame" x="0.0" y="0.0" width="834" height="272.5"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                 </view>
-                <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="Mb3-CK-6Bh">
-                    <rect key="frame" x="267" y="609" width="300" height="156"/>
+                <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" bouncesZoom="NO" translatesAutoresizingMaskIntoConstraints="NO" id="U1Z-u5-m5x">
+                    <rect key="frame" x="0.0" y="272.5" width="834" height="200"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="200" placeholder="YES" id="Kf5-dP-sSV"/>
+                    </constraints>
+                    <viewLayoutGuide key="contentLayoutGuide" id="NXx-UH-7vW"/>
+                    <viewLayoutGuide key="frameLayoutGuide" id="oYw-L8-qfh"/>
+                    <connections>
+                        <outlet property="delegate" destination="-1" id="DD7-Gs-3PL"/>
+                    </connections>
+                </scrollView>
+                <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LV2-Yg-5X4">
+                    <rect key="frame" x="0.0" y="472.5" width="834" height="273"/>
+                    <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                </view>
+                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="Mb3-CK-6Bh">
+                    <rect key="frame" x="267" y="745.5" width="300" height="156"/>
                     <subviews>
                         <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="bvA-YW-oOq">
                             <rect key="frame" x="0.0" y="0.0" width="300" height="37"/>
                             <color key="pageIndicatorTintColor" systemColor="systemGray4Color" red="0.81960784310000001" green="0.81960784310000001" blue="0.83921568629999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             <color key="currentPageIndicatorTintColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            <connections>
+                                <action selector="changePageWithSender:" destination="-1" eventType="valueChanged" id="Lo4-nK-b8n"/>
+                            </connections>
                         </pageControl>
                         <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="fhW-3r-g8K">
                             <rect key="frame" x="0.0" y="54" width="300" height="102"/>
                             <subviews>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="fP5-W2-mpS">
                                     <rect key="frame" x="0.0" y="0.0" width="300" height="45"/>
-                                    <color key="backgroundColor" systemColor="systemBlueColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                    <color key="backgroundColor" name="zoteroBlue"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                    <color key="tintColor" name="zoteroBlue"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
                                     <state key="normal" title="Button">
                                         <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </state>
+                                    <connections>
+                                        <action selector="signIn" destination="-1" eventType="touchUpInside" id="r0R-km-Ast"/>
+                                    </connections>
                                 </button>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3eu-Zz-3t3">
                                     <rect key="frame" x="0.0" y="57" width="300" height="45"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                    <color key="tintColor" name="zoteroBlue"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
-                                    <state key="normal" title="Button"/>
+                                    <state key="normal" title="Button">
+                                        <color key="titleColor" name="zoteroBlue"/>
+                                    </state>
+                                    <connections>
+                                        <action selector="createAccount" destination="-1" eventType="touchUpInside" id="D3u-1L-e70"/>
+                                    </connections>
                                 </button>
                             </subviews>
                         </stackView>
@@ -56,17 +88,8 @@
                         <constraint firstAttribute="width" priority="750" constant="300" id="Zca-Ef-MYp"/>
                     </constraints>
                 </stackView>
-                <view hidden="YES" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zyu-mC-nhe">
-                    <rect key="frame" x="0.0" y="765" width="834" height="409"/>
-                    <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
-                </view>
-                <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="U1Z-u5-m5x">
-                    <rect key="frame" x="257" y="200" width="320" height="128"/>
-                    <viewLayoutGuide key="contentLayoutGuide" id="NXx-UH-7vW"/>
-                    <viewLayoutGuide key="frameLayoutGuide" id="oYw-L8-qfh"/>
-                </scrollView>
-                <view hidden="YES" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LV2-Yg-5X4">
-                    <rect key="frame" x="0.0" y="392" width="834" height="100"/>
+                <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Zyu-mC-nhe">
+                    <rect key="frame" x="0.0" y="901.5" width="834" height="272.5"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                 </view>
             </subviews>
@@ -96,4 +119,9 @@
             <point key="canvasLocation" x="139" y="120"/>
         </view>
     </objects>
+    <resources>
+        <namedColor name="zoteroBlue">
+            <color red="0.25098039215686274" green="0.44705882352941179" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
 </document>

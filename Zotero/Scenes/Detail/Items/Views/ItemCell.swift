@@ -31,11 +31,11 @@ class ItemCell: UITableViewCell {
         self.fileView.contentInsets = UIEdgeInsets(top: 7, left: 8, bottom: 7, right: 15)
         
         let highlightView = UIView()
-        highlightView.backgroundColor = .cellHighlighted
+        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
         self.selectedBackgroundView = highlightView
 
         let selectionView = UIView()
-        selectionView.backgroundColor = .cellSelected
+        selectionView.backgroundColor = Asset.Colors.cellSelected.color
         self.multipleSelectionBackgroundView = selectionView
     }
     

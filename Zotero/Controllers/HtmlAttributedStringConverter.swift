@@ -80,25 +80,26 @@ class HtmlAttributedStringConverter {
     /// Converts string with HTML tags to attributed string. Supports only `b`, `i`, `sup` and `sub` HTML tags.
     /// - parameter comment: Comment to convert to attributed string
     /// - parameter baseFont: Base font from which attributes are derived.
+    /// - parameter baseAttributes: Attributes applied to whole string.
     /// - returns: Attributed string with attributes assigned from recognized HTML tags.
-    func convert(comment: String, baseFont: UIFont) -> NSAttributedString {
+    func convert(text: String, baseFont: UIFont, baseAttributes: [NSAttributedString.Key: Any]? = nil) -> NSAttributedString {
         var tagStart: Int?
         var deletedCharacters = 0
         var attributes: [Attribute] = []
-        var strippedComment = comment
+        var strippedText = text
 
         // Strip HTML tags from original comment, find their positions and tag types.
 
-        for (index, character) in comment.enumerated() {
+        for (index, character) in text.enumerated() {
             if character == "<" {
                 tagStart = index
                 continue
             }
             guard character == ">", let start = tagStart else { continue }
 
-            let tagStartIndex = comment.index(comment.startIndex, offsetBy: (start + 1))
-            let tagEndIndex = comment.index(comment.startIndex, offsetBy: index)
-            let tag = comment[tagStartIndex..<tagEndIndex]
+            let tagStartIndex = text.index(text.startIndex, offsetBy: (start + 1))
+            let tagEndIndex = text.index(text.startIndex, offsetBy: index)
+            let tag = text[tagStartIndex..<tagEndIndex]
             let strippedTag = self.stripClosingCharacter(in: tag)
 
             guard let type = StringAttribute(tag: (strippedTag ?? tag)) else {
@@ -116,9 +117,9 @@ class HtmlAttributedStringConverter {
 
             // Strip tag from original string.
             let tagLength = tag.count + 2 // + '<', '>'
-            let strippedStart = strippedComment.index(strippedComment.startIndex, offsetBy: (start - deletedCharacters))
-            let strippedEnd = strippedComment.index(strippedComment.startIndex, offsetBy: (index - deletedCharacters))
-            strippedComment.removeSubrange(strippedStart...strippedEnd)
+            let strippedStart = strippedText.index(strippedText.startIndex, offsetBy: (start - deletedCharacters))
+            let strippedEnd = strippedText.index(strippedText.startIndex, offsetBy: (index - deletedCharacters))
+            strippedText.removeSubrange(strippedStart...strippedEnd)
 
             deletedCharacters += tagLength
             tagStart = nil
@@ -126,7 +127,9 @@ class HtmlAttributedStringConverter {
 
         // Create attributed string with parsed attributes.
         var activeAttributes: [StringAttribute] = []
-        let attributedString = NSMutableAttributedString(string: strippedComment, attributes: [.font: baseFont])
+        var wholeStringAttributes = baseAttributes ?? [:]
+        wholeStringAttributes[.font] = baseFont
+        let attributedString = NSMutableAttributedString(string: strippedText, attributes: wholeStringAttributes)
 
         for (index, attribute) in attributes.enumerated() {
             guard index < attributes.count - 1 else { break }

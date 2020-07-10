@@ -120,7 +120,7 @@ class AnnotationCell: UITableViewCell {
         self.pageLabel.text = "\(L10n.Pdf.AnnotationsSidebar.page) \(annotation.pageLabel)"
         self.authorLabel.text = annotation.author
         self.headerButton.isEnabled = !annotation.isLocked
-        self.headerButton.tintColor = annotation.isLocked ? .black : .systemBlue
+        self.headerButton.tintColor = annotation.isLocked ? .black : Asset.Colors.zoteroBlue.color
         self.headerButton.setImage(UIImage(systemName: annotation.isLocked ? "lock" : "ellipsis.circle"), for: .normal)
         self.headerButton.isHidden = !annotation.isLocked && !selected
         self.headerButton.contentEdgeInsets = UIEdgeInsets(top: 0,
@@ -158,9 +158,9 @@ class AnnotationCell: UITableViewCell {
 
     private func image(for type: Annotation.Kind) -> UIImage? {
         switch type {
-        case .area: return UIImage(named: "annotation_area")
-        case .highlight: return UIImage(named: "annotation_highlight")
-        case .note: return UIImage(named: "annotation_note")
+        case .area: return Asset.Images.Annotations.area.image
+        case .highlight: return Asset.Images.Annotations.highlight.image
+        case .note: return Asset.Images.Annotations.note.image
         }
     }
 

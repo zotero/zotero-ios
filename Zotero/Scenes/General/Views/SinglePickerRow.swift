@@ -18,7 +18,7 @@ struct SinglePickerRow: View {
             if self.isSelected {
                 Spacer()
                 Image(systemName: "checkmark")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
             }
         }
     }

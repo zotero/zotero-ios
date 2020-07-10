@@ -18,7 +18,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.fileView.tapEnabled = false
         
         let highlightView = UIView()
-        highlightView.backgroundColor = .cellHighlighted
+        highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
         self.selectedBackgroundView = highlightView
     }
     
@@ -35,7 +35,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
             self.fileView.isHidden = false
             self.attachmentIcon.isHidden = true
         case .url:
-            self.attachmentIcon.image = UIImage(named: "web-page")
+            self.attachmentIcon.image = Asset.Images.ItemTypes.webPage.image
             self.fileView.isHidden = true
             self.attachmentIcon.isHidden = false
         }

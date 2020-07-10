@@ -34,13 +34,13 @@ struct RegisterView: View {
                     Divider()
                 }
 
-//                Button(action: {
-//
-//                }) {
-//                    OnboardingButton(title: "Create account",
-//                                     width: proxy.size.width,
-//                                     isLoading: false)
-//                }
+                Button(action: {
+
+                }) {
+                    OnboardingButton(title: L10n.Onboarding.createAccount,
+                                     width: proxy.size.width,
+                                     isLoading: false)
+                }
             }
         }
         .padding()
