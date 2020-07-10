@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="OnboardingPageView" customModule="Zotero" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="504"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="999" verticalCompressionResistancePriority="1000" text="Text" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QMG-Re-Ouf">
+                    <rect key="frame" x="169.5" y="0.0" width="36" height="24"/>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="lessThanOrEqual" constant="320" id="gOJ-Nx-wg8"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="20"/>
+                    <nil key="textColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <view hidden="YES" contentMode="scaleToFill" horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="zCL-f0-m6D">
+                    <rect key="frame" x="0.0" y="24" width="375" height="168"/>
+                    <color key="backgroundColor" systemColor="systemOrangeColor" red="1" green="0.58431372550000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                </view>
+                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="999" image="Onboarding/access" translatesAutoresizingMaskIntoConstraints="NO" id="nj0-d6-Faf">
+                    <rect key="frame" x="45" y="192" width="285" height="312"/>
+                </imageView>
+            </subviews>
+            <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+            <constraints>
+                <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="zCL-f0-m6D" secondAttribute="trailing" id="Ao5-xc-dux"/>
+                <constraint firstItem="nj0-d6-Faf" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="Bz3-1O-dEY"/>
+                <constraint firstItem="nj0-d6-Faf" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="45" id="Bzo-85-uOd"/>
+                <constraint firstItem="nj0-d6-Faf" firstAttribute="top" secondItem="zCL-f0-m6D" secondAttribute="bottom" id="JZe-az-Egj"/>
+                <constraint firstItem="zCL-f0-m6D" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="MI2-mR-vpw"/>
+                <constraint firstItem="QMG-Re-Ouf" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="Tij-74-C8O"/>
+                <constraint firstItem="QMG-Re-Ouf" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="iN0-l3-epB" secondAttribute="leading" constant="24" id="WRJ-SZ-CVI"/>
+                <constraint firstItem="QMG-Re-Ouf" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="Wad-VG-rdl"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="QMG-Re-Ouf" secondAttribute="trailing" constant="24" id="afi-2c-HLG"/>
+                <constraint firstItem="zCL-f0-m6D" firstAttribute="top" secondItem="QMG-Re-Ouf" secondAttribute="bottom" id="nO7-Zu-8Cf"/>
+                <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="nj0-d6-Faf" secondAttribute="trailing" constant="45" id="wlr-2c-STP"/>
+                <constraint firstAttribute="bottom" secondItem="nj0-d6-Faf" secondAttribute="bottom" id="wsE-xx-c4z"/>
+            </constraints>
+            <nil key="simulatedTopBarMetrics"/>
+            <nil key="simulatedBottomBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
+            <connections>
+                <outlet property="imageView" destination="nj0-d6-Faf" id="Ubh-AA-DTQ"/>
+                <outlet property="spacer" destination="zCL-f0-m6D" id="dcM-Zh-rn1"/>
+                <outlet property="textLabel" destination="QMG-Re-Ouf" id="6kM-iP-cI5"/>
+            </connections>
+            <point key="canvasLocation" x="126.81159420289856" y="249.10714285714283"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="Onboarding/access" width="312" height="312"/>
+    </resources>
+</document>

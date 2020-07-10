@@ -109,26 +109,62 @@ class OnboardingViewController: UIViewController {
 
     // MARK: - Setups
 
+    /// Setup pages so that the spacer in pages is the same height as spacers in this controller. Also set title with appropriate size and style.
+    /// - parameter pageData: Title and image for each page.
     private func setupPages(with pageData: [(String, UIImage)]) {
         let size = self.navigationController?.view.frame.size ?? CGSize()
-        let pages = pageData.map({ text, image -> OnboardingPageView in
-            return OnboardingPageView(string: text, image: image, size: size, htmlConverter: self.htmlConverter)
-        })
 
+        // Create page views. Find page view with longest text
+        var longestTextIdx = 0
+        var pages: [OnboardingPageView] = []
+
+        for (index, (text, image)) in pageData.enumerated() {
+            let pageView = UINib(nibName: "OnboardingPageView", bundle: nil).instantiate(withOwner: nil, options: nil).first as! OnboardingPageView
+            pageView.translatesAutoresizingMaskIntoConstraints = false
+            pageView.set(string: text, image: image, size: size, htmlConverter: htmlConverter)
+            pages.append(pageView)
+
+            if longestTextIdx != index && text.count > pageData[longestTextIdx].0.count {
+                longestTextIdx = index
+            }
+        }
+
+        // Add all pages inside stack view which is assigned as content view for scroll view.
         let stackView = UIStackView(arrangedSubviews: pages)
+        stackView.setContentCompressionResistancePriority(.required, for: .vertical)
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
         self.scrollView.addSubview(stackView)
 
-        let pageConstraints = pages.map({ $0.spacer.heightAnchor.constraint(equalTo: self.spacer.heightAnchor) }) +
-                              pages.map({ $0.widthAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.widthAnchor) })
-        let stackViewConstraints = [stackView.topAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.topAnchor),
-                                    stackView.bottomAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.bottomAnchor),
-                                    stackView.leadingAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.leadingAnchor),
-                                    stackView.trailingAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.trailingAnchor)]
+        // Create constraints
 
-        NSLayoutConstraint.activate(stackViewConstraints + pageConstraints)
+        // Create constraints for stackView as content view.
+        var constraints = [stackView.topAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.topAnchor),
+                           stackView.bottomAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.bottomAnchor),
+                           stackView.leadingAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.leadingAnchor),
+                           stackView.trailingAnchor.constraint(equalTo: self.scrollView.contentLayoutGuide.trailingAnchor)]
+
+        // Create spacer height constraint from page with biggest text to this controller's spacer so that the height between title and image
+        // is the same as spacers in this controller.
+        constraints.append(pages[longestTextIdx].spacer.heightAnchor.constraint(equalTo: self.spacer.heightAnchor))
+
+        for (index, view) in pages.enumerated() {
+            // Create constraints for pages so that their width is the same as scroll view.
+            constraints.append(view.widthAnchor.constraint(equalTo: self.scrollView.frameLayoutGuide.widthAnchor))
+            // Create height constraints between labels in pages so that the label height is the same in all pages and labels are vertically
+            // centered to the biggest label.
+            if index == longestTextIdx {
+                // Set content hugging of the longest label to required
+                view.textLabel.setContentHuggingPriority(.required, for: .vertical)
+            } else {
+                constraints.append(view.textLabel.heightAnchor.constraint(equalTo: pages[longestTextIdx].textLabel.heightAnchor))
+                // Set content hugging of other labels to high, so that they don't try to compress the main label
+                view.textLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
+            }
+        }
+
+        NSLayoutConstraint.activate(constraints)
     }
 
     private func setupButtons() {
