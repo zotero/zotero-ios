@@ -175,7 +175,7 @@ extension MainViewController: UISplitViewControllerDelegate {
 
 extension MainViewController: MainCoordinatorDelegate {
     func show(collection: Collection, in library: Library) {
-        guard self.isSplit == false || self.detailCoordinator?.library != library || self.detailCoordinator?.collection != collection else { return }
+        guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection != collection else { return }
 
         let navigationController = UINavigationController()
 

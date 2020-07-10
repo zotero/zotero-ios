@@ -11,12 +11,15 @@ import SwiftUI
 
 class OnboardingViewController: UIViewController {
     @IBOutlet private weak var spacer: UIView!
+    @IBOutlet private weak var topSpacerBottomConstraint: NSLayoutConstraint!
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var signInButton: UIButton!
     @IBOutlet private weak var createAccountButton: UIButton!
     @IBOutlet private weak var pageControl: UIPageControl!
+    @IBOutlet private weak var buttonStackView: UIStackView!
+    @IBOutlet private weak var bottomStackView: UIStackView!
 
-    private static let titleFont: UIFont = .systemFont(ofSize: 20)
+    private static let smallSizeLimit: CGFloat = 768
     private unowned let htmlConverter: HtmlAttributedStringConverter
     private unowned let apiClient: ApiClient
     private unowned let sessionController: SessionController
@@ -46,11 +49,40 @@ class OnboardingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.navigationController?.delegate = self
         self.navigationController?.setNavigationBarHidden(true, animated: false)
         let pages = self.pageData
         self.setupButtons()
         self.setupPages(with: pages)
         self.setupPageControl(with: pages)
+        self.setupLayout(with: (self.navigationController?.view.frame.size ?? CGSize()))
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        let page = self.scrollView.currentPage
+
+        super.viewWillTransition(to: size, with: coordinator)
+
+        guard let stackView = self.scrollView.subviews.last as? UIStackView,
+              let pageViews = stackView.arrangedSubviews as? [OnboardingPageView] else { return }
+
+        let pageData = self.pageData
+
+        guard pageViews.count == pageData.count else { return }
+
+        coordinator.animate(alongsideTransition: { _ in
+            for (index, view) in pageViews.enumerated() {
+                view.updateIfNeeded(to: size, string: pageData[index].0, htmlConverter: self.htmlConverter)
+            }
+            self.setupLayout(with: size)
+            let scrollOffset = CGPoint(x: size.width * CGFloat(page), y: 0)
+            self.scrollView.setContentOffset(scrollOffset, animated: false)
+        }, completion: nil)
     }
 
     // MARK: - Actions
@@ -78,15 +110,9 @@ class OnboardingViewController: UIViewController {
     // MARK: - Setups
 
     private func setupPages(with pageData: [(String, UIImage)]) {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 1.5
-        let kern = OnboardingViewController.titleFont.pointSize * 0.025
-
+        let size = self.navigationController?.view.frame.size ?? CGSize()
         let pages = pageData.map({ text, image -> OnboardingPageView in
-            let attributedString = self.htmlConverter.convert(text: text,
-                                                              baseFont: OnboardingViewController.titleFont,
-                                                              baseAttributes: [.paragraphStyle: paragraphStyle, .kern: kern])
-            return OnboardingPageView(attributedString: attributedString, image: image)
+            return OnboardingPageView(string: text, image: image, size: size, htmlConverter: self.htmlConverter)
         })
 
         let stackView = UIStackView(arrangedSubviews: pages)
@@ -116,13 +142,23 @@ class OnboardingViewController: UIViewController {
         self.pageControl.numberOfPages = pageData.count
         self.pageControl.currentPage = 0
     }
+
+    private func setupLayout(with size: CGSize) {
+        let isBig = min(size.width, size.height) >= OnboardingViewController.smallSizeLimit
+        self.buttonStackView.spacing = isBig ? 12 : 8
+        self.bottomStackView.spacing = isBig ? 17 : 9
+
+        // Align to xHeight of font
+        let titleFont = OnboardingPageView.font(for: size)
+        let fontOffset = titleFont.ascender - titleFont.xHeight
+        self.topSpacerBottomConstraint.constant = -fontOffset
+    }
 }
 
 extension OnboardingViewController: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard !self.ignoreScrollDelegate else { return }
-        let page = Int((scrollView.contentOffset.x + (0.5 * scrollView.frame.size.width)) / scrollView.frame.width)
-        self.pageControl.currentPage = page
+        self.pageControl.currentPage = scrollView.currentPage
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
@@ -131,5 +167,17 @@ extension OnboardingViewController: UIScrollViewDelegate {
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         self.ignoreScrollDelegate = false
+    }
+}
+
+fileprivate extension UIScrollView {
+    var currentPage: Int {
+        return Int((self.contentOffset.x + (0.5 * self.frame.size.width)) / self.frame.width)
+    }
+}
+
+extension OnboardingViewController: UINavigationControllerDelegate {
+    func navigationControllerSupportedInterfaceOrientations(_ navigationController: UINavigationController) -> UIInterfaceOrientationMask {
+        return UIDevice.current.userInterfaceIdiom == .pad ? .all : [.portrait, .portraitUpsideDown]
     }
 }

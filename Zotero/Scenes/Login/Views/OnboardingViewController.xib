@@ -10,11 +10,14 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="OnboardingViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
+                <outlet property="bottomStackView" destination="Mb3-CK-6Bh" id="avZ-KW-MAw"/>
+                <outlet property="buttonStackView" destination="fhW-3r-g8K" id="mvv-zm-WQu"/>
                 <outlet property="createAccountButton" destination="3eu-Zz-3t3" id="Sfx-qR-NqH"/>
                 <outlet property="pageControl" destination="bvA-YW-oOq" id="Gw8-Jq-KEz"/>
                 <outlet property="scrollView" destination="U1Z-u5-m5x" id="zlt-vo-INS"/>
                 <outlet property="signInButton" destination="fP5-W2-mpS" id="Q6I-4R-DgJ"/>
                 <outlet property="spacer" destination="SeZ-Gu-wcs" id="zci-gF-ZZP"/>
+                <outlet property="topSpacerBottomConstraint" destination="du4-5r-ADg" id="9ba-PM-BgR"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
         </placeholder>
@@ -24,11 +27,11 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SeZ-Gu-wcs">
-                    <rect key="frame" x="0.0" y="0.0" width="834" height="272.5"/>
+                    <rect key="frame" x="0.0" y="0.0" width="834" height="278.5"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                 </view>
                 <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" bouncesZoom="NO" translatesAutoresizingMaskIntoConstraints="NO" id="U1Z-u5-m5x">
-                    <rect key="frame" x="0.0" y="272.5" width="834" height="200"/>
+                    <rect key="frame" x="0.0" y="272" width="834" height="200"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="200" placeholder="YES" id="Kf5-dP-sSV"/>
                     </constraints>
@@ -39,11 +42,11 @@
                     </connections>
                 </scrollView>
                 <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LV2-Yg-5X4">
-                    <rect key="frame" x="0.0" y="472.5" width="834" height="273"/>
+                    <rect key="frame" x="0.0" y="478.5" width="834" height="278"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                 </view>
                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="Mb3-CK-6Bh">
-                    <rect key="frame" x="267" y="745.5" width="300" height="156"/>
+                    <rect key="frame" x="267" y="756.5" width="300" height="156"/>
                     <subviews>
                         <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="bvA-YW-oOq">
                             <rect key="frame" x="0.0" y="0.0" width="300" height="37"/>
@@ -89,7 +92,7 @@
                     </constraints>
                 </stackView>
                 <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Zyu-mC-nhe">
-                    <rect key="frame" x="0.0" y="901.5" width="834" height="272.5"/>
+                    <rect key="frame" x="0.0" y="896" width="834" height="278"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                 </view>
             </subviews>
@@ -97,14 +100,14 @@
             <constraints>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="Zyu-mC-nhe" secondAttribute="bottom" id="4Du-oK-h9g"/>
                 <constraint firstItem="U1Z-u5-m5x" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="61P-h1-mwa"/>
+                <constraint firstItem="Zyu-mC-nhe" firstAttribute="firstBaseline" secondItem="3eu-Zz-3t3" secondAttribute="baseline" id="7bC-Kj-iCt"/>
                 <constraint firstItem="LV2-Yg-5X4" firstAttribute="top" secondItem="U1Z-u5-m5x" secondAttribute="bottom" id="85A-Lq-hWN"/>
                 <constraint firstItem="LV2-Yg-5X4" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="PjS-2D-deN"/>
-                <constraint firstItem="Zyu-mC-nhe" firstAttribute="top" secondItem="Mb3-CK-6Bh" secondAttribute="bottom" id="Pvi-n1-nlP"/>
                 <constraint firstItem="Mb3-CK-6Bh" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="Uw0-QT-tc8"/>
                 <constraint firstItem="U1Z-u5-m5x" firstAttribute="top" secondItem="SeZ-Gu-wcs" secondAttribute="bottom" id="du4-5r-ADg"/>
                 <constraint firstItem="SeZ-Gu-wcs" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="f8m-b0-wd1"/>
                 <constraint firstItem="SeZ-Gu-wcs" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="gbt-7i-Du4"/>
-                <constraint firstItem="Mb3-CK-6Bh" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="lIs-0f-Iht"/>
+                <constraint firstItem="Mb3-CK-6Bh" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="32" id="lIs-0f-Iht"/>
                 <constraint firstItem="LV2-Yg-5X4" firstAttribute="height" secondItem="SeZ-Gu-wcs" secondAttribute="height" id="leU-Rw-InD"/>
                 <constraint firstItem="SeZ-Gu-wcs" firstAttribute="trailing" secondItem="fnl-2z-Ty3" secondAttribute="trailing" id="my7-cZ-8RX"/>
                 <constraint firstItem="Zyu-mC-nhe" firstAttribute="height" secondItem="SeZ-Gu-wcs" secondAttribute="height" id="rxN-Mo-F5A"/>
@@ -112,7 +115,7 @@
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="U1Z-u5-m5x" secondAttribute="trailing" id="saf-lT-Ekj"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="Zyu-mC-nhe" secondAttribute="trailing" id="spT-HL-pnx"/>
                 <constraint firstItem="Zyu-mC-nhe" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="tDN-ur-1eH"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Mb3-CK-6Bh" secondAttribute="trailing" constant="20" id="tQ8-TA-lZA"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Mb3-CK-6Bh" secondAttribute="trailing" constant="32" id="tQ8-TA-lZA"/>
                 <constraint firstItem="Mb3-CK-6Bh" firstAttribute="top" secondItem="LV2-Yg-5X4" secondAttribute="bottom" id="yeN-BN-MfS"/>
             </constraints>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
