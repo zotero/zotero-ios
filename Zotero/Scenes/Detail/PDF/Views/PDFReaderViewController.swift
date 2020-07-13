@@ -36,7 +36,6 @@ class PDFReaderViewController: UIViewController {
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
 
-    private var pendingHighlight: SearchResult?
     weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
 
     private var defaultScrollDirection: ScrollDirection {
@@ -158,18 +157,18 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func focusAnnotation(at location: AnnotationDocumentLocation, key: String, document: Document) {
-        if location.page != self.pdfController.pageIndex {
-            // Scroll to page, annotation will be selected by delegate
-            self.pdfController.setPageIndex(UInt(location.page), animated: true)
-            return
-        }
+        let pageIndex = PageIndex(location.page)
+        self.scrollIfNeeded(to: pageIndex, animated: true) {
+            guard let pageView = self.pdfController.pageViewForPage(at: pageIndex),
+                  let annotation = document.annotation(on: location.page, with: key) else { return }
 
-        // Page already visible, select annotation
-        guard let pageView = self.pdfController.pageViewForPage(at: UInt(location.page)),
-              let annotation = document.annotation(on: location.page, with: key) else { return }
+            if !pageView.selectedAnnotations.contains(annotation) {
+                pageView.selectedAnnotations = [annotation]
+            }
 
-        if !pageView.selectedAnnotations.contains(annotation) {
-            pageView.selectedAnnotations = [annotation]
+            if annotation is HighlightAnnotation {
+                self.updateSelection(on: pageView, selectedAnnotation: self.viewModel.state.selectedAnnotation, pageIndex: location.page)
+            }
         }
     }
 
@@ -212,16 +211,34 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func highlight(result: SearchResult) {
-        let isOnSamePage = self.pdfController.pageIndex == result.pageIndex
-
-        self.pdfController.searchHighlightViewManager.clearHighlightedSearchResults(animated: isOnSamePage)
-
-        if isOnSamePage {
+        self.pdfController.searchHighlightViewManager.clearHighlightedSearchResults(animated: (self.pdfController.pageIndex == result.pageIndex))
+        self.scrollIfNeeded(to: result.pageIndex, animated: true) {
             self.pdfController.searchHighlightViewManager.addHighlight([result], animated: true)
-        } else {
-            self.pendingHighlight = result
-            self.pdfController.setPageIndex(result.pageIndex, animated: true)
         }
+    }
+
+    /// Scrolls to given page if needed.
+    /// - parameter pageIndex: Page index to which the `pdfController` is supposed to scroll.
+    /// - parameter animated: `true` if scrolling is animated, `false` otherwise.
+    /// - parameter completion: Completion block called after scroll. Block is also called when scroll was not needed.
+    private func scrollIfNeeded(to pageIndex: PageIndex, animated: Bool, completion: @escaping () -> Void) {
+        guard self.pdfController.pageIndex != pageIndex else {
+            completion()
+            return
+        }
+
+        if !animated {
+            self.pdfController.setPageIndex(pageIndex, animated: false)
+            completion()
+            return
+        }
+
+        UIView.animate(withDuration: 0.25, animations: {
+            self.pdfController.setPageIndex(pageIndex, animated: false)
+        }, completion: { finished in
+            guard finished else { return }
+            completion()
+        })
     }
 
     private func showSettings(sender: UIBarButtonItem) {
@@ -508,17 +525,6 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
     }
 
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
-        // Dispatch async on main queue used so that the page can finish displaying before selection view is added. Otherwise the selection view
-        // doesn't show up.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.updateSelection(on: pageView, selectedAnnotation: self.viewModel.state.selectedAnnotation, pageIndex: pageIndex)
-
-            if let highlight = self.pendingHighlight {
-                pdfController.searchHighlightViewManager.addHighlight([highlight], animated: false)
-                self.pendingHighlight = nil
-            }
-        }
-
         // Save current page
         self.pageController.store(page: pageIndex, for: self.viewModel.state.key)
     }
