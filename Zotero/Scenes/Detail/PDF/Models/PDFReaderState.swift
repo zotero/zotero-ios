@@ -23,9 +23,10 @@ struct PDFReaderState: ViewModelState {
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
         static let darkMode = Changes(rawValue: 1 << 2)
+        static let activeColor = Changes(rawValue: 1 << 3)
     }
 
-    private static let activeColorKey = "PDFReaderState.activeColor"
+    static let activeColorKey = "PDFReaderState.activeColor"
 
     let key: String
     let libraryId: LibraryIdentifier

@@ -79,6 +79,10 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         case .updateAnnotationPreviews(let userInterfaceIsDark):
             self.storeAnnotationPreviewsIfNeeded(isDark: userInterfaceIsDark, in: viewModel)
+
+        case .setActiveColor(let hex):
+            self.setActiveColor(hex: hex, in: viewModel)
+
         }
     }
 
@@ -109,6 +113,17 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     // MARK: - Annotation actions
+
+    private func setActiveColor(hex: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let color = UIColor(hex: hex)
+
+        UserDefaults.standard.set(hex, forKey: PDFReaderState.activeColorKey)
+
+        self.update(viewModel: viewModel) { state in
+            state.activeColor = color
+            state.changes = .activeColor
+        }
+    }
 
     private func update(annotation annotationChange: (Annotation) -> Annotation, reloadComment: Bool, at indexPath: IndexPath, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }

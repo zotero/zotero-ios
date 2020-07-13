@@ -559,6 +559,7 @@
 		B3902DF824811DC3007EE48E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
 		B3972689247D403200A8B469 /* UrlDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972688247D403200A8B469 /* UrlDetector.swift */; };
 		B397EC68230BF01100A46E4B /* SyncControllerAction+Equatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */; };
+		B39A403024BC902600205172 /* ColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39A402F24BC902600205172 /* ColorPicker.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39D336823FFD96C00EF2ACB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336723FFD96C00EF2ACB /* Note.swift */; };
 		B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */; };
@@ -1026,6 +1027,7 @@
 		B38D3CC924A1F420005289EF /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
 		B3972688247D403200A8B469 /* UrlDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrlDetector.swift; sourceTree = "<group>"; };
 		B397EC67230BF01100A46E4B /* SyncControllerAction+Equatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncControllerAction+Equatable.swift"; sourceTree = "<group>"; };
+		B39A402F24BC902600205172 /* ColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPicker.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39D336723FFD96C00EF2ACB /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAttachmentsDbRequest.swift; sourceTree = "<group>"; };
@@ -1635,10 +1637,11 @@
 				B331D5DC24AB682E008F293B /* AnnotationPreviewCommentEditorViewController.swift */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
+				B39A402F24BC902600205172 /* ColorPicker.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
-				B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */,
 				B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */,
 				B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */,
+				B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2741,6 +2744,7 @@
 				B30566AD23FC051F003304F2 /* ItemResponse.swift in Sources */,
 				B3593F34241A61C700760E20 /* ItemDetailCreatorEditingCell.swift in Sources */,
 				B3B953C32459780600FC96DB /* Annotation.swift in Sources */,
+				B39A403024BC902600205172 /* ColorPicker.swift in Sources */,
 				B3593F3A241A61C700760E20 /* ItemsAction.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
 				B3DCDF08240912060039ED0D /* ActivityIndicatorView.swift in Sources */,

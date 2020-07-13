@@ -120,6 +120,11 @@ class PDFReaderViewController: UIViewController {
             self.updateSelection(on: pageView, selectedAnnotation: state.selectedAnnotation, pageIndex: Int(self.pdfController.pageIndex))
         }
 
+        if state.changes.contains(.activeColor) {
+            self.set(toolColor: state.activeColor, in: self.pdfController.annotationStateManager)
+            self.colorPickerbutton.setImage(state.activeColor.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
+        }
+
         if state.focusSidebarIndexPath != nil {
             self.openSidebarIfClosed()
         }
@@ -152,8 +157,10 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func showColorPicker() {
-
+    private func showColorPicker(sender: UIButton) {
+        self.coordinatorDelegate?.showColorPicker(selected: self.viewModel.state.activeColor.hexString, sender: sender, save: { [weak self] color in
+            self?.viewModel.process(action: .setActiveColor(color))
+        })
     }
 
     private func focusAnnotation(at location: AnnotationDocumentLocation, key: String, document: Document) {
@@ -202,12 +209,9 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func showSearch(sender: UIBarButtonItem) {
-        let viewController = PDFSearchViewController(controller: self.pdfController, searchSelected: { [weak self] result in
+        self.coordinatorDelegate?.showSearch(pdfController: self.pdfController, sender: sender, result: { [weak self] result in
             self?.highlight(result: result)
         })
-        viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        viewController.popoverPresentationController?.barButtonItem = sender
-        self.present(viewController, animated: true, completion: nil)
     }
 
     private func highlight(result: SearchResult) {
@@ -361,7 +365,7 @@ class PDFReaderViewController: UIViewController {
         picker.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         picker.rx.controlEvent(.touchUpInside)
                  .subscribe(onNext: { [weak self] _ in
-                    self?.showColorPicker()
+                    self?.showColorPicker(sender: picker)
                  })
                  .disposed(by: self.disposeBag)
         self.colorPickerbutton = picker
