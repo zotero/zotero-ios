@@ -41,7 +41,7 @@ class OnboardingPageView: UIView {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 1.5
         paragraphStyle.alignment = .center
-        let kern = font.pointSize * (bigLayout ? 0.0145 : 0.0133)
+        let kern = font.pointSize * (bigLayout ? 0.025 : -0.01)
 
         self.textLabel.attributedText = htmlConverter.convert(text: string,
                                                               baseFont: font,
