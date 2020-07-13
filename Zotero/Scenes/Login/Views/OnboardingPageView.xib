@@ -22,28 +22,32 @@
                     <nil key="textColor"/>
                     <nil key="highlightedColor"/>
                 </label>
+                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="999" image="Onboarding/access" translatesAutoresizingMaskIntoConstraints="NO" id="nj0-d6-Faf">
+                    <rect key="frame" x="45" y="219" width="285" height="285"/>
+                    <color key="backgroundColor" systemColor="opaqueSeparatorColor" red="0.77647058820000003" green="0.77647058820000003" blue="0.7843137255" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="nj0-d6-Faf" secondAttribute="height" id="U8O-Cb-kZ7"/>
+                    </constraints>
+                </imageView>
                 <view hidden="YES" contentMode="scaleToFill" horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="zCL-f0-m6D">
-                    <rect key="frame" x="0.0" y="24" width="375" height="168"/>
+                    <rect key="frame" x="0.0" y="19" width="375" height="210"/>
                     <color key="backgroundColor" systemColor="systemOrangeColor" red="1" green="0.58431372550000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                 </view>
-                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="999" image="Onboarding/access" translatesAutoresizingMaskIntoConstraints="NO" id="nj0-d6-Faf">
-                    <rect key="frame" x="45" y="192" width="285" height="312"/>
-                </imageView>
             </subviews>
             <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
             <constraints>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="zCL-f0-m6D" secondAttribute="trailing" id="Ao5-xc-dux"/>
                 <constraint firstItem="nj0-d6-Faf" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="Bz3-1O-dEY"/>
                 <constraint firstItem="nj0-d6-Faf" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="45" id="Bzo-85-uOd"/>
-                <constraint firstItem="nj0-d6-Faf" firstAttribute="top" secondItem="zCL-f0-m6D" secondAttribute="bottom" id="JZe-az-Egj"/>
+                <constraint firstItem="nj0-d6-Faf" firstAttribute="top" secondItem="zCL-f0-m6D" secondAttribute="bottom" constant="-10" id="JZe-az-Egj"/>
                 <constraint firstItem="zCL-f0-m6D" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="MI2-mR-vpw"/>
                 <constraint firstItem="QMG-Re-Ouf" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="Tij-74-C8O"/>
                 <constraint firstItem="QMG-Re-Ouf" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="iN0-l3-epB" secondAttribute="leading" constant="24" id="WRJ-SZ-CVI"/>
-                <constraint firstItem="QMG-Re-Ouf" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="Wad-VG-rdl"/>
+                <constraint firstItem="QMG-Re-Ouf" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" placeholder="YES" id="Wad-VG-rdl"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="QMG-Re-Ouf" secondAttribute="trailing" constant="24" id="afi-2c-HLG"/>
-                <constraint firstItem="zCL-f0-m6D" firstAttribute="top" secondItem="QMG-Re-Ouf" secondAttribute="bottom" id="nO7-Zu-8Cf"/>
+                <constraint firstItem="zCL-f0-m6D" firstAttribute="top" secondItem="QMG-Re-Ouf" secondAttribute="baseline" id="nO7-Zu-8Cf"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="nj0-d6-Faf" secondAttribute="trailing" constant="45" id="wlr-2c-STP"/>
-                <constraint firstAttribute="bottom" secondItem="nj0-d6-Faf" secondAttribute="bottom" id="wsE-xx-c4z"/>
+                <constraint firstAttribute="bottom" secondItem="nj0-d6-Faf" secondAttribute="bottom" placeholder="YES" id="wsE-xx-c4z"/>
             </constraints>
             <nil key="simulatedTopBarMetrics"/>
             <nil key="simulatedBottomBarMetrics"/>

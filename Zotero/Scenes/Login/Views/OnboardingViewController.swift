@@ -11,7 +11,9 @@ import SwiftUI
 
 class OnboardingViewController: UIViewController {
     @IBOutlet private weak var spacer: UIView!
-    @IBOutlet private weak var topSpacerBottomConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var spacerAboveScrollViewContent: UIView!
+    @IBOutlet private weak var spacerBelowScrollViewContent: UIView!
+    private weak var spacerAboveScrollViewBottom: NSLayoutConstraint?
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var signInButton: UIButton!
     @IBOutlet private weak var createAccountButton: UIButton!
@@ -157,10 +159,21 @@ class OnboardingViewController: UIViewController {
             if index == longestTextIdx {
                 // Set content hugging of the longest label to required
                 view.textLabel.setContentHuggingPriority(.required, for: .vertical)
+                // Connect text to top content spacer
+                let textConstraint = view.textLabel.topAnchor.constraint(equalTo: self.spacerAboveScrollViewContent.bottomAnchor)
+                textConstraint.isActive = true
+                self.spacerAboveScrollViewBottom = textConstraint
+                // Connect image to bottom content spacer
+                self.spacerBelowScrollViewContent.topAnchor.constraint(equalTo: view.imageView.bottomAnchor, constant: -10).isActive = true
             } else {
-                constraints.append(view.textLabel.heightAnchor.constraint(equalTo: pages[longestTextIdx].textLabel.heightAnchor))
+                let longestPage = pages[longestTextIdx]
+                constraints.append(view.textLabel.heightAnchor.constraint(equalTo: longestPage.textLabel.heightAnchor))
                 // Set content hugging of other labels to high, so that they don't try to compress the main label
                 view.textLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
+                // Connect text to longest text top, so that all pages start at the same height
+                view.textLabel.topAnchor.constraint(equalTo: longestPage.textLabel.topAnchor).isActive = true
+                // Connect image to longest image bottom, so that all pages end at the same height
+                view.imageView.bottomAnchor.constraint(equalTo: longestPage.imageView.bottomAnchor).isActive = true
             }
         }
 
@@ -187,7 +200,7 @@ class OnboardingViewController: UIViewController {
         // Align to xHeight of font
         let titleFont = OnboardingPageView.font(for: size)
         let fontOffset = titleFont.ascender - titleFont.xHeight
-        self.topSpacerBottomConstraint.constant = -fontOffset
+        self.spacerAboveScrollViewBottom?.constant = -fontOffset
     }
 }
 

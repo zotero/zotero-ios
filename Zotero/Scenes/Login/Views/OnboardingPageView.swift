@@ -19,7 +19,7 @@ class OnboardingPageView: UIView {
 
     @IBOutlet weak var textLabel: UILabel!
     @IBOutlet weak var spacer: UIView!
-    @IBOutlet private weak var imageView: UIImageView!
+    @IBOutlet weak var imageView: UIImageView!
 
     private var isBig: Bool = false
 
