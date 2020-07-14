@@ -164,9 +164,11 @@ class DetailCoordinator: Coordinator {
 
     private func showPdf(at url: URL, key: String, libraryId: LibraryIdentifier) {
         #if PDFENABLED
-        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: PDFReaderState(url: url, key: key, libraryId: libraryId),
-                                                                      handler: PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController,
-                                                                                                      htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter)),
+        let handler = PDFReaderActionHandler(annotationPreviewController: self.controllers.annotationPreviewController,
+                                             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter)
+        let state = PDFReaderState(url: url, key: key, libraryId: libraryId)
+        let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
+                                                 compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size),
                                                  annotationPreviewController: self.controllers.annotationPreviewController,
                                                  pageController: self.controllers.pageController)
         controller.coordinatorDelegate = self

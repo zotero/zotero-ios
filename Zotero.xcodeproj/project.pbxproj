@@ -389,6 +389,7 @@
 		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
 		B340692224A60D6A009ECE48 /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */; };
 		B340692424A60D83009ECE48 /* CGRect+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692324A60D83009ECE48 /* CGRect+Extensions.swift */; };
+		B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */; };
 		B34A44CE24B759DB000B378A /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A44CC24B759DB000B378A /* OnboardingViewController.swift */; };
 		B34A44CF24B759DB000B378A /* OnboardingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34A44CD24B759DB000B378A /* OnboardingViewController.xib */; };
 		B34A44D324B75D96000B378A /* OnboardingPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A44D224B75D96000B378A /* OnboardingPageView.swift */; };
@@ -899,6 +900,7 @@
 		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
 		B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
 		B340692324A60D83009ECE48 /* CGRect+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Extensions.swift"; sourceTree = "<group>"; };
+		B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+Extensions.swift"; sourceTree = "<group>"; };
 		B34A44CC24B759DB000B378A /* OnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
 		B34A44CD24B759DB000B378A /* OnboardingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = OnboardingViewController.xib; sourceTree = "<group>"; };
 		B34A44D224B75D96000B378A /* OnboardingPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPageView.swift; sourceTree = "<group>"; };
@@ -1394,6 +1396,7 @@
 				B305650823FC051E003304F2 /* String+Extensions.swift */,
 				B305650423FC051E003304F2 /* Threading+Extras.swift */,
 				B305650923FC051E003304F2 /* UIColor+Custom.swift */,
+				B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */,
 				B305650A23FC051E003304F2 /* UIFont+Extensions.swift */,
 				B3593ADB24B60A7600CA0B57 /* UISearchBar+Extensions.swift */,
 				B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */,
@@ -2557,6 +2560,7 @@
 				B30565FC23FC051E003304F2 /* CoordinatedFileStorage.swift in Sources */,
 				B305662623FC051F003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
 				B3593F28241A61C700760E20 /* ItemDetailFieldCell.swift in Sources */,
+				B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */,
 				B3DCDF0E240912500039ED0D /* SinglePickerActionHandler.swift in Sources */,
 				B3593F37241A61C700760E20 /* ItemDetailViewController.swift in Sources */,
 				B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */,

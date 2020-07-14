@@ -31,7 +31,6 @@ class ItemsViewController: UIViewController {
 
     private static let barButtonItemEmptyTag = 1
     private static let barButtonItemSingleTag = 2
-    private static let searchBarInTitleViewWindowWidth: CGFloat = 414
 
     private let viewModel: ViewModel<ItemsActionHandler>
     private let controllers: Controllers
@@ -422,7 +421,7 @@ class ItemsViewController: UIViewController {
                                                                                         (self.navigationItem.titleView != nil ? .titleView : nil)
         // The search bar can change position based on current window size. If the window is too narrow, the search bar appears in
         // navigationItem, otherwise it can appear in titleView.
-        let new: SearchBarPosition = windowSize.width <= ItemsViewController.searchBarInTitleViewWindowWidth ? .navigationItem : .titleView
+        let new: SearchBarPosition = UIDevice.current.isCompactWidth(size: windowSize) ? .navigationItem : .titleView
 
         // Only change search bar if the position changes.
         guard current != new else { return new }

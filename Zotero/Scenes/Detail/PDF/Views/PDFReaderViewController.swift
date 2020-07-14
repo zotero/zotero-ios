@@ -35,8 +35,13 @@ class PDFReaderViewController: UIViewController {
     private weak var createHighlightButton: CheckboxButton!
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
+    private var isCompactSize: Bool
 
     weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
+
+    private var isSidebarOpened: Bool {
+        return self.annotationsControllerLeft.constant == 0
+    }
 
     private var defaultScrollDirection: ScrollDirection {
         get {
@@ -62,9 +67,10 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, annotationPreviewController: AnnotationPreviewController,
-         pageController: PdfPageController) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool,
+         annotationPreviewController: AnnotationPreviewController, pageController: PdfPageController) {
         self.viewModel = viewModel
+        self.isCompactSize = compactSize
         self.annotationPreviewController = annotationPreviewController
         self.pageController = pageController
         self.disposeBag = DisposeBag()
@@ -83,7 +89,7 @@ class PDFReaderViewController: UIViewController {
         self.setupPdfController(with: self.viewModel.state.document)
         self.setupSidebarBorder()
         self.setupNavigationBar()
-        self.navigationItem.titleView = UIStackView(arrangedSubviews: self.createAnnotationToolbarButtons())
+        self.setupAnnotationControls(forCompactSize: self.isCompactSize)
         self.setupObserving()
 
         self.viewModel.stateObservable
@@ -108,6 +114,26 @@ class PDFReaderViewController: UIViewController {
         self.viewModel.process(action: .userInterfaceStyleChanged)
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        let isCompactSize = UIDevice.current.isCompactWidth(size: size)
+
+        guard self.isCompactSize != isCompactSize else { return }
+
+        self.isCompactSize = isCompactSize
+
+        if self.isSidebarOpened {
+            self.pdfControllerLeft.constant = isCompactSize ? 0 : AnnotationsConfig.sidebarWidth
+        }
+
+        coordinator.animate(alongsideTransition: { _ in
+            self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: isCompactSize)
+            self.setupAnnotationControls(forCompactSize: isCompactSize)
+            self.view.layoutIfNeeded()
+        }, completion: nil)
+    }
+
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
@@ -125,7 +151,8 @@ class PDFReaderViewController: UIViewController {
             self.colorPickerbutton.setImage(state.activeColor.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
         }
 
-        if state.focusSidebarIndexPath != nil {
+        // Open sidebar only when current layout is not compact, so that the sidebar doesn't cover whole page with selected annotation.
+        if state.focusSidebarIndexPath != nil && !UIDevice.current.isCompactWidth(size: self.view.frame.size) {
             self.openSidebarIfClosed()
         }
 
@@ -180,13 +207,17 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func openSidebarIfClosed() {
-        guard self.annotationsControllerLeft.constant != 0 else { return }
+        guard !self.isSidebarOpened else { return }
         self.toggleSidebar()
     }
 
     @objc private func toggleSidebar() {
-        let shouldShow = self.pdfControllerLeft.constant == 0
-        self.pdfControllerLeft.constant = shouldShow ? AnnotationsConfig.sidebarWidth : 0
+        let shouldShow = !self.isSidebarOpened
+
+        // If the layout is compact, show annotation sidebar above pdf document.
+        if !UIDevice.current.isCompactWidth(size: self.view.frame.size) {
+            self.pdfControllerLeft.constant = shouldShow ? AnnotationsConfig.sidebarWidth : 0
+        }
         self.annotationsControllerLeft.constant = shouldShow ? 0 : -AnnotationsConfig.sidebarWidth
 
         if shouldShow {
@@ -318,7 +349,86 @@ class PDFReaderViewController: UIViewController {
         self.annotationsControllerLeft = leftConstraint
     }
 
-    private func createAnnotationToolbarButtons() -> [UIButton] {
+    private func setupPdfController(with document: Document) {
+        let pdfConfiguration = PDFConfiguration { builder in
+            builder.scrollDirection = .horizontal
+            builder.documentLabelEnabled = .NO
+            builder.allowedAppearanceModes = [.night]
+        }
+
+        let controller = PDFViewController(document: document, configuration: pdfConfiguration)
+        controller.delegate = self
+        controller.formSubmissionDelegate = nil
+        if self.traitCollection.userInterfaceStyle == .dark {
+            controller.appearanceModeManager.appearanceMode = .night
+        }
+        controller.annotationStateManager.add(self)
+        controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
+        self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)
+
+        self.addChild(controller)
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        controller.view.frame = self.view.bounds
+        self.view.insertSubview(controller.view, belowSubview: self.annotationsController.view)
+
+        NSLayoutConstraint.activate([
+            controller.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        ])
+        let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
+        leftConstraint.isActive = true
+
+        controller.didMove(toParent: self)
+
+        self.pdfController = controller
+        self.pdfControllerLeft = leftConstraint
+    }
+
+    private func setupSidebarBorder() {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .separator
+        self.view.addSubview(view)
+
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: 1),
+            view.leadingAnchor.constraint(equalTo: self.annotationsController.view.trailingAnchor),
+            view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        ])
+    }
+
+    private func setupAnnotationControls(forCompactSize isCompact: Bool) {
+        let buttons = self.createAnnotationControlButtons()
+        self.navigationController?.setToolbarHidden(!isCompact, animated: false)
+
+        if !isCompact {
+            self.navigationController?.toolbarItems = nil
+            self.navigationItem.titleView = UIStackView(arrangedSubviews: buttons)
+            return
+        }
+
+        let flexibleSpacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        fixedSpacer.width = 20
+
+        // Create toolbar items from `UIButton`s
+        var toolbarItems = buttons.map({ UIBarButtonItem(customView: $0) })
+        // Add undo/redo buttons
+        let (undo, redo) = self.createUndoRedoButtons()
+        toolbarItems += [undo, redo]
+        // Insert flexible spacers between each item
+        toolbarItems = (0..<((2 * toolbarItems.count) - 1)).map({ $0 % 2 == 0 ? toolbarItems[$0/2] : flexibleSpacer })
+        // Insert fixed spacer on sides
+        toolbarItems.insert(fixedSpacer, at: 0)
+        toolbarItems.insert(fixedSpacer, at: toolbarItems.count)
+
+        self.navigationItem.titleView = nil
+        self.toolbarItems = toolbarItems
+    }
+
+    private func createAnnotationControlButtons() -> [UIButton] {
         let highlight = CheckboxButton(type: .custom)
         highlight.setImage(UIImage(systemName: "pencil.tip"), for: .normal)
         highlight.rx
@@ -373,56 +483,6 @@ class PDFReaderViewController: UIViewController {
         return [highlight, note, area, picker]
     }
 
-    private func setupPdfController(with document: Document) {
-        let pdfConfiguration = PDFConfiguration { builder in
-            builder.scrollDirection = .horizontal
-            builder.documentLabelEnabled = .NO
-            builder.allowedAppearanceModes = [.night]
-        }
-
-        let controller = PDFViewController(document: document, configuration: pdfConfiguration)
-        controller.delegate = self
-        controller.formSubmissionDelegate = nil
-        if self.traitCollection.userInterfaceStyle == .dark {
-            controller.appearanceModeManager.appearanceMode = .night
-        }
-        controller.annotationStateManager.add(self)
-        controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
-        self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)
-
-        self.addChild(controller)
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        controller.view.frame = self.view.bounds
-        self.view.addSubview(controller.view)
-
-        NSLayoutConstraint.activate([
-            controller.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
-        let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
-        leftConstraint.isActive = true
-
-        controller.didMove(toParent: self)
-
-        self.pdfController = controller
-        self.pdfControllerLeft = leftConstraint
-    }
-
-    private func setupSidebarBorder() {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .separator
-        self.view.addSubview(view)
-
-        NSLayoutConstraint.activate([
-            view.widthAnchor.constraint(equalToConstant: 1),
-            view.leadingAnchor.constraint(equalTo: self.annotationsController.view.trailingAnchor),
-            view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
-    }
-
     private func setupNavigationBar() {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3"),
                                             style: .plain, target: self,
@@ -430,8 +490,12 @@ class PDFReaderViewController: UIViewController {
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
                                           style: .plain, target: self,
                                           action: #selector(PDFReaderViewController.close))
-        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
 
+        self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
+        self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
+    }
+
+    private func createRightBarButtonItems(forCompactSize isCompact: Bool) -> [UIBarButtonItem] {
         let settings = self.pdfController.settingsButtonItem
         settings.rx
                 .tap
@@ -448,6 +512,16 @@ class PDFReaderViewController: UIViewController {
               })
               .disposed(by: self.disposeBag)
 
+        if isCompact {
+            return [settings, search]
+        }
+
+        let (undo, redo) = self.createUndoRedoButtons()
+
+        return [redo, undo, settings, search]
+    }
+
+    private func createUndoRedoButtons() -> (undo: UIBarButtonItem, redo: UIBarButtonItem) {
         let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
         undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
         undo.tag = NavigationBarButton.undo.rawValue
@@ -468,7 +542,7 @@ class PDFReaderViewController: UIViewController {
             })
             .disposed(by: self.disposeBag)
 
-        self.navigationItem.rightBarButtonItems = [redo, undo, settings, search]
+        return (undo, redo)
     }
 
     private func setupObserving() {
@@ -611,8 +685,19 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
     }
 
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
-        self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.redo.rawValue })?.isEnabled = redoEnabled
-        self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.undo.rawValue })?.isEnabled = undoEnabled
+        let redoItem: UIBarButtonItem?
+        let undoItem: UIBarButtonItem?
+
+        if let items = self.toolbarItems {
+            redoItem = items.first(where: { $0.tag == NavigationBarButton.redo.rawValue })
+            undoItem = items.first(where: { $0.tag == NavigationBarButton.undo.rawValue })
+        } else {
+            redoItem = self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.redo.rawValue })
+            undoItem = self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.undo.rawValue })
+        }
+
+        redoItem?.isEnabled = redoEnabled
+        undoItem?.isEnabled = undoEnabled
     }
 }
 

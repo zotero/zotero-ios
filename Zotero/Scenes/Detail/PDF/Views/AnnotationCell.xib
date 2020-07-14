@@ -28,7 +28,7 @@
                                             <stackView opaque="NO" contentMode="scaleToFill" horizontalCompressionResistancePriority="1000" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="mxw-ht-mEA">
                                                 <rect key="frame" x="12" y="6" width="65" height="28"/>
                                                 <subviews>
-                                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" image="annotation_area" translatesAutoresizingMaskIntoConstraints="NO" id="uVz-D3-SIV">
+                                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" image="Annotations/area" translatesAutoresizingMaskIntoConstraints="NO" id="uVz-D3-SIV">
                                                         <rect key="frame" x="0.0" y="0.0" width="12" height="28"/>
                                                     </imageView>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" text="Page 1" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7pu-Cf-nNa">
@@ -281,10 +281,10 @@
         </tableViewCell>
     </objects>
     <resources>
-        <image name="annotation_area" width="12" height="12"/>
+        <image name="Annotations/area" width="12" height="12"/>
         <image name="ellipsis.circle" catalog="system" width="128" height="121"/>
         <namedColor name="zoteroBlue">
-            <color red="0.25098039215686274" green="0.44705882352941179" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>
