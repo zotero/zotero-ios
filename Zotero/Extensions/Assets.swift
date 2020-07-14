@@ -26,6 +26,8 @@ internal enum Asset {
     internal static let cellSelected = ColorAsset(name: "cellSelected")
     internal static let onboardingTitle = ColorAsset(name: "onboardingTitle")
     internal static let zoteroBlue = ColorAsset(name: "zoteroBlue")
+    internal static let zoteroBlueWithDarkMode = ColorAsset(name: "zoteroBlueWithDarkMode")
+    internal static let zoteroDarkBlue = ColorAsset(name: "zoteroDarkBlue")
   }
   internal enum Images {
     internal enum Annotations {
