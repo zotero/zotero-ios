@@ -146,10 +146,18 @@ class HtmlAttributedStringConverter {
 
             let nextAttribute = attributes[index + 1]
             let length = nextAttribute.index - attribute.index
+            // If there are active attributes and there is a range, add them to attributed string.
             guard !activeAttributes.isEmpty && length > 0 else { continue }
 
-            // If there are active attributes and there is a range, add them to attributed string.
-            let nsStringAttributes = StringAttribute.nsStringAttributes(from: activeAttributes, baseFont: baseFont)
+            var nsStringAttributes = StringAttribute.nsStringAttributes(from: activeAttributes, baseFont: baseFont)
+            // Add base attributes to active attributes
+            if let attributes = baseAttributes {
+                for (key, value) in attributes {
+                    // Font and baseline offset are controlled by active attributes, don't rewrite them.
+                    guard key != .font && key != .baselineOffset else { continue }
+                    nsStringAttributes[key] = value
+                }
+            }
             attributedString.addAttributes(nsStringAttributes, range: NSMakeRange(attribute.index, length))
         }
 
