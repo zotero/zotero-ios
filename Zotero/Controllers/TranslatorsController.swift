@@ -199,8 +199,9 @@ class TranslatorsController {
     /// Sync local translators with bundled translators.
     private func syncTranslatorsWithBundledData(deleteIndices: [String]) throws {
         let metadata = try self.loadIndex()
+        let coordinator = try self.dbStorage.createCoordinator()
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices)
-        let updated = try self.dbStorage.createCoordinator().perform(request: request)
+        let updated = try coordinator.performInAutoreleasepoolIfNeeded { try coordinator.perform(request: request) }
 
         deleteIndices.forEach { id in
             try? self.fileStorage.remove(Files.translator(filename: id))
@@ -237,8 +238,9 @@ class TranslatorsController {
                 return Single.error(Error.incompatibleTranslator)
             }
 
+            let coordinator = try self.dbStorage.createCoordinator()
             let request = SyncTranslatorsDbRequest(updateMetadata: updateMetadata, deleteIndices: deleteMetadata.map({ $0.id }))
-            _ = try self.dbStorage.createCoordinator().perform(request: request)
+            _ = try coordinator.performInAutoreleasepoolIfNeeded { try coordinator.perform(request: request) }
 
             for metadata in deleteMetadata {
                 try? self.fileStorage.remove(Files.translator(filename: metadata.id))
@@ -284,7 +286,8 @@ class TranslatorsController {
             _ = try archive.extract(entry, to: Files.translator(filename: data.id).createUrl())
         }
 
-        try self.dbStorage.createCoordinator().perform(request: ResetTranslatorsDbRequest(metadata: metadata))
+        let coordinator = try self.dbStorage.createCoordinator()
+        try coordinator.performInAutoreleasepoolIfNeeded { try coordinator.perform(request: ResetTranslatorsDbRequest(metadata: metadata)) }
         self.lastTimestamp = timestamp
     }
 

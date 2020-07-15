@@ -143,7 +143,9 @@ class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualCodableJsonObjects(from: decoded.collections, type: .collection, libraryId: libraryId)
 
-            try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded.collections))
+            try coordinator.performInAutoreleasepoolIfNeeded {
+                try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded.collections))
+            }
             let failedKeys = expectedKeys.filter({ key in !decoded.collections.contains(where: { $0.key == key }) })
             return (failedKeys, decoded.errors, [])
 
@@ -153,7 +155,9 @@ class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualCodableJsonObjects(from: decoded.searches, type: .search, libraryId: libraryId)
 
-            try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
+            try coordinator.performInAutoreleasepoolIfNeeded {
+                try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
+            }
             let failedKeys = expectedKeys.filter({ key in !decoded.searches.contains(where: { $0.key == key }) })
             return (failedKeys, decoded.errors, [])
 
@@ -165,8 +169,10 @@ class SyncBatchProcessor {
             self.storeIndividualItem(jsonObjects: objects, libraryId: libraryId)
 
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
-            let conflicts = try coordinator.perform(request: StoreItemsDbRequest(response: items, schemaController: self.schemaController,
-                                                                                 dateParser: self.dateParser, preferRemoteData: true))
+            let conflicts = try coordinator.performInAutoreleasepoolIfNeeded {
+                try coordinator.perform(request: StoreItemsDbRequest(response: items, schemaController: self.schemaController,
+                                                                     dateParser: self.dateParser, preferRemoteData: true))
+            }
             let failedKeys = expectedKeys.filter({ key in !items.contains(where: { $0.key == key }) })
 
             return (failedKeys, errors, conflicts)

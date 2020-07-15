@@ -27,9 +27,9 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
     func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
     #if PDFENABLED
+    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
     #endif
 }
@@ -435,6 +435,20 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.navigationController.presentedViewController?.present(navigationController, animated: true, completion: nil)
     }
 
+    func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void) {
+        let view = ColorPicker(selected: selected, selectionAction: { [weak self] color in
+            save(color)
+            self?.navigationController.presentedViewController?.dismiss(animated: true, completion: nil)
+        })
+        let controller = UIHostingController(rootView: view)
+        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        controller.popoverPresentationController?.sourceView = sender
+        controller.preferredContentSize = CGSize(width: 322, height: 74)
+        /// Pdf controller is presented modally, alert needs to be presented on top of it
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+    }
+
+    #if PDFENABLED
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.sourceView = sender
@@ -463,20 +477,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
     }
 
-    func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void) {
-        let view = ColorPicker(selected: selected, selectionAction: { [weak self] color in
-            save(color)
-            self?.navigationController.presentedViewController?.dismiss(animated: true, completion: nil)
-        })
-        let controller = UIHostingController(rootView: view)
-        controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        controller.popoverPresentationController?.sourceView = sender
-        controller.preferredContentSize = CGSize(width: 322, height: 74)
-        /// Pdf controller is presented modally, alert needs to be presented on top of it
-        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
-    }
-
-    #if PDFENABLED
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
         let viewController = PDFSearchViewController(controller: pdfController, searchSelected: result)
         viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet

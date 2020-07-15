@@ -66,6 +66,7 @@ extension RealmDbCoordinator: DbCoordinator {
             try request.process(in: self.realm)
             try self.realm.commitWrite()
         } catch let error {
+            self.realm.cancelWrite()
             throw error
         }
     }
@@ -81,6 +82,7 @@ extension RealmDbCoordinator: DbCoordinator {
             try self.realm.commitWrite()
             return result
         } catch let error {
+            self.realm.cancelWrite()
             throw error
         }
     }
