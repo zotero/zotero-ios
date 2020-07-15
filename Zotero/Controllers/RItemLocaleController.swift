@@ -16,10 +16,12 @@ class RItemLocaleController {
 
     private let schemaController: SchemaController
     private let dbStorage: DbStorage
+    private let queue: DispatchQueue
 
     init(schemaController: SchemaController, dbStorage: DbStorage) {
         self.schemaController = schemaController
         self.dbStorage = dbStorage
+        self.queue = DispatchQueue(label: "org.zotero.ItemLocaleController.StorageQueue", qos: .utility)
     }
 
     func loadLocale() {
@@ -36,7 +38,7 @@ class RItemLocaleController {
             return
         }
 
-        DispatchQueue.global(qos: .utility).async { [weak self] in
+        self.queue.async { [weak self] in
             guard let `self` = self else { return }
 
             do {
