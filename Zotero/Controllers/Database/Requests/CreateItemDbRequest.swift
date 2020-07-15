@@ -119,7 +119,6 @@ struct CreateItemDbRequest: DbResponseRequest {
             rAttachment.parent = item
             rAttachment.changedFields.insert(.parent)
         }
-        item.updateMainAttachment()
 
         // Create tags
 
@@ -132,8 +131,10 @@ struct CreateItemDbRequest: DbResponseRequest {
             changes.insert(.tags)
         }
 
-        // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
+        // Item title depends on item type, creators and fields, so derived titles (displayTitle and sortTitle) are updated after everything else synced
         item.updateDerivedTitles()
+        // Main attachment depends on attachments, so it's updated after everything else
+        item.updateMainAttachment()
         // Update changed fields
         item.changedFields = changes
         item.changeType = .user
