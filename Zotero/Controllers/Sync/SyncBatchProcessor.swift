@@ -41,7 +41,7 @@ class SyncBatchProcessor {
         queue.qualityOfService = .userInteractive
 
         self.storageQueue = DispatchQueue(label: "org.zotero.SyncBatchDownloader.StorageQueue",
-                                          qos: .userInteractive, attributes: .concurrent)
+                                          qos: .userInteractive)//, attributes: .concurrent)
         self.batches = batches
         self.userId = userId
         self.apiClient = apiClient
