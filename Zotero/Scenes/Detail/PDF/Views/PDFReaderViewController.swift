@@ -318,6 +318,8 @@ class PDFReaderViewController: UIViewController {
         stateManager.setLastUsedColor(toolColor, annotationString: .highlight)
         stateManager.setLastUsedColor(toolColor, annotationString: .note)
         stateManager.setLastUsedColor(toolColor, annotationString: .square)
+
+        stateManager.drawColor = toolColor
     }
 
     // MARK: - Setups
