@@ -13,7 +13,7 @@ import PSPDFKit
 #endif
 
 struct AnnotationsConfig {
-    static let sidebarWidth: CGFloat = 300
+    static let sidebarWidth: CGFloat = createSidebarWidth()
     static let previewSize: CGSize = createPreviewSize()
     static let areaLineWidth: CGFloat = 2
     static let defaultActiveColor = UIColor(hex: "#ff8c19")
@@ -30,5 +30,12 @@ struct AnnotationsConfig {
         let scale = UIScreen.main.scale
         let size = sidebarWidth * scale
         return CGSize(width: ceil(size), height: ceil(size))
+    }
+
+    private static func createSidebarWidth() -> CGFloat {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 300
+        }
+        return UIScreen.main.bounds.width
     }
 }
