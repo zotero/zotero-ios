@@ -185,8 +185,6 @@ class RItem: Object {
     /// - oldest non-PDF attachment matching parent URL,
     /// - oldest non-PDF attachment not matching parent URL.
     func updateMainAttachment() {
-        guard !self.isInvalidated else { return }
-
         guard self.parent == nil else {
             self.mainAttachment = nil
             return
@@ -202,7 +200,7 @@ class RItem: Object {
         let url = self.fields.filter(.key(FieldKeys.url)).first?.value
         let pdfs = attachments.filter(.containsField(with: "application/pdf")).sorted(byKeyPath: "dateAdded", ascending: true)
 
-        if !pdfs.isInvalidated && pdfs.count > 0 {
+        if pdfs.count > 0 {
             if let url = url, let matchingUrl = pdfs.filter(.containsField(with: url)).first {
                 self.mainAttachment = matchingUrl
                 return
