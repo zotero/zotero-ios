@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="ipad11_0rounded" orientation="portrait" layout="fullscreen" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
@@ -47,7 +47,7 @@
                     <color key="backgroundColor" systemColor="systemPinkColor" red="1" green="0.1764705882" blue="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                 </view>
                 <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="Mb3-CK-6Bh">
-                    <rect key="frame" x="267" y="748" width="300" height="156"/>
+                    <rect key="frame" x="267" y="748" width="300" height="99"/>
                     <subviews>
                         <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="bvA-YW-oOq">
                             <rect key="frame" x="0.0" y="0.0" width="300" height="37"/>
@@ -58,7 +58,7 @@
                             </connections>
                         </pageControl>
                         <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="fhW-3r-g8K">
-                            <rect key="frame" x="0.0" y="54" width="300" height="102"/>
+                            <rect key="frame" x="0.0" y="54" width="300" height="45"/>
                             <subviews>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="fP5-W2-mpS">
                                     <rect key="frame" x="0.0" y="0.0" width="300" height="45"/>
@@ -73,8 +73,8 @@
                                         <action selector="signIn" destination="-1" eventType="touchUpInside" id="r0R-km-Ast"/>
                                     </connections>
                                 </button>
-                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3eu-Zz-3t3">
-                                    <rect key="frame" x="0.0" y="57" width="300" height="45"/>
+                                <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3eu-Zz-3t3">
+                                    <rect key="frame" x="0.0" y="49.5" width="300" height="0.0"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <color key="tintColor" name="zoteroBlue"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
@@ -93,7 +93,7 @@
                     </constraints>
                 </stackView>
                 <view hidden="YES" contentMode="scaleToFill" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zyu-mC-nhe">
-                    <rect key="frame" x="0.0" y="887.5" width="834" height="286.5"/>
+                    <rect key="frame" x="0.0" y="945" width="834" height="229"/>
                     <color key="backgroundColor" systemColor="systemIndigoColor" red="0.34509803919999998" green="0.33725490200000002" blue="0.83921568629999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                 </view>
             </subviews>
@@ -103,7 +103,7 @@
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="U1Z-u5-m5x" secondAttribute="bottom" id="40b-Hb-Pkb"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="Zyu-mC-nhe" secondAttribute="bottom" id="4Du-oK-h9g"/>
                 <constraint firstItem="U1Z-u5-m5x" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="61P-h1-mwa"/>
-                <constraint firstItem="Zyu-mC-nhe" firstAttribute="firstBaseline" secondItem="3eu-Zz-3t3" secondAttribute="baseline" id="7bC-Kj-iCt"/>
+                <constraint firstItem="Zyu-mC-nhe" firstAttribute="firstBaseline" secondItem="3eu-Zz-3t3" secondAttribute="baseline" placeholder="YES" id="7bC-Kj-iCt"/>
                 <constraint firstItem="LV2-Yg-5X4" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="PjS-2D-deN"/>
                 <constraint firstItem="Mb3-CK-6Bh" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="Uw0-QT-tc8"/>
                 <constraint firstItem="SeZ-Gu-wcs" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="f8m-b0-wd1"/>
@@ -118,9 +118,10 @@
                 <constraint firstItem="Zyu-mC-nhe" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="tDN-ur-1eH"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Mb3-CK-6Bh" secondAttribute="trailing" constant="32" id="tQ8-TA-lZA"/>
                 <constraint firstItem="Mb3-CK-6Bh" firstAttribute="top" secondItem="LV2-Yg-5X4" secondAttribute="bottom" constant="-15" id="yeN-BN-MfS"/>
+                <constraint firstItem="Zyu-mC-nhe" firstAttribute="top" secondItem="Mb3-CK-6Bh" secondAttribute="bottom" id="zPX-Ao-kEi"/>
             </constraints>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
-            <point key="canvasLocation" x="139" y="120"/>
+            <point key="canvasLocation" x="138.84892086330936" y="119.59798994974875"/>
         </view>
     </objects>
     <resources>
