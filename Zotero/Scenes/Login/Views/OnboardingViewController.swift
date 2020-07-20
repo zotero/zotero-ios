@@ -20,6 +20,7 @@ class OnboardingViewController: UIViewController {
     @IBOutlet private weak var pageControl: UIPageControl!
     @IBOutlet private weak var buttonStackView: UIStackView!
     @IBOutlet private weak var bottomStackView: UIStackView!
+    @IBOutlet private weak var bottomStackViewWidth: NSLayoutConstraint!
 
     private static let smallSizeLimit: CGFloat = 768
     private unowned let htmlConverter: HtmlAttributedStringConverter
@@ -123,7 +124,7 @@ class OnboardingViewController: UIViewController {
         for (index, (text, image)) in pageData.enumerated() {
             let pageView = UINib(nibName: "OnboardingPageView", bundle: nil).instantiate(withOwner: nil, options: nil).first as! OnboardingPageView
             pageView.translatesAutoresizingMaskIntoConstraints = false
-            pageView.set(string: text, image: image, size: size, htmlConverter: htmlConverter)
+            pageView.set(string: text, image: image, size: size, htmlConverter: self.htmlConverter)
             pages.append(pageView)
 
             if longestTextIdx != index && text.count > pageData[longestTextIdx].0.count {
@@ -193,12 +194,14 @@ class OnboardingViewController: UIViewController {
     }
 
     private func setupLayout(with size: CGSize) {
-        let isBig = min(size.width, size.height) >= OnboardingViewController.smallSizeLimit
-        self.buttonStackView.spacing = isBig ? 12 : 8
-        self.bottomStackView.spacing = isBig ? 17 : 9
+        let layout = OnboardingLayout.from(size: size)
+
+        self.buttonStackView.spacing = layout.buttonSpacing
+        self.bottomStackView.spacing = layout.bottomSpacing
+        self.bottomStackViewWidth.constant = layout.bottomWidth
 
         // Align to xHeight of font
-        let titleFont = OnboardingPageView.font(for: size)
+        let titleFont = layout.titleFont
         let fontOffset = titleFont.ascender - titleFont.xHeight
         self.spacerAboveScrollViewBottom?.constant = -fontOffset
     }
@@ -228,5 +231,28 @@ fileprivate extension UIScrollView {
 extension OnboardingViewController: UINavigationControllerDelegate {
     func navigationControllerSupportedInterfaceOrientations(_ navigationController: UINavigationController) -> UIInterfaceOrientationMask {
         return UIDevice.current.userInterfaceIdiom == .pad ? .all : [.portrait, .portraitUpsideDown]
+    }
+}
+
+extension OnboardingLayout {
+    fileprivate var buttonSpacing: CGFloat {
+        switch self {
+        case .big, .medium: return 12
+        case .small: return 8
+        }
+    }
+
+    fileprivate var bottomSpacing: CGFloat {
+        switch self {
+        case .big, .medium: return 17
+        case .small: return 9
+        }
+    }
+
+    fileprivate var bottomWidth: CGFloat {
+        switch self {
+        case .big: return 380
+        case .medium, .small: return 286
+        }
     }
 }

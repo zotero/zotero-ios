@@ -11,6 +11,7 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="OnboardingViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="bottomStackView" destination="Mb3-CK-6Bh" id="avZ-KW-MAw"/>
+                <outlet property="bottomStackViewWidth" destination="Zca-Ef-MYp" id="7i4-Ob-Kgx"/>
                 <outlet property="buttonStackView" destination="fhW-3r-g8K" id="mvv-zm-WQu"/>
                 <outlet property="createAccountButton" destination="3eu-Zz-3t3" id="Sfx-qR-NqH"/>
                 <outlet property="pageControl" destination="bvA-YW-oOq" id="Gw8-Jq-KEz"/>
@@ -23,7 +24,7 @@
             </connections>
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" ambiguous="YES" id="i5M-Pr-FkT">
             <rect key="frame" x="0.0" y="0.0" width="834" height="1194"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
@@ -47,10 +48,10 @@
                     <color key="backgroundColor" systemColor="systemPinkColor" red="1" green="0.1764705882" blue="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                 </view>
                 <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="Mb3-CK-6Bh">
-                    <rect key="frame" x="267" y="748" width="300" height="99"/>
+                    <rect key="frame" x="274" y="748" width="286" height="99"/>
                     <subviews>
                         <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="bvA-YW-oOq">
-                            <rect key="frame" x="0.0" y="0.0" width="300" height="37"/>
+                            <rect key="frame" x="0.0" y="0.0" width="286" height="37"/>
                             <color key="pageIndicatorTintColor" systemColor="systemGray4Color" red="0.81960784310000001" green="0.81960784310000001" blue="0.83921568629999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             <color key="currentPageIndicatorTintColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             <connections>
@@ -58,10 +59,10 @@
                             </connections>
                         </pageControl>
                         <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="fhW-3r-g8K">
-                            <rect key="frame" x="0.0" y="54" width="300" height="45"/>
+                            <rect key="frame" x="0.0" y="54" width="286" height="45"/>
                             <subviews>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="fP5-W2-mpS">
-                                    <rect key="frame" x="0.0" y="0.0" width="300" height="45"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="286" height="45"/>
                                     <color key="backgroundColor" name="zoteroBlueWithDarkMode"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <color key="tintColor" name="zoteroBlueWithDarkMode"/>
@@ -74,7 +75,7 @@
                                     </connections>
                                 </button>
                                 <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3eu-Zz-3t3">
-                                    <rect key="frame" x="0.0" y="49.5" width="300" height="0.0"/>
+                                    <rect key="frame" x="0.0" y="49.5" width="286" height="0.0"/>
                                     <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                     <color key="tintColor" name="zoteroBlue"/>
                                     <inset key="contentEdgeInsets" minX="0.0" minY="12" maxX="0.0" maxY="12"/>
@@ -89,7 +90,7 @@
                         </stackView>
                     </subviews>
                     <constraints>
-                        <constraint firstAttribute="width" priority="750" constant="300" id="Zca-Ef-MYp"/>
+                        <constraint firstAttribute="width" priority="750" constant="286" id="Zca-Ef-MYp"/>
                     </constraints>
                 </stackView>
                 <view hidden="YES" contentMode="scaleToFill" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zyu-mC-nhe">

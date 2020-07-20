@@ -9,44 +9,77 @@
 import UIKit
 
 class OnboardingPageView: UIView {
-    private static let smallSizeLimit: CGFloat = 768
-    private static let bigTitleFont: UIFont = .systemFont(ofSize: 20)
-    private static let smallTitleFont: UIFont = .systemFont(ofSize: 17)
-
-    static func font(for size: CGSize) -> UIFont {
-        return min(size.width, size.height) < smallSizeLimit ? smallTitleFont : bigTitleFont
-    }
-
     @IBOutlet weak var textLabel: UILabel!
+    @IBOutlet weak var textWidth: NSLayoutConstraint!
     @IBOutlet weak var spacer: UIView!
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var imageViewWidth: NSLayoutConstraint!
 
-    private var isBig: Bool = false
+    private(set) var layout: OnboardingLayout = .small
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+    }
 
     func set(string: String, image: UIImage, size: CGSize, htmlConverter: HtmlAttributedStringConverter) {
-        self.isBig = min(size.width, size.height) >= OnboardingPageView.smallSizeLimit
+        self.layout = OnboardingLayout.from(size: size)
         self.imageView.image = image
-        self.update(to: self.isBig, string: string, htmlConverter: htmlConverter)
+        self.update(to: self.layout, string: string, htmlConverter: htmlConverter)
     }
 
     func updateIfNeeded(to size: CGSize, string: String, htmlConverter: HtmlAttributedStringConverter) {
-        let isBig = min(size.width, size.height) >= OnboardingPageView.smallSizeLimit
-        guard self.isBig != isBig else { return }
-        self.isBig = isBig
-        self.update(to: isBig, string: string, htmlConverter: htmlConverter)
+        let layout = OnboardingLayout.from(size: size)
+        guard self.layout != layout else { return }
+        self.layout = layout
+        self.update(to: layout, string: string, htmlConverter: htmlConverter)
     }
 
-    private func update(to bigLayout: Bool, string: String, htmlConverter: HtmlAttributedStringConverter) {
-        let font = bigLayout ? OnboardingPageView.bigTitleFont : OnboardingPageView.smallTitleFont
+    private func update(to layout: OnboardingLayout, string: String, htmlConverter: HtmlAttributedStringConverter) {
+        let font = layout.titleFont
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 1.5
         paragraphStyle.alignment = .center
-        let kern = font.pointSize * (bigLayout ? 0.025 : -0.01)
+        let kern = font.pointSize * layout.kern
 
         self.textLabel.attributedText = htmlConverter.convert(text: string,
                                                               baseFont: font,
                                                               baseAttributes: [.paragraphStyle: paragraphStyle,
                                                                                .kern: kern,
                                                                                .foregroundColor: Asset.Colors.onboardingTitle.color])
+
+        let imageSize = layout.imageSize
+        self.imageViewWidth.constant = imageSize
+        self.textWidth.constant = layout.textWidth
+    }
+}
+
+extension OnboardingLayout {
+    var titleFont: UIFont {
+        switch self {
+        case .big: return .systemFont(ofSize: 27)
+        case .medium: return .systemFont(ofSize: 20)
+        case .small: return .systemFont(ofSize: 17)
+        }
+    }
+
+    fileprivate var kern: CGFloat {
+        switch self {
+        case .big, .medium: return 0.025
+        case .small: return -0.01
+        }
+    }
+
+    fileprivate var imageSize: CGFloat {
+        switch self {
+        case .big: return 416
+        case .medium, .small: return 312
+        }
+    }
+
+    fileprivate var textWidth: CGFloat {
+        switch self {
+        case .big: return 426
+        case .medium, .small: return 320
+        }
     }
 }
