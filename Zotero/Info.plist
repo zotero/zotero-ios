@@ -37,6 +37,8 @@
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We need permission to save images to your device ...</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Access to microphone</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need to access your library ...</string>
 	<key>UIApplicationSceneManifest</key>
