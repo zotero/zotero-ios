@@ -16,12 +16,14 @@ struct LoginView: View {
             VStack(spacing: 20) {
                 VStack {
                     TextField(L10n.Login.username, text: self.viewModel.binding(keyPath: \.username, action: { .setUsername($0) }))
+                        .autocapitalization(.none)
                         .padding([.horizontal, .top])
                     Divider()
                 }
 
                 VStack {
                     SecureField(L10n.Login.password, text: self.viewModel.binding(keyPath: \.password, action: { .setPassword($0) }))
+                        .autocapitalization(.none)
                         .padding([.horizontal, .top])
                     Divider()
                 }
