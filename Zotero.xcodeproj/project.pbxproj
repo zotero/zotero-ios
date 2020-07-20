@@ -673,6 +673,7 @@
 
 /* Begin PBXFileReference section */
 		8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.release.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.release.xcconfig"; sourceTree = "<group>"; };
+		916E63A38C78C0D8EE4A4D6E /* Pods-Zotero.release pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.release pdf.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.release pdf.xcconfig"; sourceTree = "<group>"; };
 		A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zotero.debug pdf.xcconfig"; path = "Pods/Target Support Files/Pods-Zotero/Pods-Zotero.debug pdf.xcconfig"; sourceTree = "<group>"; };
 		B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTranslatorMetadata.swift; sourceTree = "<group>"; };
 		B300B3342429222B00C1FE1E /* TranslatorMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorMetadata.swift; sourceTree = "<group>"; };
@@ -2164,6 +2165,7 @@
 				B94DCBF40180FC100EE6FA21 /* Pods-Zotero.debug.xcconfig */,
 				8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */,
 				A28108B111C744F74B405B8D /* Pods-Zotero.debug pdf.xcconfig */,
+				916E63A38C78C0D8EE4A4D6E /* Pods-Zotero.release pdf.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -2182,6 +2184,7 @@
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
 				B311B3272386A39800BCF592 /* Embed App Extensions */,
+				099FBD336B0FA63A0FA6FFE5 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -2417,6 +2420,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		099FBD336B0FA63A0FA6FFE5 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		0FB62CEAAA715D1E3F5FC027 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3263,7 +3283,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -3305,7 +3325,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3440,7 +3460,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3471,7 +3491,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3502,7 +3522,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3600,7 +3620,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -3741,7 +3761,7 @@
 		};
 		B3E5658424C5CA9300B58D14 /* Release PDF */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8BC392398E021207D0B6C18A /* Pods-Zotero.release.xcconfig */;
+			baseConfigurationReference = 916E63A38C78C0D8EE4A4D6E /* Pods-Zotero.release pdf.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -3750,7 +3770,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3836,7 +3856,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
