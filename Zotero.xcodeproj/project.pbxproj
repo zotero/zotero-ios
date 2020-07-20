@@ -399,10 +399,8 @@
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
 		B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
 		B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
-		B353F204242E52610062EE24 /* MainDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* MainDatabase.swift */; };
-		B353F205242E52610062EE24 /* TranslatorDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F203242E52610062EE24 /* TranslatorDatabase.swift */; };
-		B353F206242E527B0062EE24 /* TranslatorDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F203242E52610062EE24 /* TranslatorDatabase.swift */; };
-		B353F207242E52EE0062EE24 /* MainDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* MainDatabase.swift */; };
+		B353F204242E52610062EE24 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* Database.swift */; };
+		B353F207242E52EE0062EE24 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* Database.swift */; };
 		B355B8FF239951E800E837B9 /* translation in Resources */ = {isa = PBXBuildFile; fileRef = B355B8FE239951E800E837B9 /* translation */; };
 		B357DEE324165DEE00E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
 		B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE224165DEE00E06153 /* CrashReporter.swift */; };
@@ -911,8 +909,7 @@
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
 		B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetTranslatorsDbRequest.swift; sourceTree = "<group>"; };
-		B353F202242E52610062EE24 /* MainDatabase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainDatabase.swift; sourceTree = "<group>"; };
-		B353F203242E52610062EE24 /* TranslatorDatabase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorDatabase.swift; sourceTree = "<group>"; };
+		B353F202242E52610062EE24 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		B355B8FE239951E800E837B9 /* translation */ = {isa = PBXFileReference; lastKnownFileType = folder; path = translation; sourceTree = "<group>"; };
 		B357DEE124165DEE00E06153 /* DebugLogging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DebugLogging.swift; sourceTree = "<group>"; };
 		B357DEE224165DEE00E06153 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
@@ -1469,7 +1466,7 @@
 		B305652D23FC051E003304F2 /* Database */ = {
 			isa = PBXGroup;
 			children = (
-				B353F202242E52610062EE24 /* MainDatabase.swift */,
+				B353F202242E52610062EE24 /* Database.swift */,
 				B305653023FC051E003304F2 /* RCollection.swift */,
 				B305653123FC051E003304F2 /* RCreator.swift */,
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
@@ -1480,9 +1477,8 @@
 				B305653323FC051E003304F2 /* RSearch.swift */,
 				B305652F23FC051E003304F2 /* RTag.swift */,
 				B300B33224291C8D00C1FE1E /* RTranslatorMetadata.swift */,
-				B305653423FC051E003304F2 /* RVersions.swift */,
-				B353F203242E52610062EE24 /* TranslatorDatabase.swift */,
 				B32EE26024A092B700442974 /* RUser.swift */,
+				B305653423FC051E003304F2 /* RVersions.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -2672,8 +2668,7 @@
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3593F50241A61C700760E20 /* CollectionsState.swift in Sources */,
 				B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */,
-				B353F205242E52610062EE24 /* TranslatorDatabase.swift in Sources */,
-				B353F204242E52610062EE24 /* MainDatabase.swift in Sources */,
+				B353F204242E52610062EE24 /* Database.swift in Sources */,
 				B30565E023FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
 				B30566C023FC051F003304F2 /* DownloadBatch.swift in Sources */,
 				B305660D23FC051E003304F2 /* AttachmentUploadRequest.swift in Sources */,
@@ -2930,7 +2925,7 @@
 				B305674223FC09AF003304F2 /* LinksResponse.swift in Sources */,
 				B305674323FC09AF003304F2 /* LoginResponse.swift in Sources */,
 				B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */,
-				B353F207242E52EE0062EE24 /* MainDatabase.swift in Sources */,
+				B353F207242E52EE0062EE24 /* Database.swift in Sources */,
 				B305674523FC09AF003304F2 /* GroupResponse.swift in Sources */,
 				B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */,
 				B305674723FC09AF003304F2 /* SchemaResponse.swift in Sources */,
@@ -2987,7 +2982,6 @@
 				B30566E023FC080A003304F2 /* BackgroundUploaderContext.swift in Sources */,
 				B30566F123FC0845003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B305670423FC08A6003304F2 /* ReadAllCustomLibrariesDbRequest.swift in Sources */,
-				B353F206242E527B0062EE24 /* TranslatorDatabase.swift in Sources */,
 				B305676E23FC0A52003304F2 /* ApiClient.swift in Sources */,
 				B30566E623FC081F003304F2 /* SettingsRequest.swift in Sources */,
 				B305670C23FC08BA003304F2 /* ReadItemDbRequest.swift in Sources */,

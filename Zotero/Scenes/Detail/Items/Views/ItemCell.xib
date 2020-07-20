@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
@@ -18,7 +18,7 @@
                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="17" translatesAutoresizingMaskIntoConstraints="NO" id="bXV-Q6-IoO">
                         <rect key="frame" x="24" y="8" width="382" height="54"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="thesis" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B9P-No-KWH">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B9P-No-KWH">
                                 <rect key="frame" x="0.0" y="13" width="28" height="28"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="28" id="IT9-sA-bJb"/>
@@ -47,7 +47,7 @@
                                                 <rect key="frame" x="48" y="2" width="50" height="16.5"/>
                                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                             </view>
-                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="250" image="note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="250" image="Item types/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
                                                 <rect key="frame" x="104" y="3" width="13" height="15"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="15" id="57f-Jd-DxM"/>
@@ -87,7 +87,6 @@
         </tableViewCell>
     </objects>
     <resources>
-        <image name="note" width="23" height="28"/>
-        <image name="thesis" width="28" height="23"/>
+        <image name="Item types/note" width="23" height="28"/>
     </resources>
 </document>

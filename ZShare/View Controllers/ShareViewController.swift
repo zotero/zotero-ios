@@ -339,9 +339,9 @@ class ShareViewController: UIViewController {
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         let fileStorage = FileStorageController()
         let dbUrl = Files.dbFile(for: session.userId).createUrl()
-        let dbStorage = RealmDbStorage(config: MainDatabase.configuration(url: dbUrl))
+        let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl))
         let translatorsController = TranslatorsController(apiClient: apiClient,
-                                                          indexStorage: RealmDbStorage(config: TranslatorDatabase.configuration),
+                                                          indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
                                                           fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)

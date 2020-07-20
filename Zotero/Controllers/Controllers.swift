@@ -51,7 +51,7 @@ class Controllers {
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let schemaController = SchemaController()
         let translatorsController = TranslatorsController(apiClient: apiClient,
-                                                          indexStorage: RealmDbStorage(config: TranslatorDatabase.configuration),
+                                                          indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
                                                           fileStorage: fileStorage)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage)
 
@@ -205,7 +205,7 @@ class UserControllers {
 
             DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
 
-            return RealmDbStorage(config: MainDatabase.configuration(url: file.createUrl()))
+            return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl()))
         } catch let error {
             // TODO: - handle the error a bit more graciously
             fatalError("UserControllers: can't create DB file - \(error)")

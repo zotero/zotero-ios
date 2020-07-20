@@ -1,5 +1,5 @@
 //
-//  MainDatabase.swift
+//  Database.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 27/03/2020.
@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-struct MainDatabase {
+struct Database {
     private static let schemaVersion: UInt64 = 14
 
     static func configuration(url: URL) -> Realm.Configuration {
