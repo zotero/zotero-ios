@@ -42,7 +42,5 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
 	</dict>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Access to microphone</string>
 </dict>
 </plist>
