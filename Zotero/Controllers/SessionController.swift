@@ -55,8 +55,8 @@ class SessionController: ObservableObject {
     }
 
     func register(userId: Int, username: String, apiToken: String) {
-        Defaults.shared.userId = userId
-        Defaults.shared.username = username
+        self.defaults.userId = userId
+        self.defaults.username = username
         self.secureStorage.apiToken = apiToken
 
         self.set(data: (userId, apiToken))

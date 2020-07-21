@@ -19,7 +19,12 @@ class KeychainSecureStorage: SecureStorage {
         static let apiToken = "api_token_key"
     }
 
-    private let keychain = KeychainSwift()
+    private let keychain: KeychainSwift
+
+    init() {
+        self.keychain = KeychainSwift()
+        self.keychain.accessGroup = AppGroup.identifier
+    }
 
     var apiToken: String? {
         get {
