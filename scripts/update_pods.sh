@@ -23,7 +23,7 @@ fi
 PLACEHOLDER="#pspdfkit"
 POD=`cat $LICENSE_FILE`
 
-if [ -z $POD ]; then
+if [ -z "$POD" ]; then
 	exit
 fi
 
