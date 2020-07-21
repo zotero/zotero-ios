@@ -278,8 +278,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Toolbar actions
 
     private func deleteSelectedItems(in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = DeleteObjectsDbRequest<RItem>(keys: Array(viewModel.state.selectedItems),
-                                                    libraryId: viewModel.state.library.identifier)
+        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(viewModel.state.selectedItems),
+                                                           libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't delete items - \(error)")
