@@ -177,11 +177,20 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func toggle(annotationTool: PSPDFKit.Annotation.Tool) {
-        if self.pdfController.annotationStateManager.state == annotationTool {
-            self.pdfController.annotationStateManager.setState(nil, variant: nil)
-        } else {
-            self.pdfController.annotationStateManager.setState(annotationTool, variant: nil)
+        let stateManager = self.pdfController.annotationStateManager
+
+        if stateManager.state == annotationTool {
+            stateManager.setState(nil, variant: nil)
+            return
         }
+
+        if annotationTool == .highlight {
+            stateManager.drawColor = self.viewModel.state.activeColor.withAlphaComponent(0.5)
+        } else {
+            stateManager.drawColor = self.viewModel.state.activeColor
+        }
+
+        self.pdfController.annotationStateManager.setState(annotationTool, variant: nil)
     }
 
     private func showColorPicker(sender: UIButton) {
@@ -315,11 +324,17 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func set(toolColor: UIColor, in stateManager: AnnotationStateManager) {
-        stateManager.setLastUsedColor(toolColor, annotationString: .highlight)
+        let colorWithOpacity = toolColor.withAlphaComponent(0.5)
+
+        stateManager.setLastUsedColor(colorWithOpacity, annotationString: .highlight)
         stateManager.setLastUsedColor(toolColor, annotationString: .note)
         stateManager.setLastUsedColor(toolColor, annotationString: .square)
 
-        stateManager.drawColor = toolColor
+        if stateManager.state == .highlight {
+            stateManager.drawColor = colorWithOpacity
+        } else {
+            stateManager.drawColor = toolColor
+        }
     }
 
     // MARK: - Setups
