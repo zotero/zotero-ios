@@ -200,6 +200,29 @@ class RItem: Object {
         let url = self.fields.filter(.key(FieldKeys.url)).first?.value
         let pdfs = attachments.filter(.containsField(with: "application/pdf")).sorted(byKeyPath: "dateAdded", ascending: true)
 
+        print("------------")
+        print("ITEM: \(self.description)")
+        print("INVALIDATED: \(self.isInvalidated)")
+        print("FIELDS:")
+        self.fields.enumerated().forEach { index, element in
+            print("\t[\(index)] \(element.description)")
+        }
+        print("CHILDREN:")
+        self.children.enumerated().forEach { index, element in
+            print("\t[\(index)] \(element.description)")
+            print("\tINVALIDATED: \(element.isInvalidated)")
+            print("\tFIELDS:")
+            element.fields.enumerated().forEach { index, element in
+                print("\t\t[\(index)] \(element.description)")
+            }
+        }
+        print("FIRST PDF: \(pdfs.first?.description ?? "nil")")
+        print("PDFS:")
+        pdfs.enumerated().forEach { index, element in
+            print("\t[\(index)] \(element.description)")
+        }
+        print("PDFS COUNT: \(pdfs.count)")
+
         if pdfs.count > 0 {
             if let url = url, let matchingUrl = pdfs.filter(.containsField(with: url)).first {
                 self.mainAttachment = matchingUrl
