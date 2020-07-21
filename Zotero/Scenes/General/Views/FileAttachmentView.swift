@@ -106,8 +106,7 @@ class FileAttachmentView: UIView {
         // Badge is supposed to be at bottom right with outer border, so badgeLayer needs to be moved outside of bounds a bit
         self.badgeLayer.position = CGPoint(x: (self.bounds.width - self.contentInsets.right),
                                            y: (self.bounds.height - self.contentInsets.bottom))
-        self.badgeBorder.position = CGPoint(x: self.badgeLayer.position.x + FileAttachmentView.badgeBorderWidth,
-                                            y: self.badgeLayer.position.y + FileAttachmentView.badgeBorderWidth)
+        self.badgeBorder.position = self.badgeLayer.position
     }
 
     // MARK: - Actions
@@ -276,7 +275,7 @@ class FileAttachmentView: UIView {
     
     private func createBadgeLayer()  -> CALayer {
         let layer = CALayer()
-        layer.anchorPoint = CGPoint(x: 1, y: 1)
+        layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.badgeSize, height: FileAttachmentView.badgeSize)
         layer.contentsGravity = .resizeAspect
         return layer
@@ -286,7 +285,7 @@ class FileAttachmentView: UIView {
         let size = FileAttachmentView.badgeSize + (FileAttachmentView.badgeBorderWidth * 2)
         
         let layer = CALayer()
-        layer.anchorPoint = CGPoint(x: 1, y: 1)
+        layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.frame = CGRect(x: 0, y: 0, width: size, height: size)
         layer.borderWidth = FileAttachmentView.badgeBorderWidth
         layer.cornerRadius = size / 2
