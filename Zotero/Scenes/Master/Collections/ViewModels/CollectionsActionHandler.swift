@@ -49,6 +49,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         case .select(let collection):
             self.update(viewModel: viewModel) { state in
                 state.selectedCollection = collection
+                // Finish search when item is selected
+                self.removeCollectionsFilter(in: &state)
                 state.changes.insert(.selection)
             }
 
@@ -57,7 +59,83 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         case .loadData:
             self.loadData(in: viewModel)
+
+        case .search(let term):
+            self.search(for: term, in: viewModel)
         }
+    }
+
+    private func search(for term: String, in viewModel: ViewModel<CollectionsActionHandler>) {
+        if term.isEmpty {
+            self.update(viewModel: viewModel) { state in
+                self.removeCollectionsFilter(in: &state)
+            }
+        } else {
+            self.filterCollections(with: term, in: viewModel)
+        }
+    }
+
+    private func filterCollections(with text: String, in viewModel: ViewModel<CollectionsActionHandler>) {
+        var filtered: [Collection] = []
+        var parentCollections: Set<String> = []
+
+        // Go through all collections, find results and insert their parents.
+        for (i, collection) in viewModel.state.collections.enumerated() {
+            guard collection.name.localizedCaseInsensitiveContains(text) else { continue }
+
+            // Check whether we need to look for parents of this collection. We need to look for parents when the level > 0
+            // (otherwise there are no parents) and previously inserted collection isn't the same level as this one (otherwise we already have all
+            // parents from previous collection).
+            let shouldLookForParents = collection.level > 0 && filtered.last?.level != collection.level
+
+            // Collection contains text, append.
+            filtered.append(collection)
+
+            guard shouldLookForParents else { continue }
+
+            // Track back to search for all parents
+            let insertionIndex = filtered.count - 1
+            var lastLevel = collection.level
+
+            for j in (0..<i).reversed() {
+                let parent = viewModel.state.collections[j]
+
+                // If level changed, we found a new parent
+                guard parent.level < lastLevel else { continue }
+
+                // Parent is already in filtered array, stop searching for parents
+                if filtered.reversed().firstIndex(of: parent) != nil {
+                    break
+                }
+
+                filtered.insert(parent, at: insertionIndex)
+                parentCollections.insert(parent.id)
+
+                // If this parent is already on root level, stop searching for parents
+                if parent.level == 0 {
+                    break
+                }
+
+                lastLevel = parent.level
+            }
+        }
+
+        self.update(viewModel: viewModel) { state in
+            if state.snapshot == nil {
+                state.snapshot = state.collections
+            }
+            state.collections = filtered
+            state.disabledCollections = parentCollections
+            state.changes = .results
+        }
+    }
+
+    private func removeCollectionsFilter(in state: inout State) {
+        guard let snapshot = state.snapshot else { return }
+        state.collections = snapshot
+        state.snapshot = nil
+        state.disabledCollections = []
+        state.changes = .results
     }
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
@@ -132,27 +210,42 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func updateItemCounts(in viewModel: ViewModel<CollectionsActionHandler>, allItemCount: Int) {
-        if !Defaults.shared.showCollectionItemCount {
-            self.update(viewModel: viewModel) { state in
-                if let index = state.collections.firstIndex(where: { $0.isCustom(type: .all) }) {
-                    state.collections[index].itemCount = allItemCount
-                    state.changes.insert(.itemCount)
-                }
-            }
+        if Defaults.shared.showCollectionItemCount {
+            self.reloadCounts(in: viewModel, allItemCount: allItemCount)
             return
         }
 
-        self.reloadCounts(in: viewModel, allItemCount: allItemCount)
+        self.update(viewModel: viewModel) { state in
+            if var snapshot = state.snapshot {
+                // If the user is searching, update the snapshot and don't update UI
+                self.updateAllItemCount(to: allItemCount, in: &snapshot)
+                state.snapshot = snapshot
+            } else {
+                // If the user is not searching, update collections and reload the UI
+                if self.updateAllItemCount(to: allItemCount, in: &state.collections) {
+                    state.changes.insert(.itemCount)
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    private func updateAllItemCount(to count: Int, in collections: inout [Collection]) -> Bool {
+        if let index = collections.firstIndex(where: { $0.isCustom(type: .all) }) {
+            collections[index].itemCount = count
+            return true
+        }
+        return false
     }
 
     private func reloadCounts(in viewModel: ViewModel<CollectionsActionHandler>, allItemCount: Int) {
         let libraryId = viewModel.state.library.identifier
-        var allCollections = viewModel.state.collections
+        var allCollections = viewModel.state.snapshot ?? viewModel.state.collections
 
         do {
             let coordinator = try self.dbStorage.createCoordinator()
 
-            for (index, collection) in viewModel.state.collections.enumerated() {
+            for (index, collection) in allCollections.enumerated() {
                 let count: Int
                 switch collection.type {
                 case .collection:
@@ -173,8 +266,14 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             }
 
             self.update(viewModel: viewModel) { state in
-                state.collections = allCollections
-                state.changes.insert(.itemCount)
+                if state.snapshot != nil {
+                    // If the user is searching, just update the snapshot and don't reload
+                    state.snapshot = allCollections
+                } else {
+                    // If the user is not searching, update all collections and reload data
+                    state.collections = allCollections
+                    state.changes.insert(.itemCount)
+                }
             }
         } catch let error {
             DDLogError("CollectionsActionHandlers: can't load counts - \(error)")
@@ -241,26 +340,34 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            self.update(collections: collections, state: &state)
-            state.changes.insert(.results)
+            if var snapshot = state.snapshot {
+                // If the user is searching, update snapshot with new collections and don't reload UI
+                self.update(collections: collections, original: &snapshot)
+                state.snapshot = snapshot
+            } else {
+                // If user is not searching, update original collections with new collections and reload UI
+                self.update(collections: collections, original: &state.collections)
+                state.changes.insert(.results)
+            }
         }
     }
 
     /// Updates existing collections of the same type. If no collection of given type exists yet, collections are inserted
     /// into appropriate position based on CollectionType.
-    /// - parameter collections: collections to be inserted/updated
-    private func update(collections: [Collection], state: inout CollectionsState) {
+    /// - parameter collections: collections to be inserted/updated.
+    /// - parameter original: Original collections.
+    private func update(collections: [Collection], original: inout [Collection]) {
         guard !collections.isEmpty, let type = collections.first?.type else { return }
 
-        if self.replaceCollections(of: type, with: collections, state: &state) { return }
+        if self.replaceCollections(of: type, with: collections, original: &original) { return }
 
         switch type {
         case .collection:
             // Insert new "collection" collections after "all" collection
-            state.collections.insert(contentsOf: collections, at: 1)
+            original.insert(contentsOf: collections, at: 1)
         case .search:
             // Insert new "search" collections before "publications" collection, after "collection" collections
-            state.collections.insert(contentsOf: collections, at: state.collections.count - 2)
+            original.insert(contentsOf: collections, at: original.count - 2)
         case .custom: return // don't update custom collections
         }
     }
@@ -268,13 +375,13 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     /// Replaces existing collections of the same type with new collections.
     /// - parameter type: Type of collections.
     /// - parameter collections: New collections to replace existing ones.
-    /// - parameter state: Current state.
+    /// - parameter original: Original collections.
     /// - returns: False if there are no collections to replace, true otherwise.
-    private func replaceCollections(of type: Collection.CollectionType, with collections: [Collection], state: inout CollectionsState) -> Bool {
+    private func replaceCollections(of type: Collection.CollectionType, with collections: [Collection], original: inout [Collection]) -> Bool {
         var startIndex = -1
         var endIndex = -1
 
-        for data in state.collections.enumerated() {
+        for data in original.enumerated() {
             if startIndex == -1 {
                 if data.element.type == type {
                     startIndex = data.offset
@@ -289,12 +396,12 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         if startIndex == -1 { return false } // no object of given type found
 
         if endIndex == -1 { // last cell was of the same type, so endIndex is at the end
-            endIndex = state.collections.count
+            endIndex = original.count
         }
 
         // Replace old collections of this type with new collections
-        state.collections.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
-        state.collections.insert(contentsOf: collections, at: startIndex)
+        original.remove(atOffsets: IndexSet(integersIn: startIndex..<endIndex))
+        original.insert(contentsOf: collections, at: startIndex)
 
         return true
     }

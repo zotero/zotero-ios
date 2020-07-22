@@ -71,7 +71,7 @@ class CollectionsTableViewHandler: NSObject {
         self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView,
                                                         cellProvider: { tableView, indexPath, object -> UITableViewCell? in
             let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsTableViewHandler.cellId, for: indexPath) as? CollectionCell
-            cell?.set(collection: object)
+            cell?.set(collection: object, isActive: !self.viewModel.state.disabledCollections.contains(object.id))
             return cell
         })
     }
@@ -107,18 +107,17 @@ class CollectionsTableViewHandler: NSObject {
 
 extension CollectionsTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if let collection = self.dataSource.itemIdentifier(for: indexPath) {
-            let didChange = self.splitDelegate?.isSplit == false ? true : collection.id != self.viewModel.state.selectedCollection.id
-            // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
-            // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-            if didChange {
-                self.viewModel.process(action: .select(collection))
-            }
-        }
-
         if self.splitDelegate?.isSplit == false {
             tableView.deselectRow(at: indexPath, animated: true)
         }
+
+        guard let collection = self.dataSource.itemIdentifier(for: indexPath),
+              !self.viewModel.state.disabledCollections.contains(collection.id),
+              // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
+              // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
+              self.splitDelegate?.isSplit == false ? true : collection.id != self.viewModel.state.selectedCollection.id else { return }
+
+        self.viewModel.process(action: .select(collection))
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {

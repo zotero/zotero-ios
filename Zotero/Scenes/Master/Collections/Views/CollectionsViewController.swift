@@ -49,6 +49,7 @@ class CollectionsViewController: UIViewController {
                                                             viewModel: self.viewModel,
                                                             dragDropController: self.dragDropController,
                                                             splitDelegate: self.coordinatorDelegate)
+        self.setupSearch()
 
         self.viewModel.process(action: .loadData)
         self.tableViewHandler.update(collections: self.viewModel.state.collections, animated: false)
@@ -87,6 +88,7 @@ class CollectionsViewController: UIViewController {
         }
         if state.changes.contains(.selection) {
             self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)
+            // TODO: - deactivate search UI
         }
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
@@ -94,7 +96,8 @@ class CollectionsViewController: UIViewController {
     }
 
     private func selectCurrentRowIfNeeded() {
-        guard self.coordinatorDelegate?.isSplit == true else { return }
+        // Selection is disabled during search and in compact mode (when UISplitViewController is a single column instead of master + detail).
+        guard self.viewModel.state.snapshot == nil && self.coordinatorDelegate?.isSplit == true else { return }
         if let index = self.viewModel.state.collections.firstIndex(of: self.viewModel.state.selectedCollection) {
             self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
         }
@@ -114,5 +117,18 @@ class CollectionsViewController: UIViewController {
                                    target: self,
                                    action: #selector(CollectionsViewController.addCollection))
         self.navigationItem.rightBarButtonItem = item
+    }
+
+    private func setupSearch() {
+        let controller = UISearchController(searchResultsController: nil)
+        controller.obscuresBackgroundDuringPresentation = false
+        controller.searchBar.placeholder = L10n.Collections.searchTitle
+        controller.searchBar.rx.text.observeOn(MainScheduler.instance)
+                            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                            .subscribe(onNext: { [weak self] text in
+                                self?.viewModel.process(action: .search(text ?? ""))
+                            })
+                            .disposed(by: self.disposeBag)
+        self.navigationItem.searchController = controller
     }
 }

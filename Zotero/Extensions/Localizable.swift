@@ -76,6 +76,8 @@ internal enum L10n {
     internal static let newSubcollection = L10n.tr("Localizable", "collections.new_subcollection")
     /// Pick parent
     internal static let pickerTitle = L10n.tr("Localizable", "collections.picker_title")
+    /// Search Collections
+    internal static let searchTitle = L10n.tr("Localizable", "collections.search_title")
     /// Trash
     internal static let trash = L10n.tr("Localizable", "collections.trash")
     internal enum Error {

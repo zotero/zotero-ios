@@ -12,8 +12,9 @@ import SwiftUI
 class CollectionCell: UITableViewCell {
     private static let imageWidth: CGFloat = 36
 
-    func set(collection: Collection) {
-        self.set(view: CollectionRow(data: collection))
+    func set(collection: Collection, isActive: Bool) {
+        let view = CollectionRow(data: collection).opacity(isActive ? 1 : 0.4)
+        self.set(view: view)
         self.setupSeparatorInset(with: collection.level)
     }
 
