@@ -190,7 +190,8 @@ class RItem: Object {
             return
         }
 
-        var attachments = self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
+        let attachments = self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
+                                       .sorted(byKeyPath: "dateAdded", ascending: true)
 
         guard attachments.count > 0 else {
             self.mainAttachment = nil
@@ -198,33 +199,10 @@ class RItem: Object {
         }
 
         let url = self.fields.filter(.key(FieldKeys.url)).first?.value
-        let pdfs = attachments.filter(.containsField(with: "application/pdf")).sorted(byKeyPath: "dateAdded", ascending: true)
-
-        print("------------")
-        print("ITEM: \(self.description)")
-        print("INVALIDATED: \(self.isInvalidated)")
-        print("FIELDS:")
-        self.fields.enumerated().forEach { index, element in
-            print("\t[\(index)] \(element.description)")
-        }
-        print("CHILDREN:")
-        self.children.enumerated().forEach { index, element in
-            print("\t[\(index)] \(element.description)")
-            print("\tINVALIDATED: \(element.isInvalidated)")
-            print("\tFIELDS:")
-            element.fields.enumerated().forEach { index, element in
-                print("\t\t[\(index)] \(element.description)")
-            }
-        }
-        print("FIRST PDF: \(pdfs.first?.description ?? "nil")")
-        print("PDFS:")
-        pdfs.enumerated().forEach { index, element in
-            print("\t[\(index)] \(element.description)")
-        }
-        print("PDFS COUNT: \(pdfs.count)")
+        let pdfs = attachments.filter({ $0.fields.filter(.key(FieldKeys.contentType)).first?.value == "application/pdf" })
 
         if pdfs.count > 0 {
-            if let url = url, let matchingUrl = pdfs.filter(.containsField(with: url)).first {
+            if let url = url, let matchingUrl = pdfs.first(where: { $0.fields.filter(.key(FieldKeys.url)).first?.value == url }) {
                 self.mainAttachment = matchingUrl
                 return
             }
@@ -233,12 +211,11 @@ class RItem: Object {
             return
         }
 
-        attachments = attachments.sorted(byKeyPath: "dateAdded", ascending: true)
-
-        if let url = url, let matchingUrl = attachments.filter(.containsField(with: url)).first {
+        if let url = url, let matchingUrl = attachments.first(where: { $0.fields.filter(.key(FieldKeys.url)).first?.value == url }) {
             self.mainAttachment = matchingUrl
             return
         }
+
         self.mainAttachment = attachments.first
     }
 }

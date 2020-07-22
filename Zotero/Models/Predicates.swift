@@ -175,7 +175,7 @@ extension NSPredicate {
         return NSPredicate(format: "type = %@", type.rawValue)
     }
 
-    static func containsField(with value: String) -> NSPredicate {
-        return NSPredicate(format: "ANY fields.value = %@", value)
+    static func containsField(key: String) -> NSPredicate {
+        return NSPredicate(format: "ANY fields.key = %@", key)
     }
 }
