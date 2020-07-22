@@ -104,8 +104,8 @@ class FileAttachmentView: UIView {
         self.stopLayer.position = center
         self.imageLayer.position = center
         // Badge is supposed to be at bottom right with outer border, so badgeLayer needs to be moved outside of bounds a bit
-        self.badgeLayer.position = CGPoint(x: (self.bounds.width - self.contentInsets.right),
-                                           y: (self.bounds.height - self.contentInsets.bottom))
+        self.badgeLayer.position = CGPoint(x: (self.bounds.width - self.contentInsets.right) - 0.5,
+                                           y: (self.bounds.height - self.contentInsets.bottom) - 0.5)
         self.badgeBorder.position = self.badgeLayer.position
     }
 
