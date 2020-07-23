@@ -37,7 +37,8 @@ class OnboardingPageView: UIView {
     private func update(to layout: OnboardingLayout, string: String, htmlConverter: HtmlAttributedStringConverter) {
         let font = layout.titleFont
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 1.5
+        paragraphStyle.minimumLineHeight = font.pointSize * 1.5
+        paragraphStyle.maximumLineHeight = paragraphStyle.minimumLineHeight
         paragraphStyle.alignment = .center
         let kern = font.pointSize * layout.kern
 
