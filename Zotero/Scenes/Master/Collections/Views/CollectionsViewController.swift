@@ -53,7 +53,7 @@ class CollectionsViewController: UIViewController {
 
         self.viewModel.process(action: .loadData)
         self.tableViewHandler.update(collections: self.viewModel.state.collections, animated: false)
-        self.coordinatorDelegate?.collectionsChanged(to: self.viewModel.state.collections)
+        self.coordinatorDelegate?.collectionsChanged(to: self.viewModel.state.collections.map({ $0.collection }))
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -79,7 +79,7 @@ class CollectionsViewController: UIViewController {
             self.tableViewHandler.update(collections: state.collections, animated: true, completed: { [weak self] in
                 self?.selectCurrentRowIfNeeded()
             })
-            self.coordinatorDelegate?.collectionsChanged(to: state.collections)
+            self.coordinatorDelegate?.collectionsChanged(to: state.collections.map({ $0.collection }))
         }
         if state.changes.contains(.itemCount) {
             self.tableViewHandler.update(collections: state.collections, animated: false, completed: { [weak self] in
@@ -88,7 +88,11 @@ class CollectionsViewController: UIViewController {
         }
         if state.changes.contains(.selection) {
             self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)
-            // TODO: - deactivate search UI
+
+            if let controller = self.navigationItem.searchController,
+               controller.isActive {
+                controller.isActive = false
+            }
         }
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
@@ -98,7 +102,7 @@ class CollectionsViewController: UIViewController {
     private func selectCurrentRowIfNeeded() {
         // Selection is disabled during search and in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard self.viewModel.state.snapshot == nil && self.coordinatorDelegate?.isSplit == true else { return }
-        if let index = self.viewModel.state.collections.firstIndex(of: self.viewModel.state.selectedCollection) {
+        if let index = self.viewModel.state.collections.firstIndex(where: { $0.collection == self.viewModel.state.selectedCollection }) {
             self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
         }
     }

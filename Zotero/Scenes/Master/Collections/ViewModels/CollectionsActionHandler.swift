@@ -55,7 +55,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             }
 
         case .updateCollections(let collections):
-            self.update(collections: collections, in: viewModel)
+            self.update(collections: collections.map({ SearchableCollection(isActive: true, collection: $0) }), in: viewModel)
 
         case .loadData:
             self.loadData(in: viewModel)
@@ -67,6 +67,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func search(for term: String, in viewModel: ViewModel<CollectionsActionHandler>) {
         if term.isEmpty {
+            guard viewModel.state.snapshot != nil else { return }
             self.update(viewModel: viewModel) { state in
                 self.removeCollectionsFilter(in: &state)
             }
@@ -76,65 +77,65 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func filterCollections(with text: String, in viewModel: ViewModel<CollectionsActionHandler>) {
-        var filtered: [Collection] = []
-        var parentCollections: Set<String> = []
+        self.update(viewModel: viewModel) { state in
+            if state.snapshot == nil {
+                state.snapshot = state.collections
+            }
+            state.collections = self.filter(collections: (state.snapshot ?? state.collections), with: text)
+            state.changes = .results
+        }
+    }
+
+    private func filter(collections: [SearchableCollection], with text: String) -> [SearchableCollection] {
+        var filtered: [SearchableCollection] = []
 
         // Go through all collections, find results and insert their parents.
-        for (i, collection) in viewModel.state.collections.enumerated() {
-            guard collection.name.localizedCaseInsensitiveContains(text) else { continue }
+        for (i, searchable) in collections.enumerated() {
+            guard searchable.collection.name.localizedCaseInsensitiveContains(text) else { continue }
 
             // Check whether we need to look for parents of this collection. We need to look for parents when the level > 0
-            // (otherwise there are no parents) and previously inserted collection isn't the same level as this one (otherwise we already have all
-            // parents from previous collection).
-            let shouldLookForParents = collection.level > 0 && filtered.last?.level != collection.level
+            // (otherwise there are no parents) and previously inserted collection doesn't have the same parent as this one
+            // (otherwise we already have all parents from previous collection).
+            let shouldLookForParents = searchable.collection.level > 0 && filtered.last?.collection.parentKey != searchable.collection.parentKey
 
             // Collection contains text, append.
-            filtered.append(collection)
+            filtered.append(searchable.isActive(true))
 
             guard shouldLookForParents else { continue }
 
             // Track back to search for all parents
             let insertionIndex = filtered.count - 1
-            var lastLevel = collection.level
+            var lastLevel = searchable.collection.level
 
             for j in (0..<i).reversed() {
-                let parent = viewModel.state.collections[j]
+                let parent = collections[j]
 
                 // If level changed, we found a new parent
-                guard parent.level < lastLevel else { continue }
+                guard parent.collection.level < lastLevel else { continue }
 
                 // Parent is already in filtered array, stop searching for parents
-                if filtered.reversed().firstIndex(of: parent) != nil {
+                if filtered.reversed().firstIndex(where: { $0.collection == parent.collection }) != nil {
                     break
                 }
 
-                filtered.insert(parent, at: insertionIndex)
-                parentCollections.insert(parent.id)
+                filtered.insert(parent.isActive(false), at: insertionIndex)
 
                 // If this parent is already on root level, stop searching for parents
-                if parent.level == 0 {
+                if parent.collection.level == 0 {
                     break
                 }
 
-                lastLevel = parent.level
+                lastLevel = parent.collection.level
             }
         }
 
-        self.update(viewModel: viewModel) { state in
-            if state.snapshot == nil {
-                state.snapshot = state.collections
-            }
-            state.collections = filtered
-            state.disabledCollections = parentCollections
-            state.changes = .results
-        }
+        return filtered
     }
 
     private func removeCollectionsFilter(in state: inout State) {
         guard let snapshot = state.snapshot else { return }
         state.collections = snapshot
         state.snapshot = nil
-        state.disabledCollections = []
         state.changes = .results
     }
 
@@ -160,7 +161,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 guard let viewModel = viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let collections = CollectionTreeBuilder.collections(from: objects)
+                    let collections = CollectionTreeBuilder.collections(from: objects).map({ SearchableCollection(isActive: true, collection: $0) })
                     self.update(collections: collections, in: viewModel)
                 case .initial: break
                 case .error: break
@@ -171,7 +172,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 guard let viewModel = viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let collections = CollectionTreeBuilder.collections(from: objects)
+                    let collections = CollectionTreeBuilder.collections(from: objects).map({ SearchableCollection(isActive: true, collection: $0) })
                     self.update(collections: collections, in: viewModel)
                 case .initial: break
                 case .error: break
@@ -193,7 +194,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             }
 
             self.update(viewModel: viewModel) { state in
-                state.collections = allCollections
+                state.collections = allCollections.map({ SearchableCollection(isActive: true, collection: $0) })
                 if !allCollections.isEmpty {
                     state.selectedCollection = allCollections[0]
                 }
@@ -230,9 +231,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     @discardableResult
-    private func updateAllItemCount(to count: Int, in collections: inout [Collection]) -> Bool {
-        if let index = collections.firstIndex(where: { $0.isCustom(type: .all) }) {
-            collections[index].itemCount = count
+    private func updateAllItemCount(to count: Int, in collections: inout [SearchableCollection]) -> Bool {
+        if let index = collections.firstIndex(where: { $0.collection.isCustom(type: .all) }) {
+            collections[index].collection.itemCount = count
             return true
         }
         return false
@@ -245,13 +246,17 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         do {
             let coordinator = try self.dbStorage.createCoordinator()
 
-            for (index, collection) in allCollections.enumerated() {
+            for (index, searchable) in allCollections.enumerated() {
                 let count: Int
-                switch collection.type {
+                switch searchable.collection.type {
                 case .collection:
-                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .collection(collection.key, collection.name), libraryId: libraryId)).count
+                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .collection(searchable.collection.key,
+                                                                                                  searchable.collection.name),
+                                                                                libraryId: libraryId)).count
                 case .search:
-                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .search(collection.key, collection.name), libraryId: libraryId)).count
+                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .search(searchable.collection.key,
+                                                                                              searchable.collection.name),
+                                                                                libraryId: libraryId)).count
                 case .custom(let type):
                     switch type {
                     case .all:
@@ -262,7 +267,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                         count = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
                     }
                 }
-                allCollections[index].itemCount = count
+                allCollections[index].collection.itemCount = count
             }
 
             self.update(viewModel: viewModel) { state in
@@ -330,7 +335,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
             key = collection.key
             name = collection.name
-            parent = rCollection?.parent.flatMap { Collection(object: $0, level: 0) }
+            parent = rCollection?.parent.flatMap { Collection(object: $0, level: 0, parentKey: $0.parent?.key) }
         }
 
         self.update(viewModel: viewModel) { state in
@@ -338,7 +343,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
+    private func update(collections: [SearchableCollection], in viewModel: ViewModel<CollectionsActionHandler>) {
         self.update(viewModel: viewModel) { state in
             if var snapshot = state.snapshot {
                 // If the user is searching, update snapshot with new collections and don't reload UI
@@ -356,8 +361,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     /// into appropriate position based on CollectionType.
     /// - parameter collections: collections to be inserted/updated.
     /// - parameter original: Original collections.
-    private func update(collections: [Collection], original: inout [Collection]) {
-        guard !collections.isEmpty, let type = collections.first?.type else { return }
+    private func update(collections: [SearchableCollection], original: inout [SearchableCollection]) {
+        guard !collections.isEmpty, let type = collections.first?.collection.type else { return }
 
         if self.replaceCollections(of: type, with: collections, original: &original) { return }
 
@@ -377,17 +382,18 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     /// - parameter collections: New collections to replace existing ones.
     /// - parameter original: Original collections.
     /// - returns: False if there are no collections to replace, true otherwise.
-    private func replaceCollections(of type: Collection.CollectionType, with collections: [Collection], original: inout [Collection]) -> Bool {
+    private func replaceCollections(of type: Collection.CollectionType, with collections: [SearchableCollection],
+                                    original: inout [SearchableCollection]) -> Bool {
         var startIndex = -1
         var endIndex = -1
 
         for data in original.enumerated() {
             if startIndex == -1 {
-                if data.element.type == type {
+                if data.element.collection.type == type {
                     startIndex = data.offset
                 }
             } else if endIndex == -1 {
-                if data.element.type != type {
+                if data.element.collection.type != type {
                     endIndex = data.offset
                 }
             }

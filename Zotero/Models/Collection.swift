@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Collection: Identifiable, Equatable, Hashable {
-    
+
     enum CollectionType: Equatable, Hashable {
         case collection
         case search
@@ -53,6 +53,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     let key: String
     let name: String
     let level: Int
+    let parentKey: String?
     var itemCount: Int
 
     var iconName: String {
@@ -71,12 +72,13 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    init(object: RCollection, level: Int) {
+    init(object: RCollection, level: Int, parentKey: String?) {
         self.type = .collection
         self.key = object.key
         self.name = object.name
         self.level = level
         self.itemCount = object.items.count
+        self.parentKey = parentKey
     }
 
     init(object: RSearch) {
@@ -85,6 +87,7 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.name = object.name
         self.level = 0
         self.itemCount = 0
+        self.parentKey = nil
     }
 
     init(custom type: CustomType, itemCount: Int = 0) {
@@ -92,6 +95,7 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.type = .custom(type)
         self.key = ""
         self.level = 0
+        self.parentKey = nil
         switch type {
         case .all:
             self.name = L10n.Collections.allItems

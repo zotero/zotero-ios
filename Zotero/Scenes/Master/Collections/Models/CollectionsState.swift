@@ -32,10 +32,8 @@ struct CollectionsState: ViewModelState {
     let library: Library
 
     var selectedCollection: Collection
-    var collections: [Collection]
-    var snapshot: [Collection]?
-    // Keys of disabled collections. Used to disable parent collections of search results during search.
-    var disabledCollections: Set<String>
+    var collections: [SearchableCollection]
+    var snapshot: [SearchableCollection]?
     var editingData: CollectionStateEditingData?
     var changes: Changes
     var collectionsToken: NotificationToken?
@@ -47,7 +45,6 @@ struct CollectionsState: ViewModelState {
         self.library = library
         self.selectedCollection = Collection(custom: .all, itemCount: 0)
         self.collections = []
-        self.disabledCollections = []
         self.changes = []
         self.error = nil
     }

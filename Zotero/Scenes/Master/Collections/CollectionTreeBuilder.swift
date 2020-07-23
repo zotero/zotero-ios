@@ -34,7 +34,7 @@ struct CollectionTreeBuilder {
 
         var cells: [Collection] = []
         for rCollection in filteredResults {
-            let collection = Collection(object: rCollection, level: level)
+            let collection = Collection(object: rCollection, level: level, parentKey: parentKey)
             cells.append(collection)
 
             if rCollection.children.count > 0 {

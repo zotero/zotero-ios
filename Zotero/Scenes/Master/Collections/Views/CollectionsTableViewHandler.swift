@@ -17,7 +17,7 @@ class CollectionsTableViewHandler: NSObject {
     private unowned let dragDropController: DragDropController
     private let disposeBag: DisposeBag
 
-    private var dataSource: UITableViewDiffableDataSource<Int, Collection>!
+    private var dataSource: UITableViewDiffableDataSource<Int, SearchableCollection>!
     private weak var splitDelegate: SplitControllerDelegate?
 
     init(tableView: UITableView, viewModel: ViewModel<CollectionsActionHandler>,
@@ -37,8 +37,8 @@ class CollectionsTableViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func update(collections: [Collection], animated: Bool, completed: (() -> Void)? = nil) {
-        var snapshot = NSDiffableDataSourceSnapshot<Int, Collection>()
+    func update(collections: [SearchableCollection], animated: Bool, completed: (() -> Void)? = nil) {
+        var snapshot = NSDiffableDataSourceSnapshot<Int, SearchableCollection>()
         snapshot.appendSections([0])
         snapshot.appendItems(collections, toSection: 0)
         self.dataSource.apply(snapshot, animatingDifferences: animated, completion: completed)
@@ -71,7 +71,7 @@ class CollectionsTableViewHandler: NSObject {
         self.dataSource = UITableViewDiffableDataSource(tableView: self.tableView,
                                                         cellProvider: { tableView, indexPath, object -> UITableViewCell? in
             let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsTableViewHandler.cellId, for: indexPath) as? CollectionCell
-            cell?.set(collection: object, isActive: !self.viewModel.state.disabledCollections.contains(object.id))
+            cell?.set(searchableCollection: object)
             return cell
         })
     }
@@ -111,13 +111,12 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
             tableView.deselectRow(at: indexPath, animated: true)
         }
 
-        guard let collection = self.dataSource.itemIdentifier(for: indexPath),
-              !self.viewModel.state.disabledCollections.contains(collection.id),
+        guard let searchable = self.dataSource.itemIdentifier(for: indexPath), searchable.isActive,
               // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
               // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-              self.splitDelegate?.isSplit == false ? true : collection.id != self.viewModel.state.selectedCollection.id else { return }
+              self.splitDelegate?.isSplit == false ? true : searchable.collection.id != self.viewModel.state.selectedCollection.id else { return }
 
-        self.viewModel.process(action: .select(collection))
+        self.viewModel.process(action: .select(searchable.collection))
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
@@ -125,9 +124,9 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
             return nil
         }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let collection = self?.dataSource.itemIdentifier(for: indexPath),
-                  collection.type.isCollection else { return nil }
-            return self?.createContextMenu(for: collection)
+            guard let searchable = self?.dataSource.itemIdentifier(for: indexPath),
+                  searchable.collection.type.isCollection else { return nil }
+            return self?.createContextMenu(for: searchable.collection)
         }
     }
 }
@@ -135,7 +134,7 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
 extension CollectionsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
         guard let indexPath = coordinator.destinationIndexPath else { return }
-        let key = self.viewModel.state.collections[indexPath.row].key
+        let key = self.viewModel.state.collections[indexPath.row].collection.key
 
         switch coordinator.proposal.operation {
         case .copy:
@@ -156,7 +155,7 @@ extension CollectionsTableViewHandler: UITableViewDropDelegate {
         guard session.localDragSession != nil else { return UITableViewDropProposal(operation: .forbidden) }
 
         // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
-        if let collection = destinationIndexPath.flatMap({ self.viewModel.state.collections[$0.row] }),
+        if let collection = destinationIndexPath.flatMap({ self.viewModel.state.collections[$0.row].collection }),
            !collection.type.isCollection {
             return UITableViewDropProposal(operation: .forbidden)
         }
