@@ -46,6 +46,11 @@ struct LoginActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.password = value
             }
+
+        case .setSelectedTextField(let field):
+            self.update(viewModel: viewModel) { state in
+                state.selectedTextField = field
+            }
         }
     }
 
@@ -64,6 +69,12 @@ struct LoginActionHandler: ViewModelActionHandler {
     private func login(in viewModel: ViewModel<LoginActionHandler>) {
         if let error = self.isValid(username: viewModel.state.username, password: viewModel.state.password) {
             self.update(viewModel: viewModel) { state in
+                switch error {
+                case .invalidPassword:
+                    state.selectedTextField = .password
+                case .invalidUsername, .loginFailed:
+                    state.selectedTextField = .username
+                }
                 state.error = error
             }
             return
@@ -87,6 +98,7 @@ struct LoginActionHandler: ViewModelActionHandler {
                           guard let viewModel = viewModel else { return }
                           self.update(viewModel: viewModel, action: { state in
                               state.error = .loginFailed
+                              state.selectedTextField = .username
                               state.isLoading = false
                           })
                       })

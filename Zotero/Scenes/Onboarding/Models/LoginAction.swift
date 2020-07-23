@@ -13,4 +13,5 @@ enum LoginAction {
     case setError(LoginError?)
     case setUsername(String)
     case setPassword(String)
+    case setSelectedTextField(LoginState.TextField)
 }

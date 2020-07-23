@@ -491,6 +491,9 @@
 		B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */; };
 		B361820524C9A7C000B30D56 /* OnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */; };
 		B361820624C9A7C000B30D56 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181FB24C9A7C000B30D56 /* RegisterView.swift */; };
+		B361820824C9B53600B30D56 /* KeyboardResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820724C9B53600B30D56 /* KeyboardResponder.swift */; };
+		B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */; };
+		B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361820E24C9B9E800B30D56 /* SelectableTextField.swift */; };
 		B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */; };
 		B36A988B2428DA5D005D5790 /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
 		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
@@ -995,6 +998,9 @@
 		B36181F924C9A7C000B30D56 /* OnboardingPageView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = OnboardingPageView.xib; sourceTree = "<group>"; };
 		B36181FA24C9A7C000B30D56 /* OnboardingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingViewController.swift; sourceTree = "<group>"; };
 		B36181FB24C9A7C000B30D56 /* RegisterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		B361820724C9B53600B30D56 /* KeyboardResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardResponder.swift; sourceTree = "<group>"; };
+		B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoRotationHostingController.swift; sourceTree = "<group>"; };
+		B361820E24C9B9E800B30D56 /* SelectableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableTextField.swift; sourceTree = "<group>"; };
 		B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverter.swift; sourceTree = "<group>"; };
 		B36A988A2428DA5D005D5790 /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
@@ -2123,9 +2129,11 @@
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
 				B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */,
 				B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */,
+				B361820C24C9B9D900B30D56 /* NoRotationHostingController.swift */,
 				B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */,
 				B32B4F962475636600F78A05 /* RxTableViewCell.swift */,
 				B32B4F9224754E3600F78A05 /* SearchBar.swift */,
+				B361820E24C9B9E800B30D56 /* SelectableTextField.swift */,
 				B3DCDF1A24091EBE0039ED0D /* SinglePickerRow.swift */,
 				B3DCDF1C24091EC40039ED0D /* SinglePickerView.swift */,
 				B32B4F942475544700F78A05 /* SyncToolbarController.swift */,
@@ -2136,8 +2144,9 @@
 		B3DCDF04240912060039ED0D /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				B3DCDF0D240912500039ED0D /* SinglePickerActionHandler.swift */,
 				B3DCDF1E240945B30039ED0D /* CollectionPickerActionHandler.swift */,
+				B361820724C9B53600B30D56 /* KeyboardResponder.swift */,
+				B3DCDF0D240912500039ED0D /* SinglePickerActionHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -2608,6 +2617,7 @@
 				B30565F923FC051E003304F2 /* DragDropController.swift in Sources */,
 				B30566BE23FC051F003304F2 /* Versions.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
+				B361820824C9B53600B30D56 /* KeyboardResponder.swift in Sources */,
 				B305669823FC051F003304F2 /* RCollection.swift in Sources */,
 				B3E44642248FBE9B007FE8AB /* LinkType.swift in Sources */,
 				B372CEE5248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift in Sources */,
@@ -2787,6 +2797,7 @@
 				B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */,
 				B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3DCDF21240945D80039ED0D /* CollectionPickerState.swift in Sources */,
+				B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */,
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
 				B30565C423FC051E003304F2 /* EditItemDetailDbRequest.swift in Sources */,
 				B305662023FC051F003304F2 /* SyncSettingsSyncAction.swift in Sources */,
@@ -2828,6 +2839,7 @@
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
+				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
 				B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */,
 				B32A3C78247FB62B009E2C5D /* ComponentDate.swift in Sources */,
 				B305661923FC051E003304F2 /* SyncDeletionsSyncAction.swift in Sources */,
@@ -3277,7 +3289,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -3319,7 +3331,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3454,7 +3466,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3485,7 +3497,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3516,7 +3528,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -3614,7 +3626,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
@@ -3764,7 +3776,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3850,7 +3862,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

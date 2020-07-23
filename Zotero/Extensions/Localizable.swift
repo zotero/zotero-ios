@@ -187,7 +187,7 @@ internal enum L10n {
   }
 
   internal enum Onboarding {
-    /// <b>Organize your research</b> any way you want. Sort items into collections and tag them with keywords.
+    /// <b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.
     internal static let access = L10n.tr("Localizable", "onboarding.access")
     /// <b>Highlight and take notes</b> directly in your PDFs as you read them.
     internal static let annotate = L10n.tr("Localizable", "onboarding.annotate")
@@ -197,7 +197,7 @@ internal enum L10n {
     internal static let share = L10n.tr("Localizable", "onboarding.share")
     /// Sign In
     internal static let signIn = L10n.tr("Localizable", "onboarding.sign_in")
-    /// <b>Synchronize work</b> across devices, keeping your reading and notes seamlessly up to date.
+    /// <b>Synchronize and collaborate</b> across devices, keeping your reading and notes seamlessly up to date.
     internal static let sync = L10n.tr("Localizable", "onboarding.sync")
   }
 

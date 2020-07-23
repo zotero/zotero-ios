@@ -20,6 +20,7 @@ protocol AppOnboardingCoordinatorDelegate: class {
 
 protocol AppLoginCoordinatorDelegate: class {
     func dismiss()
+    func showForgotPassword()
 }
 
 class AppCoordinator {
@@ -122,12 +123,16 @@ extension AppCoordinator: DebugLoggingCoordinator {
 extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func presentLogin() {
         let handler = LoginActionHandler(apiClient: self.controllers.apiClient, sessionController: self.controllers.sessionController)
-        let state = LoginState(username: "", password: "", isLoading: false, error: nil)
-        let view = LoginView(coordinatorDelegate: self).environmentObject(ViewModel(initialState: state, handler: handler))
-        let controller = UIHostingController(rootView: view)
-        controller.modalPresentationStyle = .formSheet
+        let view = LoginView(coordinatorDelegate: self).environmentObject(ViewModel(initialState: LoginState(), handler: handler))
+
+        let controller = NoRotationHostingController(rootView: view)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.modalPresentationStyle = .formSheet
+            controller.preferredContentSize = CGSize(width: 540, height: 620)
+        } else {
+            controller.modalPresentationStyle = .fullScreen
+        }
         controller.isModalInPresentation = false
-        controller.preferredContentSize = CGSize(width: 540, height: 620)
         self.window?.rootViewController?.present(controller, animated: true, completion: nil)
     }
 
@@ -139,6 +144,11 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
 }
 
 extension AppCoordinator: AppLoginCoordinatorDelegate {
+    func showForgotPassword() {
+        guard let url = URL(string: "https://www.zotero.org/user/lostpassword") else { return }
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
+
     func dismiss() {
         self.window?.rootViewController?.dismiss(animated: true, completion: nil)
     }

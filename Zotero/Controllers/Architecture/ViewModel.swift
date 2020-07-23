@@ -60,6 +60,16 @@ class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
         })
     }
 
+    func binding<Value>(get: @escaping (Handler.State) -> Value, action: @escaping (Value) -> Handler.Action?) -> Binding<Value> {
+        return Binding(get: { [unowned self] in
+            return get(self.state)
+        }, set: { [unowned self] value in
+            if let action = action(value) {
+                self.process(action: action)
+            }
+        })
+    }
+
     fileprivate func update(action: (inout Handler.State) -> Void) {
         var state = self.state
         state.cleanup()
