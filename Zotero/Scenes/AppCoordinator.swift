@@ -13,6 +13,15 @@ protocol AppDelegateCoordinatorDelegate: class {
     func showMainScreen(isLoggedIn: Bool)
 }
 
+protocol AppOnboardingCoordinatorDelegate: class {
+    func presentLogin()
+    func presentRegister()
+}
+
+protocol AppLoginCoordinatorDelegate: class {
+    func dismiss()
+}
+
 class AppCoordinator {
     private typealias Action = (UIViewController) -> Void
 
@@ -42,24 +51,22 @@ class AppCoordinator {
     // MARK: - Navigation
 
     private func showMainScreen(isLogged: Bool, animated: Bool) {
+        guard let window = self.window else { return }
+
         let viewController: UIViewController
         if !isLogged {
-            let onboardingController = OnboardingViewController(htmlConverter: self.controllers.htmlAttributedStringConverter,
-                                                                apiClient: self.controllers.apiClient,
-                                                                sessionController: self.controllers.sessionController)
-            let navigationController = UINavigationController(rootViewController: onboardingController)
-            viewController = navigationController
+            let controller = OnboardingViewController(size: window.frame.size, htmlConverter: self.controllers.htmlAttributedStringConverter)
+            controller.coordinatorDelegate = self
+            viewController = controller
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
             viewController = MainViewController(controllers: self.controllers)
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
         }
-        self.show(viewController: viewController, animated: animated)
+        self.show(viewController: viewController, in: window, animated: animated)
     }
 
-    private func show(viewController: UIViewController?, animated: Bool = false) {
-        guard let window = self.window else { return }
-
+    private func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false) {
         window.rootViewController = viewController
 
         guard animated else { return }
@@ -109,6 +116,31 @@ extension AppCoordinator: DebugLoggingCoordinator {
         self.showAlert(title: "Debugging error",
                        message: message,
                        actions: [UIAlertAction(title: "Ok", style: .cancel, handler: nil)])
+    }
+}
+
+extension AppCoordinator: AppOnboardingCoordinatorDelegate {
+    func presentLogin() {
+        let handler = LoginActionHandler(apiClient: self.controllers.apiClient, sessionController: self.controllers.sessionController)
+        let state = LoginState(username: "", password: "", isLoading: false, error: nil)
+        let view = LoginView(coordinatorDelegate: self).environmentObject(ViewModel(initialState: state, handler: handler))
+        let controller = UIHostingController(rootView: view)
+        controller.modalPresentationStyle = .formSheet
+        controller.isModalInPresentation = false
+        controller.preferredContentSize = CGSize(width: 540, height: 620)
+        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+    }
+
+    func presentRegister() {
+        let view = RegisterView()
+        let controller = UIHostingController(rootView: view)
+        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension AppCoordinator: AppLoginCoordinatorDelegate {
+    func dismiss() {
+        self.window?.rootViewController?.dismiss(animated: true, completion: nil)
     }
 }
 

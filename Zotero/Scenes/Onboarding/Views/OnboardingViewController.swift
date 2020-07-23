@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import SwiftUI
 
 class OnboardingViewController: UIViewController {
     @IBOutlet private weak var spacer: UIView!
@@ -22,10 +21,10 @@ class OnboardingViewController: UIViewController {
     @IBOutlet private weak var bottomStackView: UIStackView!
     @IBOutlet private weak var bottomStackViewWidth: NSLayoutConstraint!
 
-    private static let smallSizeLimit: CGFloat = 768
+    private let parentSize: CGSize
     private unowned let htmlConverter: HtmlAttributedStringConverter
-    private unowned let apiClient: ApiClient
-    private unowned let sessionController: SessionController
+
+    weak var coordinatorDelegate: AppOnboardingCoordinatorDelegate?
 
     private var pageData: [(String, UIImage)] {
         return [(L10n.Onboarding.access, Asset.Images.Onboarding.access.image),
@@ -37,10 +36,9 @@ class OnboardingViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(htmlConverter: HtmlAttributedStringConverter, apiClient: ApiClient, sessionController: SessionController) {
+    init(size: CGSize, htmlConverter: HtmlAttributedStringConverter) {
+        self.parentSize = size
         self.htmlConverter = htmlConverter
-        self.apiClient = apiClient
-        self.sessionController = sessionController
         self.ignoreScrollDelegate = false
         super.init(nibName: "OnboardingViewController", bundle: nil)
     }
@@ -52,18 +50,11 @@ class OnboardingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.navigationController?.delegate = self
-        self.navigationController?.setNavigationBarHidden(true, animated: false)
         let pages = self.pageData
         self.setupButtons()
         self.setupPages(with: pages)
         self.setupPageControl(with: pages)
-        self.setupLayout(with: (self.navigationController?.view.frame.size ?? CGSize()))
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.navigationController?.setNavigationBarHidden(true, animated: true)
+        self.setupLayout(with: self.parentSize)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -88,6 +79,10 @@ class OnboardingViewController: UIViewController {
         }, completion: nil)
     }
 
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return UIDevice.current.userInterfaceIdiom == .pad ? .all : [.portrait, .portraitUpsideDown]
+    }
+
     // MARK: - Actions
 
     @IBAction private func changePage(sender: UIPageControl) {
@@ -97,17 +92,11 @@ class OnboardingViewController: UIViewController {
     }
 
     @IBAction private func signIn() {
-        let handler = LoginActionHandler(apiClient: self.apiClient, sessionController: self.sessionController)
-        let state = LoginState(username: "", password: "", isLoading: false, error: nil)
-        let view = LoginView().environmentObject(ViewModel(initialState: state, handler: handler))
-        let controller = UIHostingController(rootView: view)
-        self.navigationController?.pushViewController(controller, animated: true)
+        self.coordinatorDelegate?.presentLogin()
     }
 
     @IBAction private func createAccount() {
-        let view = RegisterView()
-        let controller = UIHostingController(rootView: view)
-        self.navigationController?.pushViewController(controller, animated: true)
+        self.coordinatorDelegate?.presentRegister()
     }
 
     // MARK: - Setups
@@ -115,8 +104,6 @@ class OnboardingViewController: UIViewController {
     /// Setup pages so that the spacer in pages is the same height as spacers in this controller. Also set title with appropriate size and style.
     /// - parameter pageData: Title and image for each page.
     private func setupPages(with pageData: [(String, UIImage)]) {
-        let size = self.navigationController?.view.frame.size ?? CGSize()
-
         // Create page views. Find page view with longest text
         var longestTextIdx = 0
         var pages: [OnboardingPageView] = []
@@ -124,7 +111,7 @@ class OnboardingViewController: UIViewController {
         for (index, (text, image)) in pageData.enumerated() {
             let pageView = UINib(nibName: "OnboardingPageView", bundle: nil).instantiate(withOwner: nil, options: nil).first as! OnboardingPageView
             pageView.translatesAutoresizingMaskIntoConstraints = false
-            pageView.set(string: text, image: image, size: size, htmlConverter: self.htmlConverter)
+            pageView.set(string: text, image: image, size: self.parentSize, htmlConverter: self.htmlConverter)
             pages.append(pageView)
 
             if longestTextIdx != index && text.count > pageData[longestTextIdx].0.count {
@@ -225,12 +212,6 @@ extension OnboardingViewController: UIScrollViewDelegate {
 fileprivate extension UIScrollView {
     var currentPage: Int {
         return Int((self.contentOffset.x + (0.5 * self.frame.size.width)) / self.frame.width)
-    }
-}
-
-extension OnboardingViewController: UINavigationControllerDelegate {
-    func navigationControllerSupportedInterfaceOrientations(_ navigationController: UINavigationController) -> UIInterfaceOrientationMask {
-        return UIDevice.current.userInterfaceIdiom == .pad ? .all : [.portrait, .portraitUpsideDown]
     }
 }
 

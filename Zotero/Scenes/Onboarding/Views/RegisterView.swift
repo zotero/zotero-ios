@@ -37,9 +37,7 @@ struct RegisterView: View {
                 Button(action: {
 
                 }) {
-                    OnboardingButton(title: L10n.Onboarding.createAccount,
-                                     width: proxy.size.width,
-                                     isLoading: false)
+                    Text(L10n.Onboarding.createAccount)
                 }
             }
         }

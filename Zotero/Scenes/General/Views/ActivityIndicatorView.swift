@@ -10,12 +10,14 @@ import SwiftUI
 
 struct ActivityIndicatorView: UIViewRepresentable {
     let style: UIActivityIndicatorView.Style
-//    let color: UIColor
+    let color: UIColor?
     @Binding var isAnimating: Bool
 
     func makeUIView(context: UIViewRepresentableContext<ActivityIndicatorView>) -> UIActivityIndicatorView {
         let view = UIActivityIndicatorView(style: self.style)
-//        view.color = self.color
+        if let color = self.color {
+            view.color = color
+        }
         return view
     }
 
@@ -26,6 +28,6 @@ struct ActivityIndicatorView: UIViewRepresentable {
 
 struct ActivityIndicatorView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+        ActivityIndicatorView(style: .medium, color: .white, isAnimating: .constant(true))
     }
 }

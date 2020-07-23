@@ -16,7 +16,7 @@ struct AllCollectionPickerView: View {
     var body: some View {
         Group {
             if self.store.state.libraries.count == 0 {
-                ActivityIndicatorView(style: .large, isAnimating: .constant(true))
+                ActivityIndicatorView(style: .large, color: .gray, isAnimating: .constant(true))
             } else {
                 ListView(picked: self.picked)
             }

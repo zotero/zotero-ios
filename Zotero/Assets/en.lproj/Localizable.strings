@@ -46,6 +46,7 @@
 "login.error.unknown" = "Could not log in";
 "login.email" = "Email";
 "login.repeat_password" = "Repeat password";
+"login.forgot_password" = "Forgot Password?";
 
 "libraries.my_library" = "My Library";
 "libraries.group_libraries" = "Group Libraries";

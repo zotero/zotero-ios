@@ -83,7 +83,7 @@ struct CollectionEditView: View {
     private var trailingItems: some View {
         Group {
             if self.viewModel.state.loading {
-                ActivityIndicatorView(style: .medium, isAnimating: .constant(true))
+                ActivityIndicatorView(style: .medium, color: .gray, isAnimating: .constant(true))
             } else {
                 Button(action: {
                     self.viewModel.process(action: .save)

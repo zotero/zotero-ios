@@ -101,6 +101,9 @@ internal enum Asset {
       internal static let webPageSnapshot = ImageAsset(name: "Item types/web-page-snapshot")
       internal static let webPage = ImageAsset(name: "Item types/web-page")
     }
+    internal enum Login {
+      internal static let logo = ImageAsset(name: "Login/logo")
+    }
     internal enum Onboarding {
       internal static let access = ImageAsset(name: "Onboarding/access")
       internal static let annotate = ImageAsset(name: "Onboarding/annotate")

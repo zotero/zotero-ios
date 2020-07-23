@@ -168,6 +168,8 @@ internal enum L10n {
   internal enum Login {
     /// Email
     internal static let email = L10n.tr("Localizable", "login.email")
+    /// Forgot Password?
+    internal static let forgotPassword = L10n.tr("Localizable", "login.forgot_password")
     /// Password
     internal static let password = L10n.tr("Localizable", "login.password")
     /// Repeat password
