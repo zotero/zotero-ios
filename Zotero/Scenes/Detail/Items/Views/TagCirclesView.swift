@@ -9,6 +9,7 @@
 import UIKit
 
 class TagCirclesView: UIView {
+    private static let borderWidth: CGFloat = 1
     private var aspectRatioConstraint: NSLayoutConstraint?
 
     var colors: [UIColor] = [] {
@@ -43,14 +44,31 @@ class TagCirclesView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        let height = self.layer.frame.height
-        let halfHeight = height / 2.0
-        var xPos = self.layer.frame.width - height
-        self.layer.sublayers?.forEach { circle in
-            circle.frame = CGRect(x: xPos, y: 0, width: height, height: height)
+        let mainHeight = self.layer.frame.height
+        let mainHalfHeight = mainHeight / 2.0
+        var mainXPos = self.layer.frame.width - mainHeight
+
+        let borderHeight = mainHeight + (TagCirclesView.borderWidth * 2)
+        let borderHalfHeight = mainHalfHeight + TagCirclesView.borderWidth
+
+        NSLog("-------")
+        self.layer.sublayers?.enumerated().forEach { index, circle in
+            let mainLayer = index % 2 == 1
+            let height = mainLayer ? mainHeight : borderHeight
+            let yPos = mainLayer ? 0 : -TagCirclesView.borderWidth
+            let xPos = mainLayer ? mainXPos : (mainXPos - TagCirclesView.borderWidth)
+            let halfHeight = mainLayer ? mainHalfHeight : borderHalfHeight
+
+            NSLog("IS MAIN: \(mainLayer); HEIGHT: \(height); X: \(xPos)")
+
+            circle.frame = CGRect(x: xPos, y: yPos, width: height, height: height)
             circle.cornerRadius = halfHeight
-            xPos -= halfHeight
+
+            if mainLayer {
+                mainXPos -= mainHalfHeight
+            }
         }
+        NSLog("-------")
     }
 
     override var intrinsicContentSize: CGSize {
@@ -60,14 +78,20 @@ class TagCirclesView: UIView {
     // MARK: - Actions
 
     private func createLayers(for colors: [UIColor]) -> [CALayer] {
-        return colors.map { color in
-            let layer = CALayer()
-            layer.backgroundColor = color.cgColor
-            layer.borderWidth = 1.5
-            layer.borderColor = UIColor.white.cgColor
-            layer.masksToBounds = true
-            return layer
+        var layers: [CALayer] = []
+        for color in colors {
+            // Border layer
+            let border = CALayer()
+            border.backgroundColor = UIColor.white.cgColor
+            border.masksToBounds = true
+            layers.append(border)
+            // Main circle layer
+            let main = CALayer()
+            main.backgroundColor = color.cgColor
+            main.masksToBounds = true
+            layers.append(main)
         }
+        return layers
     }
 
     private func updateAspectRatio() {

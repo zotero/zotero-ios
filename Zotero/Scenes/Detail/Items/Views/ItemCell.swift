@@ -11,6 +11,7 @@ import UIKit
 class ItemCell: UITableViewCell {
     @IBOutlet private weak var typeImageView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var titleLabelTop: NSLayoutConstraint!
     @IBOutlet private weak var subtitleLabel: UILabel!
     @IBOutlet private weak var tagCircles: TagCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
@@ -27,8 +28,11 @@ class ItemCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.fileView.contentInsets = UIEdgeInsets(top: 7, left: 8, bottom: 7, right: 15)
+        self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
+        let font = UIFont.preferredFont(for: .headline, weight: .regular)
+        self.titleLabel.font = font
+        self.titleLabelTop.constant = 12.5 - (font.ascender - font.capHeight)
+        self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         
         let highlightView = UIView()
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color

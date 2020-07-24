@@ -57,6 +57,7 @@ internal enum Asset {
       internal static let document = ImageAsset(name: "Cells/document")
       internal static let library = ImageAsset(name: "Cells/library")
       internal static let libraryReadonly = ImageAsset(name: "Cells/library_readonly")
+      internal static let note = ImageAsset(name: "Cells/note")
       internal static let trash = ImageAsset(name: "Cells/trash")
     }
     internal enum ItemTypes {
