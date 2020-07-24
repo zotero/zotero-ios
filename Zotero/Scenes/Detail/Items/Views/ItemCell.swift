@@ -11,8 +11,9 @@ import UIKit
 class ItemCell: UITableViewCell {
     @IBOutlet private weak var typeImageView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleLabelTop: NSLayoutConstraint!
+    @IBOutlet private weak var titleLabelToContainerTop: NSLayoutConstraint!
     @IBOutlet private weak var subtitleLabel: UILabel!
+    @IBOutlet private weak var fakeSubtitleLabel: UILabel!
     @IBOutlet private weak var tagCircles: TagCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
     @IBOutlet private weak var fileView: FileAttachmentView!
@@ -28,11 +29,13 @@ class ItemCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
+        let fontOffset = font.ascender - font.capHeight
         self.titleLabel.font = font
-        self.titleLabelTop.constant = 12.5 - (font.ascender - font.capHeight)
+        self.titleLabelToContainerTop.constant = -fontOffset
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+
+        self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
         
         let highlightView = UIView()
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
@@ -82,6 +85,7 @@ class ItemCell: UITableViewCell {
         self.typeImageView.image = UIImage(named: item.typeIconName)
         self.titleLabel.text = item.title.isEmpty ? " " : item.title
         self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
+        self.fakeSubtitleLabel.text = self.subtitleLabel.text
         self.subtitleLabel.isHidden = item.subtitle.isEmpty && (item.hasNote || !item.tagColors.isEmpty)
         self.noteIcon.isHidden = !item.hasNote
 

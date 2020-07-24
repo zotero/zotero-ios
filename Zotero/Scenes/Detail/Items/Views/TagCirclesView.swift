@@ -51,15 +51,12 @@ class TagCirclesView: UIView {
         let borderHeight = mainHeight + (TagCirclesView.borderWidth * 2)
         let borderHalfHeight = mainHalfHeight + TagCirclesView.borderWidth
 
-        NSLog("-------")
         self.layer.sublayers?.enumerated().forEach { index, circle in
             let mainLayer = index % 2 == 1
             let height = mainLayer ? mainHeight : borderHeight
             let yPos = mainLayer ? 0 : -TagCirclesView.borderWidth
             let xPos = mainLayer ? mainXPos : (mainXPos - TagCirclesView.borderWidth)
             let halfHeight = mainLayer ? mainHalfHeight : borderHalfHeight
-
-            NSLog("IS MAIN: \(mainLayer); HEIGHT: \(height); X: \(xPos)")
 
             circle.frame = CGRect(x: xPos, y: yPos, width: height, height: height)
             circle.cornerRadius = halfHeight
@@ -68,7 +65,6 @@ class TagCirclesView: UIView {
                 mainXPos -= mainHalfHeight
             }
         }
-        NSLog("-------")
     }
 
     override var intrinsicContentSize: CGSize {

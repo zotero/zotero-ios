@@ -8,101 +8,109 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" rowHeight="60" id="Fib-kp-DU4" customClass="ItemCell" customModule="Zotero" customModuleProvider="target">
+        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" id="Fib-kp-DU4" customClass="ItemCell" customModule="Zotero" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="406" height="60"/>
             <autoresizingMask key="autoresizingMask"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="Fib-kp-DU4" id="2Kq-Mw-dy2">
                 <rect key="frame" x="0.0" y="0.0" width="406" height="60"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="bXV-Q6-IoO">
-                        <rect key="frame" x="20" y="12" width="338" height="39.5"/>
+                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B9P-No-KWH">
+                        <rect key="frame" x="20" y="16" width="28" height="28"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="28" id="IT9-sA-bJb"/>
+                            <constraint firstAttribute="height" constant="28" id="lZF-iM-E4u"/>
+                        </constraints>
+                    </imageView>
+                    <view contentMode="scaleToFill" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="xh1-uW-L3X">
+                        <rect key="frame" x="64" y="12" width="294" height="36"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B9P-No-KWH">
-                                <rect key="frame" x="0.0" y="6" width="28" height="28"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="28" id="IT9-sA-bJb"/>
-                                    <constraint firstAttribute="height" constant="28" id="lZF-iM-E4u"/>
-                                </constraints>
-                            </imageView>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xh1-uW-L3X">
-                                <rect key="frame" x="44" y="0.0" width="294" height="39.5"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1cO-yP-LQQ">
+                                <rect key="frame" x="0.0" y="0.0" width="43.5" height="16.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" alignment="center" spacing="5" translatesAutoresizingMaskIntoConstraints="NO" id="vd0-bE-ySJ">
+                                <rect key="frame" x="0.0" y="20" width="113" height="20.5"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="251" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1cO-yP-LQQ">
-                                        <rect key="frame" x="0.0" y="0.0" width="43.5" height="20.5"/>
-                                        <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                        <nil key="textColor"/>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="41" height="20.5"/>
+                                        <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                        <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <nil key="highlightedColor"/>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="rightInset">
+                                                <real key="value" value="-1"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
                                     </label>
-                                    <stackView opaque="NO" contentMode="scaleToFill" horizontalCompressionResistancePriority="1000" alignment="center" spacing="5" translatesAutoresizingMaskIntoConstraints="NO" id="vd0-bE-ySJ">
-                                        <rect key="frame" x="0.0" y="20.5" width="114" height="19"/>
-                                        <subviews>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
-                                                <rect key="frame" x="0.0" y="0.0" width="42" height="19"/>
-                                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                                <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                                <nil key="highlightedColor"/>
-                                                <userDefinedRuntimeAttributes>
-                                                    <userDefinedRuntimeAttribute type="number" keyPath="rightInset">
-                                                        <real key="value" value="-1"/>
-                                                    </userDefinedRuntimeAttribute>
-                                                </userDefinedRuntimeAttributes>
-                                            </label>
-                                            <view contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagCirclesView" customModule="Zotero" customModuleProvider="target">
-                                                <rect key="frame" x="47" y="3.5" width="50" height="12"/>
-                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
-                                                <constraints>
-                                                    <constraint firstAttribute="width" constant="50" placeholder="YES" id="zGp-4K-An8"/>
-                                                    <constraint firstAttribute="height" constant="12" id="zRL-BJ-thT"/>
-                                                </constraints>
-                                            </view>
-                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
-                                                <rect key="frame" x="102" y="3.5" width="12" height="12"/>
-                                            </imageView>
-                                        </subviews>
-                                    </stackView>
+                                    <view contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagCirclesView" customModule="Zotero" customModuleProvider="target">
+                                        <rect key="frame" x="46" y="4.5" width="50" height="12"/>
+                                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" placeholder="YES" id="zGp-4K-An8"/>
+                                            <constraint firstAttribute="height" constant="12" id="zRL-BJ-thT"/>
+                                        </constraints>
+                                    </view>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
+                                        <rect key="frame" x="101" y="4.5" width="12" height="12"/>
+                                    </imageView>
                                 </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <constraints>
-                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="1cO-yP-LQQ" secondAttribute="trailing" id="C23-pl-Mjg"/>
-                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="vd0-bE-ySJ" secondAttribute="trailing" id="D4U-Uq-qdm"/>
-                                    <constraint firstItem="vd0-bE-ySJ" firstAttribute="top" secondItem="1cO-yP-LQQ" secondAttribute="bottom" id="GgC-E3-SIR"/>
-                                    <constraint firstItem="1cO-yP-LQQ" firstAttribute="top" secondItem="xh1-uW-L3X" secondAttribute="top" id="QVo-y0-tjg"/>
-                                    <constraint firstItem="1cO-yP-LQQ" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="RDN-os-C0n"/>
-                                    <constraint firstAttribute="bottom" secondItem="vd0-bE-ySJ" secondAttribute="bottom" id="SFp-Z1-heI"/>
-                                    <constraint firstItem="vd0-bE-ySJ" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="mlG-1s-kX3"/>
-                                </constraints>
-                            </view>
+                            </stackView>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bHf-1F-MIt">
+                                <rect key="frame" x="0.0" y="20" width="294" height="20.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
-                    </stackView>
+                        <constraints>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="1cO-yP-LQQ" secondAttribute="trailing" id="C23-pl-Mjg"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="vd0-bE-ySJ" secondAttribute="trailing" id="D4U-Uq-qdm"/>
+                            <constraint firstAttribute="bottom" secondItem="bHf-1F-MIt" secondAttribute="baseline" id="INf-HS-nYb"/>
+                            <constraint firstItem="bHf-1F-MIt" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="Ok2-rV-ry6"/>
+                            <constraint firstItem="1cO-yP-LQQ" firstAttribute="top" secondItem="xh1-uW-L3X" secondAttribute="top" id="QVo-y0-tjg"/>
+                            <constraint firstItem="1cO-yP-LQQ" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="RDN-os-C0n"/>
+                            <constraint firstItem="bHf-1F-MIt" firstAttribute="firstBaseline" secondItem="1cO-yP-LQQ" secondAttribute="baseline" constant="24" id="cAU-8V-th9"/>
+                            <constraint firstItem="vd0-bE-ySJ" firstAttribute="height" secondItem="bHf-1F-MIt" secondAttribute="height" id="eEm-7D-Dbf"/>
+                            <constraint firstAttribute="trailing" secondItem="bHf-1F-MIt" secondAttribute="trailing" id="lN8-9e-0WV"/>
+                            <constraint firstItem="vd0-bE-ySJ" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="mlG-1s-kX3"/>
+                            <constraint firstItem="bHf-1F-MIt" firstAttribute="top" relation="greaterThanOrEqual" secondItem="1cO-yP-LQQ" secondAttribute="bottom" id="vGP-Eh-FhS"/>
+                            <constraint firstItem="vd0-bE-ySJ" firstAttribute="top" secondItem="bHf-1F-MIt" secondAttribute="top" id="zSK-dq-u3e"/>
+                        </constraints>
+                    </view>
                     <view contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
                         <rect key="frame" x="358" y="0.0" width="48" height="60"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
+                            <constraint firstAttribute="height" constant="60" placeholder="YES" id="KJz-PQ-xQe"/>
                             <constraint firstAttribute="width" constant="48" placeholder="YES" id="Qwr-Ft-5mp"/>
                         </constraints>
                     </view>
                 </subviews>
                 <constraints>
-                    <constraint firstAttribute="bottom" secondItem="X2V-4e-fFg" secondAttribute="baseline" constant="13" id="6ty-wG-62v"/>
-                    <constraint firstItem="Mcw-7q-2OK" firstAttribute="top" secondItem="2Kq-Mw-dy2" secondAttribute="top" id="6zr-BT-tOQ"/>
+                    <constraint firstItem="Mcw-7q-2OK" firstAttribute="centerY" secondItem="2Kq-Mw-dy2" secondAttribute="centerY" id="9K1-kq-Bzk"/>
                     <constraint firstAttribute="trailing" secondItem="Mcw-7q-2OK" secondAttribute="trailing" id="D05-hV-5g9"/>
-                    <constraint firstItem="bXV-Q6-IoO" firstAttribute="leading" secondItem="2Kq-Mw-dy2" secondAttribute="leading" constant="20" id="Ira-Xc-nNI"/>
-                    <constraint firstAttribute="bottom" secondItem="Mcw-7q-2OK" secondAttribute="bottom" id="RZh-va-bjz"/>
-                    <constraint firstItem="1cO-yP-LQQ" firstAttribute="top" secondItem="2Kq-Mw-dy2" secondAttribute="top" constant="12" id="axa-xH-7Fv"/>
-                    <constraint firstItem="Mcw-7q-2OK" firstAttribute="leading" secondItem="bXV-Q6-IoO" secondAttribute="trailing" id="gUi-Ys-cIv"/>
+                    <constraint firstItem="B9P-No-KWH" firstAttribute="centerY" secondItem="2Kq-Mw-dy2" secondAttribute="centerY" id="GQu-Ix-SCA"/>
+                    <constraint firstAttribute="bottom" secondItem="xh1-uW-L3X" secondAttribute="bottom" constant="12" id="Jt1-Ab-CRN"/>
+                    <constraint firstItem="Mcw-7q-2OK" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="trailing" id="KfC-O7-kTO"/>
+                    <constraint firstItem="B9P-No-KWH" firstAttribute="leading" secondItem="2Kq-Mw-dy2" secondAttribute="leading" constant="20" id="TP4-Kc-Wfd"/>
+                    <constraint firstItem="xh1-uW-L3X" firstAttribute="leading" secondItem="B9P-No-KWH" secondAttribute="trailing" constant="16" id="WHb-at-3YO"/>
+                    <constraint firstItem="xh1-uW-L3X" firstAttribute="top" secondItem="2Kq-Mw-dy2" secondAttribute="top" constant="12" id="ogb-qs-XEA"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
+                <outlet property="fakeSubtitleLabel" destination="bHf-1F-MIt" id="iap-gV-fvd"/>
                 <outlet property="fileView" destination="Mcw-7q-2OK" id="osx-zR-ssI"/>
                 <outlet property="noteIcon" destination="z75-Uk-CFi" id="M1g-73-xKO"/>
                 <outlet property="subtitleLabel" destination="X2V-4e-fFg" id="cdv-iV-C0j"/>
                 <outlet property="tagCircles" destination="Z8L-AU-qom" id="mFQ-RF-VPj"/>
                 <outlet property="titleLabel" destination="1cO-yP-LQQ" id="fpf-V6-B3q"/>
-                <outlet property="titleLabelTop" destination="axa-xH-7Fv" id="IhD-ZM-ZnK"/>
+                <outlet property="titleLabelToContainerTop" destination="QVo-y0-tjg" id="CF2-CX-IMG"/>
                 <outlet property="typeImageView" destination="B9P-No-KWH" id="9DN-PU-azP"/>
             </connections>
-            <point key="canvasLocation" x="65.217391304347828" y="-89.732142857142847"/>
+            <point key="canvasLocation" x="65.217391304347828" y="-90.066964285714278"/>
         </tableViewCell>
     </objects>
     <resources>

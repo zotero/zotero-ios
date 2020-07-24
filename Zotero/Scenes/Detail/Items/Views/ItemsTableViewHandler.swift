@@ -107,7 +107,8 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.dataSource = self
         self.tableView.dragDelegate = self
         self.tableView.dropDelegate = self
-        self.tableView.rowHeight = 58
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.estimatedRowHeight = 60
         self.tableView.allowsMultipleSelectionDuringEditing = true
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
 
@@ -150,10 +151,6 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.viewModel.state.results?.count ?? 0
-    }
-
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 60
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
