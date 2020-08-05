@@ -229,6 +229,15 @@ class ItemsViewController: UIViewController {
         })
     }
 
+    private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void) {
+        let controller = UIAlertController(title: title, message: question, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: (isDestructive ? .destructive : .default), handler: { _ in
+            confirm()
+        }))
+        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
+        self.present(controller, animated: true, completion: nil)
+    }
+
     // MARK: - Setups
 
     private func setupFileObservers() {
@@ -359,7 +368,10 @@ class ItemsViewController: UIViewController {
 
         let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain, target: nil, action: nil)
         trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.viewModel.process(action: .trashSelectedItems)
+            let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.trashQuestion : L10n.Items.trashMultipleQuestion
+            self?.ask(question: question, title: L10n.Items.trashTitle, isDestructive: false, confirm: {
+                self?.viewModel.process(action: .trashSelectedItems)
+            })
         })
         .disposed(by: self.disposeBag)
         trashItem.tag = ItemsViewController.barButtonItemEmptyTag
@@ -380,7 +392,11 @@ class ItemsViewController: UIViewController {
         if self.viewModel.state.type.collectionKey != nil {
             let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"), style: .plain, target: nil, action: nil)
             removeItem.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .deleteSelectedItemsFromCollection)
+                let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.removeFromCollectionQuestion :
+                                                                                L10n.Items.removeFromCollectionMultipleQuestion
+                self?.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: {
+                    self?.viewModel.process(action: .deleteSelectedItemsFromCollection)
+                })
             })
             .disposed(by: self.disposeBag)
             removeItem.tag = ItemsViewController.barButtonItemEmptyTag
@@ -395,14 +411,20 @@ class ItemsViewController: UIViewController {
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let trashItem = UIBarButtonItem(image: Asset.Images.restoreTrash.image, style: .plain, target: nil, action: nil)
         trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.viewModel.process(action: .restoreSelectedItems)
+            let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.restoreQuestion : L10n.Items.restoreMultipleQuestion
+            self?.ask(question: question, title: L10n.Items.restoreQuestion, isDestructive: false, confirm: {
+                self?.viewModel.process(action: .restoreSelectedItems)
+            })
         })
         .disposed(by: self.disposeBag)
         trashItem.tag = ItemsViewController.barButtonItemEmptyTag
 
         let emptyItem = UIBarButtonItem(image: Asset.Images.emptyTrash.image, style: .plain, target: nil, action: nil)
         emptyItem.rx.tap.subscribe(onNext: { [weak self] _ in
-            self?.viewModel.process(action: .deleteSelectedItems)
+            let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.deleteQuestion : L10n.Items.deleteMultipleQuestion
+            self?.ask(question: question, title: L10n.delete, isDestructive: true, confirm: {
+                self?.viewModel.process(action: .deleteSelectedItems)
+            })
         })
         .disposed(by: self.disposeBag)
         emptyItem.tag = ItemsViewController.barButtonItemEmptyTag

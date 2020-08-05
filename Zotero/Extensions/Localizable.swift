@@ -124,6 +124,10 @@ internal enum L10n {
   internal enum Items {
     /// Ascending
     internal static let ascending = L10n.tr("Localizable", "items.ascending")
+    /// Are you sure you want to delete selected items?
+    internal static let deleteMultipleQuestion = L10n.tr("Localizable", "items.delete_multiple_question")
+    /// Are you sure you want to delete the selected item?
+    internal static let deleteQuestion = L10n.tr("Localizable", "items.delete_question")
     /// Descending
     internal static let descending = L10n.tr("Localizable", "items.descending")
     /// Deselect all
@@ -140,6 +144,18 @@ internal enum L10n {
     internal static let newNote = L10n.tr("Localizable", "items.new_note")
     /// 1 Collection Selected
     internal static let oneCollectionsSelected = L10n.tr("Localizable", "items.one_collections_selected")
+    /// Are you sure you want to remove selected items from this collection?
+    internal static let removeFromCollectionMultipleQuestion = L10n.tr("Localizable", "items.remove_from_collection_multiple_question")
+    /// Are you sure you want to remove the selected item from this collection?
+    internal static let removeFromCollectionQuestion = L10n.tr("Localizable", "items.remove_from_collection_question")
+    /// Remove from Collection
+    internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title")
+    /// Are you sure you want to restore selected items?
+    internal static let restoreMultipleQuestion = L10n.tr("Localizable", "items.restore_multiple_question")
+    /// Are you sure you want to restore the selected item?
+    internal static let restoreQuestion = L10n.tr("Localizable", "items.restore_question")
+    /// Restore
+    internal static let restoreTitle = L10n.tr("Localizable", "items.restore_title")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title")
     /// Select
@@ -150,6 +166,12 @@ internal enum L10n {
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")
     /// Sort Order
     internal static let sortOrder = L10n.tr("Localizable", "items.sort_order")
+    /// Are you sure you want to move selected items to the Trash?
+    internal static let trashMultipleQuestion = L10n.tr("Localizable", "items.trash_multiple_question")
+    /// Are you sure you want to move the selected item to the Trash?
+    internal static let trashQuestion = L10n.tr("Localizable", "items.trash_question")
+    /// Move to Trash
+    internal static let trashTitle = L10n.tr("Localizable", "items.trash_title")
     /// Select a Collection
     internal static let zeroCollectionsSelected = L10n.tr("Localizable", "items.zero_collections_selected")
     internal enum Error {
