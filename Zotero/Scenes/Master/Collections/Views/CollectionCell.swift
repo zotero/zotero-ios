@@ -12,6 +12,12 @@ import SwiftUI
 class CollectionCell: UITableViewCell {
     private static let imageWidth: CGFloat = 36
 
+    func set(collection: Collection) {
+        let view = CollectionRow(data: collection)
+        self.set(view: view)
+        self.setupSeparatorInset(with: collection.level)
+    }
+
     func set(searchableCollection: SearchableCollection) {
         let view = CollectionRow(data: searchableCollection.collection).opacity(searchableCollection.isActive ? 1 : 0.4)
         self.set(view: view)

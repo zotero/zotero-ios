@@ -16,5 +16,4 @@ enum CollectionsAction {
     case select(Collection)
     case updateCollections([Collection])
     case loadData
-    case search(String)
 }

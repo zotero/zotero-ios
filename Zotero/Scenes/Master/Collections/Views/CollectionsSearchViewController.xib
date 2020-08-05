@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CollectionsSearchViewController" customModule="Zotero" customModuleProvider="target">
+            <connections>
+                <outlet property="searchBar" destination="kKA-Jy-thd" id="TAG-TD-Wje"/>
+                <outlet property="tableView" destination="N4u-mQ-Llw" id="GBz-wX-8Fc"/>
+                <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+            <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <searchBar contentMode="redraw" searchBarStyle="minimal" showsCancelButton="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kKA-Jy-thd">
+                    <rect key="frame" x="0.0" y="44" width="414" height="56"/>
+                    <color key="backgroundColor" red="0.97254901960784312" green="0.97254901960784312" blue="0.97254901960784312" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                    <color key="barTintColor" name="zoteroBlue"/>
+                    <textInputTraits key="textInputTraits"/>
+                </searchBar>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qWI-2N-7Qy">
+                    <rect key="frame" x="0.0" y="100" width="414" height="1"/>
+                    <color key="backgroundColor" systemColor="opaqueSeparatorColor" red="0.77647058820000003" green="0.77647058820000003" blue="0.7843137255" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="1" id="UVA-aR-QbC"/>
+                    </constraints>
+                </view>
+                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="N4u-mQ-Llw">
+                    <rect key="frame" x="0.0" y="101" width="414" height="795"/>
+                    <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                </tableView>
+            </subviews>
+            <color key="backgroundColor" red="0.96687940139999995" green="0.96825484149999996" blue="0.96976782569999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstItem="N4u-mQ-Llw" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="1Zd-fU-eO8"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="N4u-mQ-Llw" secondAttribute="trailing" id="DWx-YQ-HCh"/>
+                <constraint firstItem="N4u-mQ-Llw" firstAttribute="top" secondItem="qWI-2N-7Qy" secondAttribute="bottom" id="Epj-JA-Qzk"/>
+                <constraint firstAttribute="bottom" secondItem="N4u-mQ-Llw" secondAttribute="bottom" id="HZS-2T-RQZ"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="qWI-2N-7Qy" secondAttribute="trailing" id="OGT-VL-qKW"/>
+                <constraint firstItem="kKA-Jy-thd" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" id="U7Y-LL-Ybw"/>
+                <constraint firstItem="qWI-2N-7Qy" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="fB5-RR-VUu"/>
+                <constraint firstItem="kKA-Jy-thd" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="fnj-dZ-ZsO"/>
+                <constraint firstItem="kKA-Jy-thd" firstAttribute="trailing" secondItem="fnl-2z-Ty3" secondAttribute="trailing" id="skm-OH-t2b"/>
+                <constraint firstItem="qWI-2N-7Qy" firstAttribute="top" secondItem="kKA-Jy-thd" secondAttribute="bottom" id="vWl-RK-G2U"/>
+            </constraints>
+            <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
+            <point key="canvasLocation" x="139" y="120"/>
+        </view>
+    </objects>
+    <resources>
+        <namedColor name="zoteroBlue">
+            <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>

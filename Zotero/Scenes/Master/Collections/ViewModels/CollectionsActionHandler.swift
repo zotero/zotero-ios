@@ -49,94 +49,15 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         case .select(let collection):
             self.update(viewModel: viewModel) { state in
                 state.selectedCollection = collection
-                // Finish search when item is selected
-                self.removeCollectionsFilter(in: &state)
                 state.changes.insert(.selection)
             }
 
         case .updateCollections(let collections):
-            self.update(collections: collections.map({ SearchableCollection(isActive: true, collection: $0) }), in: viewModel)
+            self.update(collections: collections, in: viewModel)
 
         case .loadData:
             self.loadData(in: viewModel)
-
-        case .search(let term):
-            self.search(for: term, in: viewModel)
         }
-    }
-
-    private func search(for term: String, in viewModel: ViewModel<CollectionsActionHandler>) {
-        if term.isEmpty {
-            guard viewModel.state.snapshot != nil else { return }
-            self.update(viewModel: viewModel) { state in
-                self.removeCollectionsFilter(in: &state)
-            }
-        } else {
-            self.filterCollections(with: term, in: viewModel)
-        }
-    }
-
-    private func filterCollections(with text: String, in viewModel: ViewModel<CollectionsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            if state.snapshot == nil {
-                state.snapshot = state.collections
-            }
-            state.collections = self.filter(collections: (state.snapshot ?? state.collections), with: text)
-            state.changes = .results
-        }
-    }
-
-    private func filter(collections: [SearchableCollection], with text: String) -> [SearchableCollection] {
-        var filtered: [SearchableCollection] = []
-
-        // Go through all collections, find results and insert their parents.
-        for (i, searchable) in collections.enumerated() {
-            guard searchable.collection.name.localizedCaseInsensitiveContains(text) else { continue }
-
-            // Check whether we need to look for parents of this collection. We need to look for parents when the level > 0
-            // (otherwise there are no parents) and previously inserted collection doesn't have the same parent as this one
-            // (otherwise we already have all parents from previous collection).
-            let shouldLookForParents = searchable.collection.level > 0 && filtered.last?.collection.parentKey != searchable.collection.parentKey
-
-            // Collection contains text, append.
-            filtered.append(searchable.isActive(true))
-
-            guard shouldLookForParents else { continue }
-
-            // Track back to search for all parents
-            let insertionIndex = filtered.count - 1
-            var lastLevel = searchable.collection.level
-
-            for j in (0..<i).reversed() {
-                let parent = collections[j]
-
-                // If level changed, we found a new parent
-                guard parent.collection.level < lastLevel else { continue }
-
-                // Parent is already in filtered array, stop searching for parents
-                if filtered.reversed().firstIndex(where: { $0.collection == parent.collection }) != nil {
-                    break
-                }
-
-                filtered.insert(parent.isActive(false), at: insertionIndex)
-
-                // If this parent is already on root level, stop searching for parents
-                if parent.collection.level == 0 {
-                    break
-                }
-
-                lastLevel = parent.collection.level
-            }
-        }
-
-        return filtered
-    }
-
-    private func removeCollectionsFilter(in state: inout State) {
-        guard let snapshot = state.snapshot else { return }
-        state.collections = snapshot
-        state.snapshot = nil
-        state.changes = .results
     }
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
@@ -161,7 +82,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 guard let viewModel = viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let collections = CollectionTreeBuilder.collections(from: objects).map({ SearchableCollection(isActive: true, collection: $0) })
+                    let collections = CollectionTreeBuilder.collections(from: objects)
                     self.update(collections: collections, in: viewModel)
                 case .initial: break
                 case .error: break
@@ -172,7 +93,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 guard let viewModel = viewModel else { return }
                 switch changes {
                 case .update(let objects, _, _, _):
-                    let collections = CollectionTreeBuilder.collections(from: objects).map({ SearchableCollection(isActive: true, collection: $0) })
+                    let collections = CollectionTreeBuilder.collections(from: objects)
                     self.update(collections: collections, in: viewModel)
                 case .initial: break
                 case .error: break
@@ -194,7 +115,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             }
 
             self.update(viewModel: viewModel) { state in
-                state.collections = allCollections.map({ SearchableCollection(isActive: true, collection: $0) })
+                state.collections = allCollections
                 if !allCollections.isEmpty {
                     state.selectedCollection = allCollections[0]
                 }
@@ -217,71 +138,54 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
 
         self.update(viewModel: viewModel) { state in
-            if var snapshot = state.snapshot {
-                // If the user is searching, update the snapshot and don't update UI
-                self.updateAllItemCount(to: allItemCount, in: &snapshot)
-                state.snapshot = snapshot
-            } else {
-                // If the user is not searching, update collections and reload the UI
-                if self.updateAllItemCount(to: allItemCount, in: &state.collections) {
-                    state.changes.insert(.itemCount)
-                }
+            if let index = state.collections.firstIndex(where: { $0.isCustom(type: .all) }) {
+                state.collections[index].itemCount = allItemCount
+                state.changes.insert(.itemCount)
             }
         }
-    }
-
-    @discardableResult
-    private func updateAllItemCount(to count: Int, in collections: inout [SearchableCollection]) -> Bool {
-        if let index = collections.firstIndex(where: { $0.collection.isCustom(type: .all) }) {
-            collections[index].collection.itemCount = count
-            return true
-        }
-        return false
     }
 
     private func reloadCounts(in viewModel: ViewModel<CollectionsActionHandler>, allItemCount: Int) {
         let libraryId = viewModel.state.library.identifier
-        var allCollections = viewModel.state.snapshot ?? viewModel.state.collections
+        var allCollections = viewModel.state.collections
 
-        do {
-            let coordinator = try self.dbStorage.createCoordinator()
+        self.queue.async {
+            do {
+                let coordinator = try self.dbStorage.createCoordinator()
 
-            for (index, searchable) in allCollections.enumerated() {
-                let count: Int
-                switch searchable.collection.type {
-                case .collection:
-                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .collection(searchable.collection.key,
-                                                                                                  searchable.collection.name),
-                                                                                libraryId: libraryId)).count
-                case .search:
-                    count = try coordinator.perform(request: ReadItemsDbRequest(type: .search(searchable.collection.key,
-                                                                                              searchable.collection.name),
-                                                                                libraryId: libraryId)).count
-                case .custom(let type):
-                    switch type {
-                    case .all:
-                        count = allItemCount
-                    case .publications:
-                        count = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
-                    case .trash:
-                        count = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
+                for (index, collection) in allCollections.enumerated() {
+                    let count: Int
+                    switch collection.type {
+                    case .collection:
+                        count = try coordinator.perform(request: ReadItemsDbRequest(type: .collection(collection.key,
+                                                                                                      collection.name),
+                                                                                    libraryId: libraryId)).count
+                    case .search:
+                        count = try coordinator.perform(request: ReadItemsDbRequest(type: .search(collection.key,
+                                                                                                  collection.name),
+                                                                                    libraryId: libraryId)).count
+                    case .custom(let type):
+                        switch type {
+                        case .all:
+                            count = allItemCount
+                        case .publications:
+                            count = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
+                        case .trash:
+                            count = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
+                        }
+                    }
+                    allCollections[index].itemCount = count
+                }
+
+                DispatchQueue.main.async {
+                    self.update(viewModel: viewModel) { state in
+                        state.collections = allCollections
+                        state.changes.insert(.itemCount)
                     }
                 }
-                allCollections[index].collection.itemCount = count
+            } catch let error {
+                DDLogError("CollectionsActionHandlers: can't load counts - \(error)")
             }
-
-            self.update(viewModel: viewModel) { state in
-                if state.snapshot != nil {
-                    // If the user is searching, just update the snapshot and don't reload
-                    state.snapshot = allCollections
-                } else {
-                    // If the user is not searching, update all collections and reload data
-                    state.collections = allCollections
-                    state.changes.insert(.itemCount)
-                }
-            }
-        } catch let error {
-            DDLogError("CollectionsActionHandlers: can't load counts - \(error)")
         }
     }
 
@@ -343,26 +247,28 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func update(collections: [SearchableCollection], in viewModel: ViewModel<CollectionsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            if var snapshot = state.snapshot {
-                // If the user is searching, update snapshot with new collections and don't reload UI
-                self.update(collections: collections, original: &snapshot)
-                state.snapshot = snapshot
-            } else {
-                // If user is not searching, update original collections with new collections and reload UI
-                self.update(collections: collections, original: &state.collections)
-                state.changes.insert(.results)
+    private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
+        guard !collections.isEmpty else { return }
+
+        self.queue.async {
+            var original = viewModel.state.collections
+            self.update(original: &original, with: collections)
+
+            DispatchQueue.main.async {
+                self.update(viewModel: viewModel) { state in
+                    state.collections = original
+                    state.changes.insert(.results)
+                }
             }
         }
     }
 
     /// Updates existing collections of the same type. If no collection of given type exists yet, collections are inserted
     /// into appropriate position based on CollectionType.
+    /// - parameter original: Original collections. 
     /// - parameter collections: collections to be inserted/updated.
-    /// - parameter original: Original collections.
-    private func update(collections: [SearchableCollection], original: inout [SearchableCollection]) {
-        guard !collections.isEmpty, let type = collections.first?.collection.type else { return }
+    private func update(original: inout [Collection], with collections: [Collection]) {
+        guard let type = collections.first?.type else { return }
 
         if self.replaceCollections(of: type, with: collections, original: &original) { return }
 
@@ -382,18 +288,17 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     /// - parameter collections: New collections to replace existing ones.
     /// - parameter original: Original collections.
     /// - returns: False if there are no collections to replace, true otherwise.
-    private func replaceCollections(of type: Collection.CollectionType, with collections: [SearchableCollection],
-                                    original: inout [SearchableCollection]) -> Bool {
+    private func replaceCollections(of type: Collection.CollectionType, with collections: [Collection], original: inout [Collection]) -> Bool {
         var startIndex = -1
         var endIndex = -1
 
         for data in original.enumerated() {
             if startIndex == -1 {
-                if data.element.collection.type == type {
+                if data.element.type == type {
                     startIndex = data.offset
                 }
             } else if endIndex == -1 {
-                if data.element.collection.type != type {
+                if data.element.type != type {
                     endIndex = data.offset
                 }
             }

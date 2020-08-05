@@ -49,11 +49,10 @@ class CollectionsViewController: UIViewController {
                                                             viewModel: self.viewModel,
                                                             dragDropController: self.dragDropController,
                                                             splitDelegate: self.coordinatorDelegate)
-        self.setupSearch()
 
         self.viewModel.process(action: .loadData)
         self.tableViewHandler.update(collections: self.viewModel.state.collections, animated: false)
-        self.coordinatorDelegate?.collectionsChanged(to: self.viewModel.state.collections.map({ $0.collection }))
+        self.coordinatorDelegate?.collectionsChanged(to: self.viewModel.state.collections)
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -66,7 +65,7 @@ class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        self.selectCurrentRowIfNeeded()
+        self.selectIfNeeded(collection: self.viewModel.state.selectedCollection)
         if self.coordinatorDelegate?.isSplit == true {
             self.coordinatorDelegate?.show(collection: self.viewModel.state.selectedCollection, in: self.viewModel.state.library)
         }
@@ -77,62 +76,78 @@ class CollectionsViewController: UIViewController {
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
             self.tableViewHandler.update(collections: state.collections, animated: true, completed: { [weak self] in
-                self?.selectCurrentRowIfNeeded()
+                self?.selectIfNeeded(collection: state.selectedCollection)
             })
-            self.coordinatorDelegate?.collectionsChanged(to: state.collections.map({ $0.collection }))
+            self.coordinatorDelegate?.collectionsChanged(to: state.collections)
         }
         if state.changes.contains(.itemCount) {
             self.tableViewHandler.update(collections: state.collections, animated: false, completed: { [weak self] in
-                self?.selectCurrentRowIfNeeded()
+                self?.selectIfNeeded(collection: state.selectedCollection)
             })
         }
         if state.changes.contains(.selection) {
             self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)
-
-            if let controller = self.navigationItem.searchController,
-               controller.isActive {
-                controller.isActive = false
-            }
         }
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
         }
     }
 
-    private func selectCurrentRowIfNeeded() {
-        // Selection is disabled during search and in compact mode (when UISplitViewController is a single column instead of master + detail).
-        guard self.viewModel.state.snapshot == nil && self.coordinatorDelegate?.isSplit == true else { return }
-        if let index = self.viewModel.state.collections.firstIndex(where: { $0.collection == self.viewModel.state.selectedCollection }) {
+    // MARK: - Actions
+
+    private func showSearch() {
+        let collections = self.viewModel.state.collections.filter({ !$0.type.isCustom })
+                                                          .map({ SearchableCollection(isActive: true, collection: $0) })
+        let viewModel = ViewModel(initialState: CollectionsSearchState(collections: collections), handler: CollectionsSearchActionHandler())
+        let controller = CollectionsSearchViewController(viewModel: viewModel, selectAction: { [weak self] collection in
+            self?.select(searchResult: collection)
+        })
+        controller.modalPresentationStyle = .overCurrentContext
+        controller.modalTransitionStyle = .crossDissolve
+        controller.isModalInPresentation = true
+        self.present(controller, animated: true, completion: nil)
+    }
+
+    private func selectIfNeeded(collection: Collection) {
+        // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
+        guard self.coordinatorDelegate?.isSplit == true else { return }
+        if let index = self.viewModel.state.collections.firstIndex(where: { $0 == collection }) {
             self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
         }
     }
 
-    // MARK: - Actions
+    private func select(searchResult: Collection) {
+        let isSplit = self.coordinatorDelegate?.isSplit ?? false
 
-    @objc private func addCollection() {
-        self.viewModel.process(action: .startEditing(.add))
+        if isSplit {
+            self.selectIfNeeded(collection: searchResult)
+        }
+
+        // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
+        // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
+        guard !isSplit ? true : searchResult.id != self.viewModel.state.selectedCollection.id else { return }
+        self.viewModel.process(action: .select(searchResult))
     }
 
     // MARK: - Setups
 
     private func setupAddNavbarItem() {
-        let item = UIBarButtonItem(image: UIImage(systemName: "plus"),
-                                   style: .plain,
-                                   target: self,
-                                   action: #selector(CollectionsViewController.addCollection))
-        self.navigationItem.rightBarButtonItem = item
-    }
+        let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+        addItem.rx
+               .tap
+               .subscribe(onNext: { [weak self] _ in
+                   self?.viewModel.process(action: .startEditing(.add))
+               })
+               .disposed(by: self.disposeBag)
 
-    private func setupSearch() {
-        let controller = UISearchController(searchResultsController: nil)
-        controller.obscuresBackgroundDuringPresentation = false
-        controller.searchBar.placeholder = L10n.Collections.searchTitle
-        controller.searchBar.rx.text.observeOn(MainScheduler.instance)
-                            .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                            .subscribe(onNext: { [weak self] text in
-                                self?.viewModel.process(action: .search(text ?? ""))
-                            })
-                            .disposed(by: self.disposeBag)
-        self.navigationItem.searchController = controller
+        let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        searchItem.rx
+                  .tap
+                  .subscribe(onNext: { [weak self] _ in
+                    self?.showSearch()
+                  })
+                  .disposed(by: self.disposeBag)
+
+        self.navigationItem.rightBarButtonItems = [addItem, searchItem]
     }
 }

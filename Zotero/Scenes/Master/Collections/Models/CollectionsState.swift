@@ -32,8 +32,7 @@ struct CollectionsState: ViewModelState {
     let library: Library
 
     var selectedCollection: Collection
-    var collections: [SearchableCollection]
-    var snapshot: [SearchableCollection]?
+    var collections: [Collection]
     var editingData: CollectionStateEditingData?
     var changes: Changes
     var collectionsToken: NotificationToken?

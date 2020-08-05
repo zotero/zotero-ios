@@ -10,7 +10,7 @@ import Foundation
 
 struct SearchableCollection: Equatable, Hashable {
     let isActive: Bool
-    var collection: Collection
+    let collection: Collection
 
     func isActive(_ isActive: Bool) -> Self {
         return SearchableCollection(isActive: isActive, collection: self.collection)
