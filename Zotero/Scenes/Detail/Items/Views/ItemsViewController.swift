@@ -380,7 +380,7 @@ class ItemsViewController: UIViewController {
         if self.viewModel.state.type.collectionKey != nil {
             let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"), style: .plain, target: nil, action: nil)
             removeItem.rx.tap.subscribe(onNext: { [weak self] _ in
-                self?.viewModel.process(action: .trashSelectedItems)
+                self?.viewModel.process(action: .deleteSelectedItemsFromCollection)
             })
             .disposed(by: self.disposeBag)
             removeItem.tag = ItemsViewController.barButtonItemEmptyTag

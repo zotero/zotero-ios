@@ -41,6 +41,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .assignSelectedItemsToCollections(let collections):
             self.addSelectedItems(to: collections, in: viewModel)
 
+        case .deleteSelectedItemsFromCollection:
+            self.deleteSelectedItemsFromCollection(in: viewModel)
+
         case .deselectItem(let key):
             self.update(viewModel: viewModel) { state in
                 state.selectedItems.remove(key)
@@ -276,6 +279,21 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     // MARK: - Toolbar actions
+
+    private func deleteSelectedItemsFromCollection(in viewModel: ViewModel<ItemsActionHandler>) {
+        guard let key = viewModel.state.type.collectionKey else { return }
+        let request = DeleteItemsFromCollectionDbRequest(collectionKey: key,
+                                                         itemKeys: viewModel.state.selectedItems,
+                                                         libraryId: viewModel.state.library.identifier)
+
+        self.perform(request: request) { [weak viewModel] error in
+            guard let viewModel = viewModel else { return }
+            DDLogError("ItemsStore: can't delete items - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .deletionFromCollection
+            }
+        }
+    }
 
     private func deleteSelectedItems(in viewModel: ViewModel<ItemsActionHandler>) {
         let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(viewModel.state.selectedItems),

@@ -13,6 +13,7 @@ import RealmSwift
 enum ItemsAction {
     case addAttachments([URL])
     case assignSelectedItemsToCollections(Set<String>)
+    case deleteSelectedItemsFromCollection
     case deleteSelectedItems
     case deselectItem(String)
     case loadInitialState
