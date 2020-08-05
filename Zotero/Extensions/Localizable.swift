@@ -12,6 +12,8 @@ import Foundation
 internal enum L10n {
   /// Abstract
   internal static let abstract = L10n.tr("Localizable", "abstract")
+  /// Add
+  internal static let add = L10n.tr("Localizable", "add")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel")
   /// Close

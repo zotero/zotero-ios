@@ -34,7 +34,7 @@ struct CollectionsPickerView: View {
                                     self.closeAction()
                                 },
                                 label: {
-                                    Text(L10n.save)
+                                    Text(L10n.add)
                                 })
         )
         .environment(\.editMode, .constant(.active))
