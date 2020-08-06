@@ -64,7 +64,7 @@ class CollectionsTableViewHandler: NSObject {
         self.tableView.delegate = self
         self.tableView.dropDelegate = self
         self.tableView.rowHeight = 44
-        self.tableView.register(CollectionCell.self, forCellReuseIdentifier: CollectionsTableViewHandler.cellId)
+        self.tableView.register(UINib(nibName: "CollectionCell", bundle: nil), forCellReuseIdentifier: CollectionsTableViewHandler.cellId)
     }
 
     private func setupDataSource() {
