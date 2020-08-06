@@ -11,7 +11,7 @@ import UIKit
 class ItemCell: UITableViewCell {
     @IBOutlet private weak var typeImageView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var titleLabelToContainerTop: NSLayoutConstraint!
+    @IBOutlet private weak var titleLabelsToContainerBottom: NSLayoutConstraint!
     @IBOutlet private weak var subtitleLabel: UILabel!
     @IBOutlet private weak var fakeSubtitleLabel: UILabel!
     @IBOutlet private weak var tagCircles: TagCirclesView!
@@ -30,9 +30,8 @@ class ItemCell: UITableViewCell {
         super.awakeFromNib()
 
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
-        let fontOffset = font.ascender - font.capHeight
         self.titleLabel.font = font
-        self.titleLabelToContainerTop.constant = -fontOffset
+        self.titleLabelsToContainerBottom.constant = 12  + (1 / UIScreen.main.scale) // +(1/scale) is for bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
 
         self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
