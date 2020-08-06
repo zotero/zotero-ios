@@ -29,6 +29,12 @@ class TagCirclesView: UIView {
         return 1 / (1 + (CGFloat(self.colors.count - 1) * 0.5))
     }
 
+    var borderColor: CGColor = UIColor.white.cgColor {
+        didSet {
+            self.updateBorderColors()
+        }
+    }
+
     // MARK: - Lifecycle
 
     override init(frame: CGRect) {
@@ -61,8 +67,20 @@ class TagCirclesView: UIView {
             circle.frame = CGRect(x: xPos, y: yPos, width: height, height: height)
             circle.cornerRadius = halfHeight
 
+            if !mainLayer {
+                circle.backgroundColor = self.borderColor
+            }
+
             if mainLayer {
                 mainXPos -= mainHalfHeight
+            }
+        }
+    }
+
+    private func updateBorderColors() {
+        self.layer.sublayers?.enumerated().forEach { index, circle in
+            if index % 2 == 0 {
+                circle.backgroundColor = self.borderColor
             }
         }
     }
@@ -78,8 +96,9 @@ class TagCirclesView: UIView {
         for color in colors {
             // Border layer
             let border = CALayer()
-            border.backgroundColor = UIColor.white.cgColor
+            border.backgroundColor = self.borderColor
             border.masksToBounds = true
+            border.actions = ["backgroundColor": NSNull()]
             layers.append(border)
             // Main circle layer
             let main = CALayer()

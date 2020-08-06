@@ -17,8 +17,15 @@ class ItemCell: UITableViewCell {
     @IBOutlet private weak var tagCircles: TagCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
     @IBOutlet private weak var fileView: FileAttachmentView!
-    
+
     var key: String = ""
+    private var tagBorderColor: CGColor {
+        return self.traitCollection.userInterfaceStyle == .dark ? UIColor.black.cgColor : UIColor.white.cgColor
+    }
+    private var highlightColor: UIColor? {
+        return self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
+                                self.selectedBackgroundView?.backgroundColor
+    }
 
     override func prepareForReuse() {
         super.prepareForReuse()
@@ -33,6 +40,7 @@ class ItemCell: UITableViewCell {
         self.titleLabel.font = font
         self.titleLabelsToContainerBottom.constant = 12  + (1 / UIScreen.main.scale) // +(1/scale) is for bottom separator
         self.fileView.contentInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        self.tagCircles.borderColor = self.tagBorderColor
 
         self.separatorInset = UIEdgeInsets(top: 0, left: 64, bottom: 0, right: 0)
         
@@ -44,15 +52,26 @@ class ItemCell: UITableViewCell {
         selectionView.backgroundColor = Asset.Colors.cellSelected.color
         self.multipleSelectionBackgroundView = selectionView
     }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if previousTraitCollection?.userInterfaceStyle != self.traitCollection.userInterfaceStyle {
+            self.tagCircles.borderColor = self.tagBorderColor
+            self.fileView.set(backgroundColor: self.backgroundColor, circleStrokeColor: .systemGray5)
+        }
+    }
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
         super.setHighlighted(highlighted, animated: animated)
         
         if highlighted {
-            self.fileView.set(backgroundColor: (self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
-                                                                 self.selectedBackgroundView?.backgroundColor))
+            guard let highlightColor = self.highlightColor else { return }
+            self.fileView.set(backgroundColor: highlightColor, circleStrokeColor: .systemGray5)
+            self.tagCircles.borderColor = highlightColor.cgColor
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor)
+            self.fileView.set(backgroundColor: self.backgroundColor, circleStrokeColor: .systemGray5)
+            self.tagCircles.borderColor = self.tagBorderColor
         }
     }
     
@@ -60,10 +79,12 @@ class ItemCell: UITableViewCell {
         super.setSelected(selected, animated: animated)
 
         if selected {
-            self.fileView.set(backgroundColor: (self.isEditing ? self.multipleSelectionBackgroundView?.backgroundColor :
-                                                                 self.selectedBackgroundView?.backgroundColor))
+            guard let highlightColor = self.highlightColor else { return }
+            self.fileView.set(backgroundColor: highlightColor, circleStrokeColor: .systemGray5)
+            self.tagCircles.borderColor = highlightColor.cgColor
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor)
+            self.fileView.set(backgroundColor: self.backgroundColor, circleStrokeColor: .systemGray5)
+            self.tagCircles.borderColor = self.tagBorderColor
         }
     }
 

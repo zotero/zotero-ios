@@ -10,6 +10,8 @@ import UIKit
 
 class CapHeightLabel: UILabel {
     override var alignmentRectInsets: UIEdgeInsets {
-        return UIEdgeInsets(top: (self.font.ascender - self.font.capHeight), left: 0, bottom: 0, right: 0)
+        let scale = UIScreen.main.scale
+        let top = ((ceil(self.font.ascender * scale)  - ceil(self.font.capHeight * scale)) / scale)
+        return UIEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
     }
 }

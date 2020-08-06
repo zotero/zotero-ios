@@ -111,8 +111,11 @@ class FileAttachmentView: UIView {
 
     // MARK: - Actions
 
-    func set(backgroundColor: UIColor?) {
+    func set(backgroundColor: UIColor?, circleStrokeColor: UIColor? = nil) {
         self.badgeBorder?.borderColor = backgroundColor?.cgColor
+        if let strokeColor = circleStrokeColor {
+            self.circleLayer.strokeColor = strokeColor.cgColor
+        }
     }
 
     private func set(selected: Bool) {
