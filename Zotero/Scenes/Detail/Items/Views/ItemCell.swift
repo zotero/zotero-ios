@@ -67,16 +67,6 @@ class ItemCell: UITableViewCell {
             self.fileView.set(backgroundColor: self.backgroundColor)
         }
     }
-    
-    private func string(from color: UIColor) -> String {
-        var r:CGFloat = 0
-        var g:CGFloat = 0
-        var b:CGFloat = 0
-        var a:CGFloat = 0
-        color.getRed(&r, green: &g, blue: &b, alpha: &a)
-        let rgb:Int = (Int)(r*255)<<16 | (Int)(g*255)<<8 | (Int)(b*255)<<0
-        return String(format:"#%06x; %.2f", rgb, a)
-    }
 
     func set(item: ItemCellModel, tapAction: @escaping () -> Void) {
         self.key = item.key
