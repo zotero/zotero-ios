@@ -95,7 +95,7 @@ class ItemsViewController: UIViewController {
         super.viewWillDisappear(animated)
         // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
         self.searchBarContainer?.freezeWidth()
-        self.tableViewHandler.pauseReloading()
+        self.tableViewHandler?.pauseReloading()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
