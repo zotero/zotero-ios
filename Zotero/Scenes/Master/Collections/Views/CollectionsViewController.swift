@@ -111,8 +111,12 @@ class CollectionsViewController: UIViewController {
     private func selectIfNeeded(collection: Collection) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard self.coordinatorDelegate?.isSplit == true else { return }
-        if let index = self.viewModel.state.collections.firstIndex(where: { $0 == collection }) {
+
+        if let index = self.viewModel.state.collections.firstIndex(where: { $0.id == collection.id }) {
+            guard self.tableView.indexPathForSelectedRow?.row != index else { return }
             self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
+        } else if let indexPath = self.tableView.indexPathForSelectedRow {
+            self.tableView.deselectRow(at: indexPath, animated: false)
         }
     }
 
