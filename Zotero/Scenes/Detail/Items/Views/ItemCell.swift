@@ -61,10 +61,10 @@ class ItemCell: UITableViewCell {
         self.tagCircles.borderColor = self.tagBorderColor
         self.fileView.set(backgroundColor: self.backgroundColor)
     }
-    
+
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
         super.setHighlighted(highlighted, animated: animated)
-        
+
         if highlighted {
             guard let highlightColor = self.highlightColor else { return }
             self.fileView.set(backgroundColor: highlightColor)
@@ -74,7 +74,7 @@ class ItemCell: UITableViewCell {
             self.tagCircles.borderColor = self.tagBorderColor
         }
     }
-    
+
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
 
