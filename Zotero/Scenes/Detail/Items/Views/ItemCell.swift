@@ -12,7 +12,7 @@ class ItemCell: UITableViewCell {
     @IBOutlet private weak var typeImageView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleLabelsToContainerBottom: NSLayoutConstraint!
-    @IBOutlet private weak var subtitleLabel: UILabel!
+    @IBOutlet private weak var subtitleLabel: InsetLabel!
     @IBOutlet private weak var fakeSubtitleLabel: UILabel!
     @IBOutlet private weak var tagCircles: TagCirclesView!
     @IBOutlet private weak var noteIcon: UIImageView!
@@ -95,6 +95,9 @@ class ItemCell: UITableViewCell {
         self.typeImageView.image = UIImage(named: item.typeIconName)
         self.titleLabel.text = item.title.isEmpty ? " " : item.title
         self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
+        // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
+        // The note icon is rectangular and has 1px white space on each side, so it needs an extra negative pixel when there are no tags.
+        self.subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
         self.fakeSubtitleLabel.text = self.subtitleLabel.text
         self.subtitleLabel.isHidden = item.subtitle.isEmpty && (item.hasNote || !item.tagColors.isEmpty)
         self.noteIcon.isHidden = !item.hasNote
