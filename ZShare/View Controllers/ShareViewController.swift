@@ -212,7 +212,7 @@ class ShareViewController: UIViewController {
             self.collectionPickerIndicator.stopAnimating()
             self.collectionPickerChevron.isHidden = false
             self.collectionPickerLabel.text = title
-            self.collectionPickerLabel.textColor = .link
+            self.collectionPickerLabel.textColor = Asset.Colors.zoteroBlue.color
         case .loading:
             self.collectionPickerIndicator.isHidden = false
             self.collectionPickerIndicator.startAnimating()
@@ -313,11 +313,13 @@ class ShareViewController: UIViewController {
     }
 
     private func setupNavbar(loggedIn: Bool) {
+        self.navigationController?.navigationBar.tintColor = Asset.Colors.zoteroBlue.color
+
         let cancel = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(ShareViewController.cancel))
         self.navigationItem.leftBarButtonItem = cancel
 
         if loggedIn {
-            let done = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(ShareViewController.done))
+            let done = UIBarButtonItem(title: L10n.Shareext.save, style: .done, target: self, action: #selector(ShareViewController.done))
             done.isEnabled = false
             self.navigationItem.rightBarButtonItem = done
         }

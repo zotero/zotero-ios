@@ -335,6 +335,11 @@ internal enum L10n {
     }
   }
 
+  internal enum Shareext {
+    /// Save to Zotero
+    internal static let save = L10n.tr("Localizable", "shareext.save")
+  }
+
   internal enum SyncToolbar {
     /// Sync failed (%@)
     internal static func aborted(_ p1: Any) -> String {

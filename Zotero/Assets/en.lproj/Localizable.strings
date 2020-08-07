@@ -169,3 +169,5 @@ The following fields will be lost:
 "settings.storage.delete_all" = "Delete All Attachments";
 "settings.storage.delete_all_question" = "Do you really want to delete all attachments?";
 "settings.storage.delete_library_question" = "Do you really want to delete all attachments in \"%@\"?";
+
+"shareext.save" = "Save to Zotero";
