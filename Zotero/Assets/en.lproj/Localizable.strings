@@ -162,7 +162,6 @@ The following fields will be lost:
 "settings.stop_logging" = "Stop logging";
 "settings.logging_desc1" = "If you want to debug an issue on launch, kill the app and start it again.";
 "settings.logging_desc2" = "If you want to debug share extension issue, open the share extension.";
-"settings.crash" = "Crash!";
 "settings.storage" = "Storage";
 "settings.storage.error" = "Could not collect storage data";
 "settings.storage.one_file" = "1 file";

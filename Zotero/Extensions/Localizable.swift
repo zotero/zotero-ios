@@ -271,8 +271,6 @@ internal enum L10n {
   }
 
   internal enum Settings {
-    /// Crash!
-    internal static let crash = L10n.tr("Localizable", "settings.crash")
     /// Debug
     internal static let debug = L10n.tr("Localizable", "settings.debug")
     /// General

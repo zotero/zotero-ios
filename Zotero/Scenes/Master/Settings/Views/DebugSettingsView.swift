@@ -31,15 +31,6 @@ struct DebugSettingsView: View {
                     }
                 }
             }
-
-            Section {
-                Button(action: {
-                    let test: String? = nil
-                    NSLog(test!)
-                }) {
-                    Text(L10n.Settings.crash).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
-                }
-            }
         }
     }
 }
