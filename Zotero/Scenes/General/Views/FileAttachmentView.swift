@@ -45,6 +45,8 @@ class FileAttachmentView: UIView {
     private var badgeLayer: CALayer!
     private var badgeBorder: CALayer!
     private weak var button: UIButton!
+    private var mainImageName: String?
+    private var badgeImageName: String?
 
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
         didSet {
@@ -109,13 +111,25 @@ class FileAttachmentView: UIView {
         self.badgeBorder.position = self.badgeLayer.position
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+
+        self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
+
+        if let name = self.badgeImageName {
+            self.badgeLayer.contents = UIImage(named: name)?.cgImage
+        }
+        if let name = self.mainImageName {
+            self.imageLayer.contents = UIImage(named: name)?.cgImage
+        }
+    }
+
     // MARK: - Actions
 
-    func set(backgroundColor: UIColor?, circleStrokeColor: UIColor? = nil) {
+    func set(backgroundColor: UIColor?) {
         self.badgeBorder?.borderColor = backgroundColor?.cgColor
-        if let strokeColor = circleStrokeColor {
-            self.circleLayer.strokeColor = strokeColor.cgColor
-        }
     }
 
     private func set(selected: Bool) {
@@ -147,6 +161,7 @@ class FileAttachmentView: UIView {
         case .stopSign:
             self.stopLayer.isHidden = false
             self.imageLayer.isHidden = true
+            self.mainImageName = nil
 
         case .image(let name):
             let image = UIImage(named: name)
@@ -155,6 +170,7 @@ class FileAttachmentView: UIView {
             self.stopLayer.isHidden = true
             self.imageLayer.isHidden = false
             self.imageLayer.contents = image?.cgImage
+            self.mainImageName = name
 
             if size.width != self.imageLayer.frame.width || size.height != self.imageLayer.frame.height {
                 self.imageLayer.frame = CGRect(x: 0, y: 0, width: size.width, height: size.height)
@@ -164,6 +180,7 @@ class FileAttachmentView: UIView {
 
         self.badgeLayer.isHidden = data.badgeName == nil
         self.badgeBorder.isHidden = data.badgeName == nil
+        self.badgeImageName = data.badgeName
         if let name = data.badgeName {
             self.badgeLayer.contents = UIImage(named: name)?.cgImage
         }

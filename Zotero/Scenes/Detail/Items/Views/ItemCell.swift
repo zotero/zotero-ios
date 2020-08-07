@@ -56,10 +56,10 @@ class ItemCell: UITableViewCell {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        if previousTraitCollection?.userInterfaceStyle != self.traitCollection.userInterfaceStyle {
-            self.tagCircles.borderColor = self.tagBorderColor
-            self.fileView.set(backgroundColor: self.backgroundColor, circleStrokeColor: .systemGray5)
-        }
+        guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
+
+        self.tagCircles.borderColor = self.tagBorderColor
+        self.fileView.set(backgroundColor: self.backgroundColor)
     }
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
@@ -67,10 +67,10 @@ class ItemCell: UITableViewCell {
         
         if highlighted {
             guard let highlightColor = self.highlightColor else { return }
-            self.fileView.set(backgroundColor: highlightColor, circleStrokeColor: .systemGray5)
+            self.fileView.set(backgroundColor: highlightColor)
             self.tagCircles.borderColor = highlightColor.cgColor
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor, circleStrokeColor: .systemGray5)
+            self.fileView.set(backgroundColor: self.backgroundColor)
             self.tagCircles.borderColor = self.tagBorderColor
         }
     }
@@ -80,10 +80,10 @@ class ItemCell: UITableViewCell {
 
         if selected {
             guard let highlightColor = self.highlightColor else { return }
-            self.fileView.set(backgroundColor: highlightColor, circleStrokeColor: .systemGray5)
+            self.fileView.set(backgroundColor: highlightColor)
             self.tagCircles.borderColor = highlightColor.cgColor
         } else {
-            self.fileView.set(backgroundColor: self.backgroundColor, circleStrokeColor: .systemGray5)
+            self.fileView.set(backgroundColor: self.backgroundColor)
             self.tagCircles.borderColor = self.tagBorderColor
         }
     }
