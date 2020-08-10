@@ -123,9 +123,8 @@ extension AppCoordinator: DebugLoggingCoordinator {
 extension AppCoordinator: AppOnboardingCoordinatorDelegate {
     func presentLogin() {
         let handler = LoginActionHandler(apiClient: self.controllers.apiClient, sessionController: self.controllers.sessionController)
-        let view = LoginView(coordinatorDelegate: self).environmentObject(ViewModel(initialState: LoginState(), handler: handler))
-
-        let controller = NoRotationHostingController(rootView: view)
+        let controller = LoginViewController(viewModel: ViewModel(initialState: LoginState(), handler: handler))
+        controller.coordinatorDelegate = self
         if UIDevice.current.userInterfaceIdiom == .pad {
             controller.modalPresentationStyle = .formSheet
             controller.preferredContentSize = CGSize(width: 540, height: 620)
