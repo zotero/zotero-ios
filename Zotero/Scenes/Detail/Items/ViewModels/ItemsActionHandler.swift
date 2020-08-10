@@ -123,8 +123,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .cacheAttachment(let item):
             self.cacheAttachment(for: item, in: viewModel)
 
-        case .cacheAttachmentUpdates(let results, let updates):
-            self.cacheAttachmentUpdates(from: results, updates: updates, in: viewModel)
+        case .cacheAttachmentUpdates(let items):
+            self.cacheAttachmentUpdates(from: items, in: viewModel)
 
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
@@ -243,10 +243,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func cacheAttachmentUpdates(from results: Results<RItem>, updates: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
+    private func cacheAttachmentUpdates(from items: [RItem], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            for index in updates {
-                let item = results[index]
+            items.forEach { item in
                 state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
             }
         }

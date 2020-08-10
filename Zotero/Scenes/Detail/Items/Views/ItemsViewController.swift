@@ -204,15 +204,18 @@ class ItemsViewController: UIViewController {
 
     private func startObserving(results: Results<RItem>) {
         self.resultsToken = results.observe({ [weak self] changes  in
+            guard let `self` = self else { return }
+
             switch changes {
             case .initial:
-                self?.tableViewHandler.reload()
+                self.tableViewHandler.reload()
             case .update(let results, let deletions, let insertions, let modifications):
-                self?.viewModel.process(action: .cacheAttachmentUpdates(results: results, updates: (insertions + modifications)))
-                self?.tableViewHandler.reload(modifications: modifications, insertions: insertions, deletions: deletions)
+                let items = (insertions + modifications).map({ results[$0] })
+                self.viewModel.process(action: .cacheAttachmentUpdates(items: items))
+                self.tableViewHandler.reload(modifications: modifications, insertions: insertions, deletions: deletions)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
-                self?.viewModel.process(action: .observingFailed)
+                self.viewModel.process(action: .observingFailed)
             }
         })
     }
