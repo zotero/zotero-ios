@@ -10,25 +10,46 @@ import UIKit
 import SwiftUI
 
 struct TagColorGenerator {
-    static func color(for hex: String, scheme: ColorScheme) -> Color {
-        if hex.isEmpty {
-            return .gray
-        }
-        return Color(hex: self.hex(for: hex, isDark: (scheme == .dark)))
+    enum Style {
+        case filled
+        case border
     }
 
-    static func uiColor(for hex: String, style: UIUserInterfaceStyle) -> UIColor {
-        if hex.isEmpty {
-            return .gray
+    static func color(for hex: String, scheme: ColorScheme) -> (color: Color, style: Style) {
+        if hex.isEmpty || hex == "#000000" {
+            return (.gray, .border)
         }
-        return UIColor(hex: self.hex(for: hex, isDark: (style == .dark)))
+        let opacity = Double(self.alpha(for: hex, isDarkMode: (scheme == .dark)))
+        return (Color(hex: hex).opacity(opacity), .filled)
     }
 
-    // TODO: - figure out colors for dark mode
-    private static func hex(for hex: String, isDark: Bool) -> String {
-        if (hex.isEmpty || hex == "#000000") && isDark {
-            return "#696969"
+    static func uiColor(for hex: String) -> (color: UIColor, style: Style) {
+        if hex.isEmpty || hex == "#000000" {
+            return (.gray, .border)
         }
-        return hex
+        let color = UIColor { traitCollection -> UIColor in
+            let alpha = self.alpha(for: hex, isDarkMode: (traitCollection.userInterfaceStyle == .dark))
+            return UIColor(hex: hex, alpha: alpha)
+        }
+        return (color, .filled)
+    }
+
+    private static func alpha(for hex: String, isDarkMode: Bool) -> CGFloat {
+        if !isDarkMode || hex.isEmpty {
+            return 1
+        }
+
+        switch hex {
+        case "#ff6666", "#ff8c19":
+            return 0.75
+        case "#a28ae5", "#2ea8e5", "#5fb236":
+            return 0.8
+        case "#009980", "#999999":
+            return 0.9
+        case "#a6507b", "#576dd9", "#000000":
+            return 1.0
+        default:
+            return 0.8
+        }
     }
 }

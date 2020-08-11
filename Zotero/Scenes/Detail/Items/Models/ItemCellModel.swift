@@ -44,7 +44,10 @@ struct ItemCellModel {
     }
 
     fileprivate static func tagColors(item: RItem) -> [UIColor] {
-        return item.tags.compactMap({ $0.color.isEmpty ? nil : $0.color }).map({ UIColor(hex: $0) })
+        return item.tags.compactMap({
+            let (color, style) = TagColorGenerator.uiColor(for: $0.color)
+            return style == .filled ? color : nil
+        })
     }
 
     private static func subtitle(for item: RItem) -> String {

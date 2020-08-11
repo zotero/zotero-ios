@@ -9,9 +9,16 @@
 import SwiftUI
 
 struct TagView: View {
-    let color: Color
     let name: String
+    let color: Color
     let circleFilled: Bool
+
+    init(name: String, hex: String, scheme: ColorScheme) {
+        self.name = name
+        let (color, style) = TagColorGenerator.color(for: hex, scheme: scheme)
+        self.color = color
+        self.circleFilled = style == .filled
+    }
 
     var body: some View {
         HStack {
@@ -34,7 +41,7 @@ struct TagView: View {
 
 struct TagView_Previews: PreviewProvider {
     static var previews: some View {
-        TagView(color: .red, name: "Books", circleFilled: true)
+        TagView(name: "Books", hex: "#a28ae5", scheme: .dark)
             .previewLayout(.fixed(width: 320, height: 44))
     }
 }

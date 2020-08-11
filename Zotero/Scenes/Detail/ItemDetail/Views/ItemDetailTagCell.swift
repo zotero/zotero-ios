@@ -19,16 +19,18 @@ class ItemDetailTagCell: UITableViewCell {
     }
 
     func setup(with tag: Tag) {
-        let color = TagColorGenerator.uiColor(for: tag.color, style: self.traitCollection.userInterfaceStyle)
+        let (color, style) = TagColorGenerator.uiColor(for: tag.color)
 
-        if tag.color.isEmpty {
+        switch style {
+        case .border:
             self.tagView.backgroundColor = .clear
             self.tagView.layer.borderWidth = 1
             self.tagView.layer.borderColor = color.cgColor
-        } else {
+        case .filled:
             self.tagView.backgroundColor = color
             self.tagView.layer.borderWidth = 0
         }
+
         self.label.text = tag.name
     }
 }

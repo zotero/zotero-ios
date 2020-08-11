@@ -113,6 +113,7 @@ class ItemsTableViewHandler: NSObject {
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
 
         self.tableView.register(UINib(nibName: "ItemCell", bundle: nil), forCellReuseIdentifier: ItemsTableViewHandler.cellId)
+        self.tableView.tableFooterView = UIView()
     }
 
     private func setupTableView(with keyboardData: KeyboardData) {
