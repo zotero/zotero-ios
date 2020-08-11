@@ -86,8 +86,8 @@
 
 "items.search_title" = "Search Items";
 "items.select" = "Select";
-"items.select_all" = "Select all";
-"items.deselect_all" = "Deselect all";
+"items.select_all" = "Select All";
+"items.deselect_all" = "Deselect All";
 "items.sort_by" = "Sort By";
 "items.sort_order" = "Sort Order";
 "items.ascending" = "Ascending";
