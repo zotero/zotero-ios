@@ -27,7 +27,11 @@ struct CollectionsPickerView: View {
         .navigationBarTitle(Text(self.navBarTitle), displayMode: .inline)
         .navigationBarItems(leading:
                                 Button(action: self.closeAction,
-                                       label: { Text(L10n.cancel) })
+                                       label: {
+                                           Text(L10n.cancel)
+                                              .padding(.vertical, 10)
+                                              .padding(.trailing, 10)
+                                       })
                             , trailing:
                                 Button(action: {
                                     self.selectedKeys.wrappedValue = self.viewModel.state.selected
@@ -35,6 +39,8 @@ struct CollectionsPickerView: View {
                                 },
                                 label: {
                                     Text(L10n.add)
+                                        .padding(.vertical, 10)
+                                        .padding(.leading, 10)
                                 })
         )
         .environment(\.editMode, .constant(.active))

@@ -50,7 +50,10 @@ struct LibrariesView: View {
             Button(action: {
                 self.coordinatorDelegate?.showSettings()
             }, label: {
-                Image(systemName: "person.circle").imageScale(.large)
+                Image(systemName: "person.circle")
+                    .imageScale(.large)
+                    .padding(.vertical, 10)
+                    .padding(.leading, 10)
             })
         )
         .onAppear {

@@ -27,7 +27,11 @@ struct ItemSortTypePickerView: View {
         }
         .navigationBarTitle(Text(L10n.Items.sortBy), displayMode: .inline)
         .navigationBarItems(leading: Button(action: self.closeAction,
-                                            label: { Text(L10n.cancel) }))
+                                            label: {
+                                                Text(L10n.cancel)
+                                                    .padding(.vertical, 10)
+                                                    .padding(.trailing, 10)
+                                            }))
     }
 }
 

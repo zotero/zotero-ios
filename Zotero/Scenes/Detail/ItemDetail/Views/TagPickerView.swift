@@ -31,7 +31,9 @@ struct TagPickerView: View {
 
     private var leadingBarItems: some View {
         return Button(action: self.dismiss) {
-            return Text(L10n.cancel)
+            Text(L10n.cancel)
+                .padding(.vertical, 10)
+                .padding(.trailing, 10)
         }
     }
 
@@ -43,7 +45,9 @@ struct TagPickerView: View {
             self.saveAction(tags)
             self.dismiss()
         }) {
-            return Text(L10n.save)
+            Text(L10n.save)
+                .padding(.vertical, 10)
+                .padding(.leading, 10)
         }
     }
 }

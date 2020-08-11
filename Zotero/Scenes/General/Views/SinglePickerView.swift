@@ -34,6 +34,8 @@ struct SinglePickerView: View {
     private var leadingItems: some View {
         Button(action: self.closeAction) {
             Text(L10n.cancel)
+                .padding(.vertical, 10)
+                .padding(.trailing, 10)
         }
     }
 
@@ -44,6 +46,8 @@ struct SinglePickerView: View {
                     self.save()
                 }) {
                     Text(L10n.save)
+                        .padding(.vertical, 10)
+                        .padding(.leading, 10)
                 }
             }
         }

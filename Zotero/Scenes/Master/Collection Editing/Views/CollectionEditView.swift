@@ -28,9 +28,9 @@ struct CollectionEditView: View {
                     self.showPickerView()
                 }) {
                     HStack {
-                        Image(self.viewModel.state.parent == nil ?
-                                "icon_cell_library" :
-                                "icon_cell_collection")
+                        Image(uiImage: self.viewModel.state.parent == nil ?
+                                        Asset.Images.Cells.library.image :
+                                        Asset.Images.Cells.collection.image)
                             .renderingMode(.template)
                             .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                         Text(self.viewModel.state.parent?.name ?? self.viewModel.state.library.name)
@@ -77,6 +77,8 @@ struct CollectionEditView: View {
             self.coordinatorDelegate?.dismiss()
         }, label: {
             Text(L10n.cancel)
+                .padding(.vertical, 10)
+                .padding(.trailing, 10)
         })
     }
 
@@ -89,6 +91,8 @@ struct CollectionEditView: View {
                     self.viewModel.process(action: .save)
                 }) {
                     Text(L10n.save)
+                        .padding(.vertical, 10)
+                        .padding(.leading, 10)
                 }
             }
         }
