@@ -64,19 +64,19 @@ internal enum L10n {
   internal enum Collections {
     /// All Items
     internal static let allItems = L10n.tr("Localizable", "collections.all_items")
-    /// Create collection
+    /// Create Collection
     internal static let createTitle = L10n.tr("Localizable", "collections.create_title")
     /// Delete Collection
     internal static let delete = L10n.tr("Localizable", "collections.delete")
     /// Delete Collection and Items
     internal static let deleteWithItems = L10n.tr("Localizable", "collections.delete_with_items")
-    /// Edit collection
+    /// Edit Collection
     internal static let editTitle = L10n.tr("Localizable", "collections.edit_title")
     /// My Publications
     internal static let myPublications = L10n.tr("Localizable", "collections.my_publications")
-    /// New subcollection
+    /// New Subcollection
     internal static let newSubcollection = L10n.tr("Localizable", "collections.new_subcollection")
-    /// Pick parent
+    /// Pick Parent
     internal static let pickerTitle = L10n.tr("Localizable", "collections.picker_title")
     /// Search Collections
     internal static let searchTitle = L10n.tr("Localizable", "collections.search_title")

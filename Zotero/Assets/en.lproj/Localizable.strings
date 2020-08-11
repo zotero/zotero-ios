@@ -56,12 +56,12 @@
 "collections.all_items" = "All Items";
 "collections.my_publications" = "My Publications";
 "collections.trash" = "Trash";
-"collections.new_subcollection" = "New subcollection";
-"collections.edit_title" = "Edit collection";
+"collections.new_subcollection" = "New Subcollection";
+"collections.edit_title" = "Edit Collection";
 "collections.delete" = "Delete Collection";
 "collections.delete_with_items" = "Delete Collection and Items";
-"collections.create_title" = "Create collection";
-"collections.picker_title" = "Pick parent";
+"collections.create_title" = "Create Collection";
+"collections.picker_title" = "Pick Parent";
 "collections.error.empty_name" = "You have to fill the name";
 "collections.error.save_failed" = "Could not save collection %@. Try again.";
 
