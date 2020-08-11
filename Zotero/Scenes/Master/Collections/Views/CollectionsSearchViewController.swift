@@ -60,6 +60,8 @@ class CollectionsSearchViewController: UIViewController {
    // MARK: - Setups
 
     private func setupSearchBar() {
+        self.searchBar.placeholder = L10n.Collections.searchTitle
+
         self.searchBar.rx.text
                          .observeOn(MainScheduler.instance)
                          .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
@@ -83,7 +85,7 @@ class CollectionsSearchViewController: UIViewController {
         self.tableView.translatesAutoresizingMaskIntoConstraints = false
         self.tableView.delegate = self
         self.tableView.rowHeight = 44
-        self.tableView.register(CollectionCell.self, forCellReuseIdentifier: CollectionsSearchViewController.cellId)
+        self.tableView.register(UINib(nibName: "CollectionCell", bundle: nil), forCellReuseIdentifier: CollectionsSearchViewController.cellId)
     }
 
     private func setupDataSource() {
