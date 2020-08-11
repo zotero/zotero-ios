@@ -13,6 +13,7 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CollectionsSearchViewController" customModule="Zotero" customModuleProvider="target">
             <connections>
                 <outlet property="searchBar" destination="kKA-Jy-thd" id="TAG-TD-Wje"/>
+                <outlet property="searchBarSeparatorHeight" destination="UVA-aR-QbC" id="q3E-Lh-9n5"/>
                 <outlet property="tableView" destination="N4u-mQ-Llw" id="GBz-wX-8Fc"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
@@ -23,25 +24,29 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <searchBar contentMode="redraw" searchBarStyle="minimal" showsCancelButton="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kKA-Jy-thd">
-                    <rect key="frame" x="0.0" y="44" width="414" height="56"/>
-                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    <rect key="frame" x="0.0" y="44" width="414" height="50"/>
+                    <color key="backgroundColor" name="navbarBackground"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="50" id="eaD-HQ-FnJ"/>
+                    </constraints>
+                    <color key="tintColor" name="zoteroBlue"/>
                     <color key="barTintColor" name="zoteroBlue"/>
                     <textInputTraits key="textInputTraits"/>
                 </searchBar>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qWI-2N-7Qy">
-                    <rect key="frame" x="0.0" y="100" width="414" height="1"/>
+                    <rect key="frame" x="0.0" y="94" width="414" height="1"/>
                     <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="UVA-aR-QbC"/>
                     </constraints>
                 </view>
                 <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="N4u-mQ-Llw">
-                    <rect key="frame" x="0.0" y="101" width="414" height="795"/>
+                    <rect key="frame" x="0.0" y="95" width="414" height="801"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                 </tableView>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
-            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <color key="backgroundColor" name="navbarBackground"/>
             <constraints>
                 <constraint firstItem="N4u-mQ-Llw" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" id="1Zd-fU-eO8"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="N4u-mQ-Llw" secondAttribute="trailing" id="DWx-YQ-HCh"/>
@@ -58,6 +63,9 @@
         </view>
     </objects>
     <resources>
+        <namedColor name="navbarBackground">
+            <color red="0.97254901960784312" green="0.97254901960784312" blue="0.97254901960784312" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <namedColor name="zoteroBlue">
             <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

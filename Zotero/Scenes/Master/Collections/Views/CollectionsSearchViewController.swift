@@ -12,6 +12,7 @@ import RxSwift
 
 class CollectionsSearchViewController: UIViewController {
     @IBOutlet private weak var searchBar: UISearchBar!
+    @IBOutlet private weak var searchBarSeparatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var tableView: UITableView!
 
     private static let cellId = "CollectionRow"
@@ -35,6 +36,7 @@ class CollectionsSearchViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.searchBarSeparatorHeight.constant = 1 / UIScreen.main.scale
         self.setupSearchBar()
         self.setupTableView()
         self.setupKeyboardObserving()
@@ -42,6 +44,7 @@ class CollectionsSearchViewController: UIViewController {
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
+                      .skip(1)
                       .subscribe(onNext: { [weak self] state in
                           self?.update(to: state)
                       })

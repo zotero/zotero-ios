@@ -13,14 +13,8 @@ import SwiftUI
 
 import RxSwift
 
-fileprivate enum PrimaryColumnState {
-    case minimum
-    case dynamic(CGFloat)
-}
-
 protocol MainCoordinatorDelegate: SplitControllerDelegate {
     func show(collection: Collection, in library: Library)
-    func collectionsChanged(to collections: [Collection])
 }
 
 protocol SplitControllerDelegate: class {
@@ -29,16 +23,12 @@ protocol SplitControllerDelegate: class {
 
 class MainViewController: UISplitViewController {
     // Constants
-    private static let minPrimaryColumnWidth: CGFloat = 300
-    private static let maxPrimaryColumnFraction: CGFloat = 0.4
-    private static let averageCharacterWidth: CGFloat = 10.0
     private let controllers: Controllers
     private let defaultCollection: Collection
     private let disposeBag: DisposeBag
     // Variables
     private var didAppear: Bool = false
     private var syncToolbarController: SyncToolbarController?
-    private var currentLandscapePrimaryColumnFraction: CGFloat = 0
     private var isViewingLibraries: Bool {
         return (self.viewControllers.first as? UINavigationController)?.viewControllers.count == 1
     }
@@ -60,8 +50,6 @@ class MainViewController: UISplitViewController {
         self.setupControllers()
 
         self.preferredDisplayMode = .allVisible
-        self.minimumPrimaryColumnWidth = MainViewController.minPrimaryColumnWidth
-        self.maximumPrimaryColumnWidth = self.maxSize * MainViewController.maxPrimaryColumnFraction
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -72,79 +60,12 @@ class MainViewController: UISplitViewController {
         super.viewDidLoad()
 
         self.delegate = self
-        self.setPrimaryColumn(state: .minimum, animated: false)
+        self.preferredPrimaryColumnWidthFraction = 0.3951
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         self.didAppear = true
-    }
-
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        let isLandscape = size.width > size.height
-        coordinator.animate(alongsideTransition: { _ in
-            if !isLandscape || self.isViewingLibraries {
-                self.setPrimaryColumn(state: .minimum, animated: false)
-                return
-            }
-            self.setPrimaryColumn(state: .dynamic(self.currentLandscapePrimaryColumnFraction), animated: false)
-        }, completion: nil)
-    }
-
-    // MARK: - Dynamic primary column
-
-    private func reloadPrimaryColumnFraction(with data: [Collection], animated: Bool) {
-        let newFraction = self.calculatePrimaryColumnFraction(from: data)
-        self.currentLandscapePrimaryColumnFraction = newFraction
-        if UIDevice.current.orientation.isLandscape {
-            self.setPrimaryColumn(state: .dynamic(newFraction), animated: animated)
-        }
-    }
-
-    private func setPrimaryColumn(state: PrimaryColumnState, animated: Bool) {
-        let primaryColumnFraction: CGFloat
-        switch state {
-        case .minimum:
-            primaryColumnFraction = 0.0
-        case .dynamic(let fraction):
-            primaryColumnFraction = fraction
-        }
-
-        guard primaryColumnFraction != self.preferredPrimaryColumnWidthFraction else { return }
-
-        if !animated {
-            self.preferredPrimaryColumnWidthFraction = primaryColumnFraction
-            return
-        }
-
-        UIView.animate(withDuration: 0.2) {
-            self.preferredPrimaryColumnWidthFraction = primaryColumnFraction
-        }
-    }
-
-    private func calculatePrimaryColumnFraction(from collections: [Collection]) -> CGFloat {
-        guard !collections.isEmpty else { return 0 }
-
-        var maxCollection: Collection?
-        var maxWidth: CGFloat = 0
-
-        collections.forEach { data in
-            let width = (CGFloat(data.level) * CollectionRow.levelOffset) +
-                        (CGFloat(data.name.count) * MainViewController.averageCharacterWidth)
-            if width > maxWidth {
-                maxCollection = data
-                maxWidth = width
-            }
-        }
-
-        guard let collection = maxCollection else { return 0 }
-
-        let titleSize = collection.name.size(withAttributes:[.font: UIFont.systemFont(ofSize: 18.0)])
-        let actualWidth = titleSize.width + (CGFloat(collection.level) * CollectionRow.levelOffset) + (2 * CollectionRow.levelOffset)
-
-        return min(1.0, (actualWidth / self.maxSize))
     }
 
     // MARK: - Setups
@@ -187,10 +108,6 @@ extension MainViewController: MainCoordinatorDelegate {
         self.detailCoordinator = coordinator
 
         self.showDetailViewController(navigationController, sender: nil)
-    }
-
-    func collectionsChanged(to collections: [Collection]) {
-        self.reloadPrimaryColumnFraction(with: collections, animated: self.didAppear)
     }
 }
 

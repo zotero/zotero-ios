@@ -15,7 +15,7 @@ import SwiftUI
 import PSPDFKit
 #endif
 
-protocol SceneActivityCounter: class {
+protocol SceneActivityCounter: class { 
     func sceneWillEnterForeground()
     func sceneDidEnterBackground()
 }

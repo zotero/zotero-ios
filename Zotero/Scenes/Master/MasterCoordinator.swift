@@ -176,10 +176,6 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         self.mainCoordinatorDelegate.show(collection: collection, in: library)
     }
 
-    func collectionsChanged(to collections: [Collection]) {
-        self.mainCoordinatorDelegate.collectionsChanged(to: collections)
-    }
-
     var isSplit: Bool {
         return self.mainCoordinatorDelegate.isSplit
     }

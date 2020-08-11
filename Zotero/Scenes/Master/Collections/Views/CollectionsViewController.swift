@@ -52,7 +52,6 @@ class CollectionsViewController: UIViewController {
 
         self.viewModel.process(action: .loadData)
         self.tableViewHandler.update(collections: self.viewModel.state.collections, animated: false)
-        self.coordinatorDelegate?.collectionsChanged(to: self.viewModel.state.collections)
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -78,7 +77,6 @@ class CollectionsViewController: UIViewController {
             self.tableViewHandler.update(collections: state.collections, animated: true, completed: { [weak self] in
                 self?.selectIfNeeded(collection: state.selectedCollection)
             })
-            self.coordinatorDelegate?.collectionsChanged(to: state.collections)
         }
         if state.changes.contains(.itemCount) {
             self.tableViewHandler.update(collections: state.collections, animated: false, completed: { [weak self] in
