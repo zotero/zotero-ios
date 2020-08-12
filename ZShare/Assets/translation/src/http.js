@@ -192,7 +192,73 @@ Zotero.HTTP = new function() {
 //			return xmlhttp;
 //		});
 	};
-
+	
+	/**
+	 * Load one or more documents
+	 *
+	 * This should stay in sync with the equivalent function in the client
+	 *
+	 * @param {String|String[]} urls - URL(s) of documents to load
+	 * @param {Function} processor - Callback to be executed for each document loaded
+	 * @param {CookieJar} [cookieSandbox] Cookie sandbox object
+	 * @return {Promise<Array>} - A promise for an array of results from the processor runs
+	 */
+	this.processDocuments = async function (urls, processor, options = {}) {
+		// Handle old signature: urls, processor, onDone, onError
+		if (arguments.length > 3) {
+			Zotero.debug("Zotero.HTTP.processDocuments() now takes only 2 arguments -- update your code");
+			var onDone = arguments[3];
+			var onError = arguments[4];
+		}
+		
+		var cookieSandbox = options.cookieSandbox;
+		var headers = options.headers;
+		
+		if (typeof urls == "string") urls = [urls];
+		var funcs = urls.map(url => {
+			return async function () {
+				let req = await Zotero.HTTP.request(
+					"GET",
+					url,
+					{
+						cookieSandbox,
+						headers
+					}
+				);
+				
+				// responseType: 'document' isn't supported, so make our own document
+				var parser = new DOMParser();
+				var doc = parser.parseFromString(req.responseText, 'text/html');
+				doc = this.wrapDocument(doc, url);
+				
+				return processor(doc, req.responseURL);
+			}.bind(this);
+		});
+		
+		// Run processes serially
+		// TODO: Add some concurrency?
+		var f;
+		var results = [];
+		while (f = funcs.shift()) {
+			try {
+				results.push(await f());
+			}
+			catch (e) {
+				if (onError) {
+					onError(e);
+				}
+				throw e;
+			}
+		}
+		
+		// Deprecated
+		if (onDone) {
+			onDone();
+		}
+		
+		return results;
+	}
+	
 	/**
 	* Send an HTTP GET request via XMLHTTPRequest
 	*
@@ -241,9 +307,7 @@ Zotero.HTTP = new function() {
 	 * @param docUrl
 	 */
 	this.wrapDocument = function(doc, docURL) {
-		let url = require('url');
-		docURL = url.parse(docURL);
-		docURL.toString = () => this.href;
+		docURL = new URL(docURL)
 		var wrappedDoc = new Proxy(doc, {
 			get: function (t, prop) {
 				if (prop === 'location') {
