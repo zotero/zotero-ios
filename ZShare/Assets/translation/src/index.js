@@ -25,7 +25,10 @@
 
 async function translate(url, cookies, encodedHtml, encodedTranslators) {
 	const html = window.atob(encodedHtml);
-	const doc = addLocationPropToDoc(new DOMParser().parseFromString(html, 'text/html'), url);
+	const doc = prepareDoc(
+		new DOMParser().parseFromString(html, 'text/html'),
+		url
+	);
     const translatorData = JSON.parse(window.atob(encodedTranslators));
 
     if (translatorData) {
@@ -65,7 +68,16 @@ async function translate(url, cookies, encodedHtml, encodedTranslators) {
     window.webkit.messageHandlers.itemResponseHandler.postMessage(items);
 };
 
-function addLocationPropToDoc(doc, docURL) {
+function prepareDoc(doc, docURL) {
+	// Add <base> if it doesn't exist, so relative URLs resolve
+	if (!doc.getElementsByTagName('base').length) {
+		let head = doc.head;
+		let base = doc.createElement('base');
+		base.href = docURL;
+		head.appendChild(base);
+	}
+	
+	// Add 'location' and 'evaluate'
 	docURL = new URL(docURL);
 	docURL.toString = () => this.href;
 	var wrappedDoc = new Proxy(doc, {
