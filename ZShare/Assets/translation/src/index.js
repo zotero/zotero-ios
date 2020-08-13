@@ -23,7 +23,7 @@
 	***** END LICENSE BLOCK *****
 */
 
-async function translate(url, cookies, encodedHtml, encodedTranslators) {
+async function translate(url, encodedHtml, encodedTranslators) {
 	const html = window.atob(encodedHtml);
 	const doc = prepareDoc(
 		new DOMParser().parseFromString(html, 'text/html'),
@@ -38,9 +38,6 @@ async function translate(url, cookies, encodedHtml, encodedTranslators) {
 	// Set up a translate instance
 	const translate = new Zotero.Translate.Web();
 	translate.setDocument(doc);
-    if (cookies) {
-        translate.setCookieSandbox(cookies);
-    }
 
 	// Get translators
 	let translators;

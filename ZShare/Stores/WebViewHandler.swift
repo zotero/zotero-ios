@@ -45,6 +45,8 @@ class WebViewHandler: NSObject {
     private weak var webView: WKWebView!
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
+    // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
+    private var cookies: String?
 
     // MARK: - Lifecycle
 
@@ -76,17 +78,15 @@ class WebViewHandler: NSObject {
         }
 
         let encodedHtml = self.encodeForJavascript(html.data(using: .utf8))
+        self.cookies = cookies
 
-        return self.loadCookies(from: cookies)
-                   .flatMap { _ -> Single<()> in
-                       return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
-                   }
+        return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
                    .flatMap { _ -> Single<[RawTranslator]> in
                        return self.translatorsController.translators()
                    }
                    .flatMap { translators -> Single<Any> in
                        let encodedTranslators = self.encodeJSONForJavascript(translators)
-                       return self.callJavascript("translate('\(url.absoluteString)', '\(cookies)', \(encodedHtml), \(encodedTranslators));")
+                       return self.callJavascript("translate('\(url.absoluteString)', \(encodedHtml), \(encodedTranslators));")
                    }
                    .subscribe(onError: { [weak self] error in
                        self?.observable.on(.error(error))
@@ -115,31 +115,6 @@ class WebViewHandler: NSObject {
         }
     }
 
-    /// Loads cookies retrieved from website to `webView`s `httpCookieStore`.
-    private func loadCookies(from string: String) -> Single<()> {
-        return Single.create { subscriber -> Disposable in
-            let cookies = string.split(separator: ";").compactMap { pair -> HTTPCookie? in
-                let keyValue = pair.split(separator: "=")
-                guard keyValue.count == 2 else { return nil }
-                return HTTPCookie(properties: [.name: keyValue[0], .value: keyValue[1]])
-            }
-
-            let group = DispatchGroup()
-
-            cookies.forEach { cookie in
-                group.enter()
-                self.webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie) {
-                    group.leave()
-                }
-            }
-
-            group.notify(qos: .utility, flags: [], queue: .global()) {
-                subscriber(.success(()))
-            }
-            return Disposables.create()
-        }
-    }
-
     // MARK: - Communication with WKWebView
 
     /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
@@ -159,6 +134,9 @@ class WebViewHandler: NSObject {
         request.httpMethod = method
         headers.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
+        }
+        if let cookies = self.cookies {
+            request.setValue(cookies, forHTTPHeaderField: "Cookie")
         }
         request.httpBody = body?.data(using: .utf8)
         request.timeoutInterval = timeout
