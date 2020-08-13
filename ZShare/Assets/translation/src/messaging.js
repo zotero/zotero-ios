@@ -31,7 +31,7 @@ Zotero.Messaging = new function() {
     this.receiveResponse = async function(id, encodedPayload) {
     	var payload = {};
     	if (encodedPayload) {
-    		payload = JSON.parse(window.atob(encodedPayload));
+    		payload = JSON.parse(decodeURIComponent(escape(window.atob(encodedPayload))));
     	}
 
         let callback = _responseListeners[id];

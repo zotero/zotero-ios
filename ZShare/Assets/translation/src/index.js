@@ -24,7 +24,7 @@
 */
 
 async function translate(url, encodedHtml, encodedTranslators) {
-	const html = window.atob(encodedHtml);
+	const html = decodeURIComponent(escape(window.atob(encodedHtml)));
 	const doc = prepareDoc(
 		new DOMParser().parseFromString(html, 'text/html'),
 		url
