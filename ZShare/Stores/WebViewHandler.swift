@@ -41,12 +41,19 @@ class WebViewHandler: NSObject {
     private let translatorsController: TranslatorsController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<WebViewHandler.Action>
+    private static let urlAllowedCharacters: CharacterSet = createAllowedCharacters()
 
     private weak var webView: WKWebView!
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
     // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
     private var cookies: String?
+
+    private static func createAllowedCharacters() -> CharacterSet {
+        var characters = CharacterSet.urlQueryAllowed
+        characters.insert(charactersIn: ":/?&")
+        return characters
+    }
 
     // MARK: - Lifecycle
 
@@ -70,7 +77,8 @@ class WebViewHandler: NSObject {
     /// - parameter title: Title of the shared website.
     /// - parameter html: HTML content of the shared website. Equals to javascript "document.documentElement.innerHTML".
     /// - parameter cookies: Cookies string from shared website. Equals to javacsript "document.cookie".
-    func translate(url: URL, title: String, html: String, cookies: String) {
+    /// - parameter frames: HTML content of frames contained in initial HTML document.
+    func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
         guard let containerUrl = Bundle.main.url(forResource: "src/index", withExtension: "html", subdirectory: "translation"),
               let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
             self.observable.on(.error(Error.cantFindBaseFile))
@@ -78,6 +86,8 @@ class WebViewHandler: NSObject {
         }
 
         let encodedHtml = self.encodeForJavascript(html.data(using: .utf8))
+        let jsonFramesData = try? JSONSerialization.data(withJSONObject: frames, options: .fragmentsAllowed)
+        let encodedFrames = jsonFramesData.flatMap({ self.encodeForJavascript($0) }) ?? "''"
         self.cookies = cookies
 
         return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
@@ -86,7 +96,7 @@ class WebViewHandler: NSObject {
                    }
                    .flatMap { translators -> Single<Any> in
                        let encodedTranslators = self.encodeJSONForJavascript(translators)
-                       return self.callJavascript("translate('\(url.absoluteString)', \(encodedHtml), \(encodedTranslators));")
+                       return self.callJavascript("translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators));")
                    }
                    .subscribe(onError: { [weak self] error in
                        self?.observable.on(.error(error))
@@ -120,10 +130,13 @@ class WebViewHandler: NSObject {
     /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
     /// - parameter options: Options for HTTP request.
     private func sendRequest(with options: [String: Any]) {
+        guard let messageId = options["messageId"] as? Int else { return }
         guard let urlString = options["url"] as? String,
-              let url = URL(string: urlString),
-              let method = options["method"] as? String,
-              let messageId = options["messageId"] as? Int else { return }
+              let url = urlString.addingPercentEncoding(withAllowedCharacters: WebViewHandler.urlAllowedCharacters).flatMap({ URL(string: $0) }),
+              let method = options["method"] as? String else {
+            self.sendErrorResponse(for: messageId)
+            return
+        }
 
         let headers = (options["headers"] as? [String: String]) ?? [:]
         let body = options["body"] as? String
@@ -150,6 +163,12 @@ class WebViewHandler: NSObject {
             }
         }
         task.resume()
+    }
+
+    private func sendErrorResponse(for messageId: Int) {
+        let error = "Incorrect URL request from javascript".data(using: .utf8)
+        let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
+        self.webView.evaluateJavaScript(script, completionHandler: nil)
     }
 
     private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?) -> String {

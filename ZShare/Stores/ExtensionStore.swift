@@ -162,9 +162,9 @@ class ExtensionStore {
     private func loadDocument(with extensionItem: NSExtensionItem) {
         self.loadWebData(extensionItem: extensionItem)
             .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] title, url, html, cookies in
+            .subscribe(onNext: { [weak self] title, url, html, cookies, frames in
                 self?.state.title = title
-                self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies)
+                self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
             }, onError: { [weak self] error in
                 self?.state.translation = .failed((error as? State.Translation.Error) ?? .unknown)
             })
@@ -173,12 +173,11 @@ class ExtensionStore {
 
     /// Creates an Observable for NSExtensionItem to load web data.
     /// - parameter extensionItem: `NSExtensionItem` passed from `NSExtensionContext` from share extension view controller.
-    /// - returns: Observable for loading: title, url, full HTML, cookies.
-    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String)> {
+    /// - returns: Observable for loading: title, url, full HTML, cookies, iframes content.
+    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String, [String])> {
         let propertyList = kUTTypePropertyList as String
 
-        guard let itemProvider = extensionItem.attachments?.first,
-              itemProvider.hasItemConformingToTypeIdentifier(propertyList) else {
+        guard let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(propertyList) }) else {
             return Observable.error(State.Translation.Error.cantLoadWebData)
         }
 
@@ -195,8 +194,9 @@ class ExtensionStore {
                 if let url = (data["url"] as? String).flatMap(URL.init),
                    let title = data["title"] as? String,
                    let html = data["html"] as? String,
-                   let cookies = data["cookies"] as? String {
-                    subscriber.onNext((title, url, html, cookies))
+                   let cookies = data["cookies"] as? String,
+                   let frames = data["frames"] as? [String] {
+                    subscriber.onNext((title, url, html, cookies, frames))
                     subscriber.onCompleted()
                 } else {
                     subscriber.onError(State.Translation.Error.cantLoadWebData)

@@ -23,19 +23,32 @@
 	***** END LICENSE BLOCK *****
 */
 
-async function translate(url, encodedHtml, encodedTranslators) {
+async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
 	const html = decodeURIComponent(escape(window.atob(encodedHtml)));
-	const doc = prepareDoc(
-		new DOMParser().parseFromString(html, 'text/html'),
-		url
-	);
-    const translatorData = JSON.parse(window.atob(encodedTranslators));
+    const frames = JSON.parse(decodeURIComponent(escape(window.atob(encodedFrames))));
 
+    var parsedDoc = new DOMParser().parseFromString(html, 'text/html')
+    const allFrames = parsedDoc.querySelectorAll('iframe, frame');
+
+    if (allFrames.length != frames.length) {
+        Zotero.debug("Document frames count (" + allFrames.length + ") and parameter frames (" + frames.length + ") count do not match!");
+    } else {
+        for (var idx = 0; idx < allFrames.length; idx++) {
+            const frameHtml = frames[idx];
+            if (frameHtml === "") {
+                continue;
+            }
+            allFrames[idx].innerHTML = frameHtml;
+        }
+    }
+
+    const translatorData = JSON.parse(window.atob(encodedTranslators));
     if (translatorData) {
         Zotero.Translators.init(translatorData);
     }
 
 	// Set up a translate instance
+    const doc = prepareDoc(parsedDoc, url);
 	const translate = new Zotero.Translate.Web();
 	translate.setDocument(doc);
 
