@@ -18,13 +18,17 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
+    private unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    init(annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
+    init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
+        self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
+        self.queue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.disposeBag = DisposeBag()
     }
 
@@ -83,6 +87,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         case .setActiveColor(let hex):
             self.setActiveColor(hex: hex, in: viewModel)
 
+        case .saveChanges:
+            self.saveChanges(in: viewModel)
         }
     }
 
@@ -113,6 +119,25 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     // MARK: - Annotation actions
+
+    private func saveChanges(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let key = viewModel.state.key
+        let libraryId = viewModel.state.libraryId
+
+        var changed: [Annotation] = []
+        viewModel.state.annotations.forEach { _, annotations in
+            changed.append(contentsOf: annotations)
+        }
+
+        self.queue.async {
+            do {
+                let request = StoreChangedAnnotationsDbRequest(itemKey: key, libraryId: libraryId, annotations: changed)
+                try self.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                // TODO: - Show error
+            }
+        }
+    }
 
     private func setActiveColor(hex: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
         let color = UIColor(hex: hex)
@@ -293,7 +318,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 continue
             }
 
-            guard let zoteroAnnotation = self.zoteroAnnotation(from: annotation) else { continue }
+            guard let zoteroAnnotation = self.zoteroAnnotation(from: annotation, isNew: true) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.isZoteroKey: true,
@@ -446,8 +471,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.insertedAnnotationIndexPaths = [IndexPath(row: index, section: newSection)]
             } else {
                 guard var zoteroAnnotation = state.annotations[indexPath.section]?[indexPath.row] else {
-                    DDLogError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
-                    fatalError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
+                    DDLogError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
+                    fatalError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
                 }
 
                 // TODO: - calculate new sortIndex, move annotation if needed
@@ -483,48 +508,63 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         return nil
     }
 
-    /// Loads annotations from DB (TODO), converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
+    /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadAnnotations(in viewModel: ViewModel<PDFReaderActionHandler>) {
-        /// TMP/TODO: - Import annotations only when needed/requested by user
-        let (zoteroAnnotations, comments) = self.annotationsAndComments(from: viewModel.state.document, baseFont: viewModel.state.commentFont)
+        do {
+            let (zoteroAnnotations, comments) = try self.annotationsAndComments(for: viewModel.state.key,
+                                                                                libraryId: viewModel.state.libraryId,
+                                                                                baseFont: viewModel.state.commentFont)
+            let pspdfkitAnnotations = self.annotations(from: zoteroAnnotations)
 
-        let documentAnnotations = viewModel.state.document.allAnnotations(of: AnnotationsConfig.supported)
-        let annotations = self.annotations(from: zoteroAnnotations)
+            self.update(viewModel: viewModel) { state in
+                state.annotations = zoteroAnnotations
+                state.comments = comments
+                state.changes = .annotations
 
-        self.update(viewModel: viewModel) { state in
-            state.annotations = zoteroAnnotations
-            state.comments = comments
-            state.changes = .annotations
-
-            UndoController.performWithoutUndo(undoController: state.document.undoController) {
-                // Hide external supported annotations
-                documentAnnotations.values.flatMap({ $0 }).forEach({ $0.isHidden = true })
-                // Add zotero annotations
-                state.document.add(annotations: annotations, options: nil)
+                UndoController.performWithoutUndo(undoController: state.document.undoController) {
+                    // Hide external supported annotations
+                    state.document.allAnnotations(of: AnnotationsConfig.supported).values.flatMap({ $0 }).forEach({ $0.isHidden = true })
+                    // Add zotero annotations
+                    state.document.add(annotations: pspdfkitAnnotations, options: nil)
+                }
             }
+        } catch let error {
+            // TODO: - show error
         }
     }
 
-    /// Temporary extraction of original annotations and converting them to zotero annotations. This will actually happen only when the user
-    /// imports annotations manually, with some changes.
-    private func annotationsAndComments(from document: Document, baseFont: UIFont) -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString]) {
-        let annotations = document.allAnnotations(of: AnnotationsConfig.supported)
-        var zoteroAnnotations: [Int: [Annotation]] = [:]
+    /// Loads annotations from database, groups them by page and converts comment `String`s to `NSAttributedString`s.
+    /// - parameter key: Item key for which annotations are loaded.
+    /// - parameter libraryId: Library identifier of item.
+    /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
+    /// - returns: Tuple of grouped annotations and comments.
+    private func annotationsAndComments(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont) throws
+                                                                       -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString]) {
+        let dbAnnotations = try self.dbStorage.createCoordinator().perform(request: ReadAnnotationsDbRequest(itemKey: key, libraryId: libraryId))
+
+        var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]
-        for (page, annotations) in annotations {
-            let pageAnnotations = annotations.compactMap { self.zoteroAnnotation(from: $0) }.sorted(by: { $0.sortIndex > $1.sortIndex })
-            zoteroAnnotations[page.intValue] = pageAnnotations
-            for annotation in pageAnnotations {
-                comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: baseFont)
+
+        dbAnnotations.forEach { rAnnotation in
+            let annotation = Annotation(annotation: rAnnotation)
+            if var array = annotations[annotation.page] {
+                array.append(annotation)
+                annotations[annotation.page] = array
+            } else {
+                annotations[annotation.page] = [annotation]
             }
+
+            comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: baseFont)
         }
-        return (zoteroAnnotations, comments)
+
+        return (annotations, comments)
     }
 
     /// Create Zotero annotation from existing PSPDFKit annotation.
     /// - parameter annotation: PSPDFKit annotation.
+    /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - returns: Matching Zotero annotation.
-    private func zoteroAnnotation(from annotation: PSPDFKit.Annotation) -> Annotation? {
+    private func zoteroAnnotation(from annotation: PSPDFKit.Annotation, isNew: Bool) -> Annotation? {
         guard AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         if let annotation = annotation as? NoteAnnotation {
@@ -541,7 +581,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               isLocked: annotation.isLocked,
                               sortIndex: "",
                               dateModified: Date(),
-                              tags: [])
+                              tags: [],
+                              didChange: isNew)
         } else if let annotation = annotation as? HighlightAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .highlight,
@@ -556,7 +597,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               isLocked: annotation.isLocked,
                               sortIndex: "",
                               dateModified: Date(),
-                              tags: [])
+                              tags: [],
+                              didChange: isNew)
         } else if let annotation = annotation as? SquareAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .area,
@@ -571,7 +613,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               isLocked: annotation.isLocked,
                               sortIndex: "",
                               dateModified: Date(),
-                              tags: [])
+                              tags: [],
+                              didChange: isNew)
         }
 
         return nil
@@ -628,6 +671,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.isZotero = true
         note.key = annotation.key
         note.borderStyle = .dashed
+        note.color = UIColor(hex: annotation.color)
         return note
     }
 }

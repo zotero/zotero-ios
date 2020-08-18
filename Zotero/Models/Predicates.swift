@@ -50,6 +50,15 @@ extension NSPredicate {
         }
     }
 
+    static func itemLibrary(with identifier: LibraryIdentifier) -> NSPredicate {
+        switch identifier {
+        case .custom(let type):
+            return NSPredicate(format: "item.customLibrary.rawType = %d", type.rawValue)
+        case .group(let identifier):
+            return NSPredicate(format: "item.group.identifier = %d", identifier)
+        }
+    }
+
     static func key(_ key: String, in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(key), .library(with: libraryId)])
     }
@@ -177,5 +186,11 @@ extension NSPredicate {
 
     static func containsField(key: String) -> NSPredicate {
         return NSPredicate(format: "ANY fields.key = %@", key)
+    }
+
+    static func itemKey(_ itemKey: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+        let libraryPredicate: NSPredicate = .itemLibrary(with: libraryId)
+        let itemPredicate: NSPredicate = NSPredicate(format: "item.key = %@", itemKey)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, itemPredicate])
     }
 }

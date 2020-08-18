@@ -352,6 +352,12 @@
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
+		B31EEE5424EBC9C100E3B3AD /* RAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */; };
+		B31EEE5524EBCAC900E3B3AD /* RAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */; };
+		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
+		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
+		B31EEE5A24EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */; };
+		B31EEE5C24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */; };
 		B3231334243F0F0000F1905A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3231333243F0F0000F1905A /* SceneDelegate.swift */; };
 		B3235C8F24ADC28D0034113B /* AnnotationCommentEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3235C8D24ADC28D0034113B /* AnnotationCommentEditorViewController.swift */; };
 		B3235C9024ADC28D0034113B /* AnnotationCommentEditorViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3235C8E24ADC28D0034113B /* AnnotationCommentEditorViewController.xib */; };
@@ -883,6 +889,10 @@
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
+		B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RAnnotation.swift; sourceTree = "<group>"; };
+		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
+		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
+		B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreChangedAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		B3231333243F0F0000F1905A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		B3235C8D24ADC28D0034113B /* AnnotationCommentEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCommentEditorViewController.swift; sourceTree = "<group>"; };
 		B3235C8E24ADC28D0034113B /* AnnotationCommentEditorViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationCommentEditorViewController.xib; sourceTree = "<group>"; };
@@ -1274,6 +1284,7 @@
 				B305644F23FC051E003304F2 /* PerformDeletionsDbRequest.swift */,
 				B305646023FC051E003304F2 /* ReadAllCustomLibrariesDbRequest.swift */,
 				B305644823FC051E003304F2 /* ReadAllGroupsDbRequest.swift */,
+				B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */,
 				B305646523FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift */,
 				B305644523FC051E003304F2 /* ReadAttachmentUploadsDbRequest.swift */,
 				B305645E23FC051E003304F2 /* ReadCollectionDbRequest.swift */,
@@ -1288,6 +1299,7 @@
 				B305644C23FC051E003304F2 /* ReadUpdatedObjectUpdateParametersDbRequest.swift */,
 				B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */,
 				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
+				B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
 				B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */,
@@ -1492,12 +1504,14 @@
 			isa = PBXGroup;
 			children = (
 				B353F202242E52610062EE24 /* Database.swift */,
+				B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */,
 				B305653023FC051E003304F2 /* RCollection.swift */,
 				B305653123FC051E003304F2 /* RCreator.swift */,
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
 				B305653523FC051E003304F2 /* RGroup.swift */,
 				B305653223FC051E003304F2 /* RItem.swift */,
 				B3E4463B248FBBA3007FE8AB /* RLink.swift */,
+				B31EEE5624EBCAF100E3B3AD /* RRect.swift */,
 				B3E4463E248FBD2E007FE8AB /* RRelation.swift */,
 				B305653323FC051E003304F2 /* RSearch.swift */,
 				B305652F23FC051E003304F2 /* RTag.swift */,
@@ -2721,6 +2735,7 @@
 				B30565D723FC051E003304F2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B30565E723FC051E003304F2 /* ObjectChangeObserver.swift in Sources */,
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
+				B31EEE5424EBC9C100E3B3AD /* RAnnotation.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
 				B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */,
@@ -2734,6 +2749,7 @@
 				B3593F62241A62DD00760E20 /* DetailCoordinator.swift in Sources */,
 				B30565EB23FC051E003304F2 /* Controllers.swift in Sources */,
 				B3593F78241A76E600760E20 /* CollectionEditError.swift in Sources */,
+				B31EEE5C24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift in Sources */,
 				B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */,
 				B3593F40241A61C700760E20 /* ItemCell.swift in Sources */,
 				B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */,
@@ -2773,6 +2789,7 @@
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,
 				B30565E423FC051E003304F2 /* RealmDbStorage.swift in Sources */,
 				B305661C23FC051E003304F2 /* LoadUploadDataSyncAction.swift in Sources */,
+				B31EEE5A24EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift in Sources */,
 				B3593F64241A62E400760E20 /* MasterCoordinator.swift in Sources */,
 				B30565E923FC051E003304F2 /* SessionController.swift in Sources */,
 				B30566A123FC051F003304F2 /* Library.swift in Sources */,
@@ -2865,6 +2882,7 @@
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
+				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
 				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
@@ -2967,6 +2985,7 @@
 				B325DBB324375DB100EFF0F5 /* ConflictResolution.swift in Sources */,
 				B305677723FC0BEE003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B305673E23FC09AF003304F2 /* AuthorizeUploadResponse.swift in Sources */,
+				B31EEE5524EBCAC900E3B3AD /* RAnnotation.swift in Sources */,
 				B305673F23FC09AF003304F2 /* KeyResponse.swift in Sources */,
 				B305674023FC09AF003304F2 /* UpdatesResponse.swift in Sources */,
 				B3E44643248FBF12007FE8AB /* LinkType.swift in Sources */,
@@ -2975,6 +2994,7 @@
 				B305674223FC09AF003304F2 /* LinksResponse.swift in Sources */,
 				B305674323FC09AF003304F2 /* LoginResponse.swift in Sources */,
 				B305674423FC09AF003304F2 /* DeletionsResponse.swift in Sources */,
+				B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */,
 				B353F207242E52EE0062EE24 /* Database.swift in Sources */,
 				B305674523FC09AF003304F2 /* GroupResponse.swift in Sources */,
 				B305674623FC09AF003304F2 /* SearchesResponse.swift in Sources */,

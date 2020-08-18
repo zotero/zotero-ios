@@ -29,6 +29,7 @@ enum PDFReaderAction {
     case userInterfaceStyleChanged
     case updateAnnotationPreviews(userInterfaceIsDark: Bool)
     case setActiveColor(String)
+    case saveChanges
 }
 
 #endif

@@ -52,6 +52,7 @@ class RItem: Object {
     let creators = LinkingObjects(fromType: RCreator.self, property: "item")
     let links = LinkingObjects(fromType: RLink.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
+    let annotations = LinkingObjects(fromType: RAnnotation.self, property: "item")
 
     // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting

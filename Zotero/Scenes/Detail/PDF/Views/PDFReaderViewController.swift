@@ -321,6 +321,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     @objc private func close() {
+        self.viewModel.process(action: .saveChanges)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 

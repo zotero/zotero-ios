@@ -32,6 +32,7 @@ class RTag: Object {
     @objc dynamic var customLibrary: RCustomLibrary?
     @objc dynamic var group: RGroup?
     let items: List<RItem> = List()
+    let annotations: List<RAnnotation> = List()
 
     // MARK: - Sync data
 
