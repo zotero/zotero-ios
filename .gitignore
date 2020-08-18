@@ -28,6 +28,9 @@ xcuserdata/
 *.dSYM.zip
 *.dSYM
 
+# Clang
+default.profraw
+
 ## Playgrounds
 timeline.xctimeline
 playground.xcworkspace
