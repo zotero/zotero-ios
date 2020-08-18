@@ -22,6 +22,11 @@ internal typealias AssetImageTypeAlias = ImageAsset.Image
 // swiftlint:disable identifier_name line_length nesting type_body_length type_name
 internal enum Asset {
   internal enum Colors {
+    internal static let annotationCellBackground = ColorAsset(name: "annotationCellBackground")
+    internal static let annotationCellBorder = ColorAsset(name: "annotationCellBorder")
+    internal static let annotationCellSelectedBackground = ColorAsset(name: "annotationCellSelectedBackground")
+    internal static let annotationCellSelectedBorder = ColorAsset(name: "annotationCellSelectedBorder")
+    internal static let annotationCellShadow = ColorAsset(name: "annotationCellShadow")
     internal static let cellHighlighted = ColorAsset(name: "cellHighlighted")
     internal static let cellSelected = ColorAsset(name: "cellSelected")
     internal static let navbarBackground = ColorAsset(name: "navbarBackground")

@@ -55,7 +55,7 @@ class AnnotationCell: UITableViewCell {
         self.selectionStyle = .none
 
         self.roundedContainer.layer.cornerRadius = 8
-        self.roundedContainer.layer.borderWidth = 1
+        self.roundedContainer.layer.borderWidth = 1 / UIScreen.main.scale
         self.roundedContainer.layer.shadowOpacity = 1
         self.roundedContainer.layer.shadowRadius = 2
         self.roundedContainer.layer.shadowOffset = CGSize()
@@ -179,17 +179,16 @@ class AnnotationCell: UITableViewCell {
     // MARK: - Colors
 
     private func shadowColor(selected: Bool) -> UIColor {
-        return selected ? UIColor(hex: "#6d95e0") : .clear
+        return selected ? Asset.Colors.annotationCellShadow.color : .clear
     }
 
     private func borderColor(selected: Bool) -> UIColor {
-        return UIColor(hex: selected ? "#6d95e0" : "#bcc4d2")
+        return selected ? Asset.Colors.annotationCellSelectedBorder.color :
+                          Asset.Colors.annotationCellBorder.color
     }
 
     private func contentBackgroundColor(selected: Bool) -> UIColor {
-        if selected {
-            return UIColor(hex: "#e4ebf9")
-        }
-        return self.traitCollection.userInterfaceStyle == .dark ? .black : .white
+        return selected ? Asset.Colors.annotationCellSelectedBackground.color :
+                          Asset.Colors.annotationCellBackground.color
     }
 }

@@ -21,7 +21,8 @@ class PDFReaderViewController: UIViewController {
     }
 
     private static let colorPreviewSize = CGSize(width: 15, height: 15)
-    private static let darkModeOpacity: CGFloat = 0.75
+    private static let highlightOpacity: CGFloat = 0.5
+    private static let highlightDarkOpacity: CGFloat = 0.75
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let pageController: PdfPageController
@@ -137,6 +138,25 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Actions
 
+    private func toolColor(from activeColor: UIColor, for tool: PSPDFKit.Annotation.Tool) -> UIColor {
+        switch tool {
+        case .highlight:
+            switch self.traitCollection.userInterfaceStyle {
+            case .dark:
+                var hue: CGFloat = 0
+                var sat: CGFloat = 0
+                var brg: CGFloat = 0
+                var alpha: CGFloat = 0
+                activeColor.getHue(&hue, saturation: &sat, brightness: &brg, alpha: &alpha)
+                return UIColor(hue: hue, saturation: sat * 1.15, brightness: brg, alpha: PDFReaderViewController.highlightDarkOpacity)
+            default:
+                return activeColor.withAlphaComponent(PDFReaderViewController.highlightOpacity)
+            }
+        default:
+            return activeColor
+        }
+    }
+
     private func update(state: PDFReaderState) {
         if state.changes.contains(.darkMode) {
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
@@ -185,11 +205,7 @@ class PDFReaderViewController: UIViewController {
             return
         }
 
-        if annotationTool == .highlight {
-            stateManager.drawColor = self.viewModel.state.activeColor.withAlphaComponent(PDFReaderViewController.darkModeOpacity)
-        } else {
-            stateManager.drawColor = self.viewModel.state.activeColor
-        }
+        stateManager.drawColor = self.toolColor(from: self.viewModel.state.activeColor, for: annotationTool)
 
         self.pdfController.annotationStateManager.setState(annotationTool, variant: nil)
     }
@@ -326,14 +342,14 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func set(toolColor: UIColor, in stateManager: AnnotationStateManager) {
-        let colorWithOpacity = toolColor.withAlphaComponent(PDFReaderViewController.darkModeOpacity)
+        let highlightColor = self.toolColor(from: toolColor, for: .highlight)
 
-        stateManager.setLastUsedColor(colorWithOpacity, annotationString: .highlight)
+        stateManager.setLastUsedColor(highlightColor, annotationString: .highlight)
         stateManager.setLastUsedColor(toolColor, annotationString: .note)
         stateManager.setLastUsedColor(toolColor, annotationString: .square)
 
         if stateManager.state == .highlight {
-            stateManager.drawColor = colorWithOpacity
+            stateManager.drawColor = highlightColor
         } else {
             stateManager.drawColor = toolColor
         }
