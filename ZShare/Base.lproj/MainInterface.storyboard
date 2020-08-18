@@ -141,6 +141,12 @@
                                             </progressView>
                                         </subviews>
                                     </stackView>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qGA-Wl-rYp">
+                                        <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
+                                        <connections>
+                                            <action selector="showToolbarDetail" destination="j1y-V4-xli" eventType="touchUpInside" id="mtD-uI-azA"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" white="0.95385856807511726" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
@@ -150,8 +156,12 @@
                                     <constraint firstItem="xZK-Kh-53j" firstAttribute="leading" secondItem="Qgq-AM-hs6" secondAttribute="leading" constant="20" id="RXr-49-KU3"/>
                                     <constraint firstAttribute="bottom" secondItem="xZK-Kh-53j" secondAttribute="bottom" id="Sji-4l-soV"/>
                                     <constraint firstAttribute="height" constant="44" id="Ufv-hg-sUA"/>
+                                    <constraint firstAttribute="bottom" secondItem="qGA-Wl-rYp" secondAttribute="bottom" id="VAM-Ps-wJ3"/>
+                                    <constraint firstItem="qGA-Wl-rYp" firstAttribute="leading" secondItem="Qgq-AM-hs6" secondAttribute="leading" id="W6h-E9-2kS"/>
                                     <constraint firstAttribute="trailing" secondItem="xZK-Kh-53j" secondAttribute="trailing" constant="20" id="YiO-3s-NQC"/>
                                     <constraint firstItem="xZK-Kh-53j" firstAttribute="top" secondItem="Qgq-AM-hs6" secondAttribute="top" id="efz-qS-7W2"/>
+                                    <constraint firstAttribute="trailing" secondItem="qGA-Wl-rYp" secondAttribute="trailing" id="rUQ-FT-Nlt"/>
+                                    <constraint firstItem="qGA-Wl-rYp" firstAttribute="top" secondItem="Qgq-AM-hs6" secondAttribute="top" id="t99-Bw-KKV"/>
                                 </constraints>
                             </view>
                             <view hidden="YES" alpha="0.0" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="y9J-7o-oEB">

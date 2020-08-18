@@ -81,6 +81,17 @@ class ShareViewController: UIViewController {
 
     // MARK: - Actions
 
+    @IBAction private func showToolbarDetail() {
+        guard let message = self.toolbarLabel.text, !message.isEmpty else { return }
+
+        let controller = UIAlertController(title: "Toolbar Detail", message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: "Copy", style: .default, handler: { _ in
+            UIPasteboard.general.string = message
+        }))
+        controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(controller, animated: true, completion: nil)
+    }
+
     @IBAction private func showItemPicker() {
         guard let items = self.store.state.itemPicker?.items else { return }
 
@@ -297,7 +308,7 @@ class ShareViewController: UIViewController {
     }
 
     private func showError(message: String) {
-
+        self.setToolbarData(title: "Error: \(message)", progress: nil)
     }
 
     // MARK: - Setups
