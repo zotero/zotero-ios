@@ -32,14 +32,15 @@ class PDFReaderViewController: UIViewController {
     private weak var pdfController: PDFViewController!
     private weak var annotationsControllerLeft: NSLayoutConstraint!
     private weak var pdfControllerLeft: NSLayoutConstraint!
+    private var isCompactSize: Bool
+    private var isSidebarTransitioning: Bool
+    weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
     // Annotation toolbar
     private weak var createNoteButton: CheckboxButton!
     private weak var createHighlightButton: CheckboxButton!
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
-    private var isCompactSize: Bool
 
-    weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
 
     private var isSidebarOpened: Bool {
         return self.annotationsControllerLeft.constant == 0
@@ -75,6 +76,7 @@ class PDFReaderViewController: UIViewController {
         self.isCompactSize = compactSize
         self.annotationPreviewController = annotationPreviewController
         self.pageController = pageController
+        self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -250,6 +252,8 @@ class PDFReaderViewController: UIViewController {
             self.annotationsController.view.isHidden = false
         }
 
+        self.isSidebarTransitioning = true
+
         UIView.animate(withDuration: 0.3, delay: 0,
                        usingSpringWithDamping: 1,
                        initialSpringVelocity: 5,
@@ -262,6 +266,7 @@ class PDFReaderViewController: UIViewController {
                            if !shouldShow {
                                self.annotationsController.view.isHidden = true
                            }
+                           self.isSidebarTransitioning = false
                        })
     }
 
@@ -629,7 +634,8 @@ class PDFReaderViewController: UIViewController {
 
 extension PDFReaderViewController: PDFViewControllerDelegate {
     func pdfViewController(_ pdfController: PDFViewController, didConfigurePageView pageView: PDFPageView, forPageAt pageIndex: Int) {
-        guard let selected = self.viewModel.state.selectedAnnotation,
+        guard !self.isSidebarTransitioning,
+              let selected = self.viewModel.state.selectedAnnotation,
               let annotation = self.viewModel.state.document.annotation(on: pageIndex, with: selected.key) else { return }
 
         if !pageView.selectedAnnotations.contains(annotation) {
@@ -638,6 +644,9 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
     }
 
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
+        // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
+        // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
+        guard !self.isSidebarTransitioning else { return }
         // Save current page
         self.pageController.store(page: pageIndex, for: self.viewModel.state.key)
     }
