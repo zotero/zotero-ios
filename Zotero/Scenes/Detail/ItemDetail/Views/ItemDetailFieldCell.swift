@@ -32,25 +32,25 @@ class ItemDetailFieldCell: RxTableViewCell {
     func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {
         self.titleLabel.text = field.name
         self.valueTextField.text = field.value
-        self.valueLabel.text = field.value
-        self.valueLabel.isHidden = isEditing
         self.valueTextField.isHidden = !isEditing
         self.titleWidth.constant = titleWidth
         self.setAdditionalInfo(value: field.additionalInfo?[.dateOrder])
 
-
+        self.valueLabel.text = field.value
         if !isEditing {
             if field.isTappable {
                 self.valueLabel.textColor = Asset.Colors.zoteroBlue.color
             } else {
-                self.valueLabel.textColor = self.traitCollection.userInterfaceStyle == .light ? .black : .white
+                self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
             }
         }
+        self.valueLabel.isHidden = isEditing
     }
 
     func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat) {
         self.titleLabel.text = creator.localizedType
         self.valueLabel.text = creator.name
+        self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
         self.valueLabel.isHidden = false
         self.valueTextField.isHidden = true
         self.titleWidth.constant = titleWidth
@@ -60,6 +60,7 @@ class ItemDetailFieldCell: RxTableViewCell {
     func setup(with date: String, title: String, titleWidth: CGFloat) {
         self.titleLabel.text = title
         self.valueLabel.text = date
+        self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
         self.valueLabel.isHidden = false
         self.valueTextField.isHidden = true
         self.titleWidth.constant = titleWidth
