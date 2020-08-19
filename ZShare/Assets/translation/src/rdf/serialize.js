@@ -449,9 +449,16 @@ $rdf.Serializer = function () {
         res = res.concat(statementListToTree(expr.statements));
         return res.concat(['}']);
       case 'collection':
+        var array = [];
+        if(!("length" in expr.elements)) {
+            array = [expr.elements];
+        } else {
+            array = expr.elements;
+        }
+
         var res = ['('];
-        for(i = 0; i < expr.elements.length; i++) {
-          res.push([objectTree(expr.elements[i], stats)]);
+        for(i = 0; i < array.length; i++) {
+          res.push([objectTree(array[i], stats)]);
         }
         res.push(')');
         return res;
@@ -788,9 +795,16 @@ $rdf.Serializer = function () {
     }
 
     function collectionXMLTree(subject, stats) {
+      var array = [];
+      if(!("length" in subject.elements)) {
+          array = [subject.elements];
+      } else {
+          array = subject.elements;
+      }
+
       var res = []
-      for(var i = 0; i < subject.elements.length; i++) {
-        res.push(subjectXMLTree(subject.elements[i], stats));
+      for(var i = 0; i < array.length; i++) {
+        res.push(subjectXMLTree(array[i], stats));
       }
       return res;
     }
