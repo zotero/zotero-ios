@@ -90,6 +90,11 @@ extension MainViewController: UISplitViewControllerDelegate {
     func splitViewController(_ splitViewController: UISplitViewController,
                              collapseSecondary secondaryViewController: UIViewController,
                              onto primaryViewController: UIViewController) -> Bool {
+        // The search bar is hidden when the app goes to background for unknown reason. This is a workaround to reset it if needed when
+        // the app returns to active state.
+        if let controller = (secondaryViewController as? UINavigationController)?.topViewController as? ItemsViewController {
+            controller.setSearchBarNeedsReset()
+        }
         return false
     }
 }

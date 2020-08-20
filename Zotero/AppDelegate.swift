@@ -97,8 +97,9 @@ extension AppDelegate: UIApplicationDelegate {
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         self.controllers.willEnterForeground()
+        NotificationCenter.default.post(name: .willEnterForeground, object: nil)
     }
-    
+
     func applicationWillTerminate(_ application: UIApplication) {
         self.controllers.willTerminate()
     }

@@ -39,6 +39,7 @@ class ItemsViewController: UIViewController {
     private var tableViewHandler: ItemsTableViewHandler!
     private var resultsToken: NotificationToken?
     private weak var searchBarContainer: SearchBarContainer?
+    private var searchBarNeedsReset = false
 
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
@@ -71,6 +72,7 @@ class ItemsViewController: UIViewController {
         // size is already calculated properly.
         self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
         self.setupFileObservers()
+        self.setupAppStateObserver()
 
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
@@ -114,16 +116,8 @@ class ItemsViewController: UIViewController {
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             let position = self.setupSearchBar(for: size)
-
-            // This is a workaround for setting a `navigationItem.searchController` after appearance of this controller on iPad.
-            // If `searchController` is set after controller appears on screen, it can create visual artifacts (navigation bar shows second row with
-            // nothing in it) or freeze the `tableView` scroll (user has to manually pop back to previous screen and reopen this controller to
-            // be able to scroll). The `navigationItem` is fixed when there is a transition to another `UIViewController`. So we fake a transition
-            // by pushing empty `UIViewController` and popping back to this one without animation, which fixes everything.
             if position == .navigationItem {
-                let controller = UIViewController()
-                self.navigationController?.pushViewController(controller, animated: false)
-                self.navigationController?.popViewController(animated: false)
+                self.resetSearchBar()
             }
         } else {
             coordinator.animate(alongsideTransition: { _ in
@@ -182,7 +176,24 @@ class ItemsViewController: UIViewController {
         }
     }
 
+    func setSearchBarNeedsReset() {
+        // Only reset search bar if it's in the title view. It disappears only from the navigation item title view.
+        guard self.navigationItem.titleView != nil else { return }
+        self.searchBarNeedsReset = true
+    }
+
     // MARK: - Actions
+
+    // This is a workaround for setting a `navigationItem.searchController` after appearance of this controller on iPad.
+    // If `searchController` is set after controller appears on screen, it can create visual artifacts (navigation bar shows second row with
+    // nothing in it) or freeze the `tableView` scroll (user has to manually pop back to previous screen and reopen this controller to
+    // be able to scroll). The `navigationItem` is fixed when there is a transition to another `UIViewController`. So we fake a transition
+    // by pushing empty `UIViewController` and popping back to this one without animation, which fixes everything.
+    private func resetSearchBar() {
+        let controller = UIViewController()
+        self.navigationController?.pushViewController(controller, animated: false)
+        self.navigationController?.popViewController(animated: false)
+    }
 
     private func open(attachment: Attachment, parentKey: String) {
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: parentKey)
@@ -242,6 +253,21 @@ class ItemsViewController: UIViewController {
     }
 
     // MARK: - Setups
+
+    private func setupAppStateObserver() {
+        NotificationCenter.default
+                          .rx
+                          .notification(.willEnterForeground)
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] _ in
+                              guard let `self` = self else { return }
+                              if self.searchBarNeedsReset {
+                                  self.resetSearchBar()
+                                  self.searchBarNeedsReset = false
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+    }
 
     private func setupFileObservers() {
         NotificationCenter.default
