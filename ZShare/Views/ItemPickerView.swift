@@ -9,19 +9,13 @@
 import SwiftUI
 
 struct ItemPickerView: View {
-    let data: [(String, String)]
-
-    private let picked: ((String, String)) -> Void
-
-    init(data: [String: String], picked: @escaping ((String, String)) -> Void) {
-        self.data = data.sorted(by: { $0.value > $1.value })
-        self.picked = picked
-    }
+    let data: [(key: String, value: String)]
+    let picked: ((String, String)) -> Void
 
     var body: some View {
         List {
-            ForEach(self.data, id: \.0) { data in
-                Text(data.1)
+            ForEach(self.data, id: \.key) { data in
+                Text(data.value)
                     .onTapGesture {
                         self.picked(data)
                     }
@@ -32,6 +26,6 @@ struct ItemPickerView: View {
 
 struct ItemPickerView_Previews: PreviewProvider {
     static var previews: some View {
-        ItemPickerView(data: [:]) { _ in }
+        ItemPickerView(data: []) { _ in }
     }
 }

@@ -68,9 +68,12 @@ Zotero.Messaging = new function() {
 
             _responseListeners[messageId] = responseCallback;
 
-        	payload["messageId"] = messageId;
+            const fullPayload = {
+                messageId: messageId,
+                payload: payload
+            }
 
-            handler.postMessage(payload);
+            handler.postMessage(fullPayload);
 
 //         Make sure we don't slowly gobble up memory with callbacks
 //         The drawback is that Google Docs users will timeout in MESSAGE_TIMEOUT

@@ -48,7 +48,7 @@ class ExtensionStore {
         }
 
         struct ItemPicker {
-            let items: [String: String]
+            let items: [(key: String, value: String)]
             var picked: String?
         }
 

@@ -18,7 +18,7 @@ class WebViewHandler: NSObject {
     /// - selectItem: Multiple items have been found on this website and the user needs to choose one.
     enum Action {
         case loadedItems([[String: Any]])
-        case selectItem([String: String])
+        case selectItem([(key: String, value: String)])
     }
 
     /// Handlers for communication with JS in `webView`
@@ -129,8 +129,7 @@ class WebViewHandler: NSObject {
 
     /// Sends HTTP request based on options. Sends back response with HTTP response to `webView`.
     /// - parameter options: Options for HTTP request.
-    private func sendRequest(with options: [String: Any]) {
-        guard let messageId = options["messageId"] as? Int else { return }
+    private func sendRequest(with options: [String: Any], for messageId: Int) {
         guard let urlString = options["url"] as? String,
               let url = urlString.addingPercentEncoding(withAllowedCharacters: WebViewHandler.urlAllowedCharacters).flatMap({ URL(string: $0) }),
               let method = options["method"] as? String else {
@@ -168,6 +167,12 @@ class WebViewHandler: NSObject {
     private func sendErrorResponse(for messageId: Int) {
         let error = "Incorrect URL request from javascript".data(using: .utf8)
         let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
+        self.webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+
+    private func sendError(_ error: String, for messageId: Int) {
+        let payload: [String: Any] = ["error": ["message": error]]
+        let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
         self.webView.evaluateJavaScript(script, completionHandler: nil)
     }
 
@@ -252,12 +257,37 @@ extension WebViewHandler: WKNavigationDelegate {
 /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
 extension WebViewHandler: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let handler = JSHandlers(rawValue: message.name) else { return }
+        guard let handler = JSHandlers(rawValue: message.name) else {
+            self.observable.on(.error(Error.jsError("Received unknown message from translator")))
+            return
+        }
 
         switch handler {
         case .request:
-            if let options = message.body as? [String: Any] {
-                self.sendRequest(with: options)
+            guard let body = message.body as? [String: Any],
+                  let messageId = body["messageId"] as? Int else { return }
+
+            if let options = body["payload"] as? [String: Any] {
+                self.sendRequest(with: options, for: messageId)
+            } else {
+                self.sendError("HTTP request missing payload", for: messageId)
+            }
+        case .itemSelection:
+            guard let body = message.body as? [String: Any],
+                  let messageId = body["messageId"] as? Int else { return }
+
+            if let payload = body["payload"] as? [[String]] {
+                self.itemSelectionMessageId = messageId
+
+                var sortedDictionary: [(String, String)] = []
+                for data in payload {
+                    guard data.count == 2 else { continue }
+                    sortedDictionary.append((data[0], data[1]))
+                }
+
+                self.observable.on(.next(.selectItem(sortedDictionary)))
+            } else {
+                self.sendError("Item selection missing payload", for: messageId)
             }
         case .item:
             if let info = message.body as? [[String: Any]] {
@@ -268,13 +298,6 @@ extension WebViewHandler: WKScriptMessageHandler {
                 self.receiveItems(with: .failure(.jsError(error)))
             } else {
                 self.receiveItems(with: .failure(.jsError("Unknown response")))
-            }
-        case .itemSelection:
-            if let info = message.body as? [String: Any],
-               let messageId = info["messageId"] as? Int,
-               let data = info.filter({ $0.key != "messageId" }) as? [String: String] {
-                self.itemSelectionMessageId = messageId
-                self.observable.on(.next(.selectItem(data)))
             }
         case .log:
             DDLogInfo("JSLOG: \(message.body)")

@@ -67,7 +67,7 @@ async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
 
 	// set handlers for translation
 	translate.setHandler("select", (translate, item, callback) => {
-        Zotero.Messaging.sendMessage(window.webkit.messageHandlers.itemSelectionHandler, item).then(callback, function(e) { throw (e); });
+        Zotero.Messaging.sendMessage(window.webkit.messageHandlers.itemSelectionHandler, Object.entries(item)).then(callback, function(e) { throw (e); });
 	});
 
 	translate.setHandler("error", function(obj, err) {
