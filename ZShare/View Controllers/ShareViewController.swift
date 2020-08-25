@@ -20,11 +20,13 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var collectionPickerLabel: UILabel!
     @IBOutlet private weak var collectionPickerChevron: UIImageView!
     @IBOutlet private weak var collectionPickerIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var itemPickerStackContainer: UIView!
     @IBOutlet private weak var itemPickerTitleLabel: UILabel!
     @IBOutlet private weak var itemPickerContainer: UIView!
     @IBOutlet private weak var itemPickerLabel: UILabel!
     @IBOutlet private weak var itemPickerChevron: UIImageView!
     @IBOutlet private weak var itemPickerButton: UIButton!
+    @IBOutlet private weak var translationErrorLabel: UILabel!
     @IBOutlet private weak var toolbarContainer: UIView!
     @IBOutlet private weak var toolbarLabel: UILabel!
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
@@ -81,17 +83,6 @@ class ShareViewController: UIViewController {
 
     // MARK: - Actions
 
-    @IBAction private func showToolbarDetail() {
-        guard let message = self.toolbarLabel.text, !message.isEmpty else { return }
-
-        let controller = UIAlertController(title: "Toolbar Detail", message: message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: "Copy", style: .default, handler: { _ in
-            UIPasteboard.general.string = message
-        }))
-        controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
-    }
-
     @IBAction private func showItemPicker() {
         guard let items = self.store.state.itemPicker?.items else { return }
 
@@ -130,57 +121,55 @@ class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        var rightButtonEnabled: Bool
-        // Enable "Upload" button if translation and file download (if any) are finished
-        switch state.translation {
-        case .downloaded, .translated:
-            rightButtonEnabled = true
-        default:
-            rightButtonEnabled = false
-        }
-
-        if let state = state.submission {
-            self.updateUploadState(state)
-            if state == .preparing {
-                // Disable "Upload" button if the upload is being prepared so that the user can't start it multiple times
-                rightButtonEnabled = false
-                // Disable "Cancel" button so that the user doesn't close the extension at this point.
-                self.navigationItem.leftBarButtonItem?.isEnabled = false
-            }
-        }
-
-        self.navigationItem.rightBarButtonItem?.isEnabled = rightButtonEnabled
-        self.updateToolbar(to: state.translation)
-        self.updateCollectionPicker(to: state.collectionPicker)
         self.navigationItem.title = state.title
+        self.setupNavigationItems(for: state.translation, submission: state.submission)
+        self.updateCollectionPicker(to: state.collectionPicker)
         self.updateItemPicker(to: state.itemPicker)
+        self.updateSubmission(to: state.submission)
+        self.updateToolbar(translation: state.translation, submission: state.submission)
+
+        if case .failed = state.translation {
+            self.translationErrorLabel.isHidden = false
+        } else {
+            self.translationErrorLabel.isHidden = true
+        }
     }
 
-    private func updateUploadState(_ state: ExtensionStore.State.Submission) {
+    private func setupNavigationItems(for translation: ExtensionStore.State.Translation, submission: ExtensionStore.State.Submission?) {
+        if submission == .preparing {
+            // Disable "Upload" and "Cancel" button if the upload is being prepared so that the user can't start it multiple times or cancel
+            self.navigationItem.leftBarButtonItem?.isEnabled = false
+            self.navigationItem.rightBarButtonItem?.isEnabled = false
+            return
+        }
+
+        self.navigationItem.leftBarButtonItem?.isEnabled = true
+
+        switch translation {
+        case .downloaded, .translated:
+            // Enable "Upload" button if translation and file download (if any) are finished
+            self.navigationItem.rightBarButtonItem?.isEnabled = true
+        default:
+            self.navigationItem.rightBarButtonItem?.isEnabled = true
+        }
+    }
+
+    private func updateSubmission(to state: ExtensionStore.State.Submission?) {
+        guard let state = state else { return }
+
         switch state {
         case .ready:
             self.debugLogging.storeLogs { [unowned self] in
                 self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
             }
-            return
         case .preparing:
-            self.prepareForUpload()
-        case .error(let error):
+            self.showPreparingIndicator()
+        case .error:
             self.hidePreparingIndicator()
-
-            switch error {
-            case .fileMissing:
-                self.showError(message: "Could not find file to upload.")
-            case .missingBackgroundUploader:
-                self.showError(message: "Background uploader not initialized.")
-            case .unknown:
-                self.showError(message: "Unknown error. Can't upload file.")
-            case .expired: break
-            }
         }
     }
 
-    private func prepareForUpload() {
+    private func showPreparingIndicator() {
         self.preparingContainer.isHidden = false
         UIView.animate(withDuration: 0.2) {
             self.preparingContainer.alpha = 1
@@ -198,8 +187,7 @@ class ShareViewController: UIViewController {
     }
 
     private func updateItemPicker(to state: ExtensionStore.State.ItemPicker?) {
-        self.itemPickerContainer.isHidden = state == nil
-        self.itemPickerTitleLabel.isHidden = self.itemPickerContainer.isHidden
+        self.itemPickerStackContainer.isHidden = state == nil
         
         guard let state = state else { return }
 
@@ -209,7 +197,7 @@ class ShareViewController: UIViewController {
             self.itemPickerChevron.tintColor = .gray
             self.itemPickerButton.isEnabled = false
         } else {
-            self.itemPickerLabel.text = "Pick an item"
+            self.itemPickerLabel.text = L10n.Shareext.Translation.itemSelection
             self.itemPickerLabel.textColor = Asset.Colors.zoteroBlue.color
             self.itemPickerChevron.tintColor = Asset.Colors.zoteroBlue.color
             self.itemPickerButton.isEnabled = true
@@ -238,56 +226,74 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateToolbar(to state: ExtensionStore.State.Translation) {
-        switch state {
-        case .translating:
-            if self.toolbarContainer.isHidden {
-                self.showToolbar()
+    private func updateToolbar(translation: ExtensionStore.State.Translation, submission: ExtensionStore.State.Submission?) {
+        if let submission = submission, case let .error(error) = submission {
+            self.showToolbarIfNeeded()
+
+            switch error {
+            case .fileMissing:
+                self.showError(message: "Could not find file to upload.")
+            case .missingBackgroundUploader:
+                self.showError(message: "Background uploader not initialized.")
+            case .unknown, .expired:
+                self.showError(message: "Unknown error. Can't upload file.")
             }
-            self.setToolbarData(title: "Translating", progress: nil)
+            return
+        }
+
+        switch translation {
+        case .starting:
+            self.setToolbarData(title: L10n.Shareext.Translation.start, progress: nil)
+            self.showToolbarIfNeeded()
 
         case .translated, .downloaded:
-            if !self.toolbarContainer.isHidden {
-                self.hideToolbar()
-            }
+            self.hideToolbarIfNeeded()
+
+        case .translating(let message):
+            self.setToolbarData(title: message, progress: nil)
 
         case .downloading(_, _, let progress):
-            self.setToolbarData(title: "Downloading", progress: progress)
+            self.setToolbarData(title: L10n.Shareext.Translation.downloading, progress: progress)
 
         case .failed(let error):
             switch error {
             case .cantLoadSchema:
-                self.setToolbarData(title: "Could not update schema", progress: nil)
+                self.showError(message: "Could not update schema")
             case .cantLoadWebData:
-                self.setToolbarData(title: "Could not load web data", progress: nil)
+                self.showError(message: "Could not load web data")
             case .downloadFailed:
-                self.setToolbarData(title: "Could not download attachment file", progress: nil)
+                self.showError(message: "Could not download attachment file")
             case .itemsNotFound:
-                self.setToolbarData(title: "Translator couldn't find any items", progress: nil)
+                self.showError(message: "Translator couldn't find any items")
             case .parseError:
-                self.setToolbarData(title: "Translator response couldn't be parsed", progress: nil)
+                self.showError(message: "Translator response couldn't be parsed")
             case .webViewError(let error):
                 switch error {
-                case .jsError(let string):
-                    self.setToolbarData(title: "Translation failed: \(string)", progress: nil)
+                case .incompatibleItem:
+                    self.showError(message: "Translated item contains incompatible data")
+                case .javascriptCallMissingResult:
+                    self.showError(message: "Javascript call failed")
+                case .noSuccessfulTranslators:
+                    self.showError(message: "Transation failed")
                 case .cantFindBaseFile: // should never happen
-                    self.setToolbarData(title: "Translator missing", progress: nil)
+                    self.showError(message: "Translator missing")
                 }
             case .unknown, .expired:
-                self.setToolbarData(title: "Unknown error", progress: nil)
+                self.showError(message: L10n.Shareext.Translation.unknown)
             }
-
         }
     }
 
-    private func showToolbar() {
+    private func showToolbarIfNeeded() {
+        guard self.toolbarContainer.isHidden else { return }
         self.toolbarContainer.isHidden = false
         UIView.animate(withDuration: 0.2) {
             self.toolbarContainer.alpha = 1
         }
     }
 
-    private func hideToolbar() {
+    private func hideToolbarIfNeeded() {
+        guard !self.toolbarContainer.isHidden else { return }
         UIView.animate(withDuration: 0.2, animations: {
             self.toolbarContainer.alpha = 0
         }, completion: { finished in

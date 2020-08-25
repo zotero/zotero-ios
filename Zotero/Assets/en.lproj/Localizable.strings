@@ -171,3 +171,8 @@ The following fields will be lost:
 "settings.storage.delete_library_question" = "Do you really want to delete all attachments in \"%@\"?";
 
 "shareext.save" = "Save to Zotero";
+"shareext.translation.start" = "Starting translation";
+"shareext.translation.item_selection" = "Pick an item";
+"shareext.translation.translating_with" = "Translating with: \"%@\"";
+"shareext.translation.downloading" = "Downloading";
+"shareext.translation.unknown" = "Translation failed";

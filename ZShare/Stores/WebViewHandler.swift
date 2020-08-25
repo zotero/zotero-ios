@@ -16,9 +16,12 @@ class WebViewHandler: NSObject {
     /// Actions that can be returned by this handler.
     /// - loadedItems: Items have been translated.
     /// - selectItem: Multiple items have been found on this website and the user needs to choose one.
+    /// - reportProgress: Reports progress of translation.
+    /// - saveAsWeb: Translation failed. Save as webpage item.
     enum Action {
         case loadedItems([[String: Any]])
         case selectItem([(key: String, value: String)])
+        case reportProgress(String)
     }
 
     /// Handlers for communication with JS in `webView`
@@ -29,13 +32,19 @@ class WebViewHandler: NSObject {
         case item = "itemResponseHandler"
         /// Handler used for item selection. Expects response (selected item).
         case itemSelection = "itemSelectionHandler"
+        /// Handler used to indicate that all translators failed to save and should be saved as web page
+        case saveAsWeb = "saveAsWebHandler"
+        /// Handler used to report progress of translation
+        case progress = "translationProgressHandler"
         /// Handler used to log JS debug info.
         case log = "logHandler"
     }
 
     enum Error: Swift.Error {
         case cantFindBaseFile
-        case jsError(String)
+        case incompatibleItem
+        case javascriptCallMissingResult
+        case noSuccessfulTranslators
     }
 
     private let translatorsController: TranslatorsController
@@ -190,17 +199,6 @@ class WebViewHandler: NSObject {
         return "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
     }
 
-    /// Report received items from translation server.
-    /// - parameter result: Result with either successfully translated items or failure.
-    private func receiveItems(with result: Result<[[String: Any]], Error>) {
-        switch result {
-        case .success(let info):
-            self.observable.on(.next(.loadedItems(info)))
-        case .failure(let error):
-            self.observable.on(.error(error))
-        }
-    }
-
     // MARK: - Helpers
 
     /// Makes a javascript call to `webView` with `Single` response.
@@ -212,7 +210,7 @@ class WebViewHandler: NSObject {
                 if let data = result {
                     subscriber(.success(data))
                 } else {
-                    let error = error ?? Error.jsError("Unknown error")
+                    let error = error ?? Error.javascriptCallMissingResult
                     let nsError = error as NSError
 
                     // TODO: - Check JS code to see if it's possible to remove this error.
@@ -222,6 +220,8 @@ class WebViewHandler: NSObject {
                     if nsError.domain == WKErrorDomain && nsError.code == 5 {
                         return
                     }
+
+                    DDLogError("Javascript call ('\(script)') error: \(error)")
 
                     subscriber(.error(error))
                 }
@@ -257,10 +257,7 @@ extension WebViewHandler: WKNavigationDelegate {
 /// Each message contains a `messageId` in the body, which is used to identify the message in case a response is expected.
 extension WebViewHandler: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let handler = JSHandlers(rawValue: message.name) else {
-            self.observable.on(.error(Error.jsError("Received unknown message from translator")))
-            return
-        }
+        guard let handler = JSHandlers(rawValue: message.name) else { return }
 
         switch handler {
         case .request:
@@ -291,14 +288,23 @@ extension WebViewHandler: WKScriptMessageHandler {
             }
         case .item:
             if let info = message.body as? [[String: Any]] {
-                self.receiveItems(with: .success(info))
-            } else if let info = message.body as? [String: Any] {
-                self.receiveItems(with: .success([info]))
-            } else if let error = message.body as? String {
-                self.receiveItems(with: .failure(.jsError(error)))
+                self.observable.on(.next(.loadedItems(info)))
             } else {
-                self.receiveItems(with: .failure(.jsError("Unknown response")))
+                self.observable.on(.error(Error.incompatibleItem))
             }
+        case .progress:
+            if let progress = message.body as? String {
+                if progress == "item_selection" {
+                    self.observable.on(.next(.reportProgress(L10n.Shareext.Translation.itemSelection)))
+                } else if progress.starts(with: "translating_with_") {
+                    let name = progress[progress.index(progress.startIndex, offsetBy: 17)..<progress.endIndex]
+                    self.observable.on(.next(.reportProgress(L10n.Shareext.Translation.translatingWith(name))))
+                } else {
+                    self.observable.on(.next(.reportProgress(progress)))
+                }
+            }
+        case .saveAsWeb:
+            self.observable.on(.error(Error.noSuccessfulTranslators))
         case .log:
             DDLogInfo("JSLOG: \(message.body)")
         }

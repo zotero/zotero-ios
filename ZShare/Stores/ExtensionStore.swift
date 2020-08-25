@@ -53,7 +53,8 @@ class ExtensionStore {
         }
 
         /// State for translation process.
-        /// - translating: Translation is in progress. This is the initial state.
+        /// - starting: Translation is starting. This is the initial state.
+        /// - translating: Translation is in progress. `String` is progress report from javascript code.
         /// - translated: Translation has ended. The item doesn't have an attachment.
         /// - downloading: Translation has ended. The item has an attachment which is being downloaded.
         /// - downloaded: Translation has ended. The item has an attachment which has been successfully downloaded.
@@ -65,7 +66,8 @@ class ExtensionStore {
                 case parseError(ItemResponse.Error)
             }
 
-            case translating
+            case starting
+            case translating(String)
             case translated(ItemResponse)
             case downloading(ItemResponse, [String: String], Float)
             case downloaded(ItemResponse, [String: String])
@@ -97,7 +99,7 @@ class ExtensionStore {
         init() {
             self.attachmentKey = KeyGenerator.newKey
             self.collectionPicker = .loading
-            self.translation = .translating
+            self.translation = .starting
         }
     }
 
@@ -218,7 +220,9 @@ class ExtensionStore {
                                case .loadedItems(let data):
                                    self?.processItems(data)
                                case .selectItem(let data):
-                                    self?.state.itemPicker = State.ItemPicker(items: data, picked: nil)
+                                   self?.state.itemPicker = State.ItemPicker(items: data, picked: nil)
+                               case .reportProgress(let progress):
+                                   self?.state.translation = .translating(progress)
                                }
                            }, onError: { [weak self] error in
                                self?.state.translation = .failed((error as? WebViewHandler.Error).flatMap({ .webViewError($0) }) ?? .unknown)
@@ -357,6 +361,10 @@ class ExtensionStore {
                                         libraryId: libraryId)
             self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId,
                         apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
+
+        case .failed:
+            // TODO: save web
+            break
 
         default: break
         }
