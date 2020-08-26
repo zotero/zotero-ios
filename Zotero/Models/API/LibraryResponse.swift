@@ -14,6 +14,27 @@ struct LibraryResponse: Codable {
     let type: String
     let links: LinksResponse?
 
+    init(id: Int, name: String, type: String, links: LinksResponse?) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.links = links
+    }
+
+    init(libraryId: LibraryIdentifier) {
+        self.name = ""
+        self.links = nil
+
+        switch libraryId {
+        case .custom:
+            self.id = 0
+            self.type = "user"
+        case .group(let id):
+            self.id = id
+            self.type = "group"
+        }
+    }
+
     var libraryId: LibraryIdentifier? {
         switch self.type {
         case "user":

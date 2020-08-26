@@ -91,6 +91,7 @@ class ExtensionStore {
 
         let attachmentKey: String
         var title: String?
+        var url: String?
         var collectionPicker: CollectionPicker
         var translation: Translation
         var submission: Submission?
@@ -166,6 +167,7 @@ class ExtensionStore {
             .observeOn(MainScheduler.instance)
             .subscribe(onNext: { [weak self] title, url, html, cookies, frames in
                 self?.state.title = title
+                self?.state.url = url.absoluteString
                 self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
             }, onError: { [weak self] error in
                 self?.state.translation = .failed((error as? State.Translation.Error) ?? .unknown)
@@ -189,6 +191,7 @@ class ExtensionStore {
             itemProvider.loadItem(forTypeIdentifier: propertyList, options: nil, completionHandler: { item, error -> Void in
                 guard let scriptData = item as? [String: Any],
                       let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
+                    DDLogError("ExtensionStore: can't read script data")
                     subscriber.onError(State.Translation.Error.cantLoadWebData)
                     return
                 }
@@ -201,6 +204,8 @@ class ExtensionStore {
                     subscriber.onNext((title, url, html, cookies, frames))
                     subscriber.onCompleted()
                 } else {
+                    DDLogError("ExtensionStore: script data don't contain required info")
+                    DDLogError("\(data)")
                     subscriber.onError(State.Translation.Error.cantLoadWebData)
                 }
             })
@@ -331,6 +336,8 @@ class ExtensionStore {
 
     /// Submits translated item (and attachment) to Zotero API. Enqueues background upload if needed.
     func submit() {
+        guard let title = self.state.title, let url = self.state.url else { return }
+
         let libraryId: LibraryIdentifier
         let collectionKeys: Set<String>
         let userId = Defaults.shared.userId
@@ -363,8 +370,29 @@ class ExtensionStore {
                         apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
         case .failed:
-            // TODO: save web
-            break
+            let date = Date()
+            let fields: [String: String] = [FieldKeys.url: url,
+                                            FieldKeys.title: title,
+                                            FieldKeys.accessDate: Formatter.iso8601.string(from: date)]
+            let webItem = ItemResponse(rawType: ItemTypes.webpage,
+                                       key: KeyGenerator.newKey,
+                                       library: LibraryResponse(libraryId: libraryId),
+                                       parentKey: nil,
+                                       collectionKeys: collectionKeys,
+                                       links: nil,
+                                       parsedDate: nil,
+                                       isTrash: false,
+                                       version: 0,
+                                       dateModified: date,
+                                       dateAdded: date,
+                                       fields: fields,
+                                       tags: [],
+                                       creators: [],
+                                       relations: [:],
+                                       createdBy: nil,
+                                       lastModifiedBy: nil)
+            self.submit(item: webItem, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
+                        fileStorage: self.fileStorage, schemaController: self.schemaController)
 
         default: break
         }

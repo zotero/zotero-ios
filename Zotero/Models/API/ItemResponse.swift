@@ -151,18 +151,9 @@ struct ItemResponse {
     }
 
     func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>) -> ItemResponse {
-        let library: LibraryResponse
-
-        switch libraryId {
-        case .custom:
-            library = LibraryResponse(id: 0, name: "", type: "user", links: nil)
-        case .group(let id):
-            library = LibraryResponse(id: id, name: "", type: "group", links: nil)
-        }
-
         return ItemResponse(rawType: self.rawType,
                             key: self.key,
-                            library: library,
+                            library: LibraryResponse(libraryId: libraryId),
                             parentKey: self.parentKey,
                             collectionKeys: collectionKeys,
                             links: self.links,

@@ -149,8 +149,15 @@ class ShareViewController: UIViewController {
         case .downloaded, .translated:
             // Enable "Upload" button if translation and file download (if any) are finished
             self.navigationItem.rightBarButtonItem?.isEnabled = true
-        default:
-            self.navigationItem.rightBarButtonItem?.isEnabled = true
+        case .failed(let error):
+            switch error {
+            case .cantLoadWebData, .cantLoadSchema: // These are fatal errors which can't even save as webpage item
+                self.navigationItem.rightBarButtonItem?.isEnabled = false
+            default: // Other errors are non-fatal and can still save web as webpage item at least
+                self.navigationItem.rightBarButtonItem?.isEnabled = true
+            }
+        default: // Other states are in-progress states and should have "upload" button disabled
+            self.navigationItem.rightBarButtonItem?.isEnabled = false
         }
     }
 
@@ -258,9 +265,9 @@ class ShareViewController: UIViewController {
         case .failed(let error):
             switch error {
             case .cantLoadSchema:
-                self.showError(message: "Could not update schema")
+                self.showError(message: "Could not update schema. Close and try again.")
             case .cantLoadWebData:
-                self.showError(message: "Could not load web data")
+                self.showError(message: "Could not load web data. Close and try again.")
             case .downloadFailed:
                 self.showError(message: "Could not download attachment file")
             case .itemsNotFound:

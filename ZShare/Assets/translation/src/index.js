@@ -33,8 +33,7 @@ async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
     // Prepare a document
     const html = decodeURIComponent(escape(window.atob(encodedHtml)));
     const frames = JSON.parse(decodeURIComponent(escape(window.atob(encodedFrames))));
-    const parsedDoc = new DOMParser().parseFromString(html, 'text/html');//parseDoc(html, frames);
-    const doc = prepareDoc(parsedDoc, url);
+    const doc = prepareDoc(parseDoc(html, frames), url);
 
     // Set up a translate instance
     const translate = new Zotero.Translate.Web();

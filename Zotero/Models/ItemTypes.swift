@@ -14,4 +14,5 @@ struct ItemTypes {
     static let `case` = "case"
     static let letter = "letter"
     static let interview = "interview"
+    static let webpage = "webpage"
 }
