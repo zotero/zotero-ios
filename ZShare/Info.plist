@@ -30,10 +30,20 @@
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-			<dict>
-				<key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
-				<integer>1</integer>
-			</dict>
+			<string>
+                SUBQUERY (
+                    extensionItems,
+                    $extensionItem,
+                        SUBQUERY (
+                            $extensionItem.attachments,
+                            $attachment,
+                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.adobe.pdf" OR
+                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url" OR
+                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" OR
+                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.html"
+                        ).@count == 1
+                ).@count == 1
+            </string>
 			<key>NSExtensionJavaScriptPreprocessingFile</key>
 			<string>ExtensionScript</string>
 		</dict>

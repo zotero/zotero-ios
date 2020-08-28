@@ -336,21 +336,21 @@ internal enum L10n {
   }
 
   internal enum Shareext {
+    /// Loading attachment
+    internal static let decodingAttachment = L10n.tr("Localizable", "shareext.decoding_attachment")
     /// Save to Zotero
     internal static let save = L10n.tr("Localizable", "shareext.save")
+    /// Unknown error occured
+    internal static let unknownError = L10n.tr("Localizable", "shareext.unknown_error")
     internal enum Translation {
       /// Downloading
       internal static let downloading = L10n.tr("Localizable", "shareext.translation.downloading")
       /// Pick an item
       internal static let itemSelection = L10n.tr("Localizable", "shareext.translation.item_selection")
-      /// Starting translation
-      internal static let start = L10n.tr("Localizable", "shareext.translation.start")
       /// Translating with: "%@"
       internal static func translatingWith(_ p1: Any) -> String {
         return L10n.tr("Localizable", "shareext.translation.translating_with", String(describing: p1))
       }
-      /// Translation failed
-      internal static let unknown = L10n.tr("Localizable", "shareext.translation.unknown")
     }
   }
 

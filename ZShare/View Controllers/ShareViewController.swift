@@ -122,75 +122,44 @@ class ShareViewController: UIViewController {
 
     private func update(to state: ExtensionStore.State) {
         self.navigationItem.title = state.title
-        self.setupNavigationItems(for: state.translation, submission: state.submission)
+        self.setupNavigationItems(for: state.attachmentState)
+        self.updateToolbar(for: state.attachmentState)
         self.updateCollectionPicker(to: state.collectionPicker)
         self.updateItemPicker(to: state.itemPicker)
-        self.updateSubmission(to: state.submission)
-        self.updateToolbar(translation: state.translation, submission: state.submission)
 
-        if case .failed = state.translation {
-            self.translationErrorLabel.isHidden = false
-        } else {
-            self.translationErrorLabel.isHidden = true
-        }
-    }
-
-    private func setupNavigationItems(for translation: ExtensionStore.State.Translation, submission: ExtensionStore.State.Submission?) {
-        if submission == .preparing {
-            // Disable "Upload" and "Cancel" button if the upload is being prepared so that the user can't start it multiple times or cancel
-            self.navigationItem.leftBarButtonItem?.isEnabled = false
-            self.navigationItem.rightBarButtonItem?.isEnabled = false
-            return
-        }
-
-        self.navigationItem.leftBarButtonItem?.isEnabled = true
-
-        switch translation {
-        case .downloaded, .translated:
-            // Enable "Upload" button if translation and file download (if any) are finished
-            self.navigationItem.rightBarButtonItem?.isEnabled = true
-        case .failed(let error):
-            switch error {
-            case .cantLoadWebData, .cantLoadSchema: // These are fatal errors which can't even save as webpage item
-                self.navigationItem.rightBarButtonItem?.isEnabled = false
-            default: // Other errors are non-fatal and can still save web as webpage item at least
-                self.navigationItem.rightBarButtonItem?.isEnabled = true
-            }
-        default: // Other states are in-progress states and should have "upload" button disabled
-            self.navigationItem.rightBarButtonItem?.isEnabled = false
-        }
-    }
-
-    private func updateSubmission(to state: ExtensionStore.State.Submission?) {
-        guard let state = state else { return }
-
-        switch state {
-        case .ready:
+        switch state.attachmentState {
+        case .done:
             self.debugLogging.storeLogs { [unowned self] in
                 self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
             }
-        case .preparing:
-            self.showPreparingIndicator()
-        case .error:
-            self.hidePreparingIndicator()
+        case .submitting:
+            self.showPreparingIndicatorIfNeeded()
+        case .failed(let error):
+            self.hidePreparingIndicatorIfNeeded()
+            self.translationErrorLabel.isHidden = error.isFatal
+        default: break
         }
     }
 
-    private func showPreparingIndicator() {
-        self.preparingContainer.isHidden = false
-        UIView.animate(withDuration: 0.2) {
-            self.preparingContainer.alpha = 1
+    private func setupNavigationItems(for state: ExtensionStore.State.AttachmentState) {
+        switch state {
+        case .submitting:
+            // Disable "Upload" and "Cancel" button if the upload is being prepared so that the user can't start it multiple times or cancel
+            self.navigationItem.leftBarButtonItem?.isEnabled = false
+            self.navigationItem.rightBarButtonItem?.isEnabled = false
+        case .decoding, .downloading, .translating: // In-progress states should have "Upload" button disabled
+            self.navigationItem.leftBarButtonItem?.isEnabled = true
+            self.navigationItem.rightBarButtonItem?.isEnabled = false
+        case .processed:
+            // Enable "Upload" button if translation and file download (if any) are finished
+            self.navigationItem.leftBarButtonItem?.isEnabled = true
+            self.navigationItem.rightBarButtonItem?.isEnabled = true
+        case .failed(let error):
+            // Enable "Upload" button for non-fatal errors, where the user can still at least save the web as webpage item
+            self.navigationItem.leftBarButtonItem?.isEnabled = true
+            self.navigationItem.rightBarButtonItem?.isEnabled = !error.isFatal
+        case .done: break // The extension will close
         }
-    }
-
-    private func hidePreparingIndicator() {
-        UIView.animate(withDuration: 0.2, animations: {
-            self.preparingContainer.alpha = 0
-        }, completion: { finished in
-            if finished {
-                self.preparingContainer.isHidden = true
-            }
-        })
     }
 
     private func updateItemPicker(to state: ExtensionStore.State.ItemPicker?) {
@@ -233,33 +202,19 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateToolbar(translation: ExtensionStore.State.Translation, submission: ExtensionStore.State.Submission?) {
-        if let submission = submission, case let .error(error) = submission {
+    private func updateToolbar(for state: ExtensionStore.State.AttachmentState) {
+        switch state {
+        case .decoding:
+            self.setToolbarData(title: L10n.Shareext.decodingAttachment, progress: nil)
             self.showToolbarIfNeeded()
 
-            switch error {
-            case .fileMissing:
-                self.showError(message: "Could not find file to upload.")
-            case .missingBackgroundUploader:
-                self.showError(message: "Background uploader not initialized.")
-            case .unknown, .expired:
-                self.showError(message: "Unknown error. Can't upload file.")
-            }
-            return
-        }
-
-        switch translation {
-        case .starting:
-            self.setToolbarData(title: L10n.Shareext.Translation.start, progress: nil)
-            self.showToolbarIfNeeded()
-
-        case .translated, .downloaded:
+        case .processed:
             self.hideToolbarIfNeeded()
 
         case .translating(let message):
             self.setToolbarData(title: message, progress: nil)
 
-        case .downloading(_, _, let progress):
+        case .downloading(let progress):
             self.setToolbarData(title: L10n.Shareext.Translation.downloading, progress: progress)
 
         case .failed(let error):
@@ -284,11 +239,39 @@ class ShareViewController: UIViewController {
                     self.showError(message: "Transation failed")
                 case .cantFindBaseFile: // should never happen
                     self.showError(message: "Translator missing")
+                case .webExtractionMissingJs:
+                    self.showError(message: "Can't load shared url. Close and try again.")
+                case .webExtractionMissingData:
+                    self.showError(message: "Could not load web data. Close and try again.")
                 }
             case .unknown, .expired:
-                self.showError(message: L10n.Shareext.Translation.unknown)
+                self.showError(message: L10n.Shareext.unknownError)
+            case .fileMissing:
+                self.showError(message: "Could not find file to upload.")
+            case .missingBackgroundUploader:
+                self.showError(message: "Background uploader not initialized.")
             }
+        case .submitting, .done: break
         }
+    }
+
+    private func showPreparingIndicatorIfNeeded() {
+        guard self.preparingContainer.isHidden else { return }
+        self.preparingContainer.isHidden = false
+        UIView.animate(withDuration: 0.2) {
+            self.preparingContainer.alpha = 1
+        }
+    }
+
+    private func hidePreparingIndicatorIfNeeded() {
+        guard !self.preparingContainer.isHidden else { return }
+        UIView.animate(withDuration: 0.2, animations: {
+            self.preparingContainer.alpha = 0
+        }, completion: { finished in
+            if finished {
+                self.preparingContainer.isHidden = true
+            }
+        })
     }
 
     private func showToolbarIfNeeded() {

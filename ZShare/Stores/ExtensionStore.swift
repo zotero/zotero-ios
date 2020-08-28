@@ -15,6 +15,8 @@ import CocoaLumberjackSwift
 import RxSwift
 import RxAlamofire
 
+typealias ExtractedWebData = (title: String, url: URL, html: String, cookies: String, frames: [String])
+
 /// `ExtensionStore` performs fetching of basic website data, runs the translation server which translates the web data, downloads item data with
 /// pdf attachment if available and uploads new item to Zotero.
 ///
@@ -52,55 +54,70 @@ class ExtensionStore {
             var picked: String?
         }
 
-        /// State for translation process.
-        /// - starting: Translation is starting. This is the initial state.
+        /// State for loading and processing attachment.
+        /// - decoding: Decoding attachment and deciding what to do with it. This is the initial state.
         /// - translating: Translation is in progress. `String` is progress report from javascript code.
-        /// - translated: Translation has ended. The item doesn't have an attachment.
         /// - downloading: Translation has ended. The item has an attachment which is being downloaded.
-        /// - downloaded: Translation has ended. The item has an attachment which has been successfully downloaded.
-        /// - failed: The translation process or attachment download failed.
-        enum Translation {
+        /// - processed: Processing of attachment has ended (either loading of URL or translation of web). Waiting for submission.
+        /// - submitting: Submitting processed attachment to backend.
+        /// - done: Sharing was successful, extension should close.
+        /// - failed: The attachment decoding, translation process or attachment download failed.
+        enum AttachmentState {
             enum Error: Swift.Error {
-                case cantLoadSchema, cantLoadWebData, downloadFailed, itemsNotFound, expired, unknown
+                case cantLoadSchema, cantLoadWebData, downloadFailed, itemsNotFound, expired, unknown,
+                     fileMissing, missingBackgroundUploader
                 case webViewError(WebViewHandler.Error)
                 case parseError(ItemResponse.Error)
+
+                var isFatal: Bool {
+                    switch self {
+                    case .cantLoadWebData, .cantLoadSchema: return true
+                    default: return false
+                    }
+                }
             }
 
-            case starting
+            case decoding
             case translating(String)
-            case translated(ItemResponse)
-            case downloading(ItemResponse, [String: String], Float)
-            case downloaded(ItemResponse, [String: String])
+            case downloading(Float)
+            case processed
+            case submitting
+            case done
             case failed(Error)
+
+            var isSubmittable: Bool {
+                switch self {
+                case .processed: return true
+                case .failed(let error): return !error.isFatal
+                default: return false
+                }
+            }
         }
 
-        /// State for submission of translated item (and attachment).
-        /// - preparing: Preparing the submission. Item submission request is sent. If the Item has an attachment, it is prepared for upload and
-        ///              another request is sent to authorize the upload.
-        /// - ready: The item has been submitted. If attachment was available, it's ready for background upload. The extension can be closed.
-        /// - error: The submission process failed.
-        enum Submission: Equatable {
-            enum Error: Swift.Error, Equatable {
-                case expired, fileMissing, unknown, missingBackgroundUploader
-            }
+        fileprivate enum RawAttachment {
+            case web(ExtractedWebData)
+            case webUrl(URL)
+            case fileUrl(URL)
+        }
 
-            case preparing
-            case ready
-            case error(Error)
+        fileprivate enum ProcessedAttachment {
+            case item(ItemResponse)
+            case itemWithAttachment(ItemResponse, [String: String])
+            case localFile(URL)
         }
 
         let attachmentKey: String
         var title: String?
         var url: String?
+        var attachmentState: AttachmentState
         var collectionPicker: CollectionPicker
-        var translation: Translation
-        var submission: Submission?
         var itemPicker: ItemPicker?
+        fileprivate var processedAttachment: ProcessedAttachment?
 
         init() {
             self.attachmentKey = KeyGenerator.newKey
             self.collectionPicker = .loading
-            self.translation = .starting
+            self.attachmentState = .decoding
         }
     }
 
@@ -149,8 +166,14 @@ class ExtensionStore {
     func start(with extensionItem: NSExtensionItem) {
         // Start sync in background, so that collections are available for user to pick
         self.syncController.start(type: .normal, libraries: .all)
-        // Start the translation process
-        self.loadDocument(with: extensionItem)
+
+        self.loadAttachment(from: extensionItem)
+            .subscribe(onSuccess: { [weak self] attachment in
+                self?.process(attachment: attachment)
+            }, onError: { [weak self] error in
+                self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
+            })
+            .disposed(by: self.disposeBag)
     }
 
     func cancel() {
@@ -159,40 +182,84 @@ class ExtensionStore {
         try? self.fileStorage.remove(file)
     }
 
-    // MARK: - Web data loading
+    // MARK: - Processing attachments
 
-    /// Loads document data and starts translation process if successful.
-    private func loadDocument(with extensionItem: NSExtensionItem) {
-        self.loadWebData(extensionItem: extensionItem)
-            .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] title, url, html, cookies, frames in
-                self?.state.title = title
-                self?.state.url = url.absoluteString
-                self?.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
-            }, onError: { [weak self] error in
-                self?.state.translation = .failed((error as? State.Translation.Error) ?? .unknown)
+    private func loadAttachment(from extensionItem: NSExtensionItem) -> Single<State.RawAttachment> {
+        if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String) }) {
+            return self.loadWebData(from: itemProvider)
+                       .flatMap({ Single.just(.web($0)) })
+        } else if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypeURL as String) }) {
+            return self.loadUrl(from: itemProvider)
+                       .flatMap({ $0.isFileURL ? Single.just(.fileUrl($0)) : Single.just(.webUrl($0)) })
+        }
+        return Single.error(State.AttachmentState.Error.cantLoadWebData)
+    }
+
+    private func process(attachment: State.RawAttachment) {
+        switch attachment {
+        case .web(let data):
+            var state = self.state
+            state.title = data.title
+            state.url = data.url.absoluteString
+            self.state = state
+
+            self.webViewHandler.translate(url: data.url, title: data.title, html: data.html, cookies: data.cookies, frames: data.frames)
+        case .webUrl(let url):
+            self.webViewHandler.loadWebData(from: url)
+                               .subscribe(onSuccess: { [weak self] data in
+                                   self?.process(attachment: .web(data))
+                               }, onError: { [weak self] error in
+                                   self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
+                               })
+                               .disposed(by: self.disposeBag)
+        case .fileUrl(let url):
+            self.state.processedAttachment = .localFile(url)
+        }
+    }
+
+    private func loadUrl(from itemProvider: NSItemProvider) -> Single<URL> {
+        return Single.create { [weak itemProvider] subscriber in
+            guard let itemProvider = itemProvider else {
+                subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                return Disposables.create()
+            }
+
+            itemProvider.loadItem(forTypeIdentifier: (kUTTypeURL as String), options: nil, completionHandler: { item, error -> Void in
+                if let error = error {
+                    DDLogError("ExtensionStore: url load error - \(error)")
+                }
+
+                if let url = item as? URL {
+                    subscriber(.success(url))
+                } else {
+                    DDLogError("ExtensionStore: can't load URL")
+                    subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                }
             })
-            .disposed(by: self.disposeBag)
+
+            return Disposables.create()
+        }
     }
 
     /// Creates an Observable for NSExtensionItem to load web data.
     /// - parameter extensionItem: `NSExtensionItem` passed from `NSExtensionContext` from share extension view controller.
     /// - returns: Observable for loading: title, url, full HTML, cookies, iframes content.
-    private func loadWebData(extensionItem: NSExtensionItem) -> Observable<(String, URL, String, String, [String])> {
-        let propertyList = kUTTypePropertyList as String
+    private func loadWebData(from itemProvider: NSItemProvider) -> Single<ExtractedWebData> {
+        return Single.create { [weak itemProvider] subscriber in
+            guard let itemProvider = itemProvider else {
+                subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
+                return Disposables.create()
+            }
 
-        guard let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(propertyList) }) else {
-            return Observable.error(State.Translation.Error.cantLoadWebData)
-        }
+            itemProvider.loadItem(forTypeIdentifier: (kUTTypePropertyList as String), options: nil, completionHandler: { item, error -> Void in
+                if let error = error {
+                    DDLogError("ExtensionStore: web data load error - \(error)")
+                }
 
-        return Observable.create { [weak itemProvider] subscriber in
-            guard let itemProvider = itemProvider else { return Disposables.create() }
-
-            itemProvider.loadItem(forTypeIdentifier: propertyList, options: nil, completionHandler: { item, error -> Void in
                 guard let scriptData = item as? [String: Any],
                       let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
                     DDLogError("ExtensionStore: can't read script data")
-                    subscriber.onError(State.Translation.Error.cantLoadWebData)
+                    subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
                     return
                 }
 
@@ -201,12 +268,11 @@ class ExtensionStore {
                    let html = data["html"] as? String,
                    let cookies = data["cookies"] as? String,
                    let frames = data["frames"] as? [String] {
-                    subscriber.onNext((title, url, html, cookies, frames))
-                    subscriber.onCompleted()
+                    subscriber(.success((title, url, html, cookies, frames)))
                 } else {
                     DDLogError("ExtensionStore: script data don't contain required info")
                     DDLogError("\(data)")
-                    subscriber.onError(State.Translation.Error.cantLoadWebData)
+                    subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
                 }
             })
 
@@ -227,10 +293,10 @@ class ExtensionStore {
                                case .selectItem(let data):
                                    self?.state.itemPicker = State.ItemPicker(items: data, picked: nil)
                                case .reportProgress(let progress):
-                                   self?.state.translation = .translating(progress)
+                                   self?.state.attachmentState = .translating(progress)
                                }
                            }, onError: { [weak self] error in
-                               self?.state.translation = .failed((error as? WebViewHandler.Error).flatMap({ .webViewError($0) }) ?? .unknown)
+                               self?.state.attachmentState = .failed((error as? WebViewHandler.Error).flatMap({ .webViewError($0) }) ?? .unknown)
                            })
                            .disposed(by: self.disposeBag)
 
@@ -243,17 +309,24 @@ class ExtensionStore {
             if let attachment = attachment,
                let urlString = attachment["url"],
                let url = URL(string: urlString) {
-                self.state.translation = .downloading(item, attachment, 0)
-                self.startDownload(for: url)
+                var state = self.state
+                state.processedAttachment = .itemWithAttachment(item, attachment)
+                state.attachmentState = .downloading(0)
+                self.state = state
+
+                self.download(url: url)
             } else {
-                self.state.translation = .translated(item)
+                var state = self.state
+                state.processedAttachment = .item(item)
+                state.attachmentState = .processed
+                self.state = state
             }
         } catch let error as ItemResponse.Error {
-            self.state.translation = .failed(.parseError(error))
-        } catch let error as State.Translation.Error {
-            self.state.translation = .failed(error)
+            self.state.attachmentState = .failed(.parseError(error))
+        } catch let error as State.AttachmentState.Error {
+            self.state.attachmentState = .failed(error)
         } catch {
-            self.state.translation = .failed(.unknown)
+            self.state.attachmentState = .failed(.unknown)
         }
     }
 
@@ -276,7 +349,7 @@ class ExtensionStore {
         }
 
         guard let itemData = sortedData.first else {
-            throw State.Translation.Error.itemsNotFound
+            throw State.AttachmentState.Error.itemsNotFound
         }
 
         let item = try ItemResponse(response: itemData, schemaController: self.schemaController)
@@ -295,7 +368,7 @@ class ExtensionStore {
 
     /// Starts download of PDF attachment. Downloads it to temporary folder.
     /// - parameter url: URL of file to download
-    private func startDownload(for url: URL) {
+    private func download(url: URL) {
         let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
         let request = FileRequest(data: .external(url), destination: file)
         self.apiClient.download(request: request)
@@ -305,38 +378,21 @@ class ExtensionStore {
                       }
                       .observeOn(MainScheduler.instance)
                       .subscribe(onNext: { [weak self] progress in
-                          self?.setDownloadProgress(progress.completed)
+                          self?.state.attachmentState = .downloading(progress.completed)
                       }, onError: { [weak self] error in
-                          self?.state.translation = .failed(.downloadFailed)
+                          self?.state.attachmentState = .failed(.downloadFailed)
                       }, onCompleted: { [weak self] in
-                          self?.finishDownload()
+                          self?.state.attachmentState = .processed
                       })
                       .disposed(by: self.disposeBag)
-    }
-
-    /// Sets current download progress if downloading has started.
-    /// - parameter progress: Progress
-    private func setDownloadProgress(_ progress: Float) {
-        switch self.state.translation {
-        case .downloading(let response, let attachment, _):
-            self.state.translation = .downloading(response, attachment, progress)
-        default: break
-        }
-    }
-
-    private func finishDownload() {
-        switch self.state.translation {
-        case .downloading(let response, let attachment, _):
-            self.state.translation = .downloaded(response, attachment)
-        default: break
-        }
     }
 
     // MARK: - Submission
 
     /// Submits translated item (and attachment) to Zotero API. Enqueues background upload if needed.
     func submit() {
-        guard let title = self.state.title, let url = self.state.url else { return }
+        guard self.state.attachmentState.isSubmittable,
+              let title = self.state.title, let url = self.state.url else { return }
 
         let libraryId: LibraryIdentifier
         let collectionKeys: Set<String>
@@ -351,50 +407,50 @@ class ExtensionStore {
             collectionKeys = []
         }
 
-        self.state.submission = .preparing
+        self.state.attachmentState = .submitting
 
-        switch self.state.translation {
-        case .translated(let item):
-            self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys), libraryId: libraryId, userId: userId,
-                        apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController)
+        if let attachment = self.state.processedAttachment {
+            switch attachment {
+            case .item(let item):
+                self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys), libraryId: libraryId, userId: userId,
+                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
+                            schemaController: self.schemaController)
 
-        case .downloaded(let item, let attachmentData):
-            let newItem = item.copy(libraryId: libraryId, collectionKeys: collectionKeys)
-            let filename = attachmentData["title"] ?? self.state.title ?? "Unknown"
-            let file = Files.attachmentFile(in: libraryId, key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
-            let attachment = Attachment(key: self.state.attachmentKey,
-                                        title: filename,
-                                        type: .file(file: file, filename: filename, location: .local),
-                                        libraryId: libraryId)
-            self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId,
-                        apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
+            case .itemWithAttachment(let item, let attachmentData):
+                let newItem = item.copy(libraryId: libraryId, collectionKeys: collectionKeys)
+                let filename = attachmentData["title"] ?? self.state.title ?? "Unknown"
+                let file = Files.attachmentFile(in: libraryId, key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+                let attachment = Attachment(key: self.state.attachmentKey,
+                                            title: filename,
+                                            type: .file(file: file, filename: filename, location: .local),
+                                            libraryId: libraryId)
+                self.upload(item: newItem, attachment: attachment, file: file, filename: filename, libraryId: libraryId, userId: userId,
+                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
-        case .failed:
+            case .localFile(let url):
+                let localFile = Files.file(from: url)
+                let filename = localFile.name
+                let file = Files.attachmentFile(in: libraryId, key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+                let attachment = Attachment(key: self.state.attachmentKey,
+                                            title: filename,
+                                            type: .file(file: file, filename: filename, location: .local),
+                                            libraryId: libraryId)
+                self.upload(attachment: attachment, file: file, tmpFile: localFile, libraryId: libraryId, userId: userId,
+                            apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+            }
+        } else {
             let date = Date()
             let fields: [String: String] = [FieldKeys.url: url,
                                             FieldKeys.title: title,
                                             FieldKeys.accessDate: Formatter.iso8601.string(from: date)]
-            let webItem = ItemResponse(rawType: ItemTypes.webpage,
-                                       key: KeyGenerator.newKey,
-                                       library: LibraryResponse(libraryId: libraryId),
-                                       parentKey: nil,
-                                       collectionKeys: collectionKeys,
-                                       links: nil,
-                                       parsedDate: nil,
-                                       isTrash: false,
-                                       version: 0,
-                                       dateModified: date,
-                                       dateAdded: date,
-                                       fields: fields,
-                                       tags: [],
-                                       creators: [],
-                                       relations: [:],
-                                       createdBy: nil,
+
+            let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
+                                       parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,
+                                       dateModified: date, dateAdded: date, fields: fields, tags: [], creators: [], relations: [:], createdBy: nil,
                                        lastModifiedBy: nil)
+
             self.submit(item: webItem, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
                         fileStorage: self.fileStorage, schemaController: self.schemaController)
-
-        default: break
         }
     }
 
@@ -416,10 +472,9 @@ class ExtensionStore {
             }
             .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
-                self?.state.submission = .ready
+                self?.state.attachmentState = .done
             }, onError: { [weak self] error in
-                let error = (error as? State.Submission.Error) ?? .unknown
-                self?.state.submission = .error(error)
+                self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
             })
             .disposed(by: self.disposeBag)
     }
@@ -438,6 +493,73 @@ class ExtensionStore {
         }
     }
 
+    /// Used for file sharing. Prepares file to upload and enqueues a background upload.
+    private func upload(attachment: Attachment, file: File, tmpFile: File, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient,
+                        dbStorage: DbStorage, fileStorage: FileStorage) {
+
+    }
+
+//    private func prepareUpload(attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
+//                               apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
+//        let tmpFile = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
+//        return self.moveTmpFile(from: tmpFile, to: file, removeOriginalOnFailure: true)
+//                   .subscribeOn(self.backgroundScheduler)
+//                   .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
+//                       guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
+//                       return self.createItems(item: item, attachment: attachment)
+//                                  .flatMap({ Single.just((filesize, $0, $1, $2)) })
+//                                  .do(onError: { [weak self] _ in
+//                                      // If attachment item couldn't be created in DB, remove the moved file if possible,
+//                                      // it won't be processed even from the main app
+//                                      try? self?.fileStorage.remove(file)
+//                                  })
+//                   }
+//                   .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
+//                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+//                                                     apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
+//                                                     queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+//                                    .flatMap({ _ in Single.just((filesize, md5, mtime)) })
+//                   }
+//                   .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
+//                       return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
+//                                                        libraryId: libraryId, userId: userId, apiClient: apiClient,
+//                                                        queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+//                                    .flatMap({ return Single.just(($0, md5)) })
+//                   }
+//    }
+
+    /// Creates `RItem` instances in DB from parsed item and attachement.
+    /// - parameter item: Parsed item to be created.
+    /// - parameter attachment: Parsed attachment to be created.
+    /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
+//    private func create(attachment: Attachment) -> Single<([String: Any], String, Int)> {
+//        return Single.create { subscriber -> Disposable in
+//            let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment,
+//                                                            schemaController: self.schemaController, dateParser: self.dateParser)
+//
+//            do {
+//                let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
+//
+//                let mtime = attachment.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+//                let md5 = attachment.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+//
+//                var parameters: [[String: Any]] = []
+//                if let updateParameters = item.updateParameters {
+//                    parameters.append(updateParameters)
+//                }
+//                if let updateParameters = attachment.updateParameters {
+//                    parameters.append(updateParameters)
+//                }
+//
+//                subscriber(.success((parameters, md5, mtime)))
+//            } catch let error {
+//                subscriber(.error(error))
+//            }
+//
+//            return Disposables.create()
+//        }
+//    }
+
     /// Used for item with attachment. Prepares the item for upload and enqueues a background upload.
     /// - parameter item: Parsed item to submit.
     /// - parameter attachment: Parsed attachment to submit.
@@ -451,17 +573,18 @@ class ExtensionStore {
     private func upload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                         apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) {
         self.prepareUpload(item: item, attachment: attachment, file: file, filename: filename,
-                       libraryId: libraryId, userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+                           libraryId: libraryId, userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
             .flatMap { [weak self] response, md5 -> Single<()> in
-                guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
+                guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
 
                 switch response {
                 case .exists:
                     return Single.just(())
                 case .new(let response):
                     guard let backgroundUploader = self.backgroundUploader else {
-                        return Single.error(State.Submission.Error.missingBackgroundUploader)
+                        return Single.error(State.AttachmentState.Error.missingBackgroundUploader)
                     }
+
                     let upload = BackgroundUpload(key: attachment.key, libraryId: libraryId, userId: userId, remoteUrl: response.url,
                                                   fileUrl: file.createUrl(), uploadKey: response.uploadKey, md5: md5)
                     return backgroundUploader.start(upload: upload, filename: filename, mimeType: ExtensionStore.defaultMimetype,
@@ -474,10 +597,9 @@ class ExtensionStore {
                 // This way the URLSession delegate will always be called in the main (container) app, where additional upload
                 // processing is performed.
                 self?.backgroundUploader = nil
-                self?.state.submission = .ready
+                self?.state.attachmentState = .done
             }, onError: { [weak self] error in
-                let error = (error as? State.Submission.Error) ?? .unknown
-                self?.state.submission = .error(error)
+                self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
             })
             .disposed(by: self.disposeBag)
     }
@@ -496,10 +618,11 @@ class ExtensionStore {
     /// - returns: `Single` with Authorization response and md5 hash of file.
     private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
-        return self.moveTmpFile(with: attachment.key, to: file, libraryId: libraryId)
+        let tmpFile = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
+        return self.moveTmpFile(from: tmpFile, to: file, removeOriginalOnFailure: true)
                    .subscribeOn(self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in
-                       guard let `self` = self else { return Single.error(State.Submission.Error.expired) }
+                       guard let `self` = self else { return Single.error(State.AttachmentState.Error.expired) }
                        return self.createItems(item: item, attachment: attachment)
                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
                                   .do(onError: { [weak self] _ in
@@ -523,26 +646,25 @@ class ExtensionStore {
     }
 
     /// Moves downloaded file from temporary folder to file appropriate for given attachment item.
-    /// - parameter key: Key of attachment in Zotero API.
-    /// - parameter file: `File` where the temporary file needs to be moved.
-    /// - parameter libraryId: Id of library of new attachment.
+    /// - parameter from: `File` where from the file is being moved.
+    /// - parameter to: `File` where the file needs to be moved.
     /// - returns: `Single` with size of file.
-    private func moveTmpFile(with key: String, to file: File, libraryId: LibraryIdentifier) -> Single<UInt64> {
+    private func moveTmpFile(from fromFile: File, to toFile: File, removeOriginalOnFailure: Bool) -> Single<UInt64> {
         return Single.create { subscriber -> Disposable in
-            let tmpFile = Files.shareExtensionTmpItem(key: key, ext: ExtensionStore.defaultExtension)
-
             do {
-                let size = self.fileStorage.size(of: tmpFile)
+                let size = self.fileStorage.size(of: fromFile)
                 if size == 0 {
-                    subscriber(.error(State.Submission.Error.fileMissing))
+                    subscriber(.error(State.AttachmentState.Error.fileMissing))
                     return Disposables.create()
                 }
-                try self.fileStorage.move(from: tmpFile, to: file)
+                try self.fileStorage.move(from: fromFile, to: toFile)
                 subscriber(.success(size))
             } catch {
-                // If tmp file couldn't be moved, remove it if it's there
-                try? self.fileStorage.remove(tmpFile)
-                subscriber(.error(State.Submission.Error.fileMissing))
+                if removeOriginalOnFailure {
+                    // If tmp file couldn't be moved, remove it if it's there
+                    try? self.fileStorage.remove(fromFile)
+                }
+                subscriber(.error(State.AttachmentState.Error.fileMissing))
             }
 
             return Disposables.create()

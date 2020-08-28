@@ -45,6 +45,8 @@ class WebViewHandler: NSObject {
         case incompatibleItem
         case javascriptCallMissingResult
         case noSuccessfulTranslators
+        case webExtractionMissingJs
+        case webExtractionMissingData
     }
 
     private let translatorsController: TranslatorsController
@@ -74,12 +76,32 @@ class WebViewHandler: NSObject {
 
         super.init()
 
+        self.webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
     }
 
-    // MARK: - Loading translation server
+    // MARK: - Actions
+
+    func loadWebData(from url: URL) -> Single<ExtractedWebData> {
+        return self.load(url: url)
+                   .flatMap({ _ -> Single<Any> in
+                       guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
+                             let script = try? String(contentsOf: url) else { return Single.error(Error.webExtractionMissingJs) }
+                       return self.callJavascript(script)
+                   })
+                   .flatMap({ data -> Single<ExtractedWebData> in
+                       guard let payload = data as? [String: Any],
+                             let title = payload["title"] as? String,
+                             let html = payload["html"] as? String,
+                             let cookies = payload["cookies"] as? String,
+                             let frames = payload["frames"] as? [String] else {
+                           return Single.error(Error.webExtractionMissingData)
+                       }
+                       return Single.just((title, url, html, cookies, frames))
+                   })
+    }
 
     /// Runs translation server against html content with cookies. Results are then provided through observable publisher.
     /// - parameter url: Original URL of shared website.
@@ -99,7 +121,7 @@ class WebViewHandler: NSObject {
         let encodedFrames = jsonFramesData.flatMap({ self.encodeForJavascript($0) }) ?? "''"
         self.cookies = cookies
 
-        return self.loadHtml(content: containerHtml, baseUrl: containerUrl)
+        return self.load(html: containerHtml, baseUrl: containerUrl)
                    .flatMap { _ -> Single<[RawTranslator]> in
                        return self.translatorsController.translators()
                    }
@@ -124,13 +146,25 @@ class WebViewHandler: NSObject {
     }
 
     /// Load the translation server.
-    private func loadHtml(content: String, baseUrl: URL) -> Single<()> {
-        self.webView.navigationDelegate = self
-        self.webView.loadHTMLString(content, baseURL: baseUrl)
+    private func load(html: String, baseUrl: URL) -> Single<()> {
+        self.webView.loadHTMLString(html, baseURL: baseUrl)
+        return self.createWebLoadedSingle()
+    }
 
-        return Single.create { subscriber -> Disposable in
-            self.webDidLoad = subscriber
-            return Disposables.create()
+    /// Load provided url.
+    private func load(url: URL) -> Single<()> {
+        let request = URLRequest(url: url)
+        self.webView.load(request)
+        return self.createWebLoadedSingle()
+    }
+
+    /// Create single which is fired when webview loads a resource or fails.
+    private func createWebLoadedSingle() -> Single<()> {
+        return Single.create { [weak self] subscriber -> Disposable in
+            self?.webDidLoad = subscriber
+            return Disposables.create {
+                self?.webDidLoad = nil
+            }
         }
     }
 
@@ -142,7 +176,9 @@ class WebViewHandler: NSObject {
         guard let urlString = options["url"] as? String,
               let url = urlString.addingPercentEncoding(withAllowedCharacters: WebViewHandler.urlAllowedCharacters).flatMap({ URL(string: $0) }),
               let method = options["method"] as? String else {
-            self.sendErrorResponse(for: messageId)
+            let error = "Incorrect URL request from javascript".data(using: .utf8)
+            let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
+            self.webView.evaluateJavaScript(script, completionHandler: nil)
             return
         }
 
@@ -171,12 +207,6 @@ class WebViewHandler: NSObject {
             }
         }
         task.resume()
-    }
-
-    private func sendErrorResponse(for messageId: Int) {
-        let error = "Incorrect URL request from javascript".data(using: .utf8)
-        let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
-        self.webView.evaluateJavaScript(script, completionHandler: nil)
     }
 
     private func sendError(_ error: String, for messageId: Int) {
@@ -245,7 +275,10 @@ class WebViewHandler: NSObject {
 
 extension WebViewHandler: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        self.webDidLoad?(.success(()))
+        // Wait for javascript to load
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+            self.webDidLoad?(.success(()))
+        }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {

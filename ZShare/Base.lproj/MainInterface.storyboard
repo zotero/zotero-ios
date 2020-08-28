@@ -25,7 +25,7 @@
                                 </wkWebViewConfiguration>
                             </wkWebView>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="bdo-by-G9G">
-                                <rect key="frame" x="20" y="108" width="374" height="209.5"/>
+                                <rect key="frame" x="20" y="108" width="374" height="147"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="AgV-uS-Get">
                                         <rect key="frame" x="0.0" y="0.0" width="374" height="63.5"/>
@@ -148,8 +148,8 @@
                                             <constraint firstAttribute="trailing" secondItem="Z8I-NI-5Rt" secondAttribute="trailing" id="sTP-d0-odJ"/>
                                         </constraints>
                                     </view>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No translators were successful but you can still save this web as Web Page item." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eWJ-tH-bFw">
-                                        <rect key="frame" x="0.0" y="167" width="374" height="42.5"/>
+                                    <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No translators were successful but you can still save this web as Web Page item." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eWJ-tH-bFw">
+                                        <rect key="frame" x="0.0" y="147" width="374" height="0.0"/>
                                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
