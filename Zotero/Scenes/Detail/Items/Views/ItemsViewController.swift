@@ -221,7 +221,8 @@ class ItemsViewController: UIViewController {
             case .initial:
                 self.tableViewHandler.reload()
             case .update(let results, let deletions, let insertions, let modifications):
-                let items = (insertions + modifications).map({ results[$0] })
+                let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
+                let items = (insertions + correctedModifications).map({ results[$0] })
                 self.viewModel.process(action: .cacheAttachmentUpdates(items: items))
                 self.tableViewHandler.reload(modifications: modifications, insertions: insertions, deletions: deletions)
             case .error(let error):

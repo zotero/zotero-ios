@@ -46,8 +46,9 @@ final class RealmObjectChangeObserver: ObjectChangeObserver {
         let objects = try coordinator.perform(request: ReadUserChangedObjectsDbRequest<Obj>())
         return objects.observe({ [weak self] changes in
             switch changes {
-            case .update(let results, _, let insertions, let modifications):
-                let updated = (insertions + modifications).map({ results[$0] })
+            case .update(let results, let deletions, let insertions, let modifications):
+                let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
+                let updated = (insertions + correctedModifications).map({ results[$0] })
                 self?.reportChangedLibraries(for: updated)
             case .initial: break // ignore the initial change, initially a full sync is performed anyway
             case .error(let error):
