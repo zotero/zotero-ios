@@ -54,7 +54,7 @@ class WebViewHandler: NSObject {
     let observable: PublishSubject<WebViewHandler.Action>
     private static let urlAllowedCharacters: CharacterSet = createAllowedCharacters()
 
-    private weak var webView: WKWebView!
+    private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
     // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
@@ -76,7 +76,7 @@ class WebViewHandler: NSObject {
 
         super.init()
 
-        self.webView.navigationDelegate = self
+        webView.navigationDelegate = self
         JSHandlers.allCases.forEach { handler in
             webView.configuration.userContentController.add(self, name: handler.rawValue)
         }
@@ -140,21 +140,21 @@ class WebViewHandler: NSObject {
     func selectItem(_ item: (String, String)) {
         guard let messageId = self.itemSelectionMessageId else { return }
         let (key, value) = item
-        self.webView.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));",
+        self.webView?.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));",
                                         completionHandler: nil)
         self.itemSelectionMessageId = nil
     }
 
     /// Load the translation server.
     private func load(html: String, baseUrl: URL) -> Single<()> {
-        self.webView.loadHTMLString(html, baseURL: baseUrl)
+        self.webView?.loadHTMLString(html, baseURL: baseUrl)
         return self.createWebLoadedSingle()
     }
 
     /// Load provided url.
     private func load(url: URL) -> Single<()> {
         let request = URLRequest(url: url)
-        self.webView.load(request)
+        self.webView?.load(request)
         return self.createWebLoadedSingle()
     }
 
@@ -178,7 +178,7 @@ class WebViewHandler: NSObject {
               let method = options["method"] as? String else {
             let error = "Incorrect URL request from javascript".data(using: .utf8)
             let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
-            self.webView.evaluateJavaScript(script, completionHandler: nil)
+            self.webView?.evaluateJavaScript(script, completionHandler: nil)
             return
         }
 
@@ -203,7 +203,7 @@ class WebViewHandler: NSObject {
             guard let script = self?.javascript(for: messageId, statusCode: statusCode, successCodes: successCodes, data: data) else { return }
 
             DispatchQueue.main.async {
-                self?.webView.evaluateJavaScript(script, completionHandler: nil)
+                self?.webView?.evaluateJavaScript(script, completionHandler: nil)
             }
         }
         task.resume()
@@ -212,7 +212,7 @@ class WebViewHandler: NSObject {
     private func sendError(_ error: String, for messageId: Int) {
         let payload: [String: Any] = ["error": ["message": error]]
         let script = "Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript(payload)));"
-        self.webView.evaluateJavaScript(script, completionHandler: nil)
+        self.webView?.evaluateJavaScript(script, completionHandler: nil)
     }
 
     private func javascript(for messageId: Int, statusCode: Int, successCodes: [Int], data: Data?) -> String {
@@ -236,7 +236,7 @@ class WebViewHandler: NSObject {
     /// - returns: `Single` with response from `webView`.
     private func callJavascript(_ script: String) -> Single<Any> {
         return Single.create { subscriber -> Disposable in
-            self.webView.evaluateJavaScript(script) { result, error in
+            self.webView?.evaluateJavaScript(script) { result, error in
                 if let data = result {
                     subscriber(.success(data))
                 } else {

@@ -396,12 +396,13 @@ struct ItemsActionHandler: ViewModelActionHandler {
                                              type: .file(file: $0, filename: $0.name, location: .local),
                                              libraryId: viewModel.state.library.identifier)
                               })
+        let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []
 
         do {
             try self.fileStorage.copyAttachmentFilesIfNeeded(for: attachments)
 
             let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-            let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type)
+            let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
             let failedTitles = try self.dbStorage.createCoordinator().perform(request: request)
 
             if !failedTitles.isEmpty {

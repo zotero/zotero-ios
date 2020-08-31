@@ -195,7 +195,8 @@ struct EditItemDetailDbRequest: DbRequest {
                 titleField.changed = true
             } else {
                 let childItem = try CreateAttachmentDbRequest(attachment: attachment,
-                                                              localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? "")).process(in: database)
+                                                              localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
+                                                              collections: []).process(in: database)
                 childItem.libraryObject = item.libraryObject
                 childItem.parent = item
                 childItem.changedFields.insert(.parent)

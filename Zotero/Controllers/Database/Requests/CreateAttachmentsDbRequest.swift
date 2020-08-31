@@ -16,6 +16,7 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
 
     let attachments: [Attachment]
     let localizedType: String
+    let collections: Set<String>
 
     var needsWrite: Bool { return true }
 
@@ -23,7 +24,7 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
         var failedTitles: [String] = []
         self.attachments.forEach { attachment in
             do {
-                _ = try CreateAttachmentDbRequest(attachment: attachment, localizedType: self.localizedType).process(in: database)
+                _ = try CreateAttachmentDbRequest(attachment: attachment, localizedType: self.localizedType, collections: self.collections).process(in: database)
             } catch let error {
                 DDLogError("CreateAttachmentsDbRequest: could not create attachment - \(error)")
                 failedTitles.append(attachment.title)

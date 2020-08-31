@@ -15,11 +15,14 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
     let attachment: Attachment
     let localizedType: String
+    let collections: Set<String>
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
         let attachmentKeys = FieldKeys.attachmentFieldKeys
+
+        // Basic info
 
         let item = RItem()
         item.key = self.attachment.key
@@ -34,6 +37,8 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.dateAdded = Date()
         item.dateModified = Date()
 
+        // Library
+
         switch self.attachment.libraryId {
         case .custom(let type):
             let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
@@ -44,6 +49,8 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         }
 
         database.add(item)
+
+        // Fields
 
         for fieldKey in attachmentKeys {
             let field = RItemField()
@@ -84,6 +91,23 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             field.changed = true
             field.item = item
             database.add(field)
+        }
+
+        // Collections
+
+        let libraryObject = item.libraryObject
+
+        self.collections.forEach { key in
+            let collection = RCollection()
+            collection.key = key
+            collection.syncState = .dirty
+            collection.libraryObject = libraryObject
+            database.add(collection)
+            item.collections.append(collection)
+        }
+
+        if !self.collections.isEmpty {
+            item.changedFields.insert(.collections)
         }
 
         return item
