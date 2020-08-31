@@ -4014,7 +4014,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 5.3.3;
+				version = 5.3.5;
 			};
 		};
 		B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */ = {
