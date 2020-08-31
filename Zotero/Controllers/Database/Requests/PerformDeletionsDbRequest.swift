@@ -60,8 +60,16 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
 //                conflicts.append(object.key)
 //            } else {
+                guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
+                let wasMainAttachment = object.parent?.mainAttachment?.key == object.key
+                let parent = object.parent
+
                 object.willRemove(in: database)
                 database.delete(object)
+
+                if wasMainAttachment {
+                    parent?.updateMainAttachment()
+                }
 //            }
         }
 

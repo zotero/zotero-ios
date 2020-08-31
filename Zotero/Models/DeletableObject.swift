@@ -35,9 +35,6 @@ extension RCollection: Deletable {
 
 extension RItem: Deletable {
     func willRemove(in database: Realm) {
-        let wasMainAttachment = self.parent?.mainAttachment?.key == self.key
-        let parent = self.parent
-
         self.children.forEach { child in
             child.willRemove(in: database)
         }
@@ -51,10 +48,6 @@ extension RItem: Deletable {
         }
         if let user = self.lastModifiedBy, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
             database.delete(user)
-        }
-
-        if wasMainAttachment {
-            parent?.updateMainAttachment()
         }
 
         if self.rawType == ItemTypes.attachment, let file = AttachmentCreator.file(for: self) {
