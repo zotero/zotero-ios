@@ -37,8 +37,6 @@
                         SUBQUERY (
                             $extensionItem.attachments,
                             $attachment,
-                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.adobe.pdf" OR
-                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url" OR
                             ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" OR
                             ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.html"
                         ).@count == 1

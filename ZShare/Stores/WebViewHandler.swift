@@ -77,22 +77,29 @@ class WebViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func loadWebData(from url: URL) -> Single<ExtractedWebData> {
+    func loadWebData(from url: URL) -> Single<ExtensionStore.State.RawAttachment> {
         return self.load(url: url)
                    .flatMap({ _ -> Single<Any> in
                        guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
                              let script = try? String(contentsOf: url) else { return Single.error(Error.webExtractionMissingJs) }
                        return self.callJavascript(script)
                    })
-                   .flatMap({ data -> Single<ExtractedWebData> in
+                   .flatMap({ data -> Single<ExtensionStore.State.RawAttachment> in
                        guard let payload = data as? [String: Any],
-                             let title = payload["title"] as? String,
-                             let html = payload["html"] as? String,
-                             let cookies = payload["cookies"] as? String,
-                             let frames = payload["frames"] as? [String] else {
+                             let isFile = payload["isFile"] as? Bool else {
                            return Single.error(Error.webExtractionMissingData)
                        }
-                       return Single.just((title, url, html, cookies, frames))
+
+                       if isFile {
+                           return Single.just(.remoteFileUrl(url))
+                       } else if let title = payload["title"] as? String,
+                                 let html = payload["html"] as? String,
+                                 let cookies = payload["cookies"] as? String,
+                                 let frames = payload["frames"] as? [String] {
+                           return Single.just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames))
+                       } else {
+                           return Single.error(Error.webExtractionMissingData)
+                       }
                    })
     }
 

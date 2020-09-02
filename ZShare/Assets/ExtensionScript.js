@@ -2,6 +2,12 @@ var ExtensionScriptClass = function() {};
 
 ExtensionScriptClass.prototype = {
     run: function(arguments) {
+        if (!document || !document.documentElement) {
+            arguments.completionFunction({"isFile": true,
+                                          "url": document.URL});
+            return;
+        }
+
         let allFrames = document.querySelectorAll('iframe, frame');
         var frames = [];
 
@@ -24,13 +30,18 @@ ExtensionScriptClass.prototype = {
             }
         }
 
+        var cookies = "";
+        try {
+            cookies = document.cookie;
+        } catch (e) {}
+
       	arguments.completionFunction({"title": document.title,
                              	      "url": document.URL,
                                       "html": document.documentElement.innerHTML,
-                                      "cookies": document.cookie,
-                                      "frames": frames
-       });
-    } 
+                                      "cookies": cookies,
+                                      "frames": frames,
+                                      "isFile": false});
+    }
 };
 
 // The JavaScript file must contain a global object named "ExtensionPreprocessingJS".

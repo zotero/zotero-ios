@@ -15,8 +15,6 @@ import CocoaLumberjackSwift
 import RxSwift
 import RxAlamofire
 
-typealias ExtractedWebData = (title: String, url: URL, html: String, cookies: String, frames: [String])
-
 /// `ExtensionStore` performs fetching of basic website data, runs the translation server which translates the web data, downloads item data with
 /// pdf attachment if available and uploads new item to Zotero.
 ///
@@ -94,12 +92,22 @@ class ExtensionStore {
             }
         }
 
-        fileprivate enum RawAttachment {
-            case web(ExtractedWebData)
-            case webUrl(URL)
+        /// Raw attachment received from NSItemProvider.
+        /// - web: Web content received from browser. Web content should be translated.
+        /// - remoteUrl: `URL` instance which is not a local file. This `URL` should be opened in a browser and transformed to `.web(...)` or `.fileUrl(...)`.
+        /// - fileUrl: `URL` pointing to a local file.
+        /// - remoteFileUrl: `URL` pointing to a remote file.
+        enum RawAttachment {
+            case web(title: String, url: URL, html: String, cookies: String, frames: [String])
+            case remoteUrl(URL)
             case fileUrl(URL)
+            case remoteFileUrl(URL)
         }
 
+        /// Attachment which has been loaded and translated processed/translated.
+        /// - item: Translated item which doesn't have an attachment.
+        /// - itemWithAttachment: Translated item with attachment data.
+        /// - localFile: `URL` pointing to a local file.
         fileprivate enum ProcessedAttachment {
             case item(ItemResponse)
             case itemWithAttachment(ItemResponse, [String: String])
@@ -232,27 +240,26 @@ class ExtensionStore {
     private func loadAttachment(from extensionItem: NSExtensionItem) -> Single<State.RawAttachment> {
         if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String) }) {
             return self.loadWebData(from: itemProvider)
-                       .flatMap({ Single.just(.web($0)) })
         } else if let itemProvider = extensionItem.attachments?.first(where: { $0.hasItemConformingToTypeIdentifier(kUTTypeURL as String) }) {
             return self.loadUrl(from: itemProvider)
-                       .flatMap({ $0.isFileURL ? Single.just(.fileUrl($0)) : Single.just(.webUrl($0)) })
+                       .flatMap({ $0.isFileURL ? Single.just(.fileUrl($0)) : Single.just(.remoteUrl($0)) })
         }
         return Single.error(State.AttachmentState.Error.cantLoadWebData)
     }
 
     private func process(attachment: State.RawAttachment) {
         switch attachment {
-        case .web(let data):
+        case .web(let title, let url, let html, let cookies, let frames):
             var state = self.state
-            state.title = data.title
-            state.url = data.url.absoluteString
+            state.title = title
+            state.url = url.absoluteString
             self.state = state
 
-            self.webViewHandler.translate(url: data.url, title: data.title, html: data.html, cookies: data.cookies, frames: data.frames)
-        case .webUrl(let url):
+            self.webViewHandler.translate(url: url, title: title, html: html, cookies: cookies, frames: frames)
+        case .remoteUrl(let url):
             self.webViewHandler.loadWebData(from: url)
-                               .subscribe(onSuccess: { [weak self] data in
-                                   self?.process(attachment: .web(data))
+                               .subscribe(onSuccess: { [weak self] attachment in
+                                   self?.process(attachment: attachment)
                                }, onError: { [weak self] error in
                                    self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
                                })
@@ -262,6 +269,10 @@ class ExtensionStore {
             state.processedAttachment = .localFile(url)
             state.attachmentState = .processed
             self.state = state
+
+        case .remoteFileUrl(let url):
+            // TODO: -
+            break
         }
     }
 
@@ -292,7 +303,7 @@ class ExtensionStore {
     /// Creates an Observable for NSExtensionItem to load web data.
     /// - parameter extensionItem: `NSExtensionItem` passed from `NSExtensionContext` from share extension view controller.
     /// - returns: Observable for loading: title, url, full HTML, cookies, iframes content.
-    private func loadWebData(from itemProvider: NSItemProvider) -> Single<ExtractedWebData> {
+    private func loadWebData(from itemProvider: NSItemProvider) -> Single<State.RawAttachment> {
         return Single.create { [weak itemProvider] subscriber in
             guard let itemProvider = itemProvider else {
                 subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
@@ -305,18 +316,21 @@ class ExtensionStore {
                 }
 
                 guard let scriptData = item as? [String: Any],
-                      let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
+                      let data = scriptData[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
+                      let isFile = data["isFile"] as? Bool,
+                      let url = (data["url"] as? String).flatMap(URL.init) else {
                     DDLogError("ExtensionStore: can't read script data")
                     subscriber(.error(State.AttachmentState.Error.cantLoadWebData))
                     return
                 }
 
-                if let url = (data["url"] as? String).flatMap(URL.init),
-                   let title = data["title"] as? String,
-                   let html = data["html"] as? String,
-                   let cookies = data["cookies"] as? String,
-                   let frames = data["frames"] as? [String] {
-                    subscriber(.success((title, url, html, cookies, frames)))
+                if isFile {
+                    subscriber(.success(.remoteFileUrl(url)))
+                } else if let title = data["title"] as? String,
+                          let html = data["html"] as? String,
+                          let cookies = data["cookies"] as? String,
+                          let frames = data["frames"] as? [String] {
+                    subscriber(.success(.web(title: title, url: url, html: html, cookies: cookies, frames: frames)))
                 } else {
                     DDLogError("ExtensionStore: script data don't contain required info")
                     DDLogError("\(data)")

@@ -49,7 +49,8 @@ async function translate(url, encodedHtml, encodedFrames, encodedTranslators) {
     }
 
     if (!translators.length) {
-        window.webkit.messageHandlers.translationErrorHandler.postMessage("No translators found");
+        Zotero.debug("No translators found!");
+        window.webkit.messageHandlers.saveAsWebHandler.postMessage(0);
         return;
     }
 

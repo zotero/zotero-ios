@@ -2099,9 +2099,9 @@
 		B3AB38A3238EC02D008A1ABB /* Stores */ = {
 			isa = PBXGroup;
 			children = (
-				B3823B292399302100953F5D /* WebViewHandler.swift */,
-				B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */,
 				B3AB38A8238EC060008A1ABB /* AllCollectionPickerStore.swift */,
+				B3AB38A4238EC02D008A1ABB /* ExtensionStore.swift */,
+				B3823B292399302100953F5D /* WebViewHandler.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
