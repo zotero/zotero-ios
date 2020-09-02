@@ -74,7 +74,7 @@ Zotero.HTTP = new function() {
 			successCodes: null
 		}, options);
 
-        options["url"] = url;
+        options["url"] = url.includes('%') ? url : encodeURI(url);
         options["method"] = method;
 
         return Zotero.Messaging.sendMessage(window.webkit.messageHandlers.requestHandler, options);

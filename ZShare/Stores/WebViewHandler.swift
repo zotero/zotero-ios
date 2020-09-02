@@ -52,19 +52,12 @@ class WebViewHandler: NSObject {
     private let translatorsController: TranslatorsController
     private let disposeBag: DisposeBag
     let observable: PublishSubject<WebViewHandler.Action>
-    private static let urlAllowedCharacters: CharacterSet = createAllowedCharacters()
 
     private weak var webView: WKWebView?
     private var webDidLoad: ((SingleEvent<()>) -> Void)?
     private var itemSelectionMessageId: Int?
     // Cookies from original website are stored and added to requests in `sendRequest(with:)`.
     private var cookies: String?
-
-    private static func createAllowedCharacters() -> CharacterSet {
-        var characters = CharacterSet.urlQueryAllowed
-        characters.insert(charactersIn: ":/?&")
-        return characters
-    }
 
     // MARK: - Lifecycle
 
@@ -174,7 +167,7 @@ class WebViewHandler: NSObject {
     /// - parameter options: Options for HTTP request.
     private func sendRequest(with options: [String: Any], for messageId: Int) {
         guard let urlString = options["url"] as? String,
-              let url = urlString.addingPercentEncoding(withAllowedCharacters: WebViewHandler.urlAllowedCharacters).flatMap({ URL(string: $0) }),
+              let url = URL(string: urlString),
               let method = options["method"] as? String else {
             let error = "Incorrect URL request from javascript".data(using: .utf8)
             let script = self.javascript(for: messageId, statusCode: -1, successCodes: [200], data: error)
