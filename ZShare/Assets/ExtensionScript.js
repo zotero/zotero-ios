@@ -4,7 +4,8 @@ ExtensionScriptClass.prototype = {
     run: function(arguments) {
         if (!document || !document.documentElement) {
             arguments.completionFunction({"isFile": true,
-                                          "url": document.URL});
+                                          "url": document.URL,
+                                          "contentType": document.contentType});
             return;
         }
 

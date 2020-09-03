@@ -101,23 +101,24 @@ class ExtensionStore {
             case web(title: String, url: URL, html: String, cookies: String, frames: [String])
             case remoteUrl(URL)
             case fileUrl(URL)
-            case remoteFileUrl(URL)
+            case remoteFileUrl(url: URL, contentType: String)
         }
 
         /// Attachment which has been loaded and translated processed/translated.
         /// - item: Translated item which doesn't have an attachment.
         /// - itemWithAttachment: Translated item with attachment data.
         /// - localFile: `URL` pointing to a local file.
+        /// - remoteFile: `URL` pointing to a remote file.
         fileprivate enum ProcessedAttachment {
             case item(ItemResponse)
-            case itemWithAttachment(ItemResponse, [String: String])
-            case localFile(URL)
+            case itemWithAttachment(item: ItemResponse, attachment: [String: String], attachmentFile: File)
+            case localFile(File)
         }
 
         fileprivate struct UploadData {
             enum Kind {
                 case localFile(location: File, collections: Set<String>)
-                case translated(item: ItemResponse)
+                case translated(item: ItemResponse, location: File)
             }
 
             let type: Kind
@@ -127,15 +128,15 @@ class ExtensionStore {
             let libraryId: LibraryIdentifier
             let userId: Int
 
-            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: String], defaultTitle: String, collections: Set<String>,
-                 libraryId: LibraryIdentifier, userId: Int) {
+            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: String], attachmentFile: File, defaultTitle: String,
+                 collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
                 let filename = attachmentData["title"] ?? defaultTitle
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
                 let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local),
                                             libraryId: libraryId)
 
-                self.type = .translated(item: newItem)
+                self.type = .translated(item: newItem, location: attachmentFile)
                 self.attachment = attachment
                 self.file = file
                 self.filename = filename
@@ -143,8 +144,7 @@ class ExtensionStore {
                 self.userId = userId
             }
 
-            init(url: URL, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
-                let localFile = Files.file(from: url)
+            init(localFile: File, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
                 let filename = localFile.name
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: localFile.ext)
                 let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local),
@@ -230,9 +230,13 @@ class ExtensionStore {
     }
 
     func cancel() {
-        // Remove temporary downloaded file if it exists
-        let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
-        try? self.fileStorage.remove(file)
+        guard let attachment = self.state.processedAttachment else { return }
+        switch attachment {
+        case .itemWithAttachment(_, _, let file), .localFile(let file):
+            // Remove temporary local file if it exists
+            try? self.fileStorage.remove(file)
+        case .item: break
+        }
     }
 
     // MARK: - Processing attachments
@@ -265,13 +269,36 @@ class ExtensionStore {
                                })
                                .disposed(by: self.disposeBag)
         case .fileUrl(let url):
+            let file = Files.file(from: url)
+
             var state = self.state
-            state.processedAttachment = .localFile(url)
+            state.processedAttachment = .localFile(file)
             state.attachmentState = .processed
             self.state = state
 
-        case .remoteFileUrl(let url):
-            // TODO: -
+        case .remoteFileUrl(let url, let contentType):
+            var state = self.state
+            state.url = url.absoluteString
+            state.title = url.absoluteString
+            state.attachmentState = .downloading(0)
+            self.state = state
+
+            let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, contentType: contentType)
+            self.download(url: url, to: file)
+                .observeOn(MainScheduler.instance)
+                .subscribe(onNext: { [weak self] progress in
+                    self?.state.attachmentState = .downloading(progress.completed)
+                }, onError: { [weak self] error in
+                    self?.state.attachmentState = .failed(.downloadFailed)
+                }, onCompleted: { [weak self] in
+                    guard let `self` = self else { return }
+
+                    var state = self.state
+                    state.processedAttachment = .localFile(file)
+                    state.attachmentState = .processed
+                    self.state = state
+                })
+                .disposed(by: self.disposeBag)
             break
         }
     }
@@ -324,8 +351,9 @@ class ExtensionStore {
                     return
                 }
 
-                if isFile {
-                    subscriber(.success(.remoteFileUrl(url)))
+                if isFile,
+                   let contentType = data["contentType"] as? String {
+                    subscriber(.success(.remoteFileUrl(url: url, contentType: contentType)))
                 } else if let title = data["title"] as? String,
                           let html = data["html"] as? String,
                           let cookies = data["cookies"] as? String,
@@ -371,12 +399,25 @@ class ExtensionStore {
             if let attachment = attachment,
                let urlString = attachment["url"],
                let url = URL(string: urlString) {
-                var state = self.state
-                state.processedAttachment = .itemWithAttachment(item, attachment)
-                state.attachmentState = .downloading(0)
-                self.state = state
+                let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
 
-                self.download(url: url)
+                self.state.attachmentState = .downloading(0)
+
+                self.download(url: url, to: file)
+                    .observeOn(MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] progress in
+                        self?.state.attachmentState = .downloading(progress.completed)
+                    }, onError: { [weak self] error in
+                        self?.state.attachmentState = .failed(.downloadFailed)
+                    }, onCompleted: { [weak self] in
+                        guard let `self` = self else { return }
+
+                        var state = self.state
+                        state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
+                        state.attachmentState = .processed
+                        self.state = state
+                    })
+                    .disposed(by: self.disposeBag)
             } else {
                 var state = self.state
                 state.processedAttachment = .item(item)
@@ -430,23 +471,13 @@ class ExtensionStore {
 
     /// Starts download of PDF attachment. Downloads it to temporary folder.
     /// - parameter url: URL of file to download
-    private func download(url: URL) {
-        let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
+    private func download(url: URL, to file: File) -> Observable<RxProgress> {
         let request = FileRequest(data: .external(url), destination: file)
-        self.apiClient.download(request: request)
-                      .subscribeOn(self.backgroundScheduler)
-                      .flatMap { request in
-                          return request.rx.progress()
-                      }
-                      .observeOn(MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] progress in
-                          self?.state.attachmentState = .downloading(progress.completed)
-                      }, onError: { [weak self] error in
-                          self?.state.attachmentState = .failed(.downloadFailed)
-                      }, onCompleted: { [weak self] in
-                          self?.state.attachmentState = .processed
-                      })
-                      .disposed(by: self.disposeBag)
+        return self.apiClient.download(request: request)
+                             .subscribeOn(self.backgroundScheduler)
+                             .flatMap { request in
+                                 return request.rx.progress()
+                             }
     }
 
     // MARK: - Submission
@@ -477,15 +508,15 @@ class ExtensionStore {
                             apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
                             schemaController: self.schemaController)
 
-            case .itemWithAttachment(let item, let attachmentData):
+            case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData,
-                                            defaultTitle: (self.state.title ?? "Unknown"), collections: collectionKeys, libraryId: libraryId,
-                                            userId: userId)
+                                            attachmentFile: attachmentFile, defaultTitle: (self.state.title ?? "Unknown"),
+                                            collections: collectionKeys, libraryId: libraryId, userId: userId)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
-            case .localFile(let url):
-                let data = State.UploadData(url: url, attachmentKey: self.state.attachmentKey, collections: collectionKeys, libraryId: libraryId,
-                                            userId: userId)
+            case .localFile(let file):
+                let data = State.UploadData(localFile: file, attachmentKey: self.state.attachmentKey, collections: collectionKeys,
+                                            libraryId: libraryId, userId: userId)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
             }
         } else if let url = self.state.url {
@@ -556,9 +587,10 @@ class ExtensionStore {
             prepare = self.prepareUpload(attachment: data.attachment, collections: collections, file: data.file, tmpFile: location,
                                          filename: data.filename, libraryId: data.libraryId, userId: data.userId, apiClient: apiClient,
                                          dbStorage: dbStorage, fileStorage: fileStorage)
-        case .translated(let item):
-            prepare = self.prepareUpload(item: item, attachment: data.attachment, file: data.file, filename: data.filename, libraryId: data.libraryId,
-                                         userId: data.userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
+        case .translated(let item, let location):
+            prepare = self.prepareUpload(item: item, attachment: data.attachment, file: data.file, tmpFile: location, filename: data.filename,
+                                         libraryId: data.libraryId, userId: data.userId, apiClient: apiClient, dbStorage: dbStorage,
+                                         fileStorage: fileStorage)
         }
 
         prepare.flatMap { [weak self] response, md5 -> Single<()> in
@@ -632,6 +664,7 @@ class ExtensionStore {
     /// - parameter item: Item to be created and submitted.
     /// - parameter attachment: Attachment to be created and submitted.
     /// - parameter file: File to upload.
+    /// - parameter tmpFile: Original file.
     /// - parameter filename: Filename of file to upload.
     /// - parameter libraryId: Identifier of library to which items will be submitted.
     /// - parameter userId: Id of current user.
@@ -639,9 +672,8 @@ class ExtensionStore {
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage 
     /// - returns: `Single` with Authorization response and md5 hash of file.
-    private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
+    private func prepareUpload(item: ItemResponse, attachment: Attachment, file: File, tmpFile: File, filename: String, libraryId: LibraryIdentifier, userId: Int,
                                apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage) -> Single<(AuthorizeUploadResponse, String)> {
-        let tmpFile = Files.shareExtensionTmpItem(key: attachment.key, ext: ExtensionStore.defaultExtension)
         return self.moveFile(from: tmpFile, to: file)
                    .subscribeOn(self.backgroundScheduler)
                    .flatMap { [weak self] filesize -> Single<(UInt64, [[String: Any]], String, Int)> in

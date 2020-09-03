@@ -1,6 +1,6 @@
 function extractData() {
     if (!document || !document.documentElement) {
-        return {"isFile": true}
+        return {"isFile": true, "contentType": document.contentType}
     }
 
     let allFrames = document.querySelectorAll('iframe, frame');

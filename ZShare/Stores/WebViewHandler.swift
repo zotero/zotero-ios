@@ -90,8 +90,8 @@ class WebViewHandler: NSObject {
                            return Single.error(Error.webExtractionMissingData)
                        }
 
-                       if isFile {
-                           return Single.just(.remoteFileUrl(url))
+                       if isFile, let contentType = payload["contentType"] as? String {
+                           return Single.just(.remoteFileUrl(url: url, contentType: contentType))
                        } else if let title = payload["title"] as? String,
                                  let html = payload["html"] as? String,
                                  let cookies = payload["cookies"] as? String,

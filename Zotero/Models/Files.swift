@@ -106,6 +106,10 @@ struct Files {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["tmp"], name: "item_\(key)", ext: ext)
     }
 
+    static func shareExtensionTmpItem(key: String, contentType: String) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["tmp"], name: "item_\(key)", contentType: contentType)
+    }
+
     // MARK: - Helper
 
     static func file(from url: URL) -> File {
