@@ -7,3 +7,42 @@
 //
 
 import Foundation
+
+@testable import Zotero
+
+import Nimble
+import Quick
+
+class SearchResponseSpec: QuickSpec {
+    override func spec() {
+        it("parses search with all known fields") {
+            let url = Bundle(for: type(of: self)).url(forResource: "searchresponse_knownfields", withExtension: "json")!
+            let data = try! Data(contentsOf: url)
+            let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
+
+            do {
+                _ = try SearchResponse(response: jsonData)
+            } catch let error {
+                fail("Exception thrown during parsing: \(error)")
+            }
+        }
+
+        it("throws exception for search with unknown field") {
+            let url = Bundle(for: type(of: self)).url(forResource: "searchresponse_unknownfields", withExtension: "json")!
+            let data = try! Data(contentsOf: url)
+            let jsonData = try! JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: Any]
+
+            do {
+                _ = try SearchResponse(response: jsonData)
+                fail("No exception thrown for unknown fields")
+            } catch let error {
+                if let error = error as? Parsing.Error,
+                    case .unknownField(_, let fieldName) = error,
+                    fieldName == "unknownField" {
+                } else {
+                    fail("Wrong exception thrown for unknown field: \(error)")
+                }
+            }
+        }
+    }
+}

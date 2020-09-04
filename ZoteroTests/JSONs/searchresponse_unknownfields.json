@@ -1,0 +1,44 @@
+{
+    "key": "CCCCCCCC",
+    "version": 64,
+    "library": {
+        "type": "user",
+        "id": 1234123,
+        "name": "someuser",
+        "links": {
+            "alternate": {
+                "href": "https://www.zotero.org/someuser",
+                "type": "text/html"
+            }
+        }
+    },
+    "links": {
+        "self": {
+            "href": "https://api.zotero.org/users/1234123/searches/CCCCCCCC",
+            "type": "application/json"
+        }
+    },
+    "data": {
+        "key": "CCCCCCCC",
+        "version": 64,
+        "name": "Journal search",
+        "unknownField": "Unknown Value",
+        "conditions": [
+            {
+                "condition": "itemType",
+                "operator": "is",
+                "value": "artwork"
+            },
+            {
+                "condition": "itemType",
+                "operator": "is",
+                "value": "thesis"
+            },
+            {
+                "condition": "joinMode",
+                "operator": "any",
+                "value": ""
+            }
+        ]
+    }
+    }
