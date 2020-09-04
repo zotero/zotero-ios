@@ -28,6 +28,7 @@ struct FieldKeys {
     static let mtime = "mtime"
     static let filename = "filename"
     static let url = "url"
+    static let charset = "charset"
 
     static var attachmentFieldKeys: [String] {
         return [FieldKeys.title, FieldKeys.filename,

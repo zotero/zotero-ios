@@ -170,6 +170,12 @@ struct ItemResponse {
                             lastModifiedBy: self.lastModifiedBy)
     }
 
+    /// Parses field values from item data for given type.
+    /// - parameter data: Data to parse.
+    /// - parameter rawType: Raw item type of parsed item.
+    /// - parameter schemaController: Schema controller to check fields against schema.
+    /// - parameter ignoreUnknownFields: If set to `false`, when an unknown field is encountered during parsing, an exception `Error.unknownField` is thrown. Otherwise the field is silently ignored and parsing continues.
+    /// - returns: Parsed dictionary of fields with their values.
     private static func parseFields(from data: [String: Any],
                                     rawType: String,
                                     schemaController: SchemaController,
@@ -182,42 +188,45 @@ struct ItemResponse {
         for object in data {
             guard !excludedKeys.contains(object.key) else { continue }
 
-            var isKnownField = true
-
-            // Check whether schema contains this key
-            if !schemaFields.contains(where: { $0.field == object.key }) {
-                if rawType == ItemTypes.attachment {
-                    // Attachments don't have some fields that are returned by backend in schema,
-                    // so we have to filter them out here manually.
-                    if object.key != FieldKeys.contentType && object.key != FieldKeys.md5 &&
-                       object.key != FieldKeys.mtime && object.key != FieldKeys.filename &&
-                       object.key != FieldKeys.linkMode && object.key != "charset" &&
-                       object.key != FieldKeys.note {
-                        if ignoreUnknownFields {
-                            isKnownField = false
-                        } else {
-                            throw Error.unknownField(object.key)
-                        }
-                    }
-                } else {
-                    // Note is not a field in schema but we consider it as one, since it can be returned with fields
-                    // together with other data. So we filter it out as well and report all other keys.
-                    if object.key != FieldKeys.note {
-                        if ignoreUnknownFields {
-                            isKnownField = false
-                        } else {
-                            throw Error.unknownField(object.key)
-                        }
-                    }
+            if !self.isKnownField(object.key, in: schemaFields, itemType: rawType) {
+                if ignoreUnknownFields {
+                    continue
                 }
+                throw Error.unknownField(object.key)
             }
 
-            if isKnownField {
-                fields[object.key] = object.value as? String
-            }
+            fields[object.key] = object.value as? String
         }
 
         return fields
+    }
+
+    /// Checks whether given field is a known field for given item type.
+    /// - parameter field: Field to check.
+    /// - parameter schema: Schema for given item type.
+    /// - parameter itemType: Raw item type of item.
+    /// - returns: `true` if field is a known field for given item, `false` otherwise.
+    private static func isKnownField(_ field: String, in schema: [FieldSchema], itemType: String) -> Bool {
+        // Note is not a field stored in schema but we consider it as one, since it can be returned with fields together with other data.
+        if field == FieldKeys.note || schema.contains(where: { $0.field == field }) { return true }
+
+        if itemType == ItemTypes.attachment {
+            // Attachments don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
+            switch field {
+            case FieldKeys.contentType,
+                 FieldKeys.md5,
+                 FieldKeys.mtime,
+                 FieldKeys.filename,
+                 FieldKeys.linkMode,
+                 FieldKeys.charset:
+                return true
+            default:
+                return false
+            }
+        }
+
+        // Field not found in schema and is not a special case.
+        return false
     }
 
     static func decode(response: Any, schemaController: SchemaController) throws -> ([ItemResponse], [[String: Any]], [Swift.Error]) {
