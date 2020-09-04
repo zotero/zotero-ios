@@ -802,7 +802,7 @@ class SyncControllerSpec: QuickSpec {
                                                         "library": ["id": 0, "type": "user", "name": "A"],
                                                         "data": ["name": "B",
                                                                  "parentCollection": "ZZZZZZZZ"]],
-                                                       // Unknown field - should be synced, unknown field ignored
+                                                       // Unknown field - should be rejected
                                                        ["key": "CCCCCCCC",
                                                         "version": 1,
                                                         "library": ["id": 0, "type": "user", "name": "A"],
@@ -825,7 +825,7 @@ class SyncControllerSpec: QuickSpec {
                                                                                  "operator": "unknownOperator",
                                                                                  "value": "thesis"]]]]]
                         case .item:
-                                                       // Unknown field - should be queued
+                                                       // Unknown field - should be rejected
                             objectResponses[object] = [["key": "DDDDDDDD",
                                                         "version": 3,
                                                         "library": ["id": 0, "type": "user", "name": "A"],
@@ -855,11 +855,13 @@ class SyncControllerSpec: QuickSpec {
                                         jsonResponse: (versionResponses[object] ?? [:]))
                     }
                     objects.forEach { object in
-                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object, keys: (objectKeys[object] ?? "")),
+                        createStub(for: ObjectsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, objectType: object,
+                                                       keys: (objectKeys[object] ?? "")),
                                         baseUrl: baseUrl, headers: header,
                                         jsonResponse: (objectResponses[object] ?? [:]))
                     }
-                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
+                    createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys",
+                                                                                                         withExtension: "json")!)
                     createStub(for: SettingsRequest(libraryId: libraryId, userId: SyncControllerSpec.userId, version: 0),
                                     baseUrl: baseUrl, headers: header,
                                     jsonResponse: ["tagColors" : ["value": [["name": "A", "color": "#CC66CC"]], "version": 2]])
@@ -878,12 +880,12 @@ class SyncControllerSpec: QuickSpec {
                             expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
-                            expect(library?.collections.count).to(equal(4))
-                            expect(library?.items.count).to(equal(3))
+                            expect(library?.collections.count).to(equal(3))
+                            expect(library?.items.count).to(equal(2))
 //                            expect(library?.searches.count).to(equal(3))
-                            expect(realm.objects(RCollection.self).count).to(equal(4))
+                            expect(realm.objects(RCollection.self).count).to(equal(3))
 //                            expect(realm.objects(RSearch.self).count).to(equal(3))
-                            expect(realm.objects(RItem.self).count).to(equal(3))
+                            expect(realm.objects(RItem.self).count).to(equal(2))
 
                             let collection = realm.objects(RCollection.self).filter("key = %@", "AAAAAAAA").first
                             expect(collection).toNot(beNil())
@@ -904,13 +906,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection2?.children.count).to(equal(0))
 
                             let collection3 = realm.objects(RCollection.self).filter("key = %@", "CCCCCCCC").first
-                            expect(collection3).toNot(beNil())
-                            expect(collection3?.name).to(equal("C"))
-                            expect(collection3?.syncState).to(equal(.synced))
-                            expect(collection3?.version).to(equal(1))
-                            expect(collection3?.customLibrary?.type).to(equal(.myLibrary))
-                            expect(collection3?.parent).to(beNil())
-                            expect(collection3?.children.count).to(equal(0))
+                            expect(collection3).to(beNil())
 
                             let collection4 = realm.objects(RCollection.self).filter("key = %@", "ZZZZZZZZ").first
                             expect(collection4).toNot(beNil())
@@ -920,10 +916,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection4?.children.count).to(equal(1))
 
                             let item = realm.objects(RItem.self).filter("key = %@", "DDDDDDDD").first
-                            expect(item).toNot(beNil())
-                            expect(item?.syncState).to(equal(.dirty))
-                            expect(item?.parent).to(beNil())
-                            expect(item?.children.count).to(equal(0))
+                            expect(item).to(beNil())
 
                             let item2 = realm.objects(RItem.self).filter("key = %@", "EEEEEEEE").first
                             expect(item2).toNot(beNil())

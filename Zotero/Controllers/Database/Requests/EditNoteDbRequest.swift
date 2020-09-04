@@ -25,7 +25,7 @@ struct EditNoteDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         guard let item = database.objects(RItem.self).filter(.key(self.note.key, in: self.libraryId)).first,
-              let field = item.fields.filter(.key(FieldKeys.note)).first else {
+              let field = item.fields.filter(.key(ItemFieldKeys.note)).first else {
             throw DbError.objectNotFound
         }
 

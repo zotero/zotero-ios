@@ -118,18 +118,18 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 database.add(field)
             }
 
-            if (field.key == FieldKeys.title || field.baseKey == FieldKeys.title) ||
-               (key == FieldKeys.note && item.rawType == ItemTypes.note) {
+            if (field.key == ItemFieldKeys.title || field.baseKey == ItemFieldKeys.title) ||
+               (key == ItemFieldKeys.note && item.rawType == ItemTypes.note) {
                 var title = value
-                if key == FieldKeys.note {
+                if key == ItemFieldKeys.note {
                     title = title.notePreview ?? title
                 }
                 item.baseTitle = title
-            } else if key == FieldKeys.date {
+            } else if key == ItemFieldKeys.date {
                 date = field.value
-            } else if field.key == FieldKeys.publisher || field.baseKey == FieldKeys.publisher {
+            } else if field.key == ItemFieldKeys.publisher || field.baseKey == ItemFieldKeys.publisher {
                 publisher = field.value
-            } else if field.key == FieldKeys.publicationTitle || field.baseKey == FieldKeys.publicationTitle {
+            } else if field.key == ItemFieldKeys.publicationTitle || field.baseKey == ItemFieldKeys.publicationTitle {
                 publicationTitle = field.value
             }
         }

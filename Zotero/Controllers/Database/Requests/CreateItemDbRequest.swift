@@ -87,13 +87,13 @@ struct CreateItemDbRequest: DbResponseRequest {
             rField.changed = true
             database.add(rField)
             
-            if field.key == FieldKeys.title || field.baseField == FieldKeys.title {
+            if field.key == ItemFieldKeys.title || field.baseField == ItemFieldKeys.title {
                 item.baseTitle = field.value
-            } else if field.key == FieldKeys.date {
+            } else if field.key == ItemFieldKeys.date {
                 item.setDateFieldMetadata(field.value, parser: self.dateParser)
-            } else if field.key == FieldKeys.publisher || field.baseField == FieldKeys.publisher {
+            } else if field.key == ItemFieldKeys.publisher || field.baseField == ItemFieldKeys.publisher {
                 item.set(publisher: field.value)
-            } else if field.key == FieldKeys.publicationTitle || field.baseField == FieldKeys.publicationTitle {
+            } else if field.key == ItemFieldKeys.publicationTitle || field.baseField == ItemFieldKeys.publicationTitle {
                 item.set(publicationTitle: field.value)
             }
         }

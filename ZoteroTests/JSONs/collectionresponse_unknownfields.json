@@ -1,0 +1,37 @@
+{
+    "key": "BBBBBBBB",
+    "version": 81,
+    "library": {
+        "type": "group",
+        "id": 1234123,
+        "name": "some group",
+        "links": {
+            "alternate": {
+                "href": "https://www.zotero.org/someuser",
+                "type": "text/html"
+            }
+        }
+    },
+    "links": {
+        "self": {
+            "href": "https://api.zotero.org/users/1234123/collections/BBBBBBBB",
+            "type": "application/json"
+        },
+        "alternate": {
+            "href": "https://www.zotero.org/someuser/collections/BBBBBBBB",
+            "type": "text/html"
+        }
+    },
+    "meta": {
+        "numCollections": 2,
+        "numItems": 1
+    },
+    "data": {
+        "key": "BBBBBBBB",
+        "version": 81,
+        "name": "Bachelor sources",
+        "parentCollection": false,
+        "relations": {},
+        "unknownField": "Unknown Value"
+    }
+}

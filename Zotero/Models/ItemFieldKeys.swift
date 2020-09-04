@@ -54,4 +54,7 @@ struct ItemFieldKeys {
     static func isDoi(_ value: String) -> Bool {
         return !clean(doi: value).isEmpty
     }
+
+    static let knownDataKeys: [String] = ["creators", "itemType", "version", "key", "tags", "deleted", "collections", "relations",
+                                          "dateAdded", "dateModified", "parentItem", "inPublications"]
 }

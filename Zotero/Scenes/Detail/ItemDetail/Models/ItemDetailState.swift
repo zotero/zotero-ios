@@ -194,7 +194,7 @@ struct ItemDetailState: ViewModelState {
 
             if let titleKey = schemaController.titleKey(for: self.type) {
                 allFields.append(Field(key: titleKey,
-                                       baseField: (titleKey != FieldKeys.title ? FieldKeys.title : nil),
+                                       baseField: (titleKey != ItemFieldKeys.title ? ItemFieldKeys.title : nil),
                                        name: "",
                                        value: self.title,
                                        isTitle: true,
@@ -202,7 +202,7 @@ struct ItemDetailState: ViewModelState {
             }
 
             if let abstract = self.abstract {
-                allFields.append(Field(key: FieldKeys.abstract,
+                allFields.append(Field(key: ItemFieldKeys.abstract,
                                        baseField: nil,
                                        name: "",
                                        value: abstract,

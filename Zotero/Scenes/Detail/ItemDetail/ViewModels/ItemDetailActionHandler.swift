@@ -120,7 +120,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             guard var field = viewModel.state.data.fields[id] else { return }
             field.value = value
             field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value,
-                                                                urlDetector: self.urlDetector, doiDetector: FieldKeys.isDoi)
+                                                                urlDetector: self.urlDetector, doiDetector: ItemFieldKeys.isDoi)
             self.update(viewModel: viewModel) { state in
                 state.data.fields[id] = field
             }
@@ -177,7 +177,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                                                                                   schemaController: self.schemaController,
                                                                                   dateParser: self.dateParser,
                                                                                   urlDetector: self.urlDetector,
-                                                                                  doiDetector: FieldKeys.isDoi,
+                                                                                  doiDetector: ItemFieldKeys.isDoi,
                                                                                   getExistingData: { key, baseField -> (String?, String?) in
             if let field = originalData.fields[key] {
                 return (field.name, field.value)
@@ -557,7 +557,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func updateDateFieldIfNeeded(in state: inout State) {
-        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.date || $0.key == FieldKeys.date }) else { return }
+        guard var field = state.data.fields.values.first(where: { $0.baseField == ItemFieldKeys.date || $0.key == ItemFieldKeys.date }) else { return }
 
         let date: Date?
 

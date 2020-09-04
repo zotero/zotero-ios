@@ -20,7 +20,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
-        let attachmentKeys = FieldKeys.attachmentFieldKeys
+        let attachmentKeys = ItemFieldKeys.attachmentFieldKeys
 
         // Basic info
 
@@ -60,17 +60,17 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             switch self.attachment.contentType {
             case .file(let file, let filename, _):
                 switch fieldKey {
-                case FieldKeys.title:
+                case ItemFieldKeys.title:
                     field.value = self.attachment.title
-                case FieldKeys.filename:
+                case ItemFieldKeys.filename:
                     field.value = filename
-                case FieldKeys.contentType:
+                case ItemFieldKeys.contentType:
                     field.value = file.mimeType
-                case FieldKeys.linkMode:
+                case ItemFieldKeys.linkMode:
                     field.value = "imported_file"
-                case FieldKeys.md5:
+                case ItemFieldKeys.md5:
                     field.value = md5(from: file.createUrl()) ?? ""
-                case FieldKeys.mtime:
+                case ItemFieldKeys.mtime:
                     let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
                     field.value = "\(modificationTime)"
                 default:
@@ -79,9 +79,9 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
             case .url(let url):
                 switch fieldKey {
-                case FieldKeys.url:
+                case ItemFieldKeys.url:
                     field.value = url.absoluteString
-                case FieldKeys.linkMode:
+                case ItemFieldKeys.linkMode:
                     field.value = "linked_url"
                 default:
                     continue

@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RxSwift
 
 struct RevertLibraryUpdatesSyncAction: SyncAction {
@@ -24,36 +25,40 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
         return Single.create { subscriber -> Disposable in
             do {
                 let coordinator = try self.dbStorage.createCoordinator()
-                let jsonDecoder = JSONDecoder()
 
-                let collections = try self.loadCachedJsonsForChangedDecodableObjects(of: RCollection.self,
-                                                                                     objectType: .collection,
-                                                                                     response: CollectionResponse.self,
-                                                                                     in: self.libraryId,
-                                                                                     coordinator: coordinator,
-                                                                                     decoder: jsonDecoder)
+                let collections = try self.loadCachedJsonForObject(of: RCollection.self,
+                                                                   objectType: .collection,
+                                                                   in: self.libraryId,
+                                                                   coordinator: coordinator,
+                                                                   createResponse: { try CollectionResponse(response: $0) })
+                let searches = try self.loadCachedJsonForObject(of: RSearch.self,
+                                                                objectType: .search,
+                                                                in: self.libraryId,
+                                                                coordinator: coordinator,
+                                                                createResponse: { try SearchResponse(response: $0) })
+                let items = try self.loadCachedJsonForObject(of: RItem.self,
+                                                             objectType: .item,
+                                                             in: self.libraryId,
+                                                             coordinator: coordinator,
+                                                             createResponse: {
+                                                                try ItemResponse(response: $0, schemaController: self.schemaController)
+                                                             })
+
                 let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
                 try coordinator.perform(request: storeCollectionsRequest)
 
-                let items = try self.loadCachedJsonForItems(in: self.libraryId, coordinator: coordinator)
                 let storeItemsRequest = StoreItemsDbRequest(response: items.responses,
                                                             schemaController: self.schemaController,
                                                             dateParser: self.dateParser,
                                                             preferRemoteData: true)
                 _ = try coordinator.perform(request: storeItemsRequest)
 
-                let searches = try self.loadCachedJsonsForChangedDecodableObjects(of: RSearch.self,
-                                                                                  objectType: .search,
-                                                                                  response: SearchResponse.self,
-                                                                                  in: self.libraryId,
-                                                                                  coordinator: coordinator,
-                                                                                  decoder: jsonDecoder)
                 let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
                 try coordinator.perform(request: storeSearchesRequest)
 
                 let failures: [SyncObject : [String]] = [.collection: collections.failed,
-                                                                    .search: searches.failed,
-                                                                    .item: items.failed]
+                                                         .search: searches.failed,
+                                                         .item: items.failed]
 
                 subscriber(.success(failures))
             } catch let error {
@@ -64,54 +69,35 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
         }
     }
 
-    private func loadCachedJsonForItems(in libraryId: LibraryIdentifier,
-                                        coordinator: DbCoordinator) throws -> (responses: [ItemResponse], failed: [String]) {
-        let itemsRequest = ReadAnyChangedObjectsInLibraryDbRequest<RItem>(libraryId: libraryId)
-        let items = try coordinator.perform(request: itemsRequest)
-        var responses: [ItemResponse] = []
+    private func loadCachedJsonForObject<Obj: Syncable&UpdatableObject, Response>(of type: Obj.Type,
+                                                                                  objectType: SyncObject,
+                                                                                  in libraryId: LibraryIdentifier,
+                                                                                  coordinator: DbCoordinator,
+                                                                                  createResponse: ([String: Any])
+                                                                            throws -> Response) throws -> (responses: [Response], failed: [String]) {
+        let request = ReadAnyChangedObjectsInLibraryDbRequest<Obj>(libraryId: libraryId)
+        let objects = try coordinator.perform(request: request)
+
+        var responses: [Response] = []
         var failed: [String] = []
 
-        items.forEach { item in
+        objects.forEach { object in
             do {
-                let file = Files.jsonCacheFile(for: .item, libraryId: libraryId, key: item.key)
+                let file = Files.jsonCacheFile(for: objectType, libraryId: libraryId, key: object.key)
                 let data = try self.fileStorage.read(file)
                 let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
 
                 if let jsonData = jsonObject as? [String: Any] {
-                    let response = try ItemResponse(response: jsonData, schemaController: self.schemaController)
+                    let response = try createResponse(jsonData)
                     responses.append(response)
                 } else {
-                    failed.append(item.key)
+                    failed.append(object.key)
                 }
-            } catch {
-                failed.append(item.key)
-            }
-        }
-
-        return (responses, failed)
-    }
-
-    private func loadCachedJsonsForChangedDecodableObjects<Obj: Syncable&UpdatableObject, Response: Decodable>(of type: Obj.Type,
-                                                                                                               objectType: SyncObject,
-                                                                                                               response: Response.Type,
-                                                                                                               in libraryId: LibraryIdentifier,
-                                                                                                               coordinator: DbCoordinator,
-                                                                                                               decoder: JSONDecoder) throws -> (responses: [Response], failed: [String]) {
-        let request = ReadAnyChangedObjectsInLibraryDbRequest<Obj>(libraryId: libraryId)
-        let objects = try coordinator.perform(request: request)
-        var responses: [Response] = []
-        var failed: [String] = []
-
-        objects.forEach({ object in
-            do {
-                let file = Files.jsonCacheFile(for: objectType, libraryId: libraryId, key: object.key)
-                let data = try self.fileStorage.read(file)
-                let response = try decoder.decode(Response.self, from: data)
-                responses.append(response)
-            } catch {
+            } catch let error {
+                DDLogError("RevertLibraryUpdatesSyncAction: can't load cached file - \(error)")
                 failed.append(object.key)
             }
-        })
+        }
 
         return (responses, failed)
     }

@@ -15,6 +15,8 @@ struct TestErrors {
 }
 
 class TestFileStorage: FileStorage {
+    var fileManager: FileManager = .default
+
     private var data: Data?
     private var file: File?
 

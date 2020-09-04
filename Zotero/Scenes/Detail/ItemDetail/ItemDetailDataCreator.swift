@@ -83,7 +83,7 @@ struct ItemDetailDataCreator {
 
         item.fields.forEach { field in
             switch field.key {
-            case FieldKeys.abstract:
+            case ItemFieldKeys.abstract:
                 abstract = field.value
             default:
                 values[field.key] = field.value
@@ -161,7 +161,7 @@ struct ItemDetailDataCreator {
         }
 
         var fieldKeys = fieldSchemas.map({ $0.field })
-        let abstractIndex = fieldKeys.firstIndex(of: FieldKeys.abstract)
+        let abstractIndex = fieldKeys.firstIndex(of: ItemFieldKeys.abstract)
 
         // Remove title and abstract keys, those 2 are used separately in Data struct
         if let index = abstractIndex {
@@ -183,7 +183,7 @@ struct ItemDetailDataCreator {
             let isTappable = ItemDetailDataCreator.isTappable(key: key, value: value, urlDetector: urlDetector, doiDetector: doiDetector)
             var additionalInfo: [ItemDetailState.Field.AdditionalInfoKey: String]?
 
-            if key == FieldKeys.date || baseField == FieldKeys.date,
+            if key == ItemFieldKeys.date || baseField == ItemFieldKeys.date,
                var order = dateParser.parse(string: value)?.order {
                 for index in (1..<order.count).reversed() {
                     order.insert(" ", at: order.index(order.startIndex, offsetBy: index))
@@ -208,7 +208,7 @@ struct ItemDetailDataCreator {
         guard let fieldSchemas = schemaController.fields(for: itemType) else { return [] }
         var fieldKeys = fieldSchemas.map({ $0.field })
         // Remove title and abstract keys, those 2 are used separately in Data struct
-        if let index = fieldKeys.firstIndex(of: FieldKeys.abstract) {
+        if let index = fieldKeys.firstIndex(of: ItemFieldKeys.abstract) {
             fieldKeys.remove(at: index)
         }
         if let key = schemaController.titleKey(for: itemType), let index = fieldKeys.firstIndex(of: key) {
@@ -236,9 +236,9 @@ struct ItemDetailDataCreator {
     /// - returns: True if field is tappable, false otherwise.
     static func isTappable(key: String, value: String, urlDetector: UrlDetector, doiDetector: (String) -> Bool) -> Bool {
         switch key {
-        case FieldKeys.doi:
+        case ItemFieldKeys.doi:
             return doiDetector(value)
-        case FieldKeys.url:
+        case ItemFieldKeys.url:
             return urlDetector.isUrl(string: value)
         default:
             return false

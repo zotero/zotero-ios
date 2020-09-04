@@ -22,8 +22,8 @@ struct CreateCollectionDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         let collection = RCollection()
-        collection.key = key
-        collection.name = name
+        collection.key = self.key
+        collection.name = self.name
         collection.syncState = .synced
 
         var changes: RCollectionChanges = .name

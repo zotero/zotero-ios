@@ -8,11 +8,18 @@
 
 import Foundation
 
-struct LibraryResponse: Codable {
+struct LibraryResponse {
     let id: Int
     let name: String
     let type: String
     let links: LinksResponse?
+
+    init(response: [String: Any]) throws {
+        self.id = try response.apiGet(key: "id")
+        self.name = try response.apiGet(key: "name")
+        self.type = try response.apiGet(key: "type")
+        self.links = try (response["links"] as? [String: Any]).flatMap({ try LinksResponse(response: $0) })
+    }
 
     init(id: Int, name: String, type: String, links: LinksResponse?) {
         self.id = id

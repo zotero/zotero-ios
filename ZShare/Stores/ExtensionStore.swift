@@ -521,9 +521,9 @@ class ExtensionStore {
             }
         } else if let url = self.state.url {
             let date = Date()
-            let fields: [String: String] = [FieldKeys.url: url,
-                                            FieldKeys.title: (self.state.title ?? "Unknown"),
-                                            FieldKeys.accessDate: Formatter.iso8601.string(from: date)]
+            let fields: [String: String] = [ItemFieldKeys.url: url,
+                                            ItemFieldKeys.title: (self.state.title ?? "Unknown"),
+                                            ItemFieldKeys.accessDate: Formatter.iso8601.string(from: date)]
 
             let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
                                        parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,
@@ -760,8 +760,8 @@ class ExtensionStore {
             do {
                 let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
 
-                let mtime = attachment.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-                let md5 = attachment.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+                let mtime = attachment.fields.filter(.key(ItemFieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+                let md5 = attachment.fields.filter(.key(ItemFieldKeys.md5)).first?.value ?? ""
 
                 var parameters: [[String: Any]] = []
                 if let updateParameters = item.updateParameters {
@@ -791,8 +791,8 @@ class ExtensionStore {
 
             do {
                 let attachment = try self.dbStorage.createCoordinator().perform(request: request)
-                let mtime = attachment.fields.filter(.key(FieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-                let md5 = attachment.fields.filter(.key(FieldKeys.md5)).first?.value ?? ""
+                let mtime = attachment.fields.filter(.key(ItemFieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+                let md5 = attachment.fields.filter(.key(ItemFieldKeys.md5)).first?.value ?? ""
 
                 subscriber(.success((attachment.updateParameters ?? [:], md5, mtime)))
             } catch let error {

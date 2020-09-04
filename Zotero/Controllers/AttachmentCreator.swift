@@ -27,14 +27,14 @@ struct AttachmentCreator {
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment content type if recognized. Nil otherwise.
     static func attachmentContentType(for item: RItem, fileStorage: FileStorage, urlDetector: UrlDetector) -> Attachment.ContentType? {
-        if let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value, !contentType.isEmpty {
+        if let contentType = item.fields.filter(.key(ItemFieldKeys.contentType)).first?.value, !contentType.isEmpty {
             return fileAttachmentType(for: item, contentType: contentType, fileStorage: fileStorage)
         }
         return urlAttachmentType(for: item, urlDetector: urlDetector)
     }
 
     static func file(for item: RItem) -> File? {
-        guard let contentType = item.fields.filter(.key(FieldKeys.contentType)).first?.value, !contentType.isEmpty else { return nil }
+        guard let contentType = item.fields.filter(.key(ItemFieldKeys.contentType)).first?.value, !contentType.isEmpty else { return nil }
         guard let libraryId = item.libraryObject?.identifier else {
             DDLogError("Attachment: missing library for item (\(item.key))")
             return nil
@@ -49,7 +49,7 @@ struct AttachmentCreator {
         }
 
         let file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
-        let filename = item.fields.filter(.key(FieldKeys.filename)).first?.value ?? (item.displayTitle + "." + file.ext)
+        let filename = item.fields.filter(.key(ItemFieldKeys.filename)).first?.value ?? (item.displayTitle + "." + file.ext)
         let location: Attachment.FileLocation?
 
         if fileStorage.has(file) {

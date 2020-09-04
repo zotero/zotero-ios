@@ -135,73 +135,80 @@ class SyncBatchProcessor {
 
     private func sync(data: Data, libraryId: LibraryIdentifier, object: SyncObject, userId: Int, expectedKeys: [String]) throws -> SyncBatchResponse {
         let coordinator = try self.dbStorage.createCoordinator()
+        let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
 
         switch object {
         case .collection:
-            let decoded = try JSONDecoder().decode(CollectionsResponse.self, from: data)
+            let (collections, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: { try CollectionResponse(response: $0) })
 
             // Cache JSONs locally for later use (in CR)
-            self.storeIndividualCodableJsonObjects(from: decoded.collections, type: .collection, libraryId: libraryId)
+            self.storeIndividualObjects(from: objects, type: .collection, libraryId: libraryId)
 
             try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreCollectionsDbRequest(response: decoded.collections))
+                try coordinator.perform(request: StoreCollectionsDbRequest(response: collections))
             }
-            let failedKeys = expectedKeys.filter({ key in !decoded.collections.contains(where: { $0.key == key }) })
-            return (failedKeys, decoded.errors, [])
+
+            let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: collections.map({ $0.key }), errors: errors)
+            return (failedKeys, errors, [])
 
         case .search:
-            let decoded = try JSONDecoder().decode(SearchesResponse.self, from: data)
+        let (searches, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: { try SearchResponse(response: $0) })
 
             // Cache JSONs locally for later use (in CR)
-            self.storeIndividualCodableJsonObjects(from: decoded.searches, type: .search, libraryId: libraryId)
+            self.storeIndividualObjects(from: objects, type: .search, libraryId: libraryId)
 
             try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreSearchesDbRequest(response: decoded.searches))
+                try coordinator.perform(request: StoreSearchesDbRequest(response: searches))
             }
-            let failedKeys = expectedKeys.filter({ key in !decoded.searches.contains(where: { $0.key == key }) })
-            return (failedKeys, decoded.errors, [])
+            let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: searches.map({ $0.key }), errors: errors)
+            return (failedKeys, errors, [])
 
         case .item, .trash:
-            let jsonObject = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-            let (items, objects, errors) = try ItemResponse.decode(response: jsonObject, schemaController: self.schemaController)
+            let (items, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: {
+                try ItemResponse(response: $0, schemaController: self.schemaController)
+            })
 
             // Cache JSONs locally for later use (in CR)
-            self.storeIndividualItem(jsonObjects: objects, libraryId: libraryId)
+            self.storeIndividualObjects(from: objects, type: .item, libraryId: libraryId)
 
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
             let conflicts = try coordinator.performInAutoreleasepoolIfNeeded {
                 try coordinator.perform(request: StoreItemsDbRequest(response: items, schemaController: self.schemaController,
                                                                      dateParser: self.dateParser, preferRemoteData: true))
             }
-            let failedKeys = expectedKeys.filter({ key in !items.contains(where: { $0.key == key }) })
+            let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
             return (failedKeys, errors, conflicts)
         }
     }
 
-    private func storeIndividualItem(jsonObjects: [[String: Any]], libraryId: LibraryIdentifier) {
+    private func failedKeys(from expectedKeys: [String], parsedKeys: [String], errors: [Error]) -> [String] {
+        // Keys that were not successfully parsed will be marked for resync so that the sync process can continue without them for now.
+        // Filter out parsed keys.
+        return expectedKeys.filter({ !parsedKeys.contains($0) })
+                           // Filter out keys that were not parsed because of `.unknownField` error. Objects with unknown fields should be rejected
+                           // and ignored.
+                           .filter({ key in
+                               return !errors.contains(where: { error in
+                                   if let error = error as? Parsing.Error,
+                                      case .unknownField(let errorKey, _) = error,
+                                      key == errorKey {
+                                       return true
+                                   }
+                                   return false
+                               })
+                           })
+    }
+
+    private func storeIndividualObjects(from jsonObjects: [[String: Any]], type: SyncObject, libraryId: LibraryIdentifier) {
         for object in jsonObjects {
             guard let key = object["key"] as? String else { continue }
             do {
                 let data = try JSONSerialization.data(withJSONObject: object, options: [])
-                let file = Files.jsonCacheFile(for: .item, libraryId: libraryId, key: key)
+                let file = Files.jsonCacheFile(for: type, libraryId: libraryId, key: key)
                 try self.fileStorage.write(data, to: file, options: .atomicWrite)
             } catch let error {
                 DDLogError("SyncBatchProcessor: can't encode/write item - \(error)\n\(object)")
-            }
-        }
-    }
-
-    private func storeIndividualCodableJsonObjects<Object: KeyedResponse&Codable>(from objects: [Object],
-                                                                                  type: SyncObject,
-                                                                                  libraryId: LibraryIdentifier) {
-        for object in objects {
-            do {
-                let data = try JSONEncoder().encode(object)
-                let file = Files.jsonCacheFile(for: type, libraryId: libraryId, key: object.key)
-                try self.fileStorage.write(data, to: file, options: .atomicWrite)
-            } catch let error {
-                DDLogError("SyncBatchProcessor: can't encode/write object - \(error)\n\(object)")
             }
         }
     }

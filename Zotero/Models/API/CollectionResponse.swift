@@ -8,32 +8,7 @@
 
 import Foundation
 
-struct CollectionsResponse {
-    let collections: [CollectionResponse]
-    let errors: [Error]
-}
-
-extension CollectionsResponse: Decodable {
-    init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-
-        var collections: [CollectionResponse] = []
-        var errors: [Error] = []
-
-        while !container.isAtEnd {
-            do {
-                let collection = try container.decode(CollectionResponse.self)
-                collections.append(collection)
-            } catch let error {
-                errors.append(error)
-            }
-        }
-
-        self.init(collections: collections, errors: errors)
-    }
-}
-
-struct CollectionResponse: Codable, KeyedResponse {
+struct CollectionResponse: KeyedResponse {
     struct Data {
         let name: String
         let parentCollection: String?
@@ -44,34 +19,28 @@ struct CollectionResponse: Codable, KeyedResponse {
     let links: LinksResponse?
     let data: CollectionResponse.Data
     let version: Int
+
+    init(response: [String: Any]) throws {
+        let library: [String: Any] = try response.apiGet(key: "library")
+        let data: [String: Any] = try response.apiGet(key: "data")
+        let key: String = try response.apiGet(key: "key")
+
+        self.key = key
+        self.library = try LibraryResponse(response: library)
+        self.links = try (response["links"] as? [String: Any]).flatMap({ try LinksResponse(response: $0) })
+        self.version = try response.apiGet(key: "version")
+        self.data = try Data(response: data, key: key)
+    }
 }
 
-extension CollectionResponse.Data: Codable {
-    private enum Keys: String, CodingKey {
-        case name, parentCollection
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CollectionResponse.Data.Keys.self)
-        let name = try container.decode(String.self, forKey: .name)
-        var parent: String?
-        // Try to decode this one silently. There is a little catch on backend. When no parent is assigned, the value
-        // on backend is "false". When parent is assigned, there is a String identifier.
-        // So when I try to decode as String it throws an error about type mismatch. So I just try to parse
-        // and if data doesn't match it's not available and stays nil.
-        do {
-            parent = try container.decodeIfPresent(String.self, forKey: .parentCollection)
-        } catch {}
-        self.init(name: name, parentCollection: parent)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CollectionResponse.Data.Keys.self)
-        try container.encode(self.name, forKey: .name)
-        if let parent = self.parentCollection {
-            try container.encode(parent, forKey: .parentCollection)
-        } else {
-            try container.encode(false, forKey: .parentCollection)
+extension CollectionResponse.Data {
+    init(response: [String: Any], key: String) throws {
+        // Check for unknown fields
+        if let unknownKey = response.keys.first(where: { !CollectionFieldKeys.knownDataKeys.contains($0) }) {
+            throw Parsing.Error.unknownField(key: key, field: unknownKey)
         }
+
+        self.name = try response.apiGet(key: "name")
+        self.parentCollection = response["parentCollection"] as? String
     }
 }

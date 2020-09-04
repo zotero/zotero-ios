@@ -20,10 +20,10 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
     func process(in database: Realm) throws -> [AttachmentUpload] {
         let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.libraryId))
         let uploads = items.compactMap({ item -> AttachmentUpload? in
-            guard let contentType = item.fields.filter("key = %@", FieldKeys.contentType).first?.value,
-                  let md5 = item.fields.filter("key = %@", FieldKeys.md5).first?.value,
-                  let mtime = (item.fields.filter("key = %@", FieldKeys.mtime).first?.value).flatMap(Int.init) else { return nil }
-            let filename = item.fields.filter("key = %@", FieldKeys.filename).first?.value ?? ""
+            guard let contentType = item.fields.filter("key = %@", ItemFieldKeys.contentType).first?.value,
+                  let md5 = item.fields.filter("key = %@", ItemFieldKeys.md5).first?.value,
+                  let mtime = (item.fields.filter("key = %@", ItemFieldKeys.mtime).first?.value).flatMap(Int.init) else { return nil }
+            let filename = item.fields.filter("key = %@", ItemFieldKeys.filename).first?.value ?? ""
             return AttachmentUpload(libraryId: self.libraryId, key: item.key,
                                     filename: filename, contentType: contentType,
                                     md5: md5, mtime: mtime)

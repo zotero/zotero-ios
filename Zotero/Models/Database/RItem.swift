@@ -199,11 +199,11 @@ class RItem: Object {
             return
         }
 
-        let url = self.fields.filter(.key(FieldKeys.url)).first?.value
-        let pdfs = attachments.filter({ $0.fields.filter(.key(FieldKeys.contentType)).first?.value == "application/pdf" })
+        let url = self.fields.filter(.key(ItemFieldKeys.url)).first?.value
+        let pdfs = attachments.filter({ $0.fields.filter(.key(ItemFieldKeys.contentType)).first?.value == "application/pdf" })
 
         if pdfs.count > 0 {
-            if let url = url, let matchingUrl = pdfs.first(where: { $0.fields.filter(.key(FieldKeys.url)).first?.value == url }) {
+            if let url = url, let matchingUrl = pdfs.first(where: { $0.fields.filter(.key(ItemFieldKeys.url)).first?.value == url }) {
                 self.mainAttachment = matchingUrl
                 return
             }
@@ -212,7 +212,7 @@ class RItem: Object {
             return
         }
 
-        if let url = url, let matchingUrl = attachments.first(where: { $0.fields.filter(.key(FieldKeys.url)).first?.value == url }) {
+        if let url = url, let matchingUrl = attachments.first(where: { $0.fields.filter(.key(ItemFieldKeys.url)).first?.value == url }) {
             self.mainAttachment = matchingUrl
             return
         }
