@@ -30,14 +30,14 @@ class ItemDetailCreatorEditingCell: RxTableViewCell {
                                  return Observable.just(self.namePresentation == .full ? .separate : .full)
                              }
     }
-    var firstNameObservable: ControlProperty<String> {
-        return self.firstNameTextField.rx.text.orEmpty
+    var firstNameObservable: Observable<String> {
+        return self.firstNameTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.firstNameTextField.text ?? "") })
     }
-    var lastNameObservable: ControlProperty<String> {
-        return self.lastNameTextField.rx.text.orEmpty
+    var lastNameObservable: Observable<String> {
+        return self.lastNameTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.lastNameTextField.text ?? "") })
     }
-    var fullNameObservable: ControlProperty<String> {
-        return self.fullTextField.rx.text.orEmpty
+    var fullNameObservable: Observable<String> {
+        return self.fullTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.fullTextField.text ?? "") })
     }
 
     override func awakeFromNib() {
