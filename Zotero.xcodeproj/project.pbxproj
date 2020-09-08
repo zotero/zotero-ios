@@ -1722,16 +1722,16 @@
 		B32A3C83248008A2009E2C5D /* JSONs */ = {
 			isa = PBXGroup;
 			children = (
-				B3AAABD62502A40900031065 /* searchresponse_knownfields.json */,
-				B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */,
 				B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */,
 				B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */,
 				B3B1EDF32502456000D8BC1E /* itemresponse_knownfields.json */,
 				B3B1EDF22502455F00D8BC1E /* itemresponse_unknownfields.json */,
-				B32A3C84248008A2009E2C5D /* test_keys.json */,
+				B3AAABD62502A40900031065 /* searchresponse_knownfields.json */,
+				B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */,
 				B32A3C85248008A2009E2C5D /* test_collection.json */,
-				B32A3C86248008A2009E2C5D /* test_search.json */,
 				B32A3C87248008A2009E2C5D /* test_item.json */,
+				B32A3C84248008A2009E2C5D /* test_keys.json */,
+				B32A3C86248008A2009E2C5D /* test_search.json */,
 			);
 			path = JSONs;
 			sourceTree = "<group>";
