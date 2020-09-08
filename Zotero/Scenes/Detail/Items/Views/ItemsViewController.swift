@@ -82,6 +82,7 @@ class ItemsViewController: UIViewController {
                              .observeOn(MainScheduler.instance)
                              .subscribe(onNext: { [weak self] item in
                                 self?.showItemDetail(for: item)
+                                self?.resetActiveSearch()
                              })
                              .disposed(by: self.disposeBag)
 
@@ -193,6 +194,15 @@ class ItemsViewController: UIViewController {
         let controller = UIViewController()
         self.navigationController?.pushViewController(controller, animated: false)
         self.navigationController?.popViewController(animated: false)
+    }
+
+    private func resetActiveSearch() {
+        if let searchBar = self.searchBarContainer?.searchBar {
+            searchBar.text = nil
+            searchBar.resignFirstResponder()
+        } else if let controller = self.navigationItem.searchController {
+            controller.isActive = false
+        }
     }
 
     private func open(attachment: Attachment, parentKey: String) {
@@ -527,6 +537,7 @@ class ItemsViewController: UIViewController {
         if self.navigationItem.titleView != nil {
             self.navigationItem.titleView = nil
         }
+        self.searchBarContainer = nil
     }
 }
 
@@ -547,7 +558,7 @@ class ItemsViewController: UIViewController {
 /// to `.greatestFiniteMagnitude`, so that it stretches to appropriate size when needed (for example when the device rotates).
 ///
 fileprivate class SearchBarContainer: UIView {
-    private unowned let searchBar: UISearchBar
+    unowned let searchBar: UISearchBar
     private var widthConstraint: NSLayoutConstraint!
 
     init(searchBar: UISearchBar) {
