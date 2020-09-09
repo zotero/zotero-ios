@@ -22,7 +22,7 @@ class PDFReaderViewController: UIViewController {
 
     private static let colorPreviewSize = CGSize(width: 15, height: 15)
     private static let highlightOpacity: CGFloat = 0.5
-    private static let highlightDarkOpacity: CGFloat = 0.75
+    private static let highlightDarkOpacity: CGFloat = 0.7
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let pageController: PdfPageController
@@ -150,7 +150,7 @@ class PDFReaderViewController: UIViewController {
                 var brg: CGFloat = 0
                 var alpha: CGFloat = 0
                 activeColor.getHue(&hue, saturation: &sat, brightness: &brg, alpha: &alpha)
-                return UIColor(hue: hue, saturation: sat * 1.15, brightness: brg, alpha: PDFReaderViewController.highlightDarkOpacity)
+                return UIColor(hue: hue, saturation: sat * 1.2, brightness: brg, alpha: PDFReaderViewController.highlightDarkOpacity)
             default:
                 return activeColor.withAlphaComponent(PDFReaderViewController.highlightOpacity)
             }

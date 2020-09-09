@@ -21,6 +21,7 @@ class AnnotationCell: UITableViewCell {
     @IBOutlet private weak var pageLabel: UILabel!
     @IBOutlet private weak var authorLabel: UILabel!
     @IBOutlet private weak var firstSeparator: UIView!
+    @IBOutlet private weak var firstSeparatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var headerButton: UIButton!
     // Content
     @IBOutlet private weak var annotationContainer: UIView!
@@ -35,6 +36,7 @@ class AnnotationCell: UITableViewCell {
     @IBOutlet private weak var addCommentContainer: UIView!
     @IBOutlet private weak var addCommentButton: UIButton!
     @IBOutlet private weak var secondSeparator: UIView!
+    @IBOutlet private weak var secondSeparatorHeight: NSLayoutConstraint!
     private var annotationImageHeight: NSLayoutConstraint!
     // Footer
     @IBOutlet private weak var tagsContainer: UIView!
@@ -54,13 +56,18 @@ class AnnotationCell: UITableViewCell {
 
         self.selectionStyle = .none
 
+        let borderWidth = 1 / UIScreen.main.scale
+
         self.roundedContainer.layer.cornerRadius = 8
-        self.roundedContainer.layer.borderWidth = 1 / UIScreen.main.scale
+        self.roundedContainer.layer.borderWidth = borderWidth
+        self.firstSeparatorHeight.constant = borderWidth
+        self.secondSeparatorHeight.constant = borderWidth
         self.roundedContainer.layer.shadowOpacity = 1
         self.roundedContainer.layer.shadowRadius = 2
         self.roundedContainer.layer.shadowOffset = CGSize()
 
         self.annotationImageHeight = self.annotationImageView.heightAnchor.constraint(equalToConstant: 0)
+        self.annotationTextLabel.textColor = Asset.Colors.annotationText.color
 
         self.addCommentButton.setTitle(L10n.Pdf.AnnotationsSidebar.addComment, for: .normal)
         self.addTagsButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
@@ -167,7 +174,7 @@ class AnnotationCell: UITableViewCell {
     private func attributedString(from tags: [Tag]) -> NSAttributedString {
         let wholeString = NSMutableAttributedString()
         for (index, tag) in tags.enumerated() {
-            let string = NSAttributedString(string: tag.name, attributes: [.foregroundColor: UIColor(hex: tag.color)])
+            let string = NSAttributedString(string: tag.name, attributes: [.foregroundColor: TagColorGenerator.uiColor(for: tag.color).color])
             wholeString.append(string)
             if index != (tags.count - 1) {
                 wholeString.append(NSAttributedString(string: ", "))
