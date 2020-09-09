@@ -85,6 +85,8 @@ class CollectionCell: UITableViewCell {
     }
 
     private var badgeBackgroundColor: UIColor {
-        return UIColor.systemGray.withAlphaComponent(self.traitCollection.userInterfaceStyle == .dark ? 0.5 : 0.2)
+        return UIColor { traitCollection -> UIColor in
+            return UIColor.systemGray.withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.5 : 0.2)
+        }
     }
 }
