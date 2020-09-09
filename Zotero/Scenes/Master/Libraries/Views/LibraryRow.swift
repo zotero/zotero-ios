@@ -17,6 +17,7 @@ struct LibraryRow: View {
             Image(self.isReadOnly ? Asset.Images.Cells.libraryReadonly.name : Asset.Images.Cells.library.name)
                 .renderingMode(.template)
                 .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                .padding(EdgeInsets(top: 0, leading: (self.isReadOnly ? -2 : 0), bottom: 0, trailing: 0))
             Text(self.title)
                 .foregroundColor(.primary)
                 .lineLimit(1)
