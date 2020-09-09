@@ -32,7 +32,12 @@ class ItemDetailAbstractCell: RxTableViewCell {
     }
 
     func setup(with abstract: String, isEditing: Bool) {
-        self.contentLabel.text = abstract
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.hyphenationFactor = 1
+        paragraphStyle.alignment = .justified
+        let hyphenatedText = NSAttributedString(string: abstract, attributes: [.paragraphStyle: paragraphStyle])
+
+        self.contentLabel.attributedText = hyphenatedText
         self.contentTextView.text = abstract
         self.contentLabel.isHidden = isEditing
         self.contentTextView.isHidden = !isEditing
