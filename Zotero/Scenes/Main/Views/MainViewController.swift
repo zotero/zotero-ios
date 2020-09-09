@@ -60,7 +60,10 @@ class MainViewController: UISplitViewController {
         super.viewDidLoad()
 
         self.delegate = self
+
         self.preferredPrimaryColumnWidthFraction = 0.3951
+        self.maximumPrimaryColumnWidth = .infinity
+        self.minimumPrimaryColumnWidth = 320
     }
 
     override func viewDidAppear(_ animated: Bool) {
