@@ -550,25 +550,25 @@
 		B3886C47249234D600B7D67B /* FileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3886C46249234D600B7D67B /* FileDownloader.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
-		B38D3C7924A1DCFB005289EF /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C7824A1DCFB005289EF /* RealmSwift */; };
-		B38D3C7F24A1DD25005289EF /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C7E24A1DD25005289EF /* RealmSwift */; };
-		B38D3C8224A1E025005289EF /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8124A1E025005289EF /* Alamofire */; };
-		B38D3C8424A1E037005289EF /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8324A1E037005289EF /* Alamofire */; };
-		B38D3C8724A1E0B5005289EF /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8624A1E0B5005289EF /* KeychainSwift */; };
-		B38D3C8924A1E0C2005289EF /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8824A1E0C2005289EF /* KeychainSwift */; };
-		B38D3C8C24A1E157005289EF /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8B24A1E157005289EF /* ZIPFoundation */; };
-		B38D3C8E24A1E164005289EF /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8D24A1E164005289EF /* ZIPFoundation */; };
-		B38D3C9124A1E1BA005289EF /* SwiftyGif in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9024A1E1BA005289EF /* SwiftyGif */; };
-		B38D3C9724A1E344005289EF /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9624A1E344005289EF /* CocoaLumberjackSwift */; };
-		B38D3C9D24A1E350005289EF /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */; };
-		B38D3CA024A1E39F005289EF /* Quick in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9F24A1E39F005289EF /* Quick */; };
-		B38D3CA324A1E3D7005289EF /* Nimble in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CA224A1E3D7005289EF /* Nimble */; };
-		B38D3CAC24A1E430005289EF /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */; };
-		B38D3CAF24A1E4A8005289EF /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAE24A1E4A8005289EF /* RxAlamofire */; };
-		B38D3CB124A1E4B1005289EF /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB024A1E4B1005289EF /* RxAlamofire */; };
-		B38D3CB424A1E4FA005289EF /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB324A1E4FA005289EF /* RxCocoa */; };
-		B38D3CB624A1E4FA005289EF /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB524A1E4FA005289EF /* RxSwift */; };
-		B38D3CB924A1E57A005289EF /* RxSwiftExt in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB824A1E57A005289EF /* RxSwiftExt */; };
+		B38D3C7924A1DCFB005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C7824A1DCFB005289EF /* SwiftPackageProductDependency */; };
+		B38D3C7F24A1DD25005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C7E24A1DD25005289EF /* SwiftPackageProductDependency */; };
+		B38D3C8224A1E025005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8124A1E025005289EF /* SwiftPackageProductDependency */; };
+		B38D3C8424A1E037005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8324A1E037005289EF /* SwiftPackageProductDependency */; };
+		B38D3C8724A1E0B5005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8624A1E0B5005289EF /* SwiftPackageProductDependency */; };
+		B38D3C8924A1E0C2005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8824A1E0C2005289EF /* SwiftPackageProductDependency */; };
+		B38D3C8C24A1E157005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8B24A1E157005289EF /* SwiftPackageProductDependency */; };
+		B38D3C8E24A1E164005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C8D24A1E164005289EF /* SwiftPackageProductDependency */; };
+		B38D3C9124A1E1BA005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9024A1E1BA005289EF /* SwiftPackageProductDependency */; };
+		B38D3C9724A1E344005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9624A1E344005289EF /* SwiftPackageProductDependency */; };
+		B38D3C9D24A1E350005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9C24A1E350005289EF /* SwiftPackageProductDependency */; };
+		B38D3CA024A1E39F005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3C9F24A1E39F005289EF /* SwiftPackageProductDependency */; };
+		B38D3CA324A1E3D7005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CA224A1E3D7005289EF /* SwiftPackageProductDependency */; };
+		B38D3CAC24A1E430005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAB24A1E430005289EF /* SwiftPackageProductDependency */; };
+		B38D3CAF24A1E4A8005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CAE24A1E4A8005289EF /* SwiftPackageProductDependency */; };
+		B38D3CB124A1E4B1005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB024A1E4B1005289EF /* SwiftPackageProductDependency */; };
+		B38D3CB424A1E4FA005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB324A1E4FA005289EF /* SwiftPackageProductDependency */; };
+		B38D3CB624A1E4FA005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB524A1E4FA005289EF /* SwiftPackageProductDependency */; };
+		B38D3CB924A1E57A005289EF /* BuildFile in Frameworks */ = {isa = PBXBuildFile; productRef = B38D3CB824A1E57A005289EF /* SwiftPackageProductDependency */; };
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B38D3CCB24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
@@ -1164,18 +1164,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B38D3C8724A1E0B5005289EF /* KeychainSwift in Frameworks */,
-				B38D3C8224A1E025005289EF /* Alamofire in Frameworks */,
-				B38D3CB924A1E57A005289EF /* RxSwiftExt in Frameworks */,
-				B38D3CB424A1E4FA005289EF /* RxCocoa in Frameworks */,
-				B38D3C7924A1DCFB005289EF /* RealmSwift in Frameworks */,
+				B38D3C8724A1E0B5005289EF /* BuildFile in Frameworks */,
+				B38D3C8224A1E025005289EF /* BuildFile in Frameworks */,
+				B38D3CB924A1E57A005289EF /* BuildFile in Frameworks */,
+				B38D3CB424A1E4FA005289EF /* BuildFile in Frameworks */,
+				B38D3C7924A1DCFB005289EF /* BuildFile in Frameworks */,
 				2A4E2137B0CC7B701C2B7C99 /* Pods_Zotero.framework in Frameworks */,
-				B38D3CB624A1E4FA005289EF /* RxSwift in Frameworks */,
+				B38D3CB624A1E4FA005289EF /* BuildFile in Frameworks */,
 				B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */,
-				B38D3C9724A1E344005289EF /* CocoaLumberjackSwift in Frameworks */,
-				B38D3C9124A1E1BA005289EF /* SwiftyGif in Frameworks */,
-				B38D3CAF24A1E4A8005289EF /* RxAlamofire in Frameworks */,
-				B38D3C8C24A1E157005289EF /* ZIPFoundation in Frameworks */,
+				B38D3C9724A1E344005289EF /* BuildFile in Frameworks */,
+				B38D3C9124A1E1BA005289EF /* BuildFile in Frameworks */,
+				B38D3CAF24A1E4A8005289EF /* BuildFile in Frameworks */,
+				B38D3C8C24A1E157005289EF /* BuildFile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1183,9 +1183,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B38D3CA324A1E3D7005289EF /* Nimble in Frameworks */,
-				B38D3CA024A1E39F005289EF /* Quick in Frameworks */,
-				B38D3CAC24A1E430005289EF /* OHHTTPStubsSwift in Frameworks */,
+				B38D3CA324A1E3D7005289EF /* BuildFile in Frameworks */,
+				B38D3CA024A1E39F005289EF /* BuildFile in Frameworks */,
+				B38D3CAC24A1E430005289EF /* BuildFile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1201,12 +1201,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				B38D3CCB24A1F420005289EF /* CrashReporter.framework in Frameworks */,
-				B38D3C7F24A1DD25005289EF /* RealmSwift in Frameworks */,
-				B38D3C8424A1E037005289EF /* Alamofire in Frameworks */,
-				B38D3C8924A1E0C2005289EF /* KeychainSwift in Frameworks */,
-				B38D3CB124A1E4B1005289EF /* RxAlamofire in Frameworks */,
-				B38D3C9D24A1E350005289EF /* CocoaLumberjackSwift in Frameworks */,
-				B38D3C8E24A1E164005289EF /* ZIPFoundation in Frameworks */,
+				B38D3C7F24A1DD25005289EF /* BuildFile in Frameworks */,
+				B38D3C8424A1E037005289EF /* BuildFile in Frameworks */,
+				B38D3C8924A1E0C2005289EF /* BuildFile in Frameworks */,
+				B38D3CB124A1E4B1005289EF /* BuildFile in Frameworks */,
+				B38D3C9D24A1E350005289EF /* BuildFile in Frameworks */,
+				B38D3C8E24A1E164005289EF /* BuildFile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2266,6 +2266,7 @@
 				0FB62CEAAA715D1E3F5FC027 /* [CP] Check Pods Manifest.lock */,
 				B34A85AC243CB1E4003D5638 /* ShellScript */,
 				B337A5AD244F229400AFD13D /* ShellScript */,
+				94F7EE6CF4F5DD156BC62AC3 /* [CP] Prepare Artifacts */,
 				B30D59512206F60400884C4A /* Sources */,
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
@@ -2279,16 +2280,16 @@
 			);
 			name = Zotero;
 			packageProductDependencies = (
-				B38D3C7824A1DCFB005289EF /* RealmSwift */,
-				B38D3C8124A1E025005289EF /* Alamofire */,
-				B38D3C8624A1E0B5005289EF /* KeychainSwift */,
-				B38D3C8B24A1E157005289EF /* ZIPFoundation */,
-				B38D3C9024A1E1BA005289EF /* SwiftyGif */,
-				B38D3C9624A1E344005289EF /* CocoaLumberjackSwift */,
-				B38D3CAE24A1E4A8005289EF /* RxAlamofire */,
-				B38D3CB324A1E4FA005289EF /* RxCocoa */,
-				B38D3CB524A1E4FA005289EF /* RxSwift */,
-				B38D3CB824A1E57A005289EF /* RxSwiftExt */,
+				B38D3C7824A1DCFB005289EF /* SwiftPackageProductDependency */,
+				B38D3C8124A1E025005289EF /* SwiftPackageProductDependency */,
+				B38D3C8624A1E0B5005289EF /* SwiftPackageProductDependency */,
+				B38D3C8B24A1E157005289EF /* SwiftPackageProductDependency */,
+				B38D3C9024A1E1BA005289EF /* SwiftPackageProductDependency */,
+				B38D3C9624A1E344005289EF /* SwiftPackageProductDependency */,
+				B38D3CAE24A1E4A8005289EF /* SwiftPackageProductDependency */,
+				B38D3CB324A1E4FA005289EF /* SwiftPackageProductDependency */,
+				B38D3CB524A1E4FA005289EF /* SwiftPackageProductDependency */,
+				B38D3CB824A1E57A005289EF /* SwiftPackageProductDependency */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -2309,9 +2310,9 @@
 			);
 			name = ZoteroTests;
 			packageProductDependencies = (
-				B38D3C9F24A1E39F005289EF /* Quick */,
-				B38D3CA224A1E3D7005289EF /* Nimble */,
-				B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */,
+				B38D3C9F24A1E39F005289EF /* SwiftPackageProductDependency */,
+				B38D3CA224A1E3D7005289EF /* SwiftPackageProductDependency */,
+				B38D3CAB24A1E430005289EF /* SwiftPackageProductDependency */,
 			);
 			productName = ZoteroTests;
 			productReference = B30D596B2206F60500884C4A /* ZoteroTests.xctest */;
@@ -2350,12 +2351,12 @@
 			);
 			name = ZShare;
 			packageProductDependencies = (
-				B38D3C7E24A1DD25005289EF /* RealmSwift */,
-				B38D3C8324A1E037005289EF /* Alamofire */,
-				B38D3C8824A1E0C2005289EF /* KeychainSwift */,
-				B38D3C8D24A1E164005289EF /* ZIPFoundation */,
-				B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */,
-				B38D3CB024A1E4B1005289EF /* RxAlamofire */,
+				B38D3C7E24A1DD25005289EF /* SwiftPackageProductDependency */,
+				B38D3C8324A1E037005289EF /* SwiftPackageProductDependency */,
+				B38D3C8824A1E0C2005289EF /* SwiftPackageProductDependency */,
+				B38D3C8D24A1E164005289EF /* SwiftPackageProductDependency */,
+				B38D3C9C24A1E350005289EF /* SwiftPackageProductDependency */,
+				B38D3CB024A1E4B1005289EF /* SwiftPackageProductDependency */,
 			);
 			productName = ZShare;
 			productReference = B311B31C2386A39800BCF592 /* ZShare.appex */;
@@ -2408,18 +2409,18 @@
 			);
 			mainGroup = B30D594C2206F60400884C4A;
 			packageReferences = (
-				B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */,
-				B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */,
-				B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */,
-				B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-				B38D3C8F24A1E1BA005289EF /* XCRemoteSwiftPackageReference "SwiftyGif" */,
-				B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
-				B38D3C9E24A1E39F005289EF /* XCRemoteSwiftPackageReference "Quick" */,
-				B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */,
-				B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
-				B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */,
-				B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */,
-				B38D3CB724A1E57A005289EF /* XCRemoteSwiftPackageReference "RxSwiftExt" */,
+				B38D3C7724A1DCFB005289EF /* RemoteSwiftPackageReference */,
+				B38D3C8024A1E025005289EF /* RemoteSwiftPackageReference */,
+				B38D3C8524A1E0B5005289EF /* RemoteSwiftPackageReference */,
+				B38D3C8A24A1E157005289EF /* RemoteSwiftPackageReference */,
+				B38D3C8F24A1E1BA005289EF /* RemoteSwiftPackageReference */,
+				B38D3C9524A1E344005289EF /* RemoteSwiftPackageReference */,
+				B38D3C9E24A1E39F005289EF /* RemoteSwiftPackageReference */,
+				B38D3CA124A1E3D7005289EF /* RemoteSwiftPackageReference */,
+				B38D3CA424A1E40F005289EF /* RemoteSwiftPackageReference */,
+				B38D3CAD24A1E4A8005289EF /* RemoteSwiftPackageReference */,
+				B38D3CB224A1E4FA005289EF /* RemoteSwiftPackageReference */,
+				B38D3CB724A1E57A005289EF /* RemoteSwiftPackageReference */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -2554,6 +2555,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		94F7EE6CF4F5DD156BC62AC3 /* [CP] Prepare Artifacts */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-artifacts-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Prepare Artifacts";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-artifacts-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Zotero/Pods-Zotero-artifacts.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		B3087B87245190F500FF05ED /* ShellScript */ = {
@@ -4069,7 +4087,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
+		B38D3C7724A1DCFB005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
@@ -4077,7 +4095,7 @@
 				version = 5.3.5;
 			};
 		};
-		B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+		B38D3C8024A1E025005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
@@ -4085,7 +4103,7 @@
 				version = 5.2.1;
 			};
 		};
-		B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */ = {
+		B38D3C8524A1E0B5005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/evgenyneu/keychain-swift";
 			requirement = {
@@ -4093,7 +4111,7 @@
 				version = 19.0.0;
 			};
 		};
-		B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+		B38D3C8A24A1E157005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
 			requirement = {
@@ -4101,7 +4119,7 @@
 				version = 0.9.11;
 			};
 		};
-		B38D3C8F24A1E1BA005289EF /* XCRemoteSwiftPackageReference "SwiftyGif" */ = {
+		B38D3C8F24A1E1BA005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kirualex/SwiftyGif";
 			requirement = {
@@ -4109,7 +4127,7 @@
 				version = 5.3.0;
 			};
 		};
-		B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */ = {
+		B38D3C9524A1E344005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CocoaLumberjack/CocoaLumberjack";
 			requirement = {
@@ -4117,7 +4135,7 @@
 				version = 3.6.1;
 			};
 		};
-		B38D3C9E24A1E39F005289EF /* XCRemoteSwiftPackageReference "Quick" */ = {
+		B38D3C9E24A1E39F005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Quick/Quick";
 			requirement = {
@@ -4125,7 +4143,7 @@
 				version = 3.0.0;
 			};
 		};
-		B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */ = {
+		B38D3CA124A1E3D7005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Quick/Nimble";
 			requirement = {
@@ -4133,7 +4151,7 @@
 				version = 8.1.1;
 			};
 		};
-		B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
+		B38D3CA424A1E40F005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/AliSoftware/OHHTTPStubs";
 			requirement = {
@@ -4141,7 +4159,7 @@
 				version = 9.0.0;
 			};
 		};
-		B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */ = {
+		B38D3CAD24A1E4A8005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxAlamofire";
 			requirement = {
@@ -4149,7 +4167,7 @@
 				version = 5.5.0;
 			};
 		};
-		B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */ = {
+		B38D3CB224A1E4FA005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ReactiveX/RxSwift";
 			requirement = {
@@ -4157,7 +4175,7 @@
 				version = 5.1.1;
 			};
 		};
-		B38D3CB724A1E57A005289EF /* XCRemoteSwiftPackageReference "RxSwiftExt" */ = {
+		B38D3CB724A1E57A005289EF /* RemoteSwiftPackageReference */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxSwiftExt";
 			requirement = {
@@ -4168,99 +4186,99 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		B38D3C7824A1DCFB005289EF /* RealmSwift */ = {
+		B38D3C7824A1DCFB005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			package = B38D3C7724A1DCFB005289EF /* RemoteSwiftPackageReference */;
 			productName = RealmSwift;
 		};
-		B38D3C7E24A1DD25005289EF /* RealmSwift */ = {
+		B38D3C7E24A1DD25005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C7724A1DCFB005289EF /* XCRemoteSwiftPackageReference "realm-cocoa" */;
+			package = B38D3C7724A1DCFB005289EF /* RemoteSwiftPackageReference */;
 			productName = RealmSwift;
 		};
-		B38D3C8124A1E025005289EF /* Alamofire */ = {
+		B38D3C8124A1E025005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */;
+			package = B38D3C8024A1E025005289EF /* RemoteSwiftPackageReference */;
 			productName = Alamofire;
 		};
-		B38D3C8324A1E037005289EF /* Alamofire */ = {
+		B38D3C8324A1E037005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8024A1E025005289EF /* XCRemoteSwiftPackageReference "Alamofire" */;
+			package = B38D3C8024A1E025005289EF /* RemoteSwiftPackageReference */;
 			productName = Alamofire;
 		};
-		B38D3C8624A1E0B5005289EF /* KeychainSwift */ = {
+		B38D3C8624A1E0B5005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			package = B38D3C8524A1E0B5005289EF /* RemoteSwiftPackageReference */;
 			productName = KeychainSwift;
 		};
-		B38D3C8824A1E0C2005289EF /* KeychainSwift */ = {
+		B38D3C8824A1E0C2005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8524A1E0B5005289EF /* XCRemoteSwiftPackageReference "keychain-swift" */;
+			package = B38D3C8524A1E0B5005289EF /* RemoteSwiftPackageReference */;
 			productName = KeychainSwift;
 		};
-		B38D3C8B24A1E157005289EF /* ZIPFoundation */ = {
+		B38D3C8B24A1E157005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			package = B38D3C8A24A1E157005289EF /* RemoteSwiftPackageReference */;
 			productName = ZIPFoundation;
 		};
-		B38D3C8D24A1E164005289EF /* ZIPFoundation */ = {
+		B38D3C8D24A1E164005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8A24A1E157005289EF /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			package = B38D3C8A24A1E157005289EF /* RemoteSwiftPackageReference */;
 			productName = ZIPFoundation;
 		};
-		B38D3C9024A1E1BA005289EF /* SwiftyGif */ = {
+		B38D3C9024A1E1BA005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C8F24A1E1BA005289EF /* XCRemoteSwiftPackageReference "SwiftyGif" */;
+			package = B38D3C8F24A1E1BA005289EF /* RemoteSwiftPackageReference */;
 			productName = SwiftyGif;
 		};
-		B38D3C9624A1E344005289EF /* CocoaLumberjackSwift */ = {
+		B38D3C9624A1E344005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			package = B38D3C9524A1E344005289EF /* RemoteSwiftPackageReference */;
 			productName = CocoaLumberjackSwift;
 		};
-		B38D3C9C24A1E350005289EF /* CocoaLumberjackSwift */ = {
+		B38D3C9C24A1E350005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C9524A1E344005289EF /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			package = B38D3C9524A1E344005289EF /* RemoteSwiftPackageReference */;
 			productName = CocoaLumberjackSwift;
 		};
-		B38D3C9F24A1E39F005289EF /* Quick */ = {
+		B38D3C9F24A1E39F005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3C9E24A1E39F005289EF /* XCRemoteSwiftPackageReference "Quick" */;
+			package = B38D3C9E24A1E39F005289EF /* RemoteSwiftPackageReference */;
 			productName = Quick;
 		};
-		B38D3CA224A1E3D7005289EF /* Nimble */ = {
+		B38D3CA224A1E3D7005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CA124A1E3D7005289EF /* XCRemoteSwiftPackageReference "Nimble" */;
+			package = B38D3CA124A1E3D7005289EF /* RemoteSwiftPackageReference */;
 			productName = Nimble;
 		};
-		B38D3CAB24A1E430005289EF /* OHHTTPStubsSwift */ = {
+		B38D3CAB24A1E430005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CA424A1E40F005289EF /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			package = B38D3CA424A1E40F005289EF /* RemoteSwiftPackageReference */;
 			productName = OHHTTPStubsSwift;
 		};
-		B38D3CAE24A1E4A8005289EF /* RxAlamofire */ = {
+		B38D3CAE24A1E4A8005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */;
+			package = B38D3CAD24A1E4A8005289EF /* RemoteSwiftPackageReference */;
 			productName = RxAlamofire;
 		};
-		B38D3CB024A1E4B1005289EF /* RxAlamofire */ = {
+		B38D3CB024A1E4B1005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CAD24A1E4A8005289EF /* XCRemoteSwiftPackageReference "RxAlamofire" */;
+			package = B38D3CAD24A1E4A8005289EF /* RemoteSwiftPackageReference */;
 			productName = RxAlamofire;
 		};
-		B38D3CB324A1E4FA005289EF /* RxCocoa */ = {
+		B38D3CB324A1E4FA005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */;
+			package = B38D3CB224A1E4FA005289EF /* RemoteSwiftPackageReference */;
 			productName = RxCocoa;
 		};
-		B38D3CB524A1E4FA005289EF /* RxSwift */ = {
+		B38D3CB524A1E4FA005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CB224A1E4FA005289EF /* XCRemoteSwiftPackageReference "RxSwift" */;
+			package = B38D3CB224A1E4FA005289EF /* RemoteSwiftPackageReference */;
 			productName = RxSwift;
 		};
-		B38D3CB824A1E57A005289EF /* RxSwiftExt */ = {
+		B38D3CB824A1E57A005289EF /* SwiftPackageProductDependency */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B38D3CB724A1E57A005289EF /* XCRemoteSwiftPackageReference "RxSwiftExt" */;
+			package = B38D3CB724A1E57A005289EF /* RemoteSwiftPackageReference */;
 			productName = RxSwiftExt;
 		};
 /* End XCSwiftPackageProductDependency section */

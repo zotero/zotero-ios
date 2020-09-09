@@ -404,6 +404,7 @@ class PDFReaderViewController: UIViewController {
         }
         controller.annotationStateManager.add(self)
         controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
+        self.setup(interactions: controller.interactions)
         self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)
 
         self.addChild(controller)
@@ -423,6 +424,22 @@ class PDFReaderViewController: UIViewController {
 
         self.pdfController = controller
         self.pdfControllerLeft = leftConstraint
+    }
+
+    private func setup(interactions: DocumentViewInteractions) {
+        interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
+            // Only zotero annotations can be selected
+            return context.annotation.isZotero
+        }
+
+        interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
+            guard let key = context.annotation.key else { return }
+            self?.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(context.pageView.pageIndex)))
+        }
+
+        interactions.deselectAnnotation.addActivationCallback { _, _, _ in
+            self.viewModel.process(action: .selectAnnotation(nil))
+        }
     }
 
     private func setupSidebarBorder() {
@@ -649,29 +666,6 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         guard !self.isSidebarTransitioning else { return }
         // Save current page
         self.pageController.store(page: pageIndex, for: self.viewModel.state.key)
-    }
-
-    func pdfViewController(_ pdfController: PDFViewController,
-                           shouldSelect annotations: [PSPDFKit.Annotation],
-                           on pageView: PDFPageView) -> [PSPDFKit.Annotation] {
-        // Only zotero annotations can be selected, except highlight annotation
-        return annotations.filter({ $0.isZotero })
-    }
-
-    func pdfViewController(_ pdfController: PDFViewController, didSelect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
-        guard let annotation = annotations.first,
-              let key = annotation.key else { return }
-        self.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(pageView.pageIndex)))
-    }
-
-    func pdfViewController(_ pdfController: PDFViewController, didDeselect annotations: [PSPDFKit.Annotation], on pageView: PDFPageView) {
-        self.viewModel.process(action: .selectAnnotation(nil))
-    }
-
-    func pdfViewController(_ pdfController: PDFViewController, didTapOn pageView: PDFPageView, at viewPoint: CGPoint) -> Bool {
-        self.viewModel.process(action: .selectAnnotation(nil))
-        pdfController.searchHighlightViewManager.clearHighlightedSearchResults(animated: true)
-        return true
     }
 
     func pdfViewController(_ pdfController: PDFViewController,
