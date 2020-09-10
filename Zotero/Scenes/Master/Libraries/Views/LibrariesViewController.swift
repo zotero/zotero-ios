@@ -140,7 +140,7 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         switch indexPath.section {
         case LibrariesViewController.customLibrariesSection:
             let library = self.viewModel.state.customLibraries?[indexPath.row]
-            return library.flatMap({ ($0.type.libraryName, true) })
+            return library.flatMap({ ($0.type.libraryName, false) })
         case LibrariesViewController.groupLibrariesSection:
             let library = self.viewModel.state.groupLibraries?[indexPath.row]
             return library.flatMap({ ($0.name, !$0.canEditMetadata) })
