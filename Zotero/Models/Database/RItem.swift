@@ -193,6 +193,7 @@ class RItem: Object {
 
         let attachments = self.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty, trash: false))
                                        .sorted(byKeyPath: "dateAdded", ascending: true)
+                                       .filter({ $0.fields.filter(.key(ItemFieldKeys.linkMode)).first?.value == "imported_file" })
 
         guard attachments.count > 0 else {
             self.mainAttachment = nil
