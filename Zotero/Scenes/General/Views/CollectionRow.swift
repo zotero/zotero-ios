@@ -11,22 +11,24 @@ import SwiftUI
 struct CollectionRow: View {
     @Environment(\.colorScheme) var colorScheme
 
-    static let levelOffset: CGFloat = 20.0
+    static let levelOffset: CGFloat = 16.0
     let data: Collection
 
     var body: some View {
         GeometryReader { proxy in
-            HStack {
-                Image(self.data.iconName)
-                    .renderingMode(.template)
-                    .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
-                Text(self.data.name)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-
-                Spacer()
+            HStack(spacing: 10) {
+                HStack(spacing: 16) {
+                    Image(self.data.iconName)
+                        .renderingMode(.template)
+                        .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    Text(self.data.name)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                }
 
                 if self.shouldShowCount {
+                    Spacer()
+
                     Text("\(self.data.itemCount)")
                         .font(.caption)
                         .padding(.vertical, 2)
@@ -40,7 +42,7 @@ struct CollectionRow: View {
             }
             .padding(.vertical, 10)
             .padding(.leading, self.inset(for: self.data.level))
-            .padding(.trailing, 8)
+            .padding(.trailing, self.shouldShowCount ? 10 : 16)
             .frame(width: proxy.size.width, alignment: .leading)
         }
     }

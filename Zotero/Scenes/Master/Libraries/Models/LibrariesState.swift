@@ -18,5 +18,7 @@ struct LibrariesState: ViewModelState {
     var librariesToken: NotificationToken?
     var groupsToken: NotificationToken?
 
-    func cleanup() {}
+    mutating func cleanup() {
+        self.error = nil
+    }
 }

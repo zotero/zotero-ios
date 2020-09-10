@@ -13,7 +13,7 @@ struct LibraryRow: View {
     let isReadOnly: Bool
 
     var body: some View {
-        HStack(spacing: (self.isReadOnly ? 6 : 8)) {
+        HStack(spacing: (self.isReadOnly ? 14 : 16)) {
             Image(self.isReadOnly ? Asset.Images.Cells.libraryReadonly.name : Asset.Images.Cells.library.name)
                 .renderingMode(.template)
                 .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
@@ -22,6 +22,7 @@ struct LibraryRow: View {
                 .foregroundColor(.primary)
                 .lineLimit(1)
         }
+        .padding(.horizontal, 16)
     }
 }
 

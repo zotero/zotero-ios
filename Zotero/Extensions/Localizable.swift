@@ -187,6 +187,10 @@ internal enum L10n {
     internal static let groupLibraries = L10n.tr("Localizable", "libraries.group_libraries")
     /// My Library
     internal static let myLibrary = L10n.tr("Localizable", "libraries.my_library")
+    internal enum Error {
+      /// Can't load libraries
+      internal static let cantLoad = L10n.tr("Localizable", "libraries.error.cantLoad")
+    }
   }
 
   internal enum Login {

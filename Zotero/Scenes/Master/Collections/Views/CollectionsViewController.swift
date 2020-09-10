@@ -19,15 +19,13 @@ class CollectionsViewController: UIViewController {
     private static let cellId = "CollectionRow"
     private let viewModel: ViewModel<CollectionsActionHandler>
     private unowned let dragDropController: DragDropController
-    private unowned let dbStorage: DbStorage
     private let disposeBag: DisposeBag
 
     private var tableViewHandler: CollectionsTableViewHandler!
     weak var coordinatorDelegate: MasterCollectionsCoordinatorDelegate?
 
-    init(viewModel: ViewModel<CollectionsActionHandler>, dbStorage: DbStorage, dragDropController: DragDropController) {
+    init(viewModel: ViewModel<CollectionsActionHandler>, dragDropController: DragDropController) {
         self.viewModel = viewModel
-        self.dbStorage = dbStorage
         self.dragDropController = dragDropController
         self.disposeBag = DisposeBag()
 

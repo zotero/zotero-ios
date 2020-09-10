@@ -51,6 +51,7 @@
 
 "libraries.my_library" = "My Library";
 "libraries.group_libraries" = "Group Libraries";
+"libraries.error.cantLoad" = "Can't load libraries";
 
 "collections.search_title" = "Search Collections";
 "collections.all_items" = "All Items";

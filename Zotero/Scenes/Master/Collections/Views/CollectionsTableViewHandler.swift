@@ -65,6 +65,7 @@ class CollectionsTableViewHandler: NSObject {
         self.tableView.dropDelegate = self
         self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "CollectionCell", bundle: nil), forCellReuseIdentifier: CollectionsTableViewHandler.cellId)
+        self.tableView.tableFooterView = UIView()
     }
 
     private func setupDataSource() {

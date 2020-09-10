@@ -57,20 +57,15 @@ class MasterCoordinator: NSObject, Coordinator {
 
     private func createLibrariesViewController(dbStorage: DbStorage) -> UIViewController {
         let viewModel = ViewModel(initialState: LibrariesState(), handler: LibrariesActionHandler(dbStorage: dbStorage))
-        // SWIFTUI BUG: - We need to call loadData here, because when we do so in `onAppear` in SwiftuI `View` we'll crash when data change
-        // instantly in that function. If we delay it, the user will see unwanted animation of data on screen. If we call it here, data
-        // is available immediately.
-        viewModel.process(action: .loadData)
-        var view = LibrariesView()
-        view.coordinatorDelegate = self
-        return UIHostingController(rootView: view.environmentObject(viewModel))
+        let controller = LibrariesViewController(viewModel: viewModel)
+        controller.coordinatorDelegate = self
+        return controller
     }
 
     private func createCollectionsViewController(library: Library, dbStorage: DbStorage) -> CollectionsViewController {
         let handler = CollectionsActionHandler(dbStorage: dbStorage)
         let state = CollectionsState(library: library)
         let controller = CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                                   dbStorage: dbStorage,
                                                    dragDropController: self.controllers.dragDropController)
         controller.coordinatorDelegate = self
         return controller

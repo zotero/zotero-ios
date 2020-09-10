@@ -7,23 +7,26 @@
 //
 
 import UIKit
-import SwiftUI
 
 class CollectionCell: UITableViewCell {
-    private static let imageWidth: CGFloat = 36
-    private static let levelOffset: CGFloat = 20.0
+    private static let imageWidth: CGFloat = 44
+    private static let levelOffset: CGFloat = 16.0
 
     @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
     @IBOutlet private weak var iconImage: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var badgeContainer: UIView!
     @IBOutlet private weak var badgeLabel: UILabel!
+    // These 2 need to be strong because they are being activated/deactivated
+    @IBOutlet private var rightConstraint: NSLayoutConstraint!
+    @IBOutlet private var contentToBadgeConstraint: NSLayoutConstraint!
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.badgeContainer.layer.masksToBounds = true
         self.badgeContainer.backgroundColor = self.badgeBackgroundColor
+        self.rightConstraint.isActive = false
     }
 
     override func prepareForReuse() {
@@ -56,6 +59,9 @@ class CollectionCell: UITableViewCell {
         if !self.badgeContainer.isHidden {
             self.badgeLabel.text = "\(collection.itemCount)"
         }
+
+        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden
+        self.rightConstraint.isActive = self.badgeContainer.isHidden
     }
 
     private func shouldShowCount(for collection: Collection) -> Bool {
