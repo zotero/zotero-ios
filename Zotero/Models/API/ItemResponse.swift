@@ -61,35 +61,38 @@ struct ItemResponse {
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
-        if response["data"] != nil {
-            try self.init(apiResponse: response, schemaController: schemaController)
+        let rawType: String = try response.apiGet(key: "itemType")
+
+        if rawType == ItemTypes.annotation {
+            try self.init(annotationResponse: response)
+        } else if response["data"] != nil {
+            try self.init(apiResponse: response, rawType: rawType, schemaController: schemaController)
         } else {
-            try self.init(translatorResponse: response, schemaController: schemaController)
+            try self.init(translatorResponse: response, rawType: rawType, schemaController: schemaController)
         }
     }
 
-    private init(apiResponse: [String: Any], schemaController: SchemaController) throws {
-        let data: [String: Any] = try apiResponse.apiGet(key: "data")
-        let rawType: String = try data.apiGet(key: "itemType")
+    private init(apiResponse response: [String: Any], rawType: String, schemaController: SchemaController) throws {
+        let data: [String: Any] = try response.apiGet(key: "data")
 
         if !schemaController.itemTypes.contains(rawType) {
             throw Error.unknownType(rawType)
         }
 
-        let key: String = try apiResponse.apiGet(key: "key")
-        let library: [String: Any] = try apiResponse.apiGet(key: "library")
+        let key: String = try response.apiGet(key: "key")
+        let library: [String: Any] = try response.apiGet(key: "library")
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
-        let links = apiResponse["links"] as? [String: Any]
+        let links = response["links"] as? [String: Any]
         let tags = (data["tags"] as? [[String: Any]]) ?? []
         let creators = (data["creators"] as? [[String: Any]]) ?? []
-        let meta = apiResponse["meta"] as? [String: Any]
+        let meta = response["meta"] as? [String: Any]
         let createdBy = meta?["createdByUser"] as? [String: Any]
         let lastModifiedBy = meta?["lastModifiedByUser"] as? [String: Any]
 
         self.rawType = rawType
         self.key = key
-        self.version = try apiResponse.apiGet(key: "version")
+        self.version = try response.apiGet(key: "version")
         self.collectionKeys = (data["collections"] as? [String]).flatMap(Set.init) ?? []
         self.parentKey = data["parentItem"] as? String
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
@@ -107,12 +110,38 @@ struct ItemResponse {
         self.lastModifiedBy = try lastModifiedBy.flatMap { try UserResponse(response: $0) }
     }
 
-    private init(translatorResponse: [String: Any], schemaController: SchemaController) throws {
+    private init(annotationResponse response: [String: Any]) throws {
+        let key: String = try response.apiGet(key: "key")
+        let library: [String: Any] = try response.apiGet(key: "library")
+        let dateAdded = response["dateAdded"] as? String
+        let dateModified = response["dateModified"] as? String
+        let tags = (response["tags"] as? [[String: Any]]) ?? []
+
+        self.rawType = ItemTypes.annotation
+        self.key = key
+        self.version = try response.apiGet(key: "version")
+        self.collectionKeys = []
+        self.parentKey = try response.apiGet(key: "parentItem")
+        self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        self.parsedDate = nil
+        self.isTrash = (response["deleted"] as? Int) == 1
+        self.library = try LibraryResponse(response: library)
+        self.links = nil
+        self.tags = try tags.map({ try TagResponse(response: $0) })
+        self.creators = []
+        self.relations = [:]
+        self.inPublications = false
+        self.fields = try ItemResponse.parseAnnotationFields(from: response, key: key)
+        self.createdBy = nil
+        self.lastModifiedBy = nil
+    }
+
+    private init(translatorResponse response: [String: Any], rawType: String, schemaController: SchemaController) throws {
         let key = KeyGenerator.newKey
-        let rawType: String = try translatorResponse.apiGet(key: "itemType")
-        let accessDate = (translatorResponse["accessDate"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
-        let tags = (translatorResponse["tags"] as? [[String: Any]]) ?? []
-        let creators = (translatorResponse["creators"] as? [[String: Any]]) ?? []
+        let accessDate = (response["accessDate"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
+        let tags = (response["tags"] as? [[String: Any]]) ?? []
+        let creators = (response["creators"] as? [[String: Any]]) ?? []
 
         self.rawType = rawType
         self.key = key
@@ -121,7 +150,7 @@ struct ItemResponse {
         self.parentKey = nil
         self.dateAdded = accessDate
         self.dateModified = accessDate
-        self.parsedDate = translatorResponse["date"] as? String
+        self.parsedDate = response["date"] as? String
         self.isTrash = false
         // We create a dummy library here, it's not returned by translation server, it'll be picked in the share extension
         self.library = LibraryResponse(id: 0, name: "", type: "", links: nil)
@@ -131,7 +160,7 @@ struct ItemResponse {
         self.relations = [:]
         self.inPublications = false
         // Translator returns some extra fields, which may not be recognized by schema, so we just ignore those
-        self.fields = try ItemResponse.parseFields(from: translatorResponse, rawType: rawType, key: key, schemaController: schemaController,
+        self.fields = try ItemResponse.parseFields(from: response, rawType: rawType, key: key, schemaController: schemaController,
                                                    ignoreUnknownFields: true)
         self.createdBy = nil
         self.lastModifiedBy = nil
@@ -155,6 +184,10 @@ struct ItemResponse {
                             relations: self.relations,
                             createdBy: self.createdBy,
                             lastModifiedBy: self.lastModifiedBy)
+    }
+
+    private static func parseAnnotationFields(from data: [String: Any], key: String) throws -> [String: String] {
+        throw Parsing.Error.unknownField(key: key, field: "object.key")
     }
 
     /// Parses field values from item data for given type.
