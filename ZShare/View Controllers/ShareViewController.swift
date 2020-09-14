@@ -342,8 +342,10 @@ class ShareViewController: UIViewController {
     }
 
     private func setupControllers(with session: SessionData) {
+        let schemaController = SchemaController()
         let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
+                                               "Zotero-Schema-Version": schemaController.version]
         configuration.sharedContainerIdentifier = AppGroup.identifier
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         let fileStorage = FileStorageController()
@@ -358,18 +360,16 @@ class ShareViewController: UIViewController {
 
         self.dbStorage = dbStorage
         self.translatorsController = translatorsController
-        self.store = self.createStore(for: session.userId, dbStorage: dbStorage,
-                                      apiClient: apiClient, fileStorage: fileStorage,
-                                      translatorsController: translatorsController)
+        self.store = self.createStore(for: session.userId, dbStorage: dbStorage, apiClient: apiClient, schemaController: schemaController,
+                                      fileStorage: fileStorage, translatorsController: translatorsController)
     }
 
-    private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient,
+    private func createStore(for userId: Int, dbStorage: DbStorage, apiClient: ApiClient, schemaController: SchemaController,
                              fileStorage: FileStorage, translatorsController: TranslatorsController) -> ExtensionStore {
-        let schemaController = SchemaController()
         let dateParser = DateParser()
 
         let uploadProcessor = BackgroundUploadProcessor(apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: uploadProcessor, schemaVersion: schemaController.version)
         let syncController = SyncController(userId: userId,
                                             apiClient: apiClient,
                                             dbStorage: dbStorage,

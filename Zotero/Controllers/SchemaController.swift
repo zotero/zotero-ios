@@ -28,6 +28,7 @@ protocol SchemaDataSource: class {
 class SchemaController {
     private(set) var itemSchemas: [String: ItemSchema] = [:]
     private(set) var locales: [String: SchemaLocale] = [:]
+    private(set) var version: Int = 0
 
     init() {
         self.loadBundledData()
@@ -43,6 +44,7 @@ class SchemaController {
         let schema = SchemaResponse(data: json)
         self.itemSchemas = schema.itemSchemas
         self.locales = schema.locales
+        self.version = schema.version
     }
 }
 

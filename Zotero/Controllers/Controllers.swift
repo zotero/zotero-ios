@@ -34,8 +34,11 @@ class Controllers {
     private var sessionCancellable: AnyCancellable?
 
     init() {
+        let schemaController = SchemaController()
+
         let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
+                                               "Zotero-Schema-Version": schemaController.version]
         configuration.sharedContainerIdentifier = AppGroup.identifier
 
         let fileStorage = FileStorageController()
@@ -49,7 +52,6 @@ class Controllers {
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage)
         apiClient.set(authToken: sessionController.sessionData?.apiToken)
-        let schemaController = SchemaController()
         let translatorsController = TranslatorsController(apiClient: apiClient,
                                                           indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
                                                           fileStorage: fileStorage)
@@ -131,7 +133,7 @@ class UserControllers {
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
                                                                   dbStorage: dbStorage,
                                                                   fileStorage: controllers.fileStorage)
-        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor)
+        let backgroundUploader = BackgroundUploader(uploadProcessor: backgroundUploadProcessor, schemaVersion: controllers.schemaController.version)
 
         let syncController = SyncController(userId: userId,
                                             apiClient: controllers.apiClient,
