@@ -31,7 +31,7 @@ class BackgroundUploader: NSObject {
 
     var backgroundCompletionHandler: (() -> Void)?
 
-    init(uploadProcessor: BackgroundUploadProcessor) {
+    init(uploadProcessor: BackgroundUploadProcessor, schemaVersion: Int) {
         self.context = BackgroundUploaderContext()
         self.uploadProcessor = uploadProcessor
         self.finishedUploads = []
@@ -45,7 +45,8 @@ class BackgroundUploader: NSObject {
         super.init()
 
         let configuration = URLSessionConfiguration.background(withIdentifier: "org.zotero.background.upload.session")
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description]
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
+                                               "Zotero-Schema-Version": schemaVersion]
         configuration.sharedContainerIdentifier = AppGroup.identifier
         self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }
