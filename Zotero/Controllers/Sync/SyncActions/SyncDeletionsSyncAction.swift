@@ -31,7 +31,7 @@ struct SyncDeletionsSyncAction: SyncAction {
                                  let newVersion = headers.lastModifiedVersion
 
                                  if let version = self.currentVersion, version != newVersion {
-                                     return Single.error(SyncError.versionMismatch)
+                                     return Single.error(SyncError.NonFatal.versionMismatch)
                                  }
 
                                  do {

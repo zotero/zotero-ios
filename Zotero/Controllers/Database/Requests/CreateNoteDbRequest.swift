@@ -54,7 +54,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
         database.add(item)
 
         let noteField = RItemField()
-        noteField.key = ItemFieldKeys.note
+        noteField.key = FieldKeys.Item.note
         noteField.baseKey = nil
         noteField.value = self.note.text
         noteField.changed = true

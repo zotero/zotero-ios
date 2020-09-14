@@ -95,7 +95,7 @@ class ItemDetailViewController: UIViewController {
                 self.showWeb(for: url)
             }
         case .openDoi(let doi):
-            guard let encoded = ItemFieldKeys.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
+            guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
             if let url = URL(string: "https://doi.org/\(encoded)") {
                 self.showWeb(for: url)
             }

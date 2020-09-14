@@ -656,9 +656,9 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
             if let field = self.viewModel.state.data.fields[fieldId] {
                 guard field.isTappable else { return }
                 switch field.key {
-                case ItemFieldKeys.url:
+                case FieldKeys.Item.Attachment.url:
                     self.observer.on(.next(.openUrl(field.value)))
-                case ItemFieldKeys.doi:
+                case FieldKeys.Item.doi:
                     self.observer.on(.next(.openDoi(field.value)))
                 default: break
                 }

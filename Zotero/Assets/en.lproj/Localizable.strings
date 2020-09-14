@@ -33,7 +33,6 @@
 
 "day_suffixes" = "st,nd,rd,th";
 
-
 "onboarding.access" = "<b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.";
 "onboarding.sync" = "<b>Synchronize and collaborate</b> across devices, keeping your reading and notes seamlessly up to date.";
 "onboarding.annotate" = "<b>Highlight and take notes</b> directly in your PDFs as you read them.";
@@ -177,3 +176,10 @@ The following fields will be lost:
 "shareext.translation.item_selection" = "Pick an item";
 "shareext.translation.translating_with" = "Translating with: \"%@\"";
 "shareext.translation.downloading" = "Downloading";
+
+"errors.schema" = "Some data in My Library could not be downloaded. It may have been saved with a newer version of Zotero.\n\nOther data will continue to sync.";
+"errors.parsing" = "Could not parse some data. Other data will continue to sync.";
+"errors.api" = "Failed API response: %@";
+"errors.db" = "Could not connect to database. Device storage might be full.";
+"errors.versionMismatch" = "Another sync has happened during sync";
+"errors.unknown" = "Unknown error";

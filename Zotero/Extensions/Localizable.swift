@@ -92,6 +92,23 @@ internal enum L10n {
     }
   }
 
+  internal enum Errors {
+    /// Failed API response: %@
+    internal static func api(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "errors.api", String(describing: p1))
+    }
+    /// Could not connect to database. Device storage might be full.
+    internal static let db = L10n.tr("Localizable", "errors.db")
+    /// Could not parse some data. Other data will continue to sync.
+    internal static let parsing = L10n.tr("Localizable", "errors.parsing")
+    /// Some data in My Library could not be downloaded. It may have been saved with a newer version of Zotero.\n\nOther data will continue to sync.
+    internal static let schema = L10n.tr("Localizable", "errors.schema")
+    /// Unknown error
+    internal static let unknown = L10n.tr("Localizable", "errors.unknown")
+    /// Another sync has happened during sync
+    internal static let versionMismatch = L10n.tr("Localizable", "errors.versionMismatch")
+  }
+
   internal enum ItemDetail {
     /// Add attachment
     internal static let addAttachment = L10n.tr("Localizable", "item_detail.add_attachment")

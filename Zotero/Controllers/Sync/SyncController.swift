@@ -151,7 +151,7 @@ final class SyncController: SynchronizationController {
     // Version returned by last object sync, used to check for version mismatches between object syncs
     private var lastReturnedVersion: Int?
     // Array of non-fatal errors that happened during current sync
-    private var nonFatalErrors: [Error]
+    private var nonFatalErrors: [SyncError.NonFatal]
     // DisposeBag is a var so that the sync can be cancelled.
     private var disposeBag: DisposeBag
     // Number of retries for conflicts. Used to calculate conflict delay for processing next action.
@@ -256,7 +256,7 @@ final class SyncController: SynchronizationController {
             DDLogInfo("--- Sync: cancelled ---")
 
             self.cleanup()
-            self.report(fatalError: SyncError.cancelled)
+            self.report(fatalError: .cancelled)
         }
     }
 
@@ -279,7 +279,7 @@ final class SyncController: SynchronizationController {
 
     /// Aborts ongoing sync with given error.
     /// - parameter error: Error which will be reported as a reason for this abort.
-    private func abort(error: Error) {
+    private func abort(error: SyncError.Fatal) {
         DDLogInfo("--- Sync: aborted ---")
         DDLogInfo("Error: \(error)")
 
@@ -308,26 +308,34 @@ final class SyncController: SynchronizationController {
 
     /// Reports fatal error. Fatal error stops the sync and aborts it. Enqueues a new sync if needed.
     /// - parameter fatalError: Error to be reported.
-    private func report(fatalError: Error) {
+    private func report(fatalError: SyncError.Fatal) {
         self.progressHandler.reportAbort(with: fatalError)
         self.previousType = nil
 
-        if let syncError = fatalError as? SyncError, syncError == .uploadObjectConflict {
-            // In case of this fatal error we retry the sync with special type. This error was most likely caused
-            // by a bug (library version passed validation while object version didn't), so we try to fix it.
-            self.observable.on(.next((.all, .all)))
-        } else {
+        switch fatalError {
+        case .uploadObjectConflict:
+            if self.type != .all || self.libraryType != .all {
+                // In case of this fatal error we retry the sync with special type. This error was most likely caused
+                // by a bug (library version passed validation while object version didn't), so we try to fix it.
+                self.observable.on(.next((.all, .all)))
+            } else {
+                // If this sync already was full sync, we can't do anything else.
+                self.observable.on(.next(nil))
+            }
+        default:
             // Other aborted syncs are not retried, they are fatal, so retry won't help
             self.observable.on(.next(nil))
         }
     }
 
     /// Reports non-fatal errors. These happened during sync, but didn't need to stop it. Enqueues a new sync if needed.
-    private func reportFinish(nonFatalErrors errors: [Error]) {
+    private func reportFinish(nonFatalErrors errors: [SyncError.NonFatal]) {
         self.progressHandler.reportFinish(with: errors)
 
-        if errors.isEmpty || self.type == .all {
-            // We either have no errors and can finish or we already did full sync now and another one will probably not fix anything
+        if errors.isEmpty || self.hasOnlySchemaErrors(in: errors) || self.type == .all {
+            // We either have no errors and can finish or
+            // there were only schema-related errors which won't be fixed by another sync or
+            // we already did full sync now and another one will not fix anything
             self.previousType = nil
             self.observable.on(.next(nil))
             return
@@ -343,6 +351,16 @@ final class SyncController: SynchronizationController {
             // There was already a retry sync previously, so we try to run a full sync which might fix things
             self.observable.on(.next((.all, self.libraryType)))
         }
+    }
+
+    private func hasOnlySchemaErrors(in errors: [SyncError.NonFatal]) -> Bool {
+        for error in errors {
+            switch error {
+            case .schema: continue
+            default: return false
+            }
+        }
+        return true
     }
 
     // MARK: - Queue management
@@ -554,7 +572,7 @@ final class SyncController: SynchronizationController {
                                                       groups: response.groups)
 
                   if let group = permissions.groupDefault, (!group.library || !group.write) {
-                      return Single.error(SyncError.missingGroupPermissions)
+                      return Single.error(SyncError.Fatal.missingGroupPermissions)
                   }
                   return Single.just((permissions, response.username))
               }
@@ -566,7 +584,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.abort(error: ((error as? SyncError) ?? SyncError.permissionLoadingFailed))
+                    self?.abort(error: ((error as? SyncError.Fatal) ?? .permissionLoadingFailed))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -587,7 +605,7 @@ final class SyncController: SynchronizationController {
         switch result {
         case .failure(let error):
             self.accessQueue.async(flags: .barrier) { [weak self] in
-                self?.abort(error: SyncError.allLibrariesFetchFailed(error))
+                self?.abort(error: .allLibrariesFetchFailed(error))
             }
 
         case .success((let data, let options)):
@@ -753,10 +771,11 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishFailedSyncGroupVersions(error: Error) {
-        if let abortError = self.errorRequiresAbort(error) {
-            self.abort(error: abortError)
-        } else {
-            self.abort(error: SyncError.groupSyncFailed(error))
+        switch self.syncError(from: error) {
+        case .fatal(let error):
+            self.abort(error: error)
+        case .nonFatal:
+            self.abort(error: .groupSyncFailed(error))
         }
     }
 
@@ -816,10 +835,19 @@ final class SyncController: SynchronizationController {
 
     private func finishFailedSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, error: Error) {
         if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
-        if self.handleVersionMismatchIfNeeded(for: error, libraryId: libraryId) { return }
 
-        self.nonFatalErrors.append(error)
-        self.processNextAction()
+        switch self.syncError(from: error) {
+        case .fatal(let error):
+            self.abort(error: error)
+        case .nonFatal(let error):
+            switch error {
+            case .versionMismatch:
+                self.handleVersionMismatch(for: libraryId)
+            default:
+                self.nonFatalErrors.append(error)
+                self.processNextAction()
+            }
+        }
     }
 
     private func processBatchesSync(for batches: [DownloadBatch]) {
@@ -852,7 +880,7 @@ final class SyncController: SynchronizationController {
     private func finishBatchesSyncAction(for libraryId: LibraryIdentifier, object: SyncObject, result: Swift.Result<SyncBatchResponse, Error>) {
         switch result {
         case .success((let failedKeys, let parseErrors, _))://let itemConflicts)):
-            self.nonFatalErrors.append(contentsOf: parseErrors)
+            self.nonFatalErrors.append(contentsOf: parseErrors.map({ self.nonFatalError(from: $0) }))
 
             // Decoding of other objects is performed in batches, out of the whole batch only some objects may fail,
             // so these failures are reported as success (because some succeeded) and failed ones are marked for resync
@@ -882,15 +910,17 @@ final class SyncController: SynchronizationController {
 
         case .failure(let error):
             DDLogError("--- BATCH: \(error)")
-            if let abortError = self.errorRequiresAbort(error) {
-                self.abort(error: abortError)
-                return
+
+            switch self.syncError(from: error) {
+            case .fatal(let error):
+                self.abort(error: error)
+            case .nonFatal(let error):
+                // We failed with non-fatal error. When all batches fail to sync, it's most likely a fatal error. Just to be sure, let's skip
+                // this library and continue with sync.
+                self.removeAllActions(for: libraryId)
+                self.nonFatalErrors.append(error)
+                self.processNextAction()
             }
-            // We failed with non-fatal error. When all batches fail to sync, it's most likely a fatal error. Just to be sure, let's skip this library
-            // and continue with sync.
-            self.removeAllActions(for: libraryId)
-            self.nonFatalErrors.append(error)
-            self.processNextAction()
         }
     }
 
@@ -918,18 +948,18 @@ final class SyncController: SynchronizationController {
 
         DDLogError("--- GROUP SYNC: \(error)")
 
-        if let abortError = self.errorRequiresAbort(error) {
+        switch self.syncError(from: error) {
+        case .fatal(let error):
             self.accessQueue.async(flags: .barrier) { [weak self] in
-                self?.abort(error: abortError)
+                self?.abort(error: error)
             }
-            return
+        case .nonFatal(let error):
+            self.accessQueue.async(flags: .barrier) { [weak self] in
+                self?.nonFatalErrors.append(error)
+                self?.progressHandler.reportGroupSynced()
+            }
+            self.markGroupForResync(identifier: identifier)
         }
-
-        self.accessQueue.async(flags: .barrier) { [weak self] in
-            self?.progressHandler.reportGroupSynced()
-        }
-        
-        self.markGroupForResync(identifier: identifier)
     }
 
     private func processStoreVersion(libraryId: LibraryIdentifier, type: UpdateVersionType, version: Int) {
@@ -1007,15 +1037,15 @@ final class SyncController: SynchronizationController {
             self.processNextAction()
 
         case .failure(let error):
-            if let abortError = self.errorRequiresAbort(error) {
-                self.abort(error: abortError)
-                return
-            }
-
             if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
 
-            self.nonFatalErrors.append(error)
-            self.processNextAction()
+            switch self.syncError(from: error) {
+            case .fatal(let error):
+                self.abort(error: error)
+            case .nonFatal(let error):
+                self.nonFatalErrors.append(error)
+                self.processNextAction()
+            }
         }
     }
 
@@ -1047,15 +1077,15 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            if let abortError = self.errorRequiresAbort(error) {
-                self.abort(error: abortError)
-                return
-            }
-
             if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
 
-            self.nonFatalErrors.append(error)
-            self.processNextAction()
+            switch self.syncError(from: error) {
+            case .fatal(let error):
+                self.abort(error: error)
+            case .nonFatal(let error):
+                self.nonFatalErrors.append(error)
+                self.processNextAction()
+            }
         }
     }
 
@@ -1132,12 +1162,13 @@ final class SyncController: SynchronizationController {
                 return
             }
 
-            if let error = self.errorRequiresAbort(error) {
+            switch self.syncError(from: error) {
+            case .fatal(let error):
                 self.abort(error: error)
                 return
+            case .nonFatal(let error):
+                self.nonFatalErrors.append(error)
             }
-
-            self.nonFatalErrors.append(error)
         }
 
         if let version = newVersion {
@@ -1210,14 +1241,16 @@ final class SyncController: SynchronizationController {
     }
 
     private func finishCompletableAction(error: Error?) {
-        if let error = error.flatMap({ self.errorRequiresAbort($0) }) {
-            self.abort(error: error)
-            return
+        if let error = error {
+            switch self.syncError(from: error) {
+            case .fatal(let error):
+                self.abort(error: error)
+                return
+            case .nonFatal(let error):
+                self.nonFatalErrors.append(error)
+            }
         }
 
-        if let error = error {
-            self.nonFatalErrors.append(error)
-        }
         self.processNextAction()
     }
 
@@ -1240,68 +1273,82 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    /// Checks whether given error is fatal and requires abort.
+    private func nonFatalError(from error: Error) -> SyncError.NonFatal {
+        if let error = error as? SyncError.NonFatal {
+            return error
+        }
+        if let error = error as? SchemaError {
+            return .schema(error)
+        }
+        if let error = error as? Parsing.Error {
+            return .parsing(error)
+        }
+        return .unknown
+    }
+
+    /// Checks whether given error is fatal or nonfatal.
     /// - parameter error: Error to check.
-    /// - returns: `SyncError` with appropriate error, if abort is required, `nil` otherwise.
-    private func errorRequiresAbort(_ error: Error) -> Error? {
+    /// - returns: Appropriate `SyncError`.
+    private func syncError(from error: Error) -> SyncError {
+        if let error = error as? SyncError.Fatal {
+            return .fatal(error)
+        } else if let error = error as? SyncError.NonFatal {
+            return .nonFatal(error)
+        }
+
         let nsError = error as NSError
 
         // Check connection
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorNotConnectedToInternet {
-            return SyncError.noInternetConnection
+            return .fatal(.noInternetConnection)
         }
 
         // Check other networking errors
         if let responseError = error as? AFResponseError {
-            return self.alamoErrorRequiresAbort(responseError.error)
+            return self.alamoErrorRequiresAbort(responseError.error, response: responseError.response)
         }
         if let alamoError = error as? AFError {
-            return self.alamoErrorRequiresAbort(alamoError)
+            return self.alamoErrorRequiresAbort(alamoError, response: "No response")
         }
 
         // Check realm errors, every "core" error is bad. Can't create new Realm instance, can't continue with sync
         if error is Realm.Error {
-            return SyncError.dbError
+            return .fatal(.dbError)
         }
 
-        return nil
+        return .nonFatal(self.nonFatalError(from: error))
     }
 
     /// Checks whether given `AFError` is fatal and requires abort.
     /// - error: `AFError` to check.
     /// - returns: `SyncError` with appropriate error, if abort is required, `nil` otherwise.
-    private func alamoErrorRequiresAbort(_ error: AFError) -> SyncError? {
+    private func alamoErrorRequiresAbort(_ error: AFError, response: String) -> SyncError {
         switch error {
         case .responseValidationFailed(let reason):
             switch reason {
             case .unacceptableStatusCode(let code):
-                return (code >= 400 && code <= 499 && code != 403) ? SyncError.apiError : nil
+                return (code >= 400 && code <= 499 && code != 403) ? .fatal(.apiError(response)) : .nonFatal(.apiError(response))
             case .dataFileNil, .dataFileReadFailed, .missingContentType, .unacceptableContentType, .customValidationFailed:
-                return SyncError.apiError
+                return .fatal(.apiError(response))
             }
         case .multipartEncodingFailed, .parameterEncodingFailed, .parameterEncoderFailed, .invalidURL, .createURLRequestFailed,
              .requestAdaptationFailed, .requestRetryFailed, .serverTrustEvaluationFailed, .sessionDeinitialized, .sessionInvalidated,
              .urlRequestValidationFailed, .sessionTaskFailed:
-            return SyncError.apiError
+            return .fatal(.apiError(response))
         case .responseSerializationFailed, .createUploadableFailed, .downloadedFileMoveFailed, .explicitlyCancelled:
-            return nil
+            return .nonFatal(.apiError(response))
         }
     }
 
-    /// Handles version mismatch error, if required. Version mismatch is handled by removing actions for current library, so that we don't get conflicts.
-    /// - parameter error: Error to check.
+    /// Handles version mismatch error. Version mismatch is handled by removing actions for current library, so that we don't get conflicts.
     /// - parameter libraryId: Identifier of current library, which is being synced.
     /// - returns: `true` if there was a mismatch error, `false` otherwise.
-    private func handleVersionMismatchIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
-        guard error.isMismatchError else { return false }
-
-        // If the backend received higher version in response than from previous responses,
-        // there was a change on backend and we'll probably have conflicts, abort this library
-        // and continue with sync
-        self.nonFatalErrors.append(error)
+    private func handleVersionMismatch(for libraryId: LibraryIdentifier) {
+        // If the backend received higher version in response than from previous responses, there was a change on backend and we'll probably
+        // have conflicts. Abort this library and continue with sync.
+        self.nonFatalErrors.append(.versionMismatch)
         self.removeAllActions(for: libraryId)
         self.processNextAction()
-        return true
     }
 
     /// Handles precondition error, if required. Precondition error is handled by removing all actions for current library. Then downloading all
@@ -1318,7 +1365,7 @@ final class SyncController: SynchronizationController {
 
         switch preconditionError {
         case .objectConflict:
-            self.abort(error: SyncError.uploadObjectConflict)
+            self.abort(error: .uploadObjectConflict)
 
         case .libraryConflict:
             let delay = self.conflictDelays[min(self.conflictRetries, (self.conflictDelays.count - 1))]

@@ -39,7 +39,12 @@ class SyncToolbarController {
         }
 
         if case .aborted(let error) = progress {
-            self.pendingErrors = [error]
+            switch error {
+            case .cancelled:
+                controller.setToolbarHidden(true, animated: true)
+            default:
+                self.pendingErrors = [error]
+            }
         } else if case .finished(let errors) = progress {
             if errors.isEmpty {
                 self.hideToolbarWithDelay(in: controller)
@@ -59,7 +64,41 @@ class SyncToolbarController {
     }
 
     private func alertMessage(from errors: [Error]) -> String {
-        return "Unknown error"
+        var message = ""
+
+        for (idx, error) in errors.enumerated() {
+            if let error = error as? SyncError.Fatal {
+                switch error {
+                case .cancelled, .uploadObjectConflict: return "" // should not happen
+                case .apiError(let response):
+                    message += L10n.Errors.api(response)
+                case .dbError:
+                    message += L10n.Errors.db
+                // TODO: - add error messages for known fatal errors
+                default:
+                    message += L10n.Errors.unknown
+                }
+            } else if let error = error as? SyncError.NonFatal {
+                switch error {
+                case .schema:
+                    message += L10n.Errors.schema
+                case .parsing:
+                    message += L10n.Errors.parsing
+                case .apiError(let response):
+                    message += L10n.Errors.api(response)
+                case .versionMismatch:
+                    message += L10n.Errors.versionMismatch
+                case .unknown:
+                    message += L10n.Errors.unknown
+                }
+            }
+
+            if idx != errors.count - 1 {
+                message += "\n\n"
+            }
+        }
+
+        return message
     }
 
     private func hideToolbarWithDelay(in controller: UINavigationController) {

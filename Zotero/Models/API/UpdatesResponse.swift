@@ -8,11 +8,6 @@
 
 import Foundation
 
-enum UpdatesResponseError: Error {
-    case notDictionary
-    case missingKey(String)
-}
-
 struct UpdatesResponse {
     let successful: [String]
     let successfulJsonObjects: [Any]
@@ -22,7 +17,7 @@ struct UpdatesResponse {
 
     init(json: Any, newVersion: Int) throws {
         guard let dictionary = json as? [String: Any] else {
-            throw ZoteroApiError.jsonDecoding(UpdatesResponseError.notDictionary)
+            throw Parsing.Error.notDictionary
         }
 
         let successful = (dictionary["success"] as? [String: Any]) ?? [:]

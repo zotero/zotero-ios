@@ -58,8 +58,8 @@ extension SchemaController: SchemaDataSource {
     }
 
     func titleKey(for type: String) -> String? {
-        return self.fields(for: type)?.first(where: { $0.field == ItemFieldKeys.title ||
-                                                      $0.baseField == ItemFieldKeys.title })?.field
+        return self.fields(for: type)?.first(where: { $0.field == FieldKeys.Item.title ||
+                                                      $0.baseField == FieldKeys.Item.title })?.field
     }
 
     func baseKey(for type: String, field: String) -> String? {

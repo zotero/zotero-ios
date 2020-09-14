@@ -91,7 +91,7 @@ class SyncBatchProcessor {
         guard !self.isFinished else { return }
 
         if batch.version != headers.lastModifiedVersion {
-            self.cancel(with: SyncError.versionMismatch)
+            self.cancel(with: SyncError.NonFatal.versionMismatch)
             return
         }
 
@@ -190,7 +190,7 @@ class SyncBatchProcessor {
                            // and ignored.
                            .filter({ key in
                                return !errors.contains(where: { error in
-                                   if let error = error as? Parsing.Error,
+                                   if let error = error as? SchemaError,
                                       case .unknownField(let errorKey, _) = error,
                                       key == errorKey {
                                        return true

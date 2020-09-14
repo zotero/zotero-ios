@@ -80,11 +80,11 @@ struct EditItemDetailDbRequest: DbRequest {
             let toRemove = item.fields.filter(.key(notIn: fieldKeys))
 
             toRemove.forEach { field in
-                if field.key == ItemFieldKeys.date {
+                if field.key == FieldKeys.Item.date {
                     item.setDateFieldMetadata(nil, parser: self.dateParser)
-                } else if field.key == ItemFieldKeys.publisher || field.baseKey == ItemFieldKeys.publisher {
+                } else if field.key == FieldKeys.Item.publisher || field.baseKey == FieldKeys.Item.publisher {
                     item.set(publisher: nil)
-                } else if field.key == ItemFieldKeys.publicationTitle || field.baseKey == ItemFieldKeys.publicationTitle {
+                } else if field.key == FieldKeys.Item.publicationTitle || field.baseKey == FieldKeys.Item.publicationTitle {
                     item.set(publicationTitle: nil)
                 }
             }
@@ -118,11 +118,11 @@ struct EditItemDetailDbRequest: DbRequest {
 
                 if field.isTitle {
                     item.baseTitle = field.value
-                } else if field.key == ItemFieldKeys.date {
+                } else if field.key == FieldKeys.Item.date {
                     item.setDateFieldMetadata(field.value, parser: self.dateParser)
-                } else if field.key == ItemFieldKeys.publisher || field.baseField == ItemFieldKeys.publisher {
+                } else if field.key == FieldKeys.Item.publisher || field.baseField == FieldKeys.Item.publisher {
                     item.set(publisher: field.value)
-                } else if field.key == ItemFieldKeys.publicationTitle || field.baseField == ItemFieldKeys.publicationTitle {
+                } else if field.key == FieldKeys.Item.publicationTitle || field.baseField == FieldKeys.Item.publicationTitle {
                     item.set(publicationTitle: field.value)
                 }
 
@@ -148,7 +148,7 @@ struct EditItemDetailDbRequest: DbRequest {
             guard note.text != snapshot.notes.first(where: { $0.key == note.key })?.text else { continue }
 
             if let childItem = item.children.filter(.key(note.key)).first,
-               let noteField = childItem.fields.filter(.key(ItemFieldKeys.note)).first {
+               let noteField = childItem.fields.filter(.key(FieldKeys.Item.note)).first {
                 guard noteField.value != note.text else { continue }
                 childItem.set(title: note.title)
                 childItem.changedFields.insert(.fields)
@@ -187,7 +187,7 @@ struct EditItemDetailDbRequest: DbRequest {
             guard attachment.title != snapshot.attachments.first(where: { $0.key == attachment.key })?.title else { continue }
 
             if let childItem = item.children.filter(.key(attachment.key)).first,
-               let titleField = childItem.fields.filter(.key(ItemFieldKeys.title)).first {
+               let titleField = childItem.fields.filter(.key(FieldKeys.Item.title)).first {
                 guard titleField.value != attachment.title else { continue }
                 childItem.set(title: attachment.title)
                 childItem.changedFields.insert(.fields)

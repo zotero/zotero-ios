@@ -167,9 +167,10 @@ extension Reactive where Base: DataRequest {
                             observer.on(.next((httpResponse, result)))
                             observer.on(.completed)
                         } else {
+                            let responseString = response.data.flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
                             let error = AFResponseError(error: AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength),
                                                         headers: response.response?.allHeaderFields,
-                                                        response: "")
+                                                        response: responseString)
                             observer.on(.error(error))
                         }
                     case .failure(let error):

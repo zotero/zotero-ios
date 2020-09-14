@@ -48,7 +48,7 @@ class SyncControllerSpec: QuickSpec {
         // Create background uploader with storage
         let backgroundUploader = BackgroundUploader(uploadProcessor: BackgroundUploadProcessor(apiClient: apiClient,
                                                                                                dbStorage: dbStorage,
-                                                                                               fileStorage: fileStorage))
+                                                                                               fileStorage: fileStorage), schemaVersion: 3)
 
         // Store config so that realms can be created from other threads as well (used when checking db state after sync finished)
         SyncControllerSpec.realmConfig = config

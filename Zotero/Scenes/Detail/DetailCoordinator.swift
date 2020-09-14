@@ -287,7 +287,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                                                             dateParser: self.controllers.dateParser,
                                                             fileStorage: self.controllers.fileStorage,
                                                             urlDetector: self.controllers.urlDetector,
-                                                            doiDetector: ItemFieldKeys.isDoi)
+                                                            doiDetector: FieldKeys.Item.isDoi)
             let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId, data: data)
             let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                                   fileStorage: self.controllers.fileStorage,

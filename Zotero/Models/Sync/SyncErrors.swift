@@ -10,17 +10,29 @@ import Foundation
 
 import Alamofire
 
-enum SyncError: Error {
-    case cancelled
-    case noInternetConnection
-    case apiError
-    case dbError
-    case versionMismatch
-    case groupSyncFailed(Error)
-    case allLibrariesFetchFailed(Error)
-    case uploadObjectConflict
-    case permissionLoadingFailed
-    case missingGroupPermissions
+enum SyncError {
+    case fatal(Fatal)
+    case nonFatal(NonFatal)
+
+    enum Fatal: Error {
+        case noInternetConnection
+        case apiError(String)
+        case dbError
+        case groupSyncFailed(Error)
+        case allLibrariesFetchFailed(Error)
+        case uploadObjectConflict
+        case permissionLoadingFailed
+        case missingGroupPermissions
+        case cancelled
+    }
+
+    enum NonFatal: Error {
+        case versionMismatch
+        case apiError(String)
+        case unknown
+        case schema(SchemaError)
+        case parsing(Parsing.Error)
+    }
 }
 
 /// Errors for sync actions
@@ -38,12 +50,8 @@ enum PreconditionErrorType: Error {
 }
 
 extension Error {
-    var isMismatchError: Bool {
-        return (self as? SyncError) == .versionMismatch
-    }
-
     var preconditionError: PreconditionErrorType? {
-        if let error = self as? PreconditionErrorType, error == .objectConflict {
+        if let error = self as? PreconditionErrorType {
             return error
         }
         if self.afError.flatMap({ $0.responseCode == 412 }) == true {
@@ -63,16 +71,26 @@ extension Error {
     }
 }
 
-extension SyncError: Equatable {
-    static func ==(lhs: SyncError, rhs: SyncError) -> Bool {
+extension SyncError.Fatal: Equatable {
+    static func ==(lhs: SyncError.Fatal, rhs: SyncError.Fatal) -> Bool {
         switch (lhs, rhs) {
         case (.noInternetConnection, .noInternetConnection),
              (.apiError, .apiError),
              (.dbError, .dbError),
-             (.versionMismatch, .versionMismatch),
              (.groupSyncFailed, .groupSyncFailed),
              (.allLibrariesFetchFailed, .allLibrariesFetchFailed),
              (.cancelled, .cancelled):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+extension SyncError.NonFatal: Equatable {
+    static func ==(lhs: SyncError.NonFatal, rhs: SyncError.NonFatal) -> Bool {
+        switch (lhs, rhs) {
+        case (.versionMismatch, .versionMismatch):
             return true
         default:
             return false

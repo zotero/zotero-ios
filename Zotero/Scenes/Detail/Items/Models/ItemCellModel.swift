@@ -67,7 +67,7 @@ struct ItemCellModel {
         case "artwork":
             return Asset.Images.ItemTypes.artwork.name
         case "attachment":
-            let contentType = item.fields.filter(.key(ItemFieldKeys.contentType)).first?.value ?? ""
+            let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value ?? ""
             if contentType.contains("pdf") {
                 return Asset.Images.ItemTypes.pdf.name
             }

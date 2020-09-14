@@ -8,10 +8,6 @@
 
 import Foundation
 
-enum KeyResponseError: Error {
-    case accessDataMissing
-}
-
 struct KeyResponse {
     let username: String
     let user: AccessPermissions.Permissions
@@ -19,8 +15,9 @@ struct KeyResponse {
     let groups: [Int: AccessPermissions.Permissions]
 
     init(response: Any) throws {
-        guard let data = response as? [String: Any],
-              let accessData = data["access"] as? [String: Any] else { throw KeyResponseError.accessDataMissing }
+        guard let data = response as? [String: Any] else { throw Parsing.Error.notDictionary }
+
+        let accessData: [String: Any] = try data.apiGet(key: "access")
 
         self.username = (data["username"] as? String) ?? ""
 

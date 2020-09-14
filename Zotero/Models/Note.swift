@@ -31,6 +31,6 @@ struct Note: Identifiable, Equatable {
 
         self.key = item.key
         self.title = item.displayTitle
-        self.text = item.fields.filter(.key(ItemFieldKeys.note)).first?.value ?? ""
+        self.text = item.fields.filter(.key(FieldKeys.Item.note)).first?.value ?? ""
     }
 }

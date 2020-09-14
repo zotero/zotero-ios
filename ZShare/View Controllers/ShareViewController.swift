@@ -229,6 +229,8 @@ class ShareViewController: UIViewController {
                 self.showError(message: "Translator couldn't find any items")
             case .parseError:
                 self.showError(message: "Translator response couldn't be parsed")
+            case .schemaError:
+                self.showError(message: "Some data could not be downloaded. It may have been saved with a newer version of Zotero.")
             case .webViewError(let error):
                 switch error {
                 case .incompatibleItem:

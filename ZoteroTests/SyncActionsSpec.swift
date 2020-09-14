@@ -129,7 +129,7 @@ class SyncActionsSpec: QuickSpec {
                 let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                 expect(item?.rawType).to(equal("magazineArticle"))
                 expect(item?.baseTitle).to(equal("New title"))
-                expect(item?.fields.filter("key =  %@", ItemFieldKeys.abstract).first?.value).to(equal("New abstract"))
+                expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("New abstract"))
                 expect(item?.isChanged).to(beTrue())
 
                 let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
@@ -153,7 +153,7 @@ class SyncActionsSpec: QuickSpec {
                                              let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("thesis"))
                                              expect(item?.baseTitle).to(equal("Bachelor thesis"))
-                                             expect(item?.fields.filter("key =  %@", ItemFieldKeys.abstract).first?.value).to(equal("Some note"))
+                                             expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("Some note"))
                                              expect(item?.rawChangedFields).to(equal(0))
 
                                              doneAction()
@@ -258,7 +258,7 @@ class SyncActionsSpec: QuickSpec {
                 let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                 expect(item?.rawType).to(equal("magazineArticle"))
                 expect(item?.baseTitle).to(equal("New title"))
-                expect(item?.fields.filter("key =  %@", ItemFieldKeys.abstract).first?.value).to(equal("New abstract"))
+                expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("New abstract"))
                 expect(item?.rawChangedFields).toNot(equal(0))
                 expect(item?.isChanged).to(beTrue())
 
@@ -276,7 +276,7 @@ class SyncActionsSpec: QuickSpec {
                                              let item = realm.objects(RItem.self).filter(.key("AAAAAAAA")).first
                                              expect(item?.rawType).to(equal("magazineArticle"))
                                              expect(item?.baseTitle).to(equal("New title"))
-                                             expect(item?.fields.filter("key =  %@", ItemFieldKeys.abstract).first?.value).to(equal("New abstract"))
+                                             expect(item?.fields.filter("key =  %@", FieldKeys.Item.abstract).first?.value).to(equal("New abstract"))
                                              expect(item?.rawChangedFields).to(equal(0))
 
                                              doneAction()
@@ -442,13 +442,13 @@ class SyncActionsSpec: QuickSpec {
                     realm.add(item)
 
                     let contentField = RItemField()
-                    contentField.key = ItemFieldKeys.contentType
+                    contentField.key = FieldKeys.Item.Attachment.contentType
                     contentField.value = "text/plain"
                     contentField.item = item
                     realm.add(contentField)
 
                     let filenameField = RItemField()
-                    filenameField.key = ItemFieldKeys.filename
+                    filenameField.key = FieldKeys.Item.Attachment.filename
                     filenameField.value = filename
                     filenameField.item = item
                     realm.add(filenameField)
@@ -518,13 +518,13 @@ class SyncActionsSpec: QuickSpec {
                     realm.add(item)
 
                     let contentField = RItemField()
-                    contentField.key = ItemFieldKeys.contentType
+                    contentField.key = FieldKeys.Item.Attachment.contentType
                     contentField.value = "text/plain"
                     contentField.item = item
                     realm.add(contentField)
 
                     let filenameField = RItemField()
-                    filenameField.key = ItemFieldKeys.filename
+                    filenameField.key = FieldKeys.Item.Attachment.filename
                     filenameField.value = filename
                     filenameField.item = item
                     realm.add(filenameField)

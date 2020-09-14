@@ -8,17 +8,13 @@
 
 import Foundation
 
-enum AuthorizeUploadResponseError: Error {
-    case notDictionary, missingKeys
-}
-
 enum AuthorizeUploadResponse {
     case exists
     case new(AuthorizeNewUploadResponse)
 
     init(from jsonObject: Any) throws {
         guard let data = jsonObject as? [String: Any] else {
-            throw AuthorizeUploadResponseError.notDictionary
+            throw Parsing.Error.notDictionary
         }
 
         if data["exists"] != nil {
@@ -35,15 +31,14 @@ struct AuthorizeNewUploadResponse {
     let params: [String: String]
 
     init(from jsonObject: [String: Any]) throws {
-        guard let urlString = jsonObject["url"] as? String,
-              let url = URL(string: urlString.replacingOccurrences(of: "\\", with: "")),
-              let uploadKey = jsonObject["uploadKey"] as? String,
-              let params = jsonObject["params"] as? [String: String] else {
-            throw AuthorizeUploadResponseError.missingKeys
+        let urlString: String = try jsonObject.apiGet(key: "url")
+
+        guard let url = URL(string: urlString.replacingOccurrences(of: "\\", with: "")) else {
+            throw Parsing.Error.missingKey("url")
         }
 
         self.url = url
-        self.uploadKey = uploadKey
-        self.params = params
+        self.uploadKey = try jsonObject.apiGet(key: "uploadKey")
+        self.params = try jsonObject.apiGet(key: "params")
     }
 }

@@ -20,7 +20,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
-        let attachmentKeys = ItemFieldKeys.attachmentFieldKeys
+        let attachmentKeys = FieldKeys.Item.Attachment.fieldKeys
 
         // Basic info
 
@@ -60,17 +60,17 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
             switch self.attachment.contentType {
             case .file(let file, let filename, _):
                 switch fieldKey {
-                case ItemFieldKeys.title:
+                case FieldKeys.Item.title:
                     field.value = self.attachment.title
-                case ItemFieldKeys.filename:
+                case FieldKeys.Item.Attachment.filename:
                     field.value = filename
-                case ItemFieldKeys.contentType:
+                case FieldKeys.Item.Attachment.contentType:
                     field.value = file.mimeType
-                case ItemFieldKeys.linkMode:
+                case FieldKeys.Item.Attachment.linkMode:
                     field.value = "imported_file"
-                case ItemFieldKeys.md5:
+                case FieldKeys.Item.Attachment.md5:
                     field.value = md5(from: file.createUrl()) ?? ""
-                case ItemFieldKeys.mtime:
+                case FieldKeys.Item.Attachment.mtime:
                     let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
                     field.value = "\(modificationTime)"
                 default:
@@ -79,9 +79,9 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
             case .url(let url):
                 switch fieldKey {
-                case ItemFieldKeys.url:
+                case FieldKeys.Item.Attachment.url:
                     field.value = url.absoluteString
-                case ItemFieldKeys.linkMode:
+                case FieldKeys.Item.Attachment.linkMode:
                     field.value = "linked_url"
                 default:
                     continue

@@ -65,7 +65,8 @@ class ExtensionStore {
                 case cantLoadSchema, cantLoadWebData, downloadFailed, itemsNotFound, expired, unknown,
                      fileMissing, missingBackgroundUploader
                 case webViewError(WebViewHandler.Error)
-                case parseError(ItemResponse.Error)
+                case parseError(Parsing.Error)
+                case schemaError(SchemaError)
 
                 var isFatal: Bool {
                     switch self {
@@ -424,8 +425,10 @@ class ExtensionStore {
                 state.attachmentState = .processed
                 self.state = state
             }
-        } catch let error as ItemResponse.Error {
+        } catch let error as Parsing.Error {
             self.state.attachmentState = .failed(.parseError(error))
+        } catch let error as SchemaError {
+            self.state.attachmentState = .failed(.schemaError(error))
         } catch let error as State.AttachmentState.Error {
             self.state.attachmentState = .failed(error)
         } catch {
@@ -455,7 +458,7 @@ class ExtensionStore {
             throw State.AttachmentState.Error.itemsNotFound
         }
 
-        let item = try ItemResponse(response: itemData, schemaController: self.schemaController)
+        let item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController)
         let attachment = (itemData["attachments"] as? [[String: String]])?.first(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
 
         return (item, attachment)
@@ -521,9 +524,9 @@ class ExtensionStore {
             }
         } else if let url = self.state.url {
             let date = Date()
-            let fields: [String: String] = [ItemFieldKeys.url: url,
-                                            ItemFieldKeys.title: (self.state.title ?? "Unknown"),
-                                            ItemFieldKeys.accessDate: Formatter.iso8601.string(from: date)]
+            let fields: [String: String] = [FieldKeys.Item.Attachment.url: url,
+                                            FieldKeys.Item.title: (self.state.title ?? "Unknown"),
+                                            FieldKeys.Item.accessDate: Formatter.iso8601.string(from: date)]
 
             let webItem = ItemResponse(rawType: ItemTypes.webpage, key: KeyGenerator.newKey, library: LibraryResponse(libraryId: libraryId),
                                        parentKey: nil, collectionKeys: collectionKeys, links: nil, parsedDate: nil, isTrash: false, version: 0,
@@ -760,8 +763,8 @@ class ExtensionStore {
             do {
                 let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
 
-                let mtime = attachment.fields.filter(.key(ItemFieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-                let md5 = attachment.fields.filter(.key(ItemFieldKeys.md5)).first?.value ?? ""
+                let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+                let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
 
                 var parameters: [[String: Any]] = []
                 if let updateParameters = item.updateParameters {
@@ -791,8 +794,8 @@ class ExtensionStore {
 
             do {
                 let attachment = try self.dbStorage.createCoordinator().perform(request: request)
-                let mtime = attachment.fields.filter(.key(ItemFieldKeys.mtime)).first.flatMap({ Int($0.value) }) ?? 0
-                let md5 = attachment.fields.filter(.key(ItemFieldKeys.md5)).first?.value ?? ""
+                let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
+                let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
 
                 subscriber(.success((attachment.updateParameters ?? [:], md5, mtime)))
             } catch let error {

@@ -19,10 +19,6 @@ struct ApiConstants {
 }
 
 enum ZoteroApiError: Error {
-    case unknown
-    case expired
-    case unknownItemType(String)
-    case jsonDecoding(Error)
     case unchanged(version: Int)
 }
 

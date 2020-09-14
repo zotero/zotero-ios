@@ -21,8 +21,8 @@ enum SyncProgress {
     case deletions(library: String)
     case changes(progress: SyncProgressData)
     case uploads(progress: SyncProgressData)
-    case finished([Error])
-    case aborted(Error)
+    case finished([SyncError.NonFatal])
+    case aborted(SyncError.Fatal)
 }
 
 final class SyncProgressHandler {
@@ -118,11 +118,11 @@ final class SyncProgressHandler {
         self.observable.on(.next(.deletions(library: name)))
     }
 
-    func reportFinish(with errors: [Error]) {
+    func reportFinish(with errors: [SyncError.NonFatal]) {
         self.finish(with: .finished(errors))
     }
 
-    func reportAbort(with error: Error) {
+    func reportAbort(with error: SyncError.Fatal) {
         self.finish(with: .aborted(error))
     }
 

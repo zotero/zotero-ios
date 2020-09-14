@@ -11,13 +11,13 @@ import Foundation
 struct Parsing {
     enum Error: Swift.Error {
         case missingKey(String)
-        case unknownField(key: String, field: String)
         case notArray
+        case notDictionary
     }
 
     static func parse<T>(key: String, from data: [String: Any]) throws -> T {
         guard let parsed = data[key] as? T else {
-            throw ZoteroApiError.jsonDecoding(Error.missingKey(key))
+            throw Error.missingKey(key)
         }
         return parsed
     }
@@ -29,7 +29,7 @@ struct Parsing {
     static func parse<Response>(response: Any, createResponse: ([String: Any]) throws -> Response)
                                                                 throws -> (responses: [Response], originals: [[String: Any]], errors: [Swift.Error]) {
         guard let array = response as? [[String: Any]] else {
-            throw ZoteroApiError.jsonDecoding(Error.notArray)
+            throw Error.notArray
         }
 
         var responses: [Response] = []

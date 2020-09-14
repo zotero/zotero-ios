@@ -88,9 +88,9 @@ struct ItemTitleFormatter {
     private static func caseDisplayTitle(from baseTitle: String, fields: LinkingObjects<RItemField>, creators: LinkingObjects<RCreator>) -> String {
         if !baseTitle.isEmpty {
             var title = baseTitle
-            if let field = fields.filter("key = %@", ItemFieldKeys.reporter).first, !field.value.isEmpty {
+            if let field = fields.filter("key = %@", FieldKeys.Item.reporter).first, !field.value.isEmpty {
                 title += " (\(field.value))"
-            } else if let field = fields.filter("key = %@", ItemFieldKeys.court).first, !field.value.isEmpty {
+            } else if let field = fields.filter("key = %@", FieldKeys.Item.court).first, !field.value.isEmpty {
                 title += " (\(field.value))"
             }
             return title
@@ -98,11 +98,11 @@ struct ItemTitleFormatter {
 
         var parts: [String] = []
 
-        if let field = fields.filter("key = %@", ItemFieldKeys.court).first, !field.value.isEmpty {
+        if let field = fields.filter("key = %@", FieldKeys.Item.court).first, !field.value.isEmpty {
             parts.append(field.value)
         }
 
-        if let field = fields.filter("key = %@ or baseKey = %@", ItemFieldKeys.date, ItemFieldKeys.date).first, !field.value.isEmpty {
+        if let field = fields.filter("key = %@ or baseKey = %@", FieldKeys.Item.date, FieldKeys.Item.date).first, !field.value.isEmpty {
             parts.append(field.value)
         }
 

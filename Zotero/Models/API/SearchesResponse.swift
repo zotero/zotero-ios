@@ -36,8 +36,8 @@ struct SearchResponse {
 extension SearchResponse.Data {
     init(response: [String: Any], key: String) throws {
         // Check for unknown fields
-        if let unknownKey = response.keys.first(where: { !SearchFieldKeys.knownDataKeys.contains($0) }) {
-            throw Parsing.Error.unknownField(key: key, field: unknownKey)
+        if let unknownKey = response.keys.first(where: { !FieldKeys.Search.knownDataKeys.contains($0) }) {
+            throw SchemaError.unknownField(key: key, field: unknownKey)
         }
 
         let conditions: [[String: Any]] = try response.apiGet(key: "conditions")

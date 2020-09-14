@@ -11,13 +11,6 @@ import Foundation
 import CocoaLumberjackSwift
 
 struct ItemResponse {
-    enum Error: Swift.Error {
-        case notArray
-        case missingTranslatorAttachment
-        case unknownType(String)
-        case missingFieldsForType(String)
-    }
-
     let rawType: String
     let key: String
     let library: LibraryResponse
@@ -61,84 +54,91 @@ struct ItemResponse {
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
-        let rawType: String = try response.apiGet(key: "itemType")
-
-        if rawType == ItemTypes.annotation {
-            try self.init(annotationResponse: response)
-        } else if response["data"] != nil {
-            try self.init(apiResponse: response, rawType: rawType, schemaController: schemaController)
-        } else {
-            try self.init(translatorResponse: response, rawType: rawType, schemaController: schemaController)
-        }
-    }
-
-    private init(apiResponse response: [String: Any], rawType: String, schemaController: SchemaController) throws {
         let data: [String: Any] = try response.apiGet(key: "data")
+        let itemType: String = try data.apiGet(key: "itemType")
 
-        if !schemaController.itemTypes.contains(rawType) {
-            throw Error.unknownType(rawType)
+        if !schemaController.itemTypes.contains(itemType) {
+            throw SchemaError.unknownItemType(itemType)
         }
 
         let key: String = try response.apiGet(key: "key")
-        let library: [String: Any] = try response.apiGet(key: "library")
+        let library = try LibraryResponse(response: (try response.apiGet(key: "library")))
+        let linksData = response["links"] as? [String: Any]
+        let links = try linksData.flatMap { try LinksResponse(response: $0) }
+        let meta = response["meta"] as? [String: Any]
+        let parsedDate = meta?["parsedDate"] as? String
+        let createdByData = meta?["createdByUser"] as? [String: Any]
+        let createdBy = try createdByData.flatMap { try UserResponse(response: $0) }
+        let lastModifiedByData = meta?["lastModifiedByUser"] as? [String: Any]
+        let lastModifiedBy = try lastModifiedByData.flatMap { try UserResponse(response: $0) }
+        let version: Int = try response.apiGet(key: "version")
+
+        switch itemType {
+        case ItemTypes.annotation:
+            try self.init(key: key, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy, lastModifiedBy: lastModifiedBy,
+                          version: version, annotationData: data, schemaController: schemaController)
+        default:
+            try self.init(key: key, rawType: itemType, library: library, links: links, parsedDate: parsedDate, createdBy: createdBy,
+                          lastModifiedBy: lastModifiedBy, version: version, data: data, schemaController: schemaController)
+        }
+    }
+
+    private init(key: String, rawType: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?,
+                 lastModifiedBy: UserResponse?, version: Int, data: [String: Any], schemaController: SchemaController) throws {
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
-        let links = response["links"] as? [String: Any]
         let tags = (data["tags"] as? [[String: Any]]) ?? []
         let creators = (data["creators"] as? [[String: Any]]) ?? []
-        let meta = response["meta"] as? [String: Any]
-        let createdBy = meta?["createdByUser"] as? [String: Any]
-        let lastModifiedBy = meta?["lastModifiedByUser"] as? [String: Any]
 
         self.rawType = rawType
         self.key = key
-        self.version = try response.apiGet(key: "version")
+        self.version = version
         self.collectionKeys = (data["collections"] as? [String]).flatMap(Set.init) ?? []
         self.parentKey = data["parentItem"] as? String
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
-        self.parsedDate = meta?["parsedDate"] as? String
+        self.parsedDate = parsedDate
         self.isTrash = (data["deleted"] as? Int) == 1
-        self.library = try LibraryResponse(response: library)
-        self.links = try links.flatMap { try LinksResponse(response: $0) }
+        self.library = library
+        self.links = links
         self.tags = try tags.map({ try TagResponse(response: $0) })
         self.creators = try creators.map({ try CreatorResponse(response: $0) })
         self.relations = (data["relations"] as? [String: String]) ?? [:]
         self.inPublications = (data["inPublications"] as? Bool) ?? false
         self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, key: key, schemaController: schemaController)
-        self.createdBy = try createdBy.flatMap { try UserResponse(response: $0) }
-        self.lastModifiedBy = try lastModifiedBy.flatMap { try UserResponse(response: $0) }
+        self.createdBy = createdBy
+        self.lastModifiedBy = lastModifiedBy
     }
 
-    private init(annotationResponse response: [String: Any]) throws {
-        let key: String = try response.apiGet(key: "key")
-        let library: [String: Any] = try response.apiGet(key: "library")
-        let dateAdded = response["dateAdded"] as? String
-        let dateModified = response["dateModified"] as? String
-        let tags = (response["tags"] as? [[String: Any]]) ?? []
+    private init(key: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?,
+                 lastModifiedBy: UserResponse?, version: Int, annotationData data: [String: Any], schemaController: SchemaController) throws {
+        let dateAdded = data["dateAdded"] as? String
+        let dateModified = data["dateModified"] as? String
+        let tags = (data["tags"] as? [[String: Any]]) ?? []
 
         self.rawType = ItemTypes.annotation
         self.key = key
-        self.version = try response.apiGet(key: "version")
+        self.version = version
         self.collectionKeys = []
-        self.parentKey = try response.apiGet(key: "parentItem")
+        self.parentKey = try data.apiGet(key: "parentItem")
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
-        self.parsedDate = nil
-        self.isTrash = (response["deleted"] as? Int) == 1
-        self.library = try LibraryResponse(response: library)
-        self.links = nil
+        self.parsedDate = parsedDate
+        self.isTrash = (data["deleted"] as? Int) == 1
+        self.library = library
+        self.links = links
         self.tags = try tags.map({ try TagResponse(response: $0) })
         self.creators = []
         self.relations = [:]
         self.inPublications = false
-        self.fields = try ItemResponse.parseAnnotationFields(from: response, key: key)
-        self.createdBy = nil
-        self.lastModifiedBy = nil
+        self.fields = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
+        self.createdBy = createdBy
+        self.lastModifiedBy = lastModifiedBy
     }
 
-    private init(translatorResponse response: [String: Any], rawType: String, schemaController: SchemaController) throws {
+    init(translatorResponse response: [String: Any], schemaController: SchemaController) throws {
         let key = KeyGenerator.newKey
+        let rawType: String = try response.apiGet(key: "itemType")
         let accessDate = (response["accessDate"] as? String).flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         let tags = (response["tags"] as? [[String: Any]]) ?? []
         let creators = (response["creators"] as? [[String: Any]]) ?? []
@@ -186,10 +186,6 @@ struct ItemResponse {
                             lastModifiedBy: self.lastModifiedBy)
     }
 
-    private static func parseAnnotationFields(from data: [String: Any], key: String) throws -> [String: String] {
-        throw Parsing.Error.unknownField(key: key, field: "object.key")
-    }
-
     /// Parses field values from item data for given type.
     /// - parameter data: Data to parse.
     /// - parameter rawType: Raw item type of parsed item.
@@ -199,10 +195,10 @@ struct ItemResponse {
     /// - returns: Parsed dictionary of fields with their values.
     private static func parseFields(from data: [String: Any], rawType: String, key: String, schemaController: SchemaController,
                                     ignoreUnknownFields: Bool = false) throws -> [String: String] {
-        let excludedKeys = ItemFieldKeys.knownDataKeys
+        let excludedKeys = FieldKeys.Item.knownNonFieldKeys
         var fields: [String: String] = [:]
 
-        guard let schemaFields = schemaController.fields(for: rawType) else { throw Error.missingFieldsForType(rawType) }
+        guard let schemaFields = schemaController.fields(for: rawType) else { throw SchemaError.missingFieldsForItemType(rawType) }
 
         for object in data {
             guard !excludedKeys.contains(object.key) else { continue }
@@ -211,7 +207,7 @@ struct ItemResponse {
                 if ignoreUnknownFields {
                     continue
                 }
-                throw Parsing.Error.unknownField(key: key, field: object.key)
+                throw SchemaError.unknownField(key: key, field: object.key)
             }
 
             fields[object.key] = object.value as? String
@@ -227,25 +223,40 @@ struct ItemResponse {
     /// - returns: `true` if field is a known field for given item, `false` otherwise.
     private static func isKnownField(_ field: String, in schema: [FieldSchema], itemType: String) -> Bool {
         // Note is not a field stored in schema but we consider it as one, since it can be returned with fields together with other data.
-        if field == ItemFieldKeys.note || schema.contains(where: { $0.field == field }) { return true }
+        if field == FieldKeys.Item.note || schema.contains(where: { $0.field == field }) { return true }
 
-        if itemType == ItemTypes.attachment {
-            // Attachments don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
+        switch itemType {
+        case ItemTypes.annotation:
+            // Annotations don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
             switch field {
-            case ItemFieldKeys.contentType,
-                 ItemFieldKeys.md5,
-                 ItemFieldKeys.mtime,
-                 ItemFieldKeys.filename,
-                 ItemFieldKeys.linkMode,
-                 ItemFieldKeys.charset:
+            case FieldKeys.Item.Annotation.color,
+                 FieldKeys.Item.Annotation.comment,
+                 FieldKeys.Item.Annotation.pageLabel,
+                 FieldKeys.Item.Annotation.position,
+                 FieldKeys.Item.Annotation.text,
+                 FieldKeys.Item.Annotation.type,
+                 FieldKeys.Item.Annotation.sortIndex:
                 return true
             default:
                 return false
             }
+        case ItemTypes.attachment:
+            // Attachments don't have some fields that are returned by backend in schema, so we have to filter them out here manually.
+            switch field {
+            case FieldKeys.Item.Attachment.contentType,
+                 FieldKeys.Item.Attachment.md5,
+                 FieldKeys.Item.Attachment.mtime,
+                 FieldKeys.Item.Attachment.filename,
+                 FieldKeys.Item.Attachment.linkMode,
+                 FieldKeys.Item.Attachment.charset:
+                return true
+            default:
+                return false
+            }
+        default:
+            // Field not found in schema and is not a special case.
+            return false
         }
-
-        // Field not found in schema and is not a special case.
-        return false
     }
 }
 

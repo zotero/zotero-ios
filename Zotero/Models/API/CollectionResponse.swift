@@ -36,8 +36,8 @@ struct CollectionResponse: KeyedResponse {
 extension CollectionResponse.Data {
     init(response: [String: Any], key: String) throws {
         // Check for unknown fields
-        if let unknownKey = response.keys.first(where: { !CollectionFieldKeys.knownDataKeys.contains($0) }) {
-            throw Parsing.Error.unknownField(key: key, field: unknownKey)
+        if let unknownKey = response.keys.first(where: { !FieldKeys.Collection.knownDataKeys.contains($0) }) {
+            throw SchemaError.unknownField(key: key, field: unknownKey)
         }
 
         self.name = try response.apiGet(key: "name")
