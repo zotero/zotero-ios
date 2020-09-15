@@ -56,6 +56,18 @@ struct FieldKeys {
             static let position = "annotationPosition"
             static let pageIndex = "pageIndex"
             static let rects = "rects"
+
+            static func fields(for rawType: String) -> [String] {
+                switch rawType {
+                case AnnotationTypes.highlight:
+                    return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex,
+                            Annotation.text]
+                case AnnotationTypes.note, AnnotationTypes.image:
+                    return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex]
+                default:
+                    return []
+                }
+            }
         }
 
         static func clean(doi: String) -> String {

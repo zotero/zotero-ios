@@ -11,14 +11,17 @@ import Foundation
 import RealmSwift
 
 struct ReadAnnotationsDbRequest: DbResponseRequest {
-    typealias Response = Results<RAnnotation>
+    typealias Response = Results<RItem>
 
-    let itemKey: String
+    let attachmentKey: String
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> Results<RAnnotation> {
-        return database.objects(RAnnotation.self).filter(.itemKey(self.itemKey, in: self.libraryId)).sorted(byKeyPath: "sortIndex")
+    func process(in database: Realm) throws -> Results<RItem> {
+        return database.objects(RItem.self).filter(.parentKey(self.attachmentKey, in: self.libraryId))
+                                           .filter(.items(type: ItemTypes.annotation, notSyncState: .dirty))
+                                           .filter(.deleted(false))
+                                           .sorted(byKeyPath: "annotationSortIndex")
     }
 }

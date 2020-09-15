@@ -42,12 +42,20 @@ extension RItem: Deletable {
         database.delete(self.links)
         database.delete(self.relations)
         database.delete(self.creators)
+        database.delete(self.rects)
 
-        if let user = self.createdBy, user.createdBy.count == 1 && user.modifiedBy.isEmpty {
-            database.delete(user)
-        }
-        if let user = self.lastModifiedBy, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
-            database.delete(user)
+        if let createdByUser = self.createdBy, let lastModifiedByUser = self.lastModifiedBy,
+           createdByUser.identifier == lastModifiedByUser.identifier &&
+           createdByUser.createdBy.count == 1 &&
+           createdByUser.modifiedBy.count == 1 {
+            database.delete(createdByUser)
+        } else {
+            if let user = self.createdBy, user.createdBy.count == 1 && user.modifiedBy.isEmpty {
+                database.delete(user)
+            }
+            if let user = self.lastModifiedBy, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
+                database.delete(user)
+            }
         }
 
         if self.rawType == ItemTypes.attachment, let file = AttachmentCreator.file(for: self) {

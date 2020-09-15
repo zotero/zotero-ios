@@ -29,10 +29,11 @@ struct ItemResponse {
     let inPublications: Bool
     let createdBy: UserResponse?
     let lastModifiedBy: UserResponse?
+    let rects: [[Double]]?
 
     init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?,
          parsedDate: String?, isTrash: Bool, version: Int, dateModified: Date, dateAdded: Date, fields: [String: String], tags: [TagResponse],
-         creators: [CreatorResponse], relations: [String: String], createdBy: UserResponse?, lastModifiedBy: UserResponse?) {
+         creators: [CreatorResponse], relations: [String: String], createdBy: UserResponse?, lastModifiedBy: UserResponse?, rects: [[Double]]?) {
         self.rawType = rawType
         self.key = key
         self.library = library
@@ -51,6 +52,7 @@ struct ItemResponse {
         self.inPublications = false
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
+        self.rects = rects
     }
 
     init(response: [String: Any], schemaController: SchemaController) throws {
@@ -105,9 +107,10 @@ struct ItemResponse {
         self.creators = try creators.map({ try CreatorResponse(response: $0) })
         self.relations = (data["relations"] as? [String: String]) ?? [:]
         self.inPublications = (data["inPublications"] as? Bool) ?? false
-        self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, key: key, schemaController: schemaController)
+        self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, key: key, schemaController: schemaController).fields
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
+        self.rects = nil
     }
 
     private init(key: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?,
@@ -115,6 +118,8 @@ struct ItemResponse {
         let dateAdded = data["dateAdded"] as? String
         let dateModified = data["dateModified"] as? String
         let tags = (data["tags"] as? [[String: Any]]) ?? []
+
+        let (fields, rects) = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
 
         self.rawType = ItemTypes.annotation
         self.key = key
@@ -131,9 +136,10 @@ struct ItemResponse {
         self.creators = []
         self.relations = [:]
         self.inPublications = false
-        self.fields = try ItemResponse.parseFields(from: data, rawType: ItemTypes.annotation, key: key, schemaController: schemaController)
+        self.fields = fields
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
+        self.rects = rects
     }
 
     init(translatorResponse response: [String: Any], schemaController: SchemaController) throws {
@@ -161,9 +167,10 @@ struct ItemResponse {
         self.inPublications = false
         // Translator returns some extra fields, which may not be recognized by schema, so we just ignore those
         self.fields = try ItemResponse.parseFields(from: response, rawType: rawType, key: key, schemaController: schemaController,
-                                                   ignoreUnknownFields: true)
+                                                   ignoreUnknownFields: true).fields
         self.createdBy = nil
         self.lastModifiedBy = nil
+        self.rects = nil
     }
 
     func copy(libraryId: LibraryIdentifier, collectionKeys: Set<String>) -> ItemResponse {
@@ -183,7 +190,8 @@ struct ItemResponse {
                             creators: self.creators,
                             relations: self.relations,
                             createdBy: self.createdBy,
-                            lastModifiedBy: self.lastModifiedBy)
+                            lastModifiedBy: self.lastModifiedBy,
+                            rects: self.rects)
     }
 
     /// Parses field values from item data for given type.
@@ -194,9 +202,10 @@ struct ItemResponse {
     /// - parameter ignoreUnknownFields: If set to `false`, when an unknown field is encountered during parsing, an exception `Error.unknownField` is thrown. Otherwise the field is silently ignored and parsing continues.
     /// - returns: Parsed dictionary of fields with their values.
     private static func parseFields(from data: [String: Any], rawType: String, key: String, schemaController: SchemaController,
-                                    ignoreUnknownFields: Bool = false) throws -> [String: String] {
+                                    ignoreUnknownFields: Bool = false) throws -> (fields: [String: String], rects: [[Double]]?) {
         let excludedKeys = FieldKeys.Item.knownNonFieldKeys
         var fields: [String: String] = [:]
+        var rects: [[Double]]?
 
         guard let schemaFields = schemaController.fields(for: rawType) else { throw SchemaError.missingFieldsForItemType(rawType) }
 
@@ -210,10 +219,29 @@ struct ItemResponse {
                 throw SchemaError.unknownField(key: key, field: object.key)
             }
 
-            fields[object.key] = object.value as? String
+            let value = object.value as? String
+
+            if object.key == FieldKeys.Item.Annotation.type && !AnnotationTypes.isValid(type: value ?? "") {
+                throw SchemaError.unknownAnnotationType(value ?? "")
+            }
+
+            if object.key == FieldKeys.Item.Annotation.position {
+                // Annotations have `annotationPosition` which is a JSON string, so the string needs to be decoded and stored as proper field values
+                guard let data = value?.data(using: .utf8),
+                      let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any],
+                      let pageIndex = json[FieldKeys.Item.Annotation.pageIndex] as? Int,
+                      let parsedRects = json[FieldKeys.Item.Annotation.rects] as? [[Double]] else {
+                    throw SchemaError.incompatibleAnnotationPosition
+                }
+
+                fields[FieldKeys.Item.Annotation.pageIndex] = "\(pageIndex)"
+                rects = parsedRects
+            } else {
+                fields[object.key] = value
+            }
         }
 
-        return fields
+        return (fields, rects)
     }
 
     /// Checks whether given field is a known field for given item type.

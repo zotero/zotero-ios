@@ -87,6 +87,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         self.syncRelations(data: data, item: item, database: database)
         self.syncLinks(data: data, item: item, database: database)
         self.syncUsers(createdBy: data.createdBy, lastModifiedBy: data.lastModifiedBy, item: item, database: database)
+        self.sync(rects: data.rects ?? [], in: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()
@@ -101,6 +102,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         var date: String?
         var publisher: String?
         var publicationTitle: String?
+        var sortIndex: String?
 
         allFieldKeys.forEach { key in
             let value = data.fields[key] ?? ""
@@ -131,12 +133,48 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 publisher = field.value
             } else if field.key == FieldKeys.Item.publicationTitle || field.baseKey == FieldKeys.Item.publicationTitle {
                 publicationTitle = field.value
+            } else if field.key == FieldKeys.Item.Annotation.sortIndex {
+                sortIndex = field.value
             }
         }
 
         item.setDateFieldMetadata(date, parser: self.dateParser)
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
+        item.annotationSortIndex = sortIndex ?? ""
+    }
+
+    private func sync(rects: [[Double]], in item: RItem, database: Realm) {
+        // Check whether there are any changes from local state
+        var hasChanges = rects.count != item.rects.count
+        if !hasChanges {
+            for rect in rects {
+                let containsLocally = item.rects.filter("minX == %d and minY == %d and maxX == %d and maxY == %d",
+                                                        rect[0], rect[1], rect[2], rect[3]).first != nil
+                if !containsLocally {
+                    hasChanges = true
+                    break
+                }
+            }
+        }
+
+        guard hasChanges else { return }
+
+        database.delete(item.rects)
+        for rect in rects {
+            let rRect = self.createRect(from: rect)
+            database.add(rRect)
+            item.rects.append(rRect)
+        }
+    }
+
+    private func createRect(from rect: [Double]) -> RRect {
+        let rRect = RRect()
+        rRect.minX = rect[0]
+        rRect.minY = rect[1]
+        rRect.maxX = rect[2]
+        rRect.maxY = rect[3]
+        return rRect
     }
 
     private func syncLibrary(identifier: LibraryIdentifier, libraryName: String, item: RItem, database: Realm) throws {

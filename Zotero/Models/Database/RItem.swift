@@ -29,6 +29,7 @@ extension RItemChanges {
     static let tags = RItemChanges(rawValue: 1 << 5)
     static let creators = RItemChanges(rawValue: 1 << 6)
     static let relations = RItemChanges(rawValue: 1 << 7)
+    static let rects = RItemChanges(rawValue: 1 << 8)
     static let all: RItemChanges = [.type, .trash, .parent, .collections, .fields, .tags, .creators, .relations]
 }
 
@@ -45,6 +46,7 @@ class RItem: Object {
     @objc dynamic var createdBy: RUser?
     @objc dynamic var lastModifiedBy: RUser?
     let collections: List<RCollection> = List()
+    let rects: List<RRect> = List()
 
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
@@ -52,7 +54,6 @@ class RItem: Object {
     let creators = LinkingObjects(fromType: RCreator.self, property: "item")
     let links = LinkingObjects(fromType: RLink.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
-    let annotations = LinkingObjects(fromType: RAnnotation.self, property: "item")
 
     // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting
@@ -88,6 +89,8 @@ class RItem: Object {
     /// Indicates whether this instance has nonempty publicationTitle, helper variable, used in sorting so that we can show items with titles
     /// first and sort them in any order we want (asd/desc) and all other items later
     @objc dynamic var hasPublicationTitle: Bool = false
+    /// Sort index for annotations
+    @objc dynamic var annotationSortIndex: String = ""
 
     // MARK: - Sync data
     /// Indicates whether the object is trashed locally and needs to be synced with backend

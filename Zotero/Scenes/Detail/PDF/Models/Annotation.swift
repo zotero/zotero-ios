@@ -8,9 +8,37 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
+
 struct Annotation {
-    enum Kind: Int {
-        case highlight, note, area
+    enum Kind {
+        case highlight
+        case note
+        case area
+
+        init?(rawType: String) {
+            switch rawType {
+            case AnnotationTypes.highlight:
+                self = .highlight
+            case AnnotationTypes.image:
+                self = .area
+            case AnnotationTypes.note:
+                self = .note
+            default:
+                return nil
+            }
+        }
+
+        var rawType: String {
+            switch self {
+            case .area:
+                return AnnotationTypes.image
+            case .highlight:
+                return AnnotationTypes.highlight
+            case .note:
+                return AnnotationTypes.note
+            }
+        }
     }
 
     let key: String
@@ -48,21 +76,41 @@ struct Annotation {
         self.didChange = didChange
     }
 
-    init(annotation: RAnnotation) {
-        self.key = annotation.key
-        self.type = Kind(rawValue: annotation.rawType) ?? .note
-        self.page = annotation.page
-        self.pageLabel = annotation.pageLabel
-        self.rects = annotation.rects.map({ CGRect(x: $0.x, y: $0.y, width: $0.width, height: $0.height) })
-        self.author = annotation.author
-        self.isAuthor = annotation.isAuthor
-        self.color = annotation.color
-        self.comment = annotation.comment
-        self.text = annotation.text
-        self.isLocked = annotation.isLocked
-        self.sortIndex = annotation.sortIndex
-        self.dateModified = annotation.dateModified
-        self.tags = annotation.tags.map({ Tag(tag: $0) })
+    init?(item: RItem) {
+        guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
+              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
+              let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
+              let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
+            return nil
+        }
+        guard let type = Kind(rawType: rawType) else {
+            DDLogError("Annotation: unknown annotation type '\(rawType)'")
+            return nil
+        }
+
+        let text = item.fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
+
+        if type == .highlight && text == nil {
+            DDLogError("Annotation: highlight annotation is missing text property")
+            return nil
+        }
+
+        let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
+
+        self.key = item.key
+        self.type = type
+        self.page = pageIndex
+        self.pageLabel = pageLabel
+        self.rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
+        self.author = ""
+        self.isAuthor = false
+        self.color = color
+        self.comment = comment
+        self.text = text
+        self.isLocked = false
+        self.sortIndex = item.annotationSortIndex
+        self.dateModified = item.dateModified
+        self.tags = item.tags.map({ Tag(tag: $0) })
         self.didChange = false
     }
 
@@ -164,5 +212,15 @@ struct Annotation {
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true)
+    }
+}
+
+extension RItem {
+    fileprivate func fieldValue(for key: String) -> String? {
+        let value = self.fields.filter(.key(key)).first?.value
+        if value == nil {
+            DDLogError("Annotation: missing value for `\(key)`")
+        }
+        return value
     }
 }

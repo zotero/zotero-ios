@@ -50,12 +50,12 @@ extension NSPredicate {
         }
     }
 
-    static func itemLibrary(with identifier: LibraryIdentifier) -> NSPredicate {
+    static func parentLibrary(with identifier: LibraryIdentifier) -> NSPredicate {
         switch identifier {
         case .custom(let type):
-            return NSPredicate(format: "item.customLibrary.rawType = %d", type.rawValue)
+            return NSPredicate(format: "parent.customLibrary.rawType = %d", type.rawValue)
         case .group(let identifier):
-            return NSPredicate(format: "item.group.identifier = %d", identifier)
+            return NSPredicate(format: "parent.group.identifier = %d", identifier)
         }
     }
 
@@ -188,9 +188,9 @@ extension NSPredicate {
         return NSPredicate(format: "ANY fields.key = %@", key)
     }
 
-    static func itemKey(_ itemKey: String, in libraryId: LibraryIdentifier) -> NSPredicate {
-        let libraryPredicate: NSPredicate = .itemLibrary(with: libraryId)
-        let itemPredicate: NSPredicate = NSPredicate(format: "item.key = %@", itemKey)
+    static func parentKey(_ parentKey: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+        let libraryPredicate: NSPredicate = .parentLibrary(with: libraryId)
+        let itemPredicate: NSPredicate = NSPredicate(format: "parent.key = %@", parentKey)
         return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, itemPredicate])
     }
 }

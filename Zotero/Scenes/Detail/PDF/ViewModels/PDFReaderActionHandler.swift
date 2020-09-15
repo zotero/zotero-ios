@@ -124,14 +124,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let key = viewModel.state.key
         let libraryId = viewModel.state.libraryId
 
-        var changed: [Annotation] = []
+        var allAnnotations: [Annotation] = []
         viewModel.state.annotations.forEach { _, annotations in
-            changed.append(contentsOf: annotations)
+            allAnnotations.append(contentsOf: annotations)
         }
 
         self.queue.async {
             do {
-                let request = StoreChangedAnnotationsDbRequest(itemKey: key, libraryId: libraryId, annotations: changed)
+                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 // TODO: - Show error
@@ -540,13 +540,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - returns: Tuple of grouped annotations and comments.
     private func annotationsAndComments(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont) throws
                                                                        -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString]) {
-        let dbAnnotations = try self.dbStorage.createCoordinator().perform(request: ReadAnnotationsDbRequest(itemKey: key, libraryId: libraryId))
+        let items = try self.dbStorage.createCoordinator().perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
 
         var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]
 
-        dbAnnotations.forEach { rAnnotation in
-            let annotation = Annotation(annotation: rAnnotation)
+        for item in items {
+            guard let annotation = Annotation(item: item) else { continue }
+
             if var array = annotations[annotation.page] {
                 array.append(annotation)
                 annotations[annotation.page] = array

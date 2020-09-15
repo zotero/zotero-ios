@@ -17,3 +17,18 @@ struct ItemTypes {
     static let webpage = "webpage"
     static let annotation = "annotation"
 }
+
+struct AnnotationTypes {
+    static let note = "note"
+    static let highlight = "highlight"
+    static let image = "image"
+
+    static func isValid(type: String) -> Bool {
+        switch type {
+        case AnnotationTypes.note, AnnotationTypes.highlight, AnnotationTypes.image:
+            return true
+        default:
+            return false
+        }
+    }
+}

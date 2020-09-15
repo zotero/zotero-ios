@@ -12,8 +12,12 @@ import Foundation
 /// - unknownField: An unknown field was detected during parsing.
 /// - unknownItemType: Tried to parse unknown item type.
 /// - missingFieldsForItemType: Schema doesn't contain fields for given item type.
+/// - incompatibleAnnotationPosition: `annotationPosition` is either not JSON or is invalid JSON and can't be parsed
+/// - unknownAnnotationType: Annotation type not recognized.
 enum SchemaError: Error {
     case unknownField(key: String, field: String)
     case unknownItemType(String)
     case missingFieldsForItemType(String)
+    case unknownAnnotationType(String)
+    case incompatibleAnnotationPosition
 }
