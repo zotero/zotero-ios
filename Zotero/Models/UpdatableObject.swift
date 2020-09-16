@@ -161,7 +161,13 @@ extension RItem: Updatable {
     }
 
     private func createAnnotationPosition(pageIndex: String, rects: List<RRect>) -> String {
-        return ""
+        var rectArray: [[Double]] = []
+        rects.forEach { rRect in
+            rectArray.append([rRect.minX, rRect.minY, rRect.maxX, rRect.maxY])
+        }
+        let jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex,
+                                       FieldKeys.Item.Annotation.rects: rectArray]
+        return (try? JSONSerialization.data(withJSONObject: jsonData, options: [])).flatMap({ String(data: $0, encoding: .utf8) }) ?? ""
     }
 
     func resetChanges() {
