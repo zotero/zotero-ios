@@ -9,15 +9,15 @@
 import Foundation
 
 /// Errors that can happen during schema validation.
+/// - missingSchemaFields: Schema doesn't contain fields for given item type.
 /// - unknownField: An unknown field was detected during parsing.
-/// - unknownItemType: Tried to parse unknown item type.
-/// - missingFieldsForItemType: Schema doesn't contain fields for given item type.
-/// - incompatibleAnnotationPosition: `annotationPosition` is either not JSON or is invalid JSON and can't be parsed
-/// - unknownAnnotationType: Annotation type not recognized.
+/// - missingField: Field that is mandatory is missing.
+/// - invalidValue: Value for given field is invalid.
+/// - embeddedImageMissingParent: An attachment with link mode `embedded_image` is missing a `parentItem`
 enum SchemaError: Error {
+    case missingSchemaFields(itemType: String)
     case unknownField(key: String, field: String)
-    case unknownItemType(String)
-    case missingFieldsForItemType(String)
-    case unknownAnnotationType(String)
-    case incompatibleAnnotationPosition
+    case missingField(key: String, field: String, itemType: String)
+    case invalidValue(value: String, field: String, key: String)
+    case embeddedImageMissingParent(key: String)
 }

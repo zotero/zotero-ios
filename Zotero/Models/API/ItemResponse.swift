@@ -57,13 +57,13 @@ struct ItemResponse {
 
     init(response: [String: Any], schemaController: SchemaController) throws {
         let data: [String: Any] = try response.apiGet(key: "data")
+        let key: String = try response.apiGet(key: "key")
         let itemType: String = try data.apiGet(key: "itemType")
 
         if !schemaController.itemTypes.contains(itemType) {
-            throw SchemaError.unknownItemType(itemType)
+            throw SchemaError.invalidValue(value: itemType, field: "itemType", key: key)
         }
 
-        let key: String = try response.apiGet(key: "key")
         let library = try LibraryResponse(response: (try response.apiGet(key: "library")))
         let linksData = response["links"] as? [String: Any]
         let links = try linksData.flatMap { try LinksResponse(response: $0) }
@@ -111,6 +111,13 @@ struct ItemResponse {
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
         self.rects = nil
+
+        // Attachment with link mode "embedded_image" always needs a parent assigned
+        if rawType == ItemTypes.attachment,
+           let linkMode = self.fields[FieldKeys.Item.Attachment.linkMode].flatMap({ LinkMode(rawValue: $0) }),
+           linkMode == .embeddedImage && self.parentKey == nil {
+            throw SchemaError.embeddedImageMissingParent(key: key)
+        }
     }
 
     private init(key: String, library: LibraryResponse, links: LinksResponse?, parsedDate: String?, createdBy: UserResponse?,
@@ -207,7 +214,7 @@ struct ItemResponse {
         var fields: [String: String] = [:]
         var rects: [[Double]]?
 
-        guard let schemaFields = schemaController.fields(for: rawType) else { throw SchemaError.missingFieldsForItemType(rawType) }
+        guard let schemaFields = schemaController.fields(for: rawType) else { throw SchemaError.missingSchemaFields(itemType: rawType) }
 
         for object in data {
             guard !excludedKeys.contains(object.key) else { continue }
@@ -221,27 +228,88 @@ struct ItemResponse {
 
             let value = object.value as? String
 
-            if object.key == FieldKeys.Item.Annotation.type && !AnnotationTypes.isValid(type: value ?? "") {
-                throw SchemaError.unknownAnnotationType(value ?? "")
-            }
-
-            if object.key == FieldKeys.Item.Annotation.position {
+            switch object.key {
+            case FieldKeys.Item.Annotation.position:
                 // Annotations have `annotationPosition` which is a JSON string, so the string needs to be decoded and stored as proper field values
-                guard let data = value?.data(using: .utf8),
-                      let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any],
-                      let pageIndex = json[FieldKeys.Item.Annotation.pageIndex] as? Int,
-                      let parsedRects = json[FieldKeys.Item.Annotation.rects] as? [[Double]] else {
-                    throw SchemaError.incompatibleAnnotationPosition
-                }
-
-                fields[FieldKeys.Item.Annotation.pageIndex] = "\(pageIndex)"
-                rects = parsedRects
-            } else {
+                let (index, newRects) = try self.parsePosition(from: value, key: key)
+                fields[FieldKeys.Item.Annotation.pageIndex] = "\(index)"
+                rects = newRects
+            default:
                 fields[object.key] = value
             }
         }
 
+        try self.validate(fields: fields, rects: rects, itemType: rawType, key: key)
+
         return (fields, rects)
+    }
+
+    private static func validate(fields: [String: String], rects: [[Double]]?, itemType: String, key: String) throws {
+        switch itemType {
+        case ItemTypes.annotation:
+            // Rects and pageIndex are validated in `parsePosition(from:key:)` where we have access to their original `String` value.
+            // Here we just check whether they are available/
+            if rects == nil {
+                throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.rects, itemType: itemType)
+            }
+            guard let rawType = fields[FieldKeys.Item.Annotation.type] else {
+                throw SchemaError.missingField(key: key, field: FieldKeys.Item.Annotation.type, itemType: itemType)
+            }
+            guard let type = AnnotationType(rawValue: rawType) else {
+                throw SchemaError.invalidValue(value: rawType, field: FieldKeys.Item.Annotation.type, key: key)
+            }
+
+            let mandatoryFields = FieldKeys.Item.Annotation.fields(for: type)
+            for field in mandatoryFields {
+                if let value = fields[field] {
+                    switch field {
+                    case FieldKeys.Item.Annotation.color:
+                        if !value.starts(with: "#") {
+                            throw SchemaError.invalidValue(value: value, field: field, key: key)
+                        }
+                    case FieldKeys.Item.Annotation.sortIndex:
+                        // Sort index consists of 3 parts separated by "|":
+                        // - 1. page index (5 characters)
+                        // - 2. character offset (6 characters)
+                        // - 3. y position from top (5 characters)
+                        let parts = value.split(separator: "|")
+                        if parts.count != 3 || parts[0].count != 5 || parts[1].count != 6 || parts[2].count != 5 {
+                            throw SchemaError.invalidValue(value: value, field: field, key: key)
+                        }
+                    default: break
+                    }
+                } else {
+                    throw SchemaError.missingField(key: key, field: field, itemType: itemType)
+                }
+            }
+
+        case ItemTypes.attachment:
+            guard let rawLinkMode = fields[FieldKeys.Item.Attachment.linkMode] else {
+                throw SchemaError.missingField(key: key, field: FieldKeys.Item.Attachment.linkMode, itemType: itemType)
+            }
+            if LinkMode(rawValue: rawLinkMode) == nil {
+                throw SchemaError.invalidValue(value: rawLinkMode, field: FieldKeys.Item.Attachment.linkMode, key: key)
+            }
+
+        default: return
+        }
+    }
+
+    private static func parsePosition(from value: String?, key: String) throws -> (Int, [[Double]]) {
+        guard let data = value?.data(using: .utf8),
+              let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any],
+              let pageIndex = json[FieldKeys.Item.Annotation.pageIndex] as? Int,
+              let rawRects = json[FieldKeys.Item.Annotation.rects],
+              let parsedRects = rawRects as? [[Double]] else {
+            throw SchemaError.invalidValue(value: (value ?? ""), field: FieldKeys.Item.Annotation.position, key: key)
+        }
+
+        // Rects consist of minX, minY, maxX, maxY coordinates, they can't be empty
+        if parsedRects.isEmpty || parsedRects.first(where: { $0.count != 4 }) != nil {
+            throw SchemaError.invalidValue(value: "\(rawRects)", field: FieldKeys.Item.Annotation.rects, key: key)
+        }
+
+        return (pageIndex, parsedRects)
     }
 
     /// Checks whether given field is a known field for given item type.

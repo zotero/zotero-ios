@@ -108,7 +108,7 @@ class AnnotationCell: UITableViewCell {
         self.roundedContainer.layer.borderColor = self.borderColor(selected: selected).cgColor
 
         // Setup visibility of individual containers
-        self.annotationContainer.isHidden = annotation.type != .highlight && annotation.type != .area
+        self.annotationContainer.isHidden = annotation.type != .highlight && annotation.type != .image
         self.annotationTextContainer.isHidden = annotation.type != .highlight
         self.annotationImageView.isHidden = !self.annotationTextContainer.isHidden
         self.annotationImageHeight.isActive = !self.annotationImageView.isHidden
@@ -139,7 +139,7 @@ class AnnotationCell: UITableViewCell {
         case .highlight:
             self.annotationTextHighlightView.backgroundColor = color
             self.annotationTextLabel.text = annotation.text
-        case .area:
+        case .image:
             self.annotationImageView.image = preview
             let size = annotation.boundingBox.size
             let maxWidth = availableWidth - AnnotationCell.annotationImageHorizontalInsets
@@ -163,9 +163,9 @@ class AnnotationCell: UITableViewCell {
         self.addTagsButton.isEnabled = selected
     }
 
-    private func image(for type: Annotation.Kind) -> UIImage? {
+    private func image(for type: AnnotationType) -> UIImage? {
         switch type {
-        case .area: return Asset.Images.Annotations.area.image
+        case .image: return Asset.Images.Annotations.area.image
         case .highlight: return Asset.Images.Annotations.highlight.image
         case .note: return Asset.Images.Annotations.note.image
         }

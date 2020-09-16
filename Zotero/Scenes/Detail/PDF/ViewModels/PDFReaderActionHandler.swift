@@ -602,7 +602,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               didChange: isNew)
         } else if let annotation = annotation as? SquareAnnotation {
             return Annotation(key: KeyGenerator.newKey,
-                              type: .area,
+                              type: .image,
                               page: Int(annotation.pageIndex),
                               pageLabel: "\(annotation.pageIndex + 1)",
                               rects: [annotation.boundingBox],
@@ -627,7 +627,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func annotations(from zoteroAnnotations: [Int: [Annotation]]) -> [PSPDFKit.Annotation] {
         return zoteroAnnotations.values.flatMap({ $0 }).map({
             switch $0.type {
-            case .area:
+            case .image:
                 return self.areaAnnotation(from: $0)
             case .highlight:
                 return self.highlightAnnotation(from: $0)

@@ -57,12 +57,12 @@ struct FieldKeys {
             static let pageIndex = "pageIndex"
             static let rects = "rects"
 
-            static func fields(for rawType: String) -> [String] {
-                switch rawType {
-                case AnnotationTypes.highlight:
+            static func fields(for type: AnnotationType) -> [String] {
+                switch type {
+                case .highlight:
                     return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex,
                             Annotation.text]
-                case AnnotationTypes.note, AnnotationTypes.image:
+                case .note, .image:
                     return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex]
                 default:
                     return []

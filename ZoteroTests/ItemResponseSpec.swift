@@ -38,7 +38,7 @@ class ItemResponseSpec: QuickSpec {
                 _ = try ItemResponse(response: jsonData, schemaController: ItemResponseSpec.schemaController)
                 fail("No exception thrown for unknown fields")
             } catch let error {
-                if let error = error as? Parsing.Error,
+                if let error = error as? SchemaError,
                     case .unknownField(_, let fieldName) = error,
                     fieldName == "unknownField" {
                 } else {

@@ -140,17 +140,28 @@ extension RItem: Updatable {
         }
         if changes.contains(.fields) {
             self.fields.filter("changed = true").forEach { field in
-                if field.key == FieldKeys.Item.Attachment.md5 || field.key == FieldKeys.Item.Attachment.mtime {
+                switch field.key {
+                case FieldKeys.Item.Attachment.md5, FieldKeys.Item.Attachment.mtime:
                     // Even though these field keys are set for the RItem object, we ignore them when submitting the attachment item itself,
                     // but they are used in file upload
                     parameters[field.key] = ""
-                } else {
+                case FieldKeys.Item.Annotation.pageIndex:
+                    parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: field.value, rects: self.rects)
+                default:
                     parameters[field.key] = field.value
                 }
             }
         }
+        if changes.contains(.rects) && parameters[FieldKeys.Item.Annotation.position] == nil {
+            let pageIndex = self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first?.value ?? "0"
+            parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects)
+        }
         
         return parameters
+    }
+
+    private func createAnnotationPosition(pageIndex: String, rects: List<RRect>) -> String {
+        return ""
     }
 
     func resetChanges() {

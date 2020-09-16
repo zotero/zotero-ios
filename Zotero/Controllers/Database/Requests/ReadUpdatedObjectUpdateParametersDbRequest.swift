@@ -37,19 +37,58 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> ([[String: Any]], Bool) {
         let items =  database.objects(RItem.self).filter(.itemChangesWithoutDeletions(in: self.libraryId))
-                                                 .sorted(byKeyPath: "parent.rawChangedFields", ascending: false) // parents first, children later
+
+        // Sort an array of collections or items from top-level to deepest, grouped by level
+        //
+        // This is used to sort higher-level objects first in upload JSON, since otherwise the API would reject lower-level objects for
+        // having missing parents.
 
         var hasUpload = false
-        var parameters: [[String: Any]] = []
-        items.forEach { item in
+        var keyToLevel: [String: Int] = [:]
+        var levels: [Int: [[String: Any]]] = [:]
+
+        for item in items {
+            guard let parameters = item.updateParameters else { continue }
+
+            let level = self.level(for: item, levelCache: keyToLevel)
+            keyToLevel[item.key] = level
+
+            if var array = levels[level] {
+                array.append(parameters)
+                levels[level] = array
+            } else {
+                levels[level] = [parameters]
+            }
+
             if item.attachmentNeedsSync {
                 hasUpload = true
             }
-            if let itemParams = item.updateParameters {
-                parameters.append(itemParams)
+        }
+
+        var results: [[String: Any]] = []
+        levels.keys.sorted().forEach { level in
+            if let parameters = levels[level] {
+                results.append(contentsOf: parameters)
             }
         }
-        return (parameters, hasUpload)
+        return (results, hasUpload)
+    }
+
+    private func level(for item: RItem, levelCache: [String: Int]) -> Int {
+        var level = 0
+        var parent: RItem? = item.parent
+
+        while let current = parent {
+            if let currentLevel = levelCache[current.key] {
+                level += currentLevel + 1
+                break
+            }
+
+            parent = current.parent
+            level += 1
+        }
+
+        return level
     }
 }
 

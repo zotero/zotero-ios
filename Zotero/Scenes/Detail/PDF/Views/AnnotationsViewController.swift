@@ -209,7 +209,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
             let selected = annotation.key == self.viewModel.state.selectedAnnotation?.key
             let preview: UIImage?
 
-            if annotation.type != .area {
+            if annotation.type != .image {
                 preview = nil
             } else {
                 preview = self.viewModel.state.previewCache.object(forKey: (annotation.key as NSString))

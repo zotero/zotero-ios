@@ -43,19 +43,18 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
             item = RItem()
             item.key = annotation.key
             item.rawType = ItemTypes.annotation
+            item.syncState = .synced
             item.dateAdded = annotation.dateModified
             item.changedFields = [.parent, .fields, .type]
             database.add(item)
 
             item.parent = parent
 
-            let annotationType = annotation.type.rawType
-
-            for field in FieldKeys.Item.Annotation.fields(for: annotationType) {
+            for field in FieldKeys.Item.Annotation.fields(for: annotation.type) {
                 let rField = RItemField()
                 rField.key = field
                 if field == FieldKeys.Item.Annotation.type {
-                    rField.value = annotationType
+                    rField.value = annotation.type.rawValue
                 }
                 rField.changed = true
                 database.add(rField)
@@ -66,12 +65,24 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
 
         item.dateModified = annotation.dateModified
 
-        self.syncFields(annotation: annotation, in: item, database: database)
+        let pageIndexDidChange = self.syncFields(annotation: annotation, in: item, database: database)
         self.sync(tags: annotation.tags, in: item, database: database)
         self.sync(rects: annotation.rects, in: item, database: database)
+
+        // If position changed add/update embedded_image attachment item
+        if pageIndexDidChange && item.changedFields.contains(.rects) {
+            self.updateImageAttachment(for: annotation, item: item, database: database)
+        }
+
+        if !item.changedFields.isEmpty {
+            item.changeType = .user
+        }
     }
 
-    private func syncFields(annotation: Annotation, in item: RItem, database: Realm) {
+    private func syncFields(annotation: Annotation, in item: RItem, database: Realm) -> Bool {
+        var fieldsDidChange = false
+        var pageIndexDidChange = false
+
         for field in item.fields {
             let newValue: String
             switch field.key {
@@ -81,6 +92,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
                 newValue = annotation.comment
             case FieldKeys.Item.Annotation.pageIndex:
                 newValue = "\(annotation.page)"
+                pageIndexDidChange = field.value != newValue
             case FieldKeys.Item.Annotation.pageLabel:
                 newValue = annotation.pageLabel
             case FieldKeys.Item.Annotation.sortIndex:
@@ -94,8 +106,15 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
             if didChange {
                 field.changed = didChange
                 field.value = newValue
+                fieldsDidChange = true
             }
         }
+
+        if fieldsDidChange {
+            item.changedFields.insert(.fields)
+        }
+
+        return pageIndexDidChange
     }
 
     private func sync(rects: [CGRect], in item: RItem, database: Realm) {
@@ -120,6 +139,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
             database.add(rRect)
             item.rects.append(rRect)
         }
+
+        item.changedFields.insert(.rects)
     }
 
     private func createRect(from rect: CGRect) -> RRect {
@@ -154,5 +175,9 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         if tagsDidChange {
             item.changedFields.insert(.tags)
         }
+    }
+
+    private func updateImageAttachment(for annotation: Annotation, item: RItem, database: Realm) {
+        // TODO: - create/update attachment item for preview image
     }
 }

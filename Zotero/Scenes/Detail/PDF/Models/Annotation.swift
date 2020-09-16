@@ -11,38 +11,8 @@ import UIKit
 import CocoaLumberjackSwift
 
 struct Annotation {
-    enum Kind {
-        case highlight
-        case note
-        case area
-
-        init?(rawType: String) {
-            switch rawType {
-            case AnnotationTypes.highlight:
-                self = .highlight
-            case AnnotationTypes.image:
-                self = .area
-            case AnnotationTypes.note:
-                self = .note
-            default:
-                return nil
-            }
-        }
-
-        var rawType: String {
-            switch self {
-            case .area:
-                return AnnotationTypes.image
-            case .highlight:
-                return AnnotationTypes.highlight
-            case .note:
-                return AnnotationTypes.note
-            }
-        }
-    }
-
     let key: String
-    let type: Kind
+    let type: AnnotationType
     let page: Int
     let pageLabel: String
     let rects: [CGRect]
@@ -57,7 +27,7 @@ struct Annotation {
     let tags: [Tag]
     let didChange: Bool
 
-    init(key: String, type: Kind, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
+    init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
          text: String?, isLocked: Bool, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool) {
         self.key = key
         self.type = type
@@ -83,7 +53,7 @@ struct Annotation {
               let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
             return nil
         }
-        guard let type = Kind(rawType: rawType) else {
+        guard let type = AnnotationType(rawValue: rawType) else {
             DDLogError("Annotation: unknown annotation type '\(rawType)'")
             return nil
         }
