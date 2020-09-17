@@ -790,7 +790,8 @@ class ExtensionStore {
     private func create(attachment: Attachment, collections: Set<String>) -> Single<([String: Any], String, Int)> {
         return Single.create { subscriber -> Disposable in
             let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections)
+            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
+                                                    collections: collections, linkMode: .importedFile)
 
             do {
                 let attachment = try self.dbStorage.createCoordinator().perform(request: request)

@@ -397,6 +397,7 @@
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
+		B3501F5425139B40007961DB /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */; };
 		B353F1FB242E21880062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
 		B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */; };
 		B353F204242E52610062EE24 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = B353F202242E52610062EE24 /* Database.swift */; };
@@ -3150,6 +3151,7 @@
 				B305670C23FC08BA003304F2 /* ReadItemDbRequest.swift in Sources */,
 				B305670923FC08B3003304F2 /* ReadCollectionDbRequest.swift in Sources */,
 				B3AB38A7238EC02D008A1ABB /* ExtensionStore.swift in Sources */,
+				B3501F5425139B40007961DB /* CGFloat+Extensions.swift in Sources */,
 				B30566DB23FC07E7003304F2 /* LibraryObject.swift in Sources */,
 				B30566DC23FC07EE003304F2 /* ItemResponse.swift in Sources */,
 				B30566FA23FC085C003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,

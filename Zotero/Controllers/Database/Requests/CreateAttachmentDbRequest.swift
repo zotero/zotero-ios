@@ -16,6 +16,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     let attachment: Attachment
     let localizedType: String
     let collections: Set<String>
+    let linkMode: LinkMode
 
     var needsWrite: Bool { return true }
 
@@ -67,7 +68,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 case FieldKeys.Item.Attachment.contentType:
                     field.value = file.mimeType
                 case FieldKeys.Item.Attachment.linkMode:
-                    field.value = "imported_file"
+                    field.value = self.linkMode.rawValue
                 case FieldKeys.Item.Attachment.md5:
                     field.value = md5(from: file.createUrl()) ?? ""
                 case FieldKeys.Item.Attachment.mtime:

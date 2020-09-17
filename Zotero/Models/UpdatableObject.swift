@@ -146,24 +146,25 @@ extension RItem: Updatable {
                     // but they are used in file upload
                     parameters[field.key] = ""
                 case FieldKeys.Item.Annotation.pageIndex:
-                    parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: field.value, rects: self.rects)
+                    let pageIndex = Int(field.value) ?? 0
+                    parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects)
                 default:
                     parameters[field.key] = field.value
                 }
             }
         }
         if changes.contains(.rects) && parameters[FieldKeys.Item.Annotation.position] == nil {
-            let pageIndex = self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first?.value ?? "0"
+            let pageIndex = self.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) ?? 0
             parameters[FieldKeys.Item.Annotation.position] = self.createAnnotationPosition(pageIndex: pageIndex, rects: self.rects)
         }
         
         return parameters
     }
 
-    private func createAnnotationPosition(pageIndex: String, rects: List<RRect>) -> String {
+    private func createAnnotationPosition(pageIndex: Int, rects: List<RRect>) -> String {
         var rectArray: [[Double]] = []
         rects.forEach { rRect in
-            rectArray.append([rRect.minX, rRect.minY, rRect.maxX, rRect.maxY])
+            rectArray.append([rRect.minX.rounded(to: 3), rRect.minY.rounded(to: 3), rRect.maxX.rounded(to: 3), rRect.maxY.rounded(to: 3)])
         }
         let jsonData: [String: Any] = [FieldKeys.Item.Annotation.pageIndex: pageIndex,
                                        FieldKeys.Item.Annotation.rects: rectArray]

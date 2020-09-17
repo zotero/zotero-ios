@@ -18,6 +18,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
     let annotations: [Annotation]
 
+    unowned let schemaController: SchemaController
+
     func process(in database: Realm) throws {
         let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId)
                                             .process(in: database)
@@ -30,47 +32,27 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
 
         for annotation in self.annotations {
             guard annotation.didChange else { continue }
-            self.sync(annotation: annotation, to: parent, database: database)
+            try self.sync(annotation: annotation, to: parent, database: database)
         }
     }
 
-    private func sync(annotation: Annotation, to parent: RItem, database: Realm) {
+    private func sync(annotation: Annotation, to parent: RItem, database: Realm) throws {
         let item: RItem
 
         if let existing = parent.children.filter(.key(annotation.key)).first {
             item = existing
         } else {
-            item = RItem()
-            item.key = annotation.key
-            item.rawType = ItemTypes.annotation
-            item.syncState = .synced
-            item.dateAdded = annotation.dateModified
-            item.changedFields = [.parent, .fields, .type]
-            database.add(item)
-
-            item.parent = parent
-
-            for field in FieldKeys.Item.Annotation.fields(for: annotation.type) {
-                let rField = RItemField()
-                rField.key = field
-                if field == FieldKeys.Item.Annotation.type {
-                    rField.value = annotation.type.rawValue
-                }
-                rField.changed = true
-                database.add(rField)
-
-                rField.item = item
-            }
+            item = try self.createItem(from: annotation, parent: parent, database: database)
         }
 
         item.dateModified = annotation.dateModified
 
-        let pageIndexDidChange = self.syncFields(annotation: annotation, in: item, database: database)
+        self.syncFields(annotation: annotation, in: item, database: database)
         self.sync(tags: annotation.tags, in: item, database: database)
         self.sync(rects: annotation.rects, in: item, database: database)
 
         // If position changed add/update embedded_image attachment item
-        if pageIndexDidChange && item.changedFields.contains(.rects) {
+        if item.changedFields.contains(.rects) {
             self.updateImageAttachment(for: annotation, item: item, database: database)
         }
 
@@ -79,9 +61,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         }
     }
 
-    private func syncFields(annotation: Annotation, in item: RItem, database: Realm) -> Bool {
+    private func syncFields(annotation: Annotation, in item: RItem, database: Realm) {
         var fieldsDidChange = false
-        var pageIndexDidChange = false
 
         for field in item.fields {
             let newValue: String
@@ -92,7 +73,6 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
                 newValue = annotation.comment
             case FieldKeys.Item.Annotation.pageIndex:
                 newValue = "\(annotation.page)"
-                pageIndexDidChange = field.value != newValue
             case FieldKeys.Item.Annotation.pageLabel:
                 newValue = annotation.pageLabel
             case FieldKeys.Item.Annotation.sortIndex:
@@ -113,8 +93,6 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         if fieldsDidChange {
             item.changedFields.insert(.fields)
         }
-
-        return pageIndexDidChange
     }
 
     private func sync(rects: [CGRect], in item: RItem, database: Realm) {
@@ -178,6 +156,66 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     }
 
     private func updateImageAttachment(for annotation: Annotation, item: RItem, database: Realm) {
-        // TODO: - create/update attachment item for preview image
+        // Don't create new attachment item for annotation if it doesn't exist. It's probably just not synced yet and we don't want one
+        // annotation to have multiple embeded image attachments.
+        guard let attachment = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first else { return }
+
+        attachment.attachmentNeedsSync = true
+        attachment.changeType = .user
+    }
+
+    private func createItem(from annotation: Annotation, parent: RItem, database: Realm) throws -> RItem {
+        let item = RItem()
+        item.key = annotation.key
+        item.rawType = ItemTypes.annotation
+        item.localizedType = self.schemaController.localized(itemType: ItemTypes.annotation) ?? ""
+        item.syncState = .synced
+        // We need to submit tags on creation even if they are empty, so we need to mark them as changed
+        item.changedFields = [.parent, .fields, .type, .tags]
+        item.dateAdded = annotation.dateModified
+
+        switch self.libraryId {
+        case .custom(let type):
+            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
+            item.customLibrary = library
+        case .group(let identifier):
+            let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
+            item.group = group
+        }
+
+        database.add(item)
+
+        item.parent = parent
+
+        self.createMandatoryFields(for: item, annotationType: annotation.type, database: database)
+        try self.createEmbeddedImageAttachment(for: item, parent: parent, database: database)
+        
+        return item
+    }
+
+    private func createEmbeddedImageAttachment(for item: RItem, parent: RItem, database: Realm) throws {
+        let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
+        let file = Files.annotationPreview(annotationKey: item.key, pdfKey: parent.key, isDark: false)
+        let attachmentKey = KeyGenerator.newKey
+        let attachment = Attachment(key: attachmentKey, title: attachmentKey,
+                                    type: .file(file: file, filename: attachmentKey, location: .local),
+                                    libraryId: self.libraryId)
+        let attachmentItem = try CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
+                                                           collections: [], linkMode: .embeddedImage).process(in: database)
+        attachmentItem.parent = item
+    }
+
+    private func createMandatoryFields(for item: RItem, annotationType: AnnotationType, database: Realm) {
+        for field in FieldKeys.Item.Annotation.fields(for: annotationType) {
+            let rField = RItemField()
+            rField.key = field
+            if field == FieldKeys.Item.Annotation.type {
+                rField.value = annotationType.rawValue
+            }
+            rField.changed = true
+            database.add(rField)
+
+            rField.item = item
+        }
     }
 }

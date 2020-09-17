@@ -21,13 +21,16 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    private unowned let schemaController: SchemaController
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter) {
+    init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter,
+         schemaController: SchemaController) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
+        self.schemaController = schemaController
         self.queue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.disposeBag = DisposeBag()
     }
@@ -131,7 +134,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         self.queue.async {
             do {
-                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations)
+                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations,
+                                                               schemaController: self.schemaController)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 // TODO: - Show error
@@ -444,50 +448,24 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         let newSection = Int(annotation.pageIndex)
 
+        guard newSection == indexPath.section else { return }
+
         self.update(viewModel: viewModel) { state in
-            if newSection != indexPath.section {
-                // Annotation changed page, move it
-                guard var zoteroAnnotation = state.annotations[indexPath.section]?.remove(at: indexPath.row) else {
-                    DDLogError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
-                    fatalError("PDFReaderActionHandler: annotation not found at index which was find in `findAnnotation`")
-                }
-
-                // Update bounding box
-                zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox])
-
-                // TODO: - calculate new sortIndex
-
-                // Find new index on new page based on sortIndex
-                let index: Int
-                if let annotations = state.annotations[newSection] {
-                    index = annotations.index(of: zoteroAnnotation, sortedBy: { $0.sortIndex > $1.sortIndex })
-                } else {
-                    state.annotations[newSection] = []
-                    index = 0
-                }
-
-                state.annotations[newSection]?.insert(zoteroAnnotation, at: index)
-                state.removedAnnotationIndexPaths = [indexPath]
-                state.insertedAnnotationIndexPaths = [IndexPath(row: index, section: newSection)]
-            } else {
-                guard var zoteroAnnotation = state.annotations[indexPath.section]?[indexPath.row] else {
-                    DDLogError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
-                    fatalError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
-                }
-
-                // TODO: - calculate new sortIndex, move annotation if needed
-
-                // Update bounding box of annotation
-                zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox])
-                state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
-
-                // If it's a `SquareAnnotation`, reload cell if aspect ratio of preview changed
-                if annotation is SquareAnnotation &&
-                    zoteroAnnotation.boundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
-                    // TODO: - don't update if sortIndex changed, it will be moved
-                    state.updatedAnnotationIndexPaths = [indexPath]
-                }
+            guard var zoteroAnnotation = state.annotations[indexPath.section]?[indexPath.row] else {
+                DDLogError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
+                fatalError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
             }
+
+            // If it's a `SquareAnnotation`, reload cell if aspect ratio of preview changed
+            if annotation is SquareAnnotation &&
+               zoteroAnnotation.boundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
+                state.updatedAnnotationIndexPaths = [indexPath]
+            }
+
+            // Update bounding box of annotation
+            zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox],
+                                                     sortIndex: self.sortIndex(from: annotation))
+            state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
 
             // Remove annotation preview from cache, if `SquareAnnotation` changed, then preview image changed as well
             state.previewCache.removeObject(forKey: (key as NSString))
@@ -568,10 +546,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func zoteroAnnotation(from annotation: PSPDFKit.Annotation, isNew: Bool) -> Annotation? {
         guard AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
+        let page = Int(annotation.pageIndex)
+
         if let annotation = annotation as? NoteAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .note,
-                              page: Int(annotation.pageIndex),
+                              page: page,
                               pageLabel: "\(annotation.pageIndex + 1)",
                               rects: [annotation.boundingBox],
                               author: "",
@@ -579,15 +559,15 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               color: annotation.color?.hexString ?? "#E1AD01",
                               comment: (annotation.contents ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
                               text: nil,
-                              isLocked: annotation.isLocked,
-                              sortIndex: "",
+                              isLocked: false,
+                              sortIndex: self.sortIndex(from: annotation),
                               dateModified: Date(),
                               tags: [],
                               didChange: isNew)
         } else if let annotation = annotation as? HighlightAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .highlight,
-                              page: Int(annotation.pageIndex),
+                              page: page,
                               pageLabel: "\(annotation.pageIndex + 1)",
                               rects: annotation.rects ?? [annotation.boundingBox],
                               author: "",
@@ -595,15 +575,15 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               color: annotation.color?.hexString ?? "#E1AD01",
                               comment: "",
                               text: annotation.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines),
-                              isLocked: annotation.isLocked,
-                              sortIndex: "",
+                              isLocked: false,
+                              sortIndex: self.sortIndex(from: annotation),
                               dateModified: Date(),
                               tags: [],
                               didChange: isNew)
         } else if let annotation = annotation as? SquareAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .image,
-                              page: Int(annotation.pageIndex),
+                              page: page,
                               pageLabel: "\(annotation.pageIndex + 1)",
                               rects: [annotation.boundingBox],
                               author: "",
@@ -611,8 +591,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               color: annotation.color?.hexString ?? "#E1AD01",
                               comment: "",
                               text: nil,
-                              isLocked: annotation.isLocked,
-                              sortIndex: "",
+                              isLocked: false,
+                              sortIndex: self.sortIndex(from: annotation),
                               dateModified: Date(),
                               tags: [],
                               didChange: isNew)
@@ -674,6 +654,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.borderStyle = .dashed
         note.color = UIColor(hex: annotation.color)
         return note
+    }
+
+    private func sortIndex(from annotation: PSPDFKit.Annotation) -> String {
+        let yPos = Int(round(annotation.boundingBox.origin.y))
+        return String(format: "%05d|%06d|%05d", annotation.pageIndex, 0, yPos)
     }
 }
 

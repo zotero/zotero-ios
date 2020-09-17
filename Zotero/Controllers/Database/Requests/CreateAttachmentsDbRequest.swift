@@ -24,7 +24,8 @@ struct CreateAttachmentsDbRequest: DbResponseRequest {
         var failedTitles: [String] = []
         self.attachments.forEach { attachment in
             do {
-                _ = try CreateAttachmentDbRequest(attachment: attachment, localizedType: self.localizedType, collections: self.collections).process(in: database)
+                _ = try CreateAttachmentDbRequest(attachment: attachment, localizedType: self.localizedType,
+                                                  collections: self.collections, linkMode: .importedFile).process(in: database)
             } catch let error {
                 DDLogError("CreateAttachmentsDbRequest: could not create attachment - \(error)")
                 failedTitles.append(attachment.title)
