@@ -148,6 +148,8 @@ final class SyncController: SynchronizationController {
     private var previousType: SyncType?
     // Sync type for libraries.
     private var libraryType: LibrarySyncType
+    // Create action option
+    private var createActionOptions: CreateLibraryActionsOptions
     // Version returned by last object sync, used to check for version mismatches between object syncs
     private var lastReturnedVersion: Int?
     // Array of non-fatal errors that happened during current sync
@@ -190,6 +192,7 @@ final class SyncController: SynchronizationController {
         self.nonFatalErrors = []
         self.type = .normal
         self.previousType = nil
+        self.createActionOptions = .automatic
         self.libraryType = .all
         self.conflictDelays = conflictDelays
         self.conflictRetries = 0
@@ -302,6 +305,8 @@ final class SyncController: SynchronizationController {
         self.disposeBag = DisposeBag()
         self.accessPermissions = nil
         self.batchProcessor = nil
+        self.libraryType = .all
+        self.createActionOptions = .automatic
     }
 
     // MARK: - Error handling
@@ -622,6 +627,7 @@ final class SyncController: SynchronizationController {
             let (actions, queueIndex, writeCount) = self.createLibraryActions(for: data, creationOptions: options)
 
             self.accessQueue.async(flags: .barrier) { [weak self] in
+                self?.createActionOptions = options
                 if let names = libraryNames {
                     self?.progressHandler.set(libraryNames: names)
                 }
@@ -664,16 +670,13 @@ final class SyncController: SynchronizationController {
                             allActions.append(.resolveGroupMetadataWritePermission(groupId, libraryData.name))
                         }
                     case .custom:
-                        let actions = self.createUpdateActions(updates: libraryData.updates,
-                                                               deletions: libraryData.deletions,
-                                                               libraryId: libraryId)
+                        let actions = self.createUpdateActions(updates: libraryData.updates, deletions: libraryData.deletions, libraryId: libraryId)
                          writeCount += actions.count
                         // We can always write to custom libraries
                         allActions.append(contentsOf: actions)
                     }
                 } else if creationOptions == .automatic {
-                    allActions.append(contentsOf: self.createDownloadActions(for: libraryId,
-                                                                             versions: libraryData.versions))
+                    allActions.append(contentsOf: self.createDownloadActions(for: libraryId, versions: libraryData.versions))
                 }
             }
         }
@@ -1362,6 +1365,12 @@ final class SyncController: SynchronizationController {
         // Remote has newer version than local, we need to remove remaining write actions for this library from queue,
         // sync remote changes and then try to upload our local changes again, we remove existing write actions from
         // queue because they might change - for example some deletions might be overwritten by remote changes
+
+        if self.createActionOptions == .onlyWrites {
+            // We already tried this before and it didn't work, abort sync.
+            self.abort(error: .preconditionErrorCantBeResolved)
+            return true
+        }
 
         switch preconditionError {
         case .objectConflict:

@@ -8,7 +8,7 @@
 
 #if PDFENABLED
 
-import Foundation
+import UIKit
 
 import CocoaLumberjackSwift
 import PSPDFKit
@@ -37,8 +37,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     func process(action: PDFReaderAction, in viewModel: ViewModel<PDFReaderActionHandler>) {
         switch action {
-        case .loadAnnotations:
-            self.loadAnnotations(in: viewModel)
+        case .loadAnnotations(let interfaceStyle):
+            self.loadAnnotations(interfaceStyle: interfaceStyle, in: viewModel)
 
         case .startObservingAnnotationChanges:
             self.observePreviews(in: viewModel)
@@ -81,8 +81,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         case .setTags(let tags, let indexPath):
             self.update(annotation: { $0.copy(tags: tags) }, reloadComment: false, at: indexPath, in: viewModel)
 
-        case .userInterfaceStyleChanged:
-            self.userInterfaceChanged(in: viewModel)
+        case .userInterfaceStyleChanged(let interfaceStyle):
+            self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
 
         case .updateAnnotationPreviews(let userInterfaceIsDark):
             self.storeAnnotationPreviewsIfNeeded(isDark: userInterfaceIsDark, in: viewModel)
@@ -97,11 +97,20 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     // MARK: - Dark mode changes
 
-    private func userInterfaceChanged(in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func userInterfaceChanged(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
             state.changes = .darkMode
             state.previewCache.removeAllObjects()
             state.shouldStoreAnnotationPreviewsIfNeeded = true
+
+            state.annotations.forEach { page, _ in
+                let annotations = state.document.annotations(at: PageIndex(page))
+                annotations.forEach { annotation in
+                    annotation.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor),
+                                                                      isHighlight: (annotation is HighlightAnnotation),
+                                                                      userInterfaceStyle: interfaceStyle)
+                }
+            }
         }
     }
 
@@ -487,12 +496,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
-    private func loadAnnotations(in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func loadAnnotations(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
             let (zoteroAnnotations, comments) = try self.annotationsAndComments(for: viewModel.state.key,
                                                                                 libraryId: viewModel.state.libraryId,
                                                                                 baseFont: viewModel.state.commentFont)
-            let pspdfkitAnnotations = self.annotations(from: zoteroAnnotations)
+            let pspdfkitAnnotations = self.annotations(from: zoteroAnnotations, interfaceStyle: interfaceStyle)
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
@@ -556,7 +565,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               rects: [annotation.boundingBox],
                               author: "",
                               isAuthor: true,
-                              color: annotation.color?.hexString ?? "#E1AD01",
+                              color: annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor,
                               comment: (annotation.contents ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
                               text: nil,
                               isLocked: false,
@@ -572,7 +581,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               rects: annotation.rects ?? [annotation.boundingBox],
                               author: "",
                               isAuthor: true,
-                              color: annotation.color?.hexString ?? "#E1AD01",
+                              color: annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor,
                               comment: "",
                               text: annotation.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines),
                               isLocked: false,
@@ -588,7 +597,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               rects: [annotation.boundingBox],
                               author: "",
                               isAuthor: true,
-                              color: annotation.color?.hexString ?? "#E1AD01",
+                              color: annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor,
                               comment: "",
                               text: nil,
                               isLocked: false,
@@ -604,47 +613,51 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
     /// - parameter zoteroAnnotations: Annotations to convert.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
-    private func annotations(from zoteroAnnotations: [Int: [Annotation]]) -> [PSPDFKit.Annotation] {
+    private func annotations(from zoteroAnnotations: [Int: [Annotation]], interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
         return zoteroAnnotations.values.flatMap({ $0 }).map({
             switch $0.type {
             case .image:
-                return self.areaAnnotation(from: $0)
+                return self.areaAnnotation(from: $0, interfaceStyle: interfaceStyle)
             case .highlight:
-                return self.highlightAnnotation(from: $0)
+                return self.highlightAnnotation(from: $0, interfaceStyle: interfaceStyle)
             case .note:
-                return self.noteAnnotation(from: $0)
+                return self.noteAnnotation(from: $0, interfaceStyle: interfaceStyle)
             }
         })
     }
 
     /// Creates corresponding `SquareAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private func areaAnnotation(from annotation: Annotation) -> SquareAnnotation {
+    private func areaAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> SquareAnnotation {
         let square = SquareAnnotation()
         square.pageIndex = UInt(annotation.page)
         square.boundingBox = annotation.boundingBox
-        square.borderColor = UIColor(hex: annotation.color)
+        square.borderColor = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
+                                                            isHighlight: false,
+                                                            userInterfaceStyle: interfaceStyle)
         square.isZotero = true
+        square.baseColor = annotation.color
         square.key = annotation.key
         return square
     }
 
     /// Creates corresponding `HighlightAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private func highlightAnnotation(from annotation: Annotation) -> HighlightAnnotation {
+    private func highlightAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> HighlightAnnotation {
         let highlight = HighlightAnnotation()
         highlight.pageIndex = UInt(annotation.page)
         highlight.boundingBox = annotation.boundingBox
         highlight.rects = annotation.rects
-        highlight.color = UIColor(hex: annotation.color)
+        highlight.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: true, userInterfaceStyle: interfaceStyle)
         highlight.isZotero = true
+        highlight.baseColor = annotation.color
         highlight.key = annotation.key
         return highlight
     }
 
     /// Creates corresponding `NoteAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private func noteAnnotation(from annotation: Annotation) -> NoteAnnotation {
+    private func noteAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> NoteAnnotation {
         let note = NoteAnnotation(contents: annotation.comment)
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
@@ -652,7 +665,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.isZotero = true
         note.key = annotation.key
         note.borderStyle = .dashed
-        note.color = UIColor(hex: annotation.color)
+        note.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle)
+        note.baseColor = annotation.color
         return note
     }
 

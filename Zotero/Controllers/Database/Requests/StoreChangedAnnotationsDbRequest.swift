@@ -159,9 +159,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         // Don't create new attachment item for annotation if it doesn't exist. It's probably just not synced yet and we don't want one
         // annotation to have multiple embeded image attachments.
         guard let attachment = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first else { return }
-
         attachment.attachmentNeedsSync = true
-        attachment.changeType = .user
     }
 
     private func createItem(from annotation: Annotation, parent: RItem, database: Realm) throws -> RItem {
@@ -203,6 +201,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         let attachmentItem = try CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
                                                            collections: [], linkMode: .embeddedImage).process(in: database)
         attachmentItem.parent = item
+        attachmentItem.changedFields.insert(.parent)
     }
 
     private func createMandatoryFields(for item: RItem, annotationType: AnnotationType, database: Realm) {

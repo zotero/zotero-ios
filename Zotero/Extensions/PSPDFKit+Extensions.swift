@@ -48,6 +48,20 @@ extension PSPDFKit.Annotation {
             }
         }
     }
+
+    var baseColor: String {
+        get {
+            return (self.customData?[AnnotationsConfig.baseColorKey] as? String) ?? AnnotationsConfig.defaultActiveColor
+        }
+
+        set {
+            if self.customData == nil {
+                self.customData = [AnnotationsConfig.baseColorKey: newValue]
+            } else {
+                self.customData?[AnnotationsConfig.baseColorKey] = newValue
+            }
+        }
+    }
 }
 
 #endif

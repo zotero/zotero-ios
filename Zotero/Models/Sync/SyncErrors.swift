@@ -24,6 +24,7 @@ enum SyncError {
         case permissionLoadingFailed
         case missingGroupPermissions
         case cancelled
+        case preconditionErrorCantBeResolved
     }
 
     enum NonFatal: Error {

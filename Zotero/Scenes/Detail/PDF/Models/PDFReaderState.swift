@@ -65,7 +65,7 @@ struct PDFReaderState: ViewModelState {
         self.shouldStoreAnnotationPreviewsIfNeeded = false
         self.commentFont = UIFont.preferredFont(forTextStyle: .body)
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
-                                                .flatMap({ UIColor(hex: $0) }) ?? AnnotationsConfig.defaultActiveColor
+                                                .flatMap({ UIColor(hex: $0) }) ?? UIColor(hex: AnnotationsConfig.defaultActiveColor)
         self.changes = []
 
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB

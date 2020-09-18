@@ -58,7 +58,7 @@ struct Annotation {
             return nil
         }
 
-        let text = item.fields.filter(.key(FieldKeys.Item.Annotation.comment)).first?.value
+        let text = item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
 
         if type == .highlight && text == nil {
             DDLogError("Annotation: highlight annotation is missing text property")

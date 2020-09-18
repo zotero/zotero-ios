@@ -8,13 +8,13 @@
 
 #if PDFENABLED
 
-import Foundation
+import UIKit
 
 import PSPDFKit
 
 enum PDFReaderAction {
     case startObservingAnnotationChanges
-    case loadAnnotations
+    case loadAnnotations(UIUserInterfaceStyle)
     case searchAnnotations(String)
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)
@@ -26,7 +26,7 @@ enum PDFReaderAction {
     case setComment(String, IndexPath)
     case setTags([Tag], IndexPath)
     case setHighlight(String, IndexPath)
-    case userInterfaceStyleChanged
+    case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews(userInterfaceIsDark: Bool)
     case setActiveColor(String)
     case saveChanges

@@ -48,6 +48,10 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
         var levels: [Int: [[String: Any]]] = [:]
 
         for item in items {
+            if item.attachmentNeedsSync {
+                hasUpload = true
+            }
+
             guard let parameters = item.updateParameters else { continue }
 
             let level = self.level(for: item, levelCache: keyToLevel)
@@ -58,10 +62,6 @@ struct ReadUpdatedItemUpdateParametersDbRequest: DbResponseRequest {
                 levels[level] = array
             } else {
                 levels[level] = [parameters]
-            }
-
-            if item.attachmentNeedsSync {
-                hasUpload = true
             }
         }
 
