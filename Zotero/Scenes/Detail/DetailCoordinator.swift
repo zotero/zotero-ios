@@ -169,7 +169,8 @@ class DetailCoordinator: Coordinator {
         let handler = PDFReaderActionHandler(dbStorage: dbStorage,
                                              annotationPreviewController: self.controllers.annotationPreviewController,
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
-                                             schemaController: self.controllers.schemaController)
+                                             schemaController: self.controllers.schemaController,
+                                             fileStorage: self.controllers.fileStorage)
         let state = PDFReaderState(url: url, key: key, libraryId: libraryId)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size),

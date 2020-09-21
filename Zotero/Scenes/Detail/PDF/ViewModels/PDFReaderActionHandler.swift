@@ -22,15 +22,17 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
     private unowned let schemaController: SchemaController
+    private unowned let fileStorage: FileStorage
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
     init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter,
-         schemaController: SchemaController) {
+         schemaController: SchemaController, fileStorage: FileStorage) {
         self.dbStorage = dbStorage
         self.annotationPreviewController = annotationPreviewController
         self.htmlAttributedStringConverter = htmlAttributedStringConverter
         self.schemaController = schemaController
+        self.fileStorage = fileStorage
         self.queue = DispatchQueue(label: "org.zotero.Zotero.PDFReaderActionHandler.queue", qos: .userInteractive)
         self.disposeBag = DisposeBag()
     }
@@ -415,6 +417,18 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.changes.insert(.selection)
             }
             state.changes.insert(.annotations)
+
+            let pdfKey = state.key
+            self.queue.async {
+                self.removeAnnotationFiles(for: deletedKeys, pdfKey: pdfKey)
+            }
+        }
+    }
+
+    private func removeAnnotationFiles(for keys: Set<String>, pdfKey: String) {
+        for key in keys {
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, isDark: true))
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, isDark: false))
         }
     }
 
@@ -438,8 +452,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
         }
 
-        for location in toDelete {
-            zoteroAnnotations[location.1]?.remove(at: location.0)
+        for (index, page) in toDelete {
+            zoteroAnnotations[page]?.remove(at: index)
         }
 
         return keys

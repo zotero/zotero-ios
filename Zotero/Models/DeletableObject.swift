@@ -58,8 +58,17 @@ extension RItem: Deletable {
             }
         }
 
-        if self.rawType == ItemTypes.attachment, let file = AttachmentCreator.file(for: self) {
-            NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+        // Cleanup leftover files
+        switch self.rawType {
+        case ItemTypes.attachment:
+            if let file = AttachmentCreator.file(for: self) {
+                // Delete attachment file if this attachment contains a file
+                NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+            }
+            // Try deleting annotation container as well, there's no need to check whether this attachment contains annotations or not,
+            // `AttachmentFileCleanupController` doesn't report any errors, so in the worst case it just won't find the folder.
+            NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationContainer(pdfKey: self.key))
+        default: break
         }
     }
 }

@@ -100,6 +100,10 @@ struct Files {
                         name: annotationKey + (isDark ? "_dark" : ""), ext: "jpg")
     }
 
+    static func annotationContainer(pdfKey: String) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", pdfKey], name: "", ext: "")
+    }
+
     // MARK: - Share extension
 
     static func shareExtensionTmpItem(key: String, ext: String) -> File {

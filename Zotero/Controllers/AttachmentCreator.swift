@@ -34,21 +34,47 @@ struct AttachmentCreator {
     }
 
     static func file(for item: RItem) -> File? {
-        guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty else { return nil }
+        guard let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }),
+              let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty else { return nil }
+
         guard let libraryId = item.libraryObject?.identifier else {
-            DDLogError("Attachment: missing library for item (\(item.key))")
+            DDLogError("AttachmentCreator: missing library for item (\(item.key))")
             return nil
         }
-        return Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+
+        switch linkMode {
+        case .embeddedImage:
+            if let parent = item.parent {
+                switch parent.rawType {
+                case ItemTypes.annotation:
+                    if let attachment = parent.parent {
+                        return Files.annotationPreview(annotationKey: parent.key, pdfKey: attachment.key, isDark: false)
+                    } else {
+                        DDLogError("AttachmentCreator: uploading file for embedded image of annotation without parent (\(parent.key), \(item.key))!")
+                        // This shouldn't really happen, annotation must always have a pdf parent! But let's not crash and return default attachment file.
+                        return Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+                    }
+                default:
+                    DDLogError("AttachmentCreator: uploading file for embedded image with parent of unknown type ('\(parent.rawType)', \(item.key))!")
+                    // Embedded image can only be assigned to annotations currently, but return default file just in case.
+                    return Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+                }
+            } else {
+                DDLogError("AttachmentCreator: uploading file for embedded image without parent (\(item.key))!")
+                // This shouldn't really happen, embedded image must always have a parent! But let's not crash and return default attachment file.
+                return Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+            }
+        default:
+            return Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
+        }
     }
 
     private static func fileAttachmentType(for item: RItem, contentType: String, fileStorage: FileStorage) -> Attachment.ContentType? {
-        guard let libraryId = item.libraryObject?.identifier else {
+        guard let file = file(for: item) else {
             DDLogError("Attachment: missing library for item (\(item.key))")
             return nil
         }
 
-        let file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
         let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value ?? (item.displayTitle + "." + file.ext)
         let location: Attachment.FileLocation?
 
