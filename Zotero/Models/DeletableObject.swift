@@ -61,9 +61,13 @@ extension RItem: Deletable {
         // Cleanup leftover files
         switch self.rawType {
         case ItemTypes.attachment:
-            if let file = AttachmentCreator.file(for: self) {
+            if let file = AttachmentCreator.file(for: self, options: .light),
+               let darkFile = AttachmentCreator.file(for: self, options: .dark) {
                 // Delete attachment file if this attachment contains a file
                 NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+                if file.name != darkFile.name {
+                    NotificationCenter.default.post(name: .attachmentDeleted, object: darkFile)
+                }
             }
             // Try deleting annotation container as well, there's no need to check whether this attachment contains annotations or not,
             // `AttachmentFileCleanupController` doesn't report any errors, so in the worst case it just won't find the folder.

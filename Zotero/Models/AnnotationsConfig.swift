@@ -28,9 +28,7 @@ struct AnnotationsConfig {
     #endif
 
     private static func createPreviewSize() -> CGSize {
-        let scale = UIScreen.main.scale
-        let size = sidebarWidth * scale
-        return CGSize(width: ceil(size), height: ceil(size))
+        return CGSize(width: sidebarWidth, height: sidebarWidth)
     }
 
     private static func createSidebarWidth() -> CGFloat {

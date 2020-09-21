@@ -149,10 +149,14 @@ extension AnnotationPreviewController {
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
     private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, type: PreviewType) {
+        let options = RenderOptions()
+        options.skipAnnotationArray = document.annotations(at: pageIndex)
+
         let request = MutableRenderRequest(document: document)
         request.imageSize = self.size
         request.pageIndex = pageIndex
         request.pdfRect = rect
+        request.options = options
         request.userInfo["key"] = key
         request.userInfo["parentKey"] = parentKey
         request.userInfo["type"] = type.rawValue

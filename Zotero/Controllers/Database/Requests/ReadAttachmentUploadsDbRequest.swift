@@ -22,7 +22,8 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
         let items = database.objects(RItem.self).filter(.itemsNotChangedAndNeedUpload(in: self.libraryId))
         let uploads = items.compactMap({ item -> AttachmentUpload? in
             guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value,
-                  let file = AttachmentCreator.file(for: item) else { return nil }
+                  // Always upload light version of attachment (applies to embedded_image)
+                  let file = AttachmentCreator.file(for: item, options: .light) else { return nil }
 
             let mtime = item.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
             let md5 = item.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""

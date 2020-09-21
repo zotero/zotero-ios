@@ -11,14 +11,17 @@ import Foundation
 import CocoaLumberjackSwift
 
 struct AttachmentCreator {
+    enum Options {
+        case light, dark
+    }
 
     /// Returns attachment based on attachment item.
     /// - parameter item: Attachment item to check.
     /// - parameter fileStorage: File storage to check availability of local attachment.
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment if recognized. Nil otherwise.
-    static func attachment(for item: RItem, fileStorage: FileStorage, urlDetector: UrlDetector) -> Attachment? {
-        return attachmentContentType(for: item, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
+    static func attachment(for item: RItem, options: Options? = nil, fileStorage: FileStorage, urlDetector: UrlDetector) -> Attachment? {
+        return attachmentContentType(for: item, options: options, fileStorage: fileStorage, urlDetector: urlDetector).flatMap({ Attachment(item: item, type: $0) })
     }
 
     /// Returns attachment content type type based on attachment item.
@@ -26,14 +29,14 @@ struct AttachmentCreator {
     /// - parameter fileStorage: File storage to check availability of local attachment.
     /// - parameter urlDetector: Url detector to validate url attachment.
     /// - returns: Attachment content type if recognized. Nil otherwise.
-    static func attachmentContentType(for item: RItem, fileStorage: FileStorage, urlDetector: UrlDetector) -> Attachment.ContentType? {
+    static func attachmentContentType(for item: RItem, options: Options? = nil, fileStorage: FileStorage, urlDetector: UrlDetector) -> Attachment.ContentType? {
         if let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty {
-            return fileAttachmentType(for: item, contentType: contentType, fileStorage: fileStorage)
+            return fileAttachmentType(for: item, options: options, fileStorage: fileStorage)
         }
         return urlAttachmentType(for: item, urlDetector: urlDetector)
     }
 
-    static func file(for item: RItem) -> File? {
+    static func file(for item: RItem, options: Options? = nil) -> File? {
         guard let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }),
               let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty else { return nil }
 
@@ -48,7 +51,7 @@ struct AttachmentCreator {
                 switch parent.rawType {
                 case ItemTypes.annotation:
                     if let attachment = parent.parent {
-                        return Files.annotationPreview(annotationKey: parent.key, pdfKey: attachment.key, isDark: false)
+                        return Files.annotationPreview(annotationKey: parent.key, pdfKey: attachment.key, isDark: (options == .dark))
                     } else {
                         DDLogError("AttachmentCreator: uploading file for embedded image of annotation without parent (\(parent.key), \(item.key))!")
                         // This shouldn't really happen, annotation must always have a pdf parent! But let's not crash and return default attachment file.
@@ -69,8 +72,8 @@ struct AttachmentCreator {
         }
     }
 
-    private static func fileAttachmentType(for item: RItem, contentType: String, fileStorage: FileStorage) -> Attachment.ContentType? {
-        guard let file = file(for: item) else {
+    private static func fileAttachmentType(for item: RItem, options: Options? = nil, fileStorage: FileStorage) -> Attachment.ContentType? {
+        guard let file = file(for: item, options: options) else {
             DDLogError("Attachment: missing library for item (\(item.key))")
             return nil
         }
