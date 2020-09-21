@@ -52,7 +52,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         self.sync(rects: annotation.rects, in: item, database: database)
 
         // If position changed add/update embedded_image attachment item
-        if item.changedFields.contains(.rects) {
+        if annotation.type == .image && item.changedFields.contains(.rects) {
             self.updateImageAttachment(for: annotation, item: item, database: database)
         }
 
@@ -186,7 +186,10 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         item.parent = parent
 
         self.createMandatoryFields(for: item, annotationType: annotation.type, database: database)
-        try self.createEmbeddedImageAttachment(for: item, parent: parent, database: database)
+
+        if annotation.type == .image {
+            try self.createEmbeddedImageAttachment(for: item, parent: parent, database: database)
+        }
         
         return item
     }

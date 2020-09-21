@@ -10,8 +10,8 @@ import Combine
 import MobileCoreServices
 import UIKit
 import SafariServices
-import SwiftUI
 
+import CocoaLumberjackSwift
 import RxSwift
 
 class ItemDetailViewController: UIViewController {
@@ -59,6 +59,10 @@ class ItemDetailViewController: UIViewController {
                                  self?.perform(tableViewAction: action)
                              })
                              .disposed(by: self.disposeBag)
+    }
+
+    deinit {
+        DDLogInfo("ItemDetailViewController deinitialized")
     }
 
     // MARK: - Navigation

@@ -10,6 +10,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
 import RxSwift
@@ -55,6 +56,10 @@ class AnnotationsViewController: UIViewController {
                       .disposed(by: self.disposeBag)
 
         self.viewModel.process(action: .startObservingAnnotationChanges)
+    }
+
+    deinit {
+        DDLogInfo("AnnotationsViewController deinitialized")
     }
 
     // MARK: - Actions

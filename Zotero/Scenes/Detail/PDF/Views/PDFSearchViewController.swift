@@ -10,6 +10,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
 import RxSwift
@@ -49,6 +50,10 @@ class PDFSearchViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         self.currentSearch?.cancelAllOperations()
+    }
+
+    deinit {
+        DDLogInfo("PDFSearchViewController deinitialized")
     }
 
     // MARK: - Actions

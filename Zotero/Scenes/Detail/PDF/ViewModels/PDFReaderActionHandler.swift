@@ -342,6 +342,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
         }
 
+        guard !newZoteroAnnotations.isEmpty else { return }
+
         self.update(viewModel: viewModel) { state in
             var focus: IndexPath?
 

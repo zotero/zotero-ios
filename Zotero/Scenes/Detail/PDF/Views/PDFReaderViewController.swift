@@ -10,6 +10,7 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
 import RxSwift
@@ -106,6 +107,7 @@ class PDFReaderViewController: UIViewController {
 
     deinit {
         self.pdfController?.annotationStateManager.remove(self)
+        DDLogInfo("PDFReaderViewController deinitialized")
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -220,7 +222,7 @@ class PDFReaderViewController: UIViewController {
         self.toggleSidebar()
     }
 
-    @objc private func toggleSidebar() {
+    private func toggleSidebar() {
         let shouldShow = !self.isSidebarOpened
 
         // If the layout is compact, show annotation sidebar above pdf document.
@@ -322,7 +324,7 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    @objc private func close() {
+    private func close() {
         self.viewModel.process(action: .saveChanges)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
@@ -384,8 +386,8 @@ class PDFReaderViewController: UIViewController {
         if self.traitCollection.userInterfaceStyle == .dark {
             controller.appearanceModeManager.appearanceMode = .night
         }
-        controller.annotationStateManager.add(self)
         controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
+        controller.annotationStateManager.add(self)
         self.setup(interactions: controller.interactions)
         self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)
 
@@ -419,8 +421,8 @@ class PDFReaderViewController: UIViewController {
             self?.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(context.pageView.pageIndex)))
         }
 
-        interactions.deselectAnnotation.addActivationCallback { _, _, _ in
-            self.viewModel.process(action: .selectAnnotation(nil))
+        interactions.deselectAnnotation.addActivationCallback { [weak self] _, _, _ in
+            self?.viewModel.process(action: .selectAnnotation(nil))
         }
     }
 
@@ -524,11 +526,15 @@ class PDFReaderViewController: UIViewController {
 
     private func setupNavigationBar() {
         let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3"),
-                                            style: .plain, target: self,
-                                            action: #selector(PDFReaderViewController.toggleSidebar))
+                                            style: .plain, target: nil, action: nil)
+        sidebarButton.rx.tap
+                     .subscribe(onNext: { [weak self] in self?.toggleSidebar() })
+                     .disposed(by: self.disposeBag)
         let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
-                                          style: .plain, target: self,
-                                          action: #selector(PDFReaderViewController.close))
+                                          style: .plain, target: nil, action: nil)
+        closeButton.rx.tap
+                   .subscribe(onNext: { [weak self] in self?.close() })
+                   .disposed(by: self.disposeBag)
 
         self.navigationItem.leftBarButtonItems = [closeButton, sidebarButton]
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
