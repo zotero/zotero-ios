@@ -417,18 +417,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.changes.insert(.selection)
             }
             state.changes.insert(.annotations)
-
-            let pdfKey = state.key
-            self.queue.async {
-                self.removeAnnotationFiles(for: deletedKeys, pdfKey: pdfKey)
-            }
-        }
-    }
-
-    private func removeAnnotationFiles(for keys: Set<String>, pdfKey: String) {
-        for key in keys {
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, isDark: true))
-            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, isDark: false))
         }
     }
 

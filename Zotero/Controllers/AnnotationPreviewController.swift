@@ -19,10 +19,14 @@ fileprivate struct SubscriberKey: Hashable {
 }
 
 class AnnotationPreviewController: NSObject {
+    /// Type of annotation preview
+    /// - temporary: Rendered image is returned by `Single<UIImage>` immediately, no caching is performed.
+    /// - cachedAndReported: Rendered image is cached and reported through global observable `PublishSubject<AnnotationPreviewUpdate>`.
+    /// - cachedOnly: Rendered image is only cached for later use.
     enum PreviewType: Int {
         case temporary
-        case dark
-        case light
+        case cachedAndReported
+        case cachedOnly
     }
 
     let observable: PublishSubject<AnnotationPreviewUpdate>
@@ -77,12 +81,16 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
     func store(for annotation: SquareAnnotation, parentKey: String, isDark: Bool) {
         guard let key = annotation.key, let document = annotation.document else { return }
-        self.enqueue(key: key,
-                     parentKey: parentKey,
-                     document: document,
-                     pageIndex: annotation.pageIndex,
-                     rect: annotation.boundingBox.insetBy(dx: (annotation.lineWidth + 1), dy: (annotation.lineWidth + 1)),
-                     type: isDark ? .dark : .light)
+
+        // Cache and report original color
+        let rect = annotation.boundingBox.insetBy(dx: (annotation.lineWidth + 1), dy: (annotation.lineWidth + 1))
+        self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
+                     invertColors: false, isDark: isDark, type: .cachedAndReported)
+        // If in dark mode, only cache light mode version, which is required for backend upload
+        if isDark {
+            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
+                         invertColors: true, isDark: !isDark, type: .cachedOnly)
+        }
     }
 
     /// Deletes cached preview for given annotation.
@@ -93,18 +101,8 @@ extension AnnotationPreviewController {
 
         self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
-
-            do {
-                try self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: true))
-            } catch let error {
-                DDLogWarn("AnnotationPreviewController: can't remove dark file - \(error)")
-            }
-
-            do {
-                try self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: false))
-            } catch let error {
-                DDLogWarn("AnnotationPreviewController: can't remove light file - \(error)")
-            }
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: true))
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: false))
         }
     }
 
@@ -146,11 +144,21 @@ extension AnnotationPreviewController {
     /// - parameter document: Document to render.
     /// - parameter pageIndex: Page to render.
     /// - parameter rect: Part of page to render.
+    /// - parameter invertColors: `true` if colors should be inverted, false otherwise.
+    /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, type: PreviewType) {
+    private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, invertColors: Bool = false,
+                         isDark: Bool? = nil, type: PreviewType) {
         let options = RenderOptions()
         options.skipAnnotationArray = document.annotations(at: pageIndex)
+        if invertColors {
+            if let invertFilter = CIFilter(name: "CIColorInvert") {
+                options.additionalCIFilters = [invertFilter]
+            }
+//            options.filters = [.colorCorrectInverted]
+        }
+//        options.invertRenderColor = invertColors
 
         let request = MutableRenderRequest(document: document)
         request.imageSize = self.size
@@ -160,6 +168,9 @@ extension AnnotationPreviewController {
         request.userInfo["key"] = key
         request.userInfo["parentKey"] = parentKey
         request.userInfo["type"] = type.rawValue
+        if let isDark = isDark {
+            request.userInfo["isDark"] = isDark
+        }
 
         do {
             let task = try RenderTask(request: request)
@@ -193,28 +204,33 @@ extension AnnotationPreviewController: RenderTaskDelegate {
             return
         }
 
+        let isDark = (task.request.userInfo["isDark"] as? Bool) ?? false
+
         self.queue.async(flags: .barrier) { [weak self] in
             guard let `self` = self else { return }
 
-            if type == .temporary {
-                // If image is temporary it's returned as `Single<UIImage>`, so find its subscriber and report image.
+            switch type {
+            case .temporary:
                 self.perform(event: .success(image), key: key, parentKey: parentKey)
-                return
+            case .cachedOnly:
+                self.cache(image: image, key: key, pdfKey: parentKey, isDark: isDark)
+            case .cachedAndReported:
+                self.cache(image: image, key: key, pdfKey: parentKey, isDark: isDark)
+                self.observable.on(.next((key, parentKey, image)))
             }
+        }
+    }
 
-            // If image is not temporary, cache it and report globally.
-            self.observable.on(.next((key, parentKey, image)))
+    private func cache(image: UIImage, key: String, pdfKey: String, isDark: Bool) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else {
+            DDLogError("AnnotationPreviewController: can't create data from image")
+            return
+        }
 
-            let isDark = type == .dark
-
-            do {
-                if let data = image.jpegData(compressionQuality: 0.8) {
-                    try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: parentKey, isDark: isDark),
-                                               options: .atomicWrite)
-                }
-            } catch let error {
-                DDLogError("AnnotationPreviewController: can't store preview - \(error)")
-            }
+        do {
+            try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, isDark: isDark), options: .atomicWrite)
+        } catch let error {
+            DDLogError("AnnotationPreviewController: can't store preview - \(error)")
         }
     }
 
