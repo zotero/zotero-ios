@@ -136,7 +136,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     private func saveChanges(in viewModel: ViewModel<PDFReaderActionHandler>) {
         let key = viewModel.state.key
-        let libraryId = viewModel.state.libraryId
+        let libraryId = viewModel.state.library.identifier
 
         var allAnnotations: [Annotation] = []
         viewModel.state.annotations.forEach { _, annotations in
@@ -503,8 +503,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func loadAnnotations(interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
             let (zoteroAnnotations, comments) = try self.annotationsAndComments(for: viewModel.state.key,
-                                                                                libraryId: viewModel.state.libraryId,
-                                                                                baseFont: viewModel.state.commentFont)
+                                                                                libraryId: viewModel.state.library.identifier,
+                                                                                baseFont: viewModel.state.commentFont,
+                                                                                userId: viewModel.state.userId)
             let pspdfkitAnnotations = self.annotations(from: zoteroAnnotations, interfaceStyle: interfaceStyle)
 
             self.update(viewModel: viewModel) { state in
@@ -529,7 +530,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
-    private func annotationsAndComments(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont) throws
+    private func annotationsAndComments(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont, userId: Int) throws
                                                                        -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString]) {
         let items = try self.dbStorage.createCoordinator().perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
 
@@ -537,7 +538,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         var comments: [String: NSAttributedString] = [:]
 
         for item in items {
-            guard let annotation = Annotation(item: item) else { continue }
+            guard let annotation = Annotation(item: item, currentUserId: userId) else { continue }
 
             if var array = annotations[annotation.page] {
                 array.append(annotation)
@@ -576,7 +577,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               sortIndex: self.sortIndex(from: annotation),
                               dateModified: Date(),
                               tags: [],
-                              didChange: isNew)
+                              didChange: isNew,
+                              editableInDocument: true)
         } else if let annotation = annotation as? HighlightAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .highlight,
@@ -592,7 +594,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               sortIndex: self.sortIndex(from: annotation),
                               dateModified: Date(),
                               tags: [],
-                              didChange: isNew)
+                              didChange: isNew,
+                              editableInDocument: true)
         } else if let annotation = annotation as? SquareAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .image,
@@ -608,7 +611,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                               sortIndex: self.sortIndex(from: annotation),
                               dateModified: Date(),
                               tags: [],
-                              didChange: isNew)
+                              didChange: isNew,
+                              editableInDocument: true)
         }
 
         return nil
@@ -640,6 +644,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                                                             isHighlight: false,
                                                             userInterfaceStyle: interfaceStyle)
         square.isZotero = true
+        square.isEditable = annotation.editableInDocument
         square.baseColor = annotation.color
         square.key = annotation.key
         return square
@@ -654,6 +659,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         highlight.rects = annotation.rects
         highlight.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: true, userInterfaceStyle: interfaceStyle)
         highlight.isZotero = true
+        highlight.isEditable = annotation.editableInDocument
         highlight.baseColor = annotation.color
         highlight.key = annotation.key
         return highlight
@@ -667,6 +673,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let boundingBox = annotation.boundingBox
         note.boundingBox = CGRect(x: boundingBox.minX, y: boundingBox.minY, width: 32, height: 32)
         note.isZotero = true
+        note.isEditable = annotation.editableInDocument
         note.key = annotation.key
         note.borderStyle = .dashed
         note.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle)

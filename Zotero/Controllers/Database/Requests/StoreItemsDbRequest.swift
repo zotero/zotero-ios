@@ -361,7 +361,8 @@ struct StoreItemsDbRequest: DbResponseRequest {
 
         let user = RUser()
         user.identifier = response.id
-        user.name = response.name.isEmpty ? response.username : response.name
+        user.name = response.name
+        user.username = response.username
         database.add(user)
         return user
     }

@@ -54,6 +54,8 @@ internal enum L10n {
   internal static let save = L10n.tr("Localizable", "save")
   /// Title
   internal static let title = L10n.tr("Localizable", "title")
+  /// Unknown
+  internal static let unknown = L10n.tr("Localizable", "unknown")
   /// Warning
   internal static let warning = L10n.tr("Localizable", "warning")
   /// Year

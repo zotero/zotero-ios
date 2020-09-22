@@ -123,20 +123,25 @@ class AnnotationsViewController: UIViewController {
         let state = self.viewModel.state
         guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }
 
+        guard state.library.metadataEditable else { return }
+
         switch cellAction {
         case .comment:
+            guard annotation.isAuthor else { return }
             let loader = self.previewLoader?.createPreviewLoader(for: annotation, parentKey: state.key, document: state.document)
             self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: loader, save: { [weak self] comment in
                 self?.viewModel.process(action: .setComment(comment, indexPath))
             })
 
         case .tags:
+            guard annotation.isAuthor else { return }
             let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.libraryId, selected: selected, picked: { [weak self] tags in
+            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
                 self?.viewModel.process(action: .setTags(tags, indexPath))
             })
 
         case .highlight:
+            guard annotation.isAuthor else { return }
             guard annotation.type == .highlight else { return }
             let loader = self.previewLoader?.createPreviewLoader(for: annotation, parentKey: state.key, document: state.document)
             self.coordinatorDelegate?.showHighlight(with: (annotation.text ?? ""), imageLoader: loader, save: { [weak self] highlight in
@@ -195,6 +200,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        NSLog("COUNT \(self.viewModel.state.annotations[section]?.count ?? 0) FOR \(section)")
         return self.viewModel.state.annotations[section]?.count ?? 0
     }
 
@@ -226,7 +232,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
             }
 
             cell.setup(with: annotation, attributedComment: comment, preview: preview,
-                       selected: selected, availableWidth: AnnotationsConfig.sidebarWidth)
+                       selected: selected, availableWidth: AnnotationsConfig.sidebarWidth,
+                       hasWritePermission: self.viewModel.state.library.metadataEditable)
             cell.performAction = { [weak self] action, sender in
                 self?.perform(cellAction: action, indexPath: indexPath, sender: sender)
             }

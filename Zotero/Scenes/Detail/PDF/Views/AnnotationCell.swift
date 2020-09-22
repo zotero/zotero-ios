@@ -99,7 +99,7 @@ class AnnotationCell: UITableViewCell {
         self.annotationImageView.image = image
     }
 
-    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat) {
+    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         self.key = annotation.key
 
         // Setup visuals
@@ -113,10 +113,10 @@ class AnnotationCell: UITableViewCell {
         self.annotationImageView.isHidden = !self.annotationTextContainer.isHidden
         self.annotationImageHeight.isActive = !self.annotationImageView.isHidden
         self.commentContainer.isHidden = annotation.comment.isEmpty
-        self.addCommentContainer.isHidden = !self.commentContainer.isHidden || !selected
+        self.addCommentContainer.isHidden = !hasWritePermission || !annotation.isAuthor || !self.commentContainer.isHidden || !selected
         self.firstSeparator.isHidden = self.annotationContainer.isHidden && self.commentContainer.isHidden && self.addCommentContainer.isHidden
         self.tagsContainer.isHidden = annotation.tags.isEmpty
-        self.addTagsContainer.isHidden = !self.tagsContainer.isHidden || !selected
+        self.addTagsContainer.isHidden = !hasWritePermission || !annotation.isAuthor || !self.tagsContainer.isHidden || !selected
         self.secondSeparator.isHidden = self.tagsContainer.isHidden && self.addTagsContainer.isHidden
 
         let color = UIColor(hex: annotation.color)
@@ -129,7 +129,7 @@ class AnnotationCell: UITableViewCell {
         self.headerButton.isEnabled = !annotation.isLocked
         self.headerButton.tintColor = annotation.isLocked ? .black : Asset.Colors.zoteroBlue.color
         self.headerButton.setImage(UIImage(systemName: annotation.isLocked ? "lock" : "ellipsis.circle"), for: .normal)
-        self.headerButton.isHidden = !annotation.isLocked && !selected
+        self.headerButton.isHidden = !hasWritePermission || (!annotation.isLocked && !selected)
         self.headerButton.contentEdgeInsets = UIEdgeInsets(top: 0,
                                                            left: self.headerButton.isHidden ? 0 : 10,
                                                            bottom: 0,

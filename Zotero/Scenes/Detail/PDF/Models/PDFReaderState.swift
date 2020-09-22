@@ -29,10 +29,11 @@ struct PDFReaderState: ViewModelState {
     static let activeColorKey = "PDFReaderState.activeColor"
 
     let key: String
-    let libraryId: LibraryIdentifier
+    let library: Library
     let document: Document
     let previewCache: NSCache<NSString, UIImage>
     let commentFont: UIFont
+    let userId: Int
 
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
@@ -55,9 +56,10 @@ struct PDFReaderState: ViewModelState {
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
 
-    init(url: URL, key: String, libraryId: LibraryIdentifier) {
+    init(url: URL, key: String, library: Library, userId: Int) {
         self.key = key
-        self.libraryId = libraryId
+        self.library = library
+        self.userId = userId
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]

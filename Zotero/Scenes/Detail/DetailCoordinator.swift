@@ -40,7 +40,7 @@ protocol DetailItemsCoordinatorDelegate: class {
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
-    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?)
+    func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
 }
 
 protocol DetailItemActionSheetCoordinatorDelegate: class {
@@ -56,7 +56,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
-    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?)
+    func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
 }
 
@@ -117,7 +117,7 @@ class DetailCoordinator: Coordinator {
         }
     }
 
-    func show(attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
+    func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?) {
         switch attachment.contentType {
         case .url(let url):
             self.showWeb(url: url)
@@ -128,7 +128,7 @@ class DetailCoordinator: Coordinator {
             let url = file.createUrl()
 
             if file.mimeType == "application/pdf" {
-                self.showPdf(at: url, key: attachment.key, libraryId: attachment.libraryId)
+                self.showPdf(at: url, key: attachment.key, library: library)
                 return
             } else if AVURLAsset(url: url).isPlayable {
                 self.showVideo(for: url)
@@ -162,16 +162,17 @@ class DetailCoordinator: Coordinator {
         }
     }
 
-    private func showPdf(at url: URL, key: String, libraryId: LibraryIdentifier) {
+    private func showPdf(at url: URL, key: String, library: Library) {
         #if PDFENABLED
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+        guard let dbStorage = self.controllers.userControllers?.dbStorage,
+              let userId = self.controllers.sessionController.sessionData?.userId else { return }
 
         let handler = PDFReaderActionHandler(dbStorage: dbStorage,
                                              annotationPreviewController: self.controllers.annotationPreviewController,
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
                                              schemaController: self.controllers.schemaController,
                                              fileStorage: self.controllers.fileStorage)
-        let state = PDFReaderState(url: url, key: key, libraryId: libraryId)
+        let state = PDFReaderState(url: url, key: key, library: library, userId: userId)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size),
                                                  annotationPreviewController: self.controllers.annotationPreviewController,

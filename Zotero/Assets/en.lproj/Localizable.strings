@@ -30,6 +30,7 @@
 "done" = "Done";
 "ok" = "Ok";
 "add" = "Add";
+"unknown" = "Unknown";
 
 "day_suffixes" = "st,nd,rd,th";
 

@@ -350,8 +350,6 @@
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
-		B31EEE5424EBC9C100E3B3AD /* RAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */; };
-		B31EEE5524EBCAC900E3B3AD /* RAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */; };
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5A24EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */; };
@@ -912,7 +910,6 @@
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
-		B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RAnnotation.swift; sourceTree = "<group>"; };
 		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
 		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
 		B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreChangedAnnotationsDbRequest.swift; sourceTree = "<group>"; };
@@ -1551,7 +1548,6 @@
 			isa = PBXGroup;
 			children = (
 				B353F202242E52610062EE24 /* Database.swift */,
-				B31EEE5324EBC9C100E3B3AD /* RAnnotation.swift */,
 				B305653023FC051E003304F2 /* RCollection.swift */,
 				B305653123FC051E003304F2 /* RCreator.swift */,
 				B305653723FC051E003304F2 /* RCustomLibrary.swift */,
@@ -2825,7 +2821,6 @@
 				B30565D723FC051E003304F2 /* ReadLibrariesDataDbRequest.swift in Sources */,
 				B30565E723FC051E003304F2 /* ObjectChangeObserver.swift in Sources */,
 				B305669F23FC051F003304F2 /* RCustomLibrary.swift in Sources */,
-				B31EEE5424EBC9C100E3B3AD /* RAnnotation.swift in Sources */,
 				B305667323FC051F003304F2 /* FileManager+Utils.swift in Sources */,
 				B305661223FC051E003304F2 /* FileRequest.swift in Sources */,
 				B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */,
@@ -3080,7 +3075,6 @@
 				B325DBB324375DB100EFF0F5 /* ConflictResolution.swift in Sources */,
 				B305677723FC0BEE003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B305673E23FC09AF003304F2 /* AuthorizeUploadResponse.swift in Sources */,
-				B31EEE5524EBCAC900E3B3AD /* RAnnotation.swift in Sources */,
 				B305673F23FC09AF003304F2 /* KeyResponse.swift in Sources */,
 				B305674023FC09AF003304F2 /* UpdatesResponse.swift in Sources */,
 				B3E44643248FBF12007FE8AB /* LinkType.swift in Sources */,

@@ -19,6 +19,10 @@ fileprivate struct SubscriberKey: Hashable {
 }
 
 class AnnotationPreviewController: NSObject {
+    enum Error: Swift.Error {
+        case imageNotAvailable
+    }
+
     /// Type of annotation preview
     /// - temporary: Rendered image is returned by `Single<UIImage>` immediately, no caching is performed.
     /// - cachedAndReported: Rendered image is cached and reported through global observable `PublishSubject<AnnotationPreviewUpdate>`.
@@ -149,7 +153,7 @@ extension AnnotationPreviewController {
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
     private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, invertColors: Bool = false,
-                         isDark: Bool? = nil, type: PreviewType) {
+                         isDark: Bool = false, type: PreviewType) {
         let options = RenderOptions()
         options.skipAnnotationArray = document.annotations(at: pageIndex)
         if invertColors {
@@ -165,17 +169,17 @@ extension AnnotationPreviewController {
         request.pageIndex = pageIndex
         request.pdfRect = rect
         request.options = options
-        request.userInfo["key"] = key
-        request.userInfo["parentKey"] = parentKey
-        request.userInfo["type"] = type.rawValue
-        if let isDark = isDark {
-            request.userInfo["isDark"] = isDark
-        }
 
         do {
             let task = try RenderTask(request: request)
             task.priority = .userInitiated
-            task.delegate = self
+            task.completionHandler = { [weak self] image, error in
+                let result: Result<UIImage, Swift.Error> = image.flatMap({ .success($0) }) ?? .failure(error ?? Error.imageNotAvailable)
+                self?.queue.async {
+                    self?.completeRequest(with: result, key: key, parentKey: parentKey, isDark: isDark, type: type)
+                }
+
+            }
 
             PSPDFKit.SDK.shared.renderManager.renderQueue.schedule(task)
         } catch let error {
@@ -183,32 +187,9 @@ extension AnnotationPreviewController {
         }
     }
 
-    private func perform(event: SingleEvent<UIImage>, key: String, parentKey: String) {
-        let key = SubscriberKey(key: key, parentKey: parentKey)
-        self.subscribers[key]?(event)
-        self.subscribers[key] = nil
-    }
-}
-
-// MARK: - Render delegate
-
-extension AnnotationPreviewController: RenderTaskDelegate {
-    func renderTaskDidFinish(_ task: RenderTask) {
-        guard let key = task.request.userInfo["key"] as? String,
-              let parentKey = task.request.userInfo["parentKey"] as? String,
-              let rawType = task.request.userInfo["type"] as? Int,
-              let type = PreviewType(rawValue: rawType),
-              let image = task.image else {
-            DDLogInfo("AnnotationPreviewController: missing task info - key: \(task.request.userInfo["key"] ?? "")" +
-                      "; parentKey: \(task.request.userInfo["parentKey"] ?? ""); image: \(task.image?.size ?? CGSize())")
-            return
-        }
-
-        let isDark = (task.request.userInfo["isDark"] as? Bool) ?? false
-
-        self.queue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
-
+    private func completeRequest(with result: Result<UIImage, Swift.Error>, key: String, parentKey: String, isDark: Bool, type: PreviewType) {
+        switch result {
+        case .success(let image):
             switch type {
             case .temporary:
                 self.perform(event: .success(image), key: key, parentKey: parentKey)
@@ -218,7 +199,21 @@ extension AnnotationPreviewController: RenderTaskDelegate {
                 self.cache(image: image, key: key, pdfKey: parentKey, isDark: isDark)
                 self.observable.on(.next((key, parentKey, image)))
             }
+
+        case .failure(let error):
+            DDLogError("AnnotationPreviewController: could not generate image - \(error)")
+
+            if type == .temporary {
+                // Temporary request always needs to return an error if image was not available
+                self.perform(event: .error(error), key: key, parentKey: parentKey)
+            }
         }
+    }
+
+    private func perform(event: SingleEvent<UIImage>, key: String, parentKey: String) {
+        let key = SubscriberKey(key: key, parentKey: parentKey)
+        self.subscribers[key]?(event)
+        self.subscribers[key] = nil
     }
 
     private func cache(image: UIImage, key: String, pdfKey: String, isDark: Bool) {
@@ -231,20 +226,6 @@ extension AnnotationPreviewController: RenderTaskDelegate {
             try self.fileStorage.write(data, to: Files.annotationPreview(annotationKey: key, pdfKey: pdfKey, isDark: isDark), options: .atomicWrite)
         } catch let error {
             DDLogError("AnnotationPreviewController: can't store preview - \(error)")
-        }
-    }
-
-    func renderTask(_ task: RenderTask, didFailWithError error: Error) {
-        DDLogError("AnnotationPreviewController: could not generate image - \(error)")
-
-        // Report failure for temporary render requests.
-        guard let key = task.request.userInfo["key"] as? String,
-              let parentKey = task.request.userInfo["parentKey"] as? String,
-              let rawType = task.request.userInfo["type"] as? Int,
-              let type = PreviewType(rawValue: rawType), type == .temporary else { return }
-
-        self.queue.async(flags: .barrier) { [weak self] in
-            self?.perform(event: .error(error), key: key, parentKey: parentKey)
         }
     }
 }

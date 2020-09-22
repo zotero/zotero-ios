@@ -207,7 +207,7 @@ class ItemsViewController: UIViewController {
 
     private func open(attachment: Attachment, parentKey: String) {
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(for: parentKey)
-        self.coordinatorDelegate?.show(attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+        self.coordinatorDelegate?.show(attachment: attachment, library: self.viewModel.state.library, sourceView: sourceView, sourceRect: sourceRect)
     }
 
     private func showItemDetail(for item: RItem) {

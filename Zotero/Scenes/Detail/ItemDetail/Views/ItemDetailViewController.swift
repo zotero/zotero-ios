@@ -118,7 +118,7 @@ class ItemDetailViewController: UIViewController {
     private func open(attachment: Attachment, at index: Int) {
         let indexPath = IndexPath(row: index, section: self.tableViewHandler.attachmentSection)
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
-        self.coordinatorDelegate?.show(attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+        self.coordinatorDelegate?.show(attachment: attachment, library: self.viewModel.state.library, sourceView: sourceView, sourceRect: sourceRect)
     }
 
     private func showWeb(for url: URL) {

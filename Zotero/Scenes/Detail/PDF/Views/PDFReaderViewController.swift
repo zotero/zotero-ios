@@ -412,7 +412,6 @@ class PDFReaderViewController: UIViewController {
 
     private func setup(interactions: DocumentViewInteractions) {
         interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
-            // Only zotero annotations can be selected
             return context.annotation.isZotero
         }
 
@@ -470,6 +469,10 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func createAnnotationControlButtons() -> [UIButton] {
+        guard self.viewModel.state.library.metadataEditable else {
+            return []
+        }
+
         let highlight = CheckboxButton(type: .custom)
         highlight.setImage(UIImage(systemName: "pencil.tip"), for: .normal)
         highlight.rx

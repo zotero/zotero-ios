@@ -26,9 +26,10 @@ struct Annotation {
     let dateModified: Date
     let tags: [Tag]
     let didChange: Bool
+    let editableInDocument: Bool
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
-         text: String?, isLocked: Bool, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool) {
+         text: String?, isLocked: Bool, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editableInDocument: Bool) {
         self.key = key
         self.type = type
         self.page = page
@@ -44,9 +45,10 @@ struct Annotation {
         self.dateModified = dateModified
         self.tags = tags
         self.didChange = didChange
+        self.editableInDocument = editableInDocument
     }
 
-    init?(item: RItem) {
+    init?(item: RItem, currentUserId: Int) {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
               let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
@@ -67,13 +69,46 @@ struct Annotation {
 
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
 
+        let isAuthor: Bool
+        let author: String
+        if item.customLibrary != nil {
+            // In "My Library" current user is always author
+            isAuthor = true
+            author = ""
+        } else {
+            // In group library compare `createdBy` user to current user
+            isAuthor = item.createdBy?.identifier == currentUserId
+            // Users can only edit their own annotations
+            if isAuthor {
+                author = ""
+            } else if let name = item.createdBy?.name, !name.isEmpty {
+                author = name
+            } else if let name = item.createdBy?.username, !name.isEmpty {
+                author = name
+            } else {
+                author = L10n.unknown
+            }
+        }
+
+        let editable: Bool
+        if type != .image {
+            editable = true
+        } else {
+            // Check whether image annotation has synced embedded image attachment item, if not, the annotation can't be moved or resized
+            // (can't be edited in document). The user can still update comment or tags.
+            let embeddedImage = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first(where: { item in
+                item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }) == .embeddedImage
+            })
+            editable = embeddedImage != nil
+        }
+
         self.key = item.key
         self.type = type
         self.page = pageIndex
         self.pageLabel = pageLabel
         self.rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
-        self.author = ""
-        self.isAuthor = false
+        self.author = author
+        self.isAuthor = isAuthor
         self.color = color
         self.comment = comment
         self.text = text
@@ -82,6 +117,7 @@ struct Annotation {
         self.dateModified = item.dateModified
         self.tags = item.tags.map({ Tag(tag: $0) })
         self.didChange = false
+        self.editableInDocument = editable
     }
 
     var boundingBox: CGRect {
@@ -127,7 +163,8 @@ struct Annotation {
                           sortIndex: sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
-                          didChange: true)
+                          didChange: true,
+                          editableInDocument: self.editableInDocument)
     }
 
     func copy(comment: String) -> Annotation {
@@ -145,7 +182,8 @@ struct Annotation {
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
-                          didChange: true)
+                          didChange: true,
+                          editableInDocument: self.editableInDocument)
     }
 
     func copy(tags: [Tag]) -> Annotation {
@@ -163,7 +201,8 @@ struct Annotation {
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: tags,
-                          didChange: true)
+                          didChange: true,
+                          editableInDocument: self.editableInDocument)
     }
 
     func copy(text: String?) -> Annotation {
@@ -181,7 +220,8 @@ struct Annotation {
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
-                          didChange: true)
+                          didChange: true,
+                          editableInDocument: self.editableInDocument)
     }
 }
 
