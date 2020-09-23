@@ -1743,6 +1743,11 @@
 			"creatorTypes": []
 		},
 		{
+			"itemType": "annotation",
+			"fields": [],
+			"creatorTypes": []
+		},
+		{
 			"itemType": "patent",
 			"fields": [
 				{
