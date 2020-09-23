@@ -138,7 +138,8 @@ class DateParser {
             order = (month > 0 ? "m" : "") + (year > 0 ? "y" : "")
         } else {
             // Local style date (middle or little endian)
-            let country = Locale.autoupdatingCurrent.identifier.split(separator: "_").last ?? "US"
+            let localeParts = Locale.autoupdatingCurrent.identifier.split(separator: "_")
+            let country = localeParts.count == 2 ? localeParts[1] : "US"
             switch country {
             case "US",  // The United States
                  "FM",  // The Federal States of Micronesia

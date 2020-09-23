@@ -880,12 +880,12 @@ class SyncControllerSpec: QuickSpec {
                             expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
-                            expect(library?.collections.count).to(equal(3))
-                            expect(library?.items.count).to(equal(2))
+                            expect(library?.collections.count).to(equal(4))
+                            expect(library?.items.count).to(equal(3))
 //                            expect(library?.searches.count).to(equal(3))
-                            expect(realm.objects(RCollection.self).count).to(equal(3))
+                            expect(realm.objects(RCollection.self).count).to(equal(4))
 //                            expect(realm.objects(RSearch.self).count).to(equal(3))
-                            expect(realm.objects(RItem.self).count).to(equal(2))
+                            expect(realm.objects(RItem.self).count).to(equal(3))
 
                             let collection = realm.objects(RCollection.self).filter("key = %@", "AAAAAAAA").first
                             expect(collection).toNot(beNil())
@@ -906,7 +906,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection2?.children.count).to(equal(0))
 
                             let collection3 = realm.objects(RCollection.self).filter("key = %@", "CCCCCCCC").first
-                            expect(collection3).to(beNil())
+                            expect(collection3?.syncState).to(equal(.dirty))
 
                             let collection4 = realm.objects(RCollection.self).filter("key = %@", "ZZZZZZZZ").first
                             expect(collection4).toNot(beNil())
@@ -916,7 +916,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection4?.children.count).to(equal(1))
 
                             let item = realm.objects(RItem.self).filter("key = %@", "DDDDDDDD").first
-                            expect(item).to(beNil())
+                            expect(item?.syncState).to(equal(.dirty))
 
                             let item2 = realm.objects(RItem.self).filter("key = %@", "EEEEEEEE").first
                             expect(item2).toNot(beNil())

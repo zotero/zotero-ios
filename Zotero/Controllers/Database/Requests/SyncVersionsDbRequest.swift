@@ -24,7 +24,7 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     func process(in database: Realm) throws -> [String] {
         let allKeys = Array(self.versions.keys)
 
-        if self.syncType == .all { return allKeys }
+        if self.syncType == .all && !allKeys.isEmpty { return allKeys }
 
         let date = Date()
         var toUpdate: [String] = allKeys

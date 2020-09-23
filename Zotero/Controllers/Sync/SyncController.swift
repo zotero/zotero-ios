@@ -92,7 +92,7 @@ final class SyncController: SynchronizationController {
     enum Action: Equatable {
         case loadKeyPermissions
         case syncGroupVersions
-        case syncVersions(LibraryIdentifier, SyncObject, Int)
+        case syncVersions(libraryId: LibraryIdentifier, object: SyncObject, version: Int, checkRemote: Bool)
         case createLibraryActions(LibrarySyncType, CreateLibraryActionsOptions)
         case createUploadActions(LibraryIdentifier)
         case syncBatchesToDb([DownloadBatch])
@@ -453,9 +453,9 @@ final class SyncController: SynchronizationController {
         case .syncGroupVersions:
             self.progressHandler.reportGroupsSync()
             self.processSyncGroupVersions()
-        case .syncVersions(let libraryId, let objectType, let version):
+        case .syncVersions(let libraryId, let objectType, let version, let checkRemote):
             self.progressHandler.reportObjectSync(for: objectType, in: libraryId)
-            self.processSyncVersions(libraryId: libraryId, object: objectType, since: version)
+            self.processSyncVersions(libraryId: libraryId, object: objectType, since: version, checkRemote: checkRemote)
         case .syncBatchesToDb(let batches):
             self.processBatchesSync(for: batches)
         case .syncGroupToDb(let groupId):
@@ -701,10 +701,10 @@ final class SyncController: SynchronizationController {
 
     private func createDownloadActions(for libraryId: LibraryIdentifier, versions: Versions) -> [Action] {
         return [.syncSettings(libraryId, versions.settings),
-                .syncVersions(libraryId, .collection, versions.collections),
+                .syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true),
 //                .syncVersions(libraryId, .search, versions.searches),
-                .syncVersions(libraryId, .item, versions.items),
-                .syncVersions(libraryId, .trash, versions.trash),
+                .syncVersions(libraryId: libraryId, object: .item, version: versions.items, checkRemote: true),
+                .syncVersions(libraryId: libraryId, object: .trash, version: versions.trash, checkRemote: true),
                 .syncDeletions(libraryId, versions.deletions)]
     }
 
@@ -782,18 +782,21 @@ final class SyncController: SynchronizationController {
         }
     }
 
-    private func processSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, since version: Int) {
-        let result = SyncVersionsSyncAction(object: object, sinceVersion: version, currentVersion: self.lastReturnedVersion,
+    private func processSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, since version: Int, checkRemote: Bool) {
+        let lastVersion = self.lastReturnedVersion
+        let result = SyncVersionsSyncAction(object: object, sinceVersion: version, currentVersion: lastVersion,
                                             syncType: self.type, libraryId: libraryId, userId: self.userId,
-                                            syncDelayIntervals: self.syncDelayIntervals,
+                                            syncDelayIntervals: self.syncDelayIntervals, checkRemote: checkRemote,
                                             apiClient: self.apiClient, dbStorage: self.dbStorage,
                                             queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] version, toUpdate in
                   guard let `self` = self else { return }
-                  let actions = self.createBatchedObjectActions(for: libraryId, object: object, from: toUpdate, version: version)
+                  let versionDidChange = version != lastVersion
+                  let actions = self.createBatchedObjectActions(for: libraryId, object: object, from: toUpdate,
+                                                                version: version, shouldStoreVersion: versionDidChange)
                   self.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishSyncVersions(actions: actions, updateCount: toUpdate.count, version: version, object: object, libraryId: libraryId)
+                      self?.finishSyncVersions(actions: actions, updateCount: toUpdate.count, object: object, libraryId: libraryId)
                   }
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -803,19 +806,24 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSyncVersions(actions: [Action], updateCount: Int, version: Int, object: SyncObject, libraryId: LibraryIdentifier) {
-        self.lastReturnedVersion = version
+    private func finishSyncVersions(actions: [Action], updateCount: Int, object: SyncObject, libraryId: LibraryIdentifier) {
         self.progressHandler.reportDownloadCount(for: object, count: updateCount, in: libraryId)
         self.enqueue(actions: actions, at: 0)
     }
 
-    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: SyncObject, from keys: [String], version: Int) -> [Action] {
+    private func createBatchedObjectActions(for libraryId: LibraryIdentifier, object: SyncObject, from keys: [String], version: Int, shouldStoreVersion: Bool) -> [Action] {
         let batches = self.createBatchObjects(for: keys, libraryId: libraryId, object: object, version: version)
-        return [.syncBatchesToDb(batches), .storeVersion(version, libraryId, object)]
+
+        guard !batches.isEmpty else { return [] }
+
+        var actions: [Action] = [.syncBatchesToDb(batches)]
+        if shouldStoreVersion {
+            actions.append(.storeVersion(version, libraryId, object))
+        }
+        return actions
     }
 
-    private func createBatchObjects(for keys: [String], libraryId: LibraryIdentifier,
-                                    object: SyncObject, version: Int) -> [DownloadBatch] {
+    private func createBatchObjects(for keys: [String], libraryId: LibraryIdentifier, object: SyncObject, version: Int) -> [DownloadBatch] {
         let maxBatchSize = DownloadBatch.maxCount
         var batchSize = 10
         var lowerBound = 0
@@ -1073,6 +1081,7 @@ final class SyncController: SynchronizationController {
     private func finishSettingsSync(result: Result<(Bool, Int), Error>, libraryId: LibraryIdentifier) {
         switch result {
         case .success(let (hasNewSettings, version)):
+            self.lastReturnedVersion = version
             if hasNewSettings {
                 self.enqueue(actions: [.storeSettingsVersion(version, libraryId)], at: 0)
             } else {
@@ -1400,13 +1409,23 @@ final class SyncController: SynchronizationController {
     private func handleUnchangedFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
         guard case ZoteroApiError.unchanged(let lastVersion) = error else { return false }
 
+        self.lastReturnedVersion = lastVersion
+
+        // If current sync type is `.all` we don't want to skip anything.
+        guard self.type != .all else {
+            self.processNextAction()
+            return true
+        }
+
         var toDelete: [Int] = []
 
         for (index, action) in self.queue.enumerated() {
             guard action.libraryId == libraryId else { break }
             switch action {
+            case .syncVersions(let libraryId, let object, let version, _):
+                // If there are no remote changes, we need to check for local unsynced objects anyway, so change the `checkRemote` flag to false
+                self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: false)
             case .syncSettings(_, let version),
-                 .syncVersions(_, _, let version),
                  .syncDeletions(_, let version):
                 if lastVersion == version {
                     toDelete.append(index)
@@ -1442,7 +1461,7 @@ fileprivate extension SyncController.Action {
              .markGroupAsLocalOnly(let groupId),
              .syncGroupToDb(let groupId):
             return .group(groupId)
-        case .syncVersions(let libraryId, _, _),
+        case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
              .syncDeletions(let libraryId, _),
              .syncSettings(let libraryId, _),

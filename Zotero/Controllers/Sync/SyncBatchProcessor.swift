@@ -186,18 +186,6 @@ class SyncBatchProcessor {
         // Keys that were not successfully parsed will be marked for resync so that the sync process can continue without them for now.
         // Filter out parsed keys.
         return expectedKeys.filter({ !parsedKeys.contains($0) })
-                           // Filter out keys that were not parsed because of `.unknownField` error. Objects with unknown fields should be rejected
-                           // and ignored.
-                           .filter({ key in
-                               return !errors.contains(where: { error in
-                                   if let error = error as? SchemaError,
-                                      case .unknownField(let errorKey, _) = error,
-                                      key == errorKey {
-                                       return true
-                                   }
-                                   return false
-                               })
-                           })
     }
 
     private func storeIndividualObjects(from jsonObjects: [[String: Any]], type: SyncObject, libraryId: LibraryIdentifier) {
