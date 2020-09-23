@@ -108,9 +108,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.annotations.forEach { page, _ in
                 let annotations = state.document.annotations(at: PageIndex(page))
                 annotations.forEach { annotation in
-                    annotation.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor),
-                                                                      isHighlight: (annotation is HighlightAnnotation),
-                                                                      userInterfaceStyle: interfaceStyle)
+                    let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.baseColor),
+                                                                        isHighlight: (annotation is HighlightAnnotation),
+                                                                        userInterfaceStyle: interfaceStyle)
+                    annotation.color = color
+                    annotation.alpha = alpha
                 }
             }
         }
@@ -642,7 +644,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         square.boundingBox = annotation.boundingBox
         square.borderColor = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
                                                             isHighlight: false,
-                                                            userInterfaceStyle: interfaceStyle)
+                                                            userInterfaceStyle: interfaceStyle).color
         square.isZotero = true
         square.isEditable = annotation.editableInDocument
         square.baseColor = annotation.color
@@ -653,11 +655,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// Creates corresponding `HighlightAnnotation`.
     /// - parameter annotation: Zotero annotation.
     private func highlightAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> HighlightAnnotation {
+        let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
+                                                            isHighlight: true, userInterfaceStyle: interfaceStyle)
         let highlight = HighlightAnnotation()
         highlight.pageIndex = UInt(annotation.page)
         highlight.boundingBox = annotation.boundingBox
         highlight.rects = annotation.rects
-        highlight.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: true, userInterfaceStyle: interfaceStyle)
+        highlight.color = color
+        highlight.alpha = alpha
         highlight.isZotero = true
         highlight.isEditable = annotation.editableInDocument
         highlight.baseColor = annotation.color
@@ -676,7 +681,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.isEditable = annotation.editableInDocument
         note.key = annotation.key
         note.borderStyle = .dashed
-        note.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle)
+        note.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
+                                                    isHighlight: false, userInterfaceStyle: interfaceStyle).color
         note.baseColor = annotation.color
         return note
     }

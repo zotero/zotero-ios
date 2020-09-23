@@ -188,9 +188,8 @@ class PDFReaderViewController: UIViewController {
             return
         }
 
-        stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor,
-                                                                isHighlight: (annotationTool == .highlight),
-                                                                userInterfaceStyle: self.traitCollection.userInterfaceStyle)
+        stateManager.drawColor = AnnotationColorGenerator.color(from: self.viewModel.state.activeColor, isHighlight: (annotationTool == .highlight),
+                                                                userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
 
         self.pdfController.annotationStateManager.setState(annotationTool, variant: nil)
     }
@@ -331,7 +330,7 @@ class PDFReaderViewController: UIViewController {
 
     private func set(toolColor: UIColor, in stateManager: AnnotationStateManager) {
         let highlightColor = AnnotationColorGenerator.color(from: toolColor, isHighlight: true,
-                                                            userInterfaceStyle: self.traitCollection.userInterfaceStyle)
+                                                            userInterfaceStyle: self.traitCollection.userInterfaceStyle).color
 
         stateManager.setLastUsedColor(highlightColor, annotationString: .highlight)
         stateManager.setLastUsedColor(toolColor, annotationString: .note)

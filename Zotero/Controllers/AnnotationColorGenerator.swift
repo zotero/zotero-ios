@@ -12,9 +12,9 @@ struct AnnotationColorGenerator {
     private static let highlightOpacity: CGFloat = 0.5
     private static let highlightDarkOpacity: CGFloat = 0.7
 
-    static func color(from color: UIColor, isHighlight: Bool, userInterfaceStyle: UIUserInterfaceStyle) -> UIColor {
+    static func color(from color: UIColor, isHighlight: Bool, userInterfaceStyle: UIUserInterfaceStyle) -> (color: UIColor, alpha: CGFloat) {
         if !isHighlight {
-            return color
+            return (color, 1)
         }
 
         switch userInterfaceStyle {
@@ -26,9 +26,11 @@ struct AnnotationColorGenerator {
 
             color.getHue(&hue, saturation: &sat, brightness: &brg, alpha: &alpha)
 
-            return UIColor(hue: hue, saturation: sat * 1.2, brightness: brg, alpha: AnnotationColorGenerator.highlightDarkOpacity)
+            let adjustedColor = UIColor(hue: hue, saturation: sat * 1.2, brightness: brg, alpha: AnnotationColorGenerator.highlightDarkOpacity)
+            return (adjustedColor, AnnotationColorGenerator.highlightDarkOpacity)
         default:
-            return color.withAlphaComponent(AnnotationColorGenerator.highlightOpacity)
+            let adjustedColor = color.withAlphaComponent(AnnotationColorGenerator.highlightOpacity)
+            return (adjustedColor, AnnotationColorGenerator.highlightOpacity)
         }
     }
 }
