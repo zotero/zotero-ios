@@ -158,8 +158,20 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     private func updateImageAttachment(for annotation: Annotation, item: RItem, database: Realm) {
         // Don't create new attachment item for annotation if it doesn't exist. It's probably just not synced yet and we don't want one
         // annotation to have multiple embeded image attachments.
-        guard let attachment = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first else { return }
+        guard let attachment = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first,
+              let pdfAttachment = item.parent else { return }
+
+        attachment.dateModified = annotation.dateModified
         attachment.attachmentNeedsSync = true
+
+        if let field = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first {
+            let file = Files.annotationPreview(annotationKey: annotation.key, pdfKey: pdfAttachment.key, isDark: false)
+            field.value = md5(from: file.createUrl()) ?? ""
+        }
+        if let field = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first {
+            let modificationTime = Int(round(annotation.dateModified.timeIntervalSince1970 * 1000))
+            field.value = "\(modificationTime)"
+        }
     }
 
     private func createItem(from annotation: Annotation, parent: RItem, database: Realm) throws -> RItem {
@@ -203,6 +215,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
                                     libraryId: self.libraryId)
         let attachmentItem = try CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
                                                            collections: [], linkMode: .embeddedImage).process(in: database)
+        attachmentItem.dateAdded = item.dateAdded
+        attachmentItem.dateModified = item.dateModified
         attachmentItem.parent = item
         attachmentItem.changedFields.insert(.parent)
     }

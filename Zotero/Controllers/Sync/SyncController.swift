@@ -1123,7 +1123,7 @@ final class SyncController: SynchronizationController {
 
     private func processUploadAttachment(for upload: AttachmentUpload) {
         let result = UploadAttachmentSyncAction(key: upload.key, file: upload.file, filename: upload.filename, md5: upload.md5,
-                                                mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId,
+                                                mtime: upload.mtime, libraryId: upload.libraryId, userId: self.userId, oldMd5: upload.oldMd5,
                                                 apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
                                                 queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)

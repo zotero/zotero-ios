@@ -23,6 +23,7 @@ struct UploadAttachmentSyncAction: SyncAction {
     let mtime: Int
     let libraryId: LibraryIdentifier
     let userId: Int
+    let oldMd5: String?
 
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
@@ -58,8 +59,8 @@ struct UploadAttachmentSyncAction: SyncAction {
                             .flatMap { filesize -> Single<AuthorizeUploadResponse> in
                                 return AuthorizeUploadSyncAction(key: self.key, filename: self.filename, filesize: filesize,
                                                                  md5: self.md5, mtime: self.mtime, libraryId: self.libraryId,
-                                                                 userId: self.userId, apiClient: self.apiClient, queue: self.queue,
-                                                                 scheduler: self.scheduler).result
+                                                                 userId: self.userId, oldMd5: self.oldMd5, apiClient: self.apiClient,
+                                                                 queue: self.queue, scheduler: self.scheduler).result
                             }
                             .observeOn(self.scheduler)
                             .flatMap { response -> Single<Swift.Result<(UploadRequest, String), SyncActionError>> in
@@ -98,7 +99,8 @@ struct UploadAttachmentSyncAction: SyncAction {
                                      let request = RegisterUploadRequest(libraryId: self.libraryId,
                                                                          userId: self.userId,
                                                                          key: self.key,
-                                                                         uploadKey: uploadKey)
+                                                                         uploadKey: uploadKey,
+                                                                         oldMd5: self.oldMd5)
                                      return self.apiClient.send(request: request, queue: self.queue).flatMap({ Single.just(.success($0)) })
                                  case .failure(let error):
                                      return Single.just(.failure(error))

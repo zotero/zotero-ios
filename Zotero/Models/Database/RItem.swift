@@ -55,6 +55,8 @@ class RItem: Object {
     let links = LinkingObjects(fromType: RLink.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
 
+    // MARK: - Attachment data
+    @objc dynamic var backendMd5: String = ""
     // MARK: - Derived data
     /// Localized type based on current localization of device, used for sorting
     @objc dynamic var localizedType: String = ""

@@ -339,6 +339,7 @@ class SyncActionsSpec: QuickSpec {
                                                md5: "aaaaaaaa", mtime: 0,
                                                libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
+                                               oldMd5: nil,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
                                                fileStorage: SyncActionsSpec.fileStorage,
@@ -393,6 +394,7 @@ class SyncActionsSpec: QuickSpec {
                                                md5: "aaaaaaaa", mtime: 0,
                                                libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
+                                               oldMd5: nil,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
                                                fileStorage: SyncActionsSpec.fileStorage,
@@ -455,7 +457,8 @@ class SyncActionsSpec: QuickSpec {
                 }
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
-                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
+                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123,
+                                                       oldMd5: nil),
                            baseUrl: baseUrl, jsonResponse: ["exists": 1])
 
                 waitUntil(timeout: 10, action: { doneAction in
@@ -466,6 +469,7 @@ class SyncActionsSpec: QuickSpec {
                                                mtime: 123,
                                                libraryId: libraryId,
                                                userId: SyncActionsSpec.userId,
+                                               oldMd5: nil,
                                                apiClient: SyncActionsSpec.apiClient,
                                                dbStorage: SyncActionsSpec.dbStorage,
                                                fileStorage: SyncActionsSpec.fileStorage,
@@ -531,11 +535,12 @@ class SyncActionsSpec: QuickSpec {
                 }
 
                 createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
-                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123),
+                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123,
+                                                       oldMd5: nil),
                            baseUrl: baseUrl, jsonResponse: ["url": "https://www.zotero.org/",
                                                         "uploadKey": "key",
                                                         "params": ["key": "key"]])
-                createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, uploadKey: "key"),
+                createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, uploadKey: "key", oldMd5: nil),
                            baseUrl: baseUrl, headers: nil, statusCode: 204, jsonResponse: [:])
                 stub(condition: { request -> Bool in
                     return request.url?.absoluteString == "https://www.zotero.org/"
@@ -550,6 +555,7 @@ class SyncActionsSpec: QuickSpec {
                                            mtime: 123,
                                            libraryId: libraryId,
                                            userId: SyncActionsSpec.userId,
+                                           oldMd5: nil,
                                            apiClient: SyncActionsSpec.apiClient,
                                            dbStorage: SyncActionsSpec.dbStorage,
                                            fileStorage: SyncActionsSpec.fileStorage,

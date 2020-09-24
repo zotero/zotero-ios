@@ -16,6 +16,7 @@ struct AttachmentUpload: Equatable {
     let md5: String
     let mtime: Int
     let file: File
+    let oldMd5: String?
 
     static func ==(lhs: AttachmentUpload, rhs: AttachmentUpload) -> Bool {
         return lhs.libraryId == rhs.libraryId && lhs.key == rhs.key && lhs.filename == rhs.filename && lhs.contentType == rhs.contentType &&

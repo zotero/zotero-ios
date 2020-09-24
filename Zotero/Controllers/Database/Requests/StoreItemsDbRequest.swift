@@ -103,12 +103,13 @@ struct StoreItemsDbRequest: DbResponseRequest {
         var publisher: String?
         var publicationTitle: String?
         var sortIndex: String?
+        var md5: String?
 
         allFieldKeys.forEach { key in
             let value = data.fields[key] ?? ""
             var field: RItemField
 
-            if let existing = item.fields.filter("key = %@", key).first {
+            if let existing = item.fields.filter(.key(key)).first {
                 existing.value = value
                 field = existing
             } else {
@@ -120,21 +121,22 @@ struct StoreItemsDbRequest: DbResponseRequest {
                 database.add(field)
             }
 
-            if (field.key == FieldKeys.Item.title || field.baseKey == FieldKeys.Item.title) ||
-               (key == FieldKeys.Item.note && item.rawType == ItemTypes.note) {
-                var title = value
-                if key == FieldKeys.Item.note {
-                    title = title.notePreview ?? title
-                }
-                item.baseTitle = title
-            } else if key == FieldKeys.Item.date {
-                date = field.value
-            } else if field.key == FieldKeys.Item.publisher || field.baseKey == FieldKeys.Item.publisher {
-                publisher = field.value
-            } else if field.key == FieldKeys.Item.publicationTitle || field.baseKey == FieldKeys.Item.publicationTitle {
-                publicationTitle = field.value
-            } else if field.key == FieldKeys.Item.Annotation.sortIndex {
-                sortIndex = field.value
+            switch (field.key, field.baseKey) {
+            case (FieldKeys.Item.title, _), (_, FieldKeys.Item.title):
+                item.baseTitle = value
+            case (FieldKeys.Item.note, _) where item.rawType == ItemTypes.note:
+                item.baseTitle = value.notePreview ?? value
+            case (FieldKeys.Item.date, _):
+                date = value
+            case (FieldKeys.Item.publisher, _), (_, FieldKeys.Item.publisher):
+                publisher = value
+            case (FieldKeys.Item.publicationTitle, _), (_, FieldKeys.Item.publicationTitle):
+                publicationTitle = value
+            case (FieldKeys.Item.Annotation.sortIndex, _):
+                sortIndex = value
+            case (FieldKeys.Item.Attachment.md5, _):
+                md5 = value
+            default: break
             }
         }
 
@@ -142,6 +144,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         item.set(publisher: publisher)
         item.set(publicationTitle: publicationTitle)
         item.annotationSortIndex = sortIndex ?? ""
+        item.backendMd5 = md5 ?? ""
     }
 
     private func sync(rects: [[Double]], in item: RItem, database: Realm) {

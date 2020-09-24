@@ -200,7 +200,6 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        NSLog("COUNT \(self.viewModel.state.annotations[section]?.count ?? 0) FOR \(section)")
         return self.viewModel.state.annotations[section]?.count ?? 0
     }
 

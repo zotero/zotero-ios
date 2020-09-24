@@ -13,6 +13,7 @@ struct RegisterUploadRequest: ApiRequest {
     let userId: Int
     let key: String
     let uploadKey: String
+    let oldMd5: String?
 
     var endpoint: ApiEndpoint {
         return .zotero(path: "\(self.libraryId.apiPath(userId: self.userId))/items/\(self.key)/file")
@@ -31,6 +32,9 @@ struct RegisterUploadRequest: ApiRequest {
     }
 
     var headers: [String : String]? {
+        if let md5 = self.oldMd5 {
+            return ["If-Match": md5]
+        }
         return ["If-None-Match": "*"]
     }
 }

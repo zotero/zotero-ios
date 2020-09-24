@@ -31,7 +31,7 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
 
             return AttachmentUpload(libraryId: self.libraryId, key: item.key,
                                     filename: filename, contentType: contentType,
-                                    md5: md5, mtime: mtime, file: file)
+                                    md5: md5, mtime: mtime, file: file, oldMd5: (item.backendMd5.isEmpty ? nil : item.backendMd5))
         })
         return Array(uploads)
     }

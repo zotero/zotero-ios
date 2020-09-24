@@ -186,6 +186,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func remove(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page))
                                                                .first(where: { $0.key == annotation.key }) else { return }
+        documentAnnotation.isEditable = true
         viewModel.state.document.remove(annotations: [documentAnnotation], options: nil)
     }
 

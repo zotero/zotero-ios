@@ -226,7 +226,16 @@ struct ItemResponse {
                 throw SchemaError.unknownField(key: key, field: object.key)
             }
 
-            let value = object.value as? String
+            let value: String
+            if let val = object.value as? String {
+                value = val
+            } else if let val = object.value as? Int {
+                value = "\(val)"
+            } else if let val = object.value as? Double {
+                value = "\(val)"
+            } else {
+                value = ""
+            }
 
             switch object.key {
             case FieldKeys.Item.Annotation.position:

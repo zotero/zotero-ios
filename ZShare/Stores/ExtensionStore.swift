@@ -656,7 +656,7 @@ class ExtensionStore {
                    }
                    .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
                        return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
-                                                        libraryId: libraryId, userId: userId, apiClient: apiClient,
+                                                        libraryId: libraryId, userId: userId, oldMd5: nil, apiClient: apiClient,
                                                         queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ return Single.just(($0, md5)) })
                    }
@@ -697,7 +697,7 @@ class ExtensionStore {
                    }
                    .flatMap { filesize, md5, mtime -> Single<(AuthorizeUploadResponse, String)> in
                        return AuthorizeUploadSyncAction(key: attachment.key, filename: filename, filesize: filesize, md5: md5, mtime: mtime,
-                                                        libraryId: libraryId, userId: userId, apiClient: apiClient,
+                                                        libraryId: libraryId, userId: userId, oldMd5: nil, apiClient: apiClient,
                                                         queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ return Single.just(($0, md5)) })
                    }

@@ -20,6 +20,7 @@ struct AuthorizeUploadSyncAction: SyncAction {
     let mtime: Int
     let libraryId: LibraryIdentifier
     let userId: Int
+    let oldMd5: String?
 
     unowned let apiClient: ApiClient
     let queue: DispatchQueue
@@ -27,7 +28,7 @@ struct AuthorizeUploadSyncAction: SyncAction {
 
     var result: Single<AuthorizeUploadResponse> {
         let request = AuthorizeUploadRequest(libraryId: self.libraryId, userId: self.userId, key: self.key, filename: self.filename,
-                                             filesize: self.filesize, md5: self.md5, mtime: self.mtime)
+                                             filesize: self.filesize, md5: self.md5, mtime: self.mtime, oldMd5: self.oldMd5)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
                              .flatMap { (data, _) -> Single<AuthorizeUploadResponse> in
