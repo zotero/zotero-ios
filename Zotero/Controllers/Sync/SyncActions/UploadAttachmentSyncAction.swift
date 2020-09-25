@@ -108,10 +108,18 @@ struct UploadAttachmentSyncAction: SyncAction {
                              })
                              .observeOn(self.scheduler)
                              .flatMap({ result -> Single<()> in
-                                 let markDbAction: () -> Single<()> = {
+
+                                let markDbAction: (Int?) -> Single<()> = { version in
                                      do {
-                                         let request = MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key)
-                                         try self.dbStorage.createCoordinator().perform(request: request)
+                                         let coordinator = try self.dbStorage.createCoordinator()
+                                         let uploadedRequest = MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key)
+                                         try coordinator.perform(request: uploadedRequest)
+
+                                         if let version = version {
+                                             let versionRequest = UpdateVersionsDbRequest(version: version, libraryId: self.libraryId,
+                                                                                          type: .object(.item))
+                                             try coordinator.perform(request: versionRequest)
+                                         }
                                          return Single.just(())
                                      } catch let error {
                                          return Single.error(error)
@@ -119,10 +127,10 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  }
 
                                  switch result {
-                                 case .success:
-                                     return markDbAction()
+                                 case .success(_, let headers):
+                                     return markDbAction(headers.lastModifiedVersion)
                                  case .failure(let error) where error == .attachmentAlreadyUploaded:
-                                     return markDbAction()
+                                     return markDbAction(nil)
                                  case .failure(let error):
                                      return Single.error(error)
                                  }
