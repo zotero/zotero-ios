@@ -64,8 +64,6 @@ struct FieldKeys {
                             Annotation.text]
                 case .note, .image:
                     return [Annotation.type, Annotation.comment, Annotation.color, Annotation.pageLabel, Annotation.sortIndex, Annotation.pageIndex]
-                default:
-                    return []
                 }
             }
         }

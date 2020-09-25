@@ -127,7 +127,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  }
 
                                  switch result {
-                                 case .success(_, let headers):
+                                 case .success((_, let headers)):
                                      return markDbAction(headers.lastModifiedVersion)
                                  case .failure(let error) where error == .attachmentAlreadyUploaded:
                                      return markDbAction(nil)
