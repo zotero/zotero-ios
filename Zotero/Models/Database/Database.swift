@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Database {
-    private static let schemaVersion: UInt64 = 15
+    private static let schemaVersion: UInt64 = 16
     private static let migrationBlock: MigrationBlock = createMigrationBlock()
 
     static func mainConfiguration(url: URL) -> Realm.Configuration {

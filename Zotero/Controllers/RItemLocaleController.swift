@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 class RItemLocaleController {
     @UserDefault(key: "LastLocalization", defaultValue: nil)

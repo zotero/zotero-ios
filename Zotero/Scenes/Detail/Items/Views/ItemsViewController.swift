@@ -8,7 +8,7 @@
 
 import UIKit
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 import RealmSwift
 import RxSwift
 

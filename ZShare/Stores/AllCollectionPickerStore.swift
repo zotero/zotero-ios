@@ -9,7 +9,7 @@
 import Combine
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 class AllCollectionPickerStore: ObservableObject {
     struct State {

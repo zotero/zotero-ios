@@ -11,7 +11,7 @@ import Foundation
 @testable import Zotero
 
 import Alamofire
-import CocoaLumberjackSwift
+import CocoaLumberjack
 import Nimble
 import OHHTTPStubs
 import OHHTTPStubsSwift

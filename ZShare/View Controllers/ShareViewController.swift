@@ -12,7 +12,7 @@ import SwiftUI
 import UIKit
 import WebKit
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 class ShareViewController: UIViewController {
     // Outlets

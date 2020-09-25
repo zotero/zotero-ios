@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 import RealmSwift
 
 struct CollectionsActionHandler: ViewModelActionHandler {

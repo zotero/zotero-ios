@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 import RealmSwift
 
 struct DbStorageEnvironmentKey: EnvironmentKey {

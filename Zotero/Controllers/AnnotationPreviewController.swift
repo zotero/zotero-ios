@@ -8,7 +8,7 @@
 
 import UIKit
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 import RxSwift
 
 typealias AnnotationPreviewUpdate = (annotationKey: String, pdfKey: String, image: UIImage)

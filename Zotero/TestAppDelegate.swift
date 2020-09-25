@@ -8,7 +8,7 @@
 
 import UIKit
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 class TestAppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidFinishLaunching(_ application: UIApplication) {

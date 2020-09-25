@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 struct CollectionsSearchActionHandler: ViewModelActionHandler {
     typealias Action = CollectionsSearchAction

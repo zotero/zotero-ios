@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 class DebugLogFormatter: NSObject, DDLogFormatter {
     private let targetName: String

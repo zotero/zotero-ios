@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 struct LibrariesActionHandler: ViewModelActionHandler {
     typealias State = LibrariesState

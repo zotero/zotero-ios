@@ -2,30 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "Alamofire",
-        "repositoryURL": "https://github.com/Alamofire/Alamofire",
-        "state": {
-          "branch": null,
-          "revision": "2777659076fda38bd4e487739ee331c7a65b5924",
-          "version": "5.2.1"
-        }
-      },
-      {
         "package": "CocoaLumberjack",
         "repositoryURL": "https://github.com/CocoaLumberjack/CocoaLumberjack",
         "state": {
           "branch": null,
-          "revision": "ca78b3dbbb7fb88ee58943592930dc9e2469ba9e",
-          "version": "3.6.1"
-        }
-      },
-      {
-        "package": "KeychainSwift",
-        "repositoryURL": "https://github.com/evgenyneu/keychain-swift",
-        "state": {
-          "branch": null,
-          "revision": "96fb84f45a96630e7583903bd7e08cf095c7a7ef",
-          "version": "19.0.0"
+          "revision": "24deac32cdf5040297ab957dfd938b1a30d4b49e",
+          "version": "3.6.2"
         }
       },
       {
@@ -33,8 +15,8 @@
         "repositoryURL": "https://github.com/Quick/Nimble",
         "state": {
           "branch": null,
-          "revision": "2b1809051b4a65c1d7f5233331daa24572cd7fca",
-          "version": "8.1.1"
+          "revision": "7a46a5fc86cb917f69e3daf79fcb045283d8f008",
+          "version": "8.1.2"
         }
       },
       {
@@ -56,30 +38,12 @@
         }
       },
       {
-        "package": "Realm",
-        "repositoryURL": "https://github.com/realm/realm-cocoa",
-        "state": {
-          "branch": null,
-          "revision": "6310911a38d55003f0b8acca96635aa2bfc3e2c0",
-          "version": "5.4.0"
-        }
-      },
-      {
-        "package": "RealmCore",
-        "repositoryURL": "https://github.com/realm/realm-core",
-        "state": {
-          "branch": null,
-          "revision": "34d7fbcbab2a94bcad081bddf9d172961cd84659",
-          "version": "6.0.25"
-        }
-      },
-      {
         "package": "RxAlamofire",
         "repositoryURL": "https://github.com/RxSwiftCommunity/RxAlamofire",
         "state": {
           "branch": null,
-          "revision": "1c617d8b162d173ae34ec615e09b34beae2110d0",
-          "version": "5.5.0"
+          "revision": "725179f104088192bd5eec9d86ff33c6bf3cdbeb",
+          "version": "5.6.1"
         }
       },
       {
@@ -98,24 +62,6 @@
           "branch": null,
           "revision": "9620cd55a58c1cf3370375140c45379c40049f55",
           "version": "5.2.0"
-        }
-      },
-      {
-        "package": "SwiftyGif",
-        "repositoryURL": "https://github.com/kirualex/SwiftyGif",
-        "state": {
-          "branch": null,
-          "revision": "420d12cba8338b03993f73a72c1f6b70d5273cf2",
-          "version": "5.3.0"
-        }
-      },
-      {
-        "package": "ZIPFoundation",
-        "repositoryURL": "https://github.com/weichsel/ZIPFoundation",
-        "state": {
-          "branch": null,
-          "revision": "ec32d62d412578542c0ffb7a6ce34d3e64b43b94",
-          "version": "0.9.11"
         }
       }
     ]

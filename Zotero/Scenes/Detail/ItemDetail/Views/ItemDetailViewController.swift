@@ -11,7 +11,7 @@ import MobileCoreServices
 import UIKit
 import SafariServices
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 import RxSwift
 
 class ItemDetailViewController: UIViewController {

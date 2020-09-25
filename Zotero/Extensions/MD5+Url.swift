@@ -9,7 +9,7 @@
 import CommonCrypto
 import Foundation
 
-import CocoaLumberjackSwift
+import CocoaLumberjack
 
 func md5(from url: URL) -> String? {
     let bufferSize = 1024 * 1024
