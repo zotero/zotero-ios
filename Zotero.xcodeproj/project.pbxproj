@@ -553,7 +553,6 @@
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
-		B38D3CCB24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
 		B3902DF824811DC3007EE48E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
@@ -1201,7 +1200,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B38D3CCB24A1F420005289EF /* CrashReporter.framework in Frameworks */,
 				87CC284AF2A8EDA600B12311 /* Pods_ZShare.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3476,6 +3474,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -3517,6 +3516,7 @@
 				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -3659,6 +3659,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -3691,6 +3692,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -3723,6 +3725,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -3824,6 +3827,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -3980,6 +3984,8 @@
 				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
 				ENABLE_BITCODE = NO;
+				EXCLUDED_ARCHS = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -4067,6 +4073,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
