@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct Note: Identifiable, Equatable {
     let key: String

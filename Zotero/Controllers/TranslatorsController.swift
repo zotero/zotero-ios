@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 import ZIPFoundation

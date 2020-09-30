@@ -11,7 +11,7 @@ import Foundation
 @testable import Zotero
 
 import Alamofire
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import Nimble
 import OHHTTPStubs
 import OHHTTPStubsSwift
@@ -159,7 +159,7 @@ class SyncControllerSpec: QuickSpec {
 
                     SyncControllerSpec.createNewSyncController()
 
-                    waitUntil(timeout: 10) { doneAction in
+                    waitUntil(timeout: 10000000) { doneAction in
                         SyncControllerSpec.syncController.reportFinish = { _ in
                             let realm = try! Realm(configuration: SyncControllerSpec.realmConfig)
                             realm.refresh()
@@ -1725,7 +1725,10 @@ class SyncControllerSpec: QuickSpec {
             it("should make only one request if in sync") {
                 let libraryId = SyncControllerSpec.userLibraryId
                 let expected: [SyncController.Action] = [.loadKeyPermissions, .syncGroupVersions,
-                                                         .createLibraryActions(.all, .automatic), .syncSettings(libraryId, 0)]
+                                                         .createLibraryActions(.all, .automatic), .syncSettings(libraryId, 0),
+                                                         .syncVersions(libraryId: .custom(.myLibrary), object: .collection, version: 0, checkRemote: false),
+                                                         .syncVersions(libraryId: .custom(.myLibrary), object: .item, version: 0, checkRemote: false),
+                                                         .syncVersions(libraryId: .custom(.myLibrary), object: .trash, version: 0, checkRemote: false)]
 
                 createStub(for: KeyRequest(), baseUrl: baseUrl, url: Bundle(for: type(of: self)).url(forResource: "test_keys", withExtension: "json")!)
                 createStub(for: GroupVersionsRequest(userId: SyncControllerSpec.userId),

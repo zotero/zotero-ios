@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct AttachmentCreator {
     enum Options {

@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 typealias SyncBatchResponse = (failedIds: [String], parsingErrors: [Error], conflicts: [StoreItemsError])
 

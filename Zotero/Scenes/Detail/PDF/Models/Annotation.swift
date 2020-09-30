@@ -8,7 +8,7 @@
 
 import UIKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct Annotation {
     let key: String

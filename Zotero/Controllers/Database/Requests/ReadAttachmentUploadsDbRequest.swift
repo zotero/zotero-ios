@@ -8,8 +8,8 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
-import CocoaLumberjack
 
 struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
     typealias Response = [AttachmentUpload]

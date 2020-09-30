@@ -8,14 +8,14 @@
 
 import UIKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import SwiftUI
 
 #if PDFENABLED
 import PSPDFKit
 #endif
 
-protocol SceneActivityCounter: class { 
+protocol SceneActivityCounter: class {
     func sceneWillEnterForeground()
     func sceneDidEnterBackground()
 }

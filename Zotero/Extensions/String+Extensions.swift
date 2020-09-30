@@ -9,7 +9,7 @@
 import Foundation
 import CoreServices
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 private let stripCharacters = CharacterSet(charactersIn: "\t")
 

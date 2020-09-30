@@ -8,7 +8,6 @@ SCRIPT_PATH=`realpath $0`
 SCRIPT_DIR=`dirname $SCRIPT_PATH`
 LICENSES_DIR="$SCRIPT_DIR/../pdf-keys"
 LICENSES_FILE="$LICENSES_DIR/licenses.plist"
-POD_FILE="$LICENSES_DIR/pspdfkit_pod.txt"
 
 if [ -d "$LICENSES_DIR" ]; then
 exit
@@ -26,5 +25,3 @@ cat > "$LICENSES_FILE" <<EOF
 </dict>
 </plist>
 EOF
-
-touch "$POD_FILE"

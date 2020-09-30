@@ -8,7 +8,7 @@
 
 import Foundation
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 class PdfPageController {
     private static let pagesKey = "org.zotero.PdfPageController.Pages"

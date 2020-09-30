@@ -10,7 +10,7 @@
 
 import UIKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
 import RxSwift

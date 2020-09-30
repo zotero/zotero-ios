@@ -9,7 +9,7 @@
 import Foundation
 
 import Alamofire
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 

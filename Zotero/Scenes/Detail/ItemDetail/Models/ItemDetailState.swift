@@ -8,7 +8,7 @@
 
 import UIKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 
 struct ItemDetailState: ViewModelState {
     struct Changes: OptionSet {

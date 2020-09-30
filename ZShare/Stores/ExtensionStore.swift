@@ -11,7 +11,7 @@ import Foundation
 import MobileCoreServices
 import WebKit
 
-import CocoaLumberjack
+import CocoaLumberjackSwift
 import RxSwift
 import RxAlamofire
 
