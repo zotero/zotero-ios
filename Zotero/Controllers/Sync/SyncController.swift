@@ -790,11 +790,11 @@ final class SyncController: SynchronizationController {
                                             apiClient: self.apiClient, dbStorage: self.dbStorage,
                                             queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)
-              .subscribe(onSuccess: { [weak self] version, toUpdate in
+              .subscribe(onSuccess: { [weak self] newVersion, toUpdate in
                   guard let `self` = self else { return }
                   let versionDidChange = version != lastVersion
                   let actions = self.createBatchedObjectActions(for: libraryId, object: object, from: toUpdate,
-                                                                version: version, shouldStoreVersion: versionDidChange)
+                                                                version: newVersion, shouldStoreVersion: versionDidChange)
                   self.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishSyncVersions(actions: actions, updateCount: toUpdate.count, object: object, libraryId: libraryId)
                   }
