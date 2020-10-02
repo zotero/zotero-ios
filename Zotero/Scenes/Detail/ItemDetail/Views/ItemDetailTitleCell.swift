@@ -20,12 +20,16 @@ class ItemDetailTitleCell: RxTableViewCell {
         return self.textField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.textField.text ?? "") })
     }
 
-    func setup(with title: String, isEditing: Bool) {
+    func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {
         self.separatorLeft.constant = self.separatorInset.left
         if isEditing {
             self.textField.text = title
+            self.textField.placeholder = placeholder
         } else {
             self.label.text = title
+            if title.isEmpty, let placeholder = placeholder {
+                self.label.text = placeholder
+            }
         }
         self.textField.isHidden = !isEditing
         self.label.isHidden = isEditing

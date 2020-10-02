@@ -151,22 +151,21 @@ class ItemDetailViewController: UIViewController {
         if state.changes.contains(.editing) ||
            state.changes.contains(.type) {
             self.tableViewHandler.reloadSections(to: state)
-        }
+        } else {
+            if (state.changes.contains(.downloadProgress) && !state.isEditing) ||
+                state.changes.contains(.attachmentFilesRemoved) {
+                self.tableViewHandler.reload(section: .attachments)
+            } else if let index = state.updateAttachmentIndex {
+                self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
+            }
 
-        if state.changes.contains(.downloadProgress) && !state.isEditing {
-            self.tableViewHandler.reload(section: .attachments)
-        }
+            if state.changes.contains(.abstractCollapsed) {
+                self.tableViewHandler.reload(section: .abstract)
+            }
 
-        if state.changes.contains(.attachmentFilesRemoved) {
-            self.tableViewHandler.reload(section: .attachments)
-        }
-
-        if let diff = state.diff {
-            self.tableViewHandler.reload(with: diff)
-        }
-
-        if let index = state.updateAttachmentIndex {
-            self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
+            if let diff = state.diff {
+                self.tableViewHandler.reload(with: diff)
+            }
         }
 
         if let error = state.error {
@@ -190,11 +189,11 @@ class ItemDetailViewController: UIViewController {
                          })
                          .disposed(by: self.disposeBag)
             self.navigationItem.rightBarButtonItems = [button]
+            self.navigationItem.leftBarButtonItem = nil
             return
         }
 
         let saveButton: UIBarButtonItem
-
         if isSaving {
             let indicator = UIActivityIndicatorView(style: .medium)
             indicator.color = .gray
@@ -206,6 +205,7 @@ class ItemDetailViewController: UIViewController {
                              })
                              .disposed(by: self.disposeBag)
         }
+        self.navigationItem.rightBarButtonItem = saveButton
 
         let cancelButton = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
         cancelButton.isEnabled = !isSaving
@@ -213,7 +213,7 @@ class ItemDetailViewController: UIViewController {
                                self?.cancelEditing()
                            })
                            .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItems = [saveButton, cancelButton]
+        self.navigationItem.leftBarButtonItem = cancelButton
     }
 
     /// Shows appropriate error alert for given error.

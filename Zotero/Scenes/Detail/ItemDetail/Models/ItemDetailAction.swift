@@ -40,4 +40,5 @@ enum ItemDetailAction {
     case updateDownload(FileDownloader.Update)
     case updateAttachments(AttachmentFileDeletedNotification)
     case deleteAttachmentFile(Attachment)
+    case toggleAbstractDetailCollapsed
 }

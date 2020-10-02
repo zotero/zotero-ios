@@ -211,13 +211,10 @@ class ItemDetailTableViewHandler: NSObject {
     private func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
         if isEditing {
             // Each section is visible during editing, except dates section. Dates are filled automatically and the user can't change them manually.
-            return [.title, .type, .creators, .fields, .abstract, .notes, .tags, .attachments]
+            return [.title, .type, .creators, .fields, .dates, .abstract, .notes, .tags, .attachments]
         }
 
-        var sections: [Section] = []
-        if !data.title.isEmpty {
-            sections.append(.title)
-        }
+        var sections: [Section] = [.title]
         // Item type is always visible
         sections.append(.type)
         if !data.creators.isEmpty {
@@ -226,9 +223,7 @@ class ItemDetailTableViewHandler: NSObject {
         if !data.fieldIds.isEmpty {
             sections.append(.fields)
         }
-        if !isEditing {
-            sections.append(.dates)
-        }
+        sections.append(.dates)
         if let abstract = data.abstract, !abstract.isEmpty {
             sections.append(.abstract)
         }
@@ -391,7 +386,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         switch self.sections[section] {
         case .notes, .attachments, .tags:
-            return 60
+            return 44
         default:
             return 0
         }
@@ -444,17 +439,26 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         switch section {
         case .abstract:
             if let cell = cell as? ItemDetailAbstractCell {
-                cell.setup(with: (self.viewModel.state.data.abstract ?? ""), isEditing: isEditing)
+                let state: ItemDetailAbstractCell.State
+                if isEditing {
+                    state = .editing
+                } else if self.viewModel.state.abstractCollapsed {
+                    state = .collapsed
+                } else {
+                    state = .expanded
+                }
+                cell.setup(with: (self.viewModel.state.data.abstract ?? ""), state: state)
                 cell.textObservable.subscribe(onNext: { [weak self] abstract in
                     if isEditing {
                         self?.viewModel.process(action: .setAbstract(abstract))
                     }
                 }).disposed(by: cell.newDisposeBag)
             }
+            hasSeparator = false
 
         case .title:
             if let cell = cell as? ItemDetailTitleCell {
-                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing)
+                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing, placeholder: L10n.ItemDetail.untitled)
                 cell.textObservable.subscribe(onNext: { [weak self] title in
                     if isEditing {
                         self?.viewModel.process(action: .setTitle(title))
@@ -484,12 +488,13 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addTag)
             }
+            hasSeparator = isEditing
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
                 cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth)
             }
-            hasSeparator = false
+            hasSeparator = isEditing
 
         case .fields:
             if let cell = cell as? ItemDetailFieldCell {
@@ -501,7 +506,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     }).disposed(by: cell.newDisposeBag)
                 }
             }
-            hasSeparator = false
+            hasSeparator = isEditing
 
         case .creators:
             if let cell = cell as? ItemDetailCreatorEditingCell {
@@ -532,7 +537,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addCreator)
             }
-            hasSeparator = false
+            hasSeparator = isEditing
 
         case .dates:
             if let cell = cell as? ItemDetailFieldCell {
@@ -546,10 +551,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                 default: break
                 }
             }
-            hasSeparator = false
+            hasSeparator = isEditing || indexPath.row == self.count(in: .dates, isEditing: isEditing) - 1
         }
 
-        cell.separatorInset = UIEdgeInsets(top: 0, left: (hasSeparator ? .greatestFiniteMagnitude : cell.layoutMargins.left), bottom: 0, right: 0)
+        cell.separatorInset = UIEdgeInsets(top: 0, left: (hasSeparator ? cell.layoutMargins.left : .greatestFiniteMagnitude), bottom: 0, right: 0)
 
         return cell
     }
@@ -663,7 +668,11 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 default: break
                 }
             }
-        case .title, .abstract, .dates: break
+        case .abstract:
+            if !self.viewModel.state.isEditing {
+                self.viewModel.process(action: .toggleAbstractDetailCollapsed)
+            }
+        case .title, .dates: break
         }
     }
 }

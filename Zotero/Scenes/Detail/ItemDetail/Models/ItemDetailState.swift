@@ -20,6 +20,7 @@ struct ItemDetailState: ViewModelState {
         static let type = Changes(rawValue: 1 << 1)
         static let downloadProgress = Changes(rawValue: 1 << 2)
         static let attachmentFilesRemoved = Changes(rawValue: 1 << 3)
+        static let abstractCollapsed = Changes(rawValue: 1 << 4)
     }
 
     enum DetailType {
@@ -267,6 +268,9 @@ struct ItemDetailState: ViewModelState {
     var metadataTitleMaxWidth: CGFloat
     var openAttachment: (Attachment, Int)?
     var updateAttachmentIndex: Int?
+
+    @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
+    var abstractCollapsed: Bool
 
     init(type: DetailType, library: Library, userId: Int, data: Data, error: ItemDetailError? = nil) {
         self.changes = []

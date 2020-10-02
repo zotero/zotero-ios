@@ -128,10 +128,16 @@ internal enum L10n {
     internal static let notes = L10n.tr("Localizable", "item_detail.notes")
     /// Search Tags...
     internal static let searchTags = L10n.tr("Localizable", "item_detail.search_tags")
+    /// Show less
+    internal static let showLess = L10n.tr("Localizable", "item_detail.show_less")
+    /// Show more
+    internal static let showMore = L10n.tr("Localizable", "item_detail.show_more")
     /// Split name
     internal static let splitName = L10n.tr("Localizable", "item_detail.split_name")
     /// Tags
     internal static let tags = L10n.tr("Localizable", "item_detail.tags")
+    /// Untitled
+    internal static let untitled = L10n.tr("Localizable", "item_detail.untitled")
     internal enum Error {
       /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
       internal static func droppedFieldsMessage(_ p1: Any) -> String {

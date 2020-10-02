@@ -10,10 +10,15 @@ import UIKit
 
 class ItemDetailSectionView: UITableViewHeaderFooterView {
     @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var topSeparatorHeight: NSLayoutConstraint!
+    @IBOutlet private weak var bottomSeparatorHeight: NSLayoutConstraint!
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.titleLabel.font = UIFont.preferredFont(for: .title1, weight: .light)
+
+        let height = 1 / UIScreen.main.scale
+        self.topSeparatorHeight.constant = height
+        self.bottomSeparatorHeight.constant = height
     }
 
     func setup(with title: String) {

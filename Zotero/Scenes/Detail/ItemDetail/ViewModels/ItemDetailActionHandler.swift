@@ -133,6 +133,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         case .deleteAttachmentFile(let attachment):
             self.deleteFile(of: attachment, in: viewModel)
+
+        case .toggleAbstractDetailCollapsed:
+            self.update(viewModel: viewModel) { state in
+                state.abstractCollapsed = !state.abstractCollapsed
+                state.changes = [.abstractCollapsed]
+            }
         }
     }
 

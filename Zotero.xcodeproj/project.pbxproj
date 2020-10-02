@@ -635,6 +635,7 @@
 		B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550224B85A3A00F94B59 /* Colors.xcassets */; };
 		B3D16BF224E161C70002663B /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D16BF024E161C70002663B /* LoginViewController.swift */; };
 		B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3D16BF124E161C70002663B /* LoginViewController.xib */; };
+		B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */; };
 		B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEE02408F5200039ED0D /* MainViewController.swift */; };
@@ -1150,6 +1151,7 @@
 		B3CBB124248A46D500C4228F /* NotificationCenter+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationCenter+Extensions.swift"; sourceTree = "<group>"; };
 		B3D16BF024E161C70002663B /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		B3D16BF124E161C70002663B /* LoginViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
+		B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsibleLabel.swift; sourceTree = "<group>"; };
 		B3D3F78A240D222C0018F354 /* ItemFetchType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFetchType.swift; sourceTree = "<group>"; };
 		B3DCDEE02408F5200039ED0D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocumentPickerViewController.swift; sourceTree = "<group>"; };
@@ -1847,6 +1849,7 @@
 		B3593ECE241A61C700760E20 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */,
 				B3593ED4241A61C700760E20 /* ItemDetailAbstractCell.swift */,
 				B3593EE0241A61C700760E20 /* ItemDetailAbstractCell.xib */,
 				B3593EDE241A61C700760E20 /* ItemDetailAddCell.swift */,
@@ -2952,6 +2955,7 @@
 				B3593F59241A61C700760E20 /* CollectionsViewController.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
+				B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */,
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
