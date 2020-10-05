@@ -29,7 +29,9 @@ class AppDelegate: UIResponder {
     private func setupLogs() {
         #if DEBUG
         // Enable console logs only for debug mode
-        DDLog.add(DDOSLogger.sharedInstance)
+        let logger = DDOSLogger.sharedInstance
+        logger.logFormatter = DebugLogFormatter(targetName: "Zotero")
+        DDLog.add(logger)
 
         // Change to .info to enable server logging
         // Change to .warning/.error to disable server logging

@@ -113,6 +113,8 @@ extension AppCoordinator: DebugLoggingCoordinator {
             message = "Can't start debug logging."
         case .contentReading:
             message = "Can't find log files."
+        case .noLogsRecorded:
+            message = "No logs occured during debug logging."
         }
         self.showAlert(title: "Debugging error",
                        message: message,

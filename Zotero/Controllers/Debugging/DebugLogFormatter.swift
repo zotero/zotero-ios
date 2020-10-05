@@ -21,9 +21,17 @@ class DebugLogFormatter: NSObject, DDLogFormatter {
     func format(message logMessage: DDLogMessage) -> String? {
         let level = self.logLevelString(from: logMessage.flag)
         let timeDiff = self.lastTimestamp.flatMap({ logMessage.timestamp.timeIntervalSince($0) }) ?? 0
-        let formattedTimeDiff = String(format: "%.8f", timeDiff)
+        let timeWarning: String
+        if timeDiff > 0.5 {
+            timeWarning = " 🕐❗️"
+        } else if timeDiff > 0.25 {
+            timeWarning = " 🕐❓"
+        } else {
+            timeWarning = ""
+        }
+        let formattedTimeDiff = String(format: "+%.8f%@", timeDiff, timeWarning)
         self.lastTimestamp = logMessage.timestamp
-        return "\(level) \(self.targetName)(+\(formattedTimeDiff)): \(logMessage.message)." +
+        return "\(level) \(self.targetName)(\(formattedTimeDiff)): \(logMessage.message)." +
                " [(\(logMessage.line)) \(logMessage.fileName).\(logMessage.function ?? ""); " +
                "\(logMessage.queueLabel); \(logMessage.timestamp.timeIntervalSince1970)]"
     }
@@ -33,13 +41,13 @@ class DebugLogFormatter: NSObject, DDLogFormatter {
         case .debug:
             return "[DEBUG]"
         case .error:
-            return "[ERROR]"
+            return "[❗️ERROR❗️]"
         case .info:
             return "[INFO]"
         case .verbose:
             return "[VERBOSE]"
         case .warning:
-            return "[WARNING]"
+            return "[❓WARNING❓]"
         default:
             return "[UNKNOWN]"
         }

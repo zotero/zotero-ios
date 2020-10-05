@@ -23,6 +23,7 @@ class DebugLogging {
     enum Error: Swift.Error {
         case start
         case contentReading
+        case noLogsRecorded
     }
 
     private let fileStorage: FileStorage
@@ -74,13 +75,16 @@ class DebugLogging {
     private func shareLogs() {
         do {
             let logs: [URL] = try self.fileStorage.contentsOfDirectory(at: Files.debugLogDirectory)
-            // TODO: - share logs
+            if logs.isEmpty {
+                throw Error.noLogsRecorded
+            }
+
             self.coordinator?.share(logs: logs) { [weak self] in
                 self?.clearDebugDirectory()
             }
         } catch let error {
             DDLogError("DebugLogging: can't read debug directory contents - \(error)")
-            self.coordinator?.show(error: .contentReading)
+            self.coordinator?.show(error: (error as? Error) ?? .contentReading)
         }
     }
 
