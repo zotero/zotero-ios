@@ -3441,11 +3441,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"COCOAPODS=1",
-					"MAINAPP=1",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3457,6 +3453,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG MAINAPP";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3482,11 +3479,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"COCOAPODS=1",
-					"MAINAPP=1",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3498,7 +3491,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = MAINAPP;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -3787,11 +3780,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"COCOAPODS=1",
-					"MAINAPP=1",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3803,7 +3792,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED MAINAPP";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3943,11 +3932,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"COCOAPODS=1",
-					"MAINAPP=1",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				INFOPLIST_FILE = Zotero/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3959,7 +3944,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = PDFENABLED;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PDFENABLED MAINAPP";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -4209,7 +4194,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 5.4.6;
+				version = 5.4.7;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
