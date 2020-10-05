@@ -33,19 +33,10 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.dateModified = Date()
 
         if let libraryId = self.libraryId {
-            switch libraryId {
-            case .custom(let type):
-                let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-                item.customLibrary = library
-            case .group(let identifier):
-                let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-                item.group = group
-            }
+            item.libraryId = libraryId
 
             if let key = self.collectionKey,
-               let collection = database.objects(RCollection.self)
-                                        .filter(.key(key, in: libraryId))
-                                        .first {
+               let collection = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first {
                 item.collections.append(collection)
                 item.changedFields.insert(.collections)
             }

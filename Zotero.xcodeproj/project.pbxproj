@@ -581,6 +581,7 @@
 		B39A403024BC902600205172 /* ColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39A402F24BC902600205172 /* ColorPicker.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift */; };
+		B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305650423FC051E003304F2 /* Threading+Extras.swift */; };
 		B39D336823FFD96C00EF2ACB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336723FFD96C00EF2ACB /* Note.swift */; };
 		B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
@@ -3078,6 +3079,7 @@
 				B300B3362429234C00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B305674923FC09AF003304F2 /* RTag.swift in Sources */,
 				B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */,
+				B39C9AB7252B589F00462D27 /* Threading+Extras.swift in Sources */,
 				B305674A23FC09AF003304F2 /* RCollection.swift in Sources */,
 				B305674B23FC09AF003304F2 /* RCreator.swift in Sources */,
 				B377F29F2493722100022943 /* AttachmentCreator.swift in Sources */,

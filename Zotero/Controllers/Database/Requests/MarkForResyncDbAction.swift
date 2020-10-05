@@ -38,22 +38,13 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
             }
         }
 
-        let (isNew, libraryObject) = try database.autocreatedLibraryObject(forPrimaryKey: self.libraryId)
-        if isNew {
-            switch libraryObject {
-            case .group(let group):
-                group.syncState = .dirty
-            case .custom: break
-            }
-        }
-
         toCreate.forEach { key in
             let object = Obj()
             object.key = key
             object.syncState = .dirty
             object.syncRetries = 1
             object.lastSyncDate = syncDate
-            object.libraryObject = libraryObject
+            object.libraryId = self.libraryId
             database.add(object)
         }
     }

@@ -71,7 +71,7 @@ struct Annotation {
 
         let isAuthor: Bool
         let author: String
-        if item.customLibrary != nil {
+        if item.customLibraryKey.value != nil {
             // In "My Library" current user is always author
             isAuthor = true
             author = ""

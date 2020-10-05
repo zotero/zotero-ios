@@ -326,7 +326,7 @@ class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.group = library
+                    item.groupKey.value = library.identifier
                     item.changedFields = .all
                     item.attachmentNeedsSync = true
                     realm.add(item)
@@ -381,7 +381,7 @@ class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.group = library
+                    item.groupKey.value = library.identifier
                     item.rawChangedFields = 0
                     item.attachmentNeedsSync = true
                     realm.add(item)
@@ -438,7 +438,7 @@ class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.group = library
+                    item.groupKey.value = library.identifier
                     item.rawChangedFields = 0
                     item.attachmentNeedsSync = true
                     realm.add(item)
@@ -516,7 +516,7 @@ class SyncActionsSpec: QuickSpec {
                     let item = RItem()
                     item.key = key
                     item.rawType = "attachment"
-                    item.group = library
+                    item.groupKey.value = library.identifier
                     item.rawChangedFields = 0
                     item.attachmentNeedsSync = true
                     realm.add(item)

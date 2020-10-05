@@ -72,6 +72,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
         item.syncRetries = 0
         item.lastSyncDate = Date(timeIntervalSince1970: 0)
         item.changeType = .sync
+        item.libraryId = libraryId
 
         if self.preferRemoteData {
             item.deleted = false
@@ -79,7 +80,6 @@ struct StoreItemsDbRequest: DbResponseRequest {
         }
 
         self.syncFields(data: data, item: item, database: database, schemaController: schemaController)
-        try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, item: item, database: database)
         self.syncParent(key: data.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: data.collectionKeys, libraryId: libraryId, item: item, database: database)
         try self.syncTags(data.tags, libraryId: libraryId, item: item, database: database)
@@ -180,19 +180,6 @@ struct StoreItemsDbRequest: DbResponseRequest {
         return rRect
     }
 
-    private func syncLibrary(identifier: LibraryIdentifier, libraryName: String, item: RItem, database: Realm) throws {
-        let (isNew, object) = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
-        if isNew {
-            switch object {
-            case .group(let object):
-                object.name = libraryName
-                object.syncState = .outdated
-            case .custom: break
-            }
-        }
-        item.libraryObject = object
-    }
-
     private func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         item.parent = nil
 
@@ -206,7 +193,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
             parent = RItem()
             parent.key = key
             parent.syncState = .dirty
-            parent.libraryObject = item.libraryObject
+            parent.libraryId = libraryId
             database.add(parent)
         }
 
@@ -231,7 +218,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
             let collection = RCollection()
             collection.key = key
             collection.syncState = .dirty
-            collection.libraryObject = item.libraryObject
+            collection.libraryId = libraryId
             database.add(collection)
             item.collections.append(collection)
         }
@@ -257,7 +244,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
             } else {
                 tag = RTag()
                 tag.name = object.element.tag
-                tag.libraryObject = item.libraryObject
+                tag.libraryId = libraryId
                 database.add(tag)
             }
             tag.items.append(item)

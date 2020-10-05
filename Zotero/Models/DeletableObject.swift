@@ -78,5 +78,7 @@ extension RItem: Deletable {
 }
 
 extension RSearch: Deletable {
-    func willRemove(in database: Realm) {}
+    func willRemove(in database: Realm) {
+        database.delete(self.conditions)
+    }
 }

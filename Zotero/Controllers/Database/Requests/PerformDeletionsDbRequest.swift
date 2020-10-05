@@ -25,25 +25,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         let conflicts = self.deleteItems(with: self.response.items, database: database)
         self.deleteTags(with: self.response.tags, database: database)
 
-        switch self.libraryId {
-        case .custom(let type):
-            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-            if library?.versions == nil {
-                let versions = RVersions()
-                database.add(versions)
-                library?.versions = versions
-            }
-            library?.versions?.deletions = self.version
-
-        case .group(let identifier):
-            let library = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-            if library?.versions == nil {
-                let versions = RVersions()
-                database.add(versions)
-                library?.versions = versions
-            }
-            library?.versions?.deletions = self.version
-        }
+        try UpdateVersionsDbRequest(version: self.version, libraryId: self.libraryId, type: .deletions).process(in: database)
 
         return conflicts
     }

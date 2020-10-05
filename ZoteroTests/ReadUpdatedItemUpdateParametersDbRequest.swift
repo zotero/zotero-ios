@@ -40,7 +40,7 @@ class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
                 let child = RItem()
                 child.key = childKey
                 child.changedFields = [.fields]
-                child.customLibrary = library
+                child.customLibraryKey.value = library.rawType
                 realm.add(child)
 
                 let childField = RItemField()
@@ -53,7 +53,7 @@ class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
                 let parent = RItem()
                 parent.key = parentKey
                 parent.changedFields = [.fields]
-                parent.customLibrary = library
+                parent.customLibraryKey.value = library.rawType
                 realm.add(parent)
 
                 let parentField = RItemField()
@@ -89,7 +89,7 @@ class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
                 let child = RItem()
                 child.key = childKey
                 child.changedFields = [.fields]
-                child.customLibrary = library
+                child.customLibraryKey.value = library.rawType
                 realm.add(child)
 
                 let childField = RItemField()
@@ -100,13 +100,13 @@ class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
 
                 let middle = RItem()
                 middle.key = middleKey
-                middle.customLibrary = library
+                middle.customLibraryKey.value = library.rawType
                 realm.add(middle)
 
                 let parent = RItem()
                 parent.key = parentKey
                 parent.changedFields = [.fields]
-                parent.customLibrary = library
+                parent.customLibraryKey.value = library.rawType
                 realm.add(parent)
 
                 let parentField = RItemField()

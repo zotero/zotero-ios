@@ -28,11 +28,6 @@ class RCustomLibrary: Object {
     @objc dynamic var orderId: Int = 0
     @objc dynamic var versions: RVersions?
 
-    let collections = LinkingObjects(fromType: RCollection.self, property: "customLibrary")
-    let items = LinkingObjects(fromType: RItem.self, property: "customLibrary")
-    let searches = LinkingObjects(fromType: RSearch.self, property: "customLibrary")
-    let tags = LinkingObjects(fromType: RTag.self, property: "customLibrary")
-
     override class func primaryKey() -> String? {
         return "rawType"
     }

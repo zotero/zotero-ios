@@ -26,11 +26,6 @@ class RGroup: Object {
     @objc dynamic var orderId: Int = 0
     @objc dynamic var versions: RVersions?
 
-    let collections = LinkingObjects(fromType: RCollection.self, property: "group")
-    let items = LinkingObjects(fromType: RItem.self, property: "group")
-    let searches = LinkingObjects(fromType: RSearch.self, property: "group")
-    let tags = LinkingObjects(fromType: RTag.self, property: "group")
-
     // MARK: - Sync data
     /// Flag that indicates that this group is kept only locally on this device, the group was either removed remotely
     // or the user was removed from the group, but the user chose to keep it

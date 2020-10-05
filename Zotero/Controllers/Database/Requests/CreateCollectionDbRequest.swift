@@ -25,21 +25,13 @@ struct CreateCollectionDbRequest: DbRequest {
         collection.key = self.key
         collection.name = self.name
         collection.syncState = .synced
+        collection.libraryId = self.libraryId
 
         var changes: RCollectionChanges = .name
 
         if let key = self.parentKey {
             collection.parent = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first
             changes.insert(.parent)
-        }
-
-        switch self.libraryId {
-        case .custom(let type):
-            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-            collection.customLibrary = library
-        case .group(let identifier):
-            let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-            collection.group = group
         }
 
         collection.changedFields = changes

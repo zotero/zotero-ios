@@ -12,6 +12,7 @@ import RealmSwift
 
 enum UpdateVersionType {
     case object(SyncObject)
+    case deletions
     case settings
 }
 
@@ -29,26 +30,19 @@ struct UpdateVersionsDbRequest: DbRequest {
                 throw DbError.objectNotFound
             }
 
-            let versions: RVersions = library.versions ?? RVersions()
-            if library.versions == nil {
-                database.add(versions)
-                library.versions = versions
+            if let versions = library.versions {
+                try self.update(versions: versions, type: self.type, version: self.version)
             }
-
-            try self.update(versions: versions, type: self.type, version: self.version)
 
         case .group(let identifier):
             guard let library = database.object(ofType: RGroup.self, forPrimaryKey: identifier) else {
                 throw DbError.objectNotFound
             }
 
-            let versions: RVersions = library.versions ?? RVersions()
-            if library.versions == nil {
-                database.add(versions)
-                library.versions = versions
-            }
 
-            try self.update(versions: versions, type: self.type, version: self.version)
+            if let versions = library.versions {
+                try self.update(versions: versions, type: self.type, version: self.version)
+            }
         }
     }
 
@@ -56,6 +50,8 @@ struct UpdateVersionsDbRequest: DbRequest {
         switch type {
         case .settings:
             versions.settings = version
+        case .deletions:
+            versions.deletions = version
         case .object(let object):
             switch object {
             case .collection:

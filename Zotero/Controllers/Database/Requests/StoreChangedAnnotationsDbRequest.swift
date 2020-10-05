@@ -183,16 +183,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         // We need to submit tags on creation even if they are empty, so we need to mark them as changed
         item.changedFields = [.parent, .fields, .type, .tags]
         item.dateAdded = annotation.dateModified
-
-        switch self.libraryId {
-        case .custom(let type):
-            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-            item.customLibrary = library
-        case .group(let identifier):
-            let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-            item.group = group
-        }
-
+        item.libraryId = self.libraryId
         database.add(item)
 
         item.parent = parent

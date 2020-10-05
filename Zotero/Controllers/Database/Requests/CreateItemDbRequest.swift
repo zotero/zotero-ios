@@ -32,18 +32,8 @@ struct CreateItemDbRequest: DbResponseRequest {
         item.syncState = .synced
         item.dateAdded = self.data.dateAdded
         item.dateModified = self.data.dateModified
+        item.libraryId = self.libraryId
         database.add(item)
-
-        // Assign library object
-        
-        switch self.libraryId {
-        case .custom(let type):
-            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-            item.customLibrary = library
-        case .group(let identifier):
-            let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-            item.group = group
-        }
 
         var changes: RItemChanges = [.type, .fields]
 
@@ -106,7 +96,7 @@ struct CreateItemDbRequest: DbResponseRequest {
                                                 libraryId: nil,
                                                 collectionKey: nil).process(in: database)
             rNote.parent = item
-            rNote.libraryObject = item.libraryObject
+            rNote.libraryId = self.libraryId
             rNote.changedFields.insert(.parent)
         }
 
@@ -116,7 +106,7 @@ struct CreateItemDbRequest: DbResponseRequest {
             let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
                                                             localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
                                                             collections: [], linkMode: .importedFile).process(in: database)
-            rAttachment.libraryObject = item.libraryObject
+            rAttachment.libraryId = self.libraryId
             rAttachment.parent = item
             rAttachment.changedFields.insert(.parent)
         }

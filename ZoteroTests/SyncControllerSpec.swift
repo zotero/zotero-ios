@@ -42,6 +42,9 @@ class SyncControllerSpec: QuickSpec {
             let myLibrary = RCustomLibrary()
             myLibrary.rawType = RCustomLibraryType.myLibrary.rawValue
             realm.add(myLibrary)
+
+            let versions = RVersions()
+            myLibrary.versions = versions
         }
         // Create DB storage with the same config
         let dbStorage = RealmDbStorage(config: config)
@@ -168,10 +171,14 @@ class SyncControllerSpec: QuickSpec {
                             expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
-                            expect(library?.collections.count).to(equal(1))
-                            expect(library?.items.count).to(equal(2))
+                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+                            let tags = realm.objects(RTag.self).filter(.library(with: .custom(.myLibrary)))
+
+                            expect(collections.count).to(equal(1))
+                            expect(items.count).to(equal(2))
 //                            expect(library?.searches.count).to(equal(1))
-                            expect(library?.tags.count).to(equal(1))
+                            expect(tags.count).to(equal(1))
                             expect(realm.objects(RCustomLibrary.self).count).to(equal(1))
                             expect(realm.objects(RGroup.self).count).to(equal(0))
                             expect(realm.objects(RCollection.self).count).to(equal(1))
@@ -193,7 +200,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection?.name).to(equal("A"))
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
-                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection?.parent).to(beNil())
                             expect(collection?.children.count).to(equal(0))
 
@@ -203,7 +210,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(item?.version).to(equal(3))
                             expect(item?.trash).to(beFalse())
                             expect(item?.syncState).to(equal(.synced))
-                            expect(item?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(item?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(item?.collections.count).to(equal(0))
                             expect(item?.fields.count).to(equal(1))
                             expect(item?.fields.first?.key).to(equal("title"))
@@ -218,7 +225,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(item2?.version).to(equal(4))
                             expect(item2?.trash).to(beTrue())
                             expect(item2?.syncState).to(equal(.synced))
-                            expect(item2?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(item2?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(item2?.collections.count).to(equal(0))
                             expect(item?.fields.count).to(equal(1))
                             expect(item2?.parent?.key).to(equal("AAAAAAAA"))
@@ -363,17 +370,29 @@ class SyncControllerSpec: QuickSpec {
                             let myLibrary = realm.object(ofType: RCustomLibrary.self,
                                                          forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
                             expect(myLibrary).toNot(beNil())
-                            expect(myLibrary?.collections.count).to(equal(0))
-                            expect(myLibrary?.items.count).to(equal(0))
-                            expect(myLibrary?.searches.count).to(equal(0))
-                            expect(myLibrary?.tags.count).to(equal(0))
+
+                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+//                            let searches = realm.objects(RSearch.self).filter(.library(with: .custom(.myLibrary)))
+                            let tags = realm.objects(RTag.self).filter(.library(with: .custom(.myLibrary)))
+
+                            expect(collections.count).to(equal(0))
+                            expect(items.count).to(equal(0))
+//                            expect(searches.count).to(equal(0))
+                            expect(tags.count).to(equal(0))
 
                             let group = realm.object(ofType: RGroup.self, forPrimaryKey: groupId)
                             expect(group).toNot(beNil())
-                            expect(group?.collections.count).to(equal(1))
-                            expect(group?.items.count).to(equal(2))
-//                            expect(group?.searches.count).to(equal(1))
-                            expect(group?.tags.count).to(equal(1))
+
+                            let gCollections = realm.objects(RCollection.self).filter(.library(with: .group(groupId)))
+                            let gItems = realm.objects(RItem.self).filter(.library(with: .group(groupId)))
+//                            let gSearches = realm.objects(RSearch.self).filter(.library(with: .group(groupId)))
+                            let gTags = realm.objects(RTag.self).filter(.library(with: .group(groupId)))
+
+                            expect(gCollections.count).to(equal(1))
+                            expect(gItems.count).to(equal(2))
+//                            expect(gSearches.count).to(equal(1))
+                            expect(gTags.count).to(equal(1))
 
                             let versions = group?.versions
                             expect(versions).toNot(beNil())
@@ -417,11 +436,10 @@ class SyncControllerSpec: QuickSpec {
 
                     let realm = SyncControllerSpec.realm!
                     try! realm.write {
-                        let myLibrary = SyncControllerSpec.realm.objects(RCustomLibrary.self).first
                         let item = RItem()
                         item.key = itemToDelete
                         item.baseTitle = "Delete me"
-                        item.customLibrary = myLibrary
+                        item.libraryId = .custom(.myLibrary)
                         realm.add(item)
                     }
 
@@ -614,12 +632,10 @@ class SyncControllerSpec: QuickSpec {
 
                     let realm = SyncControllerSpec.realm!
                     try! realm.write {
-                        let library = realm.object(ofType: RCustomLibrary.self,
-                                                   forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)
                         let item = RItem()
                         item.key = unsyncedItemKey
                         item.syncState = .dirty
-                        item.customLibrary = library
+                        item.libraryId = .custom(.myLibrary)
                         realm.add(item)
                     }
 
@@ -880,9 +896,13 @@ class SyncControllerSpec: QuickSpec {
                             expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
-                            expect(library?.collections.count).to(equal(4))
-                            expect(library?.items.count).to(equal(3))
-//                            expect(library?.searches.count).to(equal(3))
+                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+//                            let searches = realm.objects(RSearch.self).filter(.library(with: .custom(.myLibrary)))
+
+                            expect(collections.count).to(equal(4))
+                            expect(items.count).to(equal(3))
+//                            expect(searches.count).to(equal(3))
                             expect(realm.objects(RCollection.self).count).to(equal(4))
 //                            expect(realm.objects(RSearch.self).count).to(equal(3))
                             expect(realm.objects(RItem.self).count).to(equal(3))
@@ -892,7 +912,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection?.name).to(equal("A"))
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
-                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection?.parent).to(beNil())
                             expect(collection?.children.count).to(equal(0))
 
@@ -901,7 +921,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection2?.name).to(equal("B"))
                             expect(collection2?.syncState).to(equal(.synced))
                             expect(collection2?.version).to(equal(1))
-                            expect(collection2?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection2?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection2?.parent?.key).to(equal("ZZZZZZZZ"))
                             expect(collection2?.children.count).to(equal(0))
 
@@ -911,7 +931,7 @@ class SyncControllerSpec: QuickSpec {
                             let collection4 = realm.objects(RCollection.self).filter("key = %@", "ZZZZZZZZ").first
                             expect(collection4).toNot(beNil())
                             expect(collection4?.syncState).to(equal(.dirty))
-                            expect(collection4?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection4?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection4?.parent).to(beNil())
                             expect(collection4?.children.count).to(equal(1))
 
@@ -973,20 +993,20 @@ class SyncControllerSpec: QuickSpec {
                         collection.name = "Locally deleted collection"
                         collection.version = 0
                         collection.deleted = true
-                        collection.customLibrary = library
+                        collection.libraryId = .custom(.myLibrary)
                         realm.add(collection)
 
                         let item1 = RItem()
                         item1.key = "BBBBBBBB"
                         item1.baseTitle = "B"
-                        item1.customLibrary = library
+                        item1.libraryId = .custom(.myLibrary)
                         item1.collections.append(collection)
                         realm.add(item1)
 
                         let item2 = RItem()
                         item2.key = "CCCCCCCC"
                         item2.baseTitle = "C"
-                        item2.customLibrary = library
+                        item2.libraryId = .custom(.myLibrary)
                         item2.collections.append(collection)
                         realm.add(item2)
                     }
@@ -1033,8 +1053,11 @@ class SyncControllerSpec: QuickSpec {
                             expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
-                            expect(library?.collections.count).to(equal(1))
-                            expect(library?.items.count).to(equal(2))
+                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+
+                            expect(collections.count).to(equal(1))
+                            expect(items.count).to(equal(2))
                             expect(realm.objects(RCollection.self).count).to(equal(1))
                             expect(realm.objects(RItem.self).count).to(equal(2))
 
@@ -1043,7 +1066,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(1))
                             expect(collection?.deleted).to(beFalse())
-                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection?.parent).to(beNil())
                             expect(collection?.items.count).to(equal(2))
 
@@ -1084,13 +1107,13 @@ class SyncControllerSpec: QuickSpec {
                         collection.name = "Locally deleted collection"
                         collection.version = 1
                         collection.deleted = true
-                        collection.customLibrary = library
+                        collection.libraryId = .custom(.myLibrary)
                         realm.add(collection)
 
                         let item1 = RItem()
                         item1.key = "BBBBBBBB"
                         item1.baseTitle = "B"
-                        item1.customLibrary = library
+                        item1.libraryId = .custom(.myLibrary)
                         item1.collections.append(collection)
                         realm.add(item1)
 
@@ -1098,7 +1121,7 @@ class SyncControllerSpec: QuickSpec {
                         item2.key = deletedItemKey
                         item2.baseTitle = "C"
                         item2.deleted = true
-                        item2.customLibrary = library
+                        item2.libraryId = .custom(.myLibrary)
                         item2.collections.append(collection)
                         realm.add(item2)
                     }
@@ -1148,8 +1171,11 @@ class SyncControllerSpec: QuickSpec {
                             expect(libraryId).toNot(beNil())
                             expect(library?.type).to(equal(.myLibrary))
 
-                            expect(library?.collections.count).to(equal(1))
-                            expect(library?.items.count).to(equal(2))
+                            let collections = realm.objects(RCollection.self).filter(.library(with: .custom(.myLibrary)))
+                            let items = realm.objects(RItem.self).filter(.library(with: .custom(.myLibrary)))
+
+                            expect(collections.count).to(equal(1))
+                            expect(items.count).to(equal(2))
                             expect(realm.objects(RCollection.self).count).to(equal(1))
                             expect(realm.objects(RItem.self).count).to(equal(2))
 
@@ -1158,7 +1184,7 @@ class SyncControllerSpec: QuickSpec {
                             expect(collection?.syncState).to(equal(.synced))
                             expect(collection?.version).to(equal(2))
                             expect(collection?.deleted).to(beFalse())
-                            expect(collection?.customLibrary?.type).to(equal(.myLibrary))
+                            expect(collection?.customLibraryKey.value).to(equal(RCustomLibraryType.myLibrary.rawValue))
                             expect(collection?.parent).to(beNil())
                             expect(collection?.items.count).to(equal(2))
                             if let collection = collection {
@@ -1202,7 +1228,7 @@ class SyncControllerSpec: QuickSpec {
                         collection.name = "New name"
                         collection.version = oldVersion
                         collection.changedFields = .name
-                        collection.customLibrary = library
+                        collection.libraryId = .custom(.myLibrary)
                         realm.add(collection)
 
                         let item = RItem()
@@ -1210,7 +1236,7 @@ class SyncControllerSpec: QuickSpec {
                         item.syncState = .synced
                         item.version = oldVersion
                         item.changedFields = .fields
-                        item.customLibrary = library
+                        item.libraryId = .custom(.myLibrary)
                         realm.add(item)
 
                         let titleField = RItemField()
@@ -1332,7 +1358,7 @@ class SyncControllerSpec: QuickSpec {
                         item.changedFields = .all
                         item.dateAdded = Date(timeIntervalSinceNow: -3600)
                         item.dateModified = Date(timeIntervalSinceNow: -1800)
-                        item.customLibrary = library
+                        item.libraryId = .custom(.myLibrary)
                         realm.add(item)
 
                         let item2 = RItem()
@@ -1342,7 +1368,7 @@ class SyncControllerSpec: QuickSpec {
                         item2.changedFields = .all
                         item2.dateAdded = Date(timeIntervalSinceNow: -3599)
                         item2.dateModified = Date(timeIntervalSinceNow: -60)
-                        item2.customLibrary = library
+                        item2.libraryId = .custom(.myLibrary)
                         realm.add(item2)
 
                         let item3 = RItem()
@@ -1352,7 +1378,7 @@ class SyncControllerSpec: QuickSpec {
                         item3.changedFields = .all
                         item3.dateAdded = Date(timeIntervalSinceNow: -3598)
                         item3.dateModified = Date(timeIntervalSinceNow: -3540)
-                        item3.customLibrary = library
+                        item3.libraryId = .custom(.myLibrary)
                         item3.parent = item2
                         realm.add(item3)
                     }
@@ -1426,14 +1452,14 @@ class SyncControllerSpec: QuickSpec {
                         collection.version = oldVersion
                         collection.changedFields = .all
                         collection.dateModified = Date(timeIntervalSinceNow: -1800)
-                        collection.customLibrary = library
+                        collection.libraryId = .custom(.myLibrary)
 
                         collection2.key = secondKey
                         collection2.syncState = .synced
                         collection2.version = oldVersion
                         collection2.changedFields = .all
                         collection2.dateModified = Date(timeIntervalSinceNow: -3540)
-                        collection2.customLibrary = library
+                        collection2.libraryId = .custom(.myLibrary)
                         collection2.parent = collection
 
                         collection3.key = thirdKey
@@ -1441,7 +1467,7 @@ class SyncControllerSpec: QuickSpec {
                         collection3.version = oldVersion
                         collection3.changedFields = .all
                         collection3.dateModified = Date(timeIntervalSinceNow: -60)
-                        collection3.customLibrary = library
+                        collection3.libraryId = .custom(.myLibrary)
                         collection3.parent = collection2
                     }
 
@@ -1501,7 +1527,7 @@ class SyncControllerSpec: QuickSpec {
                         collection.version = oldVersion
                         collection.changedFields = .all
                         collection.dateModified = Date()
-                        collection.customLibrary = library
+                        collection.libraryId = .custom(.myLibrary)
                     }
 
                     let libraryId = SyncControllerSpec.userLibraryId
@@ -1597,14 +1623,14 @@ class SyncControllerSpec: QuickSpec {
                         collection.name = "Deleted collection"
                         collection.version = 0
                         collection.deleted = true
-                        collection.customLibrary = library
+                        collection.libraryId = .custom(.myLibrary)
                         realm.add(collection)
 
                         let item = RItem()
                         item.key = itemKey
                         item.baseTitle = "Deleted item"
                         item.deleted = true
-                        item.customLibrary = library
+                        item.libraryId = .custom(.myLibrary)
                         item.collections.append(collection)
                         realm.add(item)
 
@@ -1612,7 +1638,7 @@ class SyncControllerSpec: QuickSpec {
                         search.key = searchKey
                         search.name = "Deleted search"
                         search.deleted = true
-                        search.customLibrary = library
+                        search.libraryId = .custom(.myLibrary)
                         realm.add(search)
                     }
 

@@ -40,14 +40,14 @@ class RItem: Object {
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parent: RItem?
-    @objc dynamic var customLibrary: RCustomLibrary?
-    @objc dynamic var group: RGroup?
     @objc dynamic var mainAttachment: RItem?
     @objc dynamic var createdBy: RUser?
     @objc dynamic var lastModifiedBy: RUser?
     let collections: List<RCollection> = List()
     let rects: List<RRect> = List()
 
+    let customLibraryKey = RealmOptional<Int>()
+    let groupKey = RealmOptional<Int>()
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
     let tags = LinkingObjects(fromType: RTag.self, property: "items")

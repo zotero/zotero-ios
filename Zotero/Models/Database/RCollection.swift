@@ -30,10 +30,10 @@ class RCollection: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var customLibrary: RCustomLibrary?
-    @objc dynamic var group: RGroup?
     @objc dynamic var parent: RCollection?
 
+    let customLibraryKey = RealmOptional<Int>()
+    let groupKey = RealmOptional<Int>()
     let items = LinkingObjects(fromType: RItem.self, property: "collections")
     let children = LinkingObjects(fromType: RCollection.self, property: "parent")
 

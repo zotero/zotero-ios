@@ -64,7 +64,7 @@ struct Attachment: Identifiable, Equatable {
     }
 
     init?(item: RItem, type: ContentType) {
-        guard let libraryId = item.libraryObject?.identifier else {
+        guard let libraryId = item.libraryId else {
             DDLogError("Attachment: library not assigned to item (\(item.key))")
             return nil
         }

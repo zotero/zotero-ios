@@ -8,9 +8,19 @@
 
 import UIKit
 
+import CocoaLumberjackSwift
 import RxSwift
 
 class ItemsTableViewHandler: NSObject {
+    enum Action {
+        case editing(isEditing: Bool, animated: Bool)
+        case reloadAll
+        case reload(modifications: [Int], insertions: [Int], deletions: [Int])
+        case updateVisibleCell(attachment: Attachment?, parentKey: String)
+        case selectAll
+        case deselectAll
+    }
+
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
@@ -18,45 +28,43 @@ class ItemsTableViewHandler: NSObject {
     let tapObserver: PublishSubject<RItem>
     private let disposeBag: DisposeBag
 
+    private var queue: [Action]
+    private var isPerformingAction: Bool
     private weak var fileDownloader: FileDownloader?
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
-    private var canReload: Bool
-    private var hasPendingReloads: Bool
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.dragDropController = dragDropController
         self.fileDownloader = fileDownloader
+        self.queue = []
+        self.isPerformingAction = false
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
-        self.canReload = true
-        self.hasPendingReloads = false
 
         super.init()
 
         self.setupTableView()
         self.setupKeyboardObserving()
     }
-    
-    func pauseReloading() {
-        self.canReload = false
+
+    // MARK: - Data source
+
+    func sourceDataForCell(for key: String) -> (UIView, CGRect?) {
+        let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key })
+        return (self.tableView, cell?.frame)
     }
-    
-    func resumeReloading() {
-        self.canReload = true
-        
-        if self.hasPendingReloads {
-            self.tableView.reloadData()
-            self.hasPendingReloads = false
+
+    // MARK: - Actions
+
+    func enqueue(action: Action) {
+        inMainThread { [weak self] in
+            self?._enqueue(action)
         }
     }
 
-    func set(editing: Bool, animated: Bool) {
-        self.tableView.setEditing(editing, animated: animated)
-    }
-
-    func updateCell(with attachment: Attachment?, parentKey: String) {
+    private func updateCell(with attachment: Attachment?, parentKey: String) {
         guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == parentKey }) as? ItemCell else { return }
 
         if let attachment = attachment {
@@ -67,40 +75,90 @@ class ItemsTableViewHandler: NSObject {
         }
     }
 
-    func reload() {
-        self.tableView.reloadData()
-    }
-
-    func reload(modifications: [Int], insertions: [Int], deletions: [Int]) {
-        guard self.canReload else {
-            self.hasPendingReloads = true
-            return
-        }
-
+    private func reload(modifications: [Int], insertions: [Int], deletions: [Int], completion: @escaping () -> Void) {
         self.tableView.performBatchUpdates({
             self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
             self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
             self.tableView.insertRows(at: insertions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
-        }, completion: nil)
+        }, completion: { _ in
+            completion()
+        })
     }
 
-    func selectAll() {
+    private func selectAll() {
         let rows = self.tableView(self.tableView, numberOfRowsInSection: 0)
         (0..<rows).forEach { row in
             self.tableView.selectRow(at: IndexPath(row: row, section: 0), animated: false, scrollPosition: .none)
         }
     }
 
-    func deselectAll() {
+    private func deselectAll() {
         self.tableView.indexPathsForSelectedRows?.forEach({ indexPath in
             self.tableView.deselectRow(at: indexPath, animated: false)
         })
     }
 
-    func sourceDataForCell(for key: String) -> (UIView, CGRect?) {
-        let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key })
-        return (self.tableView, cell?.frame)
+    // MARK: - Queue
+
+    private func _enqueue(_ action: Action) {
+        switch action {
+        case .reloadAll:
+            // Remove all updates, we'll reload all anyway. Move all other actions after the reload.
+            self.queue.removeAll(where: {
+                switch $0 {
+                case .reload, .updateVisibleCell, .reloadAll:
+                    return true
+                case .selectAll, .deselectAll, .editing:
+                    return false
+                }
+            })
+            self.queue.insert(action, at: 0)
+        default:
+            self.queue.append(action)
+        }
+
+        self.performNextAction()
     }
+
+    private func performNextAction() {
+        guard !self.isPerformingAction && !self.queue.isEmpty else { return }
+        self.perform(action: self.queue.removeFirst())
+    }
+
+    private func perform(action: Action) {
+        self.isPerformingAction = true
+
+        let start = CFAbsoluteTimeGetCurrent()
+        DDLogInfo("ItemsTableViewHandler: perform \(action)")
+
+        let actionCompletion: () -> Void = { [weak self] in
+            DDLogInfo("ItemsTableViewHandler: did perform action in \(CFAbsoluteTimeGetCurrent() - start)")
+            self?.isPerformingAction = false
+            self?.performNextAction()
+        }
+
+        switch action {
+        case .deselectAll:
+            self.deselectAll()
+            actionCompletion()
+        case .selectAll:
+            self.selectAll()
+            actionCompletion()
+        case .editing(let isEditing, let animated):
+            self.tableView.setEditing(isEditing, animated: animated)
+            actionCompletion()
+        case .reload(let modifications, let insertions, let deletions):
+            self.reload(modifications: modifications, insertions: insertions, deletions: deletions, completion: actionCompletion)
+        case .reloadAll:
+            self.tableView.reloadData()
+            actionCompletion()
+        case .updateVisibleCell(let attachment, let parentKey):
+            self.updateCell(with: attachment, parentKey: parentKey)
+            actionCompletion()
+        }
+    }
+
+    // MARK: - Setups
 
     private func setupTableView() {
         self.tableView.delegate = self

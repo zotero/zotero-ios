@@ -18,18 +18,31 @@ struct DeleteGroupDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let object = database.object(ofType: RGroup.self, forPrimaryKey: self.groupId) else { return }
+        let libraryId: LibraryIdentifier = .group(self.groupId)
 
-        object.items.forEach { item in
+        let items = database.objects(RItem.self).filter(.library(with: libraryId))
+        items.forEach { item in
             item.willRemove(in: database)
         }
-        database.delete(object.items)
+        database.delete(items)
 
-        object.collections.forEach { collection in
+        let collections = database.objects(RCollection.self).filter(.library(with: libraryId))
+        collections.forEach { collection in
             collection.willRemove(in: database)
         }
-        database.delete(object.collections)
+        database.delete(collections)
 
-        database.delete(object)
+        let searches = database.objects(RSearch.self).filter(.library(with: libraryId))
+        searches.forEach { search in
+            search.willRemove(in: database)
+        }
+        database.delete(searches)
+
+        let tags = database.objects(RTag.self).filter(.library(with: libraryId))
+        database.delete(tags)
+
+        if let object = database.object(ofType: RGroup.self, forPrimaryKey: self.groupId) {
+            database.delete(object)
+        }
     }
 }

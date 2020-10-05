@@ -268,7 +268,7 @@ class TranslatorsController {
     }
 
     /// Manual reset of translators.
-    func resetToBundle() {
+    func resetToBundle(completion: (() -> Void)? = nil) {
         self.queue.async { [weak self] in
             guard let `self` = self else { return }
 
@@ -278,6 +278,8 @@ class TranslatorsController {
                 DDLogError("TranslatorsController: can't reset to bundle - \(error)")
                 self.coordinator?.showResetToBundleError()
             }
+
+            completion?()
         }
     }
 

@@ -346,27 +346,30 @@ class TranslatorsControllerSpec: QuickSpec {
             try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform reset
-            self.controller.resetToBundle()
-
-            // Check whether translator was reverted to bundled data
-            let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
-
-            expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
-            expect(translator).toNot(beNil())
-            expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
-            expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
 
             waitUntil(timeout: 10) { doneAction in
-                self.controller.translators()
-                    .observeOn(MainScheduler.instance)
-                    .subscribe(onSuccess: { translators in
-                        expect(translators.first?["browserSupport"] as? String).to(equal("gcsibv"))
-                        doneAction()
-                    }, onError: { error in
-                        fail("Could not load translators: \(error)")
-                        doneAction()
-                    })
-                    .disposed(by: self.disposeBag)
+                self.controller.resetToBundle(completion: {
+                    DispatchQueue.main.async {
+                        // Check whether translator was reverted to bundled data
+                        let translator = self.realm.objects(RTranslatorMetadata.self).filter("id = %@", self.translatorId).first
+
+                        expect(self.controller.lastUpdate.timeIntervalSince1970).to(equal(Double(self.bundledTimestamp)))
+                        expect(translator).toNot(beNil())
+                        expect(translator?.lastUpdated).to(equal(Date(timeIntervalSince1970: Double(self.bundledTranslatorTimestamp))))
+                        expect(self.fileStorage.has(Files.translator(filename: self.translatorId))).to(beTrue())
+
+                        self.controller.translators()
+                            .observeOn(MainScheduler.instance)
+                            .subscribe(onSuccess: { translators in
+                                expect(translators.first?["browserSupport"] as? String).to(equal("gcsibv"))
+                                doneAction()
+                            }, onError: { error in
+                                fail("Could not load translators: \(error)")
+                                doneAction()
+                            })
+                            .disposed(by: self.disposeBag)
+                    }
+                })
             }
         }
     }

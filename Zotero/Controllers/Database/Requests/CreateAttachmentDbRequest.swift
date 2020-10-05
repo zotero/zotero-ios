@@ -37,17 +37,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         item.attachmentNeedsSync = true
         item.dateAdded = Date()
         item.dateModified = Date()
-
-        // Library
-
-        switch self.attachment.libraryId {
-        case .custom(let type):
-            let library = database.object(ofType: RCustomLibrary.self, forPrimaryKey: type.rawValue)
-            item.customLibrary = library
-        case .group(let identifier):
-            let group = database.object(ofType: RGroup.self, forPrimaryKey: identifier)
-            item.group = group
-        }
+        item.libraryId = self.attachment.libraryId
 
         database.add(item)
 
@@ -96,13 +86,13 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
         // Collections
 
-        let libraryObject = item.libraryObject
+        let libraryId = item.libraryId
 
         self.collections.forEach { key in
             let collection = RCollection()
             collection.key = key
             collection.syncState = .dirty
-            collection.libraryObject = libraryObject
+            collection.libraryId = libraryId
             database.add(collection)
             item.collections.append(collection)
         }

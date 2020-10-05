@@ -160,7 +160,7 @@ struct EditItemDetailDbRequest: DbRequest {
                                                         libraryId: nil,
                                                         collectionKey: nil).process(in: database)
                 childItem.parent = item
-                childItem.libraryObject = item.libraryObject
+                childItem.libraryId = self.libraryId
                 childItem.changedFields.insert(.parent)
             }
         }
@@ -197,7 +197,7 @@ struct EditItemDetailDbRequest: DbRequest {
                 let childItem = try CreateAttachmentDbRequest(attachment: attachment,
                                                               localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
                                                               collections: [], linkMode: .importedFile).process(in: database)
-                childItem.libraryObject = item.libraryObject
+                childItem.libraryId = self.libraryId
                 childItem.parent = item
                 childItem.changedFields.insert(.parent)
                 hasMainAttachmentChange = true

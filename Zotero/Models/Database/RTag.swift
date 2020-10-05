@@ -29,8 +29,8 @@ extension RTagChanges {
 class RTag: Object {
     @objc dynamic var name: String = ""
     @objc dynamic var color: String = ""
-    @objc dynamic var customLibrary: RCustomLibrary?
-    @objc dynamic var group: RGroup?
+    let customLibraryKey = RealmOptional<Int>()
+    let groupKey = RealmOptional<Int>()
     let items: List<RItem> = List()
 
     // MARK: - Sync data
@@ -48,29 +48,29 @@ class RTag: Object {
 
     // MARK: - Sync properties
 
-    var libraryObject: LibraryObject? {
+    var libraryId: LibraryIdentifier? {
         get {
-            if let object = self.customLibrary {
-                return .custom(object)
+            if let key = self.customLibraryKey.value, let type = RCustomLibraryType(rawValue: key) {
+                return .custom(type)
             }
-            if let object = self.group {
-                return .group(object)
+            if let key = self.groupKey.value {
+                return .group(key)
             }
             return nil
         }
 
         set {
-            guard let object = newValue else {
-                self.group = nil
-                self.customLibrary = nil
+            guard let identifier = newValue else {
+                self.groupKey.value = nil
+                self.customLibraryKey.value = nil
                 return
             }
 
-            switch object {
-            case .custom(let object):
-                self.customLibrary = object
-            case .group(let object):
-                self.group = object
+            switch identifier {
+            case .custom(let type):
+                self.customLibraryKey.value = type.rawValue
+            case .group(let id):
+                self.groupKey.value = id
             }
         }
     }

@@ -44,18 +44,18 @@ extension NSPredicate {
     static func library(with identifier: LibraryIdentifier) -> NSPredicate {
         switch identifier {
         case .custom(let type):
-            return NSPredicate(format: "customLibrary.rawType = %d", type.rawValue)
+            return NSPredicate(format: "customLibraryKey = %d", type.rawValue)
         case .group(let identifier):
-            return NSPredicate(format: "group.identifier = %d", identifier)
+            return NSPredicate(format: "groupKey = %d", identifier)
         }
     }
 
     static func parentLibrary(with identifier: LibraryIdentifier) -> NSPredicate {
         switch identifier {
         case .custom(let type):
-            return NSPredicate(format: "parent.customLibrary.rawType = %d", type.rawValue)
+            return NSPredicate(format: "parent.customLibraryKey = %d", type.rawValue)
         case .group(let identifier):
-            return NSPredicate(format: "parent.group.identifier = %d", identifier)
+            return NSPredicate(format: "parent.groupKey = %d", identifier)
         }
     }
 

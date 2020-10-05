@@ -37,28 +37,13 @@ struct StoreSearchesDbRequest: DbRequest {
         search.syncState = .synced
         search.syncRetries = 0
         search.lastSyncDate = Date(timeIntervalSince1970: 0)
+        search.libraryId = libraryId
 
         // No CR for searches, if it was changed or deleted locally, just restore it
         search.deleted = false
         search.resetChanges()
 
-        try self.syncLibrary(identifier: libraryId, libraryName: data.library.name, search: search, database: database)
         self.syncConditions(data: data, search: search, database: database)
-    }
-
-    private func syncLibrary(identifier: LibraryIdentifier, libraryName: String,
-                             search: RSearch, database: Realm) throws {
-        let (isNew, object) = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
-        if isNew {
-            switch object {
-            case .group(let object):
-                object.name = libraryName
-                object.syncState = .outdated
-
-            case .custom: break // Custom library doesnt need sync or name update
-            }
-        }
-        search.libraryObject = object
     }
 
     private func syncConditions(data: SearchResponse, search: RSearch, database: Realm) {

@@ -30,9 +30,9 @@ class RSearch: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var customLibrary: RCustomLibrary?
-    @objc dynamic var group: RGroup?
 
+    let customLibraryKey = RealmOptional<Int>()
+    let groupKey = RealmOptional<Int>()
     let conditions = LinkingObjects(fromType: RCondition.self, property: "search")
 
     // MARK: - Sync data

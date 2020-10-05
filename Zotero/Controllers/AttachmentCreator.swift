@@ -40,7 +40,7 @@ struct AttachmentCreator {
         guard let linkMode = item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }),
               let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty else { return nil }
 
-        guard let libraryId = item.libraryObject?.identifier else {
+        guard let libraryId = item.libraryId else {
             DDLogError("AttachmentCreator: missing library for item (\(item.key))")
             return nil
         }

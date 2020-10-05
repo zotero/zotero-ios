@@ -21,8 +21,6 @@ struct StoreSettingsDbRequest: DbRequest {
     func process(in database: Realm) throws {
         guard let colors = self.response.tagColors else { return }
 
-        let libraryObject = try database.autocreatedLibraryObject(forPrimaryKey: self.libraryId).1
-
         let allTags = database.objects(RTag.self)
         
         colors.value.forEach { tagColor in
@@ -33,7 +31,7 @@ struct StoreSettingsDbRequest: DbRequest {
                 tag = RTag()
                 database.add(tag)
                 tag.name = tagColor.name
-                tag.libraryObject = libraryObject
+                tag.libraryId = libraryId
             }
             tag.color = tagColor.color
         }

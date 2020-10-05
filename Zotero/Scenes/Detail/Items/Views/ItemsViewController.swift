@@ -98,18 +98,12 @@ class ItemsViewController: UIViewController {
         super.viewWillDisappear(animated)
         // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
         self.searchBarContainer?.freezeWidth()
-        self.tableViewHandler?.pauseReloading()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         // Workaround for broken `titleView` animation, check `SearchBarContainer` for more info.
         self.searchBarContainer?.unfreezeWidth()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.tableViewHandler.resumeReloading()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -130,19 +124,29 @@ class ItemsViewController: UIViewController {
     // MARK: - UI state
 
     private func update(state: ItemsState) {
+        if state.changes.contains(.results),
+           let results = state.results {
+            self.startObserving(results: results)
+        } else if state.changes.contains(.sortType) ||
+                  state.changes.contains(.attachmentsRemoved) {
+            self.tableViewHandler.enqueue(action: .reloadAll)
+        } else if let key = state.updateItemKey {
+                  let attachment = state.attachments[key]
+            self.tableViewHandler.enqueue(action: .updateVisibleCell(attachment: attachment, parentKey: key))
+        }
+
         if state.changes.contains(.editing) {
-            self.tableViewHandler.set(editing: state.isEditing, animated: true)
+            self.tableViewHandler.enqueue(action: .editing(isEditing: state.isEditing, animated: true))
             self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
             self.setupRightBarButtonItems(for: state)
         }
 
-        if state.changes.contains(.results),
-           let results = state.results {
-            self.startObserving(results: results)
-        }
-
-        if state.changes.contains(.sortType) {
-            self.tableViewHandler.reload()
+        if state.changes.contains(.selectAll) {
+            if state.selectedItems.isEmpty {
+                self.tableViewHandler.enqueue(action: .deselectAll)
+            } else {
+                self.tableViewHandler.enqueue(action: .selectAll)
+            }
         }
 
         if state.changes.contains(.selection) {
@@ -150,25 +154,8 @@ class ItemsViewController: UIViewController {
             self.setupRightBarButtonItems(for: state)
         }
 
-        if state.changes.contains(.selectAll) {
-            if state.selectedItems.isEmpty {
-                self.tableViewHandler.deselectAll()
-            } else {
-                self.tableViewHandler.selectAll()
-            }
-        }
-
-        if state.changes.contains(.attachmentsRemoved) {
-            self.tableViewHandler.reload()
-        }
-
         if let (attachment, parentKey) = state.openAttachment {
             self.open(attachment: attachment, parentKey: parentKey)
-        }
-
-        if let key = state.updateItemKey {
-            let attachment = state.attachments[key]
-            self.tableViewHandler.updateCell(with: attachment, parentKey: key)
         }
 
         if let item = state.itemDuplication {
@@ -229,12 +216,12 @@ class ItemsViewController: UIViewController {
 
             switch changes {
             case .initial:
-                self.tableViewHandler.reload()
+                self.tableViewHandler.enqueue(action: .reloadAll)
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 let items = (insertions + correctedModifications).map({ results[$0] })
                 self.viewModel.process(action: .cacheAttachmentUpdates(items: items))
-                self.tableViewHandler.reload(modifications: modifications, insertions: insertions, deletions: deletions)
+                self.tableViewHandler.enqueue(action: .reload(modifications: modifications, insertions: insertions, deletions: deletions))
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)

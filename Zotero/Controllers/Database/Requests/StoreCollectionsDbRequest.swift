@@ -38,6 +38,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.syncState = .synced
         collection.syncRetries = 0
         collection.lastSyncDate = Date(timeIntervalSince1970: 0)
+        collection.libraryId = libraryId
 
         // No CR for collections, if it was changed or deleted locally, just restore it
         if collection.deleted {
@@ -50,22 +51,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.deleted = false
         collection.resetChanges()
 
-        try self.syncLibrary(identifier: libraryId, name: data.library.name, collection: collection, database: database)
         self.syncParent(libraryId: libraryId, data: data.data, collection: collection, database: database)
-    }
-
-    private func syncLibrary(identifier: LibraryIdentifier, name: String,
-                             collection: RCollection, database: Realm) throws {
-        let (isNew, object) = try database.autocreatedLibraryObject(forPrimaryKey: identifier)
-        if isNew {
-            switch object {
-            case .group(let group):
-                group.name = name
-                group.syncState = .outdated
-            case .custom: break
-            }
-        }
-        collection.libraryObject = object
     }
 
     private func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data,
@@ -81,7 +67,7 @@ struct StoreCollectionsDbRequest: DbRequest {
             parent = RCollection()
             parent.key = key
             parent.syncState = .dirty
-            parent.libraryObject = collection.libraryObject
+            parent.libraryId = libraryId
             database.add(parent)
         }
         collection.parent = parent
