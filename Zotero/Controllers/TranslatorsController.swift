@@ -62,6 +62,8 @@ class TranslatorsController {
     private let disposeBag: DisposeBag
     private let dbStorage: DbStorage
     private let bundle: Bundle
+    private let queue: DispatchQueue
+    private let scheduler: SchedulerType
 
     weak var coordinator: TranslatorsControllerCoordinatorDelegate?
 
@@ -72,12 +74,16 @@ class TranslatorsController {
             fatalError("TranslatorsController: could not create db directories - \(error)")
         }
 
+        let queue = DispatchQueue(label: "org.zotero.TranslatorsController.queue", qos: .utility, attributes: .concurrent)
+
         self.bundle = bundle
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = indexStorage
         self.isLoading = BehaviorRelay(value: false)
         self.disposeBag = DisposeBag()
+        self.queue = queue
+        self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
     }
 
     // MARK: - Actions
@@ -87,6 +93,7 @@ class TranslatorsController {
         self.isLoading.accept(true)
         let type: UpdateType = self.lastCommitHash == "" ? .initial : .startup
         self.updateFromBundle()
+            .subscribeOn(self.scheduler)
             .flatMap {
                 return self._updateFromRepo(type: type)
             }
@@ -137,6 +144,7 @@ class TranslatorsController {
     func updateFromRepo() {
         self.isLoading.accept(true)
         self._updateFromRepo(type: .manual)
+            .subscribeOn(self.scheduler)
             .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] timestamp in
                 self?.lastTimestamp = timestamp
@@ -153,7 +161,8 @@ class TranslatorsController {
     private func _updateFromRepo(type: UpdateType) -> Single<Int> {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let request = TranslatorsRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
-        return self.apiClient.send(request: request)
+        return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
                              .flatMap { data, _ -> Single<(Int, [Translator])> in
                                 do {
                                     let response = try self.parseXmlTranslators(from: data)
@@ -260,11 +269,15 @@ class TranslatorsController {
 
     /// Manual reset of translators.
     func resetToBundle() {
-        do {
-            try self._resetToBundle()
-        } catch let error {
-            DDLogError("TranslatorsController: can't reset to bundle - \(error)")
-            self.coordinator?.showResetToBundleError()
+        self.queue.async { [weak self] in
+            guard let `self` = self else { return }
+
+            do {
+                try self._resetToBundle()
+            } catch let error {
+                DDLogError("TranslatorsController: can't reset to bundle - \(error)")
+                self.coordinator?.showResetToBundleError()
+            }
         }
     }
 
@@ -305,13 +318,16 @@ class TranslatorsController {
     /// Load local raw translators for javascript.
     /// - returns: Raw translators.
     private func loadTranslators() -> Single<[RawTranslator]> {
-        do {
-            let contents: [File] = try self.fileStorage.contentsOfDirectory(at: Files.translators)
-            let translators = contents.compactMap({ self.loadRawTranslator(from: $0) })
-            return Single.just(translators)
-        } catch let error {
-            DDLogError("TranslatorController: error - \(error)")
-            return Single.error(error)
+        return Single.create { subscriber -> Disposable in
+            do {
+                let contents: [File] = try self.fileStorage.contentsOfDirectory(at: Files.translators)
+                let translators = contents.compactMap({ self.loadRawTranslator(from: $0) })
+                subscriber(.success(translators))
+            } catch let error {
+                DDLogError("TranslatorController: error - \(error)")
+                subscriber(.error(error))
+            }
+            return Disposables.create()
         }
     }
 
