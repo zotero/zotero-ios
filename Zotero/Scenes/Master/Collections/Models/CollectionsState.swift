@@ -37,7 +37,6 @@ struct CollectionsState: ViewModelState {
     var changes: Changes
     var collectionsToken: NotificationToken?
     var searchesToken: NotificationToken?
-    var itemsToken: NotificationToken?
     var error: CollectionsError?
 
     init(library: Library) {

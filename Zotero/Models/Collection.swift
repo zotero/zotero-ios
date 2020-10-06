@@ -77,7 +77,7 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.key = object.key
         self.name = object.name
         self.level = level
-        self.itemCount = object.items.count
+        self.itemCount = object.items.filter(.notSyncState(.dirty)).filter(.isTrash(false)).count
         self.parentKey = parentKey
     }
 

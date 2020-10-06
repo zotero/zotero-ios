@@ -97,20 +97,6 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 }
             })
 
-            let itemsToken = allItems.observe { [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, let deletions, let insertions, _):
-                    // If we show item counts for all collections, we need to track all changes (insertion, deletion, collection change).
-                    // Otherwise we need to track only insertions and deletions for all items.
-                    if Defaults.shared.showCollectionItemCount || (!insertions.isEmpty || !deletions.isEmpty) {
-                        self.updateItemCounts(in: viewModel, allItemCount: objects.count)
-                    }
-                case .initial: break
-                case .error: break
-                }
-            }
-
             self.update(viewModel: viewModel) { state in
                 state.collections = allCollections
                 if !allCollections.isEmpty {
@@ -118,26 +104,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 }
                 state.collectionsToken = collectionsToken
                 state.searchesToken = searchesToken
-                state.itemsToken = itemsToken
             }
         } catch let error {
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
             self.update(viewModel: viewModel) { state in
                 state.error = .dataLoading
-            }
-        }
-    }
-
-    private func updateItemCounts(in viewModel: ViewModel<CollectionsActionHandler>, allItemCount: Int) {
-        if Defaults.shared.showCollectionItemCount {
-            self.reloadCounts(in: viewModel, allItemCount: allItemCount)
-            return
-        }
-
-        self.update(viewModel: viewModel) { state in
-            if let index = state.collections.firstIndex(where: { $0.isCustom(type: .all) }) {
-                state.collections[index].itemCount = allItemCount
-                state.changes.insert(.itemCount)
             }
         }
     }
