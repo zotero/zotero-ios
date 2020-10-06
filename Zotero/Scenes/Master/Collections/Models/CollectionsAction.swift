@@ -14,6 +14,5 @@ enum CollectionsAction {
     case deleteSearch(String)
     case startEditing(CollectionsState.EditingType)
     case select(Collection)
-    case updateCollections([Collection])
     case loadData
 }

@@ -20,10 +20,10 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let collections = database.objects(RCollection.self).filter(.keys(self.collectionKeys, in: self.libraryId))
         let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
-        items.forEach { item in
-            collections.forEach { collection in
-                if !item.collections.contains(collection) {
-                    item.collections.append(collection)
+        collections.forEach { collection in
+            items.forEach { item in
+                if !collection.items.contains(item) {
+                    collection.items.append(item)
                     item.changedFields.insert(.collections)
                     item.changeType = .user
                 }

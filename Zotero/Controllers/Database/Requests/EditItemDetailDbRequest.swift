@@ -157,10 +157,9 @@ struct EditItemDetailDbRequest: DbRequest {
             } else {
                 let childItem = try CreateNoteDbRequest(note: note,
                                                         localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-                                                        libraryId: nil,
+                                                        libraryId: self.libraryId,
                                                         collectionKey: nil).process(in: database)
                 childItem.parent = item
-                childItem.libraryId = self.libraryId
                 childItem.changedFields.insert(.parent)
             }
         }

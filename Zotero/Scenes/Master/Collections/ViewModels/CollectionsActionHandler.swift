@@ -52,9 +52,6 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 state.changes.insert(.selection)
             }
 
-        case .updateCollections(let collections):
-            self.update(collections: collections, in: viewModel)
-
         case .loadData:
             self.loadData(in: viewModel)
         }

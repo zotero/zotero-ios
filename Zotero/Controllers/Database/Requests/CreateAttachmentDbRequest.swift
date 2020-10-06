@@ -86,15 +86,20 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
         // Collections
 
-        let libraryId = item.libraryId
-
         self.collections.forEach { key in
-            let collection = RCollection()
-            collection.key = key
-            collection.syncState = .dirty
-            collection.libraryId = libraryId
-            database.add(collection)
-            item.collections.append(collection)
+            let collection: RCollection
+
+            if let existing = database.objects(RCollection.self).filter(.key(key, in: self.attachment.libraryId)).first {
+                collection = existing
+            } else {
+                collection = RCollection()
+                collection.key = key
+                collection.syncState = .dirty
+                collection.libraryId = self.attachment.libraryId
+                database.add(collection)
+            }
+
+            collection.items.append(item)
         }
 
         if !self.collections.isEmpty {

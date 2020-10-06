@@ -21,10 +21,8 @@ protocol Deletable: class {
 extension RCollection: Deletable {
     func willRemove(in database: Realm) {
         self.items.forEach { item in
-            if let index = item.collections.index(of: self) {
-                item.changedFields = .collections
-                item.collections.remove(at: index)
-            }
+            item.changedFields = .collections
+            item.changeType = .user
         }
         self.children.forEach { child in
             child.willRemove(in: database)

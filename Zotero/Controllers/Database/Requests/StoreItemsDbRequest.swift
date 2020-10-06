@@ -181,9 +181,13 @@ struct StoreItemsDbRequest: DbResponseRequest {
     }
 
     private func syncParent(key: String?, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
-        item.parent = nil
-
-        guard let key = key else { return }
+        guard let key = key else {
+            if item.parent != nil {
+                item.parent = nil
+                item.updateMainAttachment()
+            }
+            return
+        }
 
         let parent: RItem
 
@@ -202,51 +206,66 @@ struct StoreItemsDbRequest: DbResponseRequest {
     }
 
     private func syncCollections(keys: Set<String>, libraryId: LibraryIdentifier, item: RItem, database: Realm) {
-        item.collections.removeAll()
+        // Remove item from collections, which are not in the `keys` array anymore
+        for collection in item.collections.filter(.key(notIn: keys)) {
+            guard let index = collection.items.index(of: item) else { continue }
+            collection.items.remove(at: index)
+        }
 
         guard !keys.isEmpty else { return }
 
-        var remainingCollections = keys
+        var toCreateKeys = keys
         let existingCollections = database.objects(RCollection.self).filter(.keys(keys, in: libraryId))
 
+        // Add item to existing collections, which don't already contain the item
         for collection in existingCollections {
-            item.collections.append(collection)
-            remainingCollections.remove(collection.key)
+            if collection.items.filter(.key(item.key)).first == nil {
+                collection.items.append(item)
+            }
+            toCreateKeys.remove(collection.key)
         }
 
-        for key in remainingCollections {
+        // Create remaining unknown collections
+        for key in toCreateKeys {
             let collection = RCollection()
             collection.key = key
             collection.syncState = .dirty
             collection.libraryId = libraryId
             database.add(collection)
-            item.collections.append(collection)
+
+            collection.items.append(item)
         }
     }
 
     private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) throws {
-        var existingIndices: Set<Int> = []
-        item.tags.forEach { tag in
-            if let index = tags.firstIndex(where: { $0.tag == tag.name }) {
-                existingIndices.insert(index)
-            } else {
-                if let index = tag.items.index(of: item) {
-                    tag.items.remove(at: index)
-                }
-            }
+        let tagNames = Set(tags.map({ $0.tag }))
+
+        // Remove item from tags, which are not in the `tags` array anymore
+        for tag in item.tags.filter(.name(notIn: tagNames)) {
+            guard let index = tag.items.index(of: item) else { continue }
+            tag.items.remove(at: index)
         }
 
-        for object in tags.enumerated() {
-            guard !existingIndices.contains(object.offset) else { continue }
-            let tag: RTag
-            if let existing = database.objects(RTag.self).filter(.name(object.element.tag, in: libraryId)).first {
-                tag = existing
-            } else {
-                tag = RTag()
-                tag.name = object.element.tag
-                tag.libraryId = libraryId
-                database.add(tag)
+        guard !tagNames.isEmpty else { return }
+
+        var toCreateTags = tagNames
+        let existingTags = database.objects(RTag.self).filter(.names(tagNames, in: libraryId))
+
+        // Add item to existing tags, which don't already contain the item
+        for tag in existingTags {
+            if tag.items.filter(.key(item.key)).first == nil {
+                tag.items.append(item)
             }
+            toCreateTags.remove(tag.name)
+        }
+
+        // Create remaining unknown tags
+        for name in toCreateTags {
+            let tag = RTag()
+            tag.name = name
+            tag.libraryId = libraryId
+            database.add(tag)
+
             tag.items.append(item)
         }
     }

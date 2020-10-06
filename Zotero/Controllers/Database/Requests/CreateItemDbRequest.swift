@@ -38,10 +38,8 @@ struct CreateItemDbRequest: DbResponseRequest {
         var changes: RItemChanges = [.type, .fields]
 
         if let key = self.collectionKey,
-           let collection = database.objects(RCollection.self)
-                                    .filter(.key(key, in: self.libraryId))
-                                    .first {
-            item.collections.append(collection)
+           let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
+            collection.items.append(item)
             changes.insert(.collections)
         }
 
@@ -93,10 +91,9 @@ struct CreateItemDbRequest: DbResponseRequest {
         for note in self.data.notes {
             let rNote = try CreateNoteDbRequest(note: note,
                                                 localizedType: (self.schemaController.localized(itemType: ItemTypes.note) ?? ""),
-                                                libraryId: nil,
+                                                libraryId: self.libraryId,
                                                 collectionKey: nil).process(in: database)
             rNote.parent = item
-            rNote.libraryId = self.libraryId
             rNote.changedFields.insert(.parent)
         }
 

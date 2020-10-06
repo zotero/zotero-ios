@@ -29,6 +29,20 @@ extension NSPredicate {
         return NSPredicate(format: "not key in %@", keys)
     }
 
+    static func key(_ key: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(key), .library(with: libraryId)])
+    }
+
+    static func keys(_ keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
+                                                                   .library(with: libraryId)])
+    }
+
+    static func keys(_ keys: Set<String>, in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
+                                                                   .library(with: libraryId)])
+    }
+
     static func name(_ name: String) -> NSPredicate {
         return NSPredicate(format: "name = %@", name)
     }
@@ -37,8 +51,31 @@ extension NSPredicate {
         return NSPredicate(format: "name in %@", names)
     }
 
+    static func name(in names: Set<String>) -> NSPredicate {
+        return NSPredicate(format: "name in %@", names)
+    }
+
     static func name(notIn names: [String]) -> NSPredicate {
         return NSPredicate(format: "not name in %@", names)
+    }
+
+    static func name(notIn names: Set<String>) -> NSPredicate {
+        return NSPredicate(format: "not name in %@", names)
+    }
+
+    static func name(_ name: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.name(name),
+                                                                   .library(with: libraryId)])
+    }
+
+    static func names(_ names: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.name(in: names),
+                                                                   .library(with: libraryId)])
+    }
+
+    static func names(_ names: Set<String>, in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.name(in: names),
+                                                                   .library(with: libraryId)])
     }
 
     static func library(with identifier: LibraryIdentifier) -> NSPredicate {
@@ -57,25 +94,6 @@ extension NSPredicate {
         case .group(let identifier):
             return NSPredicate(format: "parent.groupKey = %d", identifier)
         }
-    }
-
-    static func key(_ key: String, in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(key), .library(with: libraryId)])
-    }
-
-    static func keys(_ keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
-                                                                   .library(with: libraryId)])
-    }
-
-    static func keys(_ keys: Set<String>, in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.key(in: keys),
-                                                                   .library(with: libraryId)])
-    }
-
-    static func name(_ name: String, in libraryId: LibraryIdentifier) -> NSPredicate {
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [.name(name),
-                                                                   .library(with: libraryId)])
     }
 
     static var changed: NSPredicate {

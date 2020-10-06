@@ -15,7 +15,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
 
     let note: Note
     let localizedType: String
-    let libraryId: LibraryIdentifier?
+    let libraryId: LibraryIdentifier
     let collectionKey: String?
 
     var needsWrite: Bool { return true }
@@ -31,18 +31,14 @@ struct CreateNoteDbRequest: DbResponseRequest {
         item.changeType = .user
         item.dateAdded = Date()
         item.dateModified = Date()
-
-        if let libraryId = self.libraryId {
-            item.libraryId = libraryId
-
-            if let key = self.collectionKey,
-               let collection = database.objects(RCollection.self).filter(.key(key, in: libraryId)).first {
-                item.collections.append(collection)
-                item.changedFields.insert(.collections)
-            }
-        }
-
+        item.libraryId = libraryId
         database.add(item)
+
+        if let key = self.collectionKey,
+           let collection = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first {
+            collection.items.append(item)
+            item.changedFields.insert(.collections)
+        }
 
         let noteField = RItemField()
         noteField.key = FieldKeys.Item.note

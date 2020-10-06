@@ -27,8 +27,8 @@ struct DeleteItemsFromCollectionDbRequest: DbRequest {
         let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
 
         items.forEach { item in
-            if let index = item.collections.index(of: collection) {
-                item.collections.remove(at: index)
+            if let index = collection.items.index(of: item) {
+                collection.items.remove(at: index)
                 item.changedFields.insert(.collections)
                 item.changeType = .user
             }

@@ -43,11 +43,11 @@ class RItem: Object {
     @objc dynamic var mainAttachment: RItem?
     @objc dynamic var createdBy: RUser?
     @objc dynamic var lastModifiedBy: RUser?
-    let collections: List<RCollection> = List()
     let rects: List<RRect> = List()
 
     let customLibraryKey = RealmOptional<Int>()
     let groupKey = RealmOptional<Int>()
+    let collections = LinkingObjects(fromType: RCollection.self, property: "items")
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
     let tags = LinkingObjects(fromType: RTag.self, property: "items")
