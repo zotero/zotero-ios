@@ -406,7 +406,6 @@
 		B356A33525248C9E003F1943 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = B356A33425248C9E003F1943 /* RxCocoa */; };
 		B356A33725248C9E003F1943 /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = B356A33625248C9E003F1943 /* RxRelay */; };
 		B356A33925248C9E003F1943 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B356A33825248C9E003F1943 /* RxSwift */; };
-		B356A3492524902B003F1943 /* PSPDFKit in Frameworks */ = {isa = PBXBuildFile; productRef = B356A3482524902B003F1943 /* PSPDFKit */; };
 		B356A363252490B3003F1943 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B356A362252490B3003F1943 /* Alamofire */; };
 		B356A369252490DB003F1943 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B356A368252490DB003F1943 /* KeychainSwift */; };
 		B356A36F252494EA003F1943 /* RxAlamofire in Frameworks */ = {isa = PBXBuildFile; productRef = B356A36E252494EA003F1943 /* RxAlamofire */; };
@@ -585,6 +584,7 @@
 		B39D336823FFD96C00EF2ACB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D336723FFD96C00EF2ACB /* Note.swift */; };
 		B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39D33702400150B00EF2ACB /* CreateAttachmentsDbRequest.swift */; };
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
+		B3A6C59F252CA08300F24CBE /* PSPDFKit in Frameworks */ = {isa = PBXBuildFile; productRef = B3A6C59E252CA08300F24CBE /* PSPDFKit */; };
 		B3A94B4A2462F5D300BC7910 /* PSPDFKit+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A94B492462F5D300BC7910 /* PSPDFKit+Extensions.swift */; };
 		B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD52502A40600031065 /* searchresponse_unknownfields.json */; };
 		B3AAABD82502A40900031065 /* searchresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3AAABD62502A40900031065 /* searchresponse_knownfields.json */; };
@@ -718,15 +718,6 @@
 				B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B356A34525248E9F003F1943 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1195,7 +1186,6 @@
 			files = (
 				B356A3752524A601003F1943 /* RxSwiftExt in Frameworks */,
 				B35E4B8F25248B3C000EA134 /* RxCocoa in Frameworks */,
-				B356A3492524902B003F1943 /* PSPDFKit in Frameworks */,
 				B3F785C8252488A000B08721 /* RealmSwift in Frameworks */,
 				B3F785C6252488A000B08721 /* Realm in Frameworks */,
 				B35E4B8D25248B3C000EA134 /* RxSwift in Frameworks */,
@@ -1207,6 +1197,7 @@
 				B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */,
 				B356A36F252494EA003F1943 /* RxAlamofire in Frameworks */,
 				B35E4B9725248BAD000EA134 /* RxRelay in Frameworks */,
+				B3A6C59F252CA08300F24CBE /* PSPDFKit in Frameworks */,
 				B35E4B9525248BAD000EA134 /* RxBlocking in Frameworks */,
 				B356A3842524A66A003F1943 /* ZIPFoundation in Frameworks */,
 			);
@@ -2301,8 +2292,6 @@
 				B30D59522206F60400884C4A /* Frameworks */,
 				B30D59532206F60400884C4A /* Resources */,
 				B311B3272386A39800BCF592 /* Embed App Extensions */,
-				B356A34525248E9F003F1943 /* CopyFiles */,
-				B356A34625248EAC003F1943 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -2317,7 +2306,6 @@
 				B35E4B8E25248B3C000EA134 /* RxCocoa */,
 				B35E4B9425248BAD000EA134 /* RxBlocking */,
 				B35E4B9625248BAD000EA134 /* RxRelay */,
-				B356A3482524902B003F1943 /* PSPDFKit */,
 				B356A362252490B3003F1943 /* Alamofire */,
 				B356A368252490DB003F1943 /* KeychainSwift */,
 				B356A36E252494EA003F1943 /* RxAlamofire */,
@@ -2326,6 +2314,7 @@
 				B356A3832524A66A003F1943 /* ZIPFoundation */,
 				B356A39D2524A703003F1943 /* CocoaLumberjackSwift */,
 				B356A39F2524A703003F1943 /* CocoaLumberjack */,
+				B3A6C59E252CA08300F24CBE /* PSPDFKit */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -2454,7 +2443,6 @@
 			packageReferences = (
 				B3F785C4252488A000B08721 /* XCRemoteSwiftPackageReference "realm-cocoa" */,
 				B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */,
-				B356A3472524902B003F1943 /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
 				B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				B356A367252490DB003F1943 /* XCRemoteSwiftPackageReference "keychain-swift" */,
 				B356A36D252494EA003F1943 /* XCRemoteSwiftPackageReference "RxAlamofire" */,
@@ -2465,6 +2453,7 @@
 				B356A38E2524A6BA003F1943 /* XCRemoteSwiftPackageReference "Quick" */,
 				B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B356A39C2524A703003F1943 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
+				B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -2616,23 +2605,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "python3 $SCRIPT_INPUT_FILE_0\n";
-		};
-		B356A34625248EAC003F1943 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "for framework in $(find $CODESIGNING_FOLDER_PATH -name '*.framework'); do\n    codesign --force --deep --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements --timestamp=none \"$framework\"\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3432,7 +3404,6 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 54;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -3453,7 +3424,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG MAINAPP";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
@@ -3471,7 +3441,6 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 54;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
@@ -3491,7 +3460,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = MAINAPP;
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
@@ -3771,7 +3739,6 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 54;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -3792,7 +3759,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Development";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG PDFENABLED MAINAPP";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
@@ -3923,7 +3889,6 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zotero/Zotero.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 54;
 				DEVELOPMENT_TEAM = 8LAYR367YV;
@@ -3944,7 +3909,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.zotero.ios.Zotero;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Zotero iOS Distribution";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Zotero Mac Catalyst Development";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PDFENABLED MAINAPP";
 				SWIFT_OBJC_BRIDGING_HEADER = "Zotero/Zotero-Bridging-Header.h";
@@ -4095,14 +4059,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		B356A3472524902B003F1943 /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
-			requirement = {
-				kind = exactVersion;
-				version = 10.0.0;
-			};
-		};
 		B356A361252490B3003F1943 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
@@ -4191,6 +4147,14 @@
 				version = 5.1.1;
 			};
 		};
+		B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
+			requirement = {
+				kind = exactVersion;
+				version = 10.0.0;
+			};
+		};
 		B3F785C4252488A000B08721 /* XCRemoteSwiftPackageReference "realm-cocoa" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/realm/realm-cocoa";
@@ -4221,11 +4185,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */;
 			productName = RxSwift;
-		};
-		B356A3482524902B003F1943 /* PSPDFKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B356A3472524902B003F1943 /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */;
-			productName = PSPDFKit;
 		};
 		B356A362252490B3003F1943 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -4316,6 +4275,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */;
 			productName = RxRelay;
+		};
+		B3A6C59E252CA08300F24CBE /* PSPDFKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */;
+			productName = PSPDFKit;
 		};
 		B3F785C5252488A000B08721 /* Realm */ = {
 			isa = XCSwiftPackageProductDependency;

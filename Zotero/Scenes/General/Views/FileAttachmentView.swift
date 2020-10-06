@@ -129,6 +129,7 @@ class FileAttachmentView: UIView {
     // MARK: - Actions
 
     func set(backgroundColor: UIColor?) {
+        self.backgroundColor = backgroundColor
         self.badgeBorder?.borderColor = backgroundColor?.cgColor
     }
 
@@ -231,7 +232,7 @@ class FileAttachmentView: UIView {
     // MARK: - Setup
 
     private func setup() {
-        self.backgroundColor = .clear
+        self.backgroundColor = .white
         self.translatesAutoresizingMaskIntoConstraints = false
 
         let circleLayer = self.createCircleLayer()
@@ -291,6 +292,8 @@ class FileAttachmentView: UIView {
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.contentsGravity = .resizeAspect
         layer.actions = ["contents": NSNull()]
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
         return layer
     }
     
@@ -299,6 +302,8 @@ class FileAttachmentView: UIView {
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.frame = CGRect(x: 0, y: 0, width: FileAttachmentView.badgeSize, height: FileAttachmentView.badgeSize)
         layer.contentsGravity = .resizeAspect
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
         return layer
     }
     
@@ -314,6 +319,8 @@ class FileAttachmentView: UIView {
         layer.borderColor = self.backgroundColor?.cgColor
         // Disable color animation
         layer.actions = ["borderColor": NSNull()]
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
         return layer
     }
 
@@ -322,6 +329,8 @@ class FileAttachmentView: UIView {
         layer.fillColor = UIColor.clear.cgColor
         layer.lineWidth = 1.5
         layer.strokeColor = UIColor.systemGray5.cgColor
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
         return layer
     }
 
@@ -342,6 +351,8 @@ class FileAttachmentView: UIView {
         layer.cornerRadius = 2
         layer.masksToBounds = true
         layer.backgroundColor = Asset.Colors.zoteroBlue.color.cgColor
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
         return layer
     }
 }

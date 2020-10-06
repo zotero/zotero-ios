@@ -98,11 +98,15 @@ class TagCirclesView: UIView {
             let border = CALayer()
             border.backgroundColor = self.borderColor
             border.masksToBounds = true
+            border.shouldRasterize = true
+            border.rasterizationScale = UIScreen.main.scale
             border.actions = ["backgroundColor": NSNull()]
             layers.append(border)
             // Main circle layer
             let main = CALayer()
             main.backgroundColor = color.cgColor
+            main.shouldRasterize = true
+            main.rasterizationScale = UIScreen.main.scale
             main.masksToBounds = true
             layers.append(main)
         }
