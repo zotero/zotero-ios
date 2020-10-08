@@ -231,17 +231,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
         guard !collections.isEmpty else { return }
-
         var original = viewModel.state.collections
-        self.queue.async {
-            self.update(original: &original, with: collections)
-
-            DispatchQueue.main.async {
-                self.update(viewModel: viewModel) { state in
-                    state.collections = original
-                    state.changes.insert(.results)
-                }
-            }
+        self.update(original: &original, with: collections)
+        self.update(viewModel: viewModel) { state in
+            state.collections = original
+            state.changes.insert(.results)
         }
     }
 
@@ -282,6 +276,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             } else if endIndex == -1 {
                 if data.element.type != type {
                     endIndex = data.offset
+                    break
                 }
             }
         }
