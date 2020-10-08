@@ -20,7 +20,7 @@ struct CollectionsState: ViewModelState {
 
         static let results = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
-        static let itemCount = Changes(rawValue: 1 << 2)
+        static let allItemCount = Changes(rawValue: 1 << 2)
     }
 
     enum EditingType {
@@ -37,6 +37,7 @@ struct CollectionsState: ViewModelState {
     var changes: Changes
     var collectionsToken: NotificationToken?
     var searchesToken: NotificationToken?
+    var itemsToken: NotificationToken?
     var error: CollectionsError?
 
     init(library: Library) {

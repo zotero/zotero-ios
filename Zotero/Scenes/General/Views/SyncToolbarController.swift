@@ -147,13 +147,13 @@ class SyncToolbarController {
                 return L10n.SyncToolbar.groupsWithData(progress.completed, progress.total)
             }
             return L10n.SyncToolbar.groups
-        case .library(_, let name):
+        case .library(let name):
             return L10n.SyncToolbar.library(name)
-        case .object(let object, let progress, let library):
+        case .object(let object, let progress, let libraryName, _):
             if let progress = progress {
-                return L10n.SyncToolbar.objectWithData(self.name(for: object), progress.completed, progress.total, library)
+                return L10n.SyncToolbar.objectWithData(self.name(for: object), progress.completed, progress.total, libraryName)
             }
-            return L10n.SyncToolbar.object(self.name(for: object), library)
+            return L10n.SyncToolbar.object(self.name(for: object), libraryName)
         case .changes(let progress):
             return L10n.SyncToolbar.writes(progress.completed, progress.total)
         case .uploads(let progress):

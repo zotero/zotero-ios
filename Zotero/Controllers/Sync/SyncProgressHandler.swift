@@ -16,8 +16,8 @@ typealias SyncProgressData = (completed: Int, total: Int)
 enum SyncProgress {
     case starting
     case groups(SyncProgressData?)
-    case library(LibraryIdentifier, String)
-    case object(object: SyncObject, progress: SyncProgressData?, library: String)
+    case library(String)
+    case object(object: SyncObject, progress: SyncProgressData?, libraryName: String, libraryId: LibraryIdentifier)
     case deletions(library: String)
     case changes(progress: SyncProgressData)
     case uploads(progress: SyncProgressData)
@@ -74,12 +74,12 @@ final class SyncProgressHandler {
     func reportLibrarySync(for libraryId: LibraryIdentifier) {
         guard let name = self.libraryNames?[libraryId] else { return }
         self.libraryIdInProgress = libraryId
-        self.observable.on(.next(.library(libraryId, name)))
+        self.observable.on(.next(.library(name)))
     }
 
     func reportObjectSync(for object: SyncObject, in libraryId: LibraryIdentifier) {
         guard let name = self.libraryNames?[libraryId] else { return }
-        self.observable.on(.next(.object(object: object, progress: nil, library: name)))
+        self.observable.on(.next(.object(object: object, progress: nil, libraryName: name, libraryId: libraryId)))
     }
 
     func reportDownloadCount(for object: SyncObject, count: Int, in libraryId: LibraryIdentifier) {
@@ -140,7 +140,7 @@ final class SyncProgressHandler {
 
     private func reportDownloadObjectProgress(for object: SyncObject, libraryId: LibraryIdentifier) {
         guard let name =  self.libraryNames?[libraryId] else { return }
-        self.observable.on(.next(.object(object: object, progress: (self.currentDone, self.currentTotal), library: name)))
+        self.observable.on(.next(.object(object: object, progress: (self.currentDone, self.currentTotal), libraryName: name, libraryId: libraryId)))
     }
 
     private func finish(with state: SyncProgress) {

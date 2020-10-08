@@ -22,7 +22,7 @@ class ItemsTableViewHandler: NSObject {
         case deselectAll
     }
 
-    private static let maxUpdateCount = 200
+    private static let maxUpdateCount = 150
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
@@ -196,7 +196,7 @@ class ItemsTableViewHandler: NSObject {
         self.pendingUpdateCount += modifications.count + insertions.count + deletions.count
         self.enqueueReloadAll()
 
-        if self.pendingUpdateCount > ItemsTableViewHandler.maxUpdateCount {
+        if self.pendingUpdateCount >= ItemsTableViewHandler.maxUpdateCount {
             self.pendingUpdateCount = 0
             return true
         }

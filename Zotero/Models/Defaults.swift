@@ -23,7 +23,7 @@ class Defaults {
     @UserDefault(key: "TranslatorsNeedUpdate", defaultValue: true)
     var updateTranslators: Bool
 
-    @UserDefault(key: "ShowCollectionItemCount", defaultValue: false)
+    @UserDefault(key: "ShowCollectionItemCount", defaultValue: true)
     var showCollectionItemCount
 
     func reset() {

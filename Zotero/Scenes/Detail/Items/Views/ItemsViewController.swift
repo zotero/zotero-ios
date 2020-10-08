@@ -31,6 +31,7 @@ class ItemsViewController: UIViewController {
 
     private static let barButtonItemEmptyTag = 1
     private static let barButtonItemSingleTag = 2
+    private static let itemBatchingLimit = 150
 
     private let viewModel: ViewModel<ItemsActionHandler>
     private let controllers: Controllers
@@ -251,29 +252,26 @@ class ItemsViewController: UIViewController {
         self.present(controller, animated: true, completion: nil)
     }
 
-    /// Starts observing progress of sync. The sync progress needs to be observed to optimize `UITableView` reloads.
+    /// Starts observing progress of sync. The sync progress needs to be observed to optimize `UITableView` reloads for big syncs of items in current library.
     private func startObservingSyncProgress() {
         guard let syncController = self.controllers.userControllers?.syncScheduler.syncController else { return }
-
-        if let libraryId = syncController.libraryIdInProgress,
-           libraryId == self.viewModel.state.library.identifier {
-            self.tableViewHandler.startBatchingUpdates()
-        }
 
         syncController.progressObservable
             .observeOn(MainScheduler.instance)
             .subscribe(onNext: { [weak self] progress in
                 guard let `self` = self else { return }
                 switch progress {
-                case .library(let id, _):
-                    if id == self.viewModel.state.library.identifier {
-                        self.tableViewHandler.startBatchingUpdates()
+                case .object(let object, let progress, _, let libraryId):
+                    if self.viewModel.state.library.identifier == libraryId && object == .item {
+                        if let progress = progress, progress.total >= ItemsViewController.itemBatchingLimit {
+                            self.tableViewHandler.startBatchingUpdates()
+                        }
                     } else {
                         self.tableViewHandler.stopBatchingUpdates()
                     }
-                case .finished, .aborted:
+                default:
+                    // Just in case try stopping it everytime, in case some progress report is skipped
                     self.tableViewHandler.stopBatchingUpdates()
-                default: break
                 }
             })
             .disposed(by: self.disposeBag)

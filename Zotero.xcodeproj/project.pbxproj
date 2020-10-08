@@ -569,6 +569,7 @@
 		B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A592417C1C7006693C4 /* Coordinator.swift */; };
 		B3886C47249234D600B7D67B /* FileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3886C46249234D600B7D67B /* FileDownloader.swift */; };
+		B3897D61252F310C00C961E1 /* Differ in Frameworks */ = {isa = PBXBuildFile; productRef = B3897D60252F310C00C961E1 /* Differ */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
@@ -1188,6 +1189,7 @@
 				B35E4B8F25248B3C000EA134 /* RxCocoa in Frameworks */,
 				B3F785C8252488A000B08721 /* RealmSwift in Frameworks */,
 				B3F785C6252488A000B08721 /* Realm in Frameworks */,
+				B3897D61252F310C00C961E1 /* Differ in Frameworks */,
 				B35E4B8D25248B3C000EA134 /* RxSwift in Frameworks */,
 				B356A39E2524A703003F1943 /* CocoaLumberjackSwift in Frameworks */,
 				B356A363252490B3003F1943 /* Alamofire in Frameworks */,
@@ -2315,6 +2317,7 @@
 				B356A39D2524A703003F1943 /* CocoaLumberjackSwift */,
 				B356A39F2524A703003F1943 /* CocoaLumberjack */,
 				B3A6C59E252CA08300F24CBE /* PSPDFKit */,
+				B3897D60252F310C00C961E1 /* Differ */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -2454,6 +2457,7 @@
 				B356A3942524A6D5003F1943 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B356A39C2524A703003F1943 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
 				B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
+				B3897D5F252F310C00C961E1 /* XCRemoteSwiftPackageReference "Differ" */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -4147,6 +4151,14 @@
 				version = 5.1.1;
 			};
 		};
+		B3897D5F252F310C00C961E1 /* XCRemoteSwiftPackageReference "Differ" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tonyarnold/Differ";
+			requirement = {
+				kind = exactVersion;
+				version = 1.4.5;
+			};
+		};
 		B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
@@ -4275,6 +4287,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B35E4B8B25248B3C000EA134 /* XCRemoteSwiftPackageReference "RxSwift" */;
 			productName = RxRelay;
+		};
+		B3897D60252F310C00C961E1 /* Differ */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B3897D5F252F310C00C961E1 /* XCRemoteSwiftPackageReference "Differ" */;
+			productName = Differ;
 		};
 		B3A6C59E252CA08300F24CBE /* PSPDFKit */ = {
 			isa = XCSwiftPackageProductDependency;

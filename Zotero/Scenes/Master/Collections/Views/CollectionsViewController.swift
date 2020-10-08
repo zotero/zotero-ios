@@ -76,10 +76,8 @@ class CollectionsViewController: UIViewController {
                 self?.selectIfNeeded(collection: state.selectedCollection)
             })
         }
-        if state.changes.contains(.itemCount) {
-            self.tableViewHandler.update(collections: state.collections, animated: false, completed: { [weak self] in
-                self?.selectIfNeeded(collection: state.selectedCollection)
-            })
+        if state.changes.contains(.allItemCount) {
+            self.tableViewHandler.updateAllItemCell(with: state.collections[0])
         }
         if state.changes.contains(.selection) {
             self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)

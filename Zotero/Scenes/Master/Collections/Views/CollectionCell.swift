@@ -39,6 +39,15 @@ class CollectionCell: UITableViewCell {
         self.badgeContainer.layer.cornerRadius = self.badgeContainer.frame.height / 2.0
     }
 
+    func updateBadge(for collection: Collection) {
+        self.badgeContainer.isHidden = !self.shouldShowCount(for: collection)
+        if !self.badgeContainer.isHidden {
+            self.badgeLabel.text = "\(collection.itemCount)"
+        }
+        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden
+        self.rightConstraint.isActive = self.badgeContainer.isHidden
+    }
+
     func set(collection: Collection) {
         self.setup(with: collection)
         self.separatorInset = UIEdgeInsets(top: 0, left: self.separatorInset(for: collection.level), bottom: 0, right: 0)
@@ -53,15 +62,8 @@ class CollectionCell: UITableViewCell {
     private func setup(with collection: Collection) {
         self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
-        self.badgeContainer.isHidden = !self.shouldShowCount(for: collection)
         self.leftConstraint.constant = self.inset(for: collection.level)
-
-        if !self.badgeContainer.isHidden {
-            self.badgeLabel.text = "\(collection.itemCount)"
-        }
-
-        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden
-        self.rightConstraint.isActive = self.badgeContainer.isHidden
+        self.updateBadge(for: collection)
     }
 
     private func shouldShowCount(for collection: Collection) -> Bool {
