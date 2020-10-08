@@ -9,6 +9,7 @@
 import UIKit
 
 import CocoaLumberjackSwift
+import RxCocoa
 import RxSwift
 
 class ItemsTableViewHandler: NSObject {
@@ -21,6 +22,7 @@ class ItemsTableViewHandler: NSObject {
         case deselectAll
     }
 
+    private static let maxUpdateCount = 200
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
@@ -30,6 +32,10 @@ class ItemsTableViewHandler: NSObject {
 
     private var queue: [Action]
     private var isPerformingAction: Bool
+    private var shouldBatchReloads: Bool
+    private var pendingUpdateCount: Int
+    private var batchTimerScheduler: ConcurrentDispatchQueueScheduler
+    private var batchTimerDisposeBag: DisposeBag?
     private weak var fileDownloader: FileDownloader?
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
@@ -40,6 +46,9 @@ class ItemsTableViewHandler: NSObject {
         self.fileDownloader = fileDownloader
         self.queue = []
         self.isPerformingAction = false
+        self.shouldBatchReloads = false
+        self.pendingUpdateCount = 0
+        self.batchTimerScheduler = ConcurrentDispatchQueueScheduler(qos: .utility)
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
 
@@ -57,6 +66,25 @@ class ItemsTableViewHandler: NSObject {
     }
 
     // MARK: - Actions
+
+    /// Start batching table view updates.
+    func startBatchingUpdates() {
+        self.shouldBatchReloads = true
+    }
+
+    /// Stop batching table view updates.
+    func stopBatchingUpdates() {
+        guard self.shouldBatchReloads else { return }
+
+        // Stop batching
+        self.shouldBatchReloads = false
+        // Stop timer
+        self.batchTimerDisposeBag = nil
+        // Reset pending updates
+        self.pendingUpdateCount = 0
+        // Perform next (pending) action if needed
+        self.performNextAction()
+    }
 
     func enqueue(action: Action) {
         inMainThread { [weak self] in
@@ -101,23 +129,79 @@ class ItemsTableViewHandler: NSObject {
     // MARK: - Queue
 
     private func _enqueue(_ action: Action) {
+        // Reset batch timer
+        self.batchTimerDisposeBag = nil
+
+        // Enqueue new action(s)
+        var shouldDelay = false
         switch action {
         case .reloadAll:
-            // Remove all updates, we'll reload all anyway. Move all other actions after the reload.
-            self.queue.removeAll(where: {
-                switch $0 {
-                case .reload, .updateVisibleCell, .reloadAll:
-                    return true
-                case .selectAll, .deselectAll, .editing:
-                    return false
-                }
-            })
-            self.queue.insert(action, at: 0)
+            // Don't delay even when `shouldBatchReloads` is `true`, `reloadAll` is called when new data is presented during user actions (i. e. sort change), so it needs to be instant.
+            self.enqueueReloadAll()
+
+        case .reload(let modifications, let insertions, let deletions):
+            shouldDelay = !self.enqueueReload(modifications: modifications, insertions: insertions, deletions: deletions)
+
         default:
             self.queue.append(action)
         }
 
-        self.performNextAction()
+        if !shouldDelay {
+            // Perform new action immediately if delay is not needed
+            self.performNextAction()
+            return
+        }
+
+        // Create a batch delay
+        let disposeBag = DisposeBag()
+        Single<Int>.timer(.milliseconds(750), scheduler: self.self.batchTimerScheduler)
+                   .observeOn(MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.performNextAction()
+                   })
+                   .disposed(by: disposeBag)
+        self.batchTimerDisposeBag = disposeBag
+    }
+
+    /// Enqueues `Action.reloadAll`. Removes all other reload actions from queue, since tableView will be reloaded. Moves all other (user) actions after this `reloadAll` action.
+    private func enqueueReloadAll() {
+        if !self.queue.isEmpty, case .reloadAll = self.queue[0] { return }
+
+        self.queue.removeAll(where: {
+            switch $0 {
+            case .reload, .updateVisibleCell, .reloadAll:
+                return true
+            case .selectAll, .deselectAll, .editing:
+                return false
+            }
+        })
+        self.queue.insert(.reloadAll, at: 0)
+    }
+
+    /// Enqueues `Action.reload(...)`.
+    ///
+    /// During initial sync, for users with many items, when there are many updates, an update is reported each 0.5s. This puts big pressure on the tableView
+    /// and it becomes laggy. So these updates will be batched and tableView will be reloaded after each batch to increase times between reloads.
+    /// These delays are put only on this action so that the tableView remains responsive for other (user) actions.
+    /// - parameter modifications: Modifications to apply to tableView.
+    /// - parameter insertions: Insertions to apply to tableView.
+    /// - parameter deletions: Deletions to apply to tableView.
+    /// - returns: `true` if update limit has been passed and tableView should be reloaded, `false` otherwise.
+    private func enqueueReload(modifications: [Int], insertions: [Int], deletions: [Int]) -> Bool {
+        if !self.shouldBatchReloads {
+            self.queue.append(.reload(modifications: modifications, insertions: insertions, deletions: deletions))
+            return true
+        }
+
+        self.pendingUpdateCount += modifications.count + insertions.count + deletions.count
+        self.enqueueReloadAll()
+
+        if self.pendingUpdateCount > ItemsTableViewHandler.maxUpdateCount {
+            self.pendingUpdateCount = 0
+            return true
+        }
+
+        return false
     }
 
     private func performNextAction() {

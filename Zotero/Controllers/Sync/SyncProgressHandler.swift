@@ -16,7 +16,7 @@ typealias SyncProgressData = (completed: Int, total: Int)
 enum SyncProgress {
     case starting
     case groups(SyncProgressData?)
-    case library(String)
+    case library(LibraryIdentifier, String)
     case object(object: SyncObject, progress: SyncProgressData?, library: String)
     case deletions(library: String)
     case changes(progress: SyncProgressData)
@@ -34,6 +34,7 @@ final class SyncProgressHandler {
     private var timerDisposeBag: DisposeBag
 
     private(set) var inProgress: Bool
+    private(set) var libraryIdInProgress: LibraryIdentifier?
 
     init() {
         self.observable = PublishSubject()
@@ -72,7 +73,8 @@ final class SyncProgressHandler {
 
     func reportLibrarySync(for libraryId: LibraryIdentifier) {
         guard let name = self.libraryNames?[libraryId] else { return }
-        self.observable.on(.next(.library(name)))
+        self.libraryIdInProgress = libraryId
+        self.observable.on(.next(.library(libraryId, name)))
     }
 
     func reportObjectSync(for object: SyncObject, in libraryId: LibraryIdentifier) {
@@ -152,5 +154,6 @@ final class SyncProgressHandler {
         self.inProgress = false
         self.currentDone = 0
         self.currentTotal = 0
+        self.libraryIdInProgress = nil
     }
 }

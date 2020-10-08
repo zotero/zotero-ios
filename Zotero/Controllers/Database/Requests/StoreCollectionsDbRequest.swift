@@ -41,13 +41,6 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.libraryId = libraryId
 
         // No CR for collections, if it was changed or deleted locally, just restore it
-        if collection.deleted {
-            collection.items.forEach { item in
-                if item.deleted {
-                    item.deleted = false
-                }
-            }
-        }
         collection.deleted = false
         collection.resetChanges()
 

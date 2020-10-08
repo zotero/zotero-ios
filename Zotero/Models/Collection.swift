@@ -72,12 +72,12 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    init(object: RCollection, level: Int, parentKey: String?) {
+    init(object: RCollection, level: Int, parentKey: String?, itemCount: Int) {
         self.type = .collection
         self.key = object.key
         self.name = object.name
         self.level = level
-        self.itemCount = object.items.filter(.notSyncState(.dirty)).filter(.isTrash(false)).count
+        self.itemCount = itemCount
         self.parentKey = parentKey
     }
 

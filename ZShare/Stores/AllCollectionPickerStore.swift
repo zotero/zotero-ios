@@ -37,8 +37,9 @@ class AllCollectionPickerStore: ObservableObject {
             var collections: [LibraryIdentifier: [Collection]] = [:]
 
             for library in libraries {
-                let libraryCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: library.identifier))
-                collections[library.identifier] = CollectionTreeBuilder.collections(from: libraryCollections)
+                let libraryId = library.identifier
+                let libraryCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
+                collections[libraryId] = CollectionTreeBuilder.collections(from: libraryCollections, libraryId: libraryId)
             }
 
             self.state.libraries = libraries

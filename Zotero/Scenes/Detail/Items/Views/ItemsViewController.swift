@@ -74,6 +74,7 @@ class ItemsViewController: UIViewController {
         self.setupFileObservers()
         self.setupAppStateObserver()
 
+        self.startObservingSyncProgress()
         if let results = self.viewModel.state.results {
             self.startObserving(results: results)
         }
@@ -248,6 +249,34 @@ class ItemsViewController: UIViewController {
         }))
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
         self.present(controller, animated: true, completion: nil)
+    }
+
+    /// Starts observing progress of sync. The sync progress needs to be observed to optimize `UITableView` reloads.
+    private func startObservingSyncProgress() {
+        guard let syncController = self.controllers.userControllers?.syncScheduler.syncController else { return }
+
+        if let libraryId = syncController.libraryIdInProgress,
+           libraryId == self.viewModel.state.library.identifier {
+            self.tableViewHandler.startBatchingUpdates()
+        }
+
+        syncController.progressObservable
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] progress in
+                guard let `self` = self else { return }
+                switch progress {
+                case .library(let id, _):
+                    if id == self.viewModel.state.library.identifier {
+                        self.tableViewHandler.startBatchingUpdates()
+                    } else {
+                        self.tableViewHandler.stopBatchingUpdates()
+                    }
+                case .finished, .aborted:
+                    self.tableViewHandler.stopBatchingUpdates()
+                default: break
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 
     // MARK: - Setups

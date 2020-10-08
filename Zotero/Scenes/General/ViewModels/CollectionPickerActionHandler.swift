@@ -39,17 +39,18 @@ struct CollectionPickerActionHandler: ViewModelActionHandler {
 
     private func loadData(in viewModel: ViewModel<CollectionPickerActionHandler>) {
         do {
-            let collectionsRequest = ReadCollectionsDbRequest(libraryId: viewModel.state.library.identifier,
+            let libraryId = viewModel.state.library.identifier
+            let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId,
                                                               excludedKeys: viewModel.state.excludedKeys)
             let results = try self.dbStorage.createCoordinator().perform(request: collectionsRequest)
-            let collections = CollectionTreeBuilder.collections(from: results)
+            let collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
 
             let token = results.observe({ [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
                 switch changes {
                 case .update(let results, _, _, _):
                     self.update(viewModel: viewModel) { state in
-                        state.collections = CollectionTreeBuilder.collections(from: results)
+                        state.collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
                     }
                 case .initial: break
                 case .error: break

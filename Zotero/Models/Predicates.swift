@@ -158,6 +158,31 @@ extension NSPredicate {
         return NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
     }
 
+    static func items(for type: ItemFetchType, libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates: [NSPredicate] = [.library(with: libraryId),
+                                         .notSyncState(.dirty),
+                                         .deleted(false)]
+
+        var isTrash = false
+
+        switch type {
+        case .all, .search: break
+        case .trash:
+            isTrash = true
+        case .publications:
+            predicates.append(NSPredicate(format: "ANY collections.key = %@", "unknown"))
+        case .collection(let key, _):
+            predicates.append(NSPredicate(format: "ANY collections.key = %@", key))
+        }
+        
+        if !isTrash {
+            predicates.append(NSPredicate(format: "parent = nil"))
+        }
+        predicates.append(NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: isTrash)))
+
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
     static func items(type: String, notSyncState syncState: ObjectSyncState, trash: Bool? = nil) -> NSPredicate {
         var predicates: [NSPredicate] = [.item(type: type), .notSyncState(syncState)]
         if let trash = trash {

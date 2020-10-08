@@ -15,11 +15,11 @@ struct CollectionTreeBuilder {
         return searches.map(Collection.init)
     }
 
-    static func collections(from collections: Results<RCollection>) -> [Collection] {
-        return createCollections(from: collections, parentKey: nil, level: 0)
+    static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [Collection] {
+        return createCollections(from: collections, parentKey: nil, level: 0, libraryId: libraryId)
     }
 
-    private static func createCollections(from results: Results<RCollection>, parentKey: String?, level: Int) -> [Collection] {
+    private static func createCollections(from results: Results<RCollection>, parentKey: String?, level: Int, libraryId: LibraryIdentifier) -> [Collection] {
         var filteredResults: Results<RCollection>
         if let key = parentKey {
             filteredResults = results.filter("parent.key = %@", key)
@@ -34,13 +34,15 @@ struct CollectionTreeBuilder {
 
         var cells: [Collection] = []
         for rCollection in filteredResults {
-            let collection = Collection(object: rCollection, level: level, parentKey: parentKey)
+            let itemCount = rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
+            let collection = Collection(object: rCollection, level: level, parentKey: parentKey, itemCount: itemCount)
             cells.append(collection)
 
             if rCollection.children.count > 0 {
                 cells.append(contentsOf: createCollections(from: results,
                                                            parentKey: collection.key,
-                                                           level: (level + 1)))
+                                                           level: (level + 1),
+                                                           libraryId: libraryId))
             }
         }
         return cells
