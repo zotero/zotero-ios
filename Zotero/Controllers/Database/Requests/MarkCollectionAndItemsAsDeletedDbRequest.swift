@@ -22,7 +22,10 @@ struct MarkCollectionAndItemsAsDeletedDbRequest: DbRequest {
         guard let object = database.objects(RCollection.self).filter(.key(self.key, in: self.libraryId)).first else {
             throw DbError.objectNotFound
         }
-        object.items.forEach({ $0.deleted = true })
+        object.items.forEach({
+            $0.deleted = true
+            $0.changeType = .user
+        })
         object.deleted = true
         object.changeType = .user
     }
