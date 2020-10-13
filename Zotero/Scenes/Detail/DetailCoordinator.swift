@@ -32,6 +32,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
     #endif
+    func showAnnotationPopover(annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, hasWritePermission: Bool, sourceRect: CGRect, actionHandler: AnnotationViewControllerAction)
 }
 
 protocol DetailItemsCoordinatorDelegate: class {
@@ -422,6 +423,15 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
+    func showAnnotationPopover(annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, hasWritePermission: Bool, sourceRect: CGRect, actionHandler: AnnotationViewControllerAction) {
+        let controller = AnnotationViewController(annotation: annotation, attributedComment: attributedComment, preview: preview, hasWritePermission: hasWritePermission)
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
+        controller.popoverPresentationController?.sourceRect = sourceRect
+        /// Pdf controller is presented modally, controller needs to be presented on top of it
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+    }
+
     func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
         self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: self.controllers.htmlAttributedStringConverter, save: save)
     }

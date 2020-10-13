@@ -74,14 +74,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         case .requestPreviews(let keys, let notify, let isDark):
             self.loadPreviews(for: keys, notify: notify, isDark: isDark, in: viewModel)
 
-        case .setHighlight(let highlight, let indexPath):
-            self.update(annotation: { $0.copy(text: highlight) }, reloadComment: false, at: indexPath, in: viewModel)
+        case .setHighlight(let highlight, let key):
+            self.update(annotation: { $0.copy(text: highlight) }, reloadComment: false, key: key, in: viewModel)
 
-        case .setComment(let comment, let indexPath):
-            self.update(annotation: { $0.copy(comment: comment) }, reloadComment: true, at: indexPath, in: viewModel)
+        case .setComment(let comment, let key):
+            self.update(annotation: { $0.copy(comment: comment) }, reloadComment: true, key: key, in: viewModel)
 
-        case .setTags(let tags, let indexPath):
-            self.update(annotation: { $0.copy(tags: tags) }, reloadComment: false, at: indexPath, in: viewModel)
+        case .setTags(let tags, let key):
+            self.update(annotation: { $0.copy(tags: tags) }, reloadComment: false, key: key, in: viewModel)
 
         case .userInterfaceStyleChanged(let interfaceStyle):
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
@@ -167,8 +167,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func update(annotation annotationChange: (Annotation) -> Annotation, reloadComment: Bool, at indexPath: IndexPath, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
+    private func update(annotation annotationChange: (Annotation) -> Annotation, reloadComment: Bool, key: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations),
+              let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
         self.update(viewModel: viewModel) { state in
             let newAnnotation = annotationChange(annotation)
             state.annotations[indexPath.section]?[indexPath.row] = newAnnotation

@@ -15,9 +15,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-protocol PdfPreviewLoader: class {
-    func createPreviewLoader(for annotation: Annotation, parentKey: String, document: Document) -> Single<UIImage>?
-}
+typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 class AnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
@@ -26,8 +24,7 @@ class AnnotationsViewController: UIViewController {
 
     private weak var tableView: UITableView!
     private var searchController: UISearchController!
-    weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
-    weak var previewLoader: PdfPreviewLoader?
+    var performAction: AnnotationsViewControllerAction?
 
     // MARK: - Lifecycle
 
@@ -119,40 +116,6 @@ class AnnotationsViewController: UIViewController {
         completion()
     }
 
-    private func perform(cellAction: AnnotationCell.Action, indexPath: IndexPath, sender: UIButton) {
-        let state = self.viewModel.state
-        guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }
-
-        guard state.library.metadataEditable else { return }
-
-        switch cellAction {
-        case .comment:
-            guard annotation.isAuthor else { return }
-            let loader = self.previewLoader?.createPreviewLoader(for: annotation, parentKey: state.key, document: state.document)
-            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: loader, save: { [weak self] comment in
-                self?.viewModel.process(action: .setComment(comment, indexPath))
-            })
-
-        case .tags:
-            guard annotation.isAuthor else { return }
-            let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(tags, indexPath))
-            })
-
-        case .highlight:
-            guard annotation.isAuthor else { return }
-            guard annotation.type == .highlight else { return }
-            let loader = self.previewLoader?.createPreviewLoader(for: annotation, parentKey: state.key, document: state.document)
-            self.coordinatorDelegate?.showHighlight(with: (annotation.text ?? ""), imageLoader: loader, save: { [weak self] highlight in
-                self?.viewModel.process(action: .setHighlight(highlight, indexPath))
-            })
-
-        case .options:
-            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender, viewModel: self.viewModel)
-        }
-    }
-
     // MARK: - Setups
 
     private func setupTableView() {
@@ -163,7 +126,7 @@ class AnnotationsViewController: UIViewController {
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
         tableView.backgroundColor = self.view.backgroundColor
-        tableView.register(UINib(nibName: "AnnotationCell", bundle: nil), forCellReuseIdentifier: AnnotationsViewController.cellId)
+        tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
 
         self.view.addSubview(tableView)
 
@@ -234,7 +197,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
                        selected: selected, availableWidth: AnnotationsConfig.sidebarWidth,
                        hasWritePermission: self.viewModel.state.library.metadataEditable)
             cell.performAction = { [weak self] action, sender in
-                self?.perform(cellAction: action, indexPath: indexPath, sender: sender)
+                self?.performAction?(action, annotation, sender)
             }
         }
 
