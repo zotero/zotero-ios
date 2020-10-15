@@ -175,6 +175,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
             state.updatedAnnotationIndexPaths = [indexPath]
 
+            if newAnnotation.key == state.selectedAnnotation?.key {
+                state.selectedAnnotation = newAnnotation
+                state.changes = .selectedAnnotationChanged
+            }
+
             if reloadComment {
                 state.comments[newAnnotation.key] = self.htmlAttributedStringConverter.convert(text: newAnnotation.comment, baseFont: state.commentFont)
             }
@@ -218,7 +223,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
             state.annotations = annotations
             state.currentFilter = term
-            state.changes = .annotations
+            state.changes = .annotationCount
         }
     }
 
@@ -236,7 +241,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.annotationsSnapshot = nil
             state.annotations = snapshot
-            state.changes = .annotations
+            state.changes = .annotationCount
         }
     }
 
@@ -378,7 +383,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
 
             state.focusSidebarIndexPath = focus
-            state.changes = .annotations
+            state.changes = .annotationCount
         }
     }
 
@@ -420,7 +425,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.selectedAnnotation = nil
                 state.changes.insert(.selection)
             }
-            state.changes.insert(.annotations)
+            state.changes.insert(.annotationCount)
         }
     }
 
@@ -484,6 +489,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                                                      sortIndex: self.sortIndex(from: annotation))
             state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
 
+            if zoteroAnnotation.key == state.selectedAnnotation?.key {
+                state.selectedAnnotation = zoteroAnnotation
+                state.changes = .selectedAnnotationChanged
+            }
+
             // Remove annotation preview from cache, if `SquareAnnotation` changed, then preview image changed as well
             state.previewCache.removeObject(forKey: (key as NSString))
         }
@@ -515,7 +525,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
                 state.comments = comments
-                state.changes = .annotations
+                state.changes = .annotationCount
 
                 UndoController.performWithoutUndo(undoController: state.document.undoController) {
                     // Hide external supported annotations

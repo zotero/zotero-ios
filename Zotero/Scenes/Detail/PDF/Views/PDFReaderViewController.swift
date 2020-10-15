@@ -161,14 +161,6 @@ class PDFReaderViewController: UIViewController {
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
         }
-
-        if let keys = state.loadedPreviewImageAnnotationKeys,
-           let selectedKey = state.selectedAnnotation?.key,
-           keys.contains(selectedKey) {
-            let controller = self.navigationController?.presentedViewController as? AnnotationViewController
-            let preview = state.previewCache.object(forKey: (selectedKey as NSString))
-            controller?.updatePreview(image: preview)
-        }
     }
 
     private func perform(action: AnnotationView.Action, annotation: Annotation, sender: UIButton) {
@@ -231,36 +223,24 @@ class PDFReaderViewController: UIViewController {
               let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
         let frame = pageView.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
-
-        let comment = state.comments[annotation.key]
-        let preview: UIImage?
-
-        if annotation.type != .image {
-            preview = nil
-        } else {
-            preview = state.previewCache.object(forKey: (annotation.key as NSString))
-
-            if preview == nil {
-                let isDark = self.traitCollection.userInterfaceStyle == .dark
-                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true, isDark: isDark))
-            }
-        }
-
-        self.coordinatorDelegate?.showAnnotationPopover(annotation: annotation, attributedComment: comment, preview: preview,
-                                                        hasWritePermission: state.library.metadataEditable,
-                                                        sourceRect: frame,
+        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame,
                                                         actionHandler: { [weak self] action, annotation, sender in
                                                             self?.perform(action: action, annotation: annotation, sender: sender)
+                                                        },
+                                                        dismissHandler: { [weak self] in
+                                                            self?.viewModel.process(action: .selectAnnotation(nil))
                                                         })
     }
 
     private func updateSelection(on pageView: PDFPageView, selectedAnnotation: Annotation?, pageIndex: Int) {
+        // Delete existing custom highlight selection view
         if let view = pageView.annotationContainerView.subviews.first(where: { $0 is SelectionView }) {
             view.removeFromSuperview()
         }
 
         if let selection = selectedAnnotation,
            selection.type == .highlight && selection.page == pageIndex {
+            // Add custom highlight selection view if needed
             let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -4, dy: -4)
             let selectionView = SelectionView()
             selectionView.frame = frame
@@ -430,6 +410,9 @@ class PDFReaderViewController: UIViewController {
 
     private func setupAnnotationsSidebar() {
         let controller = AnnotationsViewController(viewModel: self.viewModel)
+        controller.performAction = { [weak self] action, annotation, sender in
+            self?.perform(action: action, annotation: annotation, sender: sender)
+        }
         controller.view.backgroundColor = self.view.backgroundColor
         controller.view.isHidden = true
 

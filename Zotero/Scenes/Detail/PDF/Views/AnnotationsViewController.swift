@@ -88,7 +88,7 @@ class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(from state: PDFReaderState, completion: @escaping () -> Void) {
-        if state.changes.contains(.annotations) || state.changes.contains(.darkMode) {
+        if state.changes.contains(.annotationCount) || state.changes.contains(.darkMode) {
             self.tableView.reloadData()
             completion()
             return

@@ -8,29 +8,23 @@
 
 import UIKit
 
+import RxSwift
+
 typealias AnnotationViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 class AnnotationViewController: UIViewController {
     private static let width: CGFloat = 300
+    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private let disposeBag: DisposeBag
 
-    private let annotation: Annotation
-    private let attributedComment: NSAttributedString?
-    private let preview: UIImage?
-    private let hasWritePermission: Bool
-
-    private var annotationView: AnnotationView? {
-        return self.view as? AnnotationView
-    }
-
+    private weak var annotationView: AnnotationView?
     var performAction: AnnotationViewControllerAction?
+    var willDismiss: (() -> Void)?
 
-    init(annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, hasWritePermission: Bool) {
-        self.annotation = annotation
-        self.attributedComment = attributedComment
-        self.preview = preview
-        self.hasWritePermission = hasWritePermission
+    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.viewModel = viewModel
+        self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
-        self.preferredContentSize = CGSize(width: AnnotationViewController.width, height: UIView.noIntrinsicMetric)
     }
 
     required init?(coder: NSCoder) {
@@ -38,20 +32,88 @@ class AnnotationViewController: UIViewController {
     }
 
     override func loadView() {
-        guard let view = Bundle.main.loadNibNamed("AnnotationView", owner: nil, options: nil)?.first as? UIView else { fatalError() }
+        guard let annotationView = Bundle.main.loadNibNamed("AnnotationView", owner: nil, options: nil)?.first as? AnnotationView else { fatalError() }
+        annotationView.translatesAutoresizingMaskIntoConstraints = false
+        annotationView.widthAnchor.constraint(equalToConstant: AnnotationViewController.width).isActive = true
+        self.annotationView = annotationView
+
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(annotationView)
+
+        NSLayoutConstraint.activate([
+            annotationView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            annotationView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            annotationView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor),
+            annotationView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor)
+        ])
+
         self.view = view
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.annotationView?.setup(with: self.annotation, attributedComment: self.attributedComment, preview: self.preview, selected: true, availableWidth: AnnotationViewController.width, hasWritePermission: self.hasWritePermission)
-        self.annotationView?.performAction = { [weak self] action, sender in
-            guard let annotation = self?.annotation else { return }
-            self?.performAction?(action, annotation, sender)
+        self.setupAnnotationView()
+
+        self.viewModel.stateObservable
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] state in
+                          self?.update(state: state)
+                      })
+                      .disposed(by: self.disposeBag)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.preferredContentSize = self.view.systemLayoutSizeFitting(CGSize(width: AnnotationViewController.width, height: .greatestFiniteMagnitude))
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.willDismiss?()
+    }
+
+    private func update(state: PDFReaderState) {
+        if let keys = state.loadedPreviewImageAnnotationKeys,
+           let selectedKey = state.selectedAnnotation?.key,
+           keys.contains(selectedKey) {
+            let preview = state.previewCache.object(forKey: (selectedKey as NSString))
+            self.annotationView?.updatePreview(image: preview)
+        }
+
+        if state.changes.contains(.selectedAnnotationChanged) {
+            self.setupAnnotationView()
+            self.preferredContentSize = self.view.systemLayoutSizeFitting(CGSize(width: AnnotationViewController.width, height: .greatestFiniteMagnitude))
+        }
+
+        if state.selectedAnnotation == nil {
+            self.dismiss(animated: true, completion: nil)
         }
     }
 
-    func updatePreview(image: UIImage?) {
-        self.annotationView?.updatePreview(image: image)
+    // MARK: - Setups
+
+    private func setupAnnotationView() {
+        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
+
+        let comment = self.viewModel.state.comments[annotation.key]
+        let preview: UIImage?
+
+        if annotation.type != .image {
+            preview = nil
+        } else {
+            preview = self.viewModel.state.previewCache.object(forKey: (annotation.key as NSString))
+
+            if preview == nil {
+                let isDark = self.traitCollection.userInterfaceStyle == .dark
+                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true, isDark: isDark))
+            }
+        }
+
+        self.annotationView?.setup(with: annotation, attributedComment: comment, preview: preview, selected: true, availableWidth: AnnotationViewController.width,
+                                   hasWritePermission: self.viewModel.state.library.metadataEditable)
+        self.annotationView?.performAction = { [weak self] action, sender in
+            self?.performAction?(action, annotation, sender)
+        }
     }
 }
