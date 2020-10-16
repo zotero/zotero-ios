@@ -441,6 +441,9 @@ class PDFReaderViewController: UIViewController {
             builder.scrollDirection = .horizontal
             builder.documentLabelEnabled = .NO
             builder.allowedAppearanceModes = [.night]
+            builder.isCreateAnnotationMenuEnabled = true
+            builder.createAnnotationMenuGroups = self.createAnnotationCreationMenuGroups()
+            builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation]
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
@@ -471,6 +474,14 @@ class PDFReaderViewController: UIViewController {
 
         self.pdfController = controller
         self.pdfControllerLeft = leftConstraint
+    }
+
+    private func createAnnotationCreationMenuGroups() -> [AnnotationToolConfiguration.ToolGroup] {
+        return [AnnotationToolConfiguration.ToolGroup(items: [
+            AnnotationToolConfiguration.ToolItem(type: .highlight),
+            AnnotationToolConfiguration.ToolItem(type: .note),
+            AnnotationToolConfiguration.ToolItem(type: .square)
+        ])]
     }
 
     private func setup(interactions: DocumentViewInteractions) {
@@ -735,7 +746,23 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            for annotations: [PSPDFKit.Annotation]?,
                            in annotationRect: CGRect,
                            on pageView: PDFPageView) -> [MenuItem] {
-      return []
+        guard annotations == nil else { return [] }
+
+        let interfaceStyle = self.traitCollection.userInterfaceStyle
+        let pageRect = pageView.convert(rect, to: pageView.pdfCoordinateSpace)
+
+        return [MenuItem(title: "Note", block: { [weak self] in
+                    self?.viewModel.process(action: .create(annotation: .note, pageIndex: pageView.pageIndex, origin: pageRect.origin, interfaceStyle: interfaceStyle))
+                }),
+                MenuItem(title: "Image", block: { [weak self] in
+                    self?.viewModel.process(action: .create(annotation: .image, pageIndex: pageView.pageIndex, origin: pageRect.origin, interfaceStyle: interfaceStyle))
+                })]
+    }
+
+    func pdfViewController(_ pdfController: PDFViewController, shouldShow menuItems: [MenuItem], atSuggestedTargetRect rect: CGRect,
+                           forSelectedText selectedText: String, in textRect: CGRect, on pageView: PDFPageView) -> [MenuItem] {
+        return menuItems.filter({ $0.identifier != TextMenu.annotationMenuUnderline.rawValue && $0.identifier != TextMenu.annotationMenuSquiggle.rawValue &&
+                                  $0.identifier != TextMenu.annotationMenuStrikeout.rawValue && $0.identifier != TextMenu.createLink.rawValue })
     }
 
     func pdfViewController(_ pdfController: PDFViewController,

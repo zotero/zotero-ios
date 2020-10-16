@@ -465,7 +465,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         controller.popoverPresentationController?.sourceView = sender
         controller.preferredContentSize = CGSize(width: 322, height: 74)
-        self.topViewController.presentedViewController?.present(controller, animated: true, completion: nil)
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     #if PDFENABLED

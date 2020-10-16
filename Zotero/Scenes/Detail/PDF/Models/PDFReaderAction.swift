@@ -30,6 +30,7 @@ enum PDFReaderAction {
     case updateAnnotationPreviews(userInterfaceIsDark: Bool)
     case setActiveColor(String)
     case saveChanges
+    case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint, interfaceStyle: UIUserInterfaceStyle)
 }
 
 #endif

@@ -94,6 +94,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         case .saveChanges:
             self.saveChanges(in: viewModel)
+
+        case .create(let annotation, let pageIndex, let origin, let interfaceStyle):
+            self.add(annotationType: annotation, pageIndex: pageIndex, origin: origin, interfaceStyle: interfaceStyle, in: viewModel)
         }
     }
 
@@ -174,10 +177,11 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             let newAnnotation = annotationChange(annotation)
             state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
             state.updatedAnnotationIndexPaths = [indexPath]
+            state.changes.insert(.annotations)
 
             if newAnnotation.key == state.selectedAnnotation?.key {
                 state.selectedAnnotation = newAnnotation
-                state.changes = .selectedAnnotationChanged
+                state.changes.insert(.selectedAnnotationChanged)
             }
 
             if reloadComment {
@@ -223,7 +227,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
             state.annotations = annotations
             state.currentFilter = term
-            state.changes = .annotationCount
+            state.changes = .annotations
         }
     }
 
@@ -241,7 +245,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.annotationsSnapshot = nil
             state.annotations = snapshot
-            state.changes = .annotationCount
+            state.changes = .annotations
         }
     }
 
@@ -255,6 +259,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             if let existing = state.selectedAnnotation,
                let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
                 state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
+                state.changes.insert(.annotations)
             }
 
             if let annotation = annotation, let index = index {
@@ -270,7 +275,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
 
             state.selectedAnnotation = annotation
-            state.changes = .selection
+            state.changes.insert(.selection)
         }
     }
 
@@ -328,6 +333,32 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     // MARK: - Annotation management
 
+    private func add(annotationType: AnnotationType, pageIndex: PageIndex, origin: CGPoint, interfaceStyle: UIUserInterfaceStyle, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let color = AnnotationColorGenerator.color(from: viewModel.state.activeColor, isHighlight: false, userInterfaceStyle: interfaceStyle).color
+        let pdfAnnotation: PSPDFKit.Annotation
+
+        switch annotationType {
+        case .highlight: return
+        case .image:
+            let rect = CGRect(origin: origin, size: CGSize(width: 50, height: 50))
+            let square = SquareAnnotation()
+            square.pageIndex = pageIndex
+            square.boundingBox = rect
+            square.borderColor = color
+            pdfAnnotation = square
+        case .note:
+            let rect = CGRect(origin: origin, size: AnnotationsConfig.noteSize)
+            let note = NoteAnnotation(contents: "")
+            note.pageIndex = pageIndex
+            note.boundingBox = rect
+            note.borderStyle = .dashed
+            note.color = color
+            pdfAnnotation = note
+        }
+
+        viewModel.state.document.add(annotations: [pdfAnnotation], options: nil)
+    }
+
     /// Updates annotations based on insertions to PSPDFKit document.
     /// - parameter annotations: Annotations that were added to the document.
     /// - parameter isDark: `true` if dark mode is on, `false` otherwise.
@@ -342,11 +373,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 continue
             }
 
-            guard let zoteroAnnotation = self.zoteroAnnotation(from: annotation, isNew: true) else { continue }
+            guard let zoteroAnnotation = self.zoteroAnnotation(from: annotation, document: viewModel.state.document, isNew: true) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.isZoteroKey: true,
-                                     AnnotationsConfig.keyKey: zoteroAnnotation.key]
+                                     AnnotationsConfig.keyKey: zoteroAnnotation.key,
+                                     AnnotationsConfig.baseColorKey: zoteroAnnotation.color]
 
             if let annotation = annotation as? SquareAnnotation {
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, isDark: isDark)
@@ -383,7 +415,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
 
             state.focusSidebarIndexPath = focus
-            state.changes = .annotationCount
+            state.changes = .annotations
         }
     }
 
@@ -425,7 +457,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.selectedAnnotation = nil
                 state.changes.insert(.selection)
             }
-            state.changes.insert(.annotationCount)
+            state.changes.insert(.annotations)
         }
     }
 
@@ -482,6 +514,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             if annotation is SquareAnnotation &&
                zoteroAnnotation.boundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
                 state.updatedAnnotationIndexPaths = [indexPath]
+                state.changes.insert(.annotations)
             }
 
             // Update bounding box of annotation
@@ -491,7 +524,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             if zoteroAnnotation.key == state.selectedAnnotation?.key {
                 state.selectedAnnotation = zoteroAnnotation
-                state.changes = .selectedAnnotationChanged
+                state.changes.insert(.selectedAnnotationChanged)
             }
 
             // Remove annotation preview from cache, if `SquareAnnotation` changed, then preview image changed as well
@@ -525,7 +558,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
                 state.comments = comments
-                state.changes = .annotationCount
+                state.changes = .annotations
 
                 UndoController.performWithoutUndo(undoController: state.document.undoController) {
                     // Hide external supported annotations
@@ -571,16 +604,17 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotation: PSPDFKit annotation.
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - returns: Matching Zotero annotation.
-    private func zoteroAnnotation(from annotation: PSPDFKit.Annotation, isNew: Bool) -> Annotation? {
+    private func zoteroAnnotation(from annotation: PSPDFKit.Annotation, document: Document, isNew: Bool) -> Annotation? {
         guard AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let page = Int(annotation.pageIndex)
+        let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
 
         if let annotation = annotation as? NoteAnnotation {
             return Annotation(key: KeyGenerator.newKey,
                               type: .note,
                               page: page,
-                              pageLabel: "\(annotation.pageIndex + 1)",
+                              pageLabel: pageLabel,
                               rects: [annotation.boundingBox],
                               author: "",
                               isAuthor: true,
@@ -597,7 +631,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             return Annotation(key: KeyGenerator.newKey,
                               type: .highlight,
                               page: page,
-                              pageLabel: "\(annotation.pageIndex + 1)",
+                              pageLabel: pageLabel,
                               rects: annotation.rects ?? [annotation.boundingBox],
                               author: "",
                               isAuthor: true,
@@ -614,7 +648,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             return Annotation(key: KeyGenerator.newKey,
                               type: .image,
                               page: page,
-                              pageLabel: "\(annotation.pageIndex + 1)",
+                              pageLabel: pageLabel,
                               rects: [annotation.boundingBox],
                               author: "",
                               isAuthor: true,
@@ -637,15 +671,19 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - returns: Array of PSPDFKit annotations that can be added to document.
     private func annotations(from zoteroAnnotations: [Int: [Annotation]], interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
         return zoteroAnnotations.values.flatMap({ $0 }).map({
-            switch $0.type {
-            case .image:
-                return self.areaAnnotation(from: $0, interfaceStyle: interfaceStyle)
-            case .highlight:
-                return self.highlightAnnotation(from: $0, interfaceStyle: interfaceStyle)
-            case .note:
-                return self.noteAnnotation(from: $0, interfaceStyle: interfaceStyle)
-            }
+            return self.annotation(from: $0, interfaceStyle: interfaceStyle)
         })
+    }
+
+    private func annotation(from zoteroAnnotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.Annotation {
+        switch zoteroAnnotation.type {
+        case .image:
+            return self.areaAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
+        case .highlight:
+            return self.highlightAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
+        case .note:
+            return self.noteAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
+        }
     }
 
     /// Creates corresponding `SquareAnnotation`.
@@ -688,7 +726,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let note = NoteAnnotation(contents: annotation.comment)
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
-        note.boundingBox = CGRect(x: boundingBox.minX, y: boundingBox.minY, width: 32, height: 32)
+        note.boundingBox = CGRect(origin: boundingBox.origin, size: AnnotationsConfig.noteSize)
         note.isZotero = true
         note.isEditable = annotation.editableInDocument
         note.key = annotation.key
@@ -700,8 +738,12 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func sortIndex(from annotation: PSPDFKit.Annotation) -> String {
-        let yPos = Int(round(annotation.boundingBox.origin.y))
-        return String(format: "%05d|%06d|%05d", annotation.pageIndex, 0, yPos)
+        return self.sortIndex(for: annotation.boundingBox, pageIndex: annotation.pageIndex)
+    }
+
+    private func sortIndex(for rect: CGRect, pageIndex: PageIndex) -> String {
+        let yPos = Int(round(rect.origin.y))
+        return String(format: "%05d|%06d|%05d", pageIndex, 0, yPos)
     }
 }
 

@@ -18,6 +18,7 @@ struct AnnotationsConfig {
     static let areaLineWidth: CGFloat = 2
     static let defaultActiveColor = "#ff8c19"
     static let colors: [String] = ["#ff6666", "#ff8c19", "#5fb236", "#2ea8e5", "#a28ae5"]
+    static let noteSize: CGSize = CGSize(width: 32, height: 32)
 
     static let isZoteroKey = "isZoteroAnnotation"
     static let keyKey = "zoteroKey"

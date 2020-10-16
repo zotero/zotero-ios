@@ -88,32 +88,33 @@ class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(from state: PDFReaderState, completion: @escaping () -> Void) {
-        if state.changes.contains(.annotationCount) || state.changes.contains(.darkMode) {
+        guard state.changes.contains(.annotations) || state.changes.contains(.darkMode) else {
+            completion()
+            return
+        }
+
+        if state.changes.contains(.darkMode) ||
+           (state.insertedAnnotationIndexPaths == nil &&
+            state.removedAnnotationIndexPaths == nil &&
+            state.updatedAnnotationIndexPaths == nil) {
             self.tableView.reloadData()
             completion()
             return
         }
 
-        guard state.insertedAnnotationIndexPaths != nil ||
-              state.removedAnnotationIndexPaths != nil ||
-              state.updatedAnnotationIndexPaths != nil else {
+        self.tableView.performBatchUpdates {
+            if let indexPaths = state.insertedAnnotationIndexPaths {
+                self.tableView.insertRows(at: indexPaths, with: .automatic)
+            }
+            if let indexPaths = state.removedAnnotationIndexPaths {
+                self.tableView.deleteRows(at: indexPaths, with: .automatic)
+            }
+            if let indexPaths = state.updatedAnnotationIndexPaths {
+                self.tableView.reloadRows(at: indexPaths, with: .none)
+            }
+        } completion: { _ in
             completion()
-            return
         }
-
-        self.tableView.beginUpdates()
-        if let indexPaths = state.insertedAnnotationIndexPaths {
-            self.tableView.insertRows(at: indexPaths, with: .automatic)
-        }
-        if let indexPaths = state.removedAnnotationIndexPaths {
-            self.tableView.deleteRows(at: indexPaths, with: .automatic)
-        }
-        if let indexPaths = state.updatedAnnotationIndexPaths {
-            self.tableView.reloadRows(at: indexPaths, with: .none)
-        }
-        self.tableView.endUpdates()
-
-        completion()
     }
 
     // MARK: - Setups
