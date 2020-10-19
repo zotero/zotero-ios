@@ -221,8 +221,20 @@ struct EditItemDetailDbRequest: DbRequest {
         }
 
         data.tags.forEach { tag in
-            if let rTag = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId))
-                                                     .filter("not (any items.key = %@)", self.itemKey).first {
+            let tagsWithName = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId))
+
+            if tagsWithName.count != 0 {
+                if let rTag = tagsWithName.filter("not (any items.key = %@)", item.key).first {
+                    rTag.items.append(item)
+                    tagsDidChange = true
+                }
+            } else {
+                let rTag = RTag()
+                rTag.name = tag.name
+                rTag.color = tag.color
+                rTag.libraryId = self.libraryId
+                database.add(rTag)
+
                 rTag.items.append(item)
                 tagsDidChange = true
             }

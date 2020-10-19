@@ -13,4 +13,5 @@ enum TagPickerAction {
     case select(String)
     case deselect(String)
     case search(String)
+    case add(String)
 }

@@ -38,6 +38,25 @@ struct TagPickerActionHandler: ViewModelActionHandler {
 
         case .search(let term):
             self.search(with: term, in: viewModel)
+
+        case .add(let name):
+            self.add(name: name, in: viewModel)
+        }
+    }
+
+    private func add(name: String, in viewModel: ViewModel<TagPickerActionHandler>) {
+        guard let snapshot = viewModel.state.snapshot else { return }
+        self.update(viewModel: viewModel) { state in
+            let tag = Tag(name: name, color: "")
+            state.tags = snapshot
+
+            let index = state.tags.index(of: tag, sortedBy: { $0.name < $1.name })
+            state.tags.insert(tag, at: index)
+            state.selectedTags.insert(name)
+
+            state.snapshot = nil
+            state.searchTerm = ""
+            state.changes = .tags
         }
     }
 

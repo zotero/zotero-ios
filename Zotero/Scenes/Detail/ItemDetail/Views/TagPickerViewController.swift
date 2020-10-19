@@ -70,6 +70,16 @@ class TagPickerViewController: UIViewController {
         }
     }
 
+    private func addTagIfNeeded() {
+        // When there are no search results during search, add current search query
+        guard let searchController = self.navigationItem.searchController,
+              !self.viewModel.state.searchTerm.isEmpty && self.viewModel.state.tags.isEmpty,
+              let text = searchController.searchBar.text, !text.isEmpty else { return }
+        self.viewModel.process(action: .add(text))
+        searchController.searchBar.text = nil
+        searchController.isActive = false
+    }
+
     private func save() {
         let allTags = self.viewModel.state.snapshot ?? self.viewModel.state.tags
         let tags = self.viewModel.state.selectedTags.compactMap { id in
@@ -93,6 +103,12 @@ class TagPickerViewController: UIViewController {
                             self?.viewModel.process(action: .search(text ?? ""))
                          })
                          .disposed(by: self.disposeBag)
+
+        searchController.searchBar.rx.searchButtonClicked.observeOn(MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] in
+                            self?.addTagIfNeeded()
+                        })
+                        .disposed(by: self.disposeBag)
 
         self.navigationItem.searchController = searchController
         self.navigationItem.hidesSearchBarWhenScrolling = false
