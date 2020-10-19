@@ -23,9 +23,14 @@ struct TagPickerActionHandler: ViewModelActionHandler {
 
     func process(action: TagPickerAction, in viewModel: ViewModel<TagPickerActionHandler>) {
         switch action {
-        case .setSelected(let selected):
+        case .select(let name):
             self.update(viewModel: viewModel) { state in
-                state.selectedTags = selected
+                state.selectedTags.insert(name)
+            }
+
+        case .deselect(let name):
+            self.update(viewModel: viewModel) { state in
+                state.selectedTags.remove(name)
             }
 
         case .load:
@@ -44,6 +49,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
                 }
                 state.searchTerm = term
                 state.tags = (state.snapshot ?? state.tags).filter({ $0.name.lowercased().contains(term.lowercased()) })
+                state.changes = .tags
             }
         } else {
             guard let snapshot = viewModel.state.snapshot else { return }
@@ -51,6 +57,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
                 state.tags = snapshot
                 state.snapshot = nil
                 state.searchTerm = ""
+                state.changes = .tags
             }
         }
     }
@@ -61,6 +68,7 @@ struct TagPickerActionHandler: ViewModelActionHandler {
             let tags = try self.dbStorage.createCoordinator().perform(request: request)
             self.update(viewModel: viewModel) { state in
                 state.tags = tags
+                state.changes = .tags
             }
         } catch let error {
             DDLogError("TagPickerStore: can't load tag: \(error)")

@@ -391,14 +391,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
         let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
 
-        let view = TagPickerView(saveAction: picked,
-                                 dismiss: { [weak self] in
-                                    self?.topViewController.dismiss(animated: true, completion: nil)
-                                 })
-                                 .environmentObject(ViewModel(initialState: state, handler: handler))
-
-        let controller = UINavigationController(rootViewController: UIHostingController(rootView: view))
+        let controller = UINavigationController(rootViewController: tagController)
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
         self.topViewController.present(controller, animated: true, completion: nil)

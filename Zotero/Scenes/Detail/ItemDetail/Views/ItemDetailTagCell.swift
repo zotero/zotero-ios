@@ -18,17 +18,22 @@ class ItemDetailTagCell: UITableViewCell {
         self.tagView.layer.masksToBounds = true
     }
 
-    func setup(with tag: Tag) {
+    func setup(with tag: Tag, showEmptyTagCircle: Bool = true) {
         let (color, style) = TagColorGenerator.uiColor(for: tag.color)
 
         switch style {
         case .border:
-            self.tagView.backgroundColor = .clear
-            self.tagView.layer.borderWidth = 1
-            self.tagView.layer.borderColor = color.cgColor
+            if showEmptyTagCircle {
+                self.tagView.backgroundColor = .clear
+                self.tagView.layer.borderWidth = 1
+                self.tagView.layer.borderColor = color.cgColor
+            } else {
+                self.tagView.isHidden = true
+            }
         case .filled:
             self.tagView.backgroundColor = color
             self.tagView.layer.borderWidth = 0
+            self.tagView.isHidden = false
         }
 
         self.label.text = tag.name
