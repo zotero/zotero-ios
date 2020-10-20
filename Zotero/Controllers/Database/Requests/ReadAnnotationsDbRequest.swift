@@ -22,6 +22,6 @@ struct ReadAnnotationsDbRequest: DbResponseRequest {
         return database.objects(RItem.self).filter(.parentKey(self.attachmentKey, in: self.libraryId))
                                            .filter(.items(type: ItemTypes.annotation, notSyncState: .dirty))
                                            .filter(.deleted(false))
-                                           .sorted(byKeyPath: "annotationSortIndex")
+                                           .sorted(byKeyPath: "annotationSortIndex", ascending: false)
     }
 }
