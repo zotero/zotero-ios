@@ -42,6 +42,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         if let groupIds = separatedIds?.group {
             groups = groups.filter("identifier IN %@", groupIds)
         }
+        groups = groups.sorted(byKeyPath: "name")
         let groupData = try groups.map({ group -> LibraryData in
             let libraryId = LibraryIdentifier.group(group.identifier)
             let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
