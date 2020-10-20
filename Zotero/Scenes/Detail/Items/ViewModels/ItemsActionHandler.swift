@@ -209,7 +209,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemsActionHandler>) {
-        guard let parentKey = update.parentKey, let attachment = viewModel.state.attachments[parentKey] else { return }
+        guard let parentKey = update.parentKey,
+              let attachment = viewModel.state.attachments[parentKey],
+              attachment.key == update.key else { return }
 
         self.update(viewModel: viewModel) { state in
             if update.kind.isDownloaded {

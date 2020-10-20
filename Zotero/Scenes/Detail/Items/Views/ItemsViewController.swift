@@ -156,7 +156,8 @@ class ItemsViewController: UIViewController {
             self.setupRightBarButtonItems(for: state)
         }
 
-        if let (attachment, parentKey) = state.openAttachment {
+        if let (attachment, parentKey) = state.openAttachment,
+           self.viewIfLoaded?.window != nil { // Only try opening attachment when viewController is currently visible on screen
             self.open(attachment: attachment, parentKey: parentKey)
         }
 
