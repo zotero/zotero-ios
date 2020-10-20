@@ -26,7 +26,8 @@ struct AnnotationColorGenerator {
 
             color.getHue(&hue, saturation: &sat, brightness: &brg, alpha: &alpha)
 
-            let adjustedColor = UIColor(hue: hue, saturation: sat * 1.2, brightness: brg, alpha: AnnotationColorGenerator.highlightDarkOpacity)
+            let adjustedSat = min(1, (sat * 1.2))
+            let adjustedColor = UIColor(hue: hue, saturation: adjustedSat, brightness: brg, alpha: AnnotationColorGenerator.highlightDarkOpacity)
             return (adjustedColor, AnnotationColorGenerator.highlightDarkOpacity)
         default:
             let adjustedColor = color.withAlphaComponent(AnnotationColorGenerator.highlightOpacity)
