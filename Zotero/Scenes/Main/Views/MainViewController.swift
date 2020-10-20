@@ -61,7 +61,7 @@ class MainViewController: UISplitViewController {
 
         self.delegate = self
 
-        self.preferredPrimaryColumnWidthFraction = 0.3951
+        self.preferredPrimaryColumnWidthFraction = 1/3
         self.maximumPrimaryColumnWidth = .infinity
         self.minimumPrimaryColumnWidth = 320
     }
