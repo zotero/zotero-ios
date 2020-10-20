@@ -210,7 +210,7 @@
                 </stackView>
             </subviews>
             <viewLayoutGuide key="safeArea" id="Svu-rH-H3i"/>
-            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="Neo-5Y-lKR" firstAttribute="top" secondItem="VQg-4B-SKY" secondAttribute="top" constant="4" id="PG2-Hw-lAa"/>
                 <constraint firstAttribute="trailing" secondItem="Neo-5Y-lKR" secondAttribute="trailing" id="We2-GD-HfO"/>
@@ -253,6 +253,9 @@
         </namedColor>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGray3Color">
             <color red="0.7803921568627451" green="0.7803921568627451" blue="0.80000000000000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
