@@ -259,7 +259,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             if let existing = state.selectedAnnotation,
                let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
                 state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
-                state.changes.insert(.annotations)
             }
 
             if let annotation = annotation, let index = index {
@@ -276,6 +275,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             state.selectedAnnotation = annotation
             state.changes.insert(.selection)
+            if let updates = state.updatedAnnotationIndexPaths, !updates.isEmpty {
+                state.changes.insert(.annotations)
+            }
         }
     }
 
