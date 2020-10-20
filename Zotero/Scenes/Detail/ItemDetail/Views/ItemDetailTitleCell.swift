@@ -17,7 +17,7 @@ class ItemDetailTitleCell: RxTableViewCell {
     @IBOutlet private weak var separatorLeft: NSLayoutConstraint!
 
     var textObservable: Observable<String> {
-        return self.textField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.textField.text ?? "") })
+        return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
     }
 
     func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {

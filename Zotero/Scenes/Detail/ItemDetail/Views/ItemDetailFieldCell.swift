@@ -20,7 +20,7 @@ class ItemDetailFieldCell: RxTableViewCell {
     @IBOutlet private weak var additionalInfoOffset: NSLayoutConstraint!
 
     var textObservable: Observable<String> {
-        return self.valueTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.valueLabel.text ?? "") })
+        return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
     }
 
     override func awakeFromNib() {

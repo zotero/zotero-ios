@@ -31,13 +31,13 @@ class ItemDetailCreatorEditingCell: RxTableViewCell {
                              }
     }
     var firstNameObservable: Observable<String> {
-        return self.firstNameTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.firstNameTextField.text ?? "") })
+        return self.firstNameTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.firstNameTextField.text ?? "") })
     }
     var lastNameObservable: Observable<String> {
-        return self.lastNameTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.lastNameTextField.text ?? "") })
+        return self.lastNameTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.lastNameTextField.text ?? "") })
     }
     var fullNameObservable: Observable<String> {
-        return self.fullTextField.rx.controlEvent(.valueChanged).flatMap({ Observable.just(self.fullTextField.text ?? "") })
+        return self.fullTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.fullTextField.text ?? "") })
     }
 
     override func awakeFromNib() {
