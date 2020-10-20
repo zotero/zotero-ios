@@ -1430,8 +1430,10 @@ final class SyncController: SynchronizationController {
             guard action.libraryId == libraryId else { break }
             switch action {
             case .syncVersions(let libraryId, let object, let version, _):
-                // If there are no remote changes, we need to check for local unsynced objects anyway, so change the `checkRemote` flag to false
-                self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: false)
+                // If there are no remote changes for previous `Object`, we should check whether current `Object` has been synced up to recent version,
+                // so we compare current version with last returned version.
+                // Even if the current object was previously fully synced, we need to check for local unsynced objects anyway.
+                self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: (version < lastVersion))
             case .syncSettings(_, let version),
                  .syncDeletions(_, let version):
                 if lastVersion == version {
