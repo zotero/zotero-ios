@@ -128,22 +128,26 @@ class DetailCoordinator: Coordinator {
 
             let url = file.createUrl()
 
-            if file.mimeType == "application/pdf" {
+            switch file.mimeType {
+            case "application/pdf":
                 self.showPdf(at: url, key: attachment.key, library: library)
-                return
-            } else if AVURLAsset(url: url).isPlayable {
-                self.showVideo(for: url)
-                return
-            } else if file.mimeType.contains("image") {
+            case "text/html":
+                self.showWebView(for: url)
+            case _ where file.mimeType.contains("image"):
                 let image = (file.mimeType == "image/gif") ? (try? Data(contentsOf: url)).flatMap({ try? UIImage(gifData: $0) }) :
                                                              UIImage(contentsOfFile: url.path)
                 if let image = image {
                     self.show(image: image, title: filename)
-                    return
+                } else {
+                    self.showUnknownAttachment(for: file, filename: filename, attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
+                }
+            default:
+                if AVURLAsset(url: url).isPlayable {
+                    self.showVideo(for: url)
+                } else {
+                    self.showUnknownAttachment(for: file, filename: filename, attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
                 }
             }
-
-            self.showUnknownAttachment(for: file, filename: filename, attachment: attachment, sourceView: sourceView, sourceRect: sourceRect)
         }
     }
 
@@ -151,14 +155,14 @@ class DetailCoordinator: Coordinator {
         let controller = ImagePreviewViewController(image: image, title: title)
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
     private func showVideo(for url: URL) {
         let player = AVPlayer(url: url)
         let controller = AVPlayerViewController()
         controller.player = player
-        self.navigationController.present(controller, animated: true) {
+        self.topViewController.present(controller, animated: true) {
             player.play()
         }
     }
@@ -181,8 +185,14 @@ class DetailCoordinator: Coordinator {
         controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
-        self.navigationController.present(navigationController, animated: true, completion: nil)
+        self.topViewController.present(navigationController, animated: true, completion: nil)
         #endif
+    }
+
+    private func showWebView(for url: URL) {
+        let controller = WebViewController(url: url)
+        let navigationController = UINavigationController(rootViewController: controller)
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
     private func showUnknownAttachment(for file: File, filename: String, attachment: Attachment, sourceView: UIView, sourceRect: CGRect?) {
@@ -204,7 +214,7 @@ class DetailCoordinator: Coordinator {
                                                                                     y: (sourceView.frame.height * 2.0 / 3.0),
                                                                                     width: (sourceView.frame.width / 3),
                                                                                     height: (sourceView.frame.height / 3))
-        self.navigationController.present(controller, animated: true, completion: nil)
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     func showWeb(url: URL) {
