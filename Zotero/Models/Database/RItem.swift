@@ -188,8 +188,6 @@ class RItem: Object {
     /// Chooses main attachment in the following order:
     /// - oldest PDF attachment matching parent URL,
     /// - oldest PDF attachment not matching parent URL,
-    /// - oldest non-PDF attachment matching parent URL,
-    /// - oldest non-PDF attachment not matching parent URL.
     func updateMainAttachment() {
         guard self.parent == nil else {
             self.mainAttachment = nil
@@ -202,6 +200,7 @@ class RItem: Object {
                                            let linkMode = attachment.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first?.value
                                            return linkMode == "imported_file" || linkMode == "imported_url"
                                        })
+                                       .filter({ $0.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value == "application/pdf" })
 
         guard attachments.count > 0 else {
             self.mainAttachment = nil
@@ -209,17 +208,6 @@ class RItem: Object {
         }
 
         let url = self.fields.filter(.key(FieldKeys.Item.Attachment.url)).first?.value
-        let pdfs = attachments.filter({ $0.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value == "application/pdf" })
-
-        if pdfs.count > 0 {
-            if let url = url, let matchingUrl = pdfs.first(where: { $0.fields.filter(.key(FieldKeys.Item.Attachment.url)).first?.value == url }) {
-                self.mainAttachment = matchingUrl
-                return
-            }
-
-            self.mainAttachment = pdfs.first
-            return
-        }
 
         if let url = url, let matchingUrl = attachments.first(where: { $0.fields.filter(.key(FieldKeys.Item.Attachment.url)).first?.value == url }) {
             self.mainAttachment = matchingUrl
