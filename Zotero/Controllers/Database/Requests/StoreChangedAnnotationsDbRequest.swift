@@ -219,7 +219,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         let attachmentItem = try CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
                                                            collections: [], linkMode: .embeddedImage).process(in: database)
         attachmentItem.dateAdded = item.dateAdded
-        attachmentItem.dateModified = item.dateModified
+        attachmentItem.dateModified = item.dateAdded
         attachmentItem.parent = item
         attachmentItem.changedFields.insert(.parent)
     }
