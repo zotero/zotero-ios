@@ -39,6 +39,7 @@ struct FieldKeys {
             static let filename = "filename"
             static let url = "url"
             static let charset = "charset"
+            static let path = "path"
 
             static var fieldKeys: [String] {
                 return [Item.title, Attachment.filename, Attachment.contentType, Attachment.linkMode,

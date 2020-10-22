@@ -59,18 +59,35 @@ extension RItem: Deletable {
         // Cleanup leftover files
         switch self.rawType {
         case ItemTypes.attachment:
-            if let file = AttachmentCreator.file(for: self, options: .light),
-               let darkFile = AttachmentCreator.file(for: self, options: .dark) {
-                // Delete attachment file if this attachment contains a file
-                NotificationCenter.default.post(name: .attachmentDeleted, object: file)
-                if file.name != darkFile.name {
-                    NotificationCenter.default.post(name: .attachmentDeleted, object: darkFile)
-                }
-            }
-            // Try deleting annotation container as well, there's no need to check whether this attachment contains annotations or not,
-            // `AttachmentFileCleanupController` doesn't report any errors, so in the worst case it just won't find the folder.
-            NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationContainer(pdfKey: self.key))
+            self.cleanupAttachmentFiles()
         default: break
+        }
+    }
+
+    private func cleanupAttachmentFiles() {
+        guard let contentType = AttachmentCreator.attachmentContentType(for: self, options: .light, fileStorage: nil, urlDetector: nil) else { return }
+
+        switch contentType {
+        case .url: break
+
+        case .snapshot(let htmlFile, _, let zipFile, _):
+            // Delete the zip
+            NotificationCenter.default.post(name: .attachmentDeleted, object: zipFile)
+            // Delete unzipped html directory
+            NotificationCenter.default.post(name: .attachmentDeleted, object: htmlFile.directory)
+
+        case .file(let file, _, _):
+            // Delete attachment file
+            NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+            if file.mimeType == "application/pdf" {
+                // This is a PDF file, remove all annotations.
+                NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationContainer(pdfKey: self.key))
+            } else if file.relativeComponents.first == "annotations",
+                      let darkContentType = AttachmentCreator.attachmentContentType(for: self, options: .dark, fileStorage: nil, urlDetector: nil),
+                      case .file(let file, _, _) = darkContentType {
+                // This is an embedded image for image annotation, remove dark version as well.
+                NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+            }
         }
     }
 }

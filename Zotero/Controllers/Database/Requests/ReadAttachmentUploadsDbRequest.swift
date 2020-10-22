@@ -23,11 +23,22 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
         let uploads = items.compactMap({ item -> AttachmentUpload? in
             guard let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value,
                   // Always upload light version of attachment (applies to embedded_image)
-                  let file = AttachmentCreator.file(for: item, options: .light) else { return nil }
+                  let attachmentType = AttachmentCreator.attachmentContentType(for: item, options: .light, fileStorage: nil, urlDetector: nil) else { return nil }
+
+            let filename: String
+            let file: File
+
+            switch attachmentType {
+            case .url:
+                return nil
+            case .file(let _file, let _filename, _),
+                 .snapshot(_, let _filename, let _file, _):
+                file = _file
+                filename = _filename
+            }
 
             let mtime = item.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
             let md5 = item.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
-            let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value ?? file.name
 
             return AttachmentUpload(libraryId: self.libraryId, key: item.key,
                                     filename: filename, contentType: contentType,

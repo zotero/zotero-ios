@@ -14,4 +14,5 @@ enum ItemDetailError: Error, Equatable, Hashable {
          cantStoreChanges
     case fileNotCopied(Int)
     case droppedFields([String])
+    case cantUnzipSnapshot
 }

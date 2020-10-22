@@ -16,6 +16,7 @@ protocol File {
     var ext: String { get }
     var mimeType: String { get }
     var isDirectory: Bool { get }
+    var directory: File { get }
 
     func createUrl() -> URL
     func createRelativeUrl() -> URL
@@ -39,6 +40,13 @@ extension File {
             url = url.appendingPathComponent(component)
         }
         return url
+    }
+
+    var directory: File {
+        if self.isDirectory {
+            return self
+        }
+        return FileData.directory(rootPath: self.rootPath, relativeComponents: self.relativeComponents)
     }
 }
 

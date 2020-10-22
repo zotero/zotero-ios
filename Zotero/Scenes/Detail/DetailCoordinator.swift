@@ -123,7 +123,8 @@ class DetailCoordinator: Coordinator {
         case .url(let url):
             self.showWeb(url: url)
 
-        case .file(let file, let filename, let location):
+        case .file(let file, let filename, let location),
+             .snapshot(let file, let filename, _, let location):
             guard let location = location, location == .local else { return }
 
             let url = file.createUrl()

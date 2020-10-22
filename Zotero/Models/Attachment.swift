@@ -17,20 +17,22 @@ struct Attachment: Identifiable, Equatable {
 
     enum ContentType: Equatable {
         case file(file: File, filename: String, location: FileLocation?)
+        case snapshot(htmlFile: File, filename: String, zipFile: File, location: FileLocation?)
         case url(URL)
 
-        var fileData: (File, String, FileLocation?)? {
+        var fileContentType: String? {
             switch self {
-            case .file(let file, let filename, let location):
-                return (file, filename, location)
-            default:
-                return nil
+            case .file(let file, _, _),
+                 .snapshot(let file, _, _, _):
+                return file.mimeType
+            case .url: return nil
             }
         }
 
         var fileLocation: FileLocation? {
             switch self {
-            case .file(_, _, let location):
+            case .file(_, _, let location),
+                 .snapshot(_, _, _, let location):
                 return location
             default:
                 return nil
@@ -83,6 +85,11 @@ struct Attachment: Identifiable, Equatable {
                               title: self.title,
                               type: .file(file: file, filename: filename, location: location),
                               libraryId: self.libraryId)
+        case .snapshot(let htmlFile, let filename, let zipFile, _):
+                return Attachment(key: self.key,
+                                  title: self.title,
+                                  type: .snapshot(htmlFile: htmlFile, filename: filename, zipFile: zipFile, location: location),
+                                  libraryId: self.libraryId)
         }
     }
 }

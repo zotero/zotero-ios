@@ -188,7 +188,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.openAttachment = (attachment, parentKey)
             }
-        case .file(let file, _, let location):
+        case .file(let file, _, let location),
+             .snapshot(_, _, let file, let location):
             guard let location = location else { return }
 
             switch location {
@@ -201,9 +202,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
                 if progress != nil {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
-                    return
+                } else {
+                    self.fileDownloader.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
                 }
-                self.fileDownloader.download(file: file, key: attachment.key, parentKey: parentKey, libraryId: attachment.libraryId)
             }
         }
     }

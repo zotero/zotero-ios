@@ -12,6 +12,7 @@ import Alamofire
 import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
+import ZIPFoundation
 
 struct ItemDetailActionHandler: ViewModelActionHandler {
     typealias State = ItemDetailState
@@ -24,7 +25,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private unowned let dateParser: DateParser
     private unowned let urlDetector: UrlDetector
     private unowned let fileDownloader: FileDownloader
-    private let saveScheduler: SerialDispatchQueueScheduler
+    private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
     init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController,
@@ -36,7 +37,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.dateParser = dateParser
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
-        self.saveScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetail.save")
+        self.backgroundScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetailActionHandler.background")
         self.disposeBag = DisposeBag()
     }
 
@@ -338,9 +339,18 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     // MARK: - Attachments
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let (file, _, _) = attachment.contentType.fileData else { return }
         do {
-            try self.fileStorage.remove(file)
+            switch attachment.contentType {
+            case .file(let file, _, _):
+                try self.fileStorage.remove(file)
+                // Don't remove annotation container here. Annotations might still be syncing and it would lead to sync errors.
+            case .snapshot(let htmlFile, _, let zipFile, _):
+                // Remove downloaded zip
+                try self.fileStorage.remove(zipFile)
+                // Remove unzipped html directory
+                try self.fileStorage.remove(htmlFile.directory)
+            case .url: return
+            }
             
             let deletionType = AttachmentFileDeletedNotification.individual(key: attachment.key,
                                                                             parentKey: viewModel.state.type.previewKey,
@@ -380,19 +390,62 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func process(downloadUpdate update: FileDownloader.Update, in viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard viewModel.state.library.identifier == update.libraryId else { return }
-        guard let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
-        var attachment = viewModel.state.data.attachments[index]
+        guard viewModel.state.library.identifier == update.libraryId,
+              let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
 
-        self.update(viewModel: viewModel) { state in
-            if update.kind.isDownloaded {
-                // If download finished, mark attachment file location as local
-                if attachment.contentType.fileLocation == .remote {
-                    attachment = attachment.changed(location: .local)
-                    state.data.attachments[index] = attachment
-                }
-                state.openAttachment = (attachment, index)
+        let attachment = viewModel.state.data.attachments[index]
+
+        if !update.kind.isDownloaded {
+            self.update(viewModel: viewModel) { state in
+                state.updateAttachmentIndex = index
             }
+            return
+        }
+
+        if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
+            // If snapshot was downloaded, unzip it
+            self.unzipSnapshot(from: zipFile, to: htmlFile.directory)
+                .subscribeOn(self.backgroundScheduler)
+                .observeOn(MainScheduler.instance)
+                .subscribe(onCompleted: { [weak viewModel] in
+                    guard let viewModel = viewModel,
+                          let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+                    self.finishDownload(at: index, in: viewModel)
+                }, onError: { [weak viewModel] error in
+                    guard let viewModel = viewModel else { return }
+                    self.update(viewModel: viewModel) { state in
+                        state.error = (error as? ItemDetailError) ?? .cantUnzipSnapshot
+                    }
+                })
+                .disposed(by: self.disposeBag)
+            return
+        }
+
+        self.finishDownload(at: index, in: viewModel)
+    }
+
+    private func unzipSnapshot(from zipFile: File, to directory: File) -> Completable {
+        return Completable.create { observer -> Disposable in
+            do {
+                try self.fileStorage.createDirectories(for: directory)
+                try FileManager.default.unzipItem(at: zipFile.createUrl(), to: directory.createUrl())
+                observer(.completed)
+            } catch let error {
+                DDLogError("ItemDetailActionHandler: error extracting file - \(error)")
+                observer(.error(ItemDetailError.cantUnzipSnapshot))
+            }
+            return Disposables.create()
+        }
+    }
+
+    private func finishDownload(at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        var attachment = viewModel.state.data.attachments[index]
+        if attachment.contentType.fileLocation == .remote {
+            attachment = attachment.changed(location: .local)
+        }
+        self.update(viewModel: viewModel) { state in
+            state.data.attachments[index] = attachment
+            state.openAttachment = (attachment, index)
             state.updateAttachmentIndex = index
         }
     }
@@ -446,21 +499,18 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.openAttachment = (attachment, index)
             }
-        case .file(let file, _, let location):
-            guard let location = location else { return }
 
+        case .file(let file, _, let location),
+             .snapshot(_, _, let file, let location):
+            guard let location = location else { return }
             switch location {
             case .remote:
                 let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
                 if progress != nil {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
-                    return
+                } else {
+                    self.fileDownloader.download(file: file, key: attachment.key, parentKey: viewModel.state.type.previewKey, libraryId: attachment.libraryId)
                 }
-                self.fileDownloader.download(file: file,
-                                             key: attachment.key,
-                                             parentKey: viewModel.state.type.previewKey,
-                                             libraryId: attachment.libraryId)
-
             case .local:
                 self.update(viewModel: viewModel) { state in
                     state.openAttachment = (attachment, index)
@@ -502,7 +552,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
 
         self.save(state: viewModel.state)
-            .subscribeOn(self.saveScheduler)
+            .subscribeOn(self.backgroundScheduler)
             .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak viewModel] newState in
                 guard let viewModel = viewModel else { return }

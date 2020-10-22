@@ -101,7 +101,7 @@ class ItemDetailTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        guard let (_, _, location) = attachment.contentType.fileData, location == .local else { return nil }
+        guard attachment.contentType.fileLocation == .local else { return nil }
         let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
             self?.viewModel.process(action: .deleteAttachmentFile(attachment)) 
         }

@@ -14,7 +14,7 @@ extension FileStorage {
     func copyAttachmentFilesIfNeeded(for attachments: [Attachment]) throws {
         for attachment in attachments {
             switch attachment.contentType {
-            case .url: continue
+            case .url, .snapshot: continue
             case .file(let originalFile, _, _):
                 let newFile = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, ext: originalFile.ext)
                 // Make sure that the file was not already moved to our internal location before

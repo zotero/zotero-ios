@@ -188,25 +188,14 @@ class FileAttachmentView: UIView {
     }
 
     private func layerData(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) -> LayerData? {
-        guard let (file, _, location) = contentType.fileData else { return nil }
-
         if let progress = progress {
             return LayerData(border: .progressLine(progress), content: .stopSign, badgeName: nil)
         }
 
-        var documentType: String = ""
         var state: String = ""
-
-        switch file.ext {
-        case "pdf":
-            documentType = "pdf"
-        default:
-            documentType = "document"
-        }
-
         if error != nil {
             state = "download-failed"
-        } else if let location = location {
+        } else if let location = contentType.fileLocation {
             switch location {
             case .local:
                 state = ""
@@ -216,6 +205,8 @@ class FileAttachmentView: UIView {
         } else {
             state = "missing"
         }
+
+        let documentType = contentType.fileContentType == "application/pdf" ? "pdf" : "document"
 
         switch style {
         case .list:
