@@ -12,13 +12,17 @@ class ItemDetailSectionView: UITableViewHeaderFooterView {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var topSeparatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var bottomSeparatorHeight: NSLayoutConstraint!
+    @IBOutlet private weak var headerHeight: NSLayoutConstraint!
+
+    private static let height: CGFloat = 44
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        let height = 1 / UIScreen.main.scale
-        self.topSeparatorHeight.constant = height
-        self.bottomSeparatorHeight.constant = height
+        let separatorHeight = 1 / UIScreen.main.scale
+        self.topSeparatorHeight.constant = separatorHeight
+        self.bottomSeparatorHeight.constant = separatorHeight
+        self.headerHeight.constant = ItemDetailSectionView.height - separatorHeight
     }
 
     func setup(with title: String) {

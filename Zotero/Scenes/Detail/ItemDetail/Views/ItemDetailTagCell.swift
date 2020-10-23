@@ -10,12 +10,22 @@ import UIKit
 
 class ItemDetailTagCell: UITableViewCell {
     @IBOutlet private weak var tagView: UIView!
+    @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
+    @IBOutlet private weak var labelBottom: NSLayoutConstraint!
+
+    private static let verticalInset: CGFloat = 10
 
     override func awakeFromNib() {
         super.awakeFromNib()
+
         self.tagView.layer.cornerRadius = self.tagView.frame.width / 2
         self.tagView.layer.masksToBounds = true
+        
+        let font = self.label.font!
+        let separatorHeight = 1 / UIScreen.main.scale
+        self.labelTop.constant = ItemDetailTagCell.verticalInset - (font.ascender - font.capHeight)
+        self.labelBottom.constant = ItemDetailTagCell.verticalInset - separatorHeight
     }
 
     func setup(with tag: Tag, showEmptyTagCircle: Bool = true) {

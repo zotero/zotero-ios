@@ -12,29 +12,23 @@ import RxCocoa
 import RxSwift
 
 class ItemDetailAbstractCell: RxTableViewCell {
-    enum State {
-        case editing
-        case collapsed
-        case expanded
-    }
-
+    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
+    @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var titleToContent: NSLayoutConstraint!
     @IBOutlet private weak var contentLabel: CollapsibleLabel!
-    @IBOutlet private weak var contentTextView: UITextView!
 
-    private var observer: AnyObserver<String>?
-    var textObservable: Observable<String> {
-        return Observable.create { observer -> Disposable in
-            self.observer = observer
-            return Disposables.create()
-        }
-    }
+    private static let lineHeight: CGFloat = 22
+    private static let verticalInset: CGFloat = 15
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.contentTextView.delegate = self
+        self.separatorHeight.constant = 1 / UIScreen.main.scale
+
+        let font = UIFont.preferredFont(for: .headline, weight: .regular)
+        self.titleLabel.font = font
+        self.titleTop.constant = ItemDetailAbstractCell.verticalInset - (font.ascender - font.capHeight)
 
         let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13),
                                                          .foregroundColor: Asset.Colors.zoteroBlue.color]
@@ -46,29 +40,18 @@ class ItemDetailAbstractCell: RxTableViewCell {
         self.contentLabel.showMoreString = showMore
     }
 
-    func setup(with abstract: String, state: State) {
-        switch state {
-        case .editing:
-            self.contentTextView.text = abstract
+    func setup(with abstract: String, isCollapsed: Bool) {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.hyphenationFactor = 1
+        paragraphStyle.alignment = .justified
+        paragraphStyle.minimumLineHeight = ItemDetailAbstractCell.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailAbstractCell.lineHeight
+        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle, .font: font]
+        let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
 
-        case .collapsed, .expanded:
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.hyphenationFactor = 1
-            paragraphStyle.alignment = .justified
-            let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
-                                                             .font: UIFont.preferredFont(forTextStyle: .body)]
-            let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
+        self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
 
-            self.contentLabel.set(text: hyphenatedText, isCollapsed: (state == .collapsed))
-        }
-
-        self.contentLabel.isHidden = state == .editing
-        self.contentTextView.isHidden = !self.contentLabel.isHidden
-    }
-}
-
-extension ItemDetailAbstractCell: UITextViewDelegate {
-    func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+        self.titleToContent.constant = ItemDetailAbstractCell.verticalInset - (font.ascender - font.capHeight) - (ItemDetailAbstractCell.lineHeight - font.lineHeight)
     }
 }

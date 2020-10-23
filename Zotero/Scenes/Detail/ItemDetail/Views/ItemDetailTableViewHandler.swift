@@ -31,7 +31,11 @@ class ItemDetailTableViewHandler: NSObject {
         func cellId(isEditing: Bool) -> String {
             switch self {
             case .abstract:
-                return "ItemDetailAbstractCell"
+                if isEditing {
+                    return "ItemDetailAbstractEditCell"
+                } else {
+                    return "ItemDetailAbstractCell"
+                }
             case .attachments:
                 return "ItemDetailAttachmentCell"
             case .notes:
@@ -57,6 +61,7 @@ class ItemDetailTableViewHandler: NSObject {
     // Identifier for "Add *" cell
     private static let addCellId = "ItemDetailAddCell"
     private static let dateFormatter = createDateFormatter()
+    private static let separatorLeftInset: CGFloat = 16
     private unowned let viewModel: ViewModel<ItemDetailActionHandler>
     private unowned let tableView: UITableView
     private let disposeBag: DisposeBag
@@ -277,6 +282,11 @@ class ItemDetailTableViewHandler: NSObject {
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         self.tableView.tableFooterView = UIView()
+        self.tableView.layoutMargins = UIEdgeInsets()
+        self.tableView.separatorInsetReference = .fromAutomaticInsets
+        self.tableView.separatorInset = UIEdgeInsets(top: 0,
+                                                     left: ItemDetailTableViewHandler.separatorLeftInset,
+                                                     bottom: 0, right: 0)
 
         Section.allCases.forEach { section in
             let cellId = section.cellId(isEditing: false)
@@ -384,9 +394,12 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        let separatorHeight = 1 / UIScreen.main.scale
         switch self.sections[section] {
-        case .notes, .attachments, .tags:
-            return 44
+        case .notes, .attachments:
+            return 44 + separatorHeight
+        case .tags:
+            return 54 // header height + 10 tag offset
         default:
             return 0
         }
@@ -413,8 +426,12 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         switch self.sections[section] {
-        case .abstract, .title:
+        case .title:
+            return 10 - (1 / UIScreen.main.scale) // - separator height
+        case .abstract:
             return 8
+        case .dates, .tags:
+            return 10 + (1 / UIScreen.main.scale) // + separator height
         default:
             return 0
         }
@@ -422,7 +439,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         switch self.sections[section] {
-        case .abstract, .title:
+        case .abstract, .title, .dates, .tags:
             return UIView()
         default:
             return nil
@@ -438,21 +455,15 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         switch section {
         case .abstract:
-            if let cell = cell as? ItemDetailAbstractCell {
-                let state: ItemDetailAbstractCell.State
-                if isEditing {
-                    state = .editing
-                } else if self.viewModel.state.abstractCollapsed {
-                    state = .collapsed
-                } else {
-                    state = .expanded
-                }
-                cell.setup(with: (self.viewModel.state.data.abstract ?? ""), state: state)
+            if let cell = cell as? ItemDetailAbstractEditCell {
+                cell.setup(with: (self.viewModel.state.data.abstract ?? ""))
                 cell.textObservable.subscribe(onNext: { [weak self] abstract in
                     if isEditing {
                         self?.viewModel.process(action: .setAbstract(abstract))
                     }
                 }).disposed(by: cell.newDisposeBag)
+            } else if let cell = cell as? ItemDetailAbstractCell {
+                cell.setup(with: (self.viewModel.state.data.abstract ?? ""), isCollapsed: self.viewModel.state.abstractCollapsed)
             }
             hasSeparator = false
 
@@ -554,7 +565,8 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             hasSeparator = isEditing || indexPath.row == self.count(in: .dates, isEditing: isEditing) - 1
         }
 
-        cell.separatorInset = UIEdgeInsets(top: 0, left: (hasSeparator ? cell.layoutMargins.left : .greatestFiniteMagnitude), bottom: 0, right: 0)
+        let left: CGFloat = hasSeparator ? 0 : .greatestFiniteMagnitude
+        cell.separatorInset = UIEdgeInsets(top: 0, left: left, bottom: 0, right: 0)
 
         return cell
     }

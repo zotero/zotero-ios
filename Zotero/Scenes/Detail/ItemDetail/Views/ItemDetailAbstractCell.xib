@@ -3,7 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17125"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17126"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -18,55 +18,52 @@
                 <rect key="frame" x="0.0" y="0.0" width="394" height="236"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="iQR-4Y-PHV">
-                        <rect key="frame" x="20" y="8" width="354" height="224"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Abstract" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="C31-DT-U38">
-                                <rect key="frame" x="0.0" y="0.0" width="354" height="224"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                <color key="textColor" systemColor="systemGrayColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="999" verticalCompressionResistancePriority="999" text="Label" textAlignment="justified" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Psa-N2-GrL" customClass="CollapsibleLabel" customModule="Zotero" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="224" width="354" height="0.0"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <textView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="999" showsHorizontalScrollIndicator="NO" bouncesZoom="NO" textAlignment="justified" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Tqk-rd-Ca3">
-                                <rect key="frame" x="0.0" y="224" width="354" height="160"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="160" id="o7C-pP-Xze"/>
-                                </constraints>
-                                <color key="textColor" systemColor="labelColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                            </textView>
-                        </subviews>
-                    </stackView>
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="1Jt-5F-mau">
+                        <rect key="frame" x="16" y="0.0" width="378" height="1"/>
+                        <color key="backgroundColor" systemColor="separatorColor"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="1" id="LL8-qH-Mas"/>
+                        </constraints>
+                    </view>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Abstract" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="C31-DT-U38">
+                        <rect key="frame" x="16" y="16" width="362" height="20.5"/>
+                        <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                        <color key="textColor" systemColor="systemGrayColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="999" verticalCompressionResistancePriority="999" text="Label" textAlignment="justified" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Psa-N2-GrL" customClass="CollapsibleLabel" customModule="Zotero" customModuleProvider="target">
+                        <rect key="frame" x="16" y="47" width="362" height="178.5"/>
+                        <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                        <nil key="highlightedColor"/>
+                    </label>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="iQR-4Y-PHV" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="20" symbolic="YES" id="VX6-xD-RMJ"/>
-                    <constraint firstAttribute="trailing" secondItem="iQR-4Y-PHV" secondAttribute="trailing" constant="20" symbolic="YES" id="bFq-PZ-i05"/>
-                    <constraint firstAttribute="bottom" secondItem="iQR-4Y-PHV" secondAttribute="bottom" constant="4" id="ema-J5-Fn1"/>
-                    <constraint firstItem="iQR-4Y-PHV" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="usg-5y-miw"/>
+                    <constraint firstItem="Psa-N2-GrL" firstAttribute="top" secondItem="C31-DT-U38" secondAttribute="baseline" constant="15" id="1C4-LT-xlv"/>
+                    <constraint firstAttribute="trailing" secondItem="1Jt-5F-mau" secondAttribute="trailing" id="1Rt-gF-RQs"/>
+                    <constraint firstItem="Psa-N2-GrL" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="FKg-Xc-jLz"/>
+                    <constraint firstAttribute="trailing" secondItem="Psa-N2-GrL" secondAttribute="trailing" constant="16" id="Ili-2h-J1b"/>
+                    <constraint firstAttribute="bottom" secondItem="Psa-N2-GrL" secondAttribute="baseline" constant="15" id="Oxd-bH-AAh"/>
+                    <constraint firstItem="C31-DT-U38" firstAttribute="top" secondItem="1Jt-5F-mau" secondAttribute="bottom" constant="15" id="Rcd-SN-QjN"/>
+                    <constraint firstItem="1Jt-5F-mau" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="XIN-mF-OIU"/>
+                    <constraint firstAttribute="trailing" secondItem="C31-DT-U38" secondAttribute="trailing" constant="16" id="edK-FO-yev"/>
+                    <constraint firstItem="1Jt-5F-mau" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="oq2-pm-PbE"/>
+                    <constraint firstItem="C31-DT-U38" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="qWG-Q1-cFE"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
                 <outlet property="contentLabel" destination="Psa-N2-GrL" id="fNc-7B-wvQ"/>
-                <outlet property="contentTextView" destination="Tqk-rd-Ca3" id="JyT-x7-VO4"/>
+                <outlet property="separatorHeight" destination="LL8-qH-Mas" id="Jcm-sc-chN"/>
                 <outlet property="titleLabel" destination="C31-DT-U38" id="eIv-BQ-NBy"/>
+                <outlet property="titleToContent" destination="1C4-LT-xlv" id="XY9-be-RuQ"/>
+                <outlet property="titleTop" destination="Rcd-SN-QjN" id="wmS-oI-Pup"/>
             </connections>
             <point key="canvasLocation" x="191.30434782608697" y="190.84821428571428"/>
         </tableViewCell>
     </objects>
     <resources>
-        <systemColor name="labelColor">
-            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        <systemColor name="separatorColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.28999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemGrayColor">
             <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

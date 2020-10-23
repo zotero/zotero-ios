@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16097.3" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17156" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17126"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -16,53 +18,55 @@
                 <rect key="frame" x="0.0" y="0.0" width="419" height="87"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="Z24-GW-m9L">
-                        <rect key="frame" x="20" y="4" width="100" height="79"/>
+                    <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="Z24-GW-m9L">
+                        <rect key="frame" x="16" y="10" width="387" height="71.5"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="Title" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bqm-5K-aUO">
-                                <rect key="frame" x="0.0" y="0.0" width="100" height="79"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" text="Title" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bqm-5K-aUO">
+                                <rect key="frame" x="0.0" y="0.0" width="100" height="71.5"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="100" id="QqB-In-7u0"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" systemColor="systemGrayColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1" verticalHuggingPriority="251" text="Value" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4vs-TP-UvN">
-                                <rect key="frame" x="100" y="0.0" width="0.0" height="79"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1" verticalHuggingPriority="999" verticalCompressionResistancePriority="1000" text="Value" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4vs-TP-UvN">
+                                <rect key="frame" x="116" y="0.0" width="271" height="71.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" adjustsFontForContentSizeCategory="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ERe-bP-QgB">
-                                <rect key="frame" x="100" y="0.0" width="0.0" height="79"/>
+                                <rect key="frame" x="387" y="0.0" width="0.0" height="71.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                         </subviews>
                     </stackView>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mve-XX-eUq">
-                        <rect key="frame" x="120" y="15" width="279" height="57"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mve-XX-eUq">
+                        <rect key="frame" x="403" y="0.0" width="0.0" height="87"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleCallout"/>
-                        <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="textColor" systemColor="systemGrayColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="Z24-GW-m9L" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="4" id="DyP-9I-x0S"/>
-                    <constraint firstAttribute="bottomMargin" secondItem="mve-XX-eUq" secondAttribute="bottom" constant="4" id="Eod-bN-B7L"/>
+                    <constraint firstAttribute="bottom" secondItem="mve-XX-eUq" secondAttribute="bottom" id="Eod-bN-B7L"/>
+                    <constraint firstAttribute="bottom" secondItem="Bqm-5K-aUO" secondAttribute="baseline" constant="10" id="Hcs-rx-oQF"/>
                     <constraint firstItem="mve-XX-eUq" firstAttribute="leading" secondItem="Z24-GW-m9L" secondAttribute="trailing" id="Jyc-6B-VFw"/>
-                    <constraint firstItem="mve-XX-eUq" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="4" id="LtQ-6C-7Nw"/>
-                    <constraint firstAttribute="trailing" secondItem="mve-XX-eUq" secondAttribute="trailing" constant="20" id="UjP-kg-b1W"/>
-                    <constraint firstAttribute="bottom" secondItem="Z24-GW-m9L" secondAttribute="bottom" constant="4" id="Ysi-h3-Cxl"/>
-                    <constraint firstItem="Z24-GW-m9L" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="20" symbolic="YES" id="cgR-LG-xAQ"/>
+                    <constraint firstItem="mve-XX-eUq" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="LtQ-6C-7Nw"/>
+                    <constraint firstAttribute="trailing" secondItem="mve-XX-eUq" secondAttribute="trailing" constant="16" id="UjP-kg-b1W"/>
+                    <constraint firstItem="Bqm-5K-aUO" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="10" id="aGO-L8-Baf"/>
+                    <constraint firstItem="Z24-GW-m9L" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="cgR-LG-xAQ"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
                 <outlet property="additionalInfoLabel" destination="mve-XX-eUq" id="0RD-ZC-ydd"/>
                 <outlet property="additionalInfoOffset" destination="Jyc-6B-VFw" id="jcK-GX-U6x"/>
+                <outlet property="titleBottom" destination="Hcs-rx-oQF" id="swD-8x-8rl"/>
                 <outlet property="titleLabel" destination="Bqm-5K-aUO" id="3lx-Ia-Fhg"/>
+                <outlet property="titleTop" destination="aGO-L8-Baf" id="6v6-2R-yCE"/>
                 <outlet property="titleWidth" destination="QqB-In-7u0" id="UbZ-vp-Ir1"/>
                 <outlet property="valueLabel" destination="4vs-TP-UvN" id="EXI-2m-Vth"/>
                 <outlet property="valueTextField" destination="ERe-bP-QgB" id="c2G-EA-Dpo"/>
@@ -70,4 +74,9 @@
             <point key="canvasLocation" x="209.42028985507247" y="205.24553571428569"/>
         </tableViewCell>
     </objects>
+    <resources>
+        <systemColor name="systemGrayColor">
+            <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
 </document>

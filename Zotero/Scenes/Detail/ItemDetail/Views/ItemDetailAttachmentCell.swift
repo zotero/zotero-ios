@@ -9,9 +9,16 @@
 import UIKit
 
 class ItemDetailAttachmentCell: UITableViewCell {
+    @IBOutlet private weak var containerHeight: NSLayoutConstraint!
     @IBOutlet private weak var fileView: FileAttachmentView!
     @IBOutlet private weak var attachmentIcon: UIImageView!
+    @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
+    @IBOutlet private weak var labelBottom: NSLayoutConstraint!
+
+    private static let height: CGFloat = 44
+    private static let verticalInset: CGFloat = 15
+    private static let lineHeight: CGFloat = 22
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -20,6 +27,9 @@ class ItemDetailAttachmentCell: UITableViewCell {
         let highlightView = UIView()
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
         self.selectedBackgroundView = highlightView
+
+        let separatorHeight = 1 / UIScreen.main.scale
+        self.containerHeight.constant = ItemDetailAttachmentCell.height - separatorHeight
     }
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
@@ -39,6 +49,18 @@ class ItemDetailAttachmentCell: UITableViewCell {
             self.fileView.isHidden = true
             self.attachmentIcon.isHidden = false
         }
-        self.label.text = attachment.title
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.minimumLineHeight = ItemDetailAttachmentCell.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailAttachmentCell.lineHeight
+        let attributedString = NSAttributedString(string: attachment.title,
+                                                  attributes: [.font: UIFont.preferredFont(forTextStyle: .body),
+                                                               .paragraphStyle: paragraphStyle])
+        self.label.attributedText = attributedString
+
+        let font = self.label.font!
+        let separatorHeight = (1 / UIScreen.main.scale)
+        self.labelTop.constant = ItemDetailAttachmentCell.verticalInset - (font.ascender - font.capHeight) - (ItemDetailAttachmentCell.lineHeight - font.lineHeight) - separatorHeight
+        self.labelBottom.constant = ItemDetailAttachmentCell.verticalInset
     }
 }

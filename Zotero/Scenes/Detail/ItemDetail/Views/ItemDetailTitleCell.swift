@@ -14,14 +14,18 @@ import RxSwift
 class ItemDetailTitleCell: RxTableViewCell {
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var textField: UITextField!
-    @IBOutlet private weak var separatorLeft: NSLayoutConstraint!
+    @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
 
     var textObservable: Observable<String> {
         return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
     }
 
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.separatorHeight.constant = 1 / UIScreen.main.scale
+    }
+
     func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {
-        self.separatorLeft.constant = self.separatorInset.left
         if isEditing {
             self.textField.text = title
             self.textField.placeholder = placeholder

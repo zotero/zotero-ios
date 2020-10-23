@@ -615,6 +615,8 @@
 		B3B953CE245981DA00FC96DB /* PDFReaderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */; };
 		B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */; };
 		B3B953D42459B62D00FC96DB /* AnnotationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953D32459B62D00FC96DB /* AnnotationCell.swift */; };
+		B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC1F5E254322D200BA3388 /* ItemDetailAbstractEditCell.swift */; };
+		B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3BC1F5F254322D200BA3388 /* ItemDetailAbstractEditCell.xib */; };
 		B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3BC6B1D250F797B006A8B9C /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */; };
 		B3BC6B1E250F79C4006A8B9C /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */; };
@@ -1148,6 +1150,8 @@
 		B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PDFReaderViewController.swift; sourceTree = "<group>"; };
 		B3B953D12459B4D800FC96DB /* UITableViewCell+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableViewCell+SwiftUI.swift"; sourceTree = "<group>"; };
 		B3B953D32459B62D00FC96DB /* AnnotationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCell.swift; sourceTree = "<group>"; };
+		B3BC1F5E254322D200BA3388 /* ItemDetailAbstractEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailAbstractEditCell.swift; sourceTree = "<group>"; };
+		B3BC1F5F254322D200BA3388 /* ItemDetailAbstractEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailAbstractEditCell.xib; sourceTree = "<group>"; };
 		B3BC25CC247E6BA000AC27B5 /* DateParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateParser.swift; sourceTree = "<group>"; };
 		B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FieldKeys.swift; sourceTree = "<group>"; };
 		B3BC6B1F250FA437006A8B9C /* SchemaError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaError.swift; sourceTree = "<group>"; };
@@ -1870,6 +1874,8 @@
 				B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */,
 				B3593ED4241A61C700760E20 /* ItemDetailAbstractCell.swift */,
 				B3593EE0241A61C700760E20 /* ItemDetailAbstractCell.xib */,
+				B3BC1F5E254322D200BA3388 /* ItemDetailAbstractEditCell.swift */,
+				B3BC1F5F254322D200BA3388 /* ItemDetailAbstractEditCell.xib */,
 				B3593EDE241A61C700760E20 /* ItemDetailAddCell.swift */,
 				B3593ED0241A61C700760E20 /* ItemDetailAddCell.xib */,
 				B3593EDC241A61C700760E20 /* ItemDetailAttachmentCell.swift */,
@@ -2516,6 +2522,7 @@
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
 				B3593F31241A61C700760E20 /* ItemDetailViewController.xib in Resources */,
 				B30566D923FC0769003304F2 /* tinymce in Resources */,
+				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditCell.xib in Resources */,
 				B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */,
 				B3A96A13253DB70800785E94 /* TagPickerViewController.xib in Resources */,
 				B3593F32241A61C700760E20 /* ItemDetailAbstractCell.xib in Resources */,
@@ -2998,6 +3005,7 @@
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
 				B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */,
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
+				B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,

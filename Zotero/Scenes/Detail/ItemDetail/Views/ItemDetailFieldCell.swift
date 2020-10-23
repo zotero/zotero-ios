@@ -13,11 +13,15 @@ import RxSwift
 
 class ItemDetailFieldCell: RxTableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var titleTop: NSLayoutConstraint!
+    @IBOutlet private weak var titleBottom: NSLayoutConstraint!
     @IBOutlet private weak var titleWidth: NSLayoutConstraint!
     @IBOutlet private weak var valueTextField: UITextField!
     @IBOutlet private weak var valueLabel: UILabel!
     @IBOutlet private weak var additionalInfoLabel: UILabel!
     @IBOutlet private weak var additionalInfoOffset: NSLayoutConstraint!
+
+    private static let verticalInset: CGFloat = 10
 
     var textObservable: Observable<String> {
         return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
@@ -26,7 +30,11 @@ class ItemDetailFieldCell: RxTableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
+        let font = UIFont.preferredFont(for: .headline, weight: .regular)
+        let separatorHeight = 1 / UIScreen.main.scale
+        self.titleLabel.font = font
+        self.titleTop.constant = ItemDetailFieldCell.verticalInset - (font.ascender - font.capHeight)
+        self.titleBottom.constant = ItemDetailFieldCell.verticalInset - separatorHeight
     }
 
     func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {
