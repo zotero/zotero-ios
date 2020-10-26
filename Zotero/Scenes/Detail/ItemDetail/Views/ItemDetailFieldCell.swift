@@ -22,6 +22,7 @@ class ItemDetailFieldCell: RxTableViewCell {
     @IBOutlet private weak var additionalInfoOffset: NSLayoutConstraint!
 
     private static let verticalInset: CGFloat = 10
+    private static let editingVerticalInset: CGFloat = 15
 
     var textObservable: Observable<String> {
         return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
@@ -30,11 +31,7 @@ class ItemDetailFieldCell: RxTableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        let font = UIFont.preferredFont(for: .headline, weight: .regular)
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.titleLabel.font = font
-        self.titleTop.constant = ItemDetailFieldCell.verticalInset - (font.ascender - font.capHeight)
-        self.titleBottom.constant = ItemDetailFieldCell.verticalInset - separatorHeight
+        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
     func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {
@@ -53,6 +50,7 @@ class ItemDetailFieldCell: RxTableViewCell {
             }
         }
         self.valueLabel.isHidden = isEditing
+        self.setupInsets(isEditing: isEditing)
     }
 
     func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat) {
@@ -63,9 +61,10 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.valueTextField.isHidden = true
         self.titleWidth.constant = titleWidth
         self.setAdditionalInfo(value: nil)
+        self.setupInsets(isEditing: isEditing)
     }
 
-    func setup(with date: String, title: String, titleWidth: CGFloat) {
+    func setup(with date: String, title: String, titleWidth: CGFloat, isEditing: Bool) {
         self.titleLabel.text = title
         self.valueLabel.text = date
         self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
@@ -73,6 +72,7 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.valueTextField.isHidden = true
         self.titleWidth.constant = titleWidth
         self.setAdditionalInfo(value: nil)
+        self.setupInsets(isEditing: isEditing)
     }
 
     private func setAdditionalInfo(value: String?) {
@@ -82,5 +82,14 @@ class ItemDetailFieldCell: RxTableViewCell {
             self.additionalInfoLabel.text = nil
         }
         self.additionalInfoOffset.constant = value == nil ? 0 : 8
+    }
+
+    private func setupInsets(isEditing: Bool) {
+        let font = self.titleLabel.font!
+        let separatorHeight = 1 / UIScreen.main.scale
+        let inset = isEditing ? ItemDetailFieldCell.editingVerticalInset :
+                                ItemDetailFieldCell.verticalInset
+        self.titleTop.constant = inset - (font.ascender - font.capHeight)
+        self.titleBottom.constant = inset + (isEditing ? 1 : -separatorHeight)
     }
 }

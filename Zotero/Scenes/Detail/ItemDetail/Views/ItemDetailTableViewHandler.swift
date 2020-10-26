@@ -501,7 +501,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth)
+                cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth, isEditing: isEditing)
             }
             hasSeparator = isEditing
 
@@ -553,10 +553,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                 switch indexPath.row {
                 case 0:
                     let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateAdded)
-                    cell.setup(with: date, title: L10n.dateAdded, titleWidth: self.titleWidth)
+                    cell.setup(with: date, title: L10n.dateAdded, titleWidth: self.titleWidth, isEditing: isEditing)
                 case 1:
                     let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateModified)
-                    cell.setup(with: date, title: L10n.dateModified, titleWidth: self.titleWidth)
+                    cell.setup(with: date, title: L10n.dateModified, titleWidth: self.titleWidth, isEditing: isEditing)
                 default: break
                 }
             }
