@@ -52,6 +52,7 @@ class ItemDetailAbstractCell: RxTableViewCell {
 
         self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
 
-        self.titleToContent.constant = ItemDetailAbstractCell.verticalInset - (font.ascender - font.capHeight) - (ItemDetailAbstractCell.lineHeight - font.lineHeight)
+        let lineHeightOffset = (ItemDetailAbstractCell.lineHeight - font.lineHeight)
+        self.titleToContent.constant = ItemDetailAbstractCell.verticalInset - (font.ascender - font.capHeight) - lineHeightOffset
     }
 }

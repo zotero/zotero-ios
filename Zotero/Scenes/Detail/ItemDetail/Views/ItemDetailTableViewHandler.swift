@@ -283,7 +283,7 @@ class ItemDetailTableViewHandler: NSObject {
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         self.tableView.tableFooterView = UIView()
         self.tableView.layoutMargins = UIEdgeInsets()
-        self.tableView.separatorInsetReference = .fromAutomaticInsets
+        self.tableView.separatorInsetReference = .fromCellEdges
         self.tableView.separatorInset = UIEdgeInsets(top: 0,
                                                      left: ItemDetailTableViewHandler.separatorLeftInset,
                                                      bottom: 0, right: 0)
@@ -428,8 +428,6 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         switch self.sections[section] {
         case .title:
             return 10 - (1 / UIScreen.main.scale) // - separator height
-        case .abstract:
-            return 8
         case .dates, .tags:
             return 10 + (1 / UIScreen.main.scale) // + separator height
         default:
@@ -439,7 +437,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         switch self.sections[section] {
-        case .abstract, .title, .dates, .tags:
+        case .title, .dates, .tags:
             return UIView()
         default:
             return nil
@@ -565,7 +563,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             hasSeparator = isEditing || indexPath.row == self.count(in: .dates, isEditing: isEditing) - 1
         }
 
-        let left: CGFloat = hasSeparator ? 0 : .greatestFiniteMagnitude
+        let left: CGFloat = hasSeparator ? ItemDetailTableViewHandler.separatorLeftInset : .greatestFiniteMagnitude
         cell.separatorInset = UIEdgeInsets(top: 0, left: left, bottom: 0, right: 0)
 
         return cell

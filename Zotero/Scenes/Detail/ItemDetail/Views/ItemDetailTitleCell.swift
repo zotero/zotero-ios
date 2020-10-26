@@ -12,9 +12,13 @@ import RxCocoa
 import RxSwift
 
 class ItemDetailTitleCell: RxTableViewCell {
+    @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
+    @IBOutlet private weak var textFieldTop: NSLayoutConstraint!
     @IBOutlet private weak var textField: UITextField!
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
+
+    private static let top: CGFloat = 44
 
     var textObservable: Observable<String> {
         return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
@@ -22,7 +26,14 @@ class ItemDetailTitleCell: RxTableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.separatorHeight.constant = 1 / UIScreen.main.scale
+
+        let separatorHeight = 1 / UIScreen.main.scale
+        self.separatorHeight.constant = separatorHeight
+
+        let font = self.label.font!
+        let top = ItemDetailTitleCell.top - (font.ascender - font.capHeight) - separatorHeight
+        self.labelTop.constant = top
+        self.textFieldTop.constant = top
     }
 
     func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {

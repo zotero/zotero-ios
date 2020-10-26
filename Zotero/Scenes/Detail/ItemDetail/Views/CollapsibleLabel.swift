@@ -55,6 +55,9 @@ class CollapsibleLabel: UILabel {
         let result = NSMutableAttributedString(attributedString: string)
         result.append(NSAttributedString(string: "\n"))
         result.append(showLessString)
+        if let paragraphStyle = string.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {
+            result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
+        }
         return result
     }
 
@@ -74,6 +77,9 @@ class CollapsibleLabel: UILabel {
             result.append(string.attributedString(for: lines[index]))
         }
         result.append(lastLineWithShowMore)
+        if let paragraphStyle = string.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {
+            result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
+        }
 
         return result
     }
@@ -126,8 +132,16 @@ class CollapsibleLabel: UILabel {
     /// - parameter text: Text to check whether it fits
     /// - returns: `true` if it fits, `false` otherwise
     private func textFitsWidth(text: NSAttributedString) -> Bool {
-        let font = (text.attributes(at: 0, effectiveRange: nil)[.font] as? UIFont) ?? self.font
-        let lineHeight = font?.lineHeight ?? 0
+        let lineHeight: CGFloat
+
+        if let paragraphStyle = text.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle,
+           paragraphStyle.maximumLineHeight > 0 {
+            lineHeight = paragraphStyle.maximumLineHeight
+        } else {
+            let font = (text.attributes(at: 0, effectiveRange: nil)[.font] as? UIFont) ?? self.font
+            lineHeight = font?.lineHeight ?? 0
+        }
+
         let size = CGSize(width: self.frame.width, height: .greatestFiniteMagnitude)
         return text.boundingRect(with: size, options: [.usesLineFragmentOrigin], context: nil).size.height <= lineHeight
     }
