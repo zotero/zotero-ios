@@ -25,45 +25,42 @@
                             <constraint firstAttribute="height" constant="1" id="klE-yu-pcY"/>
                         </constraints>
                     </view>
-                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="15" baselineRelativeArrangement="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fwo-O4-Z6a">
-                        <rect key="frame" x="16" y="16" width="362" height="176"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Abstract" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iuX-MD-1Qd">
-                                <rect key="frame" x="0.0" y="0.0" width="362" height="5.5"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                <color key="textColor" systemColor="systemGrayColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <textView clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="999" showsHorizontalScrollIndicator="NO" bouncesZoom="NO" textAlignment="justified" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FpG-g1-z40">
-                                <rect key="frame" x="0.0" y="16" width="362" height="160"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="160" id="3LM-N0-N3D"/>
-                                </constraints>
-                                <color key="textColor" systemColor="labelColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                            </textView>
-                        </subviews>
-                    </stackView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Abstract" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iuX-MD-1Qd">
+                        <rect key="frame" x="16" y="16" width="362" height="46.5"/>
+                        <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
+                        <color key="textColor" systemColor="systemGrayColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <textView clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="999" showsHorizontalScrollIndicator="NO" bouncesZoom="NO" textAlignment="justified" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FpG-g1-z40">
+                        <rect key="frame" x="16" y="67" width="372" height="160"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="160" id="3LM-N0-N3D"/>
+                        </constraints>
+                        <color key="textColor" systemColor="labelColor"/>
+                        <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                        <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                    </textView>
                 </subviews>
                 <constraints>
+                    <constraint firstItem="iuX-MD-1Qd" firstAttribute="top" secondItem="b3h-Qy-EqW" secondAttribute="bottom" constant="15" id="3JS-Ii-Ito"/>
+                    <constraint firstAttribute="trailing" secondItem="FpG-g1-z40" secondAttribute="trailing" constant="6" id="5g4-0c-kEi"/>
+                    <constraint firstItem="iuX-MD-1Qd" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leading" constant="16" id="8Ju-Ey-G3N"/>
                     <constraint firstItem="b3h-Qy-EqW" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leading" constant="16" id="IIl-iP-abN"/>
                     <constraint firstAttribute="trailing" secondItem="b3h-Qy-EqW" secondAttribute="trailing" id="J6y-C9-ban"/>
-                    <constraint firstAttribute="trailing" secondItem="Fwo-O4-Z6a" secondAttribute="trailing" constant="16" id="Q5m-iS-KEp"/>
-                    <constraint firstItem="Fwo-O4-Z6a" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leading" constant="16" id="i1F-C9-Sjk"/>
-                    <constraint firstItem="iuX-MD-1Qd" firstAttribute="top" secondItem="b3h-Qy-EqW" secondAttribute="bottom" constant="15" id="mer-xS-4Uz"/>
+                    <constraint firstAttribute="bottom" secondItem="FpG-g1-z40" secondAttribute="bottom" constant="9" id="QCp-8g-JI9"/>
+                    <constraint firstItem="FpG-g1-z40" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leading" constant="16" id="ak2-c7-0SU"/>
+                    <constraint firstAttribute="trailing" secondItem="iuX-MD-1Qd" secondAttribute="trailing" constant="16" id="bVW-iM-v5W"/>
+                    <constraint firstItem="FpG-g1-z40" firstAttribute="top" secondItem="iuX-MD-1Qd" secondAttribute="baseline" constant="9" id="eg1-KE-xy2"/>
                     <constraint firstItem="b3h-Qy-EqW" firstAttribute="top" secondItem="Zfr-Ar-kAh" secondAttribute="top" id="nrT-Aw-Zvw"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="COz-Hc-qiN"/>
-            <constraints>
-                <constraint firstItem="COz-Hc-qiN" firstAttribute="bottom" secondItem="FpG-g1-z40" secondAttribute="bottom" constant="44" id="2y2-DK-Y2Y"/>
-            </constraints>
             <connections>
                 <outlet property="contentTextView" destination="FpG-g1-z40" id="39S-sB-GKs"/>
                 <outlet property="separatorHeight" destination="klE-yu-pcY" id="MnG-eb-Dzb"/>
                 <outlet property="titleLabel" destination="iuX-MD-1Qd" id="sHI-fi-26t"/>
+                <outlet property="titleTop" destination="3JS-Ii-Ito" id="kSG-td-uGY"/>
             </connections>
             <point key="canvasLocation" x="191.30434782608697" y="190.84821428571428"/>
         </tableViewCell>

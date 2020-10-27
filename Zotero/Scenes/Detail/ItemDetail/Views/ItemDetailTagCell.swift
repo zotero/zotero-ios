@@ -11,24 +11,31 @@ import UIKit
 class ItemDetailTagCell: UITableViewCell {
     @IBOutlet private weak var tagView: UIView!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
+    @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var labelBottom: NSLayoutConstraint!
 
+    private static let containerHorizontalInset: CGFloat = 16
     private static let verticalInset: CGFloat = 10
+    private static let editingVerticalInset: CGFloat = 15
+    private static let tagViewWidth: CGFloat = 16
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.tagView.layer.cornerRadius = self.tagView.frame.width / 2
         self.tagView.layer.masksToBounds = true
-        
-        let font = self.label.font!
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.labelTop.constant = ItemDetailTagCell.verticalInset - (font.ascender - font.capHeight)
-        self.labelBottom.constant = ItemDetailTagCell.verticalInset - separatorHeight
     }
 
-    func setup(with tag: Tag, showEmptyTagCircle: Bool = true) {
+    func setupWithoutEmptyCircle(tag: Tag) {
+        self.setup(tag: tag, showEmptyTagCircle: false, isEditing: true)
+    }
+
+    func setup(tag: Tag, isEditing: Bool) {
+        self.setup(tag: tag, showEmptyTagCircle: true, isEditing: isEditing)
+    }
+
+    private func setup(tag: Tag, showEmptyTagCircle: Bool, isEditing: Bool) {
         let (color, style) = TagColorGenerator.uiColor(for: tag.color)
 
         switch style {
@@ -37,6 +44,7 @@ class ItemDetailTagCell: UITableViewCell {
                 self.tagView.backgroundColor = .clear
                 self.tagView.layer.borderWidth = 1
                 self.tagView.layer.borderColor = color.cgColor
+                self.tagView.isHidden = false
             } else {
                 self.tagView.isHidden = true
             }
@@ -47,5 +55,19 @@ class ItemDetailTagCell: UITableViewCell {
         }
 
         self.label.text = tag.name
+        self.setupInsets(isEditing: isEditing, showTagView: !self.tagView.isHidden)
+    }
+
+    private func setupInsets(isEditing: Bool, showTagView: Bool) {
+        let inset = isEditing ? ItemDetailTagCell.editingVerticalInset :
+                                ItemDetailTagCell.verticalInset
+        let font = self.label.font!
+        let separatorHeight = 1 / UIScreen.main.scale
+
+        self.labelTop.constant = inset - (font.ascender - font.capHeight)
+        self.labelBottom.constant = inset - (isEditing ? 0 : separatorHeight)
+
+        self.labelLeft.constant = ItemDetailTagCell.containerHorizontalInset +
+                                    (showTagView ? (ItemDetailTagCell.tagViewWidth + ItemDetailTagCell.containerHorizontalInset) : 0 )
     }
 }

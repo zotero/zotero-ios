@@ -4,7 +4,6 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17126"/>
-        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -20,7 +19,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="HJS-c4-gP5">
-                        <rect key="frame" x="16" y="0.0" width="273" height="87"/>
+                        <rect key="frame" x="16" y="0.0" width="314" height="87"/>
                         <subviews>
                             <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="RAA-Dr-Cos" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="29.5" width="28" height="28"/>
@@ -38,7 +37,7 @@
                                 </constraints>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yy5-No-Wsg">
-                                <rect key="frame" x="44" y="15" width="229" height="61.5"/>
+                                <rect key="frame" x="44" y="15" width="270" height="61.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -57,22 +56,14 @@
                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="44" id="zcl-qW-BbX"/>
                         </constraints>
                     </view>
-                    <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="infoLight" showsTouchWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wbQ-Z6-IAO">
-                        <rect key="frame" x="289" y="0.0" width="57" height="87"/>
-                        <color key="tintColor" name="zoteroDarkBlue"/>
-                        <inset key="contentEdgeInsets" minX="16" minY="0.0" maxX="16" maxY="0.0"/>
-                    </button>
                 </subviews>
                 <constraints>
                     <constraint firstItem="HJS-c4-gP5" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="3y2-un-Qmo"/>
+                    <constraint firstAttribute="trailing" secondItem="HJS-c4-gP5" secondAttribute="trailing" constant="16" id="3yg-SK-dqq"/>
                     <constraint firstAttribute="bottom" secondItem="Yy5-No-Wsg" secondAttribute="baseline" constant="15" id="8Pl-dl-5Ry"/>
                     <constraint firstItem="Yy5-No-Wsg" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="15" id="DSU-Y5-nns"/>
                     <constraint firstAttribute="bottom" secondItem="HJS-c4-gP5" secondAttribute="bottom" id="H90-86-iAm"/>
-                    <constraint firstAttribute="trailing" secondItem="wbQ-Z6-IAO" secondAttribute="trailing" id="Laa-Br-ibo"/>
-                    <constraint firstItem="wbQ-Z6-IAO" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="QVO-xe-EHT"/>
-                    <constraint firstAttribute="bottom" secondItem="wbQ-Z6-IAO" secondAttribute="bottom" id="XZ4-ev-zSh"/>
                     <constraint firstItem="HJS-c4-gP5" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="izj-qN-2iw"/>
-                    <constraint firstItem="wbQ-Z6-IAO" firstAttribute="leading" secondItem="HJS-c4-gP5" secondAttribute="trailing" id="uKc-Oa-1ub"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
@@ -89,9 +80,6 @@
     </objects>
     <resources>
         <image name="Item types/web-page" width="28" height="24"/>
-        <namedColor name="zoteroDarkBlue">
-            <color red="0.20000000000000001" green="0.35686274509803922" blue="0.72156862745098038" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

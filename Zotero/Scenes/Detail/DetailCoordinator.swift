@@ -55,10 +55,15 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAttachmentPicker(save: @escaping ([URL]) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
+    func showCreatorCreation(viewModel: ViewModel<ItemDetailActionHandler>)
+    func showCreatorEditor(for creator: ItemDetailState.Creator, viewModel: ViewModel<ItemDetailActionHandler>)
+}
+
+protocol DetailCreatorEditCoordinatorDelegate: class {
+    func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
 }
 
 class DetailCoordinator: Coordinator {
@@ -411,10 +416,21 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void) {
-        let viewModel = CreatorTypePickerViewModelCreator.create(itemType: itemType, selected: selected,
-                                                                 schemaController: self.controllers.schemaController)
-        self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: picked)
+    func showCreatorCreation(viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let schema = self.controllers.schemaController.creators(for: viewModel.state.data.type)?.first(where: { $0.primary }),
+              let localized = self.controllers.schemaController.localized(creator: schema.creatorType) else { return }
+        let creator = ItemDetailState.Creator(type: schema.creatorType, primary: schema.primary, localizedType: localized)
+        self.showCreatorEditor(for: creator, viewModel: viewModel)
+    }
+
+    func showCreatorEditor(for creator: ItemDetailState.Creator, viewModel: ViewModel<ItemDetailActionHandler>) {
+        let controller = CreatorEditViewController(creator: creator, viewModel: viewModel, schemaController: self.controllers.schemaController)
+        controller.coordinatorDelegate = self
+
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.isModalInPresentation = true
+        navigationController.modalPresentationStyle = .formSheet
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
     func showTypePicker(selected: String, picked: @escaping (String) -> Void) {
@@ -432,6 +448,21 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         controller.isModalInPresentation = true
         controller.modalPresentationStyle = .formSheet
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
+    func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void) {
+        let viewModel = CreatorTypePickerViewModelCreator.create(itemType: itemType, selected: selected,
+                                                                 schemaController: self.controllers.schemaController)
+        let view = SinglePickerView(requiresSaveButton: false, saveAction: picked) { [weak self] in
+            self?.topViewController.dismiss(animated: true, completion: nil)
+        }
+        .environmentObject(viewModel)
+
+        let controller = UIHostingController(rootView: view)
+        let navigationController = self.topViewController as? UINavigationController
+        navigationController?.pushViewController(controller, animated: true)
     }
 }
 

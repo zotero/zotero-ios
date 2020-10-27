@@ -69,12 +69,10 @@ class ItemDetailViewController: UIViewController {
 
     private func perform(tableViewAction: ItemDetailTableViewHandler.Action) {
         switch tableViewAction {
-        case .openCreatorTypePicker(let creator):
-            self.coordinatorDelegate?.showCreatorTypePicker(itemType: self.viewModel.state.data.type,
-                                                            selected: creator.type,
-                                                            picked: { [weak self] creatorType in
-                                                                self?.viewModel.process(action: .updateCreator(creator.id, .type(creatorType)))
-                                                            })
+        case .openCreatorEditor(let creator):
+            self.coordinatorDelegate?.showCreatorEditor(for: creator, viewModel: self.viewModel)
+        case .openCreatorCreation:
+            self.coordinatorDelegate?.showCreatorCreation(viewModel: self.viewModel)
         case .openFilePicker:
             self.coordinatorDelegate?.showAttachmentPicker(save: { [weak self] urls in
                 self?.viewModel.process(action: .addAttachments(urls))

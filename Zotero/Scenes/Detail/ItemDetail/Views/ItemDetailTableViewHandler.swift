@@ -15,7 +15,8 @@ import RxSwift
 class ItemDetailTableViewHandler: NSObject {
     /// Actions that need to take place when user taps on some cells
     enum Action {
-        case openCreatorTypePicker(ItemDetailState.Creator)
+        case openCreatorCreation
+        case openCreatorEditor(ItemDetailState.Creator)
         case openNoteEditor(Note?)
         case openTagPicker
         case openTypePicker
@@ -45,11 +46,7 @@ class ItemDetailTableViewHandler: NSObject {
             case .fields, .type, .dates:
                 return "ItemDetailFieldCell"
             case .creators:
-                if isEditing {
-                    return "ItemDetailCreatorEditingCell"
-                } else {
-                    return "ItemDetailFieldCell"
-                }
+                return "ItemDetailFieldCell"
             case .title:
                 return "ItemDetailTitleCell"
             }
@@ -62,6 +59,8 @@ class ItemDetailTableViewHandler: NSObject {
     private static let addCellId = "ItemDetailAddCell"
     private static let dateFormatter = createDateFormatter()
     private static let separatorLeftInset: CGFloat = 16
+    private static let headerHeight: CGFloat = 44
+
     private unowned let viewModel: ViewModel<ItemDetailActionHandler>
     private unowned let tableView: UITableView
     private let disposeBag: DisposeBag
@@ -397,9 +396,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         let separatorHeight = 1 / UIScreen.main.scale
         switch self.sections[section] {
         case .notes, .attachments:
-            return 44 + separatorHeight
+            return ItemDetailTableViewHandler.headerHeight + separatorHeight
         case .tags:
-            return 54 // header height + 10 tag offset
+            // header height + 10 tag offset
+            return ItemDetailTableViewHandler.headerHeight + (self.viewModel.state.isEditing ? 0 : 10) + separatorHeight
         default:
             return 0
         }
@@ -425,6 +425,9 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        if self.viewModel.state.isEditing {
+            return 0
+        }
         switch self.sections[section] {
         case .title:
             return 10 - (1 / UIScreen.main.scale) // - separator height
@@ -436,6 +439,9 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        if self.viewModel.state.isEditing {
+            return nil
+        }
         switch self.sections[section] {
         case .title, .dates, .tags:
             return UIView()
@@ -450,6 +456,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
         var hasSeparator = true
+        var accessoryType: UITableViewCell.AccessoryType = .none
 
         switch section {
         case .abstract:
@@ -480,6 +487,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     let attachment = self.viewModel.state.data.attachments[indexPath.row]
                     let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
                     cell.setup(with: attachment, progress: progress, error: error)
+                    accessoryType = .detailButton
                 } else if let cell = cell as? ItemDetailAddCell {
                     cell.setup(with: L10n.ItemDetail.addAttachment)
                 }
@@ -493,11 +501,11 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         case .tags:
             if let cell = cell as? ItemDetailTagCell {
-                cell.setup(with: self.viewModel.state.data.tags[indexPath.row])
+                cell.setup(tag: self.viewModel.state.data.tags[indexPath.row], isEditing: isEditing)
+                hasSeparator = isEditing
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addTag)
             }
-            hasSeparator = isEditing
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
@@ -518,30 +526,32 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             hasSeparator = isEditing
 
         case .creators:
-            if let cell = cell as? ItemDetailCreatorEditingCell {
-                let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
-                if let creator = self.viewModel.state.data.creators[creatorId] {
-                    cell.setup(with: creator)
-                    cell.typeObservable.subscribe(onNext: { [weak self] _ in
-                        self?.observer.on(.next(.openCreatorTypePicker(creator)))
-                    }).disposed(by: cell.newDisposeBag)
-                    cell.namePresentationObservable.subscribe(onNext: { [weak self] value in
-                        self?.viewModel.process(action: .updateCreator(creatorId, .namePresentation(value)))
-                    }).disposed(by: cell.disposeBag)
-                    cell.fullNameObservable.subscribe(onNext: { [weak self] value in
-                        self?.viewModel.process(action: .updateCreator(creatorId, .fullName(value)))
-                    }).disposed(by: cell.disposeBag)
-                    cell.firstNameObservable.subscribe(onNext: { [weak self] value in
-                        self?.viewModel.process(action: .updateCreator(creatorId, .firstName(value)))
-                    }).disposed(by: cell.disposeBag)
-                    cell.lastNameObservable.subscribe(onNext: { [weak self] value in
-                        self?.viewModel.process(action: .updateCreator(creatorId, .lastName(value)))
-                    }).disposed(by: cell.disposeBag)
-                }
-            } else if let cell = cell as? ItemDetailFieldCell {
+//                let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
+//                if let creator = self.viewModel.state.data.creators[creatorId] {
+//                    cell.setup(with: creator)
+//                    cell.typeObservable.subscribe(onNext: { [weak self] _ in
+//                        self?.observer.on(.next(.openCreatorTypePicker(creator)))
+//                    }).disposed(by: cell.newDisposeBag)
+//                    cell.namePresentationObservable.subscribe(onNext: { [weak self] value in
+//                        self?.viewModel.process(action: .updateCreator(creatorId, .namePresentation(value)))
+//                    }).disposed(by: cell.disposeBag)
+//                    cell.fullNameObservable.subscribe(onNext: { [weak self] value in
+//                        self?.viewModel.process(action: .updateCreator(creatorId, .fullName(value)))
+//                    }).disposed(by: cell.disposeBag)
+//                    cell.firstNameObservable.subscribe(onNext: { [weak self] value in
+//                        self?.viewModel.process(action: .updateCreator(creatorId, .firstName(value)))
+//                    }).disposed(by: cell.disposeBag)
+//                    cell.lastNameObservable.subscribe(onNext: { [weak self] value in
+//                        self?.viewModel.process(action: .updateCreator(creatorId, .lastName(value)))
+//                    }).disposed(by: cell.disposeBag)
+//                }
+            if let cell = cell as? ItemDetailFieldCell {
                 let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
                 if let creator = self.viewModel.state.data.creators[creatorId] {
                     cell.setup(with: creator, titleWidth: self.titleWidth)
+                }
+                if isEditing {
+                    accessoryType = .disclosureIndicator
                 }
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addCreator)
@@ -563,8 +573,13 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             hasSeparator = isEditing || indexPath.row == self.count(in: .dates, isEditing: isEditing) - 1
         }
 
-        let left: CGFloat = hasSeparator ? ItemDetailTableViewHandler.separatorLeftInset : .greatestFiniteMagnitude
+        let left: CGFloat = hasSeparator ? (ItemDetailTableViewHandler.separatorLeftInset + (isEditing ? 40 : 0)) : .greatestFiniteMagnitude
         cell.separatorInset = UIEdgeInsets(top: 0, left: left, bottom: 0, right: 0)
+        if tableView.isEditing {
+            cell.editingAccessoryType = accessoryType
+        } else {
+            cell.accessoryType = accessoryType
+        }
 
         return cell
     }
@@ -657,8 +672,15 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 self.observer.on(.next(.openTagPicker))
             }
         case .creators:
-            if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.creators.count {
-                self.viewModel.process(action: .addCreator)
+            guard self.viewModel.state.isEditing else { return }
+
+            if indexPath.row == self.viewModel.state.data.creators.count {
+                self.observer.on(.next(.openCreatorCreation))
+            } else {
+                let id = self.viewModel.state.data.creatorIds[indexPath.row]
+                if let creator = self.viewModel.state.data.creators[id] {
+                    self.observer.on(.next(.openCreatorEditor(creator)))
+                }
             }
         case .type:
             if self.viewModel.state.isEditing {

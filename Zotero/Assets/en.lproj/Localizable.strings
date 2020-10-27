@@ -130,6 +130,11 @@ The following fields will be lost:
 "item_detail.show_more" = "Show more";
 "item_detail.show_less" = "Show less";
 
+"creator_editor.first_name" = "First Name";
+"creator_editor.last_name" = "Last Name";
+"creator_editor.switch_to_single" = "Switch to Single Field";
+"creator_editor.switch_to_dual" = "Switch to Dual Field";
+
 "pdf.scrollDirection" = "Scroll Direction: %@";
 "pdf.scrollDirection.horizontal" = "Horizontal";
 "pdf.scrollDirection.vertical" = "Vertical";

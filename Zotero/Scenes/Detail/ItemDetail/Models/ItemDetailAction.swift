@@ -9,17 +9,9 @@
 import Foundation
 
 enum ItemDetailAction {
-    enum CreatorUpdate {
-        case namePresentation(ItemDetailState.Creator.NamePresentation)
-        case firstName(String)
-        case lastName(String)
-        case fullName(String)
-        case type(String)
-    }
-
     case acceptPrompt
     case addAttachments([URL])
-    case addCreator
+    case saveCreator(ItemDetailState.Creator)
     case cancelEditing
     case cancelPrompt
     case changeType(String)
@@ -36,7 +28,6 @@ enum ItemDetailAction {
     case setAbstract(String)
     case save
     case startEditing
-    case updateCreator(UUID, CreatorUpdate)
     case updateDownload(FileDownloader.Update)
     case updateAttachments(AttachmentFileDeletedNotification)
     case deleteAttachmentFile(Attachment)

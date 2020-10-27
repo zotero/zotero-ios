@@ -12,10 +12,12 @@ import RxSwift
 
 class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
+    @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentTextView: UITextView!
 
     private static let lineHeight: CGFloat = 22
+    private static let verticalInset: CGFloat = 15
 
     private var observer: AnyObserver<String>?
     var textObservable: Observable<String> {
@@ -29,8 +31,14 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
         super.awakeFromNib()
 
         self.separatorHeight.constant = 1 / UIScreen.main.scale
-        self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
+
+        let font = UIFont.preferredFont(for: .headline, weight: .regular)
+        self.titleLabel.font = font
+        self.titleTop.constant = ItemDetailAbstractEditCell.verticalInset - (font.ascender - font.capHeight)
+
         self.contentTextView.delegate = self
+        self.contentTextView.textContainerInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 10)
+        self.contentTextView.textContainer.lineFragmentPadding = 0
     }
 
     func setup(with abstract: String) {

@@ -66,8 +66,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         case .openAttachment(let index):
             self.openAttachment(at: index, in: viewModel)
 
-        case .addCreator:
-            self.addCreator(in: viewModel)
+        case .saveCreator(let creator):
+            self.save(creator: creator, in: viewModel)
 
         case .deleteCreators(let offsets):
             self.deleteCreators(at: offsets, in: viewModel)
@@ -113,9 +113,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.data.abstract = abstract
             }
-
-        case .updateCreator(let id, let update):
-            self.updateCreator(with: id, update: update, in: viewModel)
 
         case .setFieldValue(let id, let value):
             guard var field = viewModel.state.data.fields[id] else { return }
@@ -240,20 +237,6 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     // MARK: - Creators
 
-    private func addCreator(in viewModel: ViewModel<ItemDetailActionHandler>) {
-        // Check whether there already is an empty/new creator, add only if there is none
-        guard viewModel.state.data.creators.values.first(where: { $0.isEmpty }) == nil,
-              let schema = self.schemaController.creators(for: viewModel.state.data.type)?.first(where: { $0.primary }),
-              let localized = self.schemaController.localized(creator: schema.creatorType) else { return }
-
-        let creator = State.Creator(type: schema.creatorType, primary: schema.primary, localizedType: localized)
-        self.update(viewModel: viewModel) { state in
-            state.diff = .creators(insertions: [state.data.creatorIds.count], deletions: [], reloads: [])
-            state.data.creatorIds.append(creator.id)
-            state.data.creators[creator.id] = creator
-        }
-    }
-
     private func deleteCreators(at offsets: IndexSet, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let keys = offsets.map({ viewModel.state.data.creatorIds[$0] })
         self.update(viewModel: viewModel) { state in
@@ -263,32 +246,15 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func updateCreator(with identifier: UUID, update: ItemDetailAction.CreatorUpdate, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func save(creator: State.Creator, in viewModel: ViewModel<ItemDetailActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            guard var creator = state.data.creators[identifier] else { return }
-            var needsReload = false
-
-            switch update {
-            case .type(let value):
-                creator.type = value
-                creator.localizedType = self.schemaController.localized(creator: value) ?? ""
-                needsReload = true
-            case .firstName(let value):
-                creator.firstName = value
-            case .lastName(let value):
-                creator.lastName = value
-            case .fullName(let value):
-                creator.fullName = value
-            case .namePresentation(let value):
-                creator.namePresentation = value
-                needsReload = true
-            }
-
-            if needsReload, let index = state.data.creatorIds.firstIndex(of: identifier) {
+            if let index = state.data.creatorIds.firstIndex(of: creator.id) {
                 state.diff = .creators(insertions: [], deletions: [], reloads: [index])
+            } else {
+                state.diff = .creators(insertions: [state.data.creatorIds.count], deletions: [], reloads: [])
+                state.data.creatorIds.append(creator.id)
             }
-
-            state.data.creators[identifier] = creator
+            state.data.creators[creator.id] = creator
         }
     }
 

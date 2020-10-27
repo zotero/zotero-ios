@@ -155,7 +155,7 @@ extension TagPickerViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: TagPickerViewController.cellId, for: indexPath)
         if let cell = cell as? ItemDetailTagCell {
             let tag = self.viewModel.state.tags[indexPath.row]
-            cell.setup(with: tag, showEmptyTagCircle: false)
+            cell.setupWithoutEmptyCircle(tag: tag)
         }
         return cell
     }

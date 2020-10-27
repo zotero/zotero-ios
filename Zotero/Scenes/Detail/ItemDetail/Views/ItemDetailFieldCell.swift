@@ -89,7 +89,7 @@ class ItemDetailFieldCell: RxTableViewCell {
         let separatorHeight = 1 / UIScreen.main.scale
         let inset = isEditing ? ItemDetailFieldCell.editingVerticalInset :
                                 ItemDetailFieldCell.verticalInset
-        self.titleTop.constant = inset - (font.ascender - font.capHeight)
-        self.titleBottom.constant = inset + (isEditing ? 1 : -separatorHeight)
+        self.titleTop.constant = inset - (font.ascender - font.capHeight) + (isEditing ? -separatorHeight : 0)
+        self.titleBottom.constant = inset + (isEditing ? 1 : 0) - separatorHeight
     }
 }

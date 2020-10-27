@@ -94,6 +94,17 @@ internal enum L10n {
     }
   }
 
+  internal enum CreatorEditor {
+    /// First Name
+    internal static let firstName = L10n.tr("Localizable", "creator_editor.first_name")
+    /// Last Name
+    internal static let lastName = L10n.tr("Localizable", "creator_editor.last_name")
+    /// Switch to Dual Field
+    internal static let switchToDual = L10n.tr("Localizable", "creator_editor.switch_to_dual")
+    /// Switch to Single Field
+    internal static let switchToSingle = L10n.tr("Localizable", "creator_editor.switch_to_single")
+  }
+
   internal enum Errors {
     /// Failed API response: %@
     internal static func api(_ p1: Any) -> String {
