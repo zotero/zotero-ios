@@ -19,7 +19,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="HJS-c4-gP5">
-                        <rect key="frame" x="16" y="0.0" width="314" height="87"/>
+                        <rect key="frame" x="20" y="0.0" width="334" height="87"/>
                         <subviews>
                             <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="RAA-Dr-Cos" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="29.5" width="28" height="28"/>
@@ -37,7 +37,7 @@
                                 </constraints>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yy5-No-Wsg">
-                                <rect key="frame" x="44" y="15" width="270" height="61.5"/>
+                                <rect key="frame" x="44" y="15" width="290" height="61.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -58,8 +58,8 @@
                     </view>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="HJS-c4-gP5" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="3y2-un-Qmo"/>
-                    <constraint firstAttribute="trailing" secondItem="HJS-c4-gP5" secondAttribute="trailing" constant="16" id="3yg-SK-dqq"/>
+                    <constraint firstItem="HJS-c4-gP5" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="3y2-un-Qmo"/>
+                    <constraint firstAttribute="trailing" secondItem="HJS-c4-gP5" secondAttribute="trailingMargin" id="3yg-SK-dqq"/>
                     <constraint firstAttribute="bottom" secondItem="Yy5-No-Wsg" secondAttribute="baseline" constant="15" id="8Pl-dl-5Ry"/>
                     <constraint firstItem="Yy5-No-Wsg" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="15" id="DSU-Y5-nns"/>
                     <constraint firstAttribute="bottom" secondItem="HJS-c4-gP5" secondAttribute="bottom" id="H90-86-iAm"/>
@@ -73,6 +73,7 @@
                 <outlet property="fileView" destination="RAA-Dr-Cos" id="fOL-pJ-RdW"/>
                 <outlet property="label" destination="Yy5-No-Wsg" id="3eK-Bn-cdL"/>
                 <outlet property="labelBottom" destination="8Pl-dl-5Ry" id="isX-pd-qQP"/>
+                <outlet property="labelLeft" destination="YDQ-Fo-TVL" id="WAT-kn-jt7"/>
                 <outlet property="labelTop" destination="DSU-Y5-nns" id="dSl-yv-r8b"/>
             </connections>
             <point key="canvasLocation" x="155.07246376811597" y="98.102678571428569"/>

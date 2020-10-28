@@ -72,6 +72,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         case .deleteCreators(let offsets):
             self.deleteCreators(at: offsets, in: viewModel)
 
+        case .deleteCreator(let id):
+            self.deleteCreator(with: id, in: viewModel)
+
         case .moveCreators(let from, let to):
             self.update(viewModel: viewModel) { state in
                 state.data.creatorIds.move(fromOffsets: from, toOffset: to)
@@ -240,9 +243,18 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private func deleteCreators(at offsets: IndexSet, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let keys = offsets.map({ viewModel.state.data.creatorIds[$0] })
         self.update(viewModel: viewModel) { state in
-            state.diff = .creators(insertions: [], deletions: Array(offsets), reloads: [])
             state.data.creatorIds.remove(atOffsets: offsets)
             keys.forEach({ state.data.creators[$0] = nil })
+            state.diff = .creators(insertions: [], deletions: Array(offsets), reloads: [])
+        }
+    }
+
+    private func deleteCreator(with id: UUID, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let index = viewModel.state.data.creatorIds.firstIndex(of: id) else { return }
+        self.update(viewModel: viewModel) { state in
+            state.data.creatorIds.remove(at: index)
+            state.data.creators[id] = nil
+            state.diff = .creators(insertions: [], deletions: [index], reloads: [])
         }
     }
 

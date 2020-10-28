@@ -21,6 +21,7 @@ class ItemDetailFieldCell: RxTableViewCell {
     @IBOutlet private weak var additionalInfoLabel: UILabel!
     @IBOutlet private weak var additionalInfoOffset: NSLayoutConstraint!
 
+    private static let horizontalOffset: CGFloat = 16
     private static let verticalInset: CGFloat = 10
     private static let editingVerticalInset: CGFloat = 15
 
@@ -34,7 +35,7 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
     }
 
-    func setup(with field: ItemDetailState.Field, isEditing: Bool, titleWidth: CGFloat) {
+    func setup(with field: ItemDetailState.Field, titleWidth: CGFloat, isEditing: Bool) {
         self.titleLabel.text = field.name
         self.valueTextField.text = field.value
         self.valueTextField.isHidden = !isEditing
@@ -53,7 +54,7 @@ class ItemDetailFieldCell: RxTableViewCell {
         self.setupInsets(isEditing: isEditing)
     }
 
-    func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat) {
+    func setup(with creator: ItemDetailState.Creator, titleWidth: CGFloat, isEditing: Bool) {
         self.titleLabel.text = creator.localizedType
         self.valueLabel.text = creator.name
         self.valueLabel.textColor = UIColor(dynamicProvider: { $0.userInterfaceStyle == .dark ? .white : .black })
@@ -81,7 +82,7 @@ class ItemDetailFieldCell: RxTableViewCell {
         } else {
             self.additionalInfoLabel.text = nil
         }
-        self.additionalInfoOffset.constant = value == nil ? 0 : 8
+        self.additionalInfoOffset.constant = value == nil ? 0 : ItemDetailFieldCell.horizontalOffset
     }
 
     private func setupInsets(isEditing: Bool) {

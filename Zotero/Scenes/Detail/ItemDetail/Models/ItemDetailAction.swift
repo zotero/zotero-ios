@@ -16,6 +16,7 @@ enum ItemDetailAction {
     case cancelPrompt
     case changeType(String)
     case deleteAttachments(IndexSet)
+    case deleteCreator(UUID)
     case deleteCreators(IndexSet)
     case deleteNotes(IndexSet)
     case deleteTags(IndexSet)

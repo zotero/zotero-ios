@@ -17,7 +17,6 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var contentTextView: UITextView!
 
     private static let lineHeight: CGFloat = 22
-    private static let verticalInset: CGFloat = 15
 
     private var observer: AnyObserver<String>?
     var textObservable: Observable<String> {
@@ -34,7 +33,7 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
 
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = font
-        self.titleTop.constant = ItemDetailAbstractEditCell.verticalInset - (font.ascender - font.capHeight)
+        self.titleTop.constant = -(font.ascender - font.capHeight)
 
         self.contentTextView.delegate = self
         self.contentTextView.textContainerInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 10)

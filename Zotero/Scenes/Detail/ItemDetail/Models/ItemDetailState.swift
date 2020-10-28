@@ -135,7 +135,7 @@ struct ItemDetailState: ViewModelState {
             self.namePresentation = .full
         }
 
-        mutating func change(namePresentation: NamePresentation) {
+        private mutating func change(namePresentation: NamePresentation) {
             guard namePresentation != self.namePresentation else { return }
 
             switch namePresentation {

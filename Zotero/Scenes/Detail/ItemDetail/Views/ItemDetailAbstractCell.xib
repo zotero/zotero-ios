@@ -19,20 +19,20 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="1Jt-5F-mau">
-                        <rect key="frame" x="16" y="0.0" width="378" height="1"/>
+                        <rect key="frame" x="20" y="0.0" width="374" height="1"/>
                         <color key="backgroundColor" systemColor="separatorColor"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="1" id="LL8-qH-Mas"/>
                         </constraints>
                     </view>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Abstract" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="C31-DT-U38">
-                        <rect key="frame" x="16" y="16" width="362" height="20.5"/>
+                        <rect key="frame" x="20" y="11" width="354" height="20.5"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                         <color key="textColor" systemColor="systemGrayColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="999" verticalCompressionResistancePriority="999" text="Label" textAlignment="justified" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Psa-N2-GrL" customClass="CollapsibleLabel" customModule="Zotero" customModuleProvider="target">
-                        <rect key="frame" x="16" y="47" width="362" height="65.5"/>
+                        <rect key="frame" x="20" y="42" width="354" height="74.5"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                         <nil key="highlightedColor"/>
                     </label>
@@ -40,23 +40,24 @@
                 <constraints>
                     <constraint firstItem="Psa-N2-GrL" firstAttribute="top" secondItem="C31-DT-U38" secondAttribute="baseline" constant="15" id="1C4-LT-xlv"/>
                     <constraint firstAttribute="trailing" secondItem="1Jt-5F-mau" secondAttribute="trailing" id="1Rt-gF-RQs"/>
-                    <constraint firstItem="Psa-N2-GrL" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="FKg-Xc-jLz"/>
-                    <constraint firstAttribute="trailing" secondItem="Psa-N2-GrL" secondAttribute="trailing" constant="16" id="Ili-2h-J1b"/>
-                    <constraint firstAttribute="bottom" secondItem="Psa-N2-GrL" secondAttribute="baseline" constant="15" id="Oxd-bH-AAh"/>
-                    <constraint firstItem="C31-DT-U38" firstAttribute="top" secondItem="1Jt-5F-mau" secondAttribute="bottom" constant="15" id="Rcd-SN-QjN"/>
+                    <constraint firstItem="Psa-N2-GrL" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="FKg-Xc-jLz"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="Psa-N2-GrL" secondAttribute="trailing" id="Ili-2h-J1b"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="Psa-N2-GrL" secondAttribute="baseline" id="Oxd-bH-AAh"/>
                     <constraint firstItem="1Jt-5F-mau" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="XIN-mF-OIU"/>
-                    <constraint firstAttribute="trailing" secondItem="C31-DT-U38" secondAttribute="trailing" constant="16" id="edK-FO-yev"/>
-                    <constraint firstItem="1Jt-5F-mau" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="oq2-pm-PbE"/>
-                    <constraint firstItem="C31-DT-U38" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="qWG-Q1-cFE"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="C31-DT-U38" secondAttribute="trailing" id="edK-FO-yev"/>
+                    <constraint firstItem="1Jt-5F-mau" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="oq2-pm-PbE"/>
+                    <constraint firstItem="C31-DT-U38" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="qWG-Q1-cFE"/>
+                    <constraint firstItem="C31-DT-U38" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="se1-XM-0yH"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
+                <outlet property="contentBottom" destination="Oxd-bH-AAh" id="lL4-KV-lTC"/>
                 <outlet property="contentLabel" destination="Psa-N2-GrL" id="fNc-7B-wvQ"/>
                 <outlet property="separatorHeight" destination="LL8-qH-Mas" id="Jcm-sc-chN"/>
                 <outlet property="titleLabel" destination="C31-DT-U38" id="eIv-BQ-NBy"/>
                 <outlet property="titleToContent" destination="1C4-LT-xlv" id="XY9-be-RuQ"/>
-                <outlet property="titleTop" destination="Rcd-SN-QjN" id="wmS-oI-Pup"/>
+                <outlet property="titleTop" destination="se1-XM-0yH" id="2fj-1n-Yzf"/>
             </connections>
             <point key="canvasLocation" x="191.30434782608697" y="152.34375"/>
         </tableViewCell>

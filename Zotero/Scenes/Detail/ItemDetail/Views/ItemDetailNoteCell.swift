@@ -11,6 +11,7 @@ import UIKit
 class ItemDetailNoteCell: UITableViewCell {
     @IBOutlet private weak var containerHeight: NSLayoutConstraint!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
+    @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var labelBottom: NSLayoutConstraint!
 
@@ -38,5 +39,6 @@ class ItemDetailNoteCell: UITableViewCell {
         let separatorHeight = (1 / UIScreen.main.scale)
         self.labelTop.constant = ItemDetailNoteCell.verticalInset - (font.ascender - font.capHeight) - (ItemDetailNoteCell.lineHeight - font.lineHeight) - separatorHeight
         self.labelBottom.constant = ItemDetailNoteCell.verticalInset
+        self.labelLeft.constant = self.layoutMargins.left
     }
 }

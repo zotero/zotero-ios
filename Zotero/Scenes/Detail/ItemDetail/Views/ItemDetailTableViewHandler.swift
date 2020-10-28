@@ -58,7 +58,8 @@ class ItemDetailTableViewHandler: NSObject {
     // Identifier for "Add *" cell
     private static let addCellId = "ItemDetailAddCell"
     private static let dateFormatter = createDateFormatter()
-    private static let separatorLeftInset: CGFloat = 16
+    private static let horizontalInset: CGFloat = 16
+    private static let iconWidth: CGFloat = 28
     private static let headerHeight: CGFloat = 44
 
     private unowned let viewModel: ViewModel<ItemDetailActionHandler>
@@ -281,11 +282,9 @@ class ItemDetailTableViewHandler: NSObject {
         self.tableView.delegate = self
         self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
         self.tableView.tableFooterView = UIView()
-        self.tableView.layoutMargins = UIEdgeInsets()
-        self.tableView.separatorInsetReference = .fromCellEdges
-        self.tableView.separatorInset = UIEdgeInsets(top: 0,
-                                                     left: ItemDetailTableViewHandler.separatorLeftInset,
-                                                     bottom: 0, right: 0)
+        self.tableView.separatorInsetReference = .fromAutomaticInsets
+        self.tableView.layoutMargins = .zero
+        self.tableView.separatorInset = .zero
 
         Section.allCases.forEach { section in
             let cellId = section.cellId(isEditing: false)
@@ -384,6 +383,67 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         return (section, cellId)
     }
 
+    private func cellLayoutData(for section: Section, isEditing: Bool, isAddCell: Bool, indexPath: IndexPath) -> (separatorInsets: UIEdgeInsets, layoutMargins: UIEdgeInsets, accessoryType: UITableViewCell.AccessoryType) {
+        var hasSeparator = true
+        var accessoryType: UITableViewCell.AccessoryType = .none
+
+        switch section {
+        case .abstract, .title, .notes: break
+        case .attachments:
+            if !isAddCell {
+                accessoryType = .detailButton
+            }
+        case .tags, .type, .fields:
+            if !isAddCell {
+                hasSeparator = isEditing
+            }
+        case .creators:
+            if !isAddCell {
+                if isEditing {
+                    accessoryType = .disclosureIndicator
+                }
+                hasSeparator = isEditing
+            }
+        case .dates:
+            hasSeparator = isEditing && indexPath.row != (self.count(in: .dates, isEditing: isEditing) - 1)
+        }
+
+        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing)
+        let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, horizontalInset: layoutMargins.left) :
+                                                         max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+        let separatorInsets = UIEdgeInsets(top: 0, left: leftSeparatorInset, bottom: 0, right: 0)
+        return (separatorInsets, layoutMargins, accessoryType)
+    }
+
+    private func separatorLeftInset(for section: Section, isEditing: Bool, horizontalInset: CGFloat) -> CGFloat {
+        switch section {
+        case .notes, .attachments, .tags:
+            return horizontalInset + ItemDetailTableViewHandler.iconWidth + (isEditing ? 39 : 0)
+        case .abstract, .creators, .dates, .fields, .title, .type:
+            return 0
+        }
+    }
+
+    private func layoutMargin(for section: Section, isEditing: Bool) -> UIEdgeInsets {
+        let top: CGFloat
+        let bottom: CGFloat
+
+        switch section {
+        case .fields, .dates, .creators, .tags, .type:
+            top = 10
+            bottom = 10
+        case .abstract, .attachments, .notes:
+            top = 15
+            bottom = 15
+        case .title:
+            top = 43 + (1 / UIScreen.main.scale)
+            bottom = 20
+        }
+
+        return UIEdgeInsets(top: top, left: ItemDetailTableViewHandler.horizontalInset,
+                            bottom: bottom, right: ItemDetailTableViewHandler.horizontalInset)
+    }
+
     func numberOfSections(in tableView: UITableView) -> Int {
         return self.sections.count
     }
@@ -450,13 +510,29 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         }
     }
 
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        let isEditing = self.viewModel.state.isEditing
+        let section = self.sections[indexPath.section]
+        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing)
+        cell.layoutMargins = layoutMargins
+        cell.contentView.layoutMargins = layoutMargins
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let isEditing = self.viewModel.state.isEditing
         let (section, cellId) = self.cellData(for: indexPath, isEditing: isEditing)
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
-        var hasSeparator = true
-        var accessoryType: UITableViewCell.AccessoryType = .none
+        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isEditing: isEditing,
+                                                                                  isAddCell: (cell is ItemDetailAddCell), indexPath: indexPath)
+        cell.separatorInset = separatorInsets
+        cell.layoutMargins = layoutMargins
+        cell.contentView.layoutMargins = layoutMargins
+        if tableView.isEditing {
+            cell.editingAccessoryType = accessoryType
+        } else {
+            cell.accessoryType = accessoryType
+        }
 
         switch section {
         case .abstract:
@@ -470,7 +546,6 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             } else if let cell = cell as? ItemDetailAbstractCell {
                 cell.setup(with: (self.viewModel.state.data.abstract ?? ""), isCollapsed: self.viewModel.state.abstractCollapsed)
             }
-            hasSeparator = false
 
         case .title:
             if let cell = cell as? ItemDetailTitleCell {
@@ -483,14 +558,13 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             }
 
         case .attachments:
-                if let cell = cell as? ItemDetailAttachmentCell {
-                    let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                    let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-                    cell.setup(with: attachment, progress: progress, error: error)
-                    accessoryType = .detailButton
-                } else if let cell = cell as? ItemDetailAddCell {
-                    cell.setup(with: L10n.ItemDetail.addAttachment)
-                }
+            if let cell = cell as? ItemDetailAttachmentCell {
+                let attachment = self.viewModel.state.data.attachments[indexPath.row]
+                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+                cell.setup(with: attachment, progress: progress, error: error)
+            } else if let cell = cell as? ItemDetailAddCell {
+                cell.setup(with: L10n.ItemDetail.addAttachment)
+            }
 
         case .notes:
             if let cell = cell as? ItemDetailNoteCell {
@@ -502,7 +576,6 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         case .tags:
             if let cell = cell as? ItemDetailTagCell {
                 cell.setup(tag: self.viewModel.state.data.tags[indexPath.row], isEditing: isEditing)
-                hasSeparator = isEditing
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addTag)
             }
@@ -511,52 +584,27 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             if let cell = cell as? ItemDetailFieldCell {
                 cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth, isEditing: isEditing)
             }
-            hasSeparator = isEditing
 
         case .fields:
             if let cell = cell as? ItemDetailFieldCell {
                 let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
                 if let field = self.viewModel.state.data.fields[fieldId] {
-                    cell.setup(with: field, isEditing: isEditing, titleWidth: self.titleWidth)
+                    cell.setup(with: field, titleWidth: self.titleWidth, isEditing: isEditing)
                     cell.textObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
                     }).disposed(by: cell.newDisposeBag)
                 }
             }
-            hasSeparator = isEditing
 
         case .creators:
-//                let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
-//                if let creator = self.viewModel.state.data.creators[creatorId] {
-//                    cell.setup(with: creator)
-//                    cell.typeObservable.subscribe(onNext: { [weak self] _ in
-//                        self?.observer.on(.next(.openCreatorTypePicker(creator)))
-//                    }).disposed(by: cell.newDisposeBag)
-//                    cell.namePresentationObservable.subscribe(onNext: { [weak self] value in
-//                        self?.viewModel.process(action: .updateCreator(creatorId, .namePresentation(value)))
-//                    }).disposed(by: cell.disposeBag)
-//                    cell.fullNameObservable.subscribe(onNext: { [weak self] value in
-//                        self?.viewModel.process(action: .updateCreator(creatorId, .fullName(value)))
-//                    }).disposed(by: cell.disposeBag)
-//                    cell.firstNameObservable.subscribe(onNext: { [weak self] value in
-//                        self?.viewModel.process(action: .updateCreator(creatorId, .firstName(value)))
-//                    }).disposed(by: cell.disposeBag)
-//                    cell.lastNameObservable.subscribe(onNext: { [weak self] value in
-//                        self?.viewModel.process(action: .updateCreator(creatorId, .lastName(value)))
-//                    }).disposed(by: cell.disposeBag)
-//                }
             if let cell = cell as? ItemDetailFieldCell {
                 let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
                 if let creator = self.viewModel.state.data.creators[creatorId] {
-                    cell.setup(with: creator, titleWidth: self.titleWidth)
-                }
-                if isEditing {
-                    accessoryType = .disclosureIndicator
+                    cell.setup(with: creator, titleWidth: self.titleWidth, isEditing: isEditing)
                 }
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addCreator)
             }
-            hasSeparator = isEditing
 
         case .dates:
             if let cell = cell as? ItemDetailFieldCell {
@@ -570,15 +618,6 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                 default: break
                 }
             }
-            hasSeparator = isEditing || indexPath.row == self.count(in: .dates, isEditing: isEditing) - 1
-        }
-
-        let left: CGFloat = hasSeparator ? (ItemDetailTableViewHandler.separatorLeftInset + (isEditing ? 40 : 0)) : .greatestFiniteMagnitude
-        cell.separatorInset = UIEdgeInsets(top: 0, left: left, bottom: 0, right: 0)
-        if tableView.isEditing {
-            cell.editingAccessoryType = accessoryType
-        } else {
-            cell.accessoryType = accessoryType
         }
 
         return cell

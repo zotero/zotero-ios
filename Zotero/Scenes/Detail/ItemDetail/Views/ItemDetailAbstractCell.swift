@@ -17,18 +17,20 @@ class ItemDetailAbstractCell: RxTableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleToContent: NSLayoutConstraint!
     @IBOutlet private weak var contentLabel: CollapsibleLabel!
+    @IBOutlet private weak var contentBottom: NSLayoutConstraint!
 
     private static let lineHeight: CGFloat = 22
-    private static let verticalInset: CGFloat = 15
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.separatorHeight.constant = 1 / UIScreen.main.scale
+        let separatorHeight = 1 / UIScreen.main.scale
+        self.separatorHeight.constant = separatorHeight
 
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = font
-        self.titleTop.constant = ItemDetailAbstractCell.verticalInset - (font.ascender - font.capHeight)
+        self.titleTop.constant = separatorHeight - (font.ascender - font.capHeight)
+        self.contentBottom.constant = -separatorHeight
 
         let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13),
                                                          .foregroundColor: Asset.Colors.zoteroBlue.color]
@@ -36,7 +38,7 @@ class ItemDetailAbstractCell: RxTableViewCell {
         showMore.append(NSAttributedString(string: L10n.ItemDetail.showMore, attributes: attributes))
 
         self.contentLabel.collapsedNumberOfLines = 2
-        self.contentLabel.showLessString = NSAttributedString(string: L10n.ItemDetail.showLess, attributes: attributes)
+        self.contentLabel.showLessString = NSAttributedString(string: " \(L10n.ItemDetail.showLess)", attributes: attributes)
         self.contentLabel.showMoreString = showMore
     }
 
@@ -53,6 +55,6 @@ class ItemDetailAbstractCell: RxTableViewCell {
         self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
 
         let lineHeightOffset = (ItemDetailAbstractCell.lineHeight - font.lineHeight)
-        self.titleToContent.constant = ItemDetailAbstractCell.verticalInset - (font.ascender - font.capHeight) - lineHeightOffset
+        self.titleToContent.constant = self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset
     }
 }

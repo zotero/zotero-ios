@@ -15,10 +15,8 @@ class ItemDetailTagCell: UITableViewCell {
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var labelBottom: NSLayoutConstraint!
 
-    private static let containerHorizontalInset: CGFloat = 16
     private static let verticalInset: CGFloat = 10
     private static let editingVerticalInset: CGFloat = 15
-    private static let tagViewWidth: CGFloat = 16
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -66,8 +64,6 @@ class ItemDetailTagCell: UITableViewCell {
 
         self.labelTop.constant = inset - (font.ascender - font.capHeight)
         self.labelBottom.constant = inset - (isEditing ? 0 : separatorHeight)
-
-        self.labelLeft.constant = ItemDetailTagCell.containerHorizontalInset +
-                                    (showTagView ? (ItemDetailTagCell.tagViewWidth + ItemDetailTagCell.containerHorizontalInset) : 0 )
+        self.labelLeft.constant = showTagView ? (28 + self.layoutMargins.left) : 0
     }
 }

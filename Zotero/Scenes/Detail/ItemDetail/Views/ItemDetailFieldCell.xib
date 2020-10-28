@@ -19,7 +19,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="Z24-GW-m9L">
-                        <rect key="frame" x="16" y="10" width="387" height="71.5"/>
+                        <rect key="frame" x="20" y="10" width="379" height="71.5"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" text="Title" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bqm-5K-aUO">
                                 <rect key="frame" x="0.0" y="0.0" width="100" height="71.5"/>
@@ -31,20 +31,20 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1" verticalHuggingPriority="999" verticalCompressionResistancePriority="1000" text="Value" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4vs-TP-UvN">
-                                <rect key="frame" x="116" y="0.0" width="271" height="71.5"/>
+                                <rect key="frame" x="116" y="0.0" width="263" height="71.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1" verticalHuggingPriority="999" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" adjustsFontForContentSizeCategory="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ERe-bP-QgB">
-                                <rect key="frame" x="387" y="0.0" width="0.0" height="71.5"/>
+                                <rect key="frame" x="379" y="0.0" width="0.0" height="71.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                         </subviews>
                     </stackView>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mve-XX-eUq">
-                        <rect key="frame" x="403" y="0.0" width="0.0" height="87"/>
+                        <rect key="frame" x="399" y="0.0" width="0.0" height="87"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleCallout"/>
                         <color key="textColor" systemColor="systemGrayColor"/>
                         <nil key="highlightedColor"/>
@@ -55,9 +55,9 @@
                     <constraint firstAttribute="bottom" secondItem="Bqm-5K-aUO" secondAttribute="baseline" constant="10" id="Hcs-rx-oQF"/>
                     <constraint firstItem="mve-XX-eUq" firstAttribute="leading" secondItem="Z24-GW-m9L" secondAttribute="trailing" id="Jyc-6B-VFw"/>
                     <constraint firstItem="mve-XX-eUq" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="LtQ-6C-7Nw"/>
-                    <constraint firstAttribute="trailing" secondItem="mve-XX-eUq" secondAttribute="trailing" constant="16" id="UjP-kg-b1W"/>
+                    <constraint firstAttribute="rightMargin" secondItem="mve-XX-eUq" secondAttribute="right" id="UjP-kg-b1W"/>
                     <constraint firstItem="Bqm-5K-aUO" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="10" id="aGO-L8-Baf"/>
-                    <constraint firstItem="Z24-GW-m9L" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="cgR-LG-xAQ"/>
+                    <constraint firstItem="Z24-GW-m9L" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="cgR-LG-xAQ"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>

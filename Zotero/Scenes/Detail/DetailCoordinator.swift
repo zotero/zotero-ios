@@ -58,8 +58,8 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
-    func showCreatorCreation(viewModel: ViewModel<ItemDetailActionHandler>)
-    func showCreatorEditor(for creator: ItemDetailState.Creator, viewModel: ViewModel<ItemDetailActionHandler>)
+    func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
+    func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: class {
@@ -416,15 +416,22 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showCreatorCreation(viewModel: ViewModel<ItemDetailActionHandler>) {
-        guard let schema = self.controllers.schemaController.creators(for: viewModel.state.data.type)?.first(where: { $0.primary }),
+    func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction) {
+        guard let schema = self.controllers.schemaController.creators(for: itemType)?.first(where: { $0.primary }),
               let localized = self.controllers.schemaController.localized(creator: schema.creatorType) else { return }
         let creator = ItemDetailState.Creator(type: schema.creatorType, primary: schema.primary, localizedType: localized)
-        self.showCreatorEditor(for: creator, viewModel: viewModel)
+        self._showCreatorEditor(for: creator, itemType: itemType, saved: saved, deleted: nil)
     }
 
-    func showCreatorEditor(for creator: ItemDetailState.Creator, viewModel: ViewModel<ItemDetailActionHandler>) {
-        let controller = CreatorEditViewController(creator: creator, viewModel: viewModel, schemaController: self.controllers.schemaController)
+    func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction) {
+        self._showCreatorEditor(for: creator, itemType: itemType, saved: saved, deleted: deleted)
+    }
+
+    private func _showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: CreatorEditDeleteAction?) {
+        let state = CreatorEditState(itemType: itemType, creator: creator)
+        let handler = CreatorEditActionHandler(schemaController: self.controllers.schemaController)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = CreatorEditViewController(viewModel: viewModel, saved: saved, deleted: deleted)
         controller.coordinatorDelegate = self
 
         let navigationController = UINavigationController(rootViewController: controller)
@@ -439,7 +446,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, requiresSaveButton: Bool, saveAction: @escaping (String) -> Void) {
-        let view = SinglePickerView(requiresSaveButton: requiresSaveButton, saveAction: saveAction) { [weak self] in
+        let view = SinglePickerView(requiresSaveButton: requiresSaveButton, requiresCancelButton: true, saveAction: saveAction) { [weak self] in
             self?.topViewController.dismiss(animated: true, completion: nil)
         }
         .environmentObject(viewModel)
@@ -453,15 +460,16 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
 
 extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void) {
+        let navigationController = self.topViewController as? UINavigationController
+
         let viewModel = CreatorTypePickerViewModelCreator.create(itemType: itemType, selected: selected,
                                                                  schemaController: self.controllers.schemaController)
-        let view = SinglePickerView(requiresSaveButton: false, saveAction: picked) { [weak self] in
-            self?.topViewController.dismiss(animated: true, completion: nil)
+        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { [weak navigationController] in
+            navigationController?.popViewController(animated: true)
         }
         .environmentObject(viewModel)
 
         let controller = UIHostingController(rootView: view)
-        let navigationController = self.topViewController as? UINavigationController
         navigationController?.pushViewController(controller, animated: true)
     }
 }

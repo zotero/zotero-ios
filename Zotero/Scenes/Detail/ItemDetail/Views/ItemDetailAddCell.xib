@@ -20,7 +20,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="Ela-EX-k3g">
-                        <rect key="frame" x="15" y="11" width="352" height="22"/>
+                        <rect key="frame" x="20" y="11" width="343" height="22"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gFc-G3-uHA">
                                 <rect key="frame" x="0.0" y="-1" width="25" height="24"/>
@@ -29,7 +29,7 @@
                                 <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large"/>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lrT-uw-dgr">
-                                <rect key="frame" x="39" y="1" width="313" height="20.5"/>
+                                <rect key="frame" x="39" y="1" width="304" height="20.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <color key="textColor" name="zoteroBlue"/>
                                 <nil key="highlightedColor"/>
@@ -38,10 +38,10 @@
                     </stackView>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="Ela-EX-k3g" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="15" id="I6l-Jg-v9M"/>
+                    <constraint firstItem="Ela-EX-k3g" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="I6l-Jg-v9M"/>
                     <constraint firstItem="Ela-EX-k3g" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="11" id="IZg-xt-SLV"/>
                     <constraint firstAttribute="bottom" secondItem="Ela-EX-k3g" secondAttribute="bottom" constant="11" id="heH-mU-DSX"/>
-                    <constraint firstAttribute="trailing" secondItem="Ela-EX-k3g" secondAttribute="trailing" constant="16" id="nQZ-41-ooF"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="Ela-EX-k3g" secondAttribute="trailing" id="nQZ-41-ooF"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>

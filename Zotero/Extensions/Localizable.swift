@@ -95,6 +95,10 @@ internal enum L10n {
   }
 
   internal enum CreatorEditor {
+    /// Creator
+    internal static let creator = L10n.tr("Localizable", "creator_editor.creator")
+    /// Do you really want to delete this creator?
+    internal static let deleteConfirmation = L10n.tr("Localizable", "creator_editor.delete_confirmation")
     /// First Name
     internal static let firstName = L10n.tr("Localizable", "creator_editor.first_name")
     /// Last Name

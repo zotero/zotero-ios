@@ -12,6 +12,7 @@ struct SinglePickerView: View {
     @EnvironmentObject private var viewModel: ViewModel<SinglePickerActionHandler>
 
     let requiresSaveButton: Bool
+    let requiresCancelButton: Bool
     let saveAction: (String) -> Void
     let closeAction: () -> Void
 
@@ -32,10 +33,14 @@ struct SinglePickerView: View {
     }
 
     private var leadingItems: some View {
-        Button(action: self.closeAction) {
-            Text(L10n.cancel)
-                .padding(.vertical, 10)
-                .padding(.trailing, 10)
+        Group {
+            if self.requiresCancelButton {
+                Button(action: self.closeAction) {
+                    Text(L10n.cancel)
+                        .padding(.vertical, 10)
+                        .padding(.trailing, 10)
+                }
+            }
         }
     }
 
@@ -62,6 +67,7 @@ struct SinglePickerView: View {
 struct SinglePickerView_Previews: PreviewProvider {
     static var previews: some View {
         SinglePickerView(requiresSaveButton: true,
+                         requiresCancelButton: true,
                          saveAction: { _ in }, closeAction: {})
             .environmentObject(ViewModel(initialState: SinglePickerState(objects: [], selectedRow: ""),
                                          handler: SinglePickerActionHandler()))

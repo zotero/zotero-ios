@@ -13,6 +13,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
     @IBOutlet private weak var fileView: FileAttachmentView!
     @IBOutlet private weak var attachmentIcon: UIImageView!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
+    @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var labelBottom: NSLayoutConstraint!
 
@@ -62,5 +63,6 @@ class ItemDetailAttachmentCell: UITableViewCell {
         let separatorHeight = (1 / UIScreen.main.scale)
         self.labelTop.constant = ItemDetailAttachmentCell.verticalInset - (font.ascender - font.capHeight) - (ItemDetailAttachmentCell.lineHeight - font.lineHeight) - separatorHeight
         self.labelBottom.constant = ItemDetailAttachmentCell.verticalInset
+        self.labelLeft.constant = self.layoutMargins.left
     }
 }

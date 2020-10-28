@@ -52,13 +52,7 @@ class CollapsibleLabel: UILabel {
     /// - returns: An `NSAttributedString` with appended `showLessString` if `showLessString` is available, `nil` otherwise.
     private func expandedString(from string: NSAttributedString) -> NSAttributedString? {
         guard let showLessString = self.showLessString else { return nil }
-        let result = NSMutableAttributedString(attributedString: string)
-        result.append(NSAttributedString(string: "\n"))
-        result.append(showLessString)
-        if let paragraphStyle = string.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {
-            result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
-        }
-        return result
+        return self.fit(attributedString: showLessString, toLastLineOf: string, lineLimit: nil)
     }
 
     /// Creates a "collapsed" version of given string. Collapsed string appends a `showMoreString` at the last line, limited by `collapsedNumberOfLines`, if needed.
@@ -66,17 +60,25 @@ class CollapsibleLabel: UILabel {
     /// - returns: An `NSAttributedString` with appended `showMoreString` if there are more than `collapsedNumberOfLines`, `nil` otherwise.
     private func collapsedString(from string: NSAttributedString) -> NSAttributedString? {
         guard let showMoreString = self.showMoreString,
-              !string.string.isEmpty && self.collapsedNumberOfLines > 0,
-              let lines = string.lines(for: self.frame.width),
-              lines.count > self.collapsedNumberOfLines else { return nil }
+              !string.string.isEmpty && self.collapsedNumberOfLines > 0 else { return nil }
+        return self.fit(attributedString: showMoreString, toLastLineOf: string, lineLimit: self.collapsedNumberOfLines)
+    }
 
-        let lastLine = lines[self.collapsedNumberOfLines - 1]
-        let lastLineWithShowMore = self.line(string.attributedString(for: lastLine), withFittedString: showMoreString)
+    private func fit(attributedString stringToFit: NSAttributedString, toLastLineOf string: NSAttributedString, lineLimit: Int?) -> NSAttributedString? {
+        guard let lines = string.lines(for: self.frame.width) else { return nil }
+
+        if let limit = lineLimit, lines.count <= limit {
+            return nil
+        }
+
+        let limit = lineLimit ?? lines.count
+        let lastLine = lines[limit - 1]
+        let lastLineWithFittedString = self.line(string.attributedString(for: lastLine), withFittedString: stringToFit)
         let result = NSMutableAttributedString()
-        for index in 0..<(self.collapsedNumberOfLines - 1) {
+        for index in 0..<(limit - 1) {
             result.append(string.attributedString(for: lines[index]))
         }
-        result.append(lastLineWithShowMore)
+        result.append(lastLineWithFittedString)
         if let paragraphStyle = string.attributes(at: 0, effectiveRange: nil)[.paragraphStyle] as? NSParagraphStyle {
             result.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: result.length))
         }
