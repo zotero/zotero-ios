@@ -14,11 +14,10 @@ import RxSwift
 class ItemDetailTitleCell: RxTableViewCell {
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
-    @IBOutlet private weak var textFieldTop: NSLayoutConstraint!
     @IBOutlet private weak var textField: UITextField!
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
 
-    private static let top: CGFloat = 44
+    private static let lineHeight: CGFloat = 22
 
     var textObservable: Observable<String> {
         return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
@@ -29,24 +28,23 @@ class ItemDetailTitleCell: RxTableViewCell {
 
         let separatorHeight = 1 / UIScreen.main.scale
         self.separatorHeight.constant = separatorHeight
-
-        let font = self.label.font!
-        let top = ItemDetailTitleCell.top - (font.ascender - font.capHeight) - separatorHeight
-        self.labelTop.constant = top
-        self.textFieldTop.constant = top
     }
 
     func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {
+        self.textField.isHidden = !isEditing
+        self.label.isHidden = isEditing
+
+        self.labelTop.constant = self.label.font.capHeight - self.label.font.ascender
+
         if isEditing {
             self.textField.text = title
             self.textField.placeholder = placeholder
         } else {
-            self.label.text = title
-            if title.isEmpty, let placeholder = placeholder {
+            if !title.isEmpty {
+                self.label.text = title
+            } else if let placeholder = placeholder {
                 self.label.text = placeholder
             }
         }
-        self.textField.isHidden = !isEditing
-        self.label.isHidden = isEditing
     }
 }

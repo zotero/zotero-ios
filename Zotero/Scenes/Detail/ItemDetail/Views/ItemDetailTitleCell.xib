@@ -18,14 +18,14 @@
                 <rect key="frame" x="0.0" y="0.0" width="488" height="105"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="i7P-j7-Rv3">
-                        <rect key="frame" x="20" y="44" width="448" height="47"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="i7P-j7-Rv3">
+                        <rect key="frame" x="20" y="11" width="448" height="90"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleTitle1"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Title" textAlignment="natural" adjustsFontForContentSizeCategory="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="JdO-wB-L1B">
-                        <rect key="frame" x="20" y="44" width="448" height="35"/>
+                    <textField opaque="NO" contentMode="scaleToFill" verticalCompressionResistancePriority="999" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Title" textAlignment="natural" adjustsFontForContentSizeCategory="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="JdO-wB-L1B">
+                        <rect key="frame" x="20" y="38.5" width="448" height="35"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleTitle1"/>
                         <textInputTraits key="textInputTraits"/>
                     </textField>
@@ -38,15 +38,15 @@
                     </view>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="i7P-j7-Rv3" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="44" id="1lq-Mw-BWr"/>
-                    <constraint firstItem="JdO-wB-L1B" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="44" id="6pd-VQ-y6G"/>
+                    <constraint firstItem="i7P-j7-Rv3" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="1lq-Mw-BWr"/>
                     <constraint firstItem="i7P-j7-Rv3" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="6t8-u8-eOy"/>
                     <constraint firstAttribute="rightMargin" secondItem="i7P-j7-Rv3" secondAttribute="right" id="GPw-5N-09h"/>
                     <constraint firstItem="JdO-wB-L1B" firstAttribute="left" secondItem="H2p-sc-9uM" secondAttribute="leftMargin" id="NoZ-Nx-MvI"/>
-                    <constraint firstItem="78g-xD-Jxo" firstAttribute="top" secondItem="i7P-j7-Rv3" secondAttribute="baseline" constant="20" id="Vqa-hv-sNh"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="i7P-j7-Rv3" secondAttribute="baseline" id="Vqa-hv-sNh"/>
                     <constraint firstAttribute="rightMargin" secondItem="JdO-wB-L1B" secondAttribute="right" id="cNx-ko-k3l"/>
                     <constraint firstAttribute="bottom" secondItem="78g-xD-Jxo" secondAttribute="bottom" id="h1W-sc-BSw"/>
                     <constraint firstAttribute="right" secondItem="78g-xD-Jxo" secondAttribute="right" id="keA-u8-PIV"/>
+                    <constraint firstItem="JdO-wB-L1B" firstAttribute="centerY" secondItem="i7P-j7-Rv3" secondAttribute="centerY" id="lhK-Yx-Hx5"/>
                     <constraint firstItem="78g-xD-Jxo" firstAttribute="left" secondItem="H2p-sc-9uM" secondAttribute="leftMargin" id="m4o-SF-dLq"/>
                 </constraints>
             </tableViewCellContentView>
@@ -56,7 +56,6 @@
                 <outlet property="labelTop" destination="1lq-Mw-BWr" id="yEf-lp-DsF"/>
                 <outlet property="separatorHeight" destination="9Mi-Cp-NSW" id="dVP-ZZ-Ezc"/>
                 <outlet property="textField" destination="JdO-wB-L1B" id="8Ig-IC-rzj"/>
-                <outlet property="textFieldTop" destination="6pd-VQ-y6G" id="EnY-Vk-gpR"/>
             </connections>
             <point key="canvasLocation" x="259.4202898550725" y="146.98660714285714"/>
         </tableViewCell>

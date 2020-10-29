@@ -13,10 +13,8 @@ class ItemDetailNoteCell: UITableViewCell {
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
-    @IBOutlet private weak var labelBottom: NSLayoutConstraint!
 
     private static let height: CGFloat = 44
-    private static let verticalInset: CGFloat = 15
     private static let lineHeight: CGFloat = 22
 
     override func awakeFromNib() {
@@ -36,9 +34,7 @@ class ItemDetailNoteCell: UITableViewCell {
         self.label.attributedText = attributedString
 
         let font = self.label.font!
-        let separatorHeight = (1 / UIScreen.main.scale)
-        self.labelTop.constant = ItemDetailNoteCell.verticalInset - (font.ascender - font.capHeight) - (ItemDetailNoteCell.lineHeight - font.lineHeight) - separatorHeight
-        self.labelBottom.constant = ItemDetailNoteCell.verticalInset
+        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailNoteCell.lineHeight - font.lineHeight)
         self.labelLeft.constant = self.layoutMargins.left
     }
 }

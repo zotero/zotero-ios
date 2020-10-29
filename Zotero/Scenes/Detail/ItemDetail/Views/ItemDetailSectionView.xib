@@ -13,11 +13,11 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="ItemDetailSectionView" customModule="Zotero" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="428" height="234"/>
+            <rect key="frame" x="0.0" y="0.0" width="428" height="47"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="iA1-y2-ImJ">
-                    <rect key="frame" x="0.0" y="0.0" width="428" height="234"/>
+                    <rect key="frame" x="0.0" y="0.0" width="428" height="47"/>
                     <subviews>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="HxX-4G-xYN">
                             <rect key="frame" x="0.0" y="0.0" width="428" height="1"/>
@@ -27,10 +27,10 @@
                             </constraints>
                         </view>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="cY0-EH-PZA">
-                            <rect key="frame" x="0.0" y="1" width="428" height="44"/>
+                            <rect key="frame" x="0.0" y="1" width="428" height="45"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tmh-CA-LEO">
-                                    <rect key="frame" x="16" y="0.0" width="396" height="44"/>
+                                    <rect key="frame" x="16" y="0.0" width="396" height="45"/>
                                     <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="17"/>
                                     <color key="textColor" name="itemDetailHeaderTitle"/>
                                     <nil key="highlightedColor"/>
@@ -40,13 +40,13 @@
                             <constraints>
                                 <constraint firstItem="tmh-CA-LEO" firstAttribute="top" secondItem="cY0-EH-PZA" secondAttribute="top" id="AX5-Tk-O3M"/>
                                 <constraint firstItem="tmh-CA-LEO" firstAttribute="leading" secondItem="cY0-EH-PZA" secondAttribute="leading" constant="16" id="H8M-0A-B5c"/>
-                                <constraint firstAttribute="height" constant="44" id="qnz-xG-V7g"/>
+                                <constraint firstAttribute="height" constant="45" id="KJA-HE-FR0"/>
                                 <constraint firstAttribute="trailing" secondItem="tmh-CA-LEO" secondAttribute="trailing" constant="16" id="rKj-Qt-czU"/>
                                 <constraint firstAttribute="bottom" secondItem="tmh-CA-LEO" secondAttribute="bottom" id="rgt-eR-eZj"/>
                             </constraints>
                         </view>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mm0-Ic-7rz">
-                            <rect key="frame" x="0.0" y="45" width="428" height="1"/>
+                            <rect key="frame" x="0.0" y="46" width="428" height="1"/>
                             <color key="backgroundColor" systemColor="separatorColor"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="1" id="hkI-qk-jdu"/>
@@ -64,6 +64,7 @@
                         <constraint firstAttribute="trailing" secondItem="mm0-Ic-7rz" secondAttribute="trailing" id="WpS-u0-NfA"/>
                         <constraint firstItem="cY0-EH-PZA" firstAttribute="top" secondItem="HxX-4G-xYN" secondAttribute="bottom" id="ZUd-E8-RAb"/>
                         <constraint firstItem="HxX-4G-xYN" firstAttribute="leading" secondItem="iA1-y2-ImJ" secondAttribute="leading" id="gc4-dB-3NI"/>
+                        <constraint firstAttribute="bottom" secondItem="mm0-Ic-7rz" secondAttribute="bottom" id="hCc-XP-UAN"/>
                         <constraint firstItem="cY0-EH-PZA" firstAttribute="leading" secondItem="bda-Bw-CLl" secondAttribute="leading" id="sgG-fl-Z9l"/>
                     </constraints>
                 </view>
@@ -78,11 +79,11 @@
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>
                 <outlet property="bottomSeparatorHeight" destination="hkI-qk-jdu" id="4jO-yN-f4g"/>
-                <outlet property="headerHeight" destination="qnz-xG-V7g" id="DUY-dt-IRN"/>
+                <outlet property="headerHeight" destination="KJA-HE-FR0" id="BGF-gE-OAo"/>
                 <outlet property="titleLabel" destination="tmh-CA-LEO" id="iY2-IL-zj2"/>
                 <outlet property="topSeparatorHeight" destination="E1d-ZY-cX2" id="Ewy-tB-jPm"/>
             </connections>
-            <point key="canvasLocation" x="147.82608695652175" y="-95.089285714285708"/>
+            <point key="canvasLocation" x="147.82608695652175" y="-157.70089285714286"/>
         </view>
     </objects>
     <resources>

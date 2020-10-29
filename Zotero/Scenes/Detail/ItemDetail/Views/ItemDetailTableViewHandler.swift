@@ -43,7 +43,13 @@ class ItemDetailTableViewHandler: NSObject {
                 return "ItemDetailNoteCell"
             case .tags:
                 return "ItemDetailTagCell"
-            case .fields, .type, .dates:
+            case .fields:
+                if isEditing {
+                    return "ItemDetailFieldEditCell"
+                } else {
+                    return "ItemDetailFieldCell"
+                }
+            case .type, .dates:
                 return "ItemDetailFieldCell"
             case .creators:
                 return "ItemDetailFieldCell"
@@ -408,36 +414,86 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             hasSeparator = isEditing && indexPath.row != (self.count(in: .dates, isEditing: isEditing) - 1)
         }
 
-        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing)
-        let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, horizontalInset: layoutMargins.left) :
+        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing, row: indexPath.row)
+        let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, leftMargin: layoutMargins.left) :
                                                          max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         let separatorInsets = UIEdgeInsets(top: 0, left: leftSeparatorInset, bottom: 0, right: 0)
         return (separatorInsets, layoutMargins, accessoryType)
     }
 
-    private func separatorLeftInset(for section: Section, isEditing: Bool, horizontalInset: CGFloat) -> CGFloat {
+    private func separatorLeftInset(for section: Section, isEditing: Bool, leftMargin: CGFloat) -> CGFloat {
         switch section {
         case .notes, .attachments, .tags:
-            return horizontalInset + ItemDetailTableViewHandler.iconWidth + (isEditing ? 39 : 0)
+            return ItemDetailTableViewHandler.iconWidth + (isEditing ? 39 : 0) + leftMargin
         case .abstract, .creators, .dates, .fields, .title, .type:
             return 0
         }
     }
 
-    private func layoutMargin(for section: Section, isEditing: Bool) -> UIEdgeInsets {
+    private func layoutMargin(for section: Section, isEditing: Bool, row: Int) -> UIEdgeInsets {
+        let separatorHeight = 1 / UIScreen.main.scale
         let top: CGFloat
         let bottom: CGFloat
 
         switch section {
-        case .fields, .dates, .creators, .tags, .type:
-            top = 10
-            bottom = 10
-        case .abstract, .attachments, .notes:
+        case .type:
+            if isEditing {
+                top = 15
+                bottom = 15
+            } else {
+                top = 20
+                bottom = 10
+            }
+        case .dates:
+            if isEditing {
+                top = 15
+                bottom = 15
+            } else {
+                let isLast = row == (self.count(in: section, isEditing: isEditing) - 1)
+                top = 10
+                bottom = isLast ? 20 : 10
+            }
+        case .tags:
+            let isLast = row == (self.count(in: section, isEditing: isEditing) - 1)
+            if isEditing {
+                top = isLast ? 0 : 15
+                bottom = isLast ? 0 : 15
+            } else if isLast {
+                top = 10
+                bottom = 20
+            } else if row == 0 {
+                top = 20
+                bottom = 10
+            } else {
+                top = 10
+                bottom = 10
+            }
+        case .creators:
+            if isEditing {
+                let isLast = row == (self.count(in: section, isEditing: isEditing) - 1)
+                top = isLast ? 0 : 15
+                bottom = isLast ? 0 : 15
+            } else {
+                top = 10
+                bottom = 10
+            }
+        case .fields:
+            top = isEditing ? 15 : 10
+            bottom = isEditing ? 15 : 10
+        case .abstract:
             top = 15
             bottom = 15
+        case .attachments, .notes:
+            if row == (self.count(in: section, isEditing: isEditing) - 1) {
+                top = 0
+                bottom = 0
+            } else {
+                top = 15
+                bottom = 15
+            }
         case .title:
-            top = 43 + (1 / UIScreen.main.scale)
-            bottom = 20
+            top = 43 + separatorHeight
+            bottom = 20 + separatorHeight
         }
 
         return UIEdgeInsets(top: top, left: ItemDetailTableViewHandler.horizontalInset,
@@ -453,13 +509,9 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        let separatorHeight = 1 / UIScreen.main.scale
         switch self.sections[section] {
-        case .notes, .attachments:
-            return ItemDetailTableViewHandler.headerHeight + separatorHeight
-        case .tags:
-            // header height + 10 tag offset
-            return ItemDetailTableViewHandler.headerHeight + (self.viewModel.state.isEditing ? 0 : 10) + separatorHeight
+        case .notes, .attachments, .tags:
+            return ItemDetailTableViewHandler.headerHeight + (1 / UIScreen.main.scale)
         default:
             return 0
         }
@@ -484,36 +536,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         }
     }
 
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        if self.viewModel.state.isEditing {
-            return 0
-        }
-        switch self.sections[section] {
-        case .title:
-            return 10 - (1 / UIScreen.main.scale) // - separator height
-        case .dates, .tags:
-            return 10 + (1 / UIScreen.main.scale) // + separator height
-        default:
-            return 0
-        }
-    }
-
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        if self.viewModel.state.isEditing {
-            return nil
-        }
-        switch self.sections[section] {
-        case .title, .dates, .tags:
-            return UIView()
-        default:
-            return nil
-        }
-    }
-
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let isEditing = self.viewModel.state.isEditing
         let section = self.sections[indexPath.section]
-        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing)
+        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing, row: indexPath.row)
         cell.layoutMargins = layoutMargins
         cell.contentView.layoutMargins = layoutMargins
     }
@@ -582,14 +608,16 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         case .type:
             if let cell = cell as? ItemDetailFieldCell {
-                cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth, isEditing: isEditing)
+                cell.setup(with: self.viewModel.state.data.localizedType, title: L10n.itemType, titleWidth: self.titleWidth)
             }
 
         case .fields:
-            if let cell = cell as? ItemDetailFieldCell {
-                let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
-                if let field = self.viewModel.state.data.fields[fieldId] {
-                    cell.setup(with: field, titleWidth: self.titleWidth, isEditing: isEditing)
+            let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
+            if let field = self.viewModel.state.data.fields[fieldId] {
+                if let cell = cell as? ItemDetailFieldCell {
+                    cell.setup(with: field, titleWidth: self.titleWidth)
+                } else if let cell = cell as? ItemDetailFieldEditCell {
+                    cell.setup(with: field, titleWidth: self.titleWidth)
                     cell.textObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
                     }).disposed(by: cell.newDisposeBag)
@@ -600,7 +628,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             if let cell = cell as? ItemDetailFieldCell {
                 let creatorId = self.viewModel.state.data.creatorIds[indexPath.row]
                 if let creator = self.viewModel.state.data.creators[creatorId] {
-                    cell.setup(with: creator, titleWidth: self.titleWidth, isEditing: isEditing)
+                    cell.setup(with: creator, titleWidth: self.titleWidth)
                 }
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addCreator)
@@ -611,10 +639,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                 switch indexPath.row {
                 case 0:
                     let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateAdded)
-                    cell.setup(with: date, title: L10n.dateAdded, titleWidth: self.titleWidth, isEditing: isEditing)
+                    cell.setup(with: date, title: L10n.dateAdded, titleWidth: self.titleWidth)
                 case 1:
                     let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateModified)
-                    cell.setup(with: date, title: L10n.dateModified, titleWidth: self.titleWidth, isEditing: isEditing)
+                    cell.setup(with: date, title: L10n.dateModified, titleWidth: self.titleWidth)
                 default: break
                 }
             }
