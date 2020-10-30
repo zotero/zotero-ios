@@ -14,6 +14,8 @@ class ItemDetailTagCell: UITableViewCell {
     @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
 
+    private static let iconWidth: CGFloat = 28
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
@@ -54,6 +56,6 @@ class ItemDetailTagCell: UITableViewCell {
 
     private func setupInsets(isEditing: Bool, showTagView: Bool) {
         self.labelTop.constant = self.label.font.capHeight - self.label.font.ascender
-        self.labelLeft.constant = showTagView ? (28 + self.layoutMargins.left) : 0
+        self.labelLeft.constant = showTagView ? (ItemDetailTagCell.iconWidth + self.layoutMargins.left) : 0
     }
 }

@@ -18,28 +18,39 @@
                 <rect key="frame" x="0.0" y="0.0" width="470" height="145"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2lr-if-5qZ">
-                        <rect key="frame" x="26" y="67" width="16" height="16"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="32h-hK-LT5">
+                        <rect key="frame" x="20" y="61" width="28" height="28"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2lr-if-5qZ">
+                                <rect key="frame" x="6" y="6" width="16" height="16"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="16" id="FXb-qz-LsT"/>
+                                    <constraint firstAttribute="height" constant="16" id="RdD-L4-Cni"/>
+                                </constraints>
+                            </view>
+                        </subviews>
                         <constraints>
-                            <constraint firstAttribute="width" constant="16" id="FXb-qz-LsT"/>
-                            <constraint firstAttribute="height" constant="16" id="RdD-L4-Cni"/>
+                            <constraint firstAttribute="height" constant="28" id="7ks-FW-mKX"/>
+                            <constraint firstItem="2lr-if-5qZ" firstAttribute="centerX" secondItem="32h-hK-LT5" secondAttribute="centerX" id="L6e-hc-4CG"/>
+                            <constraint firstAttribute="width" constant="28" id="gEb-MF-fRh"/>
+                            <constraint firstItem="2lr-if-5qZ" firstAttribute="centerY" secondItem="32h-hK-LT5" secondAttribute="centerY" id="yfn-Rt-AOp"/>
                         </constraints>
                     </view>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="A2z-7p-kXW">
-                        <rect key="frame" x="12" y="11" width="438" height="127.5"/>
+                        <rect key="frame" x="20" y="11" width="430" height="127.5"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="A2z-7p-kXW" firstAttribute="leadingMargin" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="1Qn-vI-Q7o"/>
+                    <constraint firstItem="A2z-7p-kXW" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="1Qn-vI-Q7o"/>
                     <constraint firstAttribute="bottomMargin" secondItem="A2z-7p-kXW" secondAttribute="baseline" id="40H-YV-aj1"/>
                     <constraint firstItem="A2z-7p-kXW" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="SSS-PM-B5T"/>
-                    <constraint firstItem="2lr-if-5qZ" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" constant="6" id="byA-Fp-vGr"/>
-                    <constraint firstItem="2lr-if-5qZ" firstAttribute="centerY" secondItem="A2z-7p-kXW" secondAttribute="centerY" id="dA2-UW-mvJ"/>
+                    <constraint firstItem="32h-hK-LT5" firstAttribute="centerY" secondItem="A2z-7p-kXW" secondAttribute="centerY" id="aNg-kC-4mC"/>
                     <constraint firstAttribute="trailingMargin" secondItem="A2z-7p-kXW" secondAttribute="trailing" id="fM8-el-nKR"/>
+                    <constraint firstItem="32h-hK-LT5" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="tRR-1W-jiT"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>

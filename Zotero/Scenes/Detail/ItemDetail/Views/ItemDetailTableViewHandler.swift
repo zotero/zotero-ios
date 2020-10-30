@@ -424,7 +424,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     private func separatorLeftInset(for section: Section, isEditing: Bool, leftMargin: CGFloat) -> CGFloat {
         switch section {
         case .notes, .attachments, .tags:
-            return ItemDetailTableViewHandler.iconWidth + (isEditing ? 39 : 0) + leftMargin
+            return ItemDetailTableViewHandler.iconWidth + (isEditing ? 40 : 0) + leftMargin
         case .abstract, .creators, .dates, .fields, .title, .type:
             return 0
         }
@@ -484,7 +484,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             top = 15
             bottom = 15
         case .attachments, .notes:
-            if row == (self.count(in: section, isEditing: isEditing) - 1) {
+            if isEditing && row == (self.count(in: section, isEditing: isEditing) - 1) {
                 top = 0
                 bottom = 0
             } else {

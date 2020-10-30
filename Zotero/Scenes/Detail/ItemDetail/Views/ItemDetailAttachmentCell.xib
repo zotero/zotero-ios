@@ -19,25 +19,25 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="HJS-c4-gP5">
-                        <rect key="frame" x="20" y="11" width="334" height="84"/>
+                        <rect key="frame" x="20" y="0.0" width="306" height="87"/>
                         <subviews>
                             <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="RAA-Dr-Cos" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="21" width="28" height="28"/>
+                                <rect key="frame" x="0.0" y="32" width="28" height="28"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="28" placeholder="YES" id="b3P-hp-MnG"/>
                                     <constraint firstAttribute="width" constant="28" placeholder="YES" id="vwP-ib-3zs"/>
                                 </constraints>
                             </view>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Item types/web-page" translatesAutoresizingMaskIntoConstraints="NO" id="C5w-yw-d8Z">
-                                <rect key="frame" x="0.0" y="21" width="28" height="28"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Item types/web-page" translatesAutoresizingMaskIntoConstraints="NO" id="C5w-yw-d8Z">
+                                <rect key="frame" x="0.0" y="32" width="28" height="28"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="28" id="MmQ-fV-cI2"/>
                                     <constraint firstAttribute="height" constant="28" id="ogh-Vr-H7l"/>
                                 </constraints>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yy5-No-Wsg">
-                                <rect key="frame" x="44" y="0.0" width="290" height="69.5"/>
+                                <rect key="frame" x="44" y="11" width="262" height="69.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -59,11 +59,11 @@
                 </subviews>
                 <constraints>
                     <constraint firstItem="HJS-c4-gP5" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="3y2-un-Qmo"/>
-                    <constraint firstAttribute="trailing" secondItem="HJS-c4-gP5" secondAttribute="trailingMargin" id="3yg-SK-dqq"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="HJS-c4-gP5" secondAttribute="trailing" id="3yg-SK-dqq"/>
                     <constraint firstAttribute="bottomMargin" secondItem="Yy5-No-Wsg" secondAttribute="baseline" id="8Pl-dl-5Ry"/>
                     <constraint firstItem="Yy5-No-Wsg" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="DSU-Y5-nns"/>
-                    <constraint firstAttribute="bottom" secondItem="HJS-c4-gP5" secondAttribute="bottomMargin" id="H90-86-iAm"/>
-                    <constraint firstItem="HJS-c4-gP5" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="izj-qN-2iw"/>
+                    <constraint firstAttribute="bottom" secondItem="HJS-c4-gP5" secondAttribute="bottom" id="H90-86-iAm"/>
+                    <constraint firstItem="HJS-c4-gP5" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="izj-qN-2iw"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
