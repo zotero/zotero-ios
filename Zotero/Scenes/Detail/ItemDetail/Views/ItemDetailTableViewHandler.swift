@@ -67,6 +67,7 @@ class ItemDetailTableViewHandler: NSObject {
     private static let horizontalInset: CGFloat = 16
     private static let iconWidth: CGFloat = 28
     private static let headerHeight: CGFloat = 44
+    private static let lineHeight: CGFloat = 22
 
     private unowned let viewModel: ViewModel<ItemDetailActionHandler>
     private unowned let tableView: UITableView
@@ -82,13 +83,14 @@ class ItemDetailTableViewHandler: NSObject {
     private var titleWidth: CGFloat {
         return self.viewModel.state.isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
     }
+    private var abstractTextViewHeight: CGFloat = 0
     private weak var fileDownloader: FileDownloader?
 
     var attachmentSection: Int {
         return self.sections.firstIndex(of: .attachments) ?? 0
     }
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: FileDownloader?) {
+    init(tableView: UITableView, containerWidth: CGFloat, viewModel: ViewModel<ItemDetailActionHandler>, fileDownloader: FileDownloader?) {
         self.tableView = tableView
         self.viewModel = viewModel
         self.fileDownloader = fileDownloader
@@ -101,6 +103,10 @@ class ItemDetailTableViewHandler: NSObject {
         let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: viewModel.state.data)
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
+        if let abstract = viewModel.state.data.abstract {
+            let maxWidth = containerWidth - (2 * ItemDetailTableViewHandler.horizontalInset)
+            self.abstractTextViewHeight = self.calculateAbstractHeight(for: abstract, width: maxWidth)
+        }
         self.setupTableView()
         self.setupKeyboardObserving()
     }
@@ -111,13 +117,7 @@ class ItemDetailTableViewHandler: NSObject {
         return formatter
     }
 
-    private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        guard attachment.contentType.fileLocation == .local else { return nil }
-        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
-            self?.viewModel.process(action: .deleteAttachmentFile(attachment)) 
-        }
-        return UIMenu(title: "", children: [delete])
-    }
+    // MARK: - Actions
 
     func sourceDataForCell(at indexPath: IndexPath) -> (UIView, CGRect?) {
         return (self.tableView, self.tableView.cellForRow(at: indexPath)?.frame)
@@ -192,6 +192,8 @@ class ItemDetailTableViewHandler: NSObject {
             }
         }, completion: nil)
     }
+
+    // MARK: - Helpers
 
     private func section(from diff: ItemDetailState.Diff) -> Int? {
         switch diff {
@@ -282,60 +284,48 @@ class ItemDetailTableViewHandler: NSObject {
         return (maxTitleWidth, maxNonemptyTitleWidth)
     }
 
-    /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
-    private func setupTableView() {
-        self.tableView.dataSource = self
-        self.tableView.delegate = self
-        self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
-        self.tableView.tableFooterView = UIView()
-        self.tableView.separatorInsetReference = .fromAutomaticInsets
-        self.tableView.layoutMargins = .zero
-        self.tableView.separatorInset = .zero
+    private func update(abstract: String, currentHeight: CGFloat, indexPath: IndexPath) {
+        // Update abstract value in state
+        self.viewModel.process(action: .setAbstract(abstract))
+        // Change height if needed
+        let maxWidth = self.tableView.frame.width - (2 * ItemDetailTableViewHandler.horizontalInset)
+        let height = self.calculateAbstractHeight(for: abstract, width: maxWidth)
+        guard height != currentHeight else { return }
+        self.updateAbstractCellHeight(at: indexPath, to: height)
+    }
 
-        Section.allCases.forEach { section in
-            let cellId = section.cellId(isEditing: false)
-            self.tableView.register(UINib(nibName: cellId, bundle: nil), forCellReuseIdentifier: cellId)
-            let cellIdEditing = section.cellId(isEditing: true)
-            if cellId != cellIdEditing {
-                self.tableView.register(UINib(nibName: cellIdEditing, bundle: nil), forCellReuseIdentifier: cellIdEditing)
-            }
+    private func updateAbstractCellHeight(at indexPath: IndexPath, to height: CGFloat) {
+        guard let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAbstractEditCell else { return }
+
+        cell.update(toHeight: height)
+
+        UIView.setAnimationsEnabled(false)
+        self.tableView.beginUpdates()
+        self.tableView.endUpdates()
+
+        let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
+        let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+
+        if cellBottom > tableViewBottom {
+            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
         }
-        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.addCellId, bundle: nil),
-                                forCellReuseIdentifier: ItemDetailTableViewHandler.addCellId)
-        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.sectionId, bundle: nil),
-                                forHeaderFooterViewReuseIdentifier: ItemDetailTableViewHandler.sectionId)
+        UIView.setAnimationsEnabled(true)
     }
 
-    private func setupTableView(with keyboardData: KeyboardData) {
-        var insets = self.tableView.contentInset
-        insets.bottom = keyboardData.endFrame.height
-        self.tableView.contentInset = insets
+    private func calculateAbstractHeight(for text: String, width: CGFloat) -> CGFloat {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .justified
+        paragraphStyle.minimumLineHeight = ItemDetailTableViewHandler.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailTableViewHandler.lineHeight
+        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
+                                                         .font: UIFont.preferredFont(forTextStyle: .body)]
+        let maxSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+        let height = (text.isEmpty ? " " : text).boundingRect(with: maxSize, options: .usesLineFragmentOrigin, attributes: attributes, context: nil).height
+        return ceil(height)
     }
 
-    private func setupKeyboardObserving() {
-        NotificationCenter.default
-                          .keyboardWillShow
-                          .observeOn(MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
+    // MARK: - Tableview data source helpers
 
-        NotificationCenter.default
-                          .keyboardWillHide
-                          .observeOn(MainScheduler.instance)
-                          .subscribe(onNext: { [weak self] notification in
-                              if let data = notification.keyboardData {
-                                  self?.setupTableView(with: data)
-                              }
-                          })
-                          .disposed(by: self.disposeBag)
-    }
-}
-
-extension ItemDetailTableViewHandler: UITableViewDataSource {
     /// Base count of objects in each section. "Base" means just count of actual objects in data arrays, without additional rows shown in tableView.
     private func baseCount(in section: Section) -> Int {
         switch section {
@@ -500,6 +490,70 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                             bottom: bottom, right: ItemDetailTableViewHandler.horizontalInset)
     }
 
+    private func createContextMenu(for attachment: Attachment) -> UIMenu? {
+        guard attachment.contentType.fileLocation == .local else { return nil }
+        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .deleteAttachmentFile(attachment))
+        }
+        return UIMenu(title: "", children: [delete])
+    }
+
+    // MARK: - Setups
+
+    /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
+    private func setupTableView() {
+        self.tableView.dataSource = self
+        self.tableView.delegate = self
+        self.tableView.keyboardDismissMode = UIDevice.current.userInterfaceIdiom == .phone ? .interactive : .none
+        self.tableView.tableFooterView = UIView()
+        self.tableView.separatorInsetReference = .fromAutomaticInsets
+        self.tableView.layoutMargins = .zero
+        self.tableView.separatorInset = .zero
+
+        Section.allCases.forEach { section in
+            let cellId = section.cellId(isEditing: false)
+            self.tableView.register(UINib(nibName: cellId, bundle: nil), forCellReuseIdentifier: cellId)
+            let cellIdEditing = section.cellId(isEditing: true)
+            if cellId != cellIdEditing {
+                self.tableView.register(UINib(nibName: cellIdEditing, bundle: nil), forCellReuseIdentifier: cellIdEditing)
+            }
+        }
+        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.addCellId, bundle: nil),
+                                forCellReuseIdentifier: ItemDetailTableViewHandler.addCellId)
+        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.sectionId, bundle: nil),
+                                forHeaderFooterViewReuseIdentifier: ItemDetailTableViewHandler.sectionId)
+    }
+
+    private func setupTableView(with keyboardData: KeyboardData) {
+        var insets = self.tableView.contentInset
+        insets.bottom = keyboardData.endFrame.height
+        self.tableView.contentInset = insets
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+    }
+}
+
+extension ItemDetailTableViewHandler: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         return self.sections.count
     }
@@ -563,11 +617,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         switch section {
         case .abstract:
             if let cell = cell as? ItemDetailAbstractEditCell {
-                cell.setup(with: (self.viewModel.state.data.abstract ?? ""))
-                cell.textObservable.subscribe(onNext: { [weak self] abstract in
-                    if isEditing {
-                        self?.viewModel.process(action: .setAbstract(abstract))
-                    }
+                cell.setup(with: (self.viewModel.state.data.abstract ?? ""), height: self.abstractTextViewHeight)
+                cell.textObservable.subscribe(onNext: { [weak self] (abstract, currentHeight) in
+                    guard isEditing else { return }
+                    self?.update(abstract: abstract, currentHeight: currentHeight, indexPath: indexPath)
                 }).disposed(by: cell.newDisposeBag)
             } else if let cell = cell as? ItemDetailAbstractCell {
                 cell.setup(with: (self.viewModel.state.data.abstract ?? ""), isCollapsed: self.viewModel.state.abstractCollapsed)

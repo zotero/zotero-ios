@@ -42,7 +42,11 @@ class ItemDetailViewController: UIViewController {
         if self.viewModel.state.library.metadataEditable {
             self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing, isSaving: self.viewModel.state.isSaving)
         }
-        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView, viewModel: self.viewModel,
+
+        let width = self.navigationController?.view.frame.width ?? self.view.frame.width
+        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
+                                                           containerWidth: width,
+                                                           viewModel: self.viewModel,
                                                            fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.setupFileObservers()
 

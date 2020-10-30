@@ -31,7 +31,7 @@
                         <color key="textColor" systemColor="systemGrayColor"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <textView clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="999" showsHorizontalScrollIndicator="NO" bouncesZoom="NO" textAlignment="justified" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FpG-g1-z40">
+                    <textView clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="999" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" bouncesZoom="NO" textAlignment="justified" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FpG-g1-z40">
                         <rect key="frame" x="20" y="71" width="364" height="160"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
@@ -59,6 +59,7 @@
             <connections>
                 <outlet property="contentTextView" destination="FpG-g1-z40" id="39S-sB-GKs"/>
                 <outlet property="separatorHeight" destination="klE-yu-pcY" id="MnG-eb-Dzb"/>
+                <outlet property="textViewHeight" destination="3LM-N0-N3D" id="a7I-i7-gC1"/>
                 <outlet property="titleLabel" destination="iuX-MD-1Qd" id="sHI-fi-26t"/>
                 <outlet property="titleTop" destination="p96-oJ-w5r" id="DUX-56-53w"/>
             </connections>

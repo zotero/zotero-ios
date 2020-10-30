@@ -15,11 +15,12 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentTextView: UITextView!
+    @IBOutlet private weak var textViewHeight: NSLayoutConstraint!
 
     private static let lineHeight: CGFloat = 22
 
-    private var observer: AnyObserver<String>?
-    var textObservable: Observable<String> {
+    private var observer: AnyObserver<(String, CGFloat)>?
+    var textObservable: Observable<(String, CGFloat)> {
         return Observable.create { observer -> Disposable in
             self.observer = observer
             return Disposables.create()
@@ -40,7 +41,7 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
         self.contentTextView.textContainer.lineFragmentPadding = 0
     }
 
-    func setup(with abstract: String) {
+    func setup(with abstract: String, height: CGFloat) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .justified
         paragraphStyle.minimumLineHeight = ItemDetailAbstractEditCell.lineHeight
@@ -51,11 +52,16 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
         let attributedText = NSAttributedString(string: abstract, attributes: attributes)
 
         self.contentTextView.attributedText = attributedText
+        self.textViewHeight.constant = height
+    }
+
+    func update(toHeight height: CGFloat) {
+        self.textViewHeight.constant = height
     }
 }
 
 extension ItemDetailAbstractEditCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+        self.observer?.on(.next((textView.text, self.textViewHeight.constant)))
     }
 }
