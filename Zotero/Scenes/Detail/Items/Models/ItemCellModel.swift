@@ -22,12 +22,10 @@ struct ItemCellModel {
     let attachment: ItemCellAttachmentData?
 
     init(item: RItem, attachment: ItemCellAttachmentData?) {
-        let title = item.displayTitle
-        let subtitle = ItemCellModel.subtitle(for: item)
         self.key = item.key
         self.typeIconName = ItemCellModel.iconName(for: item)
-        self.title = title.isEmpty ? " " : title
-        self.subtitle = subtitle.isEmpty ? " " : subtitle
+        self.title = item.displayTitle
+        self.subtitle = ItemCellModel.subtitle(for: item)
         self.hasNote = ItemCellModel.hasNote(item: item)
         self.tagColors = ItemCellModel.tagColors(item: item)
         self.attachment = attachment

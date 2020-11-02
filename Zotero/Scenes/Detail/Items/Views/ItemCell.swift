@@ -94,8 +94,8 @@ class ItemCell: UITableViewCell {
         self.fileView.tapAction = tapAction
 
         self.typeImageView.image = UIImage(named: item.typeIconName)
-        self.titleLabel.text = item.title
-        self.subtitleLabel.text = item.subtitle
+        self.titleLabel.text = item.title.isEmpty ? " " : item.title
+        self.subtitleLabel.text = item.subtitle.isEmpty ? " " : item.subtitle
         // The label adds extra horizontal spacing so there is a negative right inset so that the label ends where the text ends exactly.
         // The note icon is rectangular and has 1px white space on each side, so it needs an extra negative pixel when there are no tags.
         self.subtitleLabel.rightInset = item.tagColors.isEmpty ? -2 : -1
