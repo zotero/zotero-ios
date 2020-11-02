@@ -23,6 +23,7 @@ class ItemDetailTableViewHandler: NSObject {
         case openFilePicker
         case openUrl(String)
         case openDoi(String)
+        case showAttachmentError(Error, Int)
     }
 
     /// Sections that are shown in `tableView`
@@ -128,7 +129,8 @@ class ItemDetailTableViewHandler: NSObject {
         let indexPath = IndexPath(row: index, section: section)
 
         if let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAttachmentCell {
-            let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            let (progress, _) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            let error = self.viewModel.state.attachmentErrors[attachment.key]
             cell.setup(with: attachment, progress: progress, error: error)
         }
     }
@@ -639,7 +641,8 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         case .attachments:
             if let cell = cell as? ItemDetailAttachmentCell {
                 let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+                let (progress, _) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+                let error = self.viewModel.state.attachmentErrors[attachment.key]
                 cell.setup(with: attachment, progress: progress, error: error)
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addAttachment)
@@ -778,7 +781,12 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                     self.observer.on(.next(.openFilePicker))
                 }
             } else {
-                self.viewModel.process(action: .openAttachment(indexPath.row))
+                let attachment = self.viewModel.state.data.attachments[indexPath.row]
+                if let error = self.viewModel.state.attachmentErrors[attachment.key] {
+                    self.observer.on(.next(.showAttachmentError(error, indexPath.row)))
+                } else {
+                    self.viewModel.process(action: .openAttachment(indexPath.row))
+                }
             }
         case .notes:
             if self.viewModel.state.isEditing && indexPath.row == self.viewModel.state.data.notes.count {

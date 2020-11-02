@@ -113,6 +113,10 @@ class ItemDetailViewController: UIViewController {
             if let url = URL(string: "https://doi.org/\(encoded)") {
                 self.showWeb(for: url)
             }
+        case .showAttachmentError(let error, let index):
+            self.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
+                self?.viewModel.process(action: .openAttachment(index))
+            })
         }
     }
 

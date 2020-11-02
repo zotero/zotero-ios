@@ -60,6 +60,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showWeb(url: URL)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
+    func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: class {
@@ -310,13 +311,13 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 hidesBackButton = true
             }
 
-            let data = try ItemDetailDataCreator.createData(from: type,
-                                                            schemaController: self.controllers.schemaController,
-                                                            dateParser: self.controllers.dateParser,
-                                                            fileStorage: self.controllers.fileStorage,
-                                                            urlDetector: self.controllers.urlDetector,
-                                                            doiDetector: FieldKeys.Item.isDoi)
-            let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId, data: data)
+            let (data, attachmentErrors) = try ItemDetailDataCreator.createData(from: type,
+                                                                                schemaController: self.controllers.schemaController,
+                                                                                dateParser: self.controllers.dateParser,
+                                                                                fileStorage: self.controllers.fileStorage,
+                                                                                urlDetector: self.controllers.urlDetector,
+                                                                                doiDetector: FieldKeys.Item.isDoi)
+            let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId, data: data, attachmentErrors: attachmentErrors)
             let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
@@ -402,6 +403,15 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
+    func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.error, message: "\(error)", preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
+            retryAction()
+        }))
+        self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 

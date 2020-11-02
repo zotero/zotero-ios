@@ -268,11 +268,12 @@ struct ItemDetailState: ViewModelState {
     var metadataTitleMaxWidth: CGFloat
     var openAttachment: (Attachment, Int)?
     var updateAttachmentIndex: Int?
+    var attachmentErrors: [String: Error]
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
 
-    init(type: DetailType, library: Library, userId: Int, data: Data, error: ItemDetailError? = nil) {
+    init(type: DetailType, library: Library, userId: Int, data: Data, attachmentErrors: [String: Error], error: ItemDetailError? = nil) {
         self.changes = []
         self.userId = userId
         self.library = library
@@ -281,6 +282,7 @@ struct ItemDetailState: ViewModelState {
         self.metadataTitleMaxWidth = 0
         self.error = error
         self.isSaving = false
+        self.attachmentErrors = attachmentErrors
 
         switch type {
         case .preview, .duplication:
@@ -304,6 +306,7 @@ struct ItemDetailState: ViewModelState {
                              abstract: nil, notes: [],
                              attachments: [], tags: [],
                              dateModified: Date(), dateAdded: Date()),
+                  attachmentErrors: [:],
                   error: error)
     }
 

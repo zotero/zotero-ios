@@ -20,11 +20,12 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
     static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController, dateParser: DateParser,
-                           fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
+                           fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
         switch type {
         case .creation(_, let type):
-            return try creationData(itemType: type, schemaController: schemaController, dateParser: dateParser,
-                                    urlDetector: urlDetector, doiDetector: doiDetector)
+            let data = try creationData(itemType: type, schemaController: schemaController, dateParser: dateParser,
+                                        urlDetector: urlDetector, doiDetector: doiDetector)
+            return (data, [:])
         case .preview(let item), .duplication(let item, _):
             return try itemData(item: item, schemaController: schemaController, dateParser: dateParser,
                                 fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
@@ -73,7 +74,7 @@ struct ItemDetailDataCreator {
     /// - parameter doiDetector: DOI detector.
     /// - returns: Data for item detail state.
     private static func itemData(item: RItem, schemaController: SchemaController, dateParser: DateParser, fileStorage: FileStorage,
-                                 urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> ItemDetailState.Data {
+                                 urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
         guard let localizedType = schemaController.localized(itemType: item.rawType) else {
             throw ItemDetailError.typeNotSupported
         }
@@ -128,21 +129,36 @@ struct ItemDetailDataCreator {
             attachments = Array(mappedAttachments)
         }
 
-        let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
+        var attachmentErrors: [String: Error] = [:]
 
-        return ItemDetailState.Data(title: item.baseTitle,
-                                    type: item.rawType,
-                                    localizedType: localizedType,
-                                    creators: creators,
-                                    creatorIds: creatorIds,
-                                    fields: fields,
-                                    fieldIds: fieldIds,
-                                    abstract: abstract,
-                                    notes: Array(notes),
-                                    attachments: attachments,
-                                    tags: Array(tags),
-                                    dateModified: item.dateModified,
-                                    dateAdded: item.dateAdded)
+        for attachment in attachments {
+            switch attachment.contentType {
+            case .snapshot(let htmlFile, _, _, let location):
+                // Check whether local snapshots are actually unzipped
+                guard location == .local else { continue }
+                if !fileStorage.has(htmlFile) {
+                    attachmentErrors[attachment.key] = ItemDetailError.cantUnzipSnapshot
+                }
+            case .file, .url:
+                continue
+            }
+        }
+
+        let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
+        let data =  ItemDetailState.Data(title: item.baseTitle,
+                                         type: item.rawType,
+                                         localizedType: localizedType,
+                                         creators: creators,
+                                         creatorIds: creatorIds,
+                                         fields: fields,
+                                         fieldIds: fieldIds,
+                                         abstract: abstract,
+                                         notes: Array(notes),
+                                          attachments: attachments,
+                                         tags: Array(tags),
+                                         dateModified: item.dateModified,
+                                         dateAdded: item.dateAdded)
+        return (data, attachmentErrors)
     }
 
     /// Creates field data for given item type with the option of setting values for given fields.

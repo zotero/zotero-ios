@@ -376,6 +376,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         if !update.kind.isDownloaded {
             self.update(viewModel: viewModel) { state in
                 state.updateAttachmentIndex = index
+                if case .failed(let error) = update.kind {
+                    state.attachmentErrors[attachment.key] = error
+                }
             }
             return
         }
@@ -390,10 +393,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                           let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
                     self.finishDownload(at: index, in: viewModel)
                 }, onError: { [weak viewModel] error in
-                    guard let viewModel = viewModel else { return }
-                    self.update(viewModel: viewModel) { state in
-                        state.error = (error as? ItemDetailError) ?? .cantUnzipSnapshot
-                    }
+                    guard let viewModel = viewModel,
+                          let index = viewModel.state.data.attachments.firstIndex(where: { $0.key == update.key }) else { return }
+                    self.finishFailedDownload(error: error, at: index, in: viewModel)
                 })
                 .disposed(by: self.disposeBag)
             return
@@ -425,6 +427,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             state.data.attachments[index] = attachment
             state.openAttachment = (attachment, index)
             state.updateAttachmentIndex = index
+        }
+    }
+
+    private func finishFailedDownload(error: Error, at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let attachment = viewModel.state.data.attachments[index]
+        self.update(viewModel: viewModel) { state in
+            state.updateAttachmentIndex = index
+            state.attachmentErrors[attachment.key] = error
         }
     }
 
