@@ -155,6 +155,8 @@ internal enum L10n {
     internal static let tags = L10n.tr("Localizable", "item_detail.tags")
     /// Untitled
     internal static let untitled = L10n.tr("Localizable", "item_detail.untitled")
+    /// View PDF
+    internal static let viewPdf = L10n.tr("Localizable", "item_detail.view_pdf")
     internal enum Error {
       /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
       internal static func droppedFieldsMessage(_ p1: Any) -> String {

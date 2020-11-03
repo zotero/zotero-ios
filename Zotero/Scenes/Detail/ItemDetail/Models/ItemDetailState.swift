@@ -18,9 +18,8 @@ struct ItemDetailState: ViewModelState {
 
         static let editing = Changes(rawValue: 1 << 0)
         static let type = Changes(rawValue: 1 << 1)
-        static let downloadProgress = Changes(rawValue: 1 << 2)
-        static let attachmentFilesRemoved = Changes(rawValue: 1 << 3)
-        static let abstractCollapsed = Changes(rawValue: 1 << 4)
+        static let attachmentFilesRemoved = Changes(rawValue: 1 << 2)
+        static let abstractCollapsed = Changes(rawValue: 1 << 3)
     }
 
     enum DetailType {
@@ -189,6 +188,17 @@ struct ItemDetailState: ViewModelState {
 
         var maxFieldTitleWidth: CGFloat = 0
         var maxNonemptyFieldTitleWidth: CGFloat = 0
+
+        var mainAttachmentIndex: Int? {
+            return self.attachments.firstIndex(where: {
+                switch $0.contentType {
+                case .file(let file, _, let location, _):
+                    return location != nil && file.mimeType == "application/pdf"
+                case .snapshot, .url:
+                    return false
+                }
+            })
+        }
 
         func databaseFields(schemaController: SchemaController) -> [Field] {
             var allFields = Array(self.fields.values)

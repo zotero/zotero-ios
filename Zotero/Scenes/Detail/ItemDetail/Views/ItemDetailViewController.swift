@@ -14,6 +14,10 @@ import SafariServices
 import CocoaLumberjackSwift
 import RxSwift
 
+fileprivate enum MainAttachmentButtonState {
+    case ready(Int), downloading, error(Int, Error)
+}
+
 class ItemDetailViewController: UIViewController {
     @IBOutlet private var tableView: UITableView!
 
@@ -39,9 +43,7 @@ class ItemDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if self.viewModel.state.library.metadataEditable {
-            self.setNavigationBarEditingButton(toEditing: self.viewModel.state.isEditing, isSaving: self.viewModel.state.isSaving)
-        }
+        self.setNavigationBarButtons(to: self.viewModel.state)
 
         let width = self.navigationController?.view.frame.width ?? self.view.frame.width
         self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
@@ -155,7 +157,7 @@ class ItemDetailViewController: UIViewController {
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
         if state.changes.contains(.editing) {
-            self.setNavigationBarEditingButton(toEditing: state.isEditing, isSaving: state.isSaving)
+            self.setNavigationBarButtons(to: state)
         }
 
         if state.changes.contains(.type) {
@@ -166,11 +168,13 @@ class ItemDetailViewController: UIViewController {
            state.changes.contains(.type) {
             self.tableViewHandler.reloadSections(to: state)
         } else {
-            if (state.changes.contains(.downloadProgress) && !state.isEditing) ||
-                state.changes.contains(.attachmentFilesRemoved) {
+            if state.changes.contains(.attachmentFilesRemoved) {
                 self.tableViewHandler.reload(section: .attachments)
             } else if let index = state.updateAttachmentIndex {
                 self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
+                if state.data.mainAttachmentIndex == index {
+                    self.setNavigationBarButtons(to: state)
+                }
             }
 
             if state.changes.contains(.abstractCollapsed) {
@@ -193,19 +197,78 @@ class ItemDetailViewController: UIViewController {
 
     /// Updates navigation bar with appropriate buttons based on editing state.
     /// - parameter isEditing: Current editing state of tableView.
-    private func setNavigationBarEditingButton(toEditing editing: Bool, isSaving: Bool) {
-        self.navigationItem.setHidesBackButton(editing, animated: false)
+    private func setNavigationBarButtons(to state: ItemDetailState) {
+        guard state.library.metadataEditable else { return }
 
-        if !editing {
-            let button = UIBarButtonItem(title: L10n.edit, style: .plain, target: nil, action: nil)
-            button.rx.tap.subscribe(onNext: { [weak self] _ in
-                             self?.viewModel.process(action: .startEditing)
-                         })
-                         .disposed(by: self.disposeBag)
-            self.navigationItem.rightBarButtonItems = [button]
-            self.navigationItem.leftBarButtonItem = nil
-            return
+        self.navigationItem.setHidesBackButton(state.isEditing, animated: false)
+
+        if state.isEditing {
+            self.setEditingNavigationBarButtons(isSaving: state.isSaving)
+        } else {
+            self.setPreviewNavigationBarButtons(attachmentButtonState: self.mainAttachmentButtonState(from: state))
         }
+    }
+
+    private func mainAttachmentButtonState(from state: ItemDetailState) -> MainAttachmentButtonState? {
+        guard let index = state.data.mainAttachmentIndex else { return nil }
+        guard let downloader = self.controllers.userControllers?.fileDownloader else { return .ready(index) }
+
+        let key = state.data.attachments[index].key
+        let (progress, error) = downloader.data(for: key, libraryId: state.library.identifier)
+
+        if let error = error {
+            return .error(index, error)
+        }
+        if progress != nil {
+            return .downloading
+        }
+        return .ready(index)
+    }
+
+    private func setPreviewNavigationBarButtons(attachmentButtonState: MainAttachmentButtonState?) {
+        self.navigationItem.setHidesBackButton(false, animated: false)
+
+        let button = UIBarButtonItem(title: L10n.edit, style: .plain, target: nil, action: nil)
+        button.rx.tap.subscribe(onNext: { [weak self] _ in
+                         self?.viewModel.process(action: .startEditing)
+                     })
+                     .disposed(by: self.disposeBag)
+
+        var buttons: [UIBarButtonItem] = [button]
+
+        if let state = attachmentButtonState {
+            let attachmentButton: UIBarButtonItem
+
+            switch state {
+            case .ready(let index):
+                attachmentButton = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
+                attachmentButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                    self?.viewModel.process(action: .openAttachment(index))
+                }).disposed(by: self.disposeBag)
+
+            case .error(let index, let error):
+                attachmentButton = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
+                attachmentButton.rx.tap.subscribe(onNext: { [weak self] _ in
+                    self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
+                        self?.viewModel.process(action: .openAttachment(index))
+                    })
+                }).disposed(by: self.disposeBag)
+
+            case .downloading:
+                let activityIndicator = UIActivityIndicatorView(style: .medium)
+                activityIndicator.startAnimating()
+                attachmentButton = UIBarButtonItem(customView: activityIndicator)
+            }
+
+            buttons.append(attachmentButton)
+        }
+
+        self.navigationItem.rightBarButtonItems = buttons
+        self.navigationItem.leftBarButtonItem = nil
+    }
+
+    private func setEditingNavigationBarButtons(isSaving: Bool) {
+        self.navigationItem.setHidesBackButton(true, animated: false)
 
         let saveButton: UIBarButtonItem
         if isSaving {

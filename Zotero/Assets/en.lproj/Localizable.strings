@@ -130,6 +130,7 @@ The following fields will be lost:
 "item_detail.untitled" = "Untitled";
 "item_detail.show_more" = "Show more";
 "item_detail.show_less" = "Show less";
+"item_detail.view_pdf" = "View PDF";
 
 "creator_editor.creator" = "Creator";
 "creator_editor.first_name" = "First Name";
