@@ -76,7 +76,10 @@ extension RItem: Deletable {
             // Delete unzipped html directory
             NotificationCenter.default.post(name: .attachmentDeleted, object: htmlFile.directory)
 
-        case .file(let file, _, _):
+        case .file(let file, _, _, let linkType):
+            // Don't try to remove linked attachments
+            guard linkType != .linked else { return }
+
             // Delete attachment file
             NotificationCenter.default.post(name: .attachmentDeleted, object: file)
             if file.mimeType == "application/pdf" {
@@ -84,7 +87,7 @@ extension RItem: Deletable {
                 NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationContainer(pdfKey: self.key))
             } else if file.relativeComponents.first == "annotations",
                       let darkContentType = AttachmentCreator.attachmentContentType(for: self, options: .dark, fileStorage: nil, urlDetector: nil),
-                      case .file(let file, _, _) = darkContentType {
+                      case .file(let file, _, _, _) = darkContentType {
                 // This is an embedded image for image annotation, remove dark version as well.
                 NotificationCenter.default.post(name: .attachmentDeleted, object: file)
             }

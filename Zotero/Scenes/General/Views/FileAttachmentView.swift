@@ -47,6 +47,7 @@ class FileAttachmentView: UIView {
     private weak var button: UIButton!
     private var mainImageName: String?
     private var badgeImageName: String?
+    private var parentBackgroundColor: UIColor?
 
     var contentInsets: UIEdgeInsets = UIEdgeInsets() {
         didSet {
@@ -82,7 +83,6 @@ class FileAttachmentView: UIView {
         self.setup()
     }
 
-
     override var intrinsicContentSize: CGSize {
         return CGSize(width: (FileAttachmentView.size + self.contentInsets.left + self.contentInsets.right),
                       height: (FileAttachmentView.size + self.contentInsets.top + self.contentInsets.bottom))
@@ -117,6 +117,7 @@ class FileAttachmentView: UIView {
         guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
 
         self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
+        self.badgeBorder.borderColor = self.parentBackgroundColor?.cgColor
 
         if let name = self.badgeImageName {
             self.badgeLayer.contents = UIImage(named: name)?.cgImage
@@ -129,8 +130,8 @@ class FileAttachmentView: UIView {
     // MARK: - Actions
 
     func set(backgroundColor: UIColor?) {
-        self.backgroundColor = backgroundColor
         self.badgeBorder?.borderColor = backgroundColor?.cgColor
+        self.parentBackgroundColor = backgroundColor
     }
 
     private func set(selected: Bool) {
@@ -191,39 +192,74 @@ class FileAttachmentView: UIView {
         if let progress = progress {
             return LayerData(border: .progressLine(progress), content: .stopSign, badgeName: nil)
         }
-
-        var state: String = ""
-        if error != nil {
-            state = "download-failed"
-        } else if let location = contentType.fileLocation {
-            switch location {
-            case .local:
-                state = ""
-            case .remote:
-                state = "download"
-            }
-        } else {
-            state = "missing"
-        }
-
-        let documentType = contentType.fileContentType == "application/pdf" ? "pdf" : "document"
-
         switch style {
         case .list:
-            return LayerData(border: .borderLine,
-                             content: .image("attachment-list-" + documentType + (state.isEmpty ? "" : "-" + state)),
-                             badgeName: nil)
+            let image = self.listImage(for: contentType, error: error)
+            return LayerData(border: .borderLine, content: .image(image), badgeName: nil)
         case .detail:
-            return LayerData(border: nil,
-                             content: .image("attachment-detail-" + documentType),
-                             badgeName: (state.isEmpty ? nil : "attachment-detail-" + state))
+            let (image, badge) = self.detailImageData(for: contentType, error: error)
+            return LayerData(border: nil, content: .image(image), badgeName: badge)
         }
+    }
+
+    private func listImage(for contentType: Attachment.ContentType, error: Error?) -> String {
+        switch contentType {
+        case .file(let file, _, let location, _):
+            let documentType = file.mimeType == "application/pdf" ? "pdf" : "document"
+            var state = self.attachmentState(from: location, error: error)
+            if !state.isEmpty {
+                state = "-" + state
+            }
+            return "attachment-list-" + documentType + state
+
+        case .snapshot, .url:
+            // These two are not shown in item list, but just in case return missing document
+            return "attachment-list-document-missing"
+        }
+    }
+
+    private func detailImageData(for contentType: Attachment.ContentType, error: Error?) -> (image: String, badge: String?) {
+        switch contentType {
+        case .file(let file, _, let location, let linkType):
+            let documentType = file.mimeType == "application/pdf" ? "pdf" : "document"
+            let link = linkType == .linked ? "-linked" : ""
+            let badge = self.detailBadge(from: location, error: error)
+            return (("attachment-detail" + link + "-" + documentType), badge)
+        case .snapshot(_, _, _, let location):
+            let badge = self.detailBadge(from: location, error: error)
+            return ("attachment-detail-webpage-snapshot", badge)
+        case .url:
+            return ("attachment-detail-linked-url", nil)
+        }
+    }
+
+    private func attachmentState(from location: Attachment.FileLocation?, error: Error?) -> String {
+        guard error == nil else {
+            return "download-failed"
+        }
+        guard let location = location else {
+            return "missing"
+        }
+        switch location {
+        case .local:
+            return ""
+        case .remote:
+            return "download"
+        }
+    }
+
+    private func detailBadge(from location: Attachment.FileLocation?, error: Error?) -> String? {
+        let state = self.attachmentState(from: location, error: error)
+        if state.isEmpty {
+            return nil
+        }
+        return "attachment-detail-" + state
     }
 
     // MARK: - Setup
 
     private func setup() {
-        self.backgroundColor = .white
+        self.backgroundColor = .clear
         self.translatesAutoresizingMaskIntoConstraints = false
 
         let circleLayer = self.createCircleLayer()
@@ -307,7 +343,6 @@ class FileAttachmentView: UIView {
         layer.borderWidth = FileAttachmentView.badgeBorderWidth
         layer.cornerRadius = size / 2
         layer.masksToBounds = true
-        layer.borderColor = self.backgroundColor?.cgColor
         // Disable color animation
         layer.actions = ["borderColor": NSNull()]
         layer.shouldRasterize = true

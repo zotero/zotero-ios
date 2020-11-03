@@ -15,7 +15,9 @@ extension FileStorage {
         for attachment in attachments {
             switch attachment.contentType {
             case .url, .snapshot: continue
-            case .file(let originalFile, _, _):
+            case .file(let originalFile, _, _, let linkType):
+                guard linkType != .linked else { continue }
+                
                 let newFile = Files.attachmentFile(in: attachment.libraryId, key: attachment.key, ext: originalFile.ext)
                 // Make sure that the file was not already moved to our internal location before
                 guard originalFile.createUrl() != newFile.createUrl() else { continue }

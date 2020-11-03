@@ -319,7 +319,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
         do {
             switch attachment.contentType {
-            case .file(let file, _, _):
+            case .file(let file, _, _, let linkType):
+                // Don't try to delete linked files
+                guard linkType != .linked else { return }
                 try self.fileStorage.remove(file)
                 // Don't remove annotation container here. Annotations might still be syncing and it would lead to sync errors.
             case .snapshot(let htmlFile, _, let zipFile, _):
@@ -448,7 +450,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, ext: originalFile.ext)
             let attachment = Attachment(key: key,
                                         title: originalFile.name,
-                                        type: .file(file: file, filename: originalFile.name, location: .local),
+                                        type: .file(file: file, filename: originalFile.name, location: .local, linkType: .imported),
                                         libraryId: viewModel.state.library.identifier)
 
             do {
@@ -488,7 +490,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.openAttachment = (attachment, index)
             }
 
-        case .file(let file, _, let location),
+        case .file(let file, _, let location, _),
              .snapshot(_, _, let file, let location):
             guard let location = location else { return }
             switch location {

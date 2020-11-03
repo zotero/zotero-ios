@@ -16,7 +16,6 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     let attachment: Attachment
     let localizedType: String
     let collections: Set<String>
-    let linkMode: LinkMode
 
     var needsWrite: Bool { return true }
 
@@ -44,42 +43,74 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         // Fields
 
         for fieldKey in attachmentKeys {
+            let value: String
+
+            switch fieldKey {
+            case FieldKeys.Item.title:
+                value = self.attachment.title
+            case FieldKeys.Item.Attachment.linkMode:
+                switch self.attachment.contentType {
+                case .file(_, _, _, let linkType):
+                    switch linkType {
+                    case .embeddedImage:
+                        value = LinkMode.embeddedImage.rawValue
+                    case .imported:
+                        value = LinkMode.importedFile.rawValue
+                    case .linked:
+                        value = LinkMode.linkedFile.rawValue
+                    }
+                case .snapshot:
+                    value = LinkMode.importedUrl.rawValue
+                case .url:
+                    value = LinkMode.linkedUrl.rawValue
+                }
+            case FieldKeys.Item.Attachment.contentType:
+                switch self.attachment.contentType {
+                case .file(let file, _, _, _),
+                     .snapshot(let file, _, _, _):
+                    value = file.mimeType
+                case .url: continue
+                }
+            case FieldKeys.Item.Attachment.md5:
+                switch self.attachment.contentType {
+                case .file(let file, _, _, _),
+                     .snapshot(let file, _, _, _):
+                    value = md5(from: file.createUrl()) ?? ""
+                case .url: continue
+                }
+            case FieldKeys.Item.Attachment.mtime:
+                switch self.attachment.contentType {
+                case .file, .snapshot:
+                    let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
+                    value = "\(modificationTime)"
+                case .url: continue
+                }
+            case FieldKeys.Item.Attachment.filename:
+                switch self.attachment.contentType {
+                case .file(_, let filename, _, _),
+                     .snapshot(_, let filename, _, _):
+                    value = filename
+                case .url: continue
+                }
+            case FieldKeys.Item.Attachment.url:
+                if case .url(let url) = self.attachment.contentType {
+                    value = url.absoluteString
+                } else {
+                    continue
+                }
+            case FieldKeys.Item.Attachment.path:
+                if case .file(let file, _, _, let linkType) = self.attachment.contentType, linkType == .linked {
+                    value = file.createUrl().path
+                } else {
+                    continue
+                }
+            default: continue
+            }
+
             let field = RItemField()
             field.key = fieldKey
             field.baseKey = nil
-
-            switch self.attachment.contentType {
-            case .file(let file, let filename, _),
-                 .snapshot(let file, let filename, _, _):
-                switch fieldKey {
-                case FieldKeys.Item.title:
-                    field.value = self.attachment.title
-                case FieldKeys.Item.Attachment.filename:
-                    field.value = filename
-                case FieldKeys.Item.Attachment.contentType:
-                    field.value = file.mimeType
-                case FieldKeys.Item.Attachment.linkMode:
-                    field.value = self.linkMode.rawValue
-                case FieldKeys.Item.Attachment.md5:
-                    field.value = md5(from: file.createUrl()) ?? ""
-                case FieldKeys.Item.Attachment.mtime:
-                    let modificationTime = Int(round(Date().timeIntervalSince1970 * 1000))
-                    field.value = "\(modificationTime)"
-                default:
-                    continue
-                }
-
-            case .url(let url):
-                switch fieldKey {
-                case FieldKeys.Item.Attachment.url:
-                    field.value = url.absoluteString
-                case FieldKeys.Item.Attachment.linkMode:
-                    field.value = "linked_url"
-                default:
-                    continue
-                }
-            }
-
+            field.value = value
             field.changed = true
             field.item = item
             database.add(field)

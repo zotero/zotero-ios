@@ -33,7 +33,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
         super.setHighlighted(highlighted, animated: animated)
-        
+
         self.fileView.set(backgroundColor: (highlighted ? self.selectedBackgroundView?.backgroundColor : self.backgroundColor))
     }
 

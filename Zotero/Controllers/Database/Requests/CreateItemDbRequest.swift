@@ -102,7 +102,7 @@ struct CreateItemDbRequest: DbResponseRequest {
         for attachment in self.data.attachments {
             let rAttachment = try CreateAttachmentDbRequest(attachment: attachment,
                                                             localizedType: (self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""),
-                                                            collections: [], linkMode: .importedFile).process(in: database)
+                                                            collections: []).process(in: database)
             rAttachment.libraryId = self.libraryId
             rAttachment.parent = item
             rAttachment.changedFields.insert(.parent)

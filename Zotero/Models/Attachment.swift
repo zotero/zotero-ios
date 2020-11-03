@@ -15,23 +15,18 @@ struct Attachment: Identifiable, Equatable {
         case local, remote
     }
 
+    enum FileLinkType {
+        case imported, linked, embeddedImage
+    }
+
     enum ContentType: Equatable {
-        case file(file: File, filename: String, location: FileLocation?)
+        case file(file: File, filename: String, location: FileLocation?, linkType: FileLinkType)
         case snapshot(htmlFile: File, filename: String, zipFile: File, location: FileLocation?)
         case url(URL)
 
-        var fileContentType: String? {
-            switch self {
-            case .file(let file, _, _),
-                 .snapshot(let file, _, _, _):
-                return file.mimeType
-            case .url: return nil
-            }
-        }
-
         var fileLocation: FileLocation? {
             switch self {
-            case .file(_, _, let location),
+            case .file(_, _, let location, _),
                  .snapshot(_, _, _, let location):
                 return location
             default:
@@ -43,8 +38,10 @@ struct Attachment: Identifiable, Equatable {
             switch (lhs, rhs) {
             case (.url(let lUrl), .url(let rUrl)):
                 return lUrl == rUrl
-            case (.file(let lFile, _, _), .file(let rFile, _, _)):
+            case (.file(let lFile, _, _, _), .file(let rFile, _, _, _)):
                 return lFile.createUrl() == rFile.createUrl()
+            case (.snapshot(let lHtmlFile, _, _, _), .snapshot(let rHthmlFile, _, _, _)):
+                return lHtmlFile.createUrl() == rHthmlFile.createUrl()
             default:
                 return false
             }
@@ -80,10 +77,10 @@ struct Attachment: Identifiable, Equatable {
     func changed(location: FileLocation?) -> Attachment {
         switch self.contentType {
         case .url: return self
-        case .file(let file, let filename, _):
+        case .file(let file, let filename, _, let linkType):
             return Attachment(key: self.key,
                               title: self.title,
-                              type: .file(file: file, filename: filename, location: location),
+                              type: .file(file: file, filename: filename, location: location, linkType: linkType),
                               libraryId: self.libraryId)
         case .snapshot(let htmlFile, let filename, let zipFile, _):
                 return Attachment(key: self.key,

@@ -71,7 +71,7 @@ struct AttachmentCreator {
         let file = Files.annotationPreview(annotationKey: parent.key, pdfKey: attachmentItem.key, isDark: (options == .dark))
         let location = fileStorage.flatMap({ self.location(for: item, file: file, fileStorage: $0) })
         let filename = self.filename(for: item, file: file)
-        return .file(file: file, filename: filename, location: location)
+        return .file(file: file, filename: filename, location: location, linkType: .imported)
     }
 
     private static func importedFileContentType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> Attachment.ContentType? {
@@ -80,7 +80,7 @@ struct AttachmentCreator {
             DDLogError("AttachmentCreator: content type missing for item \(item.key)")
             return nil
         }
-        return self.fileContentType(for: item, libraryId: libraryId, contentType: contentType, fileStorage: fileStorage)
+        return self.fileContentType(for: item, libraryId: libraryId, contentType: contentType, linkType: .imported, fileStorage: fileStorage)
     }
 
     private static func importedUrlContentType(item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> Attachment.ContentType? {
@@ -91,7 +91,7 @@ struct AttachmentCreator {
 
         switch contentType {
         case "application/pdf":
-            return self.fileContentType(for: item, libraryId: libraryId, contentType: contentType, fileStorage: fileStorage)
+            return self.fileContentType(for: item, libraryId: libraryId, contentType: contentType, linkType: .imported, fileStorage: fileStorage)
 
         case "text/html":
             guard let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value else {
@@ -110,11 +110,11 @@ struct AttachmentCreator {
         }
     }
 
-    private static func fileContentType(for item: RItem, libraryId: LibraryIdentifier, contentType: String, fileStorage: FileStorage?) -> Attachment.ContentType {
+    private static func fileContentType(for item: RItem, libraryId: LibraryIdentifier, contentType: String, linkType: Attachment.FileLinkType, fileStorage: FileStorage?) -> Attachment.ContentType {
         let file = Files.attachmentFile(in: libraryId, key: item.key, contentType: contentType)
         let location = fileStorage.flatMap({ self.location(for: item, file: file, fileStorage: $0) })
         let filename = self.filename(for: item, file: file)
-        return .file(file: file, filename: filename, location: location)
+        return .file(file: file, filename: filename, location: location, linkType: linkType)
     }
 
     private static func linkedFileContentType(item: RItem, libraryId: LibraryIdentifier) -> Attachment.ContentType? {
@@ -130,7 +130,7 @@ struct AttachmentCreator {
         }
         let file = Files.file(from: URL(fileURLWithPath: path))
         let filename = self.filename(for: item, file: file)
-        return .file(file: file, filename: filename, location: .local)
+        return .file(file: file, filename: filename, location: .local, linkType: .linked)
     }
 
     private static func linkedUrlContentType(for item: RItem, libraryId: LibraryIdentifier, urlDetector: UrlDetector) -> Attachment.ContentType? {

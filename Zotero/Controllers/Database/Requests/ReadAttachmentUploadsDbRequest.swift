@@ -31,8 +31,12 @@ struct ReadAttachmentUploadsDbRequest: DbResponseRequest {
             switch attachmentType {
             case .url:
                 return nil
-            case .file(let _file, let _filename, _),
-                 .snapshot(_, let _filename, let _file, _):
+            case .file(let _file, let _filename, _, let linkType):
+                // Don't try to upload linked attachments
+                guard linkType != .linked else { return nil }
+                file = _file
+                filename = _filename
+            case .snapshot(_, let _filename, let _file, _):
                 file = _file
                 filename = _filename
             }

@@ -214,10 +214,10 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         let file = Files.annotationPreview(annotationKey: item.key, pdfKey: parent.key, isDark: false)
         let attachmentKey = KeyGenerator.newKey
         let attachment = Attachment(key: attachmentKey, title: attachmentKey,
-                                    type: .file(file: file, filename: attachmentKey, location: .local),
+                                    type: .file(file: file, filename: attachmentKey, location: .local, linkType: .imported),
                                     libraryId: self.libraryId)
         let attachmentItem = try CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
-                                                           collections: [], linkMode: .embeddedImage).process(in: database)
+                                                           collections: []).process(in: database)
         attachmentItem.dateAdded = item.dateAdded
         attachmentItem.dateModified = item.dateAdded
         attachmentItem.parent = item

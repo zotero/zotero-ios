@@ -188,7 +188,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.openAttachment = (attachment, parentKey)
             }
-        case .file(let file, _, let location),
+        case .file(let file, _, let location, _),
              .snapshot(_, _, let file, let location):
             guard let location = location else { return }
 
@@ -396,7 +396,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                               .map({
                                   Attachment(key: KeyGenerator.newKey,
                                              title: $0.name,
-                                             type: .file(file: $0, filename: $0.name, location: .local),
+                                             type: .file(file: $0, filename: $0.name, location: .local, linkType: .imported),
                                              libraryId: viewModel.state.library.identifier)
                               })
         let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []

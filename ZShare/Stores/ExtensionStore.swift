@@ -134,7 +134,7 @@ class ExtensionStore {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
                 let filename = attachmentData["title"] ?? defaultTitle
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
-                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local),
+                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported),
                                             libraryId: libraryId)
 
                 self.type = .translated(item: newItem, location: attachmentFile)
@@ -148,7 +148,7 @@ class ExtensionStore {
             init(localFile: File, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
                 let filename = localFile.name
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: localFile.ext)
-                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local),
+                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported),
                                             libraryId: libraryId)
 
                 self.type = .localFile(location: localFile, collections: collections)
@@ -790,8 +790,7 @@ class ExtensionStore {
     private func create(attachment: Attachment, collections: Set<String>) -> Single<([String: Any], String, Int)> {
         return Single.create { subscriber -> Disposable in
             let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
-                                                    collections: collections, linkMode: .importedFile)
+            let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections)
 
             do {
                 let attachment = try self.dbStorage.createCoordinator().perform(request: request)
