@@ -17,17 +17,13 @@ class ItemDetailTitleCell: RxTableViewCell {
     @IBOutlet private weak var textField: UITextField!
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
 
-    private static let lineHeight: CGFloat = 22
-
     var textObservable: Observable<String> {
         return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
     }
 
     override func awakeFromNib() {
         super.awakeFromNib()
-
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.separatorHeight.constant = separatorHeight
+        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
     }
 
     func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {

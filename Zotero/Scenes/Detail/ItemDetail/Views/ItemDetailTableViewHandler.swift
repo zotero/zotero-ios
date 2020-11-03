@@ -65,10 +65,6 @@ class ItemDetailTableViewHandler: NSObject {
     // Identifier for "Add *" cell
     private static let addCellId = "ItemDetailAddCell"
     private static let dateFormatter = createDateFormatter()
-    private static let horizontalInset: CGFloat = 16
-    private static let iconWidth: CGFloat = 28
-    private static let headerHeight: CGFloat = 44
-    private static let lineHeight: CGFloat = 22
 
     private unowned let viewModel: ViewModel<ItemDetailActionHandler>
     private unowned let tableView: UITableView
@@ -105,7 +101,7 @@ class ItemDetailTableViewHandler: NSObject {
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
         if let abstract = viewModel.state.data.abstract {
-            let maxWidth = containerWidth - (2 * ItemDetailTableViewHandler.horizontalInset)
+            let maxWidth = containerWidth - (2 * ItemDetailLayout.horizontalInset)
             self.abstractTextViewHeight = self.calculateAbstractHeight(for: abstract, width: maxWidth)
         }
         self.setupTableView()
@@ -290,7 +286,7 @@ class ItemDetailTableViewHandler: NSObject {
         // Update abstract value in state
         self.viewModel.process(action: .setAbstract(abstract))
         // Change height if needed
-        let maxWidth = self.tableView.frame.width - (2 * ItemDetailTableViewHandler.horizontalInset)
+        let maxWidth = self.tableView.frame.width - (2 * ItemDetailLayout.horizontalInset)
         let height = self.calculateAbstractHeight(for: abstract, width: maxWidth)
         guard height != currentHeight else { return }
         self.updateAbstractCellHeight(at: indexPath, to: height)
@@ -317,8 +313,8 @@ class ItemDetailTableViewHandler: NSObject {
     private func calculateAbstractHeight(for text: String, width: CGFloat) -> CGFloat {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailTableViewHandler.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailTableViewHandler.lineHeight
+        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
         let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
                                                          .font: UIFont.preferredFont(forTextStyle: .body)]
         let maxSize = CGSize(width: width, height: .greatestFiniteMagnitude)
@@ -406,7 +402,8 @@ class ItemDetailTableViewHandler: NSObject {
             hasSeparator = isEditing && indexPath.row != (self.count(in: .dates, isEditing: isEditing) - 1)
         }
 
-        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing, row: indexPath.row)
+        let isLastRow = indexPath.row == (self.count(in: section, isEditing: isEditing) - 1)
+        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
         let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, leftMargin: layoutMargins.left) :
                                                          max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         let separatorInsets = UIEdgeInsets(top: 0, left: leftSeparatorInset, bottom: 0, right: 0)
@@ -416,80 +413,10 @@ class ItemDetailTableViewHandler: NSObject {
     private func separatorLeftInset(for section: Section, isEditing: Bool, leftMargin: CGFloat) -> CGFloat {
         switch section {
         case .notes, .attachments, .tags:
-            return ItemDetailTableViewHandler.iconWidth + (isEditing ? 40 : 0) + leftMargin
+            return ItemDetailLayout.iconWidth + (isEditing ? 40 : 0) + leftMargin
         case .abstract, .creators, .dates, .fields, .title, .type:
             return 0
         }
-    }
-
-    private func layoutMargin(for section: Section, isEditing: Bool, row: Int) -> UIEdgeInsets {
-        let separatorHeight = 1 / UIScreen.main.scale
-        let top: CGFloat
-        let bottom: CGFloat
-
-        switch section {
-        case .type:
-            if isEditing {
-                top = 15
-                bottom = 15
-            } else {
-                top = 20
-                bottom = 10
-            }
-        case .dates:
-            if isEditing {
-                top = 15
-                bottom = 15
-            } else {
-                let isLast = row == (self.count(in: section, isEditing: isEditing) - 1)
-                top = 10
-                bottom = isLast ? 20 : 10
-            }
-        case .tags:
-            let isLast = row == (self.count(in: section, isEditing: isEditing) - 1)
-            if isEditing {
-                top = isLast ? 0 : 15
-                bottom = isLast ? 0 : 15
-            } else if isLast {
-                top = 10
-                bottom = 20
-            } else if row == 0 {
-                top = 20
-                bottom = 10
-            } else {
-                top = 10
-                bottom = 10
-            }
-        case .creators:
-            if isEditing {
-                let isLast = row == (self.count(in: section, isEditing: isEditing) - 1)
-                top = isLast ? 0 : 15
-                bottom = isLast ? 0 : 15
-            } else {
-                top = 10
-                bottom = 10
-            }
-        case .fields:
-            top = isEditing ? 15 : 10
-            bottom = isEditing ? 15 : 10
-        case .abstract:
-            top = 15
-            bottom = 15
-        case .attachments, .notes:
-            if isEditing && row == (self.count(in: section, isEditing: isEditing) - 1) {
-                top = 0
-                bottom = 0
-            } else {
-                top = 15
-                bottom = 15
-            }
-        case .title:
-            top = 43 + separatorHeight
-            bottom = 20 + separatorHeight
-        }
-
-        return UIEdgeInsets(top: top, left: ItemDetailTableViewHandler.horizontalInset,
-                            bottom: bottom, right: ItemDetailTableViewHandler.horizontalInset)
     }
 
     private func createContextMenu(for attachment: Attachment) -> UIMenu? {
@@ -567,7 +494,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         switch self.sections[section] {
         case .notes, .attachments, .tags:
-            return ItemDetailTableViewHandler.headerHeight + (1 / UIScreen.main.scale)
+            return ItemDetailLayout.sectionHeaderHeight + ItemDetailLayout.separatorHeight
         default:
             return 0
         }
@@ -595,7 +522,8 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let isEditing = self.viewModel.state.isEditing
         let section = self.sections[indexPath.section]
-        let layoutMargins = self.layoutMargin(for: section, isEditing: isEditing, row: indexPath.row)
+        let isLastRow = indexPath.row == (self.count(in: section, isEditing: isEditing) - 1)
+        let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
         cell.layoutMargins = layoutMargins
         cell.contentView.layoutMargins = layoutMargins
     }

@@ -17,8 +17,6 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var contentTextView: UITextView!
     @IBOutlet private weak var textViewHeight: NSLayoutConstraint!
 
-    private static let lineHeight: CGFloat = 22
-
     private var observer: AnyObserver<(String, CGFloat)>?
     var textObservable: Observable<(String, CGFloat)> {
         return Observable.create { observer -> Disposable in
@@ -30,7 +28,7 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        self.separatorHeight.constant = 1 / UIScreen.main.scale
+        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
 
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = font
@@ -44,8 +42,8 @@ class ItemDetailAbstractEditCell: RxTableViewCell {
     func setup(with abstract: String, height: CGFloat) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailAbstractEditCell.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailAbstractEditCell.lineHeight
+        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
 
         let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
                                                          .font: UIFont.preferredFont(forTextStyle: .body)]

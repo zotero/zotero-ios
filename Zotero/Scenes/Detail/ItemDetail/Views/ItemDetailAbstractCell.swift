@@ -19,18 +19,15 @@ class ItemDetailAbstractCell: RxTableViewCell {
     @IBOutlet private weak var contentLabel: CollapsibleLabel!
     @IBOutlet private weak var contentBottom: NSLayoutConstraint!
 
-    private static let lineHeight: CGFloat = 22
-
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.separatorHeight.constant = separatorHeight
+        self.separatorHeight.constant = ItemDetailLayout.separatorHeight
 
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = font
-        self.titleTop.constant = separatorHeight - (font.ascender - font.capHeight)
-        self.contentBottom.constant = -separatorHeight
+        self.titleTop.constant = ItemDetailLayout.separatorHeight - (font.ascender - font.capHeight)
+        self.contentBottom.constant = -ItemDetailLayout.separatorHeight
 
         let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13),
                                                          .foregroundColor: Asset.Colors.zoteroBlue.color]
@@ -47,14 +44,14 @@ class ItemDetailAbstractCell: RxTableViewCell {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.hyphenationFactor = 1
         paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailAbstractCell.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailAbstractCell.lineHeight
+        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
         let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle, .font: font]
         let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
 
         self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
 
-        let lineHeightOffset = (ItemDetailAbstractCell.lineHeight - font.lineHeight)
+        let lineHeightOffset = (ItemDetailLayout.lineHeight - font.lineHeight)
         self.titleToContent.constant = self.layoutMargins.top - (font.ascender - font.capHeight) - lineHeightOffset
     }
 }

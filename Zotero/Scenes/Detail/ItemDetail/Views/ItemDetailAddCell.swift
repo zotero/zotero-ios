@@ -17,9 +17,7 @@ class ItemDetailAddCell: UITableViewCell {
 
     func setup(with title: String) {
         self.titleLabel.text = title
-
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.titleTop.constant = ItemDetailAddCell.verticalInset - separatorHeight
-        self.titleBottom.constant = ItemDetailAddCell.verticalInset - separatorHeight
+        self.titleTop.constant = ItemDetailAddCell.verticalInset - ItemDetailLayout.separatorHeight
+        self.titleBottom.constant = ItemDetailAddCell.verticalInset - ItemDetailLayout.separatorHeight
     }
 }

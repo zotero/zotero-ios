@@ -348,6 +348,7 @@
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
@@ -946,6 +947,7 @@
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B312BB4025519DD30023300A /* ItemDetailLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailLayout.swift; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
 		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
@@ -1873,6 +1875,7 @@
 				B395EFE625494B2300CEBD9F /* CreatorEditState.swift */,
 				B3593ECA241A61C700760E20 /* ItemDetailAction.swift */,
 				B3593ECD241A61C700760E20 /* ItemDetailError.swift */,
+				B312BB4025519DD30023300A /* ItemDetailLayout.swift */,
 				B3593EC9241A61C700760E20 /* ItemDetailState.swift */,
 				B3593ECC241A61C700760E20 /* TagPickerAction.swift */,
 				B3593EC8241A61C700760E20 /* TagPickerError.swift */,
@@ -2707,6 +2710,7 @@
 				B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */,
 				B305661023FC051E003304F2 /* SchemaRequest.swift in Sources */,
 				B305660223FC051E003304F2 /* ApiClient.swift in Sources */,
+				B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */,
 				B39D33712400150B00EF2ACB /* CreateAttachmentsDbRequest.swift in Sources */,
 				B305667223FC051F003304F2 /* Controllers+EnvironmentValues.swift in Sources */,
 				B3593F3C241A61C700760E20 /* ItemsSortType.swift in Sources */,

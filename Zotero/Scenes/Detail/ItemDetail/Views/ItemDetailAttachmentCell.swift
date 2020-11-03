@@ -16,9 +16,6 @@ class ItemDetailAttachmentCell: UITableViewCell {
     @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
 
-    private static let height: CGFloat = 44
-    private static let lineHeight: CGFloat = 22
-
     override func awakeFromNib() {
         super.awakeFromNib()
         self.fileView.tapEnabled = false
@@ -27,8 +24,7 @@ class ItemDetailAttachmentCell: UITableViewCell {
         highlightView.backgroundColor = Asset.Colors.cellHighlighted.color
         self.selectedBackgroundView = highlightView
 
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.containerHeight.constant = ItemDetailAttachmentCell.height - separatorHeight
+        self.containerHeight.constant = ItemDetailLayout.minCellHeight
     }
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
@@ -50,15 +46,15 @@ class ItemDetailAttachmentCell: UITableViewCell {
         }
 
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = ItemDetailAttachmentCell.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailAttachmentCell.lineHeight
+        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
         let attributedString = NSAttributedString(string: attachment.title,
                                                   attributes: [.font: UIFont.preferredFont(forTextStyle: .body),
                                                                .paragraphStyle: paragraphStyle])
         self.label.attributedText = attributedString
 
         let font = self.label.font!
-        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailAttachmentCell.lineHeight - font.lineHeight)
+        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
         self.labelLeft.constant = self.layoutMargins.left
     }
 }

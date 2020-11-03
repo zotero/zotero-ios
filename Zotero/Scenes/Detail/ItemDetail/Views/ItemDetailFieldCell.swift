@@ -71,8 +71,7 @@ class ItemDetailFieldCell: RxTableViewCell {
     private func setupInsets() {
         // Workaround for weird iOS bug, when layout margins are too short, the baseline is misaligned
         let needsOffset = self.layoutMargins.bottom == 10 && self.layoutMargins.top == 10
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.valueTop.constant = self.valueLabel.font.capHeight - self.valueLabel.font.ascender - (needsOffset ? 1 : separatorHeight)
-        self.valueBottom.constant = needsOffset ? -1 : -separatorHeight
+        self.valueTop.constant = self.valueLabel.font.capHeight - self.valueLabel.font.ascender - (needsOffset ? 1 : ItemDetailLayout.separatorHeight)
+        self.valueBottom.constant = needsOffset ? -1 : -ItemDetailLayout.separatorHeight
     }
 }

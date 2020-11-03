@@ -14,27 +14,22 @@ class ItemDetailNoteCell: UITableViewCell {
     @IBOutlet private weak var labelLeft: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
 
-    private static let height: CGFloat = 44
-    private static let lineHeight: CGFloat = 22
-
     override func awakeFromNib() {
         super.awakeFromNib()
-
-        let separatorHeight = 1 / UIScreen.main.scale
-        self.containerHeight.constant = ItemDetailNoteCell.height - separatorHeight
+        self.containerHeight.constant = ItemDetailLayout.minCellHeight
     }
 
     func setup(with note: Note) {
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = ItemDetailNoteCell.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailNoteCell.lineHeight
+        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
         let attributedString = NSAttributedString(string: note.title,
                                                   attributes: [.font: UIFont.preferredFont(forTextStyle: .body),
                                                                .paragraphStyle: paragraphStyle])
         self.label.attributedText = attributedString
 
         let font = self.label.font!
-        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailNoteCell.lineHeight - font.lineHeight)
+        self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
         self.labelLeft.constant = self.layoutMargins.left
     }
 }
