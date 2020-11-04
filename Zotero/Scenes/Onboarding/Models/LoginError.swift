@@ -20,11 +20,11 @@ enum LoginError: Error, Identifiable {
     var localizedDescription: String {
         switch self {
         case .invalidPassword:
-            return L10n.Login.Error.invalidPassword
+            return L10n.Errors.Login.invalidPassword
         case .invalidUsername:
-            return L10n.Login.Error.invalidUsername
+            return L10n.Errors.Login.invalidUsername
         case .loginFailed:
-            return L10n.Login.Error.unknown
+            return L10n.Errors.Login.unknown
         }
     }
 }

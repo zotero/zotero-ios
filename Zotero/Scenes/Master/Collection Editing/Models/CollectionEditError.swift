@@ -28,9 +28,9 @@ enum CollectionEditError: Error, Identifiable, Hashable {
     var localizedDescription: String {
         switch self {
         case .emptyName:
-            return L10n.Collections.Error.emptyName
+            return L10n.Errors.Collections.emptyName
         case .saveFailed(let name):
-            return L10n.Collections.Error.saveFailed(name)
+            return L10n.Errors.Collections.saveFailed(name)
         }
     }
 }

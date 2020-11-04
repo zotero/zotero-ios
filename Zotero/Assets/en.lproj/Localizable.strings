@@ -43,16 +43,12 @@
 "onboarding.create_account" = "Create Account";
 "login.username" = "Username";
 "login.password" = "Password";
-"login.error.invalid_password" = "Invalid password";
-"login.error.invalid_username" = "Invalid username";
-"login.error.unknown" = "Could not log in";
 "login.email" = "Email";
 "login.repeat_password" = "Repeat password";
 "login.forgot_password" = "Forgot Password?";
 
 "libraries.my_library" = "My Library";
 "libraries.group_libraries" = "Group Libraries";
-"libraries.error.cantLoad" = "Can't load libraries";
 
 "collections.search_title" = "Search Collections";
 "collections.all_items" = "All Items";
@@ -64,8 +60,6 @@
 "collections.delete_with_items" = "Delete Collection and Items";
 "collections.create_title" = "Create Collection";
 "collections.picker_title" = "Pick Parent";
-"collections.error.empty_name" = "You have to fill the name";
-"collections.error.save_failed" = "Could not save collection %@. Try again.";
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";
@@ -74,9 +68,6 @@
 "sync_toolbar.object" = "Syncing %@ in %@";
 "sync_toolbar.object_with_data" = "Syncing %@ (%d / %d) in %@";
 "sync_toolbar.finished" = "Finished sync";
-"sync_toolbar.finished_with_errors" = "Finished sync (%@)";
-"sync_toolbar.one_error" = "1 issue";
-"sync_toolbar.multiple_errors" = "%d issues";
 "sync_toolbar.deletion" = "Removing unused objects in %@";
 "sync_toolbar.aborted" = "Sync failed (%@)";
 "sync_toolbar.writes" = "Submitting changes (%d / %d)";
@@ -111,7 +102,6 @@
 "items.remove_from_collection_title" = "Remove from Collection";
 "items.remove_from_collection_question" = "Are you sure you want to remove the selected item from this collection?";
 "items.remove_from_collection_multiple_question" = "Are you sure you want to remove selected items from this collection?";
-"items.error.open_detail" = "Can't open item detail. Please try again.";
 
 "item_detail.add_creator" = "Add creator";
 "item_detail.notes" = "Notes";
@@ -122,10 +112,6 @@
 "item_detail.add_attachment" = "Add attachment";
 "item_detail.split_name" = "Split name";
 "item_detail.merge_name" = "Merge name";
-"item_detail.error.dropped_fields_title" = "Change Item Type";
-"item_detail.error.dropped_fields_message" = "Are you sure you want to change the item type?
-The following fields will be lost:
-%@";
 "item_detail.search_tags" = "Search Tags...";
 "item_detail.untitled" = "Untitled";
 "item_detail.show_more" = "Show more";
@@ -176,7 +162,6 @@ The following fields will be lost:
 "settings.logging_desc1" = "If you want to debug an issue on launch, kill the app and start it again.";
 "settings.logging_desc2" = "If you want to debug share extension issue, open the share extension.";
 "settings.storage" = "Storage";
-"settings.storage.error" = "Could not collect storage data";
 "settings.storage.one_file" = "1 file";
 "settings.storage.multiple_files" = "%d files";
 "settings.storage.delete_all" = "Delete All Attachments";
@@ -185,7 +170,6 @@ The following fields will be lost:
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Loading attachment";
-"shareext.unknown_error" = "Unknown error occured";
 "shareext.translation.item_selection" = "Pick an item";
 "shareext.translation.translating_with" = "Translating with: \"%@\"";
 "shareext.translation.downloading" = "Downloading";
@@ -196,3 +180,21 @@ The following fields will be lost:
 "errors.db" = "Could not connect to database. Device storage might be full.";
 "errors.versionMismatch" = "Another sync has happened during sync";
 "errors.unknown" = "Unknown error";
+"errors.attachments.cant_unzip_snapshot" = "Could not unzip snapshot.";
+"errors.attachments.cant_open_attachment" = "The attached file could not be found.";
+"errors.login.invalid_password" = "Invalid password";
+"errors.login.invalid_username" = "Invalid username";
+"errors.login.unknown" = "Could not log in";
+"errors.libraries.cantLoad" = "Can't load libraries";
+"errors.collections.empty_name" = "You have to fill the name";
+"errors.collections.save_failed" = "Could not save collection %@. Try again.";
+"errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
+"errors.sync_toolbar.one_error" = "1 issue";
+"errors.sync_toolbar.multiple_errors" = "%d issues";
+"errors.items.open_detail" = "Can't open item detail. Please try again.";
+"errors.item_detail.dropped_fields_title" = "Change Item Type";
+"errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?
+                                               The following fields will be lost:
+                                               %@";
+"errors.settings.storage" = "Could not collect storage data";
+"errors.shareext.unknown" = "Unknown error occured";

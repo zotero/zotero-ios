@@ -333,7 +333,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
             self.navigationController.pushViewController(controller, animated: true)
         } catch let error {
             DDLogError("DetailCoordinator: could not open item detail - \(error)")
-            let controller = UIAlertController(title: L10n.error, message: L10n.Items.Error.openDetail, preferredStyle: .alert)
+            let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Items.openDetail, preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
             self.topViewController.present(controller, animated: true, completion: nil)
         }
@@ -404,7 +404,14 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
 
 extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void) {
-        let controller = UIAlertController(title: L10n.error, message: "\(error)", preferredStyle: .alert)
+        let message: String
+        if let error = error as? ItemDetailError, error == .cantUnzipSnapshot {
+            message = L10n.Errors.Attachments.cantUnzipSnapshot
+        } else {
+            message = L10n.Errors.Attachments.cantOpenAttachment
+        }
+
+        let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
         controller.addAction(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
             retryAction()

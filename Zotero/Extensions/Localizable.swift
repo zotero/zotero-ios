@@ -86,14 +86,6 @@ internal enum L10n {
     internal static let searchTitle = L10n.tr("Localizable", "collections.search_title")
     /// Trash
     internal static let trash = L10n.tr("Localizable", "collections.trash")
-    internal enum Error {
-      /// You have to fill the name
-      internal static let emptyName = L10n.tr("Localizable", "collections.error.empty_name")
-      /// Could not save collection %@. Try again.
-      internal static func saveFailed(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "collections.error.save_failed", String(describing: p1))
-      }
-    }
   }
 
   internal enum CreatorEditor {
@@ -126,6 +118,64 @@ internal enum L10n {
     internal static let unknown = L10n.tr("Localizable", "errors.unknown")
     /// Another sync has happened during sync
     internal static let versionMismatch = L10n.tr("Localizable", "errors.versionMismatch")
+    internal enum Attachments {
+      /// The attached file could not be found.
+      internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment")
+      /// Could not unzip snapshot.
+      internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot")
+    }
+    internal enum Collections {
+      /// You have to fill the name
+      internal static let emptyName = L10n.tr("Localizable", "errors.collections.empty_name")
+      /// Could not save collection %@. Try again.
+      internal static func saveFailed(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.collections.save_failed", String(describing: p1))
+      }
+    }
+    internal enum ItemDetail {
+      /// Are you sure you want to change the item type?\n                                               The following fields will be lost:\n                                               %@
+      internal static func droppedFieldsMessage(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.item_detail.dropped_fields_message", String(describing: p1))
+      }
+      /// Change Item Type
+      internal static let droppedFieldsTitle = L10n.tr("Localizable", "errors.item_detail.dropped_fields_title")
+    }
+    internal enum Items {
+      /// Can't open item detail. Please try again.
+      internal static let openDetail = L10n.tr("Localizable", "errors.items.open_detail")
+    }
+    internal enum Libraries {
+      /// Can't load libraries
+      internal static let cantLoad = L10n.tr("Localizable", "errors.libraries.cantLoad")
+    }
+    internal enum Login {
+      /// Invalid password
+      internal static let invalidPassword = L10n.tr("Localizable", "errors.login.invalid_password")
+      /// Invalid username
+      internal static let invalidUsername = L10n.tr("Localizable", "errors.login.invalid_username")
+      /// Could not log in
+      internal static let unknown = L10n.tr("Localizable", "errors.login.unknown")
+    }
+    internal enum Settings {
+      /// Could not collect storage data
+      internal static let storage = L10n.tr("Localizable", "errors.settings.storage")
+    }
+    internal enum Shareext {
+      /// Unknown error occured
+      internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
+    }
+    internal enum SyncToolbar {
+      /// Finished sync (%@)
+      internal static func finishedWithErrors(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.finished_with_errors", String(describing: p1))
+      }
+      /// %d issues
+      internal static func multipleErrors(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.multiple_errors", p1)
+      }
+      /// 1 issue
+      internal static let oneError = L10n.tr("Localizable", "errors.sync_toolbar.one_error")
+    }
   }
 
   internal enum ItemDetail {
@@ -157,14 +207,6 @@ internal enum L10n {
     internal static let untitled = L10n.tr("Localizable", "item_detail.untitled")
     /// View PDF
     internal static let viewPdf = L10n.tr("Localizable", "item_detail.view_pdf")
-    internal enum Error {
-      /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
-      internal static func droppedFieldsMessage(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "item_detail.error.dropped_fields_message", String(describing: p1))
-      }
-      /// Change Item Type
-      internal static let droppedFieldsTitle = L10n.tr("Localizable", "item_detail.error.dropped_fields_title")
-    }
   }
 
   internal enum Items {
@@ -220,10 +262,6 @@ internal enum L10n {
     internal static let trashTitle = L10n.tr("Localizable", "items.trash_title")
     /// Select a Collection
     internal static let zeroCollectionsSelected = L10n.tr("Localizable", "items.zero_collections_selected")
-    internal enum Error {
-      /// Can't open item detail. Please try again.
-      internal static let openDetail = L10n.tr("Localizable", "items.error.open_detail")
-    }
   }
 
   internal enum Libraries {
@@ -231,10 +269,6 @@ internal enum L10n {
     internal static let groupLibraries = L10n.tr("Localizable", "libraries.group_libraries")
     /// My Library
     internal static let myLibrary = L10n.tr("Localizable", "libraries.my_library")
-    internal enum Error {
-      /// Can't load libraries
-      internal static let cantLoad = L10n.tr("Localizable", "libraries.error.cantLoad")
-    }
   }
 
   internal enum Login {
@@ -248,14 +282,6 @@ internal enum L10n {
     internal static let repeatPassword = L10n.tr("Localizable", "login.repeat_password")
     /// Username
     internal static let username = L10n.tr("Localizable", "login.username")
-    internal enum Error {
-      /// Invalid password
-      internal static let invalidPassword = L10n.tr("Localizable", "login.error.invalid_password")
-      /// Invalid username
-      internal static let invalidUsername = L10n.tr("Localizable", "login.error.invalid_username")
-      /// Could not log in
-      internal static let unknown = L10n.tr("Localizable", "login.error.unknown")
-    }
   }
 
   internal enum Onboarding {
@@ -372,8 +398,6 @@ internal enum L10n {
       internal static func deleteLibraryQuestion(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1))
       }
-      /// Could not collect storage data
-      internal static let error = L10n.tr("Localizable", "settings.storage.error")
       /// %d files
       internal static func multipleFiles(_ p1: Int) -> String {
         return L10n.tr("Localizable", "settings.storage.multiple_files", p1)
@@ -388,8 +412,6 @@ internal enum L10n {
     internal static let decodingAttachment = L10n.tr("Localizable", "shareext.decoding_attachment")
     /// Save to Zotero
     internal static let save = L10n.tr("Localizable", "shareext.save")
-    /// Unknown error occured
-    internal static let unknownError = L10n.tr("Localizable", "shareext.unknown_error")
     internal enum Translation {
       /// Downloading
       internal static let downloading = L10n.tr("Localizable", "shareext.translation.downloading")
@@ -413,10 +435,6 @@ internal enum L10n {
     }
     /// Finished sync
     internal static let finished = L10n.tr("Localizable", "sync_toolbar.finished")
-    /// Finished sync (%@)
-    internal static func finishedWithErrors(_ p1: Any) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.finished_with_errors", String(describing: p1))
-    }
     /// Syncing groups
     internal static let groups = L10n.tr("Localizable", "sync_toolbar.groups")
     /// Syncing groups (%d / %d)
@@ -427,10 +445,6 @@ internal enum L10n {
     internal static func library(_ p1: Any) -> String {
       return L10n.tr("Localizable", "sync_toolbar.library", String(describing: p1))
     }
-    /// %d issues
-    internal static func multipleErrors(_ p1: Int) -> String {
-      return L10n.tr("Localizable", "sync_toolbar.multiple_errors", p1)
-    }
     /// Syncing %@ in %@
     internal static func object(_ p1: Any, _ p2: Any) -> String {
       return L10n.tr("Localizable", "sync_toolbar.object", String(describing: p1), String(describing: p2))
@@ -439,8 +453,6 @@ internal enum L10n {
     internal static func objectWithData(_ p1: Any, _ p2: Int, _ p3: Int, _ p4: Any) -> String {
       return L10n.tr("Localizable", "sync_toolbar.object_with_data", String(describing: p1), p2, p3, String(describing: p4))
     }
-    /// 1 issue
-    internal static let oneError = L10n.tr("Localizable", "sync_toolbar.one_error")
     /// Sync starting
     internal static let starting = L10n.tr("Localizable", "sync_toolbar.starting")
     /// Uploading attachment (%d / %d)

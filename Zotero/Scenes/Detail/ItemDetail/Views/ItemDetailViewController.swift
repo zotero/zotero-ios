@@ -297,7 +297,7 @@ class ItemDetailViewController: UIViewController {
     private func show(error: ItemDetailError) {
         switch error {
         case .droppedFields(let fields):
-            let controller = UIAlertController(title: L10n.ItemDetail.Error.droppedFieldsTitle,
+            let controller = UIAlertController(title: L10n.Errors.ItemDetail.droppedFieldsTitle,
                                                message: self.droppedFieldsMessage(for: fields),
                                                preferredStyle: .alert)
             controller.addAction(UIAlertAction(title: L10n.ok, style: .default, handler: { [weak self] _ in
@@ -344,6 +344,6 @@ class ItemDetailViewController: UIViewController {
     /// - returns: Error message.
     private func droppedFieldsMessage(for names: [String]) -> String {
         let formattedNames = names.map({ "- \($0)\n" }).joined()
-        return L10n.ItemDetail.Error.droppedFieldsMessage(formattedNames)
+        return L10n.Errors.ItemDetail.droppedFieldsMessage(formattedNames)
     }
 }

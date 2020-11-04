@@ -67,7 +67,7 @@ class LibrariesViewController: UIViewController {
         switch error {
         case .cantLoadData:
             title = L10n.error
-            message = L10n.Libraries.Error.cantLoad
+            message = L10n.Errors.Libraries.cantLoad
         }
 
         let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)

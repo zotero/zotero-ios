@@ -247,7 +247,7 @@ class ShareViewController: UIViewController {
                     self.showError(message: "Could not load web data. Close and try again.")
                 }
             case .unknown, .expired:
-                self.showError(message: L10n.Shareext.unknownError)
+                self.showError(message: L10n.Errors.Shareext.unknown)
             case .fileMissing:
                 self.showError(message: "Could not find file to upload.")
             case .missingBackgroundUploader:
