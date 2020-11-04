@@ -161,6 +161,10 @@ internal enum L10n {
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage")
     }
     internal enum Shareext {
+      /// Failed to load data. Please try again.
+      internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data")
+      /// Please log into the app before using this extension.
+      internal static let loggedOut = L10n.tr("Localizable", "errors.shareext.logged_out")
       /// Unknown error occured
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }

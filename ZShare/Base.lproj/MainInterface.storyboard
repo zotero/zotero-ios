@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="6dC-6u-zhd">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17156" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="6dC-6u-zhd">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17126"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -33,7 +35,7 @@
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" text="PICK COLLECTION" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2eG-8h-PgA">
                                                 <rect key="frame" x="6" y="0.0" width="368" height="13.5"/>
                                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
-                                                <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                <color key="textColor" systemColor="systemGrayColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0V1-Zt-mR3">
@@ -54,14 +56,14 @@
                                                     <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="VzB-Km-Si1">
                                                         <rect key="frame" x="342" y="12" width="20" height="20"/>
                                                     </activityIndicatorView>
-                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="auM-cU-USd">
+                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="auM-cU-USd">
                                                         <rect key="frame" x="0.0" y="0.0" width="374" height="44"/>
                                                         <connections>
                                                             <action selector="showCollectionPicker" destination="j1y-V4-xli" eventType="touchUpInside" id="due-je-KqJ"/>
                                                         </connections>
                                                     </button>
                                                 </subviews>
-                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>
                                                     <constraint firstAttribute="trailing" secondItem="VzB-Km-Si1" secondAttribute="trailing" constant="12" id="2kX-Pc-xJn"/>
                                                     <constraint firstItem="VzB-Km-Si1" firstAttribute="centerY" secondItem="0V1-Zt-mR3" secondAttribute="centerY" id="2sY-s8-PeO"/>
@@ -96,14 +98,14 @@
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" text="MULTIPLE ITEMS FOUND" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Z8I-NI-5Rt">
                                                 <rect key="frame" x="6" y="0.0" width="368" height="13.5"/>
                                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
-                                                <color key="textColor" systemColor="systemGrayColor" red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                <color key="textColor" systemColor="systemGrayColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="9mk-fm-lGU">
                                                 <rect key="frame" x="0.0" y="19.5" width="374" height="44"/>
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Mnf-Y7-enG">
-                                                        <rect key="frame" x="15" y="8" width="42" height="28"/>
+                                                        <rect key="frame" x="15" y="8" width="41.5" height="28"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                         <color key="textColor" name="zoteroBlue"/>
                                                         <nil key="highlightedColor"/>
@@ -114,14 +116,14 @@
                                                             <constraint firstAttribute="height" constant="20" id="V7E-eb-wnY"/>
                                                         </constraints>
                                                     </imageView>
-                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="AsU-Ie-6RA">
+                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="AsU-Ie-6RA">
                                                         <rect key="frame" x="0.0" y="0.0" width="374" height="44"/>
                                                         <connections>
                                                             <action selector="showItemPicker" destination="j1y-V4-xli" eventType="touchUpInside" id="PPF-Y0-siy"/>
                                                         </connections>
                                                     </button>
                                                 </subviews>
-                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="44" id="E8P-zj-a3S"/>
                                                     <constraint firstAttribute="bottom" secondItem="Mnf-Y7-enG" secondAttribute="bottom" constant="8" id="QUw-Jl-H5T"/>
@@ -161,7 +163,7 @@
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="zSX-0G-G4r">
                                         <rect key="frame" x="0.0" y="0.0" width="414" height="1"/>
-                                        <color key="backgroundColor" systemColor="opaqueSeparatorColor" red="0.77647058820000003" green="0.77647058820000003" blue="0.7843137255" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <color key="backgroundColor" systemColor="opaqueSeparatorColor"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="1" id="A0Q-rL-RvS"/>
                                         </constraints>
@@ -176,7 +178,7 @@
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ZZl-OV-xDK">
-                                                <rect key="frame" x="193" y="21" width="181" height="2"/>
+                                                <rect key="frame" x="193" y="20" width="181" height="4"/>
                                                 <color key="tintColor" name="zoteroBlue"/>
                                                 <color key="progressTintColor" name="zoteroBlue"/>
                                             </progressView>
@@ -196,17 +198,17 @@
                                 </constraints>
                             </view>
                             <view hidden="YES" alpha="0.0" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="y9J-7o-oEB">
-                                <rect key="frame" x="115" y="402" width="184.5" height="92.5"/>
+                                <rect key="frame" x="115" y="402" width="184" height="92.5"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="2Ra-mK-fat">
-                                        <rect key="frame" x="20" y="20" width="144.5" height="52.5"/>
+                                        <rect key="frame" x="20" y="20" width="144" height="52.5"/>
                                         <subviews>
                                             <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="uzs-OS-vfs">
-                                                <rect key="frame" x="0.0" y="0.0" width="144.5" height="20"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="144" height="20"/>
                                                 <color key="color" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                             </activityIndicatorView>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="Preparing upload..." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DLQ-LV-6lr">
-                                                <rect key="frame" x="0.0" y="32" width="144.5" height="20.5"/>
+                                                <rect key="frame" x="0.0" y="32" width="144" height="20.5"/>
                                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <nil key="highlightedColor"/>
@@ -222,35 +224,15 @@
                                     <constraint firstAttribute="bottom" secondItem="2Ra-mK-fat" secondAttribute="bottom" constant="20" id="t5q-Vu-vDN"/>
                                 </constraints>
                             </view>
-                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="JX5-Nc-6rV">
-                                <rect key="frame" x="0.0" y="88" width="414" height="774"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Please log into the app before using this extension." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aiE-ky-j9m">
-                                        <rect key="frame" x="20" y="20" width="374" height="734"/>
-                                        <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                </subviews>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="trailing" secondItem="aiE-ky-j9m" secondAttribute="trailing" constant="20" id="Fe3-UF-M7b"/>
-                                    <constraint firstItem="aiE-ky-j9m" firstAttribute="leading" secondItem="JX5-Nc-6rV" secondAttribute="leading" constant="20" id="dKg-F6-Ufd"/>
-                                    <constraint firstAttribute="bottom" secondItem="aiE-ky-j9m" secondAttribute="bottom" constant="20" id="fQC-Be-Sjl"/>
-                                    <constraint firstItem="aiE-ky-j9m" firstAttribute="top" secondItem="JX5-Nc-6rV" secondAttribute="top" constant="20" id="vpd-RP-QwA"/>
-                                </constraints>
-                            </view>
                         </subviews>
+                        <viewLayoutGuide key="safeArea" id="1Xd-am-t49"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="ymF-El-U9O" firstAttribute="leading" secondItem="1Xd-am-t49" secondAttribute="leading" id="37H-qZ-9Ki"/>
                             <constraint firstItem="1Xd-am-t49" firstAttribute="trailing" secondItem="ymF-El-U9O" secondAttribute="trailing" id="7ol-Ix-J24"/>
-                            <constraint firstItem="1Xd-am-t49" firstAttribute="bottom" secondItem="JX5-Nc-6rV" secondAttribute="bottom" id="9e8-wR-5Dq"/>
                             <constraint firstItem="ymF-El-U9O" firstAttribute="top" secondItem="1Xd-am-t49" secondAttribute="top" id="DcX-3Y-nTR"/>
-                            <constraint firstItem="JX5-Nc-6rV" firstAttribute="top" secondItem="1Xd-am-t49" secondAttribute="top" id="Fja-a9-gnw"/>
                             <constraint firstItem="Qgq-AM-hs6" firstAttribute="bottom" secondItem="1Xd-am-t49" secondAttribute="bottom" id="HAM-aJ-uPg"/>
                             <constraint firstItem="1Xd-am-t49" firstAttribute="bottom" secondItem="ymF-El-U9O" secondAttribute="bottom" id="Leh-rS-3Em"/>
-                            <constraint firstItem="1Xd-am-t49" firstAttribute="trailing" secondItem="JX5-Nc-6rV" secondAttribute="trailing" id="NhL-ZL-6a7"/>
                             <constraint firstItem="Qgq-AM-hs6" firstAttribute="leading" secondItem="1Xd-am-t49" secondAttribute="leading" id="NnP-rt-4cu"/>
                             <constraint firstItem="y9J-7o-oEB" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="1Xd-am-t49" secondAttribute="leading" constant="20" id="T0G-Eh-h2O"/>
                             <constraint firstItem="bdo-by-G9G" firstAttribute="leading" secondItem="1Xd-am-t49" secondAttribute="leading" constant="20" id="Tkd-pO-e4j"/>
@@ -260,9 +242,7 @@
                             <constraint firstItem="bdo-by-G9G" firstAttribute="top" secondItem="1Xd-am-t49" secondAttribute="top" constant="20" id="mqf-yp-vZj"/>
                             <constraint firstItem="1Xd-am-t49" firstAttribute="trailing" secondItem="bdo-by-G9G" secondAttribute="trailing" constant="20" id="nA8-n4-3Gp"/>
                             <constraint firstItem="y9J-7o-oEB" firstAttribute="centerX" secondItem="wbc-yd-nQP" secondAttribute="centerX" id="nYo-1g-66Q"/>
-                            <constraint firstItem="JX5-Nc-6rV" firstAttribute="leading" secondItem="1Xd-am-t49" secondAttribute="leading" id="z9T-vn-xjQ"/>
                         </constraints>
-                        <viewLayoutGuide key="safeArea" id="1Xd-am-t49"/>
                     </view>
                     <navigationItem key="navigationItem" id="u21-L1-csQ"/>
                     <connections>
@@ -276,7 +256,6 @@
                         <outlet property="itemPickerLabel" destination="Mnf-Y7-enG" id="gro-AX-XQA"/>
                         <outlet property="itemPickerStackContainer" destination="QfY-E5-upR" id="1Ob-vh-SoC"/>
                         <outlet property="itemPickerTitleLabel" destination="Z8I-NI-5Rt" id="Vzc-DZ-JxK"/>
-                        <outlet property="notLoggedInOverlay" destination="JX5-Nc-6rV" id="Xhq-fT-eH9"/>
                         <outlet property="preparingContainer" destination="y9J-7o-oEB" id="qQM-wh-jMn"/>
                         <outlet property="toolbarContainer" destination="Qgq-AM-hs6" id="NZb-uv-qBq"/>
                         <outlet property="toolbarLabel" destination="pdK-Zh-JVA" id="QAe-OW-uiQ"/>
@@ -313,5 +292,14 @@
         <namedColor name="zoteroBlue">
             <color red="0.25098039215686274" green="0.44313725490196076" blue="0.90196078431372551" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
+        <systemColor name="opaqueSeparatorColor">
+            <color red="0.77647058823529413" green="0.77647058823529413" blue="0.78431372549019607" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemGrayColor">
+            <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
     </resources>
 </document>

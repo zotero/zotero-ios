@@ -31,7 +31,6 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var toolbarLabel: UILabel!
     @IBOutlet private weak var toolbarProgressView: UIProgressView!
     @IBOutlet private weak var preparingContainer: UIView!
-    @IBOutlet private weak var notLoggedInOverlay: UIView!
     @IBOutlet private weak var webView: WKWebView!
     // Variables
     private var translatorsController: TranslatorsController!
@@ -59,7 +58,7 @@ class ShareViewController: UIViewController {
         if let session = session {
             self.setupControllers(with: session)
         } else {
-            self.setupNotLoggedInOverlay()
+            self.showInitialError(message: L10n.Errors.Shareext.loggedOut)
             return
         }
 
@@ -77,11 +76,21 @@ class ShareViewController: UIViewController {
         if let extensionItem = self.extensionContext?.inputItems.first as? NSExtensionItem {
             self.store?.start(with: extensionItem)
         } else {
-            // TODO: - Show error about missing file
+            self.showInitialError(message: L10n.Errors.Shareext.cantLoadData)
         }
     }
 
     // MARK: - Actions
+
+    private func showInitialError(message: String) {
+        self.navigationController?.view.alpha = 0.0
+
+        let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
+            self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        }))
+        self.present(controller, animated: false, completion: nil)
+    }
 
     @IBAction private func showItemPicker() {
         guard let items = self.store.state.itemPicker?.items else { return }
@@ -337,10 +346,6 @@ class ShareViewController: UIViewController {
     private func setupPreparingIndicator() {
         self.preparingContainer.layer.cornerRadius = 8
         self.preparingContainer.layer.masksToBounds = true
-    }
-
-    private func setupNotLoggedInOverlay() {
-        self.notLoggedInOverlay.isHidden = false
     }
 
     private func setupControllers(with session: SessionData) {
