@@ -31,8 +31,8 @@ protocol DetailPdfCoordinatorDelegate: class {
     #if PDFENABLED
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
-    #endif
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, actionHandler: @escaping AnnotationViewControllerAction, dismissHandler: @escaping () -> Void)
+    #endif
 }
 
 protocol DetailItemsCoordinatorDelegate: class {
@@ -485,16 +485,6 @@ extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, actionHandler: @escaping AnnotationViewControllerAction, dismissHandler: @escaping () -> Void) {
-        let controller = AnnotationViewController(viewModel: viewModel)
-        controller.performAction = actionHandler
-        controller.willDismiss = dismissHandler
-        controller.modalPresentationStyle = .popover
-        controller.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
-        controller.popoverPresentationController?.sourceRect = sourceRect
-        self.topViewController.present(controller, animated: true, completion: nil)
-    }
-
     func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
         self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: self.controllers.htmlAttributedStringConverter, save: save)
     }
@@ -525,6 +515,16 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     #if PDFENABLED
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, actionHandler: @escaping AnnotationViewControllerAction, dismissHandler: @escaping () -> Void) {
+        let controller = AnnotationViewController(viewModel: viewModel)
+        controller.performAction = actionHandler
+        controller.willDismiss = dismissHandler
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
+        controller.popoverPresentationController?.sourceRect = sourceRect
+        self.topViewController.present(controller, animated: true, completion: nil)
+    }
+    
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.sourceView = sender

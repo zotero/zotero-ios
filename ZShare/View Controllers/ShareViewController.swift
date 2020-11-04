@@ -114,7 +114,7 @@ class ShareViewController: UIViewController {
     }
 
     @objc private func cancel() {
-        self.store.cancel()
+        self.store?.cancel()
         self.debugLogging.storeLogs { [unowned self] in
             self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
         }

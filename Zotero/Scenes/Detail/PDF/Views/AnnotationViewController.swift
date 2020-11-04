@@ -10,6 +10,8 @@ import UIKit
 
 import RxSwift
 
+#if PDFENABLED
+
 typealias AnnotationViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 class AnnotationViewController: UIViewController {
@@ -117,3 +119,5 @@ class AnnotationViewController: UIViewController {
         }
     }
 }
+
+#endif
