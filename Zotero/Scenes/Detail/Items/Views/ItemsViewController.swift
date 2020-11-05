@@ -188,10 +188,9 @@ class ItemsViewController: UIViewController {
 
     private func resetActiveSearch() {
         if let searchBar = self.searchBarContainer?.searchBar {
-            searchBar.text = nil
             searchBar.resignFirstResponder()
         } else if let controller = self.navigationItem.searchController {
-            controller.isActive = false
+            controller.searchBar.resignFirstResponder()
         }
     }
 
