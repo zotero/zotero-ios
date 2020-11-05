@@ -38,15 +38,15 @@
                         </constraints>
                     </view>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="A2z-7p-kXW">
-                        <rect key="frame" x="20" y="11" width="430" height="127.5"/>
+                        <rect key="frame" x="64" y="11" width="386" height="127.5"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="A2z-7p-kXW" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" id="1Qn-vI-Q7o"/>
                     <constraint firstAttribute="bottomMargin" secondItem="A2z-7p-kXW" secondAttribute="baseline" id="40H-YV-aj1"/>
+                    <constraint firstItem="A2z-7p-kXW" firstAttribute="leading" secondItem="32h-hK-LT5" secondAttribute="trailing" constant="16" id="Qde-lB-iPD"/>
                     <constraint firstItem="A2z-7p-kXW" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" id="SSS-PM-B5T"/>
                     <constraint firstItem="32h-hK-LT5" firstAttribute="centerY" secondItem="A2z-7p-kXW" secondAttribute="centerY" id="aNg-kC-4mC"/>
                     <constraint firstAttribute="trailingMargin" secondItem="A2z-7p-kXW" secondAttribute="trailing" id="fM8-el-nKR"/>
@@ -56,7 +56,6 @@
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
                 <outlet property="label" destination="A2z-7p-kXW" id="Xj3-Pj-siy"/>
-                <outlet property="labelLeft" destination="1Qn-vI-Q7o" id="ou4-3Q-DSL"/>
                 <outlet property="labelTop" destination="SSS-PM-B5T" id="xPF-Np-oOg"/>
                 <outlet property="tagView" destination="2lr-if-5qZ" id="b6R-Sa-yhd"/>
             </connections>

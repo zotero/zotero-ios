@@ -119,7 +119,8 @@ class TagPickerViewController: UIViewController {
         self.tableView.dataSource = self
         self.tableView.allowsMultipleSelectionDuringEditing = true
         self.tableView.isEditing = true
-        self.tableView.register(UINib(nibName: "ItemDetailTagCell", bundle: nil), forCellReuseIdentifier: TagPickerViewController.cellId)
+        self.tableView.rowHeight = 44
+        self.tableView.register(UINib(nibName: "TagPickerCell", bundle: nil), forCellReuseIdentifier: TagPickerViewController.cellId)
     }
 
     private func setupNavigationBar() {
@@ -153,9 +154,9 @@ extension TagPickerViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TagPickerViewController.cellId, for: indexPath)
-        if let cell = cell as? ItemDetailTagCell {
+        if let cell = cell as? TagPickerCell {
             let tag = self.viewModel.state.tags[indexPath.row]
-            cell.setupWithoutEmptyCircle(tag: tag)
+            cell.setup(with: tag)
         }
         return cell
     }
