@@ -30,7 +30,7 @@ internal enum Asset {
     internal static let annotationText = ColorAsset(name: "annotationText")
     internal static let cellHighlighted = ColorAsset(name: "cellHighlighted")
     internal static let cellSelected = ColorAsset(name: "cellSelected")
-    internal static let itemDetailHeaderBackground = ColorAsset(name: "itemDetailHeaderBackground")
+    internal static let itemDetailDarkSeparator = ColorAsset(name: "itemDetailDarkSeparator")
     internal static let itemDetailHeaderTitle = ColorAsset(name: "itemDetailHeaderTitle")
     internal static let navbarBackground = ColorAsset(name: "navbarBackground")
     internal static let onboardingTitle = ColorAsset(name: "onboardingTitle")
