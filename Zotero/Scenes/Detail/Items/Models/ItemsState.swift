@@ -19,20 +19,19 @@ struct ItemsState: ViewModelState {
         static let results = Changes(rawValue: 1 << 0)
         static let editing = Changes(rawValue: 1 << 1)
         static let selection = Changes(rawValue: 1 << 2)
-        static let sortType = Changes(rawValue: 1 << 3)
-        static let selectAll = Changes(rawValue: 1 << 4)
-        static let attachmentsRemoved = Changes(rawValue: 1 << 5)
+        static let selectAll = Changes(rawValue: 1 << 3)
+        static let attachmentsRemoved = Changes(rawValue: 1 << 4)
     }
 
     let type: ItemFetchType
     let library: Library
 
     var sortType: ItemsSortType
+    var searchTerm: String?
     var results: Results<RItem>?
     // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item,
     // or item if it's a standalone attachment.
     var attachments: [String: Attachment]
-    var unfilteredResults: Results<RItem>?
     var selectedItems: Set<String>
     var isEditing: Bool
     var changes: Changes

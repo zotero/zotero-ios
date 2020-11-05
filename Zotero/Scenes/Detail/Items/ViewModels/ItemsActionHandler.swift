@@ -348,12 +348,17 @@ struct ItemsActionHandler: ViewModelActionHandler {
             UserDefaults.standard.set(data, forKey: ItemsActionHandler.sortTypeKey)
         }
 
+        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
+        var results = try? self.dbStorage.createCoordinator().perform(request: request)
+        if let term = viewModel.state.searchTerm {
+            results = results?.filter(.itemSearch(for: term))
+        }
+        results = results?.sorted(by: sortType.descriptors)
+
         self.update(viewModel: viewModel) { state in
             state.sortType = sortType
-            let descriptors = state.sortType.descriptors
-            state.results = state.results?.sorted(by: descriptors)
-            state.unfilteredResults = state.unfilteredResults?.sorted(by: descriptors)
-            state.changes.insert(.sortType)
+            state.results = results
+            state.changes.insert(.results)
         }
     }
 
@@ -432,21 +437,31 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func filterResults(with text: String, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
+        let results = (try? self.dbStorage.createCoordinator()
+                                          .perform(request: request))?
+                                          .filter(.itemSearch(for: text))
+                                          .sorted(by: viewModel.state.sortType.descriptors)
+
         self.update(viewModel: viewModel) { state in
-            if state.unfilteredResults == nil {
-                state.unfilteredResults = state.results
-            }
-            state.results = state.unfilteredResults?.filter(.itemSearch(for: text))
+            state.searchTerm = text
+            state.results = results
             state.changes.insert(.results)
         }
     }
 
     private func removeResultsFilters(in viewModel: ViewModel<ItemsActionHandler>) {
-        guard viewModel.state.unfilteredResults != nil else { return }
+        guard viewModel.state.searchTerm != nil else { return }
+
+        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
+        let results = (try? self.dbStorage.createCoordinator()
+                                          .perform(request: request))?
+                                          .sorted(by: viewModel.state.sortType.descriptors)
+
         self.update(viewModel: viewModel) { state in
-            state.results = state.unfilteredResults
+            state.searchTerm = nil
+            state.results = results
             state.changes.insert(.results)
-            state.unfilteredResults = nil
         }
     }
 

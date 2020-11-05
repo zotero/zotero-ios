@@ -129,8 +129,7 @@ class ItemsViewController: UIViewController {
         if state.changes.contains(.results),
            let results = state.results {
             self.startObserving(results: results)
-        } else if state.changes.contains(.sortType) ||
-                  state.changes.contains(.attachmentsRemoved) {
+        } else if state.changes.contains(.attachmentsRemoved) {
             self.tableViewHandler.enqueue(action: .reloadAll)
         } else if let key = state.updateItemKey {
                   let attachment = state.attachments[key]
