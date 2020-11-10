@@ -234,41 +234,46 @@ class ItemDetailViewController: UIViewController {
                      })
                      .disposed(by: self.disposeBag)
 
-        var buttons: [UIBarButtonItem] = [button]
+        self.navigationItem.rightBarButtonItem = button
+        self.navigationItem.leftBarButtonItem = nil
 
-        if let state = attachmentButtonState {
-            let attachmentButton: UIBarButtonItem
+        guard let state = attachmentButtonState else { return }
 
-            switch state {
-            case .ready(let index):
-                attachmentButton = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
-                attachmentButton.rx.tap.subscribe(onNext: { [weak self] _ in
+        let titleView: UIView
+
+        switch state {
+        case .ready(let index):
+            let button = UIButton()
+            button.setTitleColor(Asset.Colors.zoteroBlue.color, for: .normal)
+            button.setTitle(L10n.ItemDetail.viewPdf, for: .normal)
+            button.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.viewModel.process(action: .openAttachment(index))
+            }).disposed(by: self.disposeBag)
+            titleView = button
+
+        case .error(let index, let error):
+            let button = UIButton()
+            button.setTitleColor(Asset.Colors.zoteroBlue.color, for: .normal)
+            button.setTitle(L10n.ItemDetail.viewPdf, for: .normal)
+            button.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
                     self?.viewModel.process(action: .openAttachment(index))
-                }).disposed(by: self.disposeBag)
+                })
+            }).disposed(by: self.disposeBag)
+            titleView = button
 
-            case .error(let index, let error):
-                attachmentButton = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
-                attachmentButton.rx.tap.subscribe(onNext: { [weak self] _ in
-                    self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
-                        self?.viewModel.process(action: .openAttachment(index))
-                    })
-                }).disposed(by: self.disposeBag)
-
-            case .downloading:
-                let activityIndicator = UIActivityIndicatorView(style: .medium)
-                activityIndicator.startAnimating()
-                attachmentButton = UIBarButtonItem(customView: activityIndicator)
-            }
-
-            buttons.append(attachmentButton)
+        case .downloading:
+            let activityIndicator = UIActivityIndicatorView(style: .medium)
+            activityIndicator.startAnimating()
+            titleView = activityIndicator
         }
 
-        self.navigationItem.rightBarButtonItems = buttons
-        self.navigationItem.leftBarButtonItem = nil
+        self.navigationItem.titleView = titleView
     }
 
     private func setEditingNavigationBarButtons(isSaving: Bool) {
         self.navigationItem.setHidesBackButton(true, animated: false)
+        self.navigationItem.titleView = nil
 
         let saveButton: UIBarButtonItem
         if isSaving {
