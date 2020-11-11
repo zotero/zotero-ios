@@ -132,7 +132,7 @@
 "pdf.pageTransition.jump" = "Jump";
 "pdf.pageTransition.continuous" = "Continuous";
 "pdf.annotations_sidebar.page" = "Page";
-"pdf.annotations_sidebar.search_title" = "Search Annotations";
+"pdf.annotations_sidebar.search_title" = "Search";
 "pdf.annotations_sidebar.add_comment" = "Add comment";
 "pdf.annotations_sidebar.add_tags" = "Add tags";
 "pdf.search.title" = "Search in Document";

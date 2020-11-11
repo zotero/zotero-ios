@@ -319,7 +319,7 @@ internal enum L10n {
       internal static let addTags = L10n.tr("Localizable", "pdf.annotations_sidebar.add_tags")
       /// Page
       internal static let page = L10n.tr("Localizable", "pdf.annotations_sidebar.page")
-      /// Search Annotations
+      /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
     }
     internal enum PageTransition {

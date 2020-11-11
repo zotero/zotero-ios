@@ -349,7 +349,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             square.borderColor = color
             pdfAnnotation = square
         case .note:
-            let rect = CGRect(origin: origin, size: AnnotationsConfig.noteSize)
+            let rect = CGRect(origin: origin, size: PDFReaderLayout.noteSize)
             let note = NoteAnnotation(contents: "")
             note.pageIndex = pageIndex
             note.boundingBox = rect
@@ -728,7 +728,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let note = NoteAnnotation(contents: annotation.comment)
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
-        note.boundingBox = CGRect(origin: boundingBox.origin, size: AnnotationsConfig.noteSize)
+        note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteSize)
         note.isZotero = true
         note.isEditable = annotation.editableInDocument
         note.key = annotation.key

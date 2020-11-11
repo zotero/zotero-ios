@@ -21,7 +21,6 @@ class PDFReaderViewController: UIViewController {
         case undo = 2
     }
 
-    private static let colorPreviewSize = CGSize(width: 15, height: 15)
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let pageController: PdfPageController
@@ -88,19 +87,11 @@ class PDFReaderViewController: UIViewController {
         super.viewDidLoad()
 
         self.view.backgroundColor = .secondarySystemBackground
-        self.setupAnnotationsSidebar()
-        self.setupPdfController(with: self.viewModel.state.document)
-        self.setupSidebarBorder()
+        self.setupViews()
         self.setupNavigationBar()
         self.setupAnnotationControls(forCompactSize: self.isCompactSize)
+        self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
-
-        self.viewModel.stateObservable
-                      .observeOn(MainScheduler.instance)
-                      .subscribe(onNext: { [weak self] state in
-                          self?.update(state: state)
-                      })
-                      .disposed(by: self.disposeBag)
 
         self.viewModel.process(action: .loadAnnotations(self.traitCollection.userInterfaceStyle))
     }
@@ -128,7 +119,7 @@ class PDFReaderViewController: UIViewController {
         self.isCompactSize = isCompactSize
 
         if self.isSidebarOpened {
-            self.pdfControllerLeft.constant = isCompactSize ? 0 : AnnotationsConfig.sidebarWidth
+            self.pdfControllerLeft.constant = isCompactSize ? 0 : PDFReaderLayout.sidebarWidth
         }
 
         coordinator.animate(alongsideTransition: { _ in
@@ -154,7 +145,7 @@ class PDFReaderViewController: UIViewController {
 
         if state.changes.contains(.activeColor) {
             self.set(toolColor: state.activeColor, in: self.pdfController.annotationStateManager)
-            self.colorPickerbutton.setImage(state.activeColor.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
+            self.colorPickerbutton.tintColor = state.activeColor
         }
 
         if let location = state.focusDocumentLocation,
@@ -289,9 +280,9 @@ class PDFReaderViewController: UIViewController {
 
         // If the layout is compact, show annotation sidebar above pdf document.
         if !UIDevice.current.isCompactWidth(size: self.view.frame.size) {
-            self.pdfControllerLeft.constant = shouldShow ? AnnotationsConfig.sidebarWidth : 0
+            self.pdfControllerLeft.constant = shouldShow ? PDFReaderLayout.sidebarWidth : 0
         }
-        self.annotationsControllerLeft.constant = shouldShow ? 0 : -AnnotationsConfig.sidebarWidth
+        self.annotationsControllerLeft.constant = shouldShow ? 0 : -PDFReaderLayout.sidebarWidth
 
         if shouldShow {
             self.annotationsController.view.isHidden = false
@@ -406,37 +397,60 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    // MARK: - Setups
-
-    private func setupAnnotationsSidebar() {
-        let controller = AnnotationsViewController(viewModel: self.viewModel)
-        controller.performAction = { [weak self] action, annotation, sender in
-            self?.perform(action: action, annotation: annotation, sender: sender)
-        }
-        controller.view.backgroundColor = self.view.backgroundColor
-        controller.view.isHidden = true
-
+    private func add(controller: UIViewController) {
+        controller.willMove(toParent: self)
         self.addChild(controller)
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        controller.view.frame = self.view.bounds
         self.view.addSubview(controller.view)
-
-        NSLayoutConstraint.activate([
-            controller.view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
-            controller.view.widthAnchor.constraint(equalToConstant: AnnotationsConfig.sidebarWidth)
-        ])
-        let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor,
-                                                                      constant: -AnnotationsConfig.sidebarWidth)
-        leftConstraint.isActive = true
-
         controller.didMove(toParent: self)
-
-        self.annotationsController = controller
-        self.annotationsControllerLeft = leftConstraint
     }
 
-    private func setupPdfController(with document: Document) {
+    // MARK: - Setups
+
+    private func setupViews() {
+        let pdfController = self.createPdfController(with: self.viewModel.state.document)
+        pdfController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        let sidebarController = AnnotationsViewController(viewModel: self.viewModel)
+        sidebarController.performAction = { [weak self] action, annotation, sender in
+            self?.perform(action: action, annotation: annotation, sender: sender)
+        }
+        sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        let separator = UIView()
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+            return traitCollection.userInterfaceStyle == .light ? UIColor(hex: "#C6C6C8") : .systemGray4
+        })
+
+        self.add(controller: pdfController)
+        self.add(controller: sidebarController)
+        self.view.addSubview(separator)
+
+        let pdfLeftConstraint = pdfController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
+        let sidebarLeftConstraint = sidebarController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: -PDFReaderLayout.sidebarWidth)
+
+        NSLayoutConstraint.activate([
+            sidebarController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            sidebarController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            sidebarController.view.widthAnchor.constraint(equalToConstant: PDFReaderLayout.sidebarWidth),
+            sidebarLeftConstraint,
+            separator.widthAnchor.constraint(equalToConstant: PDFReaderLayout.separatorWidth),
+            separator.leadingAnchor.constraint(equalTo: sidebarController.view.trailingAnchor),
+            separator.topAnchor.constraint(equalTo: self.view.topAnchor),
+            separator.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            pdfController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            pdfController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+            pdfController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            pdfLeftConstraint
+        ])
+
+        self.pdfController = pdfController
+        self.pdfControllerLeft = pdfLeftConstraint
+        self.annotationsController = sidebarController
+        self.annotationsControllerLeft = sidebarLeftConstraint
+    }
+
+    private func createPdfController(with document: Document) -> PDFViewController {
         let pdfConfiguration = PDFConfiguration { builder in
             builder.scrollDirection = .horizontal
             builder.documentLabelEnabled = .NO
@@ -447,6 +461,7 @@ class PDFReaderViewController: UIViewController {
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
+        controller.view.backgroundColor = .systemGray6
         controller.delegate = self
         controller.formSubmissionDelegate = nil
         if self.traitCollection.userInterfaceStyle == .dark {
@@ -455,25 +470,7 @@ class PDFReaderViewController: UIViewController {
         controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
         controller.annotationStateManager.add(self)
         self.setup(interactions: controller.interactions)
-        self.set(toolColor: self.viewModel.state.activeColor, in: controller.annotationStateManager)
-
-        self.addChild(controller)
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        controller.view.frame = self.view.bounds
-        self.view.insertSubview(controller.view, belowSubview: self.annotationsController.view)
-
-        NSLayoutConstraint.activate([
-            controller.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
-        let leftConstraint = controller.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor)
-        leftConstraint.isActive = true
-
-        controller.didMove(toParent: self)
-
-        self.pdfController = controller
-        self.pdfControllerLeft = leftConstraint
+        return controller
     }
 
     private func createAnnotationCreationMenuGroups() -> [AnnotationToolConfiguration.ToolGroup] {
@@ -499,27 +496,15 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func setupSidebarBorder() {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .separator
-        self.view.addSubview(view)
-
-        NSLayoutConstraint.activate([
-            view.widthAnchor.constraint(equalToConstant: 1),
-            view.leadingAnchor.constraint(equalTo: self.annotationsController.view.trailingAnchor),
-            view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
-        ])
-    }
-
     private func setupAnnotationControls(forCompactSize isCompact: Bool) {
         let buttons = self.createAnnotationControlButtons()
         self.navigationController?.setToolbarHidden(!isCompact, animated: false)
 
         if !isCompact {
             self.navigationController?.toolbarItems = nil
-            self.navigationItem.titleView = UIStackView(arrangedSubviews: buttons)
+            let stackView = UIStackView(arrangedSubviews: buttons)
+            stackView.spacing = 14
+            self.navigationItem.titleView = stackView
             return
         }
 
@@ -547,8 +532,11 @@ class PDFReaderViewController: UIViewController {
             return []
         }
 
+        let symbolConfig = UIImage.SymbolConfiguration(scale: .large)
+
         let highlight = CheckboxButton(type: .custom)
-        highlight.setImage(UIImage(systemName: "pencil.tip"), for: .normal)
+        highlight.setImage(Asset.Images.Annotations.highlighterLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
+        highlight.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         highlight.rx
                  .controlEvent(.touchDown)
                  .subscribe(onNext: { [weak self] _ in
@@ -558,7 +546,8 @@ class PDFReaderViewController: UIViewController {
         self.createHighlightButton = highlight
 
         let note = CheckboxButton(type: .custom)
-        note.setImage(UIImage(systemName: "doc"), for: .normal)
+        note.setImage(UIImage(systemName: "doc", withConfiguration: symbolConfig), for: .normal)
+        note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         note.rx
             .controlEvent(.touchDown)
             .subscribe(onNext: { [weak self] _ in
@@ -568,7 +557,8 @@ class PDFReaderViewController: UIViewController {
         self.createNoteButton = note
 
         let area = CheckboxButton(type: .custom)
-        area.setImage(UIImage(systemName: "plus.square"), for: .normal)
+        area.setImage(UIImage(systemName: "plus.square", withConfiguration: symbolConfig), for: .normal)
+        area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         area.rx
             .controlEvent(.touchDown)
             .subscribe(onNext: { [weak self] _ in
@@ -577,9 +567,8 @@ class PDFReaderViewController: UIViewController {
             .disposed(by: self.disposeBag)
         self.createAreaButton = area
 
+
         [highlight, note, area].forEach { button in
-            button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 0, bottom: 6, right: 0)
-            button.widthAnchor.constraint(equalTo: button.heightAnchor, multiplier: 1, constant: 0).isActive = true
             button.adjustsImageWhenHighlighted = false
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
@@ -588,9 +577,8 @@ class PDFReaderViewController: UIViewController {
         }
 
         let picker = UIButton()
-        let color = self.viewModel.state.activeColor
-        picker.setImage(color.createImage(size: PDFReaderViewController.colorPreviewSize), for: .normal)
-        picker.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+        picker.setImage(UIImage(systemName: "circle.fill", withConfiguration: symbolConfig), for: .normal)
+        picker.tintColor = self.viewModel.state.activeColor
         picker.rx.controlEvent(.touchUpInside)
                  .subscribe(onNext: { [weak self] _ in
                     self?.showColorPicker(sender: picker)
@@ -598,11 +586,26 @@ class PDFReaderViewController: UIViewController {
                  .disposed(by: self.disposeBag)
         self.colorPickerbutton = picker
 
+        NSLayoutConstraint.activate([
+            highlight.widthAnchor.constraint(equalToConstant: 44),
+            highlight.heightAnchor.constraint(equalToConstant: 44),
+            note.widthAnchor.constraint(equalToConstant: 44),
+            note.heightAnchor.constraint(equalToConstant: 44),
+            area.widthAnchor.constraint(equalToConstant: 44),
+            area.heightAnchor.constraint(equalToConstant: 44),
+            picker.widthAnchor.constraint(equalToConstant: 44),
+            picker.heightAnchor.constraint(equalToConstant: 44),
+        ])
+
+//        let test = CheckboxButton(type: .custom)
+//        test.setImage(UIImage(systemName: "highlighter", withConfiguration: symbolConfig), for: .normal)
+//        test.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+
         return [highlight, note, area, picker]
     }
 
     private func setupNavigationBar() {
-        let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3"),
+        let sidebarButton = UIBarButtonItem(image: UIImage(systemName: "sidebar.left"),
                                             style: .plain, target: nil, action: nil)
         sidebarButton.rx.tap
                      .subscribe(onNext: { [weak self] in self?.toggleSidebar() })
@@ -626,9 +629,8 @@ class PDFReaderViewController: UIViewController {
                 })
                 .disposed(by: self.disposeBag)
 
-        let search = self.pdfController.searchButtonItem
-        search.rx
-              .tap
+        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.rx.tap
               .subscribe(onNext: { [weak self] _ in
                   self?.showSearch(sender: search)
               })
@@ -640,7 +642,7 @@ class PDFReaderViewController: UIViewController {
 
         let (undo, redo) = self.createUndoRedoButtons()
 
-        return [redo, undo, settings, search]
+        return [settings, redo, undo, search]
     }
 
     private func createUndoRedoButtons() -> (undo: UIBarButtonItem, redo: UIBarButtonItem) {
@@ -668,6 +670,13 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func setupObserving() {
+        self.viewModel.stateObservable
+                      .observeOn(MainScheduler.instance)
+                      .subscribe(onNext: { [weak self] state in
+                          self?.update(state: state)
+                      })
+                      .disposed(by: self.disposeBag)
+
         NotificationCenter.default.rx
                                   .notification(.PSPDFAnnotationChanged)
                                   .observeOn(MainScheduler.instance)

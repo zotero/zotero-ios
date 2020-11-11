@@ -63,9 +63,9 @@ class AnnotationCell: UITableViewCell {
         self.annotationView = view
 
         NSLayoutConstraint.activate([
-            view.leftAnchor.constraint(equalTo: self.contentView.leftAnchor, constant: 4),
-            self.contentView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: 4),
-            view.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: 4),
+            view.leftAnchor.constraint(equalTo: self.contentView.leftAnchor, constant: 8),
+            self.contentView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: 8),
+            view.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: 0),
             self.contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }

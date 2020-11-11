@@ -56,6 +56,7 @@ class Controllers {
                                                           indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
                                                           fileStorage: fileStorage)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage)
+        let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
         self.sessionController = sessionController
         self.apiClient = apiClient
@@ -66,7 +67,7 @@ class Controllers {
         self.crashReporter = crashReporter
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
-        self.annotationPreviewController = AnnotationPreviewController(previewSize: AnnotationsConfig.previewSize, fileStorage: fileStorage)
+        self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         self.urlDetector = UrlDetector()
         self.dateParser = DateParser()
         self.fileCleanupController = fileCleanupController

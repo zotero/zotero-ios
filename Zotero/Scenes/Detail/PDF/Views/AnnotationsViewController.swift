@@ -42,6 +42,7 @@ class AnnotationsViewController: UIViewController {
         super.viewDidLoad()
 
         self.definesPresentationContext = true
+        self.view.backgroundColor = .systemGray6
         self.setupTableView()
         self.setupSearchController()
 
@@ -120,13 +121,16 @@ class AnnotationsViewController: UIViewController {
     // MARK: - Setups
 
     private func setupTableView() {
+        let backgroundView = UIView()
+        backgroundView.backgroundColor = .systemGray6
+
         let tableView = UITableView(frame: self.view.bounds, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
-        tableView.backgroundColor = self.view.backgroundColor
+        tableView.backgroundView = backgroundView
         tableView.register(AnnotationCell.self, forCellReuseIdentifier: AnnotationsViewController.cellId)
 
         self.view.addSubview(tableView)
@@ -143,9 +147,16 @@ class AnnotationsViewController: UIViewController {
 
     private func setupSearchController() {
         let controller = UISearchController(searchResultsController: nil)
+        controller.searchBar.searchBarStyle = .minimal
         controller.searchBar.placeholder = L10n.Pdf.AnnotationsSidebar.searchTitle
+        controller.searchBar.barTintColor = .systemGray6
         controller.obscuresBackgroundDuringPresentation = false
         controller.hidesNavigationBarDuringPresentation = false
+
+        var frame = controller.searchBar.frame
+        frame.size.height = 52
+        controller.searchBar.frame = frame
+
         self.tableView.tableHeaderView = controller.searchBar
         self.searchController = controller
 
@@ -195,7 +206,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
             }
 
             cell.setup(with: annotation, attributedComment: comment, preview: preview,
-                       selected: selected, availableWidth: AnnotationsConfig.sidebarWidth,
+                       selected: selected, availableWidth: PDFReaderLayout.sidebarWidth,
                        hasWritePermission: self.viewModel.state.library.metadataEditable)
             cell.performAction = { [weak self] action, sender in
                 self?.performAction?(action, annotation, sender)
