@@ -234,46 +234,46 @@ class ItemDetailViewController: UIViewController {
                      })
                      .disposed(by: self.disposeBag)
 
-        self.navigationItem.rightBarButtonItem = button
+        self.navigationItem.rightBarButtonItems = [button] + self.attachmentButtonItems(for: attachmentButtonState)
         self.navigationItem.leftBarButtonItem = nil
+    }
 
-        guard let state = attachmentButtonState else { return }
+    private func attachmentButtonItems(for state: MainAttachmentButtonState?) -> [UIBarButtonItem] {
+        guard let state = state else { return [] }
 
-        let titleView: UIView
+        let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        spacer.width = 16
+        var items: [UIBarButtonItem] = [spacer]
 
         switch state {
         case .ready(let index):
-            let button = UIButton()
-            button.setTitleColor(Asset.Colors.zoteroBlue.color, for: .normal)
-            button.setTitle(L10n.ItemDetail.viewPdf, for: .normal)
+            let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.viewModel.process(action: .openAttachment(index))
             }).disposed(by: self.disposeBag)
-            titleView = button
+            items.append(button)
 
         case .error(let index, let error):
-            let button = UIButton()
-            button.setTitleColor(Asset.Colors.zoteroBlue.color, for: .normal)
-            button.setTitle(L10n.ItemDetail.viewPdf, for: .normal)
+            let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
                     self?.viewModel.process(action: .openAttachment(index))
                 })
             }).disposed(by: self.disposeBag)
-            titleView = button
+            items.append(button)
 
         case .downloading:
             let activityIndicator = UIActivityIndicatorView(style: .medium)
             activityIndicator.startAnimating()
-            titleView = activityIndicator
+            let item = UIBarButtonItem(customView: activityIndicator)
+            items.append(item)
         }
 
-        self.navigationItem.titleView = titleView
+        return items
     }
 
     private func setEditingNavigationBarButtons(isSaving: Bool) {
         self.navigationItem.setHidesBackButton(true, animated: false)
-        self.navigationItem.titleView = nil
 
         let saveButton: UIBarButtonItem
         if isSaving {
