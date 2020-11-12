@@ -343,6 +343,7 @@
 		B30B550C24B8623900F94B59 /* Assets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550A24B85CC900F94B59 /* Assets.swift */; };
 		B30B551024B8646E00F94B59 /* Assets+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */; };
 		B30B551124B8689900F94B59 /* Assets+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */; };
+		B30BA8C4255D415600361D25 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
@@ -515,7 +516,6 @@
 		B361A3042511F9FB00271173 /* AnnotationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3032511F9FB00271173 /* AnnotationType.swift */; };
 		B361A3052511FA0C00271173 /* AnnotationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B361A3032511F9FB00271173 /* AnnotationType.swift */; };
 		B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */; };
-		B36A988B2428DA5D005D5790 /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
 		B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36A98912428E346005D5790 /* TranslatorsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A988C2428E059005D5790 /* TranslatorsController.swift */; };
 		B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36BEC7224485FC700A60552 /* TagColorGenerator.swift */; };
@@ -579,7 +579,6 @@
 		B38D3CCA24A1F420005289EF /* CrashReporter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B38D3CC924A1F420005289EF /* CrashReporter.framework */; };
 		B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC25CC247E6BA000AC27B5 /* DateParser.swift */; };
 		B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32A3C77247FB62B009E2C5D /* ComponentDate.swift */; };
-		B3902DF824811DC3007EE48E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B36A988A2428DA5D005D5790 /* bundled */; };
 		B395EFE325494B1B00CEBD9F /* CreatorEditAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE225494B1B00CEBD9F /* CreatorEditAction.swift */; };
 		B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFE625494B2300CEBD9F /* CreatorEditState.swift */; };
 		B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B395EFEA25494B3200CEBD9F /* CreatorEditActionHandler.swift */; };
@@ -938,6 +937,7 @@
 		B30B550424B85A6200F94B59 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		B30B550A24B85CC900F94B59 /* Assets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Assets.swift; sourceTree = "<group>"; };
 		B30B550F24B8646E00F94B59 /* Assets+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Assets+SwiftUI.swift"; sourceTree = "<group>"; };
+		B30BA8C3255D415600361D25 /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B30D59552206F60400884C4A /* Zotero.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Zotero.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D59582206F60400884C4A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B30D59642206F60500884C4A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -1078,7 +1078,6 @@
 		B361A3002511F98700271173 /* LinkMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkMode.swift; sourceTree = "<group>"; };
 		B361A3032511F9FB00271173 /* AnnotationType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationType.swift; sourceTree = "<group>"; };
 		B367330C24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlAttributedStringConverter.swift; sourceTree = "<group>"; };
-		B36A988A2428DA5D005D5790 /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B36A988C2428E059005D5790 /* TranslatorsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TranslatorsController.swift; sourceTree = "<group>"; };
 		B36BEC7224485FC700A60552 /* TagColorGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagColorGenerator.swift; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -1667,7 +1666,7 @@
 		B30D594C2206F60400884C4A = {
 			isa = PBXGroup;
 			children = (
-				B36A988A2428DA5D005D5790 /* bundled */,
+				B30BA8C3255D415600361D25 /* Bundled */,
 				B30D59572206F60400884C4A /* Zotero */,
 				B30D596E2206F60500884C4A /* ZoteroTests */,
 				B30D59792206F60500884C4A /* ZoteroUITests */,
@@ -2569,8 +2568,8 @@
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
 				B3593F58241A61C700760E20 /* CollectionsViewController.xib in Resources */,
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
-				B36A988B2428DA5D005D5790 /* bundled in Resources */,
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
+				B30BA8C4255D415600361D25 /* Bundled in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
@@ -2612,7 +2611,6 @@
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
-				B3902DF824811DC3007EE48E /* bundled in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
 				B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */,

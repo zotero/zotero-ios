@@ -4,7 +4,7 @@ import subprocess
 import time
 
 # Get bundle directory
-bundle_dir = os.path.join(os.path.abspath("."), "bundled" + os.sep + "translators")
+bundle_dir = os.path.join(os.path.abspath("."), "Bundled" + os.sep + "translators")
 
 if not os.path.isdir(bundle_dir):
     raise Exception(bundle_dir + " is not a directory")

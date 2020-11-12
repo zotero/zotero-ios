@@ -6,6 +6,6 @@ realpath() {
 
 SCRIPT_PATH=`realpath $0`
 SCRIPT_DIR=`dirname $SCRIPT_PATH`
-SCHEMA_FILE="$SCRIPT_DIR/../bundled/schema.json"
+SCHEMA_FILE="$SCRIPT_DIR/../Bundled/schema.json"
 
 curl --compressed https://api.zotero.org/schema --output $SCHEMA_FILE

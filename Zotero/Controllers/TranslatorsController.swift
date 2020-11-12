@@ -222,7 +222,7 @@ class TranslatorsController {
     /// Unzip individual translators from bundled zip file to translator location.
     /// - parameter translators: Array of tuples. Each tuple consists of translator id and translator filename.
     private func unzip(translators: [(id: String, filename: String)]) throws {
-        guard let zipUrl = self.bundle.path(forResource: "bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
+        guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip").flatMap({ URL(fileURLWithPath: $0) }),
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
         }
@@ -285,7 +285,7 @@ class TranslatorsController {
 
     /// Reset local translators to match bundled translators.
     private func _resetToBundle() throws {
-        guard let zipUrl = self.bundle.path(forResource: "bundled/translators/translators", ofType: "zip")
+        guard let zipUrl = self.bundle.path(forResource: "Bundled/translators/translators", ofType: "zip")
                                       .flatMap({ URL(fileURLWithPath: $0) }),
               let archive = Archive(url: zipUrl, accessMode: .read) else {
             throw Error.bundleMissing
@@ -466,7 +466,7 @@ class TranslatorsController {
     /// Load bundled index file and parse translator metadata.
     /// - returns: Parsed translator metadata.
     private func loadIndex() throws -> [TranslatorMetadata] {
-        guard let indexFilePath = self.bundle.path(forResource: "bundled/translators/index", ofType: "json") else {
+        guard let indexFilePath = self.bundle.path(forResource: "Bundled/translators/index", ofType: "json") else {
             throw Error.bundleMissing
         }
         let data = try Data(contentsOf: URL(fileURLWithPath: indexFilePath))
@@ -477,7 +477,7 @@ class TranslatorsController {
     /// Load bundled deleted.txt file and parse version and indices stored there.
     /// - returns: Tuple, where first value is the version of deleted file and second value is an array of indices of translators to be deleted.
     private func loadDeleted() throws -> (Int, [String]) {
-        return try self.loadFromBundle(resource: "bundled/translators/deleted", type: "txt", map: {
+        return try self.loadFromBundle(resource: "Bundled/translators/deleted", type: "txt", map: {
             guard let data = self.parse(deleted: $0, lastDeletedVersion: self.lastDeleted) else {
                 throw Error.incompatibleDeleted
             }
@@ -488,7 +488,7 @@ class TranslatorsController {
     /// Load bundled last timestamp.
     /// - returns: Last timestamp.
     private func loadLastTimestamp() throws -> Int {
-        return try self.loadFromBundle(resource: "bundled/translators/timestamp", type: "txt", map: {
+        return try self.loadFromBundle(resource: "Bundled/translators/timestamp", type: "txt", map: {
             guard let value = Int($0) else { throw Error.bundleMissing }
             return value
         })
@@ -497,7 +497,7 @@ class TranslatorsController {
     /// Load bundled last commit hash.
     /// - returns: Commit hash.
     private func loadLastCommitHash() throws -> String {
-        return try self.loadFromBundle(resource: "bundled/translators/commit_hash", type: "txt", map: { return $0 })
+        return try self.loadFromBundle(resource: "Bundled/translators/commit_hash", type: "txt", map: { return $0 })
     }
 
     /// Load bundled data and map it to appropriate type.

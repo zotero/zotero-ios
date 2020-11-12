@@ -106,7 +106,7 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.realm.add(translator)
             }
 
-            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "bundled/translators/translator", withExtension: "js")!
+            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
             try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform update and wait for results
@@ -162,7 +162,7 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.realm.add(translator)
             }
 
-            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "bundled/translators/translator", withExtension: "js")!
+            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
             try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform update and wait for results
@@ -220,7 +220,7 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.realm.add(translator)
             }
 
-            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "bundled/translators/translator", withExtension: "js")!
+            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
             try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: deletedTranslatorId))
 
             // Perform update and wait for results
@@ -342,7 +342,7 @@ class TranslatorsControllerSpec: QuickSpec {
                 self.realm.add(translator)
             }
 
-            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "bundled/translators/translator", withExtension: "js")!
+            let translatorURL = Bundle(for: TranslatorsControllerSpec.self).url(forResource: "Bundled/translators/translator", withExtension: "js")!
             try! self.fileStorage.copy(from: Files.file(from: translatorURL), to: Files.translator(filename: self.translatorId))
 
             // Perform reset
