@@ -505,6 +505,7 @@ class PDFReaderViewController: UIViewController {
             let stackView = UIStackView(arrangedSubviews: buttons)
             stackView.spacing = 14
             self.navigationItem.titleView = stackView
+            self.navigationItem.titleView?.backgroundColor = .red
             return
         }
 
@@ -597,11 +598,11 @@ class PDFReaderViewController: UIViewController {
             picker.heightAnchor.constraint(equalToConstant: 44),
         ])
 
-//        let test = CheckboxButton(type: .custom)
-//        test.setImage(UIImage(systemName: "highlighter", withConfiguration: symbolConfig), for: .normal)
-//        test.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        let test = CheckboxButton(type: .custom)
+        test.setImage(UIImage(systemName: "highlighter", withConfiguration: symbolConfig), for: .normal)
+        test.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
 
-        return [highlight, note, area, picker]
+        return [test, highlight, note, area, picker]
     }
 
     private func setupNavigationBar() {

@@ -43,6 +43,7 @@ internal enum Asset {
       internal static let area = ImageAsset(name: "Annotations/area")
       internal static let highlight = ImageAsset(name: "Annotations/highlight")
       internal static let highlighterLarge = ImageAsset(name: "Annotations/highlighter.large")
+      internal static let highlighterMedium = ImageAsset(name: "Annotations/highlighter.medium")
       internal static let note = ImageAsset(name: "Annotations/note")
     }
     internal static let attachmentDetailDocument = ImageAsset(name: "attachment-detail-document")
