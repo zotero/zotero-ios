@@ -50,21 +50,17 @@ class AnnotationCell: UITableViewCell {
     // MARK: - Setups
 
     private func setupView() {
-        guard let view = Bundle.main.loadNibNamed("AnnotationView", owner: nil, options: nil)?.first as? AnnotationView else { return }
-
-        let borderWidth = 1 / UIScreen.main.scale
-        view.layer.cornerRadius = 8
-        view.layer.borderWidth = borderWidth
-        view.layer.shadowOpacity = 1
-        view.layer.shadowRadius = 2
-        view.layer.shadowOffset = CGSize()
-        view.translatesAutoresizingMaskIntoConstraints = false
+        let view = AnnotationView()
+        view.layer.cornerRadius = 10
+        view.layer.masksToBounds = true
         self.contentView.addSubview(view)
         self.annotationView = view
 
+        self.contentView.addSubview(view)
+
         NSLayoutConstraint.activate([
-            view.leftAnchor.constraint(equalTo: self.contentView.leftAnchor, constant: 8),
-            self.contentView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: 8),
+            view.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: PDFReaderLayout.horizontalInset),
+            self.contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: PDFReaderLayout.horizontalInset),
             view.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: 0),
             self.contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
@@ -73,26 +69,10 @@ class AnnotationCell: UITableViewCell {
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         self.key = annotation.key
 
-        self.annotationView?.backgroundColor = self.contentBackgroundColor(selected: selected)
-        self.annotationView?.layer.shadowColor = self.shadowColor(selected: selected).cgColor
-        self.annotationView?.layer.borderColor = self.borderColor(selected: selected).cgColor
+        self.annotationView?.backgroundColor = Asset.Colors.annotationCellBackground.color
+        self.annotationView?.layer.borderColor = selected ? Asset.Colors.annotationSelectedCellBorder.color.cgColor : nil
+        self.annotationView?.layer.borderWidth = selected ? 3 : 0
         self.annotationView?.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected,
-                                   availableWidth: availableWidth, hasWritePermission: hasWritePermission)
-    }
-
-    // MARK: - Colors
-
-    private func shadowColor(selected: Bool) -> UIColor {
-        return selected ? Asset.Colors.annotationCellShadow.color : .clear
-    }
-
-    private func borderColor(selected: Bool) -> UIColor {
-        return selected ? Asset.Colors.annotationCellSelectedBorder.color :
-                          Asset.Colors.annotationCellBorder.color
-    }
-
-    private func contentBackgroundColor(selected: Bool) -> UIColor {
-        return selected ? Asset.Colors.annotationCellSelectedBackground.color :
-                          Asset.Colors.annotationCellBackground.color
+                                   availableWidth: (availableWidth - (PDFReaderLayout.horizontalInset * 2)), hasWritePermission: hasWritePermission)
     }
 }

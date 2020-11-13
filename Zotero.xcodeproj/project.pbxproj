@@ -684,6 +684,13 @@
 		B3F0C400250A1DD7002D557A /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */; };
 		B3F0C401250A2450002D557A /* LibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */; };
 		B3F184A4253F067100498F32 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F184A3253F067100498F32 /* WebViewController.swift */; };
+		B3F3D62C255EBE3500F310C2 /* AnnotationViewHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */; };
+		B3F3D632255EC5F200F310C2 /* AnnotationViewHighlightContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */; };
+		B3F3D636255EC8F300F310C2 /* AnnotationViewImageContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */; };
+		B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */; };
+		B3F3D640255ECA4700F310C2 /* AnnotationViewText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */; };
+		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
+		B3F3D64C255ED60B00F310C2 /* AnnotationViewSpacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D64B255ED60B00F310C2 /* AnnotationViewSpacer.swift */; };
 		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C02243B3960004F8B1E /* TestFileStorage.swift */; };
 		B3F785C6252488A000B08721 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = B3F785C5252488A000B08721 /* Realm */; };
@@ -1217,6 +1224,13 @@
 		B3F0C3FF250A1DD7002D557A /* LibraryRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
 		B3F184A3253F067100498F32 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		B3F3A6A922F97D4300E3A09C /* Zotero.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Zotero.entitlements; sourceTree = "<group>"; };
+		B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewHeader.swift; sourceTree = "<group>"; };
+		B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewHighlightContent.swift; sourceTree = "<group>"; };
+		B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewImageContent.swift; sourceTree = "<group>"; };
+		B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewButton.swift; sourceTree = "<group>"; };
+		B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewText.swift; sourceTree = "<group>"; };
+		B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSeparator.swift; sourceTree = "<group>"; };
+		B3F3D64B255ED60B00F310C2 /* AnnotationViewSpacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSpacer.swift; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
@@ -1785,7 +1799,14 @@
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B372DE4B2535AB3E00CB5FA8 /* AnnotationView.swift */,
 				B372DE512535ABE300CB5FA8 /* AnnotationView.xib */,
+				B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */,
 				B38763642535EF2700CC6F5C /* AnnotationViewController.swift */,
+				B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */,
+				B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */,
+				B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */,
+				B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */,
+				B3F3D64B255ED60B00F310C2 /* AnnotationViewSpacer.swift */,
+				B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPicker.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
@@ -2807,6 +2828,7 @@
 				B305661E23FC051E003304F2 /* DeleteGroupSyncAction.swift in Sources */,
 				B3DCDF1D24091EC40039ED0D /* SinglePickerView.swift in Sources */,
 				B3593F4A241A61C700760E20 /* LibrariesState.swift in Sources */,
+				B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */,
 				B30565D523FC051E003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B3235C9224ADE11E0034113B /* StringAttributes.swift in Sources */,
 				B30565F923FC051E003304F2 /* DragDropController.swift in Sources */,
@@ -2824,6 +2846,7 @@
 				B37D8E6924DC2BEE00F526C5 /* CollectionRow.swift in Sources */,
 				B3593F56241A61C700760E20 /* CollectionCell.swift in Sources */,
 				B3B953C8245981A600FC96DB /* PDFReaderState.swift in Sources */,
+				B3F3D632255EC5F200F310C2 /* AnnotationViewHighlightContent.swift in Sources */,
 				B395EFE725494B2300CEBD9F /* CreatorEditState.swift in Sources */,
 				B30565C523FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B3F0C3F9250A1BD8002D557A /* LibrariesViewController.swift in Sources */,
@@ -2849,6 +2872,7 @@
 				B30565EA23FC051E003304F2 /* SecureStorage.swift in Sources */,
 				B3593F3B241A61C700760E20 /* ItemsError.swift in Sources */,
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
+				B3F3D64C255ED60B00F310C2 /* AnnotationViewSpacer.swift in Sources */,
 				B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
 				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,
@@ -2954,6 +2978,7 @@
 				B3593F7A241A76E600760E20 /* CollectionEditState.swift in Sources */,
 				B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */,
 				B30565E823FC051E003304F2 /* CreatorSummaryFormatter.swift in Sources */,
+				B3F3D640255ECA4700F310C2 /* AnnotationViewText.swift in Sources */,
 				B30566AB23FC051F003304F2 /* ItemTypes.swift in Sources */,
 				B3DCDF18240917500039ED0D /* ItemTypePickerViewModelCreator.swift in Sources */,
 				B337A5AC244F228500AFD13D /* Localizable.swift in Sources */,
@@ -3030,14 +3055,17 @@
 				B30566C723FC051F003304F2 /* AppGroup.swift in Sources */,
 				B36A988D2428E05A005D5790 /* TranslatorsController.swift in Sources */,
 				B378F4CD242CD45700B88A05 /* TranslatorParserDelegate.swift in Sources */,
+				B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */,
 				B325DBB524375DD200EFF0F5 /* DebugPermissionResponse.swift in Sources */,
 				B357DEE424165DEE00E06153 /* CrashReporter.swift in Sources */,
 				B3593F59241A61C700760E20 /* CollectionsViewController.swift in Sources */,
 				B30565BB23FC051E003304F2 /* ReadItemDbRequest.swift in Sources */,
 				B305660623FC051E003304F2 /* UpdatesRequest.swift in Sources */,
+				B3F3D636255EC8F300F310C2 /* AnnotationViewImageContent.swift in Sources */,
 				B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */,
 				B372CEE32486512500B423AE /* GroupRequest.swift in Sources */,
 				B3830CDA255451AB00910FE0 /* TagPickerError.swift in Sources */,
+				B3F3D62C255EBE3500F310C2 /* AnnotationViewHeader.swift in Sources */,
 				B3BC1F60254322D200BA3388 /* ItemDetailAbstractEditCell.swift in Sources */,
 				B30566C523FC051F003304F2 /* Tag.swift in Sources */,
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,

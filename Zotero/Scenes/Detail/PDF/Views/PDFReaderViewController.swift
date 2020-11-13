@@ -232,7 +232,7 @@ class PDFReaderViewController: UIViewController {
         if let selection = selectedAnnotation,
            selection.type == .highlight && selection.page == pageIndex {
             // Add custom highlight selection view if needed
-            let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -4, dy: -4)
+            let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
             let selectionView = SelectionView()
             selectionView.frame = frame
             pageView.annotationContainerView.addSubview(selectionView)
@@ -458,6 +458,8 @@ class PDFReaderViewController: UIViewController {
             builder.isCreateAnnotationMenuEnabled = true
             builder.createAnnotationMenuGroups = self.createAnnotationCreationMenuGroups()
             builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation]
+            builder.scrubberBarType = .horizontal
+            builder.thumbnailBarMode = .scrubberBar
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
@@ -469,6 +471,7 @@ class PDFReaderViewController: UIViewController {
         }
         controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
         controller.annotationStateManager.add(self)
+        self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
         return controller
     }
@@ -479,6 +482,14 @@ class PDFReaderViewController: UIViewController {
             AnnotationToolConfiguration.ToolItem(type: .note),
             AnnotationToolConfiguration.ToolItem(type: .square)
         ])]
+    }
+
+    private func setup(scrubberBar: ScrubberBar) {
+        let appearance = UIToolbarAppearance()
+        appearance.backgroundColor = Asset.Colors.pdfScrubberBarBackground.color
+
+        scrubberBar.standardAppearance = appearance
+        scrubberBar.compactAppearance = appearance
     }
 
     private func setup(interactions: DocumentViewInteractions) {
@@ -505,7 +516,6 @@ class PDFReaderViewController: UIViewController {
             let stackView = UIStackView(arrangedSubviews: buttons)
             stackView.spacing = 14
             self.navigationItem.titleView = stackView
-            self.navigationItem.titleView?.backgroundColor = .red
             return
         }
 
@@ -598,11 +608,7 @@ class PDFReaderViewController: UIViewController {
             picker.heightAnchor.constraint(equalToConstant: 44),
         ])
 
-        let test = CheckboxButton(type: .custom)
-        test.setImage(UIImage(systemName: "highlighter", withConfiguration: symbolConfig), for: .normal)
-        test.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-
-        return [test, highlight, note, area, picker]
+        return [highlight, note, area, picker]
     }
 
     private func setupNavigationBar() {
@@ -831,6 +837,8 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
 }
 
 class SelectionView: UIView {
+    static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
+
     init() {
         super.init(frame: CGRect())
         self.commonSetup()
@@ -844,8 +852,10 @@ class SelectionView: UIView {
     private func commonSetup() {
         self.backgroundColor = .clear
         self.autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleBottomMargin, .flexibleRightMargin, .flexibleWidth, .flexibleHeight]
-        self.layer.borderColor = Asset.Colors.zoteroBlue.color.cgColor
-        self.layer.borderWidth = 1
+        self.layer.borderColor = Asset.Colors.annotationHighlightSelection.color.cgColor
+        self.layer.borderWidth = 2.5
+        self.layer.cornerRadius = 2.5
+        self.layer.masksToBounds = true
     }
 }
 
