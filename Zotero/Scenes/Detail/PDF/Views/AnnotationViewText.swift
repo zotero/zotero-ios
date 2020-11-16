@@ -7,6 +7,7 @@
 //
 
 import UIKit
+
 import RxSwift
 import RxCocoa
 
@@ -14,13 +15,14 @@ class AnnotationViewText: UIView {
     private var textLabel: UILabel!
     private var button: UIButton!
 
-    var tap: ControlEvent<Void> {
-        return self.button.rx.tap
+    var tap: Observable<UIButton> {
+        return self.button.rx.tap.flatMap({ Observable.just(self.button) })
     }
 
     init() {
         let label = UILabel()
         label.font = PDFReaderLayout.font
+        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let button = UIButton()
@@ -30,6 +32,7 @@ class AnnotationViewText: UIView {
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .white
+        self.clipsToBounds = false
 
         self.addSubview(label)
         self.addSubview(button)
@@ -38,8 +41,8 @@ class AnnotationViewText: UIView {
 
         NSLayoutConstraint.activate([
             // Horizontal
-            label.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.horizontalInset),
-            label.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: PDFReaderLayout.horizontalInset),
+            label.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
+            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
             button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
             // Vertical

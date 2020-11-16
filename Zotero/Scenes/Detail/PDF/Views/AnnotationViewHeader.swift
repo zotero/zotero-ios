@@ -8,6 +8,8 @@
 
 import UIKit
 
+import RxSwift
+
 class AnnotationViewHeader: UIView {
     private weak var typeImageView: UIImageView!
     private weak var pageLabel: UILabel!
@@ -17,26 +19,35 @@ class AnnotationViewHeader: UIView {
     private var authorTrailingToContainer: NSLayoutConstraint!
     private var authorTrailingToButton: NSLayoutConstraint!
 
+    var menuTap: Observable<UIButton> {
+        return self.menuButton.rx.tap.flatMap({ Observable.just(self.menuButton) })
+    }
+
     init() {
         let typeImageView = UIImageView()
+        typeImageView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        typeImageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         typeImageView.translatesAutoresizingMaskIntoConstraints = false
 
         let pageLabel = UILabel()
         pageLabel.font = PDFReaderLayout.pageLabelFont
         pageLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        pageLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         pageLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let authorLabel = UILabel()
         authorLabel.font = PDFReaderLayout.font
         authorLabel.textColor = .systemGray
         authorLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        authorLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         authorLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let menuButton = UIButton()
         menuButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
         menuButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: PDFReaderLayout.horizontalInset, bottom: 0, right: PDFReaderLayout.horizontalInset)
+        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: PDFReaderLayout.annotationsHorizontalInset, bottom: 0, right: PDFReaderLayout.annotationsHorizontalInset)
         menuButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         menuButton.translatesAutoresizingMaskIntoConstraints = false
 
         self.typeImageView = typeImageView
@@ -54,8 +65,8 @@ class AnnotationViewHeader: UIView {
         self.addSubview(authorLabel)
         self.addSubview(menuButton)
 
-        self.authorTrailingToContainer = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: PDFReaderLayout.horizontalInset)
-        self.authorTrailingToButton = menuButton.leadingAnchor.constraint(greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: PDFReaderLayout.horizontalInset)
+        self.authorTrailingToContainer = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: -PDFReaderLayout.annotationsHorizontalInset)
+        self.authorTrailingToButton = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: menuButton.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset)
         let authorCenter = authorLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor)
         authorCenter.priority = UILayoutPriority(rawValue: 750)
 
@@ -69,10 +80,10 @@ class AnnotationViewHeader: UIView {
             // Height
             self.heightAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHeaderHeight),
             // Horizontal
-            typeImageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.horizontalInset),
+            typeImageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             pageLabel.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: PDFReaderLayout.annotationHeaderPageLeadingOffset),
             authorCenter,
-            authorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: pageLabel.trailingAnchor, constant: PDFReaderLayout.horizontalInset),
+            authorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: pageLabel.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             menuButton.trailingAnchor.constraint(equalTo: self.trailingAnchor)
         ])
     }
@@ -82,7 +93,7 @@ class AnnotationViewHeader: UIView {
     }
 
     func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool) {
-        self.typeImageView.image = self.image(for: type)
+        self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
         self.pageLabel.text = pageLabel
         self.authorLabel.text = author

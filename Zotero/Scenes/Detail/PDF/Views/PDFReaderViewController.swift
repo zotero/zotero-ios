@@ -617,7 +617,7 @@ class PDFReaderViewController: UIViewController {
         sidebarButton.rx.tap
                      .subscribe(onNext: { [weak self] in self?.toggleSidebar() })
                      .disposed(by: self.disposeBag)
-        let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
+        let closeButton = UIBarButtonItem(image: UIImage(systemName: "chevron.left"),
                                           style: .plain, target: nil, action: nil)
         closeButton.rx.tap
                    .subscribe(onNext: { [weak self] in self?.close() })

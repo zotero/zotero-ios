@@ -89,7 +89,7 @@ class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(from state: PDFReaderState, completion: @escaping () -> Void) {
-        guard state.changes.contains(.annotations) || state.changes.contains(.darkMode) else {
+        guard state.changes.contains(.annotations) || state.changes.contains(.darkMode) || state.changes.contains(.selection) else {
             completion()
             return
         }
@@ -100,6 +100,18 @@ class AnnotationsViewController: UIViewController {
             state.updatedAnnotationIndexPaths == nil) {
             self.tableView.reloadData()
             completion()
+            return
+        }
+
+        if state.changes.contains(.selection),
+           let indexPaths = state.updatedAnnotationIndexPaths {
+            for indexPath in indexPaths {
+                guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
+                self.setup(cell: cell, at: indexPath, state: state)
+            }
+
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
             return
         }
 
@@ -115,6 +127,31 @@ class AnnotationsViewController: UIViewController {
             }
         } completion: { _ in
             completion()
+        }
+    }
+
+    private func setup(cell: AnnotationCell, at indexPath: IndexPath, state: PDFReaderState) {
+        guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }
+
+        let hasWritePermission = state.library.metadataEditable
+        let comment = state.comments[annotation.key]
+        let selected = annotation.key == state.selectedAnnotation?.key
+        let preview: UIImage?
+
+        if annotation.type != .image {
+            preview = nil
+        } else {
+            preview = state.previewCache.object(forKey: (annotation.key as NSString))
+
+            if preview == nil {
+                let isDark = self.traitCollection.userInterfaceStyle == .dark
+                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true, isDark: isDark))
+            }
+        }
+
+        cell.setup(with: annotation, attributedComment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, hasWritePermission: hasWritePermission)
+        cell.performAction = { [weak self] action, sender in
+            self?.performAction?(action, annotation, sender)
         }
     }
 
@@ -187,32 +224,9 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
         cell.contentView.backgroundColor = self.view.backgroundColor
-
-        if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row],
-           let cell = cell as? AnnotationCell {
-            let comment = self.viewModel.state.comments[annotation.key]
-            let selected = annotation.key == self.viewModel.state.selectedAnnotation?.key
-            let preview: UIImage?
-
-            if annotation.type != .image {
-                preview = nil
-            } else {
-                preview = self.viewModel.state.previewCache.object(forKey: (annotation.key as NSString))
-
-                if preview == nil {
-                    let isDark = self.traitCollection.userInterfaceStyle == .dark
-                    self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true, isDark: isDark))
-                }
-            }
-
-            cell.setup(with: annotation, attributedComment: comment, preview: preview,
-                       selected: selected, availableWidth: PDFReaderLayout.sidebarWidth,
-                       hasWritePermission: self.viewModel.state.library.metadataEditable)
-            cell.performAction = { [weak self] action, sender in
-                self?.performAction?(action, annotation, sender)
-            }
+        if let cell = cell as? AnnotationCell {
+            self.setup(cell: cell, at: indexPath, state: self.viewModel.state)
         }
-
         return cell
     }
 

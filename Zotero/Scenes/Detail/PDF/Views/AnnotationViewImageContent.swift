@@ -28,8 +28,8 @@ class AnnotationViewImageContent: UIView {
 
         NSLayoutConstraint.activate([
             // Horizontal
-            imageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.horizontalInset),
-            imageView.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: PDFReaderLayout.horizontalInset),
+            imageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
+            self.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             // Vertical
             imageView.topAnchor.constraint(equalTo: self.topAnchor),
             imageView.bottomAnchor.constraint(equalTo: self.bottomAnchor)

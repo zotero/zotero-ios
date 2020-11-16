@@ -14,7 +14,8 @@ class AnnotationViewButton: UIButton {
         super.init(frame: CGRect())
         self.translatesAutoresizingMaskIntoConstraints = false
         self.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
-        self.contentEdgeInsets = UIEdgeInsets(top: 0, left: PDFReaderLayout.horizontalInset, bottom: 0, right: PDFReaderLayout.horizontalInset)
+        self.titleLabel?.font = PDFReaderLayout.font
+        self.contentEdgeInsets = UIEdgeInsets(top: 0, left: PDFReaderLayout.annotationsHorizontalInset, bottom: 0, right: PDFReaderLayout.annotationsHorizontalInset)
         self.heightAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHeaderHeight).isActive = true
     }
 

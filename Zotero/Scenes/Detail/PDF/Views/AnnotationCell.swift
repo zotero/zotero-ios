@@ -10,7 +10,8 @@ import UIKit
 
 class AnnotationCell: UITableViewCell {
     private(set) var key: String = ""
-    private weak var annotationView: AnnotationView?
+    private weak var annotationView: AnnotationView!
+    private weak var selectionView: UIView!
 
     var performAction: AnnotationViewAction? {
         get {
@@ -50,29 +51,42 @@ class AnnotationCell: UITableViewCell {
     // MARK: - Setups
 
     private func setupView() {
-        let view = AnnotationView()
-        view.layer.cornerRadius = 10
-        view.layer.masksToBounds = true
-        self.contentView.addSubview(view)
-        self.annotationView = view
+        let selectionView = UIView()
+        selectionView.backgroundColor = Asset.Colors.annotationSelectedCellBorder.color
+        selectionView.layer.cornerRadius = 10
+        selectionView.layer.masksToBounds = true
+        selectionView.translatesAutoresizingMaskIntoConstraints = false
+        self.selectionView = selectionView
 
-        self.contentView.addSubview(view)
+        let annotationView = AnnotationView()
+        annotationView.layer.cornerRadius = 10
+        annotationView.layer.masksToBounds = true
+        annotationView.backgroundColor = Asset.Colors.annotationCellBackground.color
+        self.annotationView = annotationView
+
+        self.contentView.addSubview(selectionView)
+        self.contentView.addSubview(annotationView)
+
+        let selectionViewHorizontal = PDFReaderLayout.annotationsHorizontalInset - PDFReaderLayout.annotationSelectionLineWidth
+        let selectionViewBottom = PDFReaderLayout.annotationsCellSeparatorHeight - (PDFReaderLayout.annotationSelectionLineWidth * 2)
+        let annotationViewBottom = selectionViewBottom + PDFReaderLayout.annotationSelectionLineWidth
 
         NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: PDFReaderLayout.horizontalInset),
-            self.contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: PDFReaderLayout.horizontalInset),
-            view.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: 0),
-            self.contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            selectionView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: selectionViewHorizontal),
+            self.contentView.trailingAnchor.constraint(equalTo: selectionView.trailingAnchor, constant: selectionViewHorizontal),
+            selectionView.topAnchor.constraint(equalTo: self.contentView.topAnchor),
+            self.contentView.bottomAnchor.constraint(equalTo: selectionView.bottomAnchor, constant: selectionViewBottom),
+            annotationView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
+            self.contentView.trailingAnchor.constraint(equalTo: annotationView.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
+            annotationView.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: PDFReaderLayout.annotationSelectionLineWidth),
+            self.contentView.bottomAnchor.constraint(equalTo: annotationView.bottomAnchor, constant: annotationViewBottom)
         ])
     }
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         self.key = annotation.key
-
-        self.annotationView?.backgroundColor = Asset.Colors.annotationCellBackground.color
-        self.annotationView?.layer.borderColor = selected ? Asset.Colors.annotationSelectedCellBorder.color.cgColor : nil
-        self.annotationView?.layer.borderWidth = selected ? 3 : 0
-        self.annotationView?.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected,
-                                   availableWidth: (availableWidth - (PDFReaderLayout.horizontalInset * 2)), hasWritePermission: hasWritePermission)
+        self.selectionView.isHidden = !selected
+        let availableWidth = availableWidth - (PDFReaderLayout.annotationsHorizontalInset * 2)
+        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, availableWidth: availableWidth, hasWritePermission: hasWritePermission)
     }
 }

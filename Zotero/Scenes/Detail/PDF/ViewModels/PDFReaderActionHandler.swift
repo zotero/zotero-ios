@@ -275,9 +275,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             state.selectedAnnotation = annotation
             state.changes.insert(.selection)
-            if let updates = state.updatedAnnotationIndexPaths, !updates.isEmpty {
-                state.changes.insert(.annotations)
-            }
         }
     }
 
@@ -349,7 +346,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             square.borderColor = color
             pdfAnnotation = square
         case .note:
-            let rect = CGRect(origin: origin, size: PDFReaderLayout.noteSize)
+            let rect = CGRect(origin: origin, size: PDFReaderLayout.noteAnnotationSize)
             let note = NoteAnnotation(contents: "")
             note.pageIndex = pageIndex
             note.boundingBox = rect
@@ -728,7 +725,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let note = NoteAnnotation(contents: annotation.comment)
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
-        note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteSize)
+        note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteAnnotationSize)
         note.isZotero = true
         note.isEditable = annotation.editableInDocument
         note.key = annotation.key

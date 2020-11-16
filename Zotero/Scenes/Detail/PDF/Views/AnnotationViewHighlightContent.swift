@@ -16,8 +16,8 @@ class AnnotationViewHighlightContent: UIView {
     private var textLabel: UILabel!
     private var button: UIButton!
 
-    var tap: ControlEvent<Void> {
-        return self.button.rx.tap
+    var tap: Observable<UIButton> {
+        return self.button.rx.tap.flatMap({ Observable.just(self.button) })
     }
 
     init() {
@@ -27,6 +27,7 @@ class AnnotationViewHighlightContent: UIView {
         let label = UILabel()
         label.font = PDFReaderLayout.font
         label.textColor = Asset.Colors.annotationText.color
+        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let button = UIButton()
@@ -45,13 +46,14 @@ class AnnotationViewHighlightContent: UIView {
 
         NSLayoutConstraint.activate([
             // Horizontal
-            lineView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.horizontalInset),
+            lineView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             label.leadingAnchor.constraint(equalTo: lineView.trailingAnchor, constant: PDFReaderLayout.annotationHighlightContentLeadingOffset),
-            label.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: PDFReaderLayout.horizontalInset),
+            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
             button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
-            // Height
+            // Size
             lineView.heightAnchor.constraint(equalTo: label.heightAnchor),
+            lineView.widthAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHighlightLineWidth),
             // Vertical
             lineView.topAnchor.constraint(equalTo: label.topAnchor),
             lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
