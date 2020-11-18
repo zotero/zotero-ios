@@ -690,7 +690,6 @@
 		B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */; };
 		B3F3D640255ECA4700F310C2 /* AnnotationViewText.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */; };
 		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
-		B3F3D64C255ED60B00F310C2 /* AnnotationViewSpacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D64B255ED60B00F310C2 /* AnnotationViewSpacer.swift */; };
 		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C02243B3960004F8B1E /* TestFileStorage.swift */; };
 		B3F785C6252488A000B08721 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = B3F785C5252488A000B08721 /* Realm */; };
@@ -1230,7 +1229,6 @@
 		B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewButton.swift; sourceTree = "<group>"; };
 		B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewText.swift; sourceTree = "<group>"; };
 		B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSeparator.swift; sourceTree = "<group>"; };
-		B3F3D64B255ED60B00F310C2 /* AnnotationViewSpacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSpacer.swift; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
@@ -1805,7 +1803,6 @@
 				B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */,
 				B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */,
 				B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */,
-				B3F3D64B255ED60B00F310C2 /* AnnotationViewSpacer.swift */,
 				B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPicker.swift */,
@@ -2872,7 +2869,6 @@
 				B30565EA23FC051E003304F2 /* SecureStorage.swift in Sources */,
 				B3593F3B241A61C700760E20 /* ItemsError.swift in Sources */,
 				B30566B823FC051F003304F2 /* SearchesResponse.swift in Sources */,
-				B3F3D64C255ED60B00F310C2 /* AnnotationViewSpacer.swift in Sources */,
 				B3CBB125248A46D500C4228F /* NotificationCenter+Extensions.swift in Sources */,
 				B305660C23FC051E003304F2 /* VersionsRequest.swift in Sources */,
 				B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */,

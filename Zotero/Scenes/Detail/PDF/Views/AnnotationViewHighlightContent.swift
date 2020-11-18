@@ -12,9 +12,10 @@ import RxSwift
 import RxCocoa
 
 class AnnotationViewHighlightContent: UIView {
-    private var lineView: UIView!
-    private var textLabel: UILabel!
-    private var button: UIButton!
+    private weak var lineView: UIView!
+    private weak var textLabel: UILabel!
+    private weak var button: UIButton!
+    private weak var bottomInsetConstraint: NSLayoutConstraint!
 
     var tap: Observable<UIButton> {
         return self.button.rx.tap.flatMap({ Observable.just(self.button) })
@@ -43,6 +44,7 @@ class AnnotationViewHighlightContent: UIView {
         self.addSubview(button)
 
         let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight
+        let bottomInset = self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight)
 
         NSLayoutConstraint.activate([
             // Horizontal
@@ -57,8 +59,8 @@ class AnnotationViewHighlightContent: UIView {
             // Vertical
             lineView.topAnchor.constraint(equalTo: label.topAnchor),
             lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
-            label.topAnchor.constraint(equalTo: self.topAnchor, constant: -topFontOffset),
-            label.lastBaselineAnchor.constraint(equalTo: self.bottomAnchor),
+            label.topAnchor.constraint(equalTo: self.topAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight - topFontOffset),
+            bottomInset,
             button.topAnchor.constraint(equalTo: self.topAnchor),
             button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
         ])
@@ -66,13 +68,14 @@ class AnnotationViewHighlightContent: UIView {
         self.lineView = lineView
         self.textLabel = label
         self.button = button
+        self.bottomInsetConstraint = bottomInset
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with color: UIColor, text: String) {
+    func setup(with color: UIColor, text: String, halfBottomInset: Bool) {
         self.lineView.backgroundColor = color
 
         let paragraphStyle = NSMutableParagraphStyle()
@@ -80,5 +83,7 @@ class AnnotationViewHighlightContent: UIView {
         paragraphStyle.maximumLineHeight = PDFReaderLayout.annotationLineHeight
         let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle])
         self.textLabel.attributedText = attributedString
+
+        self.bottomInsetConstraint.constant = halfBottomInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
     }
 }

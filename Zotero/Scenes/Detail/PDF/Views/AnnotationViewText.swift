@@ -12,8 +12,9 @@ import RxSwift
 import RxCocoa
 
 class AnnotationViewText: UIView {
-    private var textLabel: UILabel!
-    private var button: UIButton!
+    private weak var textLabel: UILabel!
+    private weak var button: UIButton!
+    private weak var topInsetConstraint: NSLayoutConstraint!
 
     var tap: Observable<UIButton> {
         return self.button.rx.tap.flatMap({ Observable.just(self.button) })
@@ -23,9 +24,11 @@ class AnnotationViewText: UIView {
         let label = UILabel()
         label.font = PDFReaderLayout.font
         label.numberOfLines = 0
+        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
         label.translatesAutoresizingMaskIntoConstraints = false
 
         let button = UIButton()
+        button.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         button.translatesAutoresizingMaskIntoConstraints = false
 
         super.init(frame: CGRect())
@@ -38,6 +41,7 @@ class AnnotationViewText: UIView {
         self.addSubview(button)
 
         let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight
+        let topInset = label.topAnchor.constraint(equalTo: self.topAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight - topFontOffset)
 
         NSLayoutConstraint.activate([
             // Horizontal
@@ -46,21 +50,26 @@ class AnnotationViewText: UIView {
             button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
             button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
             // Vertical
-            label.topAnchor.constraint(equalTo: self.topAnchor, constant: -topFontOffset),
-            label.lastBaselineAnchor.constraint(equalTo: self.bottomAnchor),
+            topInset,
+            self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight),
             button.topAnchor.constraint(equalTo: self.topAnchor),
             button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
         ])
 
         self.textLabel = label
         self.button = button
+        self.topInsetConstraint = topInset
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with attributedString: NSAttributedString) {
+    func setup(with attributedString: NSAttributedString, halfTopInset: Bool) {
         self.textLabel.attributedText = attributedString
+
+        let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight
+        let topInset = halfTopInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
+        self.topInsetConstraint.constant = topInset - topFontOffset
     }
 }
