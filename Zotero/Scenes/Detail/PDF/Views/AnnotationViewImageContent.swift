@@ -17,7 +17,6 @@ class AnnotationViewImageContent: UIView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        imageView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         imageView.translatesAutoresizingMaskIntoConstraints = false
 
         super.init(frame: CGRect())
@@ -27,7 +26,7 @@ class AnnotationViewImageContent: UIView {
 
         self.addSubview(imageView)
 
-        let height = imageView.heightAnchor.constraint(equalToConstant: 100)
+        let height = imageView.heightAnchor.constraint(equalToConstant: 0)
         let bottomInset = self.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight)
 
         NSLayoutConstraint.activate([
@@ -54,7 +53,6 @@ class AnnotationViewImageContent: UIView {
         if let height = height {
             self.imageViewHeight.constant = height
         }
-
         if let halfInset = halfBottomInset {
             self.bottomInsetConstraint.constant = halfInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
         }

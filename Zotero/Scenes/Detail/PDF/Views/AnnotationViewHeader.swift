@@ -27,6 +27,7 @@ class AnnotationViewHeader: UIView {
         let typeImageView = UIImageView()
         typeImageView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         typeImageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        typeImageView.contentMode = .scaleAspectFit
         typeImageView.translatesAutoresizingMaskIntoConstraints = false
 
         let pageLabel = UILabel()
@@ -104,9 +105,9 @@ class AnnotationViewHeader: UIView {
 
     private func image(for type: AnnotationType) -> UIImage? {
         switch type {
-        case .image: return Asset.Images.Annotations.area.image
-        case .highlight: return Asset.Images.Annotations.highlight.image
-        case .note: return Asset.Images.Annotations.note.image
+        case .image: return Asset.Images.Annotations.areaMedium.image
+        case .highlight: return Asset.Images.Annotations.highlighterMedium.image
+        case .note: return Asset.Images.Annotations.noteMedium.image
         }
     }
 }

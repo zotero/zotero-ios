@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "annotation_highlight.png",
+      "filename" : "area.medium.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "annotation_highlight@2x.png",
+      "filename" : "area.medium@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "annotation_highlight@3x.png",
+      "filename" : "area.medium@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

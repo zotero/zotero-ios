@@ -40,11 +40,12 @@ internal enum Asset {
   }
   internal enum Images {
     internal enum Annotations {
-      internal static let area = ImageAsset(name: "Annotations/area")
-      internal static let highlight = ImageAsset(name: "Annotations/highlight")
+      internal static let areaLarge = ImageAsset(name: "Annotations/area.large")
+      internal static let areaMedium = ImageAsset(name: "Annotations/area.medium")
       internal static let highlighterLarge = ImageAsset(name: "Annotations/highlighter.large")
       internal static let highlighterMedium = ImageAsset(name: "Annotations/highlighter.medium")
-      internal static let note = ImageAsset(name: "Annotations/note")
+      internal static let noteLarge = ImageAsset(name: "Annotations/note.large")
+      internal static let noteMedium = ImageAsset(name: "Annotations/note.medium")
     }
     internal static let attachmentDetailDocument = ImageAsset(name: "attachment-detail-document")
     internal static let attachmentDetailDownloadFailed = ImageAsset(name: "attachment-detail-download-failed")

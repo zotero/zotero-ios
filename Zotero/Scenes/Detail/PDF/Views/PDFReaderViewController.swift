@@ -557,7 +557,7 @@ class PDFReaderViewController: UIViewController {
         self.createHighlightButton = highlight
 
         let note = CheckboxButton(type: .custom)
-        note.setImage(UIImage(systemName: "doc", withConfiguration: symbolConfig), for: .normal)
+        note.setImage(Asset.Images.Annotations.noteLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         note.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         note.rx
             .controlEvent(.touchDown)
@@ -568,7 +568,7 @@ class PDFReaderViewController: UIViewController {
         self.createNoteButton = note
 
         let area = CheckboxButton(type: .custom)
-        area.setImage(UIImage(systemName: "plus.square", withConfiguration: symbolConfig), for: .normal)
+        area.setImage(Asset.Images.Annotations.areaLarge.image.withRenderingMode(.alwaysTemplate), for: .normal)
         area.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
         area.rx
             .controlEvent(.touchDown)

@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "highlighter.large.png",
+      "filename" : "note.medium.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "highlighter.large@2x.png",
+      "filename" : "note.medium@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "highlighter.large@3x.png",
+      "filename" : "note.medium@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
