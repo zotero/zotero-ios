@@ -160,12 +160,12 @@ class PDFReaderViewController: UIViewController {
         guard state.library.metadataEditable else { return }
 
         switch action {
-        case .comment:
-            guard annotation.isAuthor else { return }
-            let preview = self.preview(for: annotation, parentKey: state.key, document: state.document)
-            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: preview, save: { [weak self] comment in
-                self?.viewModel.process(action: .setComment(comment, annotation.key))
-            })
+//        case .comment:
+//            guard annotation.isAuthor else { return }
+//            let preview = self.preview(for: annotation, parentKey: state.key, document: state.document)
+//            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: preview, save: { [weak self] comment in
+//                self?.viewModel.process(action: .setComment(comment, annotation.key))
+//            })
 
         case .tags:
             guard annotation.isAuthor else { return }

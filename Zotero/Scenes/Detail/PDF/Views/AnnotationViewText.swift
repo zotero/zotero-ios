@@ -35,7 +35,6 @@ class AnnotationViewText: UIView {
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .white
-        self.clipsToBounds = false
 
         self.addSubview(label)
         self.addSubview(button)
@@ -65,7 +64,7 @@ class AnnotationViewText: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with attributedString: NSAttributedString, halfTopInset: Bool) {
+    func setup(with attributedString: NSAttributedString?, halfTopInset: Bool) {
         self.textLabel.attributedText = attributedString
 
         let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight

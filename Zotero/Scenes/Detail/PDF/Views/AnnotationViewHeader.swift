@@ -23,7 +23,7 @@ class AnnotationViewHeader: UIView {
         return self.menuButton.rx.tap.flatMap({ Observable.just(self.menuButton) })
     }
 
-    init() {
+    init(type: AnnotationView.Kind) {
         let typeImageView = UIImageView()
         typeImageView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         typeImageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -79,7 +79,7 @@ class AnnotationViewHeader: UIView {
             menuButton.topAnchor.constraint(equalTo: self.topAnchor),
             menuButton.bottomAnchor.constraint(equalTo: self.bottomAnchor),
             // Height
-            self.heightAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHeaderHeight),
+            self.heightAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHeaderHeight(type: type)),
             // Horizontal
             typeImageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
             pageLabel.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: PDFReaderLayout.annotationHeaderPageLeadingOffset),

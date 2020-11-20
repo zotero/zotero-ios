@@ -10,14 +10,14 @@ import UIKit
 
 class AnnotationViewButton: UIButton {
 
-    init() {
+    init(type: AnnotationView.Kind) {
         super.init(frame: CGRect())
         self.translatesAutoresizingMaskIntoConstraints = false
         self.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
         self.titleLabel?.font = PDFReaderLayout.font
         self.contentHorizontalAlignment = .leading
         self.contentEdgeInsets = UIEdgeInsets(top: 0, left: PDFReaderLayout.annotationsHorizontalInset, bottom: 0, right: PDFReaderLayout.annotationsHorizontalInset)
-        self.heightAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHeaderHeight).isActive = true
+        self.heightAnchor.constraint(equalToConstant: PDFReaderLayout.annotationButtonheight(type: type)).isActive = true
     }
 
     required init?(coder: NSCoder) {

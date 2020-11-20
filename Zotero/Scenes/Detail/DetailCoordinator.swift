@@ -523,15 +523,19 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 
     #if PDFENABLED
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, actionHandler: @escaping AnnotationViewControllerAction, dismissHandler: @escaping () -> Void) {
-        let controller = AnnotationViewController(viewModel: viewModel)
-        controller.performAction = actionHandler
-        controller.willDismiss = dismissHandler
-        controller.modalPresentationStyle = .popover
-        controller.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
-        controller.popoverPresentationController?.sourceRect = sourceRect
-        self.topViewController.present(controller, animated: true, completion: nil)
+        let navigationController = UINavigationController()
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
+        navigationController.popoverPresentationController?.sourceRect = sourceRect
+
+        let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, viewModel: viewModel)
+        coordinator.parentCoordinator = self
+        self.childCoordinators.append(coordinator)
+        coordinator.start(animated: false)
+
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
-    
+
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.sourceView = sender

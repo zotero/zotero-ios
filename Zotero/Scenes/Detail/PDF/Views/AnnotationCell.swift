@@ -59,7 +59,7 @@ class AnnotationCell: UITableViewCell {
         selectionView.translatesAutoresizingMaskIntoConstraints = false
         self.selectionView = selectionView
 
-        let annotationView = AnnotationView()
+        let annotationView = AnnotationView(type: .cell)
         annotationView.layer.cornerRadius = 10
         annotationView.layer.masksToBounds = true
         annotationView.backgroundColor = Asset.Colors.annotationCellBackground.color
@@ -88,6 +88,7 @@ class AnnotationCell: UITableViewCell {
         self.key = annotation.key
         self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.annotationSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationsHorizontalInset * 2)
-        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, availableWidth: availableWidth, hasWritePermission: hasWritePermission)
+        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, availableWidth: availableWidth,
+                                  hasWritePermission: hasWritePermission)
     }
 }

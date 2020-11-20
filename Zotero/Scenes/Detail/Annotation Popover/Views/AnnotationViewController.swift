@@ -20,8 +20,10 @@ class AnnotationViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var annotationView: AnnotationView?
-    var performAction: AnnotationViewControllerAction?
-    var willDismiss: (() -> Void)?
+
+    weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
+
+    // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>) {
         self.viewModel = viewModel
@@ -34,12 +36,12 @@ class AnnotationViewController: UIViewController {
     }
 
     override func loadView() {
-        guard let annotationView = Bundle.main.loadNibNamed("AnnotationView", owner: nil, options: nil)?.first as? AnnotationView else { fatalError() }
-        annotationView.translatesAutoresizingMaskIntoConstraints = false
+        let annotationView = AnnotationView(type: .popover)
         annotationView.widthAnchor.constraint(equalToConstant: AnnotationViewController.width).isActive = true
         self.annotationView = annotationView
 
         let view = UIView()
+        view.backgroundColor = .white
         view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(annotationView)
 
@@ -55,6 +57,7 @@ class AnnotationViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         self.setupAnnotationView()
 
         self.viewModel.stateObservable
@@ -67,12 +70,14 @@ class AnnotationViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.preferredContentSize = self.view.systemLayoutSizeFitting(CGSize(width: AnnotationViewController.width, height: .greatestFiniteMagnitude))
+        self.updatePreferredContentSize()
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        self.willDismiss?()
+    // MARK: - Actions
+
+    private func updatePreferredContentSize() {
+        guard let size = self.annotationView?.systemLayoutSizeFitting(CGSize(width: AnnotationViewController.width, height: .greatestFiniteMagnitude)) else { return }
+        self.preferredContentSize = size
     }
 
     private func update(state: PDFReaderState) {
@@ -85,11 +90,19 @@ class AnnotationViewController: UIViewController {
 
         if state.changes.contains(.selectedAnnotationChanged) {
             self.setupAnnotationView()
-            self.preferredContentSize = self.view.systemLayoutSizeFitting(CGSize(width: AnnotationViewController.width, height: .greatestFiniteMagnitude))
+            self.updatePreferredContentSize()
         }
 
         if state.selectedAnnotation == nil {
             self.dismiss(animated: true, completion: nil)
+        }
+    }
+
+    private func perform(action: AnnotationView.Action) {
+        switch action {
+        case .highlight, .options:
+            self.coordinatorDelegate?.showEdit()
+        case .tags: break
         }
     }
 
@@ -114,8 +127,8 @@ class AnnotationViewController: UIViewController {
 
         self.annotationView?.setup(with: annotation, attributedComment: comment, preview: preview, selected: true, availableWidth: AnnotationViewController.width,
                                    hasWritePermission: self.viewModel.state.library.metadataEditable)
-        self.annotationView?.performAction = { [weak self] action, sender in
-            self?.performAction?(action, annotation, sender)
+        self.annotationView?.performAction = { [weak self] action, _ in
+            self?.perform(action: action)
         }
     }
 }

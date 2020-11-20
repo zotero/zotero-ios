@@ -20,7 +20,6 @@ struct PDFReaderLayout {
     // Annotation views
     static let annotationsHorizontalInset: CGFloat = 16
     static let annotationsCellSeparatorHeight: CGFloat = 13
-    static let annotationHeaderHeight: CGFloat = 36
     static let annotationHeaderPageLeadingOffset: CGFloat = 8
     static let annotationHighlightContentLeadingOffset: CGFloat = 8
     static let annotationLineHeight: CGFloat = 20
@@ -28,9 +27,25 @@ struct PDFReaderLayout {
     static let annotationSelectionLineWidth: CGFloat = 3
     // Line width shown next to the highlighted text in highlight annotation (sidebar or popover).
     static let annotationHighlightLineWidth: CGFloat = 3
+    static let annotationTextViewMinHeight: CGFloat = 100
+    static let annotationTextViewMaxHeight: CGFloat = 300
 
     static let font: UIFont = .systemFont(ofSize: 15)
     static let pageLabelFont: UIFont = .systemFont(ofSize: 15, weight: .bold)
+
+    static func annotationHeaderHeight(type: AnnotationView.Kind) -> CGFloat {
+        switch type {
+        case .cell: return 36
+        case .popover: return 50
+        }
+    }
+
+    static func annotationButtonheight(type: AnnotationView.Kind) -> CGFloat {
+        switch type {
+        case .cell: return 36
+        case .popover: return 44
+        }
+    }
 
     private static func createSidebarWidth() -> CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {

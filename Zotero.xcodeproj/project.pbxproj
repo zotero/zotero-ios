@@ -390,6 +390,9 @@
 		B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B337A5AB244F228500AFD13D /* Localizable.swift */; };
 		B33979D12493ACA800A923C3 /* ImagePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */; };
 		B33AB488246D315F00490DDE /* CheckboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33AB487246D315F00490DDE /* CheckboxButton.swift */; };
+		B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */; };
+		B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */; };
+		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
 		B340692224A60D6A009ECE48 /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */; };
 		B340692424A60D83009ECE48 /* CGRect+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692324A60D83009ECE48 /* CGRect+Extensions.swift */; };
 		B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */; };
@@ -572,7 +575,6 @@
 		B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3830CF525545EE400910FE0 /* TagPickerCell.xib */; };
 		B3866A582417C1BC006693C4 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A572417C1BC006693C4 /* ViewModel.swift */; };
 		B3866A5A2417C1C7006693C4 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3866A592417C1C7006693C4 /* Coordinator.swift */; };
-		B38763652535EF2700CC6F5C /* AnnotationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38763642535EF2700CC6F5C /* AnnotationViewController.swift */; };
 		B3886C47249234D600B7D67B /* FileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3886C46249234D600B7D67B /* FileDownloader.swift */; };
 		B38CD21E241128D4004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
 		B38CD21F241128FE004299EA /* KeysResponseProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */; };
@@ -989,6 +991,9 @@
 		B337A5AB244F228500AFD13D /* Localizable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizable.swift; sourceTree = "<group>"; };
 		B33979CF2493ACA800A923C3 /* ImagePreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewViewController.swift; sourceTree = "<group>"; };
 		B33AB487246D315F00490DDE /* CheckboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckboxButton.swift; sourceTree = "<group>"; };
+		B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationViewController.swift; sourceTree = "<group>"; };
+		B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverCoordinator.swift; sourceTree = "<group>"; };
+		B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewTextView.swift; sourceTree = "<group>"; };
 		B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
 		B340692324A60D83009ECE48 /* CGRect+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Extensions.swift"; sourceTree = "<group>"; };
 		B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+Extensions.swift"; sourceTree = "<group>"; };
@@ -1129,7 +1134,6 @@
 		B3830CF525545EE400910FE0 /* TagPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TagPickerCell.xib; sourceTree = "<group>"; };
 		B3866A572417C1BC006693C4 /* ViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		B3866A592417C1C7006693C4 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
-		B38763642535EF2700CC6F5C /* AnnotationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewController.swift; sourceTree = "<group>"; };
 		B3886C46249234D600B7D67B /* FileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloader.swift; sourceTree = "<group>"; };
 		B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysResponseProcessor.swift; sourceTree = "<group>"; };
 		B38D3CC924A1F420005289EF /* CrashReporter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CrashReporter.framework; sourceTree = "<group>"; };
@@ -1798,12 +1802,12 @@
 				B372DE4B2535AB3E00CB5FA8 /* AnnotationView.swift */,
 				B372DE512535ABE300CB5FA8 /* AnnotationView.xib */,
 				B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */,
-				B38763642535EF2700CC6F5C /* AnnotationViewController.swift */,
 				B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */,
 				B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */,
 				B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */,
 				B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */,
 				B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */,
+				B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPicker.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
@@ -1849,6 +1853,39 @@
 			path = DbRequests;
 			sourceTree = "<group>";
 		};
+		B3401D4E2567D8CF00BB8D6E /* Annotation Popover */ = {
+			isa = PBXGroup;
+			children = (
+				B3401D562567D8F700BB8D6E /* Models */,
+				B3401D532567D8F700BB8D6E /* ViewModels */,
+				B3401D542567D8F700BB8D6E /* Views */,
+				B3401D5A2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift */,
+			);
+			path = "Annotation Popover";
+			sourceTree = "<group>";
+		};
+		B3401D532567D8F700BB8D6E /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B3401D542567D8F700BB8D6E /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B3401D562567D8F700BB8D6E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		B357DEE024165DEE00E06153 /* Debugging */ = {
 			isa = PBXGroup;
 			children = (
@@ -1862,6 +1899,7 @@
 		B3593EC2241A61C700760E20 /* Detail */ = {
 			isa = PBXGroup;
 			children = (
+				B3401D4E2567D8CF00BB8D6E /* Annotation Popover */,
 				B3593EC3241A61C700760E20 /* ItemDetail */,
 				B3593EE7241A61C700760E20 /* Items */,
 				B31941D824531F6600BF6296 /* PDF */,
@@ -2895,6 +2933,7 @@
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */,
 				B3593F50241A61C700760E20 /* CollectionsState.swift in Sources */,
+				B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */,
 				B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */,
 				B353F204242E52610062EE24 /* Database.swift in Sources */,
 				B30565E023FC051E003304F2 /* ReadAnyChangedObjectsInLibraryDbRequest.swift in Sources */,
@@ -3006,7 +3045,6 @@
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
 				B300B33324291C8D00C1FE1E /* RTranslatorMetadata.swift in Sources */,
-				B38763652535EF2700CC6F5C /* AnnotationViewController.swift in Sources */,
 				B30566A723FC051F003304F2 /* DelayIntervals.swift in Sources */,
 				B37491382488D7040042FF85 /* SettingsListView.swift in Sources */,
 				B3DCDF1F240945B40039ED0D /* CollectionPickerActionHandler.swift in Sources */,
@@ -3071,11 +3109,13 @@
 				B305661823FC051E003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */,
 				B3DCDF102409127A0039ED0D /* CreatorTypePickerViewModelCreator.swift in Sources */,
+				B3401D572567D8F700BB8D6E /* AnnotationViewController.swift in Sources */,
 				B3830CE2255451C200910FE0 /* TagPickerActionHandler.swift in Sources */,
 				B305662223FC051F003304F2 /* StoreVersionSyncAction.swift in Sources */,
 				B3BC25CD247E6BA000AC27B5 /* DateParser.swift in Sources */,
 				B305662523FC051F003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B361820D24C9B9D900B30D56 /* NoRotationHostingController.swift in Sources */,
+				B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */,
 				B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */,
 				B3C9D60A24DA9D49003EA1EE /* CollectionsSearchAction.swift in Sources */,
 				B3C9D60524DA921B003EA1EE /* CollectionsSearchViewController.swift in Sources */,
