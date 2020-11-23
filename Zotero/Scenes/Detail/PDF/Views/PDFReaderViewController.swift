@@ -32,13 +32,12 @@ class PDFReaderViewController: UIViewController {
     private weak var pdfControllerLeft: NSLayoutConstraint!
     private var isCompactSize: Bool
     private var isSidebarTransitioning: Bool
-    weak var coordinatorDelegate: DetailPdfCoordinatorDelegate?
+    weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
     // Annotation toolbar
     private weak var createNoteButton: CheckboxButton!
     private weak var createHighlightButton: CheckboxButton!
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
-
 
     private var isSidebarOpened: Bool {
         return self.annotationsControllerLeft.constant == 0
@@ -68,8 +67,7 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool,
-         annotationPreviewController: AnnotationPreviewController, pageController: PdfPageController) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, annotationPreviewController: AnnotationPreviewController, pageController: PdfPageController) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
         self.annotationPreviewController = annotationPreviewController
@@ -154,60 +152,6 @@ class PDFReaderViewController: UIViewController {
         }
     }
 
-    private func perform(action: AnnotationView.Action, annotation: Annotation, sender: UIButton) {
-        let state = self.viewModel.state
-
-        guard state.library.metadataEditable else { return }
-
-        switch action {
-//        case .comment:
-//            guard annotation.isAuthor else { return }
-//            let preview = self.preview(for: annotation, parentKey: state.key, document: state.document)
-//            self.coordinatorDelegate?.showComment(with: annotation.comment, imageLoader: preview, save: { [weak self] comment in
-//                self?.viewModel.process(action: .setComment(comment, annotation.key))
-//            })
-
-        case .tags:
-            guard annotation.isAuthor else { return }
-            let selected = Set(annotation.tags.map({ $0.name }))
-            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
-                self?.viewModel.process(action: .setTags(tags, annotation.key))
-            })
-
-        case .highlight:
-            guard annotation.isAuthor else { return }
-            guard annotation.type == .highlight else { return }
-            let preview = self.preview(for: annotation, parentKey: state.key, document: state.document)
-            self.coordinatorDelegate?.showHighlight(with: (annotation.text ?? ""), imageLoader: preview, save: { [weak self] highlight in
-                self?.viewModel.process(action: .setHighlight(highlight, annotation.key))
-            })
-
-        case .options:
-            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender, viewModel: self.viewModel)
-        }
-    }
-
-    func preview(for annotation: Annotation, parentKey: String, document: Document) -> Single<UIImage>? {
-        guard annotation.type != .note else { return nil }
-
-        let boundingBox = annotation.boundingBox
-        let previewRect: CGRect
-
-        if let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) {
-            var viewCoordinatesBoundingBox = pageView.convert(boundingBox, from: pageView.pdfCoordinateSpace)
-            viewCoordinatesBoundingBox = viewCoordinatesBoundingBox.insetBy(dx: -10, dy: -40)
-            previewRect = pageView.convert(viewCoordinatesBoundingBox, to: pageView.pdfCoordinateSpace)
-        } else {
-            previewRect = boundingBox
-        }
-
-        return self.annotationPreviewController.render(document: document,
-                                                       page: UInt(annotation.page),
-                                                       rect: previewRect,
-                                                       key: annotation.key,
-                                                       parentKey: parentKey)
-    }
-
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
         guard UIDevice.current.userInterfaceIdiom == .pad && !self.isSidebarOpened,
               let annotation = state.selectedAnnotation,
@@ -215,9 +159,6 @@ class PDFReaderViewController: UIViewController {
 
         let frame = pageView.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
         self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame,
-                                                        actionHandler: { [weak self] action, annotation, sender in
-                                                            self?.perform(action: action, annotation: annotation, sender: sender)
-                                                        },
                                                         dismissHandler: { [weak self] in
                                                             self?.viewModel.process(action: .selectAnnotation(nil))
                                                         })
@@ -411,10 +352,8 @@ class PDFReaderViewController: UIViewController {
         pdfController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let sidebarController = AnnotationsViewController(viewModel: self.viewModel)
-        sidebarController.performAction = { [weak self] action, annotation, sender in
-            self?.perform(action: action, annotation: annotation, sender: sender)
-        }
         sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
+        sidebarController.coordinatorDelegate = self.coordinatorDelegate
 
         let separator = UIView()
         separator.translatesAutoresizingMaskIntoConstraints = false

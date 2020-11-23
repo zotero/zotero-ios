@@ -102,14 +102,18 @@ class AnnotationViewController: UIViewController {
         switch action {
         case .highlight, .options:
             self.coordinatorDelegate?.showEdit()
-        case .tags: break
+        case .setComment(let comment):
+            guard let key = self.viewModel.state.selectedAnnotation?.key else { return }
+            self.viewModel.process(action: .setComment(key: key, comment: comment))
+        case .tags, .reloadHeight: break
         }
     }
 
     // MARK: - Setups
 
     private func setupAnnotationView() {
-        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
+        guard let annotation = self.viewModel.state.selectedAnnotation,
+              let annotationView = self.annotationView else { return }
 
         let comment = self.viewModel.state.comments[annotation.key]
         let preview: UIImage?
@@ -125,11 +129,12 @@ class AnnotationViewController: UIViewController {
             }
         }
 
-        self.annotationView?.setup(with: annotation, attributedComment: comment, preview: preview, selected: true, availableWidth: AnnotationViewController.width,
-                                   hasWritePermission: self.viewModel.state.library.metadataEditable)
-        self.annotationView?.performAction = { [weak self] action, _ in
+        annotationView.setup(with: annotation, attributedComment: comment, preview: preview, selected: true, availableWidth: AnnotationViewController.width,
+                             hasWritePermission: self.viewModel.state.library.metadataEditable)
+        annotationView.actionPublisher.subscribe(onNext: { [weak self] action in
             self?.perform(action: action)
-        }
+        })
+        .disposed(by: annotationView.disposeBag)
     }
 }
 

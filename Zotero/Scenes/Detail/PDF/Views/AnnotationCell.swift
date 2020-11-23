@@ -8,19 +8,18 @@
 
 import UIKit
 
+import RxSwift
+
 class AnnotationCell: UITableViewCell {
     private(set) var key: String = ""
     private weak var annotationView: AnnotationView!
     private weak var selectionView: UIView!
 
-    var performAction: AnnotationViewAction? {
-        get {
-            return self.annotationView?.performAction
-        }
-
-        set {
-            self.annotationView?.performAction = newValue
-        }
+    var actionPublisher: PublishSubject<AnnotationView.Action> {
+        return self.annotationView.actionPublisher
+    }
+    var disposeBag: DisposeBag {
+        return self.annotationView.disposeBag
     }
 
     // MARK: - Lifecycle

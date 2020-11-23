@@ -55,7 +55,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
 extension AnnotationPopoverCoordinator: UINavigationControllerDelegate {
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         let navbarHidden = viewController is AnnotationViewController
-        navigationController.setNavigationBarHidden(true, animated: animated)
+        navigationController.setNavigationBarHidden(navbarHidden, animated: animated)
         navigationController.preferredContentSize = viewController.preferredContentSize
     }
 }

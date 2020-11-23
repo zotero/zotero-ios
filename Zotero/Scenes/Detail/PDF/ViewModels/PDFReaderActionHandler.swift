@@ -75,13 +75,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.loadPreviews(for: keys, notify: notify, isDark: isDark, in: viewModel)
 
         case .setHighlight(let highlight, let key):
-            self.update(annotation: { $0.copy(text: highlight) }, reloadComment: false, key: key, in: viewModel)
+            self.update(annotation: { $0.copy(text: highlight) }, key: key, in: viewModel)
 
-        case .setComment(let comment, let key):
-            self.update(annotation: { $0.copy(comment: comment) }, reloadComment: true, key: key, in: viewModel)
+        case .setComment(let key, let comment):
+            let convertedComment = self.htmlAttributedStringConverter.convert(attributedString: comment)
+            self.update(annotation: { $0.copy(comment: convertedComment) }, attributedComment: comment, reloadAnnotation: false, key: key, in: viewModel)
 
         case .setTags(let tags, let key):
-            self.update(annotation: { $0.copy(tags: tags) }, reloadComment: false, key: key, in: viewModel)
+            self.update(annotation: { $0.copy(tags: tags) }, key: key, in: viewModel)
 
         case .userInterfaceStyleChanged(let interfaceStyle):
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
@@ -170,22 +171,26 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func update(annotation annotationChange: (Annotation) -> Annotation, reloadComment: Bool, key: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func update(annotation annotationChange: (Annotation) -> Annotation, attributedComment: NSAttributedString? = nil, reloadAnnotation: Bool = true,
+                        key: String, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations),
               let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
         self.update(viewModel: viewModel) { state in
             let newAnnotation = annotationChange(annotation)
             state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
-            state.updatedAnnotationIndexPaths = [indexPath]
-            state.changes.insert(.annotations)
+
+            if reloadAnnotation {
+                state.updatedAnnotationIndexPaths = [indexPath]
+                state.changes.insert(.annotations)
+            }
 
             if newAnnotation.key == state.selectedAnnotation?.key {
                 state.selectedAnnotation = newAnnotation
                 state.changes.insert(.selectedAnnotationChanged)
             }
 
-            if reloadComment {
-                state.comments[newAnnotation.key] = self.htmlAttributedStringConverter.convert(text: newAnnotation.comment, baseFont: state.commentFont)
+            if let comment = attributedComment {
+                state.comments[newAnnotation.key] = comment
             }
         }
     }

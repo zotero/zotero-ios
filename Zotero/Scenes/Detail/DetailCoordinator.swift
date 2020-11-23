@@ -23,18 +23,6 @@ import PSPDFKitUI
 
 #endif
 
-protocol DetailPdfCoordinatorDelegate: class {
-    func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
-    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
-    #if PDFENABLED
-    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
-    func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, actionHandler: @escaping AnnotationViewControllerAction, dismissHandler: @escaping () -> Void)
-    #endif
-}
-
 protocol DetailItemsCoordinatorDelegate: class {
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
@@ -42,13 +30,6 @@ protocol DetailItemsCoordinatorDelegate: class {
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
-}
-
-protocol DetailItemActionSheetCoordinatorDelegate: class {
-    func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
-    func showNoteCreation(save: @escaping (String) -> Void)
-    func showAttachmentPicker(save: @escaping ([URL]) -> Void)
-    func showItemCreation(library: Library, collectionKey: String?)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: class {
@@ -65,6 +46,29 @@ protocol DetailItemDetailCoordinatorDelegate: class {
 
 protocol DetailCreatorEditCoordinatorDelegate: class {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
+}
+
+protocol DetailPdfCoordinatorDelegate: class {
+    func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
+    #if PDFENABLED
+    func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, dismissHandler: @escaping () -> Void)
+    #endif
+}
+
+protocol DetailAnnotationsCoordinatorDelegate: class {
+    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+    #if PDFENABLED
+    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
+    #endif
+}
+
+protocol DetailItemActionSheetCoordinatorDelegate: class {
+    func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
+    func showNoteCreation(save: @escaping (String) -> Void)
+    func showAttachmentPicker(save: @escaping ([URL]) -> Void)
+    func showItemCreation(library: Library, collectionKey: String?)
 }
 
 class DetailCoordinator: Coordinator {
@@ -172,6 +176,20 @@ class DetailCoordinator: Coordinator {
         self.topViewController.present(controller, animated: true) {
             player.play()
         }
+    }
+
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
+        let handler = TagPickerActionHandler(dbStorage: dbStorage)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
+
+        let controller = UINavigationController(rootViewController: tagController)
+        controller.isModalInPresentation = true
+        controller.modalPresentationStyle = .formSheet
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     private func showPdf(at url: URL, key: String, library: Library) {
@@ -419,20 +437,6 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
-        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-
-        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
-        let handler = TagPickerActionHandler(dbStorage: dbStorage)
-        let viewModel = ViewModel(initialState: state, handler: handler)
-        let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
-
-        let controller = UINavigationController(rootViewController: tagController)
-        controller.isModalInPresentation = true
-        controller.modalPresentationStyle = .formSheet
-        self.topViewController.present(controller, animated: true, completion: nil)
-    }
-
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction) {
         guard let schema = self.controllers.schemaController.creators(for: itemType)?.first(where: { $0.primary }),
               let localized = self.controllers.schemaController.localized(creator: schema.creatorType) else { return }
@@ -492,14 +496,6 @@ extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
-    func showComment(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
-        self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: self.controllers.htmlAttributedStringConverter, save: save)
-    }
-
-    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
-        self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: nil, save: save)
-    }
-
     private func showAnnotationPreviewEditor(with text: String, imageLoader: Single<UIImage>?,
                                              converter: HtmlAttributedStringConverter?, save: @escaping (String) -> Void) {
         let controller = AnnotationPreviewCommentEditorViewController(text: text, imageLoader: imageLoader, converter: converter, saveAction: save)
@@ -522,7 +518,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     #if PDFENABLED
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, actionHandler: @escaping AnnotationViewControllerAction, dismissHandler: @escaping () -> Void) {
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, dismissHandler: @escaping () -> Void) {
         let navigationController = UINavigationController()
         navigationController.modalPresentationStyle = .popover
         navigationController.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
@@ -536,6 +532,21 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
+    func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
+        let viewController = PDFSearchViewController(controller: pdfController, searchSelected: result)
+        viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        viewController.popoverPresentationController?.barButtonItem = sender
+        self.topViewController.present(viewController, animated: true, completion: nil)
+    }
+    #endif
+}
+
+extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
+    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
+        self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: nil, save: save)
+    }
+
+    #if PDFENABLED
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         controller.popoverPresentationController?.sourceView = sender
@@ -565,13 +576,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
 
         self.topViewController.present(controller, animated: true, completion: nil)
-    }
-
-    func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
-        let viewController = PDFSearchViewController(controller: pdfController, searchSelected: result)
-        viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
-        viewController.popoverPresentationController?.barButtonItem = sender
-        self.topViewController.present(viewController, animated: true, completion: nil)
     }
     #endif
 }

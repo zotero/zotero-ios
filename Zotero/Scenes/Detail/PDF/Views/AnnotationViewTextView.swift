@@ -17,8 +17,8 @@ class AnnotationViewTextView: UIView {
 
     private let placeholder: String
 
-    private var observer: AnyObserver<String>?
-    var textObservable: Observable<String> {
+    private var observer: AnyObserver<(NSAttributedString, Bool)>?
+    var textObservable: Observable<(NSAttributedString, Bool)> {
         return Observable.create { observer -> Disposable in
             self.observer = observer
             return Disposables.create()
@@ -37,9 +37,11 @@ class AnnotationViewTextView: UIView {
 
         let textView = UITextView()
         textView.font = PDFReaderLayout.font
-        textView.contentInset = UIEdgeInsets()
+        textView.textContainerInset = UIEdgeInsets()
+        textView.textContainer.lineFragmentPadding = 0
         textView.text = placeholder
         textView.textColor = .lightGray
+        textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
 
         super.init(frame: CGRect())
@@ -70,6 +72,8 @@ class AnnotationViewTextView: UIView {
             textView.bottomAnchor.constraint(equalTo: label.bottomAnchor)
         ])
 
+        textView.delegate = self
+        self.label = label
         self.textView = textView
         self.topInsetConstraint = topInset
     }
@@ -79,6 +83,7 @@ class AnnotationViewTextView: UIView {
     }
 
     func setup(text: NSAttributedString?, halfTopInset: Bool) {
+        self.label.attributedText = text
         if let text = text, !text.string.isEmpty {
             self.textView.textColor = .black
             self.textView.attributedText = text
@@ -109,6 +114,10 @@ extension AnnotationViewTextView: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next(textView.text))
+        let height = self.label.frame.height
+        self.label.attributedText = textView.attributedText
+        self.label.layoutIfNeeded()
+        let needsReload = height != self.label.frame.height
+        self.observer?.on(.next((textView.attributedText, needsReload)))
     }
 }

@@ -24,7 +24,8 @@ class AnnotationsViewController: UIViewController {
 
     private weak var tableView: UITableView!
     private var searchController: UISearchController!
-    var performAction: AnnotationsViewControllerAction?
+
+    weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
 
     // MARK: - Lifecycle
 
@@ -45,6 +46,7 @@ class AnnotationsViewController: UIViewController {
         self.view.backgroundColor = .systemGray6
         self.setupTableView()
         self.setupSearchController()
+        self.setupKeyboardObserving()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -61,6 +63,56 @@ class AnnotationsViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func perform(action: AnnotationView.Action, annotation: Annotation) {
+        let state = self.viewModel.state
+
+        guard state.library.metadataEditable else { return }
+
+        switch action {
+        case .tags:
+            guard annotation.isAuthor else { return }
+            let selected = Set(annotation.tags.map({ $0.name }))
+            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
+                self?.viewModel.process(action: .setTags(tags, annotation.key))
+            })
+
+        case .highlight: break
+            // TODO: - move editing to cell
+//            guard annotation.isAuthor else { return }
+//            guard annotation.type == .highlight else { return }
+//            let preview = self.preview(for: annotation, parentKey: state.key, document: state.document)
+//            self.coordinatorDelegate?.showHighlight(with: (annotation.text ?? ""), imageLoader: preview, save: { [weak self] highlight in
+//                self?.viewModel.process(action: .setHighlight(highlight, annotation.key))
+//            })
+
+        case .options(let sender):
+            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender, viewModel: self.viewModel)
+
+        case .setComment(let comment):
+            self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
+
+        case .reloadHeight:
+            self.reloadHeight()
+        }
+    }
+
+    private func reloadHeight() {
+        UIView.setAnimationsEnabled(false)
+        self.tableView.beginUpdates()
+        self.tableView.endUpdates()
+
+        if let indexPath = self.tableView.indexPathForSelectedRow {
+            let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
+            let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+
+            if cellBottom > tableViewBottom {
+                self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+            }
+        }
+
+        UIView.setAnimationsEnabled(true)
+    }
 
     private func update(state: PDFReaderState) {
         self.reloadIfNeeded(from: state) {
@@ -150,9 +202,10 @@ class AnnotationsViewController: UIViewController {
         }
 
         cell.setup(with: annotation, attributedComment: comment, preview: preview, selected: selected, availableWidth: PDFReaderLayout.sidebarWidth, hasWritePermission: hasWritePermission)
-        cell.performAction = { [weak self] action, sender in
-            self?.performAction?(action, annotation, sender)
-        }
+        cell.actionPublisher.subscribe(onNext: { [weak self] action in
+            self?.perform(action: action, annotation: annotation)
+        })
+        .disposed(by: cell.disposeBag)
     }
 
     // MARK: - Setups
@@ -203,6 +256,34 @@ class AnnotationsViewController: UIViewController {
                                         self?.viewModel.process(action: .searchAnnotations(text ?? ""))
                                     })
                                     .disposed(by: self.disposeBag)
+    }
+
+    private func setupTableView(with keyboardData: KeyboardData) {
+        var insets = self.tableView.contentInset
+        insets.bottom = keyboardData.endFrame.height
+        self.tableView.contentInset = insets
+    }
+
+    private func setupKeyboardObserving() {
+        NotificationCenter.default
+                          .keyboardWillShow
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
+
+        NotificationCenter.default
+                          .keyboardWillHide
+                          .observeOn(MainScheduler.instance)
+                          .subscribe(onNext: { [weak self] notification in
+                              if let data = notification.keyboardData {
+                                  self?.setupTableView(with: data)
+                              }
+                          })
+                          .disposed(by: self.disposeBag)
     }
 }
 

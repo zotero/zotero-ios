@@ -531,7 +531,6 @@
 		B372CEE92486748500B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */; };
 		B372DE4C2535AB3E00CB5FA8 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372DE4B2535AB3E00CB5FA8 /* AnnotationView.swift */; };
-		B372DE522535ABE300CB5FA8 /* AnnotationView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B372DE512535ABE300CB5FA8 /* AnnotationView.xib */; };
 		B374912E2488D7040042FF85 /* SettingsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491212488D7040042FF85 /* SettingsActionHandler.swift */; };
 		B374912F2488D7040042FF85 /* SettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491232488D7040042FF85 /* SettingsState.swift */; };
 		B37491302488D7040042FF85 /* SettingsAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37491242488D7040042FF85 /* SettingsAction.swift */; };
@@ -1097,7 +1096,6 @@
 		B372CEE4248670AF00B423AE /* FetchAndStoreGroupSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchAndStoreGroupSyncAction.swift; sourceTree = "<group>"; };
 		B372CEE82486748500B423AE /* MarkGroupForResyncSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkGroupForResyncSyncAction.swift; sourceTree = "<group>"; };
 		B372DE4B2535AB3E00CB5FA8 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnnotationView.swift; path = ../../../../../../../../../../Applications/AnnotationView.swift; sourceTree = "<group>"; };
-		B372DE512535ABE300CB5FA8 /* AnnotationView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationView.xib; sourceTree = "<group>"; };
 		B37491212488D7040042FF85 /* SettingsActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsActionHandler.swift; sourceTree = "<group>"; };
 		B37491232488D7040042FF85 /* SettingsState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsState.swift; sourceTree = "<group>"; };
 		B37491242488D7040042FF85 /* SettingsAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsAction.swift; sourceTree = "<group>"; };
@@ -1800,7 +1798,6 @@
 				B331D5DC24AB682E008F293B /* AnnotationPreviewCommentEditorViewController.swift */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
 				B372DE4B2535AB3E00CB5FA8 /* AnnotationView.swift */,
-				B372DE512535ABE300CB5FA8 /* AnnotationView.xib */,
 				B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */,
 				B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */,
 				B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */,
@@ -2599,7 +2596,6 @@
 				B3593F22241A61C700760E20 /* ItemDetailAddCell.xib in Resources */,
 				B3593F21241A61C700760E20 /* ItemDetailAttachmentCell.xib in Resources */,
 				B3235C9024ADC28D0034113B /* AnnotationCommentEditorViewController.xib in Resources */,
-				B372DE522535ABE300CB5FA8 /* AnnotationView.xib in Resources */,
 				B361820324C9A7C000B30D56 /* OnboardingViewController.xib in Resources */,
 				B361820424C9A7C000B30D56 /* OnboardingPageView.xib in Resources */,
 				B3F0C3FA250A1BD8002D557A /* LibrariesViewController.xib in Resources */,
