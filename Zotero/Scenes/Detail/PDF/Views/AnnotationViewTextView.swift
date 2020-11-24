@@ -12,7 +12,7 @@ import RxSwift
 
 class AnnotationViewTextView: UIView {
     private weak var label: UILabel!
-    private weak var textView: UITextView!
+    private weak var textView: AnnotationTextView!
     private weak var topInsetConstraint: NSLayoutConstraint!
 
     private let placeholder: String
@@ -25,7 +25,9 @@ class AnnotationViewTextView: UIView {
         }
     }
 
-    init(placeholder: String, minHeight: CGFloat?) {
+    // MARK: - Lifecycle
+
+    init(placeholder: String, minHeight: CGFloat? = nil) {
         self.placeholder = placeholder
 
         let label = UILabel()
@@ -35,7 +37,7 @@ class AnnotationViewTextView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.isHidden = true
 
-        let textView = UITextView()
+        let textView = AnnotationTextView()
         textView.font = PDFReaderLayout.font
         textView.textContainerInset = UIEdgeInsets()
         textView.textContainer.lineFragmentPadding = 0
@@ -82,6 +84,12 @@ class AnnotationViewTextView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Actions
+
+
+
+    // MARK: - Setups
+
     func setup(text: NSAttributedString?, halfTopInset: Bool) {
         self.label.attributedText = text
         if let text = text, !text.string.isEmpty {
@@ -96,6 +104,14 @@ class AnnotationViewTextView: UIView {
         let topInset = halfTopInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
         self.topInsetConstraint.constant = topInset - topFontOffset
     }
+
+    private func setupMenuItems() {
+        let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
+        let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
+        let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
+        let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
+        UIMenuController.shared.menuItems = [bold, italics, superscript, `subscript`]
+    }
 }
 
 extension AnnotationViewTextView: UITextViewDelegate {
@@ -104,6 +120,12 @@ extension AnnotationViewTextView: UITextViewDelegate {
             textView.text = ""
             textView.textColor = .black
         }
+
+        self.setupMenuItems()
+    }
+
+    @objc private func test() {
+
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -119,5 +141,32 @@ extension AnnotationViewTextView: UITextViewDelegate {
         self.label.layoutIfNeeded()
         let needsReload = height != self.label.frame.height
         self.observer?.on(.next((textView.attributedText, needsReload)))
+    }
+}
+
+fileprivate class AnnotationTextView: UITextView {
+    private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript"]
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        return AnnotationTextView.allowedActions.contains(action.description)
+    }
+
+    @objc func toggleSuperscript() {
+        guard self.selectedRange.length > 0 else { return }
+        self.perform(attributedStringAction: { StringAttribute.toggleSuperscript(in: $0, range: $1, defaultFont: PDFReaderLayout.font) })
+    }
+
+    @objc func toggleSubscript() {
+        guard self.selectedRange.length > 0 else { return }
+        self.perform(attributedStringAction: { StringAttribute.toggleSubscript(in: $0, range: $1, defaultFont: PDFReaderLayout.font) })
+    }
+
+    private func perform(attributedStringAction: (NSMutableAttributedString, NSRange) -> Void) {
+        let range = self.selectedRange
+        let string = NSMutableAttributedString(attributedString: self.attributedText)
+        attributedStringAction(string, range)
+        self.attributedText = string
+        self.selectedRange = range
+        self.delegate?.textViewDidChange?(self)
     }
 }

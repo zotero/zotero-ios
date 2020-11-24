@@ -66,7 +66,7 @@ struct PDFReaderState: ViewModelState {
         self.annotations = [:]
         self.comments = [:]
         self.shouldStoreAnnotationPreviewsIfNeeded = false
-        self.commentFont = UIFont.preferredFont(forTextStyle: .body)
+        self.commentFont = PDFReaderLayout.font
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
                                                 .flatMap({ UIColor(hex: $0) }) ?? UIColor(hex: AnnotationsConfig.defaultActiveColor)
         self.changes = []

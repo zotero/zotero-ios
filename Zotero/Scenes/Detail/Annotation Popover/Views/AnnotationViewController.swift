@@ -15,7 +15,7 @@ import RxSwift
 typealias AnnotationViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 class AnnotationViewController: UIViewController {
-    private static let width: CGFloat = 300
+    private static let width: CGFloat = 400
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 

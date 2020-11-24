@@ -112,4 +112,42 @@ enum StringAttribute: CaseIterable {
 
         return allKeys
     }
+
+    static func toggleSuperscript(in string: NSMutableAttributedString, range: NSRange, defaultFont: UIFont) {
+        self.toggle(superscript: true, in: string, range: range, defaultFont: defaultFont)
+    }
+
+    static func toggleSubscript(in string: NSMutableAttributedString, range: NSRange, defaultFont: UIFont) {
+        self.toggle(superscript: false, in: string, range: range, defaultFont: defaultFont)
+    }
+
+    private static func toggle(superscript: Bool, in string: NSMutableAttributedString, range: NSRange, defaultFont: UIFont) {
+        string.enumerateAttributes(in: range, options: []) { attributes, range, _ in
+            let active = !(superscript ? self.superscriptIsActive(in: attributes) : self.subscriptIsActive(in: attributes))
+
+            let font = (attributes[.font] as? UIFont) ?? defaultFont
+            let newFontSize = active ? StringAttribute.subOrSuperScriptFontSizeRatio * defaultFont.pointSize : defaultFont.pointSize
+            if font.pointSize != newFontSize {
+                string.addAttributes([.font: font.withSize(newFontSize)], range: range)
+            }
+
+            if active {
+                let offsetRatio = superscript ? StringAttribute.superscriptFontOffset : StringAttribute.subscriptFontOffset
+                let offset = defaultFont.pointSize * offsetRatio * (superscript ? 1 : -1)
+                string.addAttributes([.baselineOffset: offset], range: range)
+            } else {
+                string.removeAttribute(.baselineOffset, range: range)
+            }
+        }
+    }
+
+    private static func superscriptIsActive(in attributes: [NSAttributedString.Key: Any]) -> Bool {
+        guard let baselineOffset = attributes[.baselineOffset] as? CGFloat, baselineOffset != 0 else { return false }
+        return baselineOffset > 0
+    }
+
+    private static func subscriptIsActive(in attributes: [NSAttributedString.Key: Any]) -> Bool {
+        guard let baselineOffset = attributes[.baselineOffset] as? CGFloat, baselineOffset != 0 else { return false }
+        return baselineOffset < 0
+    }
 }
