@@ -157,7 +157,8 @@ class PDFReaderViewController: UIViewController {
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
-        let frame = pageView.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
+        let frame = self.view.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
+
         self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame,
                                                         dismissHandler: { [weak self] in
                                                             self?.viewModel.process(action: .selectAnnotation(nil))

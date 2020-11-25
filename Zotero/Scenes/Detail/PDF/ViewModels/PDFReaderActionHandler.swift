@@ -186,7 +186,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             if newAnnotation.key == state.selectedAnnotation?.key {
                 state.selectedAnnotation = newAnnotation
-                state.changes.insert(.selectedAnnotationChanged)
             }
 
             if let comment = attributedComment {
@@ -528,7 +527,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             if zoteroAnnotation.key == state.selectedAnnotation?.key {
                 state.selectedAnnotation = zoteroAnnotation
-                state.changes.insert(.selectedAnnotationChanged)
             }
 
             // Remove annotation preview from cache, if `SquareAnnotation` changed, then preview image changed as well

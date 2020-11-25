@@ -93,29 +93,13 @@ class AnnotationsViewController: UIViewController {
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
 
         case .reloadHeight:
-            self.reloadHeight()
+            self.updateCellHeight()
+            self.focusSelectedCell()
         }
-    }
-
-    private func reloadHeight() {
-        UIView.setAnimationsEnabled(false)
-        self.tableView.beginUpdates()
-        self.tableView.endUpdates()
-
-        if let indexPath = self.tableView.indexPathForSelectedRow {
-            let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
-            let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
-
-            if cellBottom > tableViewBottom {
-                self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
-            }
-        }
-
-        UIView.setAnimationsEnabled(true)
     }
 
     private func update(state: PDFReaderState) {
-        self.reloadIfNeeded(from: state) {
+        self.reloadIfNeeded(for: state) {
             if let keys = state.loadedPreviewImageAnnotationKeys {
                 self.updatePreviewsIfVisible(for: keys)
             }
@@ -140,41 +124,61 @@ class AnnotationsViewController: UIViewController {
     /// Reloads tableView if needed, based on new state. Calls completion either when reloading finished or when there was no reload.
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
-    private func reloadIfNeeded(from state: PDFReaderState, completion: @escaping () -> Void) {
-        guard state.changes.contains(.annotations) || state.changes.contains(.darkMode) || state.changes.contains(.selection) else {
+    private func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
+        if state.changes.contains(.selection) {
+            // Reload updated cells which are visible
+            if let indexPaths = state.updatedAnnotationIndexPaths {
+                for indexPath in indexPaths {
+                    guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
+                    self.setup(cell: cell, at: indexPath, state: state)
+                }
+            }
+
+            self.updateCellHeight()
+            self.focusSelectedCell()
+
             completion()
             return
         }
 
-        if state.changes.contains(.darkMode) ||
-           (state.insertedAnnotationIndexPaths == nil &&
-            state.removedAnnotationIndexPaths == nil &&
-            state.updatedAnnotationIndexPaths == nil) {
+        guard state.changes.contains(.annotations) || state.changes.contains(.darkMode) else { return }
+
+        if state.insertedAnnotationIndexPaths == nil && state.removedAnnotationIndexPaths == nil && state.updatedAnnotationIndexPaths == nil {
             self.tableView.reloadData()
             completion()
             return
         }
 
-        if state.changes.contains(.selection),
-           let indexPaths = state.updatedAnnotationIndexPaths {
-            for indexPath in indexPaths {
-                guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
-                self.setup(cell: cell, at: indexPath, state: state)
-            }
+        self.reload(insertions: state.insertedAnnotationIndexPaths, deletions: state.removedAnnotationIndexPaths, updates: state.updatedAnnotationIndexPaths, completion: completion)
+    }
 
-            self.tableView.beginUpdates()
-            self.tableView.endUpdates()
-            return
-        }
+    /// Updates tableView layout in case any cell changed height.
+    private func updateCellHeight() {
+        self.tableView.beginUpdates()
+        self.tableView.endUpdates()
+    }
 
+    /// Scrolls to selected cell if it's not visible.
+    private func focusSelectedCell() {
+        guard let indexPath = self.tableView.indexPathForSelectedRow else { return }
+
+        let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
+        let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+
+        guard cellBottom > tableViewBottom else { return }
+
+        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+    }
+
+    private func reload(insertions: [IndexPath]?, deletions: [IndexPath]?, updates: [IndexPath]?, completion: @escaping () -> Void) {
         self.tableView.performBatchUpdates {
-            if let indexPaths = state.insertedAnnotationIndexPaths {
+            if let indexPaths = insertions {
                 self.tableView.insertRows(at: indexPaths, with: .automatic)
             }
-            if let indexPaths = state.removedAnnotationIndexPaths {
+            if let indexPaths = deletions {
                 self.tableView.deleteRows(at: indexPaths, with: .automatic)
             }
-            if let indexPaths = state.updatedAnnotationIndexPaths {
+            if let indexPaths = updates {
                 self.tableView.reloadRows(at: indexPaths, with: .none)
             }
         } completion: { _ in
