@@ -27,6 +27,8 @@ struct PDFReaderLayout {
     static let annotationSelectionLineWidth: CGFloat = 3
     // Line width shown next to the highlighted text in highlight annotation (sidebar or popover).
     static let annotationHighlightLineWidth: CGFloat = 3
+    static let annotationPopoverWidth: CGFloat = 400
+    static let tagPickerPopoverPreferredSize: CGSize = CGSize(width: PDFReaderLayout.annotationPopoverWidth, height: UIScreen.main.bounds.height)
 
     static let font: UIFont = .systemFont(ofSize: 15)
     static let pageLabelFont: UIFont = .systemFont(ofSize: 15, weight: .bold)

@@ -15,7 +15,6 @@ import RxSwift
 typealias AnnotationViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 class AnnotationViewController: UIViewController {
-    private static let width: CGFloat = 400
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag
 
@@ -37,7 +36,7 @@ class AnnotationViewController: UIViewController {
 
     override func loadView() {
         let annotationView = AnnotationView(type: .popover)
-        annotationView.widthAnchor.constraint(equalToConstant: AnnotationViewController.width).isActive = true
+        annotationView.widthAnchor.constraint(equalToConstant: PDFReaderLayout.annotationPopoverWidth).isActive = true
         self.annotationView = annotationView
 
         let view = UIView()
@@ -75,7 +74,7 @@ class AnnotationViewController: UIViewController {
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
-        guard let size = self.annotationView?.systemLayoutSizeFitting(CGSize(width: AnnotationViewController.width, height: .greatestFiniteMagnitude)) else { return }
+        guard let size = self.annotationView?.systemLayoutSizeFitting(CGSize(width: PDFReaderLayout.annotationPopoverWidth, height: .greatestFiniteMagnitude)) else { return }
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
     }
@@ -94,6 +93,11 @@ class AnnotationViewController: UIViewController {
     }
 
     private func perform(action: AnnotationView.Action) {
+        let state = self.viewModel.state
+
+        guard state.library.metadataEditable,
+              let annotation = state.selectedAnnotation else { return }
+
         switch action {
         case .highlight, .options:
             self.coordinatorDelegate?.showEdit()
@@ -102,7 +106,13 @@ class AnnotationViewController: UIViewController {
             self.viewModel.process(action: .setComment(key: key, comment: comment))
         case .reloadHeight:
             self.updatePreferredContentSize()
-        case .tags: break
+        case .tags:
+            guard annotation.isAuthor else { return }
+
+            let selected = Set(annotation.tags.map({ $0.name }))
+            self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
+                self?.viewModel.process(action: .setTags(tags, annotation.key))
+            })
         }
     }
 
@@ -110,7 +120,7 @@ class AnnotationViewController: UIViewController {
         guard let annotation = state.selectedAnnotation else { return }
         let comment = state.comments[annotation.key]
         annotationView.setup(with: annotation, attributedComment: comment, preview: nil, selected: true,
-                             availableWidth: AnnotationViewController.width, hasWritePermission: state.library.metadataEditable)
+                             availableWidth: PDFReaderLayout.annotationPopoverWidth, hasWritePermission: state.library.metadataEditable)
     }
 
     // MARK: - Setups

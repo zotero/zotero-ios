@@ -524,7 +524,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         navigationController.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
         navigationController.popoverPresentationController?.sourceRect = sourceRect
 
-        let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, viewModel: viewModel)
+        let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self
         self.childCoordinators.append(coordinator)
         coordinator.start(animated: false)

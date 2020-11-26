@@ -12,6 +12,7 @@ import RxSwift
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: class {
     func showEdit()
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
 }
 
 class AnnotationPopoverCoordinator: NSObject, Coordinator {
@@ -20,10 +21,12 @@ class AnnotationPopoverCoordinator: NSObject, Coordinator {
 
     unowned let navigationController: UINavigationController
     private unowned let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let controllers: Controllers
     private let disposeBag: DisposeBag
 
-    init(navigationController: UINavigationController, viewModel: ViewModel<PDFReaderActionHandler>) {
+    init(navigationController: UINavigationController, controllers: Controllers, viewModel: ViewModel<PDFReaderActionHandler>) {
         self.navigationController = navigationController
+        self.controllers = controllers
         self.viewModel = viewModel
         self.childCoordinators = []
         self.disposeBag = DisposeBag()
@@ -45,10 +48,17 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let controller = UIViewController()
         controller.view.backgroundColor = .red
         self.navigationController.pushViewController(controller, animated: true)
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            self.navigationController.popViewController(animated: true)
-        }
+    func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void) {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        let state = TagPickerState(libraryId: libraryId, selectedTags: selected)
+        let handler = TagPickerActionHandler(dbStorage: dbStorage)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
+        tagController.preferredContentSize = PDFReaderLayout.tagPickerPopoverPreferredSize
+        self.navigationController.pushViewController(tagController, animated: true)
     }
 }
 

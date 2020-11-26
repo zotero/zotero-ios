@@ -127,7 +127,11 @@ class TagPickerViewController: UIViewController {
         let left = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
         left.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.navigationController?.dismiss(animated: true, completion: nil)
+                if self?.navigationController?.popoverPresentationController != nil {
+                    self?.navigationController?.popViewController(animated: true)
+                } else {
+                    self?.navigationController?.dismiss(animated: true, completion: nil)
+                }
             })
             .disposed(by: self.disposeBag)
         self.navigationItem.leftBarButtonItem = left

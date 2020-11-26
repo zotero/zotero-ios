@@ -124,10 +124,6 @@ extension AnnotationViewTextView: UITextViewDelegate {
         self.setupMenuItems()
     }
 
-    @objc private func test() {
-
-    }
-
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.isEmpty {
             textView.text = self.placeholder
@@ -137,7 +133,17 @@ extension AnnotationViewTextView: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
         let height = self.label.frame.height
-        self.label.attributedText = textView.attributedText
+
+        // If last line is an empty newline, the label doesn't grow appropriately and we get misaligned view. Add a whitespace to the last line so that the label grows.
+        if let attributedString = textView.attributedText,
+           let lastChar = attributedString.string.unicodeScalars.last, CharacterSet.newlines.contains(lastChar) {
+            let mutableString = NSMutableAttributedString(attributedString: attributedString)
+            mutableString.append(NSAttributedString(string: " "))
+            self.label.attributedText = mutableString
+        } else {
+            self.label.attributedText = textView.attributedText
+        }
+
         self.label.layoutIfNeeded()
         let needsReload = height != self.label.frame.height
         self.observer?.on(.next((textView.attributedText, needsReload)))
