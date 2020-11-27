@@ -15,6 +15,7 @@ class AnnotationViewTextView: UIView {
     private weak var textView: AnnotationTextView!
     private weak var topInsetConstraint: NSLayoutConstraint!
 
+    private let layout: AnnotationViewLayout
     private let placeholder: String
 
     private var observer: AnyObserver<(NSAttributedString, Bool)>?
@@ -27,57 +28,15 @@ class AnnotationViewTextView: UIView {
 
     // MARK: - Lifecycle
 
-    init(placeholder: String, minHeight: CGFloat? = nil) {
+    init(layout: AnnotationViewLayout, placeholder: String) {
+        self.layout = layout
         self.placeholder = placeholder
-
-        let label = UILabel()
-        label.font = PDFReaderLayout.font
-        label.numberOfLines = 0
-        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.isHidden = true
-
-        let textView = AnnotationTextView()
-        textView.font = PDFReaderLayout.font
-        textView.textContainerInset = UIEdgeInsets()
-        textView.textContainer.lineFragmentPadding = 0
-        textView.text = placeholder
-        textView.textColor = .lightGray
-        textView.isScrollEnabled = false
-        textView.translatesAutoresizingMaskIntoConstraints = false
 
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .white
-
-        self.addSubview(textView)
-        self.addSubview(label)
-
-        let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight
-        let topInset = label.topAnchor.constraint(equalTo: self.topAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight - topFontOffset)
-
-        if let minHeight = minHeight {
-            label.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
-        }
-
-        NSLayoutConstraint.activate([
-            // Horizontal
-            label.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            textView.leadingAnchor.constraint(equalTo: label.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: label.trailingAnchor),
-            // Vertical
-            topInset,
-            self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight),
-            textView.topAnchor.constraint(equalTo: label.topAnchor),
-            textView.bottomAnchor.constraint(equalTo: label.bottomAnchor)
-        ])
-
-        textView.delegate = self
-        self.label = label
-        self.textView = textView
-        self.topInsetConstraint = topInset
+        self.setupView()
     }
 
     required init?(coder: NSCoder) {
@@ -100,8 +59,8 @@ class AnnotationViewTextView: UIView {
             self.textView.text = self.placeholder
         }
 
-        let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight
-        let topInset = halfTopInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
+        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
+        let topInset = halfTopInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
         self.topInsetConstraint.constant = topInset - topFontOffset
     }
 
@@ -111,6 +70,51 @@ class AnnotationViewTextView: UIView {
         let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
         let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
         UIMenuController.shared.menuItems = [bold, italics, superscript, `subscript`]
+    }
+
+    private func setupView() {
+        let label = UILabel()
+        label.font = self.layout.font
+        label.numberOfLines = 0
+        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.isHidden = true
+
+        let textView = AnnotationTextView(defaultFont: self.layout.font)
+        textView.textContainerInset = UIEdgeInsets()
+        textView.textContainer.lineFragmentPadding = 0
+        textView.text = self.placeholder
+        textView.textColor = .lightGray
+        textView.isScrollEnabled = false
+        textView.translatesAutoresizingMaskIntoConstraints = false
+
+        self.addSubview(textView)
+        self.addSubview(label)
+
+        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
+        let topInset = label.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset)
+
+        if let minHeight = self.layout.commentMinHeight {
+            label.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
+        }
+
+        NSLayoutConstraint.activate([
+            // Horizontal
+            label.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
+            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: self.layout.horizontalInset),
+            textView.leadingAnchor.constraint(equalTo: label.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: label.trailingAnchor),
+            // Vertical
+            topInset,
+            self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight),
+            textView.topAnchor.constraint(equalTo: label.topAnchor),
+            textView.bottomAnchor.constraint(equalTo: label.bottomAnchor)
+        ])
+
+        textView.delegate = self
+        self.label = label
+        self.textView = textView
+        self.topInsetConstraint = topInset
     }
 }
 
@@ -153,18 +157,30 @@ extension AnnotationViewTextView: UITextViewDelegate {
 fileprivate class AnnotationTextView: UITextView {
     private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript"]
 
+    private let defaultFont: UIFont
+
+    init(defaultFont: UIFont) {
+        self.defaultFont = defaultFont
+        super.init(frame: CGRect(), textContainer: nil)
+        self.font = defaultFont
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         return AnnotationTextView.allowedActions.contains(action.description)
     }
 
     @objc func toggleSuperscript() {
         guard self.selectedRange.length > 0 else { return }
-        self.perform(attributedStringAction: { StringAttribute.toggleSuperscript(in: $0, range: $1, defaultFont: PDFReaderLayout.font) })
+        self.perform(attributedStringAction: { StringAttribute.toggleSuperscript(in: $0, range: $1, defaultFont: self.defaultFont) })
     }
 
     @objc func toggleSubscript() {
         guard self.selectedRange.length > 0 else { return }
-        self.perform(attributedStringAction: { StringAttribute.toggleSubscript(in: $0, range: $1, defaultFont: PDFReaderLayout.font) })
+        self.perform(attributedStringAction: { StringAttribute.toggleSubscript(in: $0, range: $1, defaultFont: self.defaultFont) })
     }
 
     private func perform(attributedStringAction: (NSMutableAttributedString, NSRange) -> Void) {

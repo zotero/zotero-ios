@@ -139,6 +139,9 @@
 "pdf.search.failed" = "Search failed";
 "pdf.search.one_match" = "Found 1 match";
 "pdf.search.multiple_matches" = "Found %d matches";
+"pdf.annotation_popover.title" = "Edit Annotation";
+"pdf.annotation_popover.delete" = "Delete Annotation";
+"pdf.annotation_popover.delete_confirm" = "Do you really want to delete this annotation?";
 
 "settings.title" = "Settings";
 "settings.profile" = "Profile";

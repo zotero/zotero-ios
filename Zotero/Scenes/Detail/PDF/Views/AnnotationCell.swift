@@ -58,7 +58,7 @@ class AnnotationCell: UITableViewCell {
         selectionView.translatesAutoresizingMaskIntoConstraints = false
         self.selectionView = selectionView
 
-        let annotationView = AnnotationView(type: .cell)
+        let annotationView = AnnotationView(layout: PDFReaderLayout.annotationLayout)
         annotationView.layer.cornerRadius = 10
         annotationView.layer.masksToBounds = true
         annotationView.backgroundColor = Asset.Colors.annotationCellBackground.color
@@ -67,27 +67,26 @@ class AnnotationCell: UITableViewCell {
         self.contentView.addSubview(selectionView)
         self.contentView.addSubview(annotationView)
 
-        let selectionViewHorizontal = PDFReaderLayout.annotationsHorizontalInset - PDFReaderLayout.annotationSelectionLineWidth
-        let selectionViewBottom = PDFReaderLayout.annotationsCellSeparatorHeight - (PDFReaderLayout.annotationSelectionLineWidth * 2)
-        let annotationViewBottom = selectionViewBottom + PDFReaderLayout.annotationSelectionLineWidth
+        let selectionViewHorizontal = PDFReaderLayout.annotationLayout.horizontalInset - PDFReaderLayout.cellSelectionLineWidth
+        let selectionViewBottom = PDFReaderLayout.cellSeparatorHeight - (PDFReaderLayout.cellSelectionLineWidth * 2)
+        let annotationViewBottom = selectionViewBottom + PDFReaderLayout.cellSelectionLineWidth
 
         NSLayoutConstraint.activate([
             selectionView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: selectionViewHorizontal),
             self.contentView.trailingAnchor.constraint(equalTo: selectionView.trailingAnchor, constant: selectionViewHorizontal),
             selectionView.topAnchor.constraint(equalTo: self.contentView.topAnchor),
             self.contentView.bottomAnchor.constraint(equalTo: selectionView.bottomAnchor, constant: selectionViewBottom),
-            annotationView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            self.contentView.trailingAnchor.constraint(equalTo: annotationView.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            annotationView.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: PDFReaderLayout.annotationSelectionLineWidth),
+            annotationView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: PDFReaderLayout.annotationLayout.horizontalInset),
+            self.contentView.trailingAnchor.constraint(equalTo: annotationView.trailingAnchor, constant: PDFReaderLayout.annotationLayout.horizontalInset),
+            annotationView.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: PDFReaderLayout.cellSelectionLineWidth),
             self.contentView.bottomAnchor.constraint(equalTo: annotationView.bottomAnchor, constant: annotationViewBottom)
         ])
     }
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         self.key = annotation.key
-        self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.annotationSelectionLineWidth : 0
-        let availableWidth = availableWidth - (PDFReaderLayout.annotationsHorizontalInset * 2)
-        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, availableWidth: availableWidth,
-                                  hasWritePermission: hasWritePermission)
+        self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
+        let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)
+        self.annotationView.setup(with: annotation, attributedComment: attributedComment, preview: preview, selected: selected, availableWidth: availableWidth, hasWritePermission: hasWritePermission)
     }
 }

@@ -12,40 +12,8 @@ struct PDFReaderLayout {
     // Sidebar
     static let sidebarWidth: CGFloat = createSidebarWidth()
     static let separatorWidth: CGFloat = 1 / UIScreen.main.scale
-    // Document annotations
-    // Line width of image annotation in PDF document.
-    static let imageAnnotationLineWidth: CGFloat = 2
-    // Size of note annotation in PDF document.
-    static let noteAnnotationSize: CGSize = CGSize(width: 32, height: 32)
-    // Annotation views
-    static let annotationsHorizontalInset: CGFloat = 16
-    static let annotationsCellSeparatorHeight: CGFloat = 13
-    static let annotationHeaderPageLeadingOffset: CGFloat = 8
-    static let annotationHighlightContentLeadingOffset: CGFloat = 8
-    static let annotationLineHeight: CGFloat = 20
-    static let annotationVerticalSpacerHeight: CGFloat = 12.5
-    static let annotationSelectionLineWidth: CGFloat = 3
-    // Line width shown next to the highlighted text in highlight annotation (sidebar or popover).
-    static let annotationHighlightLineWidth: CGFloat = 3
-    static let annotationPopoverWidth: CGFloat = 400
-    static let tagPickerPopoverPreferredSize: CGSize = CGSize(width: PDFReaderLayout.annotationPopoverWidth, height: UIScreen.main.bounds.height)
-
-    static let font: UIFont = .systemFont(ofSize: 15)
-    static let pageLabelFont: UIFont = .systemFont(ofSize: 15, weight: .bold)
-
-    static func annotationHeaderHeight(type: AnnotationView.Kind) -> CGFloat {
-        switch type {
-        case .cell: return 36
-        case .popover: return 50
-        }
-    }
-
-    static func annotationButtonheight(type: AnnotationView.Kind) -> CGFloat {
-        switch type {
-        case .cell: return 36
-        case .popover: return 44
-        }
-    }
+    static let cellSeparatorHeight: CGFloat = 13
+    static let cellSelectionLineWidth: CGFloat = 3
 
     private static func createSidebarWidth() -> CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -53,4 +21,13 @@ struct PDFReaderLayout {
         }
         return UIScreen.main.bounds.width
     }
+
+    // Document annotations
+    // Line width of image annotation in PDF document.
+    static let imageAnnotationLineWidth: CGFloat = 2
+    // Size of note annotation in PDF document.
+    static let noteAnnotationSize: CGSize = CGSize(width: 32, height: 32)
+
+    // Annotation
+    static let annotationLayout = AnnotationViewLayout(type: .cell)
 }

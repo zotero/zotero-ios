@@ -312,6 +312,14 @@ internal enum L10n {
     internal static func scrollDirection(_ p1: Any) -> String {
       return L10n.tr("Localizable", "pdf.scrollDirection", String(describing: p1))
     }
+    internal enum AnnotationPopover {
+      /// Delete Annotation
+      internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete")
+      /// Do you really want to delete this annotation?
+      internal static let deleteConfirm = L10n.tr("Localizable", "pdf.annotation_popover.delete_confirm")
+      /// Edit Annotation
+      internal static let title = L10n.tr("Localizable", "pdf.annotation_popover.title")
+    }
     internal enum AnnotationsSidebar {
       /// Add comment
       internal static let addComment = L10n.tr("Localizable", "pdf.annotations_sidebar.add_comment")

@@ -17,58 +17,20 @@ class AnnotationViewHighlightContent: UIView {
     private weak var button: UIButton!
     private weak var bottomInsetConstraint: NSLayoutConstraint!
 
+    private let layout: AnnotationViewLayout
+
     var tap: Observable<UIButton> {
         return self.button.rx.tap.flatMap({ Observable.just(self.button) })
     }
 
-    init() {
-        let lineView = UIView()
-        lineView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let label = UILabel()
-        label.font = PDFReaderLayout.font
-        label.textColor = Asset.Colors.annotationText.color
-        label.numberOfLines = 0
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
+    init(layout: AnnotationViewLayout) {
+        self.layout = layout
 
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .white
-
-        self.addSubview(lineView)
-        self.addSubview(label)
-        self.addSubview(button)
-
-        let topFontOffset = PDFReaderLayout.font.ascender - PDFReaderLayout.font.xHeight
-        let bottomInset = self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight)
-
-        NSLayoutConstraint.activate([
-            // Horizontal
-            lineView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            label.leadingAnchor.constraint(equalTo: lineView.trailingAnchor, constant: PDFReaderLayout.annotationHighlightContentLeadingOffset),
-            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
-            // Size
-            lineView.heightAnchor.constraint(equalTo: label.heightAnchor),
-            lineView.widthAnchor.constraint(equalToConstant: PDFReaderLayout.annotationHighlightLineWidth),
-            // Vertical
-            lineView.topAnchor.constraint(equalTo: label.topAnchor),
-            lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
-            label.topAnchor.constraint(equalTo: self.topAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight - topFontOffset),
-            bottomInset,
-            button.topAnchor.constraint(equalTo: self.topAnchor),
-            button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
-        ])
-
-        self.lineView = lineView
-        self.textLabel = label
-        self.button = button
-        self.bottomInsetConstraint = bottomInset
+        self.setupView()
     }
 
     required init?(coder: NSCoder) {
@@ -79,11 +41,56 @@ class AnnotationViewHighlightContent: UIView {
         self.lineView.backgroundColor = color
 
         let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = PDFReaderLayout.annotationLineHeight
-        paragraphStyle.maximumLineHeight = PDFReaderLayout.annotationLineHeight
+        paragraphStyle.minimumLineHeight = self.layout.lineHeight
+        paragraphStyle.maximumLineHeight = self.layout.lineHeight
         let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle])
         self.textLabel.attributedText = attributedString
 
-        self.bottomInsetConstraint.constant = halfBottomInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
+        self.bottomInsetConstraint.constant = halfBottomInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
+    }
+
+    private func setupView() {
+        let lineView = UIView()
+        lineView.translatesAutoresizingMaskIntoConstraints = false
+
+        let label = UILabel()
+        label.font = self.layout.font
+        label.textColor = Asset.Colors.annotationText.color
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let button = UIButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+
+        self.addSubview(lineView)
+        self.addSubview(label)
+        self.addSubview(button)
+
+        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
+        let bottomInset = self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight)
+
+        NSLayoutConstraint.activate([
+            // Horizontal
+            lineView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
+            label.leadingAnchor.constraint(equalTo: lineView.trailingAnchor, constant: self.layout.highlightContentLeadingOffset),
+            self.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: self.layout.horizontalInset),
+            button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            // Size
+            lineView.heightAnchor.constraint(equalTo: label.heightAnchor),
+            lineView.widthAnchor.constraint(equalToConstant: self.layout.highlightLineWidth),
+            // Vertical
+            lineView.topAnchor.constraint(equalTo: label.topAnchor),
+            lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
+            label.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
+            bottomInset,
+            button.topAnchor.constraint(equalTo: self.topAnchor),
+            button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
+        ])
+
+        self.lineView = lineView
+        self.textLabel = label
+        self.button = button
+        self.bottomInsetConstraint = bottomInset
     }
 }

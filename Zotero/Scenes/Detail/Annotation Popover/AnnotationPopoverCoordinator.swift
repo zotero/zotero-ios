@@ -37,7 +37,7 @@ class AnnotationPopoverCoordinator: NSObject, Coordinator {
     }
 
     func start(animated: Bool) {
-        let controller = AnnotationViewController(viewModel: self.viewModel)
+        let controller = AnnotationViewController(viewModel: self.viewModel, attributedStringConverter: self.controllers.htmlAttributedStringConverter)
         controller.coordinatorDelegate = self
         self.navigationController.setViewControllers([controller], animated: animated)
     }
@@ -45,8 +45,8 @@ class AnnotationPopoverCoordinator: NSObject, Coordinator {
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
     func showEdit() {
-        let controller = UIViewController()
-        controller.view.backgroundColor = .red
+        let controller = AnnotationEditViewController(viewModel: self.viewModel)
+        controller.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
         self.navigationController.pushViewController(controller, animated: true)
     }
 
@@ -57,7 +57,7 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let handler = TagPickerActionHandler(dbStorage: dbStorage)
         let viewModel = ViewModel(initialState: state, handler: handler)
         let tagController = TagPickerViewController(viewModel: viewModel, saveAction: picked)
-        tagController.preferredContentSize = PDFReaderLayout.tagPickerPopoverPreferredSize
+        tagController.preferredContentSize = AnnotationPopoverLayout.tagPickerPreferredSize
         self.navigationController.pushViewController(tagController, animated: true)
     }
 }

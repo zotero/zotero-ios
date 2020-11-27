@@ -16,6 +16,7 @@ typealias AnnotationViewControllerAction = (AnnotationView.Action, Annotation, U
 
 class AnnotationViewController: UIViewController {
     private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let attributedStringConverter: HtmlAttributedStringConverter
     private let disposeBag: DisposeBag
 
     private weak var annotationView: AnnotationView?
@@ -24,8 +25,9 @@ class AnnotationViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, attributedStringConverter: HtmlAttributedStringConverter) {
         self.viewModel = viewModel
+        self.attributedStringConverter = attributedStringConverter
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -35,8 +37,8 @@ class AnnotationViewController: UIViewController {
     }
 
     override func loadView() {
-        let annotationView = AnnotationView(type: .popover)
-        annotationView.widthAnchor.constraint(equalToConstant: PDFReaderLayout.annotationPopoverWidth).isActive = true
+        let annotationView = AnnotationView(layout: AnnotationPopoverLayout.annotationLayout)
+        annotationView.widthAnchor.constraint(equalToConstant: AnnotationPopoverLayout.width).isActive = true
         self.annotationView = annotationView
 
         let view = UIView()
@@ -74,7 +76,7 @@ class AnnotationViewController: UIViewController {
     // MARK: - Actions
 
     private func updatePreferredContentSize() {
-        guard let size = self.annotationView?.systemLayoutSizeFitting(CGSize(width: PDFReaderLayout.annotationPopoverWidth, height: .greatestFiniteMagnitude)) else { return }
+        guard let size = self.annotationView?.systemLayoutSizeFitting(CGSize(width: AnnotationPopoverLayout.width, height: .greatestFiniteMagnitude)) else { return }
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
     }
@@ -118,9 +120,9 @@ class AnnotationViewController: UIViewController {
 
     private func update(annotationView: AnnotationView, state: PDFReaderState) {
         guard let annotation = state.selectedAnnotation else { return }
-        let comment = state.comments[annotation.key]
+        let comment = self.attributedStringConverter.convert(text: annotation.comment, baseFont: AnnotationPopoverLayout.annotationLayout.font)
         annotationView.setup(with: annotation, attributedComment: comment, preview: nil, selected: true,
-                             availableWidth: PDFReaderLayout.annotationPopoverWidth, hasWritePermission: state.library.metadataEditable)
+                             availableWidth: AnnotationPopoverLayout.width, hasWritePermission: state.library.metadataEditable)
     }
 
     // MARK: - Setups

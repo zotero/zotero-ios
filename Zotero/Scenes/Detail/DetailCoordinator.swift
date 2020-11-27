@@ -546,36 +546,15 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: nil, save: save)
     }
 
-    #if PDFENABLED
     func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.sourceView = sender
+        let controller = AnnotationEditViewController(viewModel: viewModel)
+        controller.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
 
-        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak self, weak viewModel] _ in
-            guard let `self` = self, let viewModel = viewModel else { return }
-            self.confirmAnnotationDeletion(annotation, viewModel: viewModel)
-        }))
-
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-
-        /// Pdf controller is presented modally, alert needs to be presented on top of it
-        var presented: UIViewController = self.navigationController
-        while let ctrl = presented.presentedViewController {
-            presented = ctrl
-        }
-        presented.present(controller, animated: true, completion: nil)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = .popover
+        navigationController.popoverPresentationController?.sourceView = sender
+        navigationController.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
+        navigationController.popoverPresentationController?.permittedArrowDirections = .left
+        self.topViewController.present(navigationController, animated: true, completion: nil)
     }
-
-    private func confirmAnnotationDeletion(_ annotation: Annotation, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let controller = UIAlertController(title: L10n.warning, message: "Do you really want to delete this annotation?", preferredStyle: .alert)
-
-        controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak viewModel] _ in
-            viewModel?.process(action: .removeAnnotation(annotation))
-        }))
-
-        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
-
-        self.topViewController.present(controller, animated: true, completion: nil)
-    }
-    #endif
 }

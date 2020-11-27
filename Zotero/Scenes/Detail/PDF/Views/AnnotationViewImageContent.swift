@@ -13,35 +13,16 @@ class AnnotationViewImageContent: UIView {
     private var imageViewHeight: NSLayoutConstraint!
     private weak var bottomInsetConstraint: NSLayoutConstraint!
 
-    init() {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        imageView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+    private let layout: AnnotationViewLayout
+
+    init(layout: AnnotationViewLayout) {
+        self.layout = layout
 
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .white
-
-        self.addSubview(imageView)
-
-        let height = imageView.heightAnchor.constraint(equalToConstant: 0)
-        let bottomInset = self.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight)
-
-        NSLayoutConstraint.activate([
-            // Horizontal
-            imageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            self.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: PDFReaderLayout.annotationsHorizontalInset),
-            // Vertical
-            imageView.topAnchor.constraint(equalTo: self.topAnchor, constant: PDFReaderLayout.annotationsCellSeparatorHeight),
-            bottomInset,
-            height
-        ])
-
-        self.imageView = imageView
-        self.imageViewHeight = height
-        self.bottomInsetConstraint = bottomInset
+        self.setupView()
     }
 
     required init?(coder: NSCoder) {
@@ -54,7 +35,33 @@ class AnnotationViewImageContent: UIView {
             self.imageViewHeight.constant = height
         }
         if let halfInset = halfBottomInset {
-            self.bottomInsetConstraint.constant = halfInset ? (PDFReaderLayout.annotationsCellSeparatorHeight / 2) : PDFReaderLayout.annotationsCellSeparatorHeight
+            self.bottomInsetConstraint.constant = halfInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
         }
+    }
+
+    private func setupView() {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+
+        self.addSubview(imageView)
+
+        let height = imageView.heightAnchor.constraint(equalToConstant: 0)
+        let bottomInset = self.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: self.layout.verticalSpacerHeight)
+
+        NSLayoutConstraint.activate([
+            // Horizontal
+            imageView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: self.layout.horizontalInset),
+            self.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: self.layout.horizontalInset),
+            // Vertical
+            imageView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight),
+            bottomInset,
+            height
+        ])
+
+        self.imageView = imageView
+        self.imageViewHeight = height
+        self.bottomInsetConstraint = bottomInset
     }
 }
