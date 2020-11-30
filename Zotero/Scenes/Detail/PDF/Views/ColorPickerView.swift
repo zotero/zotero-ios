@@ -1,5 +1,5 @@
 //
-//  ColorPicker.swift
+//  ColorPickerView.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 13/07/2020.
@@ -8,11 +8,11 @@
 
 import SwiftUI
 
-struct ColorPicker: View {
+struct ColorPickerView: View {
     private static let numberOfCellsInRow = 5
     private var numberOfRows: Int {
-        guard AnnotationsConfig.colors.count != ColorPicker.numberOfCellsInRow else { return 1 }
-        return (AnnotationsConfig.colors.count / ColorPicker.numberOfCellsInRow) + 1
+        guard AnnotationsConfig.colors.count != ColorPickerView.numberOfCellsInRow else { return 1 }
+        return (AnnotationsConfig.colors.count / ColorPickerView.numberOfCellsInRow) + 1
     }
 
     @State var selected: String?
@@ -42,8 +42,8 @@ struct ColorPicker: View {
     }
 }
 
-struct ColorPicker_Previews: PreviewProvider {
+struct ColorPickerView_Previews: PreviewProvider {
     static var previews: some View {
-        ColorPicker(selected: "#ff8c19", selectionAction: { _ in })
+        ColorPickerView(selected: "#ff8c19", selectionAction: { _ in })
     }
 }

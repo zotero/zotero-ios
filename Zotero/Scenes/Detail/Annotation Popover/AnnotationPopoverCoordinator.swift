@@ -11,8 +11,13 @@ import UIKit
 import RxSwift
 
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: class {
-    func showEdit()
+    func showEdit(annotation: Annotation, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+}
+
+protocol AnnotationEditCoordinatorDelegate: class {
+    func dismiss()
+    func back()
 }
 
 class AnnotationPopoverCoordinator: NSObject, Coordinator {
@@ -44,8 +49,12 @@ class AnnotationPopoverCoordinator: NSObject, Coordinator {
 }
 
 extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDelegate {
-    func showEdit() {
-        let controller = AnnotationEditViewController(viewModel: self.viewModel)
+    func showEdit(annotation: Annotation, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+        let state = AnnotationEditState(annotation: annotation)
+        let handler = AnnotationEditActionHandler()
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = AnnotationEditViewController(viewModel: viewModel, saveAction: saveAction, deleteAction: deleteAction)
+        controller.coordinatorDelegate = self
         controller.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
         self.navigationController.pushViewController(controller, animated: true)
     }
@@ -67,5 +76,15 @@ extension AnnotationPopoverCoordinator: UINavigationControllerDelegate {
         let navbarHidden = viewController is AnnotationViewController
         navigationController.setNavigationBarHidden(navbarHidden, animated: animated)
         navigationController.preferredContentSize = viewController.preferredContentSize
+    }
+}
+
+extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
+    func back() {
+        self.navigationController.popViewController(animated: true)
+    }
+
+    func dismiss() {
+        self.navigationController.dismiss(animated: true, completion: nil)
     }
 }

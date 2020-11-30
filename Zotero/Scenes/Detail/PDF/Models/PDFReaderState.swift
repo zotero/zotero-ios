@@ -22,7 +22,7 @@ struct PDFReaderState: ViewModelState {
 
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
-        static let darkMode = Changes(rawValue: 1 << 2)
+        static let interfaceStyle = Changes(rawValue: 1 << 2)
         static let activeColor = Changes(rawValue: 1 << 3)
     }
 
@@ -35,6 +35,7 @@ struct PDFReaderState: ViewModelState {
     let commentFont: UIFont
     let userId: Int
 
+    var interfaceStyle: UIUserInterfaceStyle
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
     var comments: [String: NSAttributedString]
@@ -56,10 +57,11 @@ struct PDFReaderState: ViewModelState {
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
 
-    init(url: URL, key: String, library: Library, userId: Int) {
+    init(url: URL, key: String, library: Library, userId: Int, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
         self.library = library
         self.userId = userId
+        self.interfaceStyle = interfaceStyle
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]

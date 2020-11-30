@@ -91,7 +91,7 @@ class PDFReaderViewController: UIViewController {
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
 
-        self.viewModel.process(action: .loadAnnotations(self.traitCollection.userInterfaceStyle))
+        self.viewModel.process(action: .loadAnnotations)
     }
 
     deinit {
@@ -130,7 +130,7 @@ class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
-        if state.changes.contains(.darkMode) {
+        if state.changes.contains(.interfaceStyle) {
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
         }
 
@@ -629,9 +629,8 @@ class PDFReaderViewController: UIViewController {
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
-                                      let isDark = self.traitCollection.userInterfaceStyle == .dark
                                       if let annotation = notification.object as? PSPDFKit.Annotation {
-                                          self.viewModel.process(action: .annotationChanged(annotation, isDark: isDark))
+                                          self.viewModel.process(action: .annotationChanged(annotation))
                                       }
                                   })
                                   .disposed(by: self.disposeBag)
@@ -641,9 +640,8 @@ class PDFReaderViewController: UIViewController {
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
-                                      let isDark = self.traitCollection.userInterfaceStyle == .dark
                                       if let annotations = notification.object as? [PSPDFKit.Annotation] {
-                                          self.viewModel.process(action: .annotationsAdded(annotations, isDark: isDark))
+                                          self.viewModel.process(action: .annotationsAdded(annotations))
                                       }
                                   })
                                   .disposed(by: self.disposeBag)
@@ -663,8 +661,7 @@ class PDFReaderViewController: UIViewController {
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
-                                      let isDark = self.traitCollection.userInterfaceStyle == .dark
-                                      self.viewModel.process(action: .updateAnnotationPreviews(userInterfaceIsDark: isDark))
+                                      self.viewModel.process(action: .updateAnnotationPreviews)
                                   })
                                   .disposed(by: self.disposeBag)
     }
@@ -704,14 +701,13 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            on pageView: PDFPageView) -> [MenuItem] {
         guard annotations == nil else { return [] }
 
-        let interfaceStyle = self.traitCollection.userInterfaceStyle
         let pageRect = pageView.convert(rect, to: pageView.pdfCoordinateSpace)
 
         return [MenuItem(title: "Note", block: { [weak self] in
-                    self?.viewModel.process(action: .create(annotation: .note, pageIndex: pageView.pageIndex, origin: pageRect.origin, interfaceStyle: interfaceStyle))
+                    self?.viewModel.process(action: .create(annotation: .note, pageIndex: pageView.pageIndex, origin: pageRect.origin))
                 }),
                 MenuItem(title: "Image", block: { [weak self] in
-                    self?.viewModel.process(action: .create(annotation: .image, pageIndex: pageView.pageIndex, origin: pageRect.origin, interfaceStyle: interfaceStyle))
+                    self?.viewModel.process(action: .create(annotation: .image, pageIndex: pageView.pageIndex, origin: pageRect.origin))
                 })]
     }
 

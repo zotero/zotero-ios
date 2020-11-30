@@ -8,6 +8,11 @@
 
 import UIKit
 
+import RxSwift
+
+typealias AnnotationEditSaveAction = (Annotation) -> Void
+typealias AnnotationEditDeleteAction = (Annotation) -> Void
+
 class AnnotationEditViewController: UIViewController {
     private enum Section {
         case colorPicker, pageLabel, actions
@@ -17,17 +22,25 @@ class AnnotationEditViewController: UIViewController {
         var cellId: String {
             switch self {
             case .colorPicker: return "ColorPickerCell"
-            case .actions, .pageLabel: return "BasicCell"
+            case .actions: return "ActionCell"
+            case .pageLabel: return "PageLabelCell"
             }
         }
     }
 
     @IBOutlet private weak var tableView: UITableView!
 
-    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private let viewModel: ViewModel<AnnotationEditActionHandler>
+    private let saveAction: AnnotationEditSaveAction
+    private let deleteAction: AnnotationEditDeleteAction
+    private let disposeBag = DisposeBag()
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>) {
+    weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
+
+    init(viewModel: ViewModel<AnnotationEditActionHandler>, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
         self.viewModel = viewModel
+        self.saveAction = saveAction
+        self.deleteAction = deleteAction
         super.init(nibName: "AnnotationEditViewController", bundle: nil)
     }
 
@@ -40,18 +53,38 @@ class AnnotationEditViewController: UIViewController {
 
         self.title = L10n.Pdf.AnnotationPopover.title
         self.setupTableView()
+        self.setupNavigationBar()
+
+        self.viewModel.stateObservable
+                      .subscribe(onNext: { [weak self] state in
+                          self?.update(to: state)
+                      })
+                      .disposed(by: self.disposeBag)
     }
 
     // MARK: - Actions
 
-    private func confirmDeletion() {
-        guard let annotation = self.viewModel.state.selectedAnnotation else { return }
+    private func update(to state: AnnotationEditState) {
+        if state.changes.contains(.color) {
+            self.reload(section: .colorPicker)
+        }
+        if state.changes.contains(.pageLabel) {
+            self.reload(section: .pageLabel)
+        }
+    }
 
+    private func reload(section: Section) {
+        guard let index = Section.sortedAllCases.firstIndex(of: section) else { return }
+        self.tableView.reloadSections(IndexSet(integer: index), with: .none)
+    }
+
+    private func confirmDeletion() {
         let controller = UIAlertController(title: L10n.warning, message: L10n.Pdf.AnnotationPopover.deleteConfirm, preferredStyle: .alert)
 
         controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak self] _ in
-            self?.viewModel.process(action: .removeAnnotation(annotation))
-            self?.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
+            guard let `self` = self else { return }
+            self.deleteAction(self.viewModel.state.annotation)
+            self.coordinatorDelegate?.dismiss()
         }))
 
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
@@ -60,11 +93,31 @@ class AnnotationEditViewController: UIViewController {
 
     // MARK: - Setups
 
+    private func setupNavigationBar() {
+        self.navigationItem.hidesBackButton = true
+
+        let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
+        cancel.rx.tap.subscribe(onNext: { [weak self] in self?.coordinatorDelegate?.back() }).disposed(by: self.disposeBag)
+        self.navigationItem.leftBarButtonItem = cancel
+
+        let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
+        save.rx.tap
+               .subscribe(onNext: { [weak self] in
+                   guard let `self` = self else { return }
+                   self.saveAction(self.viewModel.state.annotation)
+                   self.coordinatorDelegate?.back()
+               })
+               .disposed(by: self.disposeBag)
+
+        self.navigationItem.rightBarButtonItem = save
+    }
+
     private func setupTableView() {
         self.tableView.delegate = self
         self.tableView.dataSource = self
         self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.colorPicker.cellId)
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId)
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId)
         self.tableView.rowHeight = 44
     }
 }
@@ -82,19 +135,16 @@ extension AnnotationEditViewController: UITableViewDataSource {
         let section = Section.sortedAllCases[indexPath.section]
         let cell = tableView.dequeueReusableCell(withIdentifier: section.cellId, for: indexPath)
 
-        cell.accessoryType = .none
-
         switch section {
         case .colorPicker:
-            if let cell = cell as? ColorPicker {
-                // TODO
+            if let cell = cell as? ColorPickerCell {
+                cell.setup(selectedColor: self.viewModel.state.annotation.color)
+                cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
             }
 
         case .pageLabel:
-            cell.textLabel?.text = self.viewModel.state.selectedAnnotation?.pageLabel ?? ""
-            cell.textLabel?.textAlignment = .left
+            cell.textLabel?.text = self.viewModel.state.annotation.pageLabel
             cell.accessoryType = .disclosureIndicator
-            cell.textLabel?.textColor = .black
 
         case .actions:
             cell.textLabel?.text = L10n.Pdf.AnnotationPopover.delete

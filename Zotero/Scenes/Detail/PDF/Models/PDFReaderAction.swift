@@ -14,23 +14,24 @@ import PSPDFKit
 
 enum PDFReaderAction {
     case startObservingAnnotationChanges
-    case loadAnnotations(UIUserInterfaceStyle)
+    case loadAnnotations
     case searchAnnotations(String)
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)
     case removeAnnotation(Annotation)
-    case annotationChanged(PSPDFKit.Annotation, isDark: Bool)
-    case annotationsAdded([PSPDFKit.Annotation], isDark: Bool)
+    case updateAnnotation(Annotation)
+    case annotationChanged(PSPDFKit.Annotation)
+    case annotationsAdded([PSPDFKit.Annotation])
     case annotationsRemoved([PSPDFKit.Annotation])
-    case requestPreviews(keys: [String], notify: Bool, isDark: Bool)
+    case requestPreviews(keys: [String], notify: Bool)
     case setComment(key: String, comment: NSAttributedString)
     case setTags([Tag], String)
     case setHighlight(String, String)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
-    case updateAnnotationPreviews(userInterfaceIsDark: Bool)
+    case updateAnnotationPreviews
     case setActiveColor(String)
     case saveChanges
-    case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint, interfaceStyle: UIUserInterfaceStyle)
+    case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
 }
 
 #endif

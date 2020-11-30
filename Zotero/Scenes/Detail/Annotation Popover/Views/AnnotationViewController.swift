@@ -82,15 +82,18 @@ class AnnotationViewController: UIViewController {
     }
 
     private func update(state: PDFReaderState) {
-        if let keys = state.loadedPreviewImageAnnotationKeys,
-           let selectedKey = state.selectedAnnotation?.key,
-           keys.contains(selectedKey) {
-            let preview = state.previewCache.object(forKey: (selectedKey as NSString))
+        guard let annotation = state.selectedAnnotation else {
+            self.dismiss(animated: true, completion: nil)
+            return
+        }
+
+        if let keys = state.loadedPreviewImageAnnotationKeys, keys.contains(annotation.key) {
+            let preview = state.previewCache.object(forKey: (annotation.key as NSString))
             self.annotationView?.updatePreview(image: preview)
         }
 
-        if state.selectedAnnotation == nil {
-            self.dismiss(animated: true, completion: nil)
+        if state.changes.contains(.annotations), let annotation = state.selectedAnnotation {
+            self.annotationView?.setupHeader(with: annotation, selected: true, hasWritePermission: state.library.metadataEditable)
         }
     }
 
@@ -102,10 +105,15 @@ class AnnotationViewController: UIViewController {
 
         switch action {
         case .highlight, .options:
-            self.coordinatorDelegate?.showEdit()
+            self.coordinatorDelegate?.showEdit(annotation: annotation,
+                                               saveAction: { [weak self] annotation in
+                                                   self?.viewModel.process(action: .updateAnnotation(annotation))
+                                               },
+                                               deleteAction: { [weak self] annotation in
+                                                   self?.viewModel.process(action: .removeAnnotation(annotation))
+                                               })
         case .setComment(let comment):
-            guard let key = self.viewModel.state.selectedAnnotation?.key else { return }
-            self.viewModel.process(action: .setComment(key: key, comment: comment))
+            self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
         case .reloadHeight:
             self.updatePreferredContentSize()
         case .tags:

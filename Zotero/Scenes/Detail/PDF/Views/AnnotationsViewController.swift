@@ -87,7 +87,13 @@ class AnnotationsViewController: UIViewController {
 //            })
 
         case .options(let sender):
-            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender, viewModel: self.viewModel)
+            self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender,
+                                                      saveAction: { [weak self] annotation in
+                                                          self?.viewModel.process(action: .updateAnnotation(annotation))
+                                                      },
+                                                      deleteAction: { [weak self] annotation in
+                                                          self?.viewModel.process(action: .removeAnnotation(annotation))
+                                                      })
 
         case .setComment(let comment):
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
@@ -141,7 +147,7 @@ class AnnotationsViewController: UIViewController {
             return
         }
 
-        guard state.changes.contains(.annotations) || state.changes.contains(.darkMode) else { return }
+        guard state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) else { return }
 
         if state.insertedAnnotationIndexPaths == nil && state.removedAnnotationIndexPaths == nil && state.updatedAnnotationIndexPaths == nil {
             self.tableView.reloadData()
@@ -200,8 +206,7 @@ class AnnotationsViewController: UIViewController {
             preview = state.previewCache.object(forKey: (annotation.key as NSString))
 
             if preview == nil {
-                let isDark = self.traitCollection.userInterfaceStyle == .dark
-                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true, isDark: isDark))
+                self.viewModel.process(action: .requestPreviews(keys: [annotation.key], notify: true))
             }
         }
 
@@ -302,8 +307,7 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource,
 
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ self.viewModel.state.annotations[$0.section]?[$0.row] }).map({ $0.key })
-        let isDark = self.traitCollection.userInterfaceStyle == .dark
-        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false, isDark: isDark))
+        self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

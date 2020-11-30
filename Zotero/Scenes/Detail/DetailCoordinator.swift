@@ -57,11 +57,8 @@ protocol DetailPdfCoordinatorDelegate: class {
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
-    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
-    #if PDFENABLED
-    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>)
-    #endif
+    func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
 }
 
 protocol DetailItemActionSheetCoordinatorDelegate: class {
@@ -202,7 +199,7 @@ class DetailCoordinator: Coordinator {
                                              htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
                                              schemaController: self.controllers.schemaController,
                                              fileStorage: self.controllers.fileStorage)
-        let state = PDFReaderState(url: url, key: key, library: library, userId: userId)
+        let state = PDFReaderState(url: url, key: key, library: library, userId: userId, interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size),
                                                  annotationPreviewController: self.controllers.annotationPreviewController,
@@ -496,17 +493,8 @@ extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
-    private func showAnnotationPreviewEditor(with text: String, imageLoader: Single<UIImage>?,
-                                             converter: HtmlAttributedStringConverter?, save: @escaping (String) -> Void) {
-        let controller = AnnotationPreviewCommentEditorViewController(text: text, imageLoader: imageLoader, converter: converter, saveAction: save)
-        let navigationController = UINavigationController(rootViewController: controller)
-        navigationController.modalPresentationStyle = .formSheet
-        navigationController.isModalInPresentation = true
-        self.topViewController.present(navigationController, animated: true, completion: nil)
-    }
-
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void) {
-        let view = ColorPicker(selected: selected, selectionAction: { [weak self] color in
+        let view = ColorPickerView(selected: selected, selectionAction: { [weak self] color in
             save(color)
             self?.topViewController.dismiss(animated: true, completion: nil)
         })
@@ -542,12 +530,12 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 }
 
 extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
-    func showHighlight(with text: String, imageLoader: Single<UIImage>?, save: @escaping (String) -> Void) {
-        self.showAnnotationPreviewEditor(with: text, imageLoader: imageLoader, converter: nil, save: save)
-    }
-
-    func showCellOptions(for annotation: Annotation, sender: UIButton, viewModel: ViewModel<PDFReaderActionHandler>) {
-        let controller = AnnotationEditViewController(viewModel: viewModel)
+    func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+        let state = AnnotationEditState(annotation: annotation)
+        let handler = AnnotationEditActionHandler()
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = AnnotationEditViewController(viewModel: viewModel, saveAction: saveAction, deleteAction: deleteAction)
+        controller.coordinatorDelegate = self
         controller.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
 
         let navigationController = UINavigationController(rootViewController: controller)
@@ -556,5 +544,15 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         navigationController.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
         navigationController.popoverPresentationController?.permittedArrowDirections = .left
         self.topViewController.present(navigationController, animated: true, completion: nil)
+    }
+}
+
+extension DetailCoordinator: AnnotationEditCoordinatorDelegate {
+    func back() {
+        self.topViewController.dismiss(animated: true, completion: nil)
+    }
+
+    func dismiss() {
+        self.topViewController.dismiss(animated: true, completion: nil)
     }
 }
