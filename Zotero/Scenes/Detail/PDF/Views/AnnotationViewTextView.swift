@@ -45,7 +45,20 @@ class AnnotationViewTextView: UIView {
 
     // MARK: - Actions
 
+    @discardableResult
+    override func becomeFirstResponder() -> Bool {
+        self.textView.becomeFirstResponder()
+    }
 
+    override func resignFirstResponder() -> Bool {
+        self.textView.resignFirstResponder()
+    }
+
+    func clearPlaceholderIfNeeded() {
+        guard self.textView.text == self.placeholder else { return }
+        self.textView.text = ""
+        self.textView.textColor = .black
+    }
 
     // MARK: - Setups
 
@@ -87,6 +100,7 @@ class AnnotationViewTextView: UIView {
         textView.textColor = .lightGray
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.delegate = self
 
         self.addSubview(textView)
         self.addSubview(label)
@@ -111,7 +125,6 @@ class AnnotationViewTextView: UIView {
             textView.bottomAnchor.constraint(equalTo: label.bottomAnchor)
         ])
 
-        textView.delegate = self
         self.label = label
         self.textView = textView
         self.topInsetConstraint = topInset
@@ -120,11 +133,7 @@ class AnnotationViewTextView: UIView {
 
 extension AnnotationViewTextView: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if textView.text == self.placeholder {
-            textView.text = ""
-            textView.textColor = .black
-        }
-
+        self.clearPlaceholderIfNeeded()
         self.setupMenuItems()
     }
 

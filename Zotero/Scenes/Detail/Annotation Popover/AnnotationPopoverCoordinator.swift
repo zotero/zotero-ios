@@ -18,6 +18,7 @@ protocol AnnotationPopoverAnnotationCoordinatorDelegate: class {
 protocol AnnotationEditCoordinatorDelegate: class {
     func dismiss()
     func back()
+    func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction)
 }
 
 class AnnotationPopoverCoordinator: NSObject, Coordinator {
@@ -86,5 +87,13 @@ extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
 
     func dismiss() {
         self.navigationController.dismiss(animated: true, completion: nil)
+    }
+
+    func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {
+        let state = AnnotationPageLabelState(label: label, updateSubsequentPages: updateSubsequentPages)
+        let handler = AnnotationPageLabelActionHandler()
+        let viewModel = ViewModel(initialState: state, handler: handler)
+        let controller = AnnotationPageLabelViewController(viewModel: viewModel, saveAction: saveAction)
+        self.navigationController.pushViewController(controller, animated: true)
     }
 }

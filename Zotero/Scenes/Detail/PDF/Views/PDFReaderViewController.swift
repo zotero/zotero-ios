@@ -346,6 +346,13 @@ class PDFReaderViewController: UIViewController {
         controller.didMove(toParent: self)
     }
 
+    private func updateRects(from notification: Notification) {
+        guard let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String],
+              changes.contains("boundingBox") || changes.contains("rects"),
+              let pdfAnnotation = notification.object as? PSPDFKit.Annotation else { return }
+        self.viewModel.process(action: .setBoundingBox(pdfAnnotation))
+    }
+
     // MARK: - Setups
 
     private func setupViews() {
@@ -628,10 +635,7 @@ class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationChanged)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
-                                      guard let `self` = self else { return }
-                                      if let annotation = notification.object as? PSPDFKit.Annotation {
-                                          self.viewModel.process(action: .annotationChanged(annotation))
-                                      }
+                                      self?.updateRects(from: notification)
                                   })
                                   .disposed(by: self.disposeBag)
 

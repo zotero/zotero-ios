@@ -107,7 +107,7 @@ class AnnotationViewController: UIViewController {
         case .highlight, .options:
             self.coordinatorDelegate?.showEdit(annotation: annotation,
                                                saveAction: { [weak self] annotation in
-                                                   self?.viewModel.process(action: .updateAnnotation(annotation))
+                                                   self?.viewModel.process(action: .updateAnnotationProperties(annotation))
                                                },
                                                deleteAction: { [weak self] annotation in
                                                    self?.viewModel.process(action: .removeAnnotation(annotation))

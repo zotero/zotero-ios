@@ -19,10 +19,12 @@ struct AnnotationEditState: ViewModelState {
     }
 
     var annotation: Annotation
+    var updateSubsequentLabels: Bool
     var changes: Changes
 
     init(annotation: Annotation) {
         self.annotation = annotation
+        self.updateSubsequentLabels = false
         self.changes = []
     }
 

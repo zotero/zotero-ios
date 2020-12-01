@@ -58,9 +58,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             guard let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) else { return }
             let annotation = viewModel.state.annotations[page]?[index]
             self.select(annotation: annotation, index: index, didSelectInDocument: true, in: viewModel)
-
-        case .annotationChanged(let annotation):
-            self.update(annotation: annotation, in: viewModel)
             
         case .annotationsAdded(let annotations):
             self.add(annotations: annotations, in: viewModel)
@@ -81,15 +78,18 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             let convertedComment = self.htmlAttributedStringConverter.convert(attributedString: comment)
             self.updateAnnotation(with: key,
                                   transformAnnotation: { $0.copy(comment: convertedComment) },
+                                  shouldReload: { _, _ in false }, // doesn't need reload, text is already written in textView in cell
                                   additionalStateChange: { $0.comments[key] = comment },
-                                  shouldReload: false,
                                   in: viewModel)
 
         case .setTags(let tags, let key):
             self.updateAnnotation(with: key, transformAnnotation: { $0.copy(tags: tags) }, in: viewModel)
 
-        case .updateAnnotation(let annotation):
-            self.update(annotation: annotation, in: viewModel)
+        case .setBoundingBox(let pdfAnnotation):
+            self.updateBoundingBoxAndRects(for: pdfAnnotation, in: viewModel)
+
+        case .updateAnnotationProperties(let annotation):
+            self.updateAnnotationProperties(of: annotation, in: viewModel)
 
         case .userInterfaceStyleChanged(let interfaceStyle):
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
@@ -183,8 +183,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
     private func updateAnnotation(with key: String,
                                   transformAnnotation: (Annotation) -> Annotation,
+                                  shouldReload: ((Annotation, Annotation) -> Bool)? = nil,
                                   additionalStateChange: ((inout PDFReaderState) -> Void)? = nil,
-                                  shouldReload: Bool = true,
                                   in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations),
               let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
@@ -192,38 +192,88 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             let newAnnotation = transformAnnotation(annotation)
 
-            state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
-
             if key == state.selectedAnnotation?.key {
                 state.selectedAnnotation = newAnnotation
             }
 
-            if shouldReload {
-                state.updatedAnnotationIndexPaths = [indexPath]
+            if annotation.sortIndex != newAnnotation.sortIndex,
+               var annotations = state.annotations[indexPath.section] {
+                // Reorder annotations
+                annotations.remove(at: indexPath.row)
+                let newIndex = annotations.index(of: newAnnotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+                annotations.insert(newAnnotation, at: newIndex)
+                state.annotations[indexPath.section] = annotations
+
+                state.removedAnnotationIndexPaths = [indexPath]
+                state.insertedAnnotationIndexPaths = [IndexPath(row: newIndex, section: indexPath.section)]
                 state.changes.insert(.annotations)
+            } else {
+                state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
+                if shouldReload?(annotation, newAnnotation) ?? true {
+                    state.updatedAnnotationIndexPaths = [indexPath]
+                    state.changes.insert(.annotations)
+                }
             }
 
             additionalStateChange?(&state)
         }
     }
 
-    private func update(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        var originalColor = ""
+    private func updateAnnotationProperties(of annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        var colorDidChange = false
         self.updateAnnotation(with: annotation.key,
                               transformAnnotation: { original in
-                                  originalColor = original.color
+                                  colorDidChange = original.color != annotation.color
                                   return annotation
                               },
-                              additionalStateChange: { state in
-                                  let page = UInt(annotation.page)
-                                  guard annotation.color != originalColor, let pdfAnnotation = state.document.annotations(at: page).first(where: { $0.key == annotation.key }) else { return }
-                                  let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
-                                                                                      isHighlight: (annotation.type == .highlight),
-                                                                                      userInterfaceStyle: state.interfaceStyle)
-                                  pdfAnnotation.baseColor = annotation.color
-                                  pdfAnnotation.color = color
-                                  pdfAnnotation.alpha = alpha
-                              }, in: viewModel)
+                              in: viewModel)
+
+        if colorDidChange {
+            self.updatePdfAnnotationColor(for: annotation, state: viewModel.state)
+        }
+    }
+
+    private func updatePdfAnnotationColor(for annotation: Annotation, state: PDFReaderState) {
+        let page = UInt(annotation.page)
+        guard let pdfAnnotation = state.document.annotations(at: page).first(where: { $0.key == annotation.key }) else { return }
+
+        let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
+                                                            isHighlight: (annotation.type == .highlight),
+                                                            userInterfaceStyle: state.interfaceStyle)
+        pdfAnnotation.baseColor = annotation.color
+        pdfAnnotation.color = color
+        pdfAnnotation.alpha = alpha
+
+        NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: pdfAnnotation,
+                                        userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["color", "alpha"]])
+    }
+
+
+
+    /// Updates corresponding Zotero annotation to updated PSPDFKit annotation in document.
+    /// - parameter annotation: Updated PSPDFKit annotation.
+    /// - parameter viewModel: ViewModel.
+    private func updateBoundingBoxAndRects(for pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let key = pdfAnnotation.key else { return }
+
+        let sortIndex = self.sortIndex(from: pdfAnnotation)
+        let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
+
+        self.updateAnnotation(with: key,
+                              transformAnnotation: { $0.copy(rects: rects, sortIndex: sortIndex) },
+                              shouldReload: { original, new in
+                                  // Reload only if aspect ratio changed.
+                                  return original.boundingBox.heightToWidthRatio.rounded(to: 2) != new.boundingBox.heightToWidthRatio.rounded(to: 2)
+                              },
+                              in: viewModel)
+
+        if let pdfAnnotation = pdfAnnotation as? SquareAnnotation {
+            // Remove cached annotation preview.
+            viewModel.state.previewCache.removeObject(forKey: (key as NSString))
+            // Cache new preview.
+            let isDark = viewModel.state.interfaceStyle == .dark
+            self.annotationPreviewController.store(for: pdfAnnotation, parentKey: viewModel.state.key, isDark: isDark)
+        }
     }
 
     /// Removes Zotero annotation from document.
@@ -472,35 +522,43 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func remove(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            let deletedKeys: Set<String>
+            let shouldRemoveSelection: Bool
+            let toRemove: [IndexPath]
 
             if var snapshot = state.annotationsSnapshot {
                 // Search is active, delete annotation from snapshot so that it doesn't re-appear when search is cancelled
-                deletedKeys = self.remove(annotations: annotations, from: &snapshot, parentKey: state.key,
-                                          annotationPreviewController: self.annotationPreviewController)
+                let (removedSelection, indexPaths) = self.remove(annotations: annotations, from: &snapshot, parentKey: state.key, selectedKey: state.selectedAnnotation?.key,
+                                                                      annotationPreviewController: self.annotationPreviewController)
+                shouldRemoveSelection = removedSelection
+                toRemove = indexPaths
                 state.annotationsSnapshot = snapshot
+
                 // Remove annotations from search result as well
-                self.remove(annotations: annotations, from: &state.annotations, parentKey: state.key,
+                self.remove(annotations: annotations, from: &state.annotations, parentKey: state.key, selectedKey: nil,
                             annotationPreviewController: self.annotationPreviewController)
             } else {
                 // Search not active, just remove annotations and deselect if needed
-                deletedKeys = self.remove(annotations: annotations, from: &state.annotations, parentKey: state.key,
-                                          annotationPreviewController: self.annotationPreviewController)
+                let (removedSelection, indexPaths) = self.remove(annotations: annotations, from: &state.annotations, parentKey: state.key, selectedKey: state.selectedAnnotation?.key,
+                                                                      annotationPreviewController: self.annotationPreviewController)
+                shouldRemoveSelection = removedSelection
+                toRemove = indexPaths
             }
 
-            if let selectedKey = state.selectedAnnotation?.key, deletedKeys.contains(selectedKey) {
+            if shouldRemoveSelection {
                 state.selectedAnnotation = nil
                 state.changes.insert(.selection)
             }
+
+            state.removedAnnotationIndexPaths = toRemove
             state.changes.insert(.annotations)
         }
     }
 
     @discardableResult
-    private func remove(annotations: [PSPDFKit.Annotation], from zoteroAnnotations: inout [Int: [Annotation]], parentKey: String,
-                        annotationPreviewController: AnnotationPreviewController) -> Set<String> {
-        var toDelete: [(Int, Int)] = []
-        var keys: Set<String> = []
+    private func remove(annotations: [PSPDFKit.Annotation], from zoteroAnnotations: inout [Int: [Annotation]], parentKey: String, selectedKey: String?,
+                        annotationPreviewController: AnnotationPreviewController) -> (removedSelection: Bool, indexPaths: [IndexPath]) {
+        var toRemove: [IndexPath] = []
+        var removedSelection = false
 
         for annotation in annotations {
             guard annotation.isZotero, let key = annotation.key else { continue }
@@ -509,67 +567,21 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 annotationPreviewController.delete(for: annotation, parentKey: parentKey)
             }
 
+            if selectedKey == key {
+                removedSelection = true
+            }
+
             let page = Int(annotation.pageIndex)
             if let index = zoteroAnnotations[page]?.firstIndex(where: { $0.key == key }) {
-                toDelete.append((index, page))
-                keys.insert(key)
+                toRemove.append(IndexPath(row: index, section: page))
             }
         }
 
-        for (index, page) in toDelete {
-            zoteroAnnotations[page]?.remove(at: index)
+        for indexPath in toRemove {
+            zoteroAnnotations[indexPath.section]?.remove(at: indexPath.row)
         }
 
-        return keys
-    }
-
-    /// Updates corresponding Zotero annotation to updated PSPDFKit annotation in document.
-    /// - parameter annotation: Updated PSPDFKit annotation.
-    /// - parameter viewModel: ViewModel.
-    private func update(annotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let key = annotation.key else { return }
-
-        guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations) else {
-            // Annotation not found, add it
-            self.add(annotations: [annotation], in: viewModel)
-            return
-        }
-
-        let newSection = Int(annotation.pageIndex)
-
-        guard newSection == indexPath.section else { return }
-
-        self.update(viewModel: viewModel) { state in
-            guard var zoteroAnnotation = state.annotations[indexPath.section]?[indexPath.row] else {
-                DDLogError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
-                fatalError("PDFReaderActionHandler: annotation not found at index which was found in `findAnnotation`")
-            }
-
-            // If it's a `SquareAnnotation`, reload cell if aspect ratio of preview changed
-            if annotation is SquareAnnotation &&
-               zoteroAnnotation.boundingBox.heightToWidthRatio.rounded(to: 2) != annotation.boundingBox.heightToWidthRatio.rounded(to: 2) {
-                state.updatedAnnotationIndexPaths = [indexPath]
-                state.changes.insert(.annotations)
-            }
-
-            // Update bounding box of annotation
-            zoteroAnnotation = zoteroAnnotation.copy(rects: annotation.rects ?? [annotation.boundingBox],
-                                                     sortIndex: self.sortIndex(from: annotation))
-            state.annotations[indexPath.section]?[indexPath.row] = zoteroAnnotation
-
-            if zoteroAnnotation.key == state.selectedAnnotation?.key {
-                state.selectedAnnotation = zoteroAnnotation
-            }
-
-            // Remove annotation preview from cache, if `SquareAnnotation` changed, then preview image changed as well
-            state.previewCache.removeObject(forKey: (key as NSString))
-        }
-
-        if let annotation = annotation as? SquareAnnotation {
-            // Load new image for `SquareAnnotation`
-            let isDark = viewModel.state.interfaceStyle == .dark
-            self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, isDark: isDark)
-        }
+        return (removedSelection, toRemove)
     }
 
     private func indexPath(for key: String, in annotations: [Int: [Annotation]]) -> IndexPath? {

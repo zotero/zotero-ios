@@ -317,8 +317,12 @@ internal enum L10n {
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete")
       /// Do you really want to delete this annotation?
       internal static let deleteConfirm = L10n.tr("Localizable", "pdf.annotation_popover.delete_confirm")
+      /// Edit Page Number
+      internal static let pageLabelTitle = L10n.tr("Localizable", "pdf.annotation_popover.page_label_title")
       /// Edit Annotation
       internal static let title = L10n.tr("Localizable", "pdf.annotation_popover.title")
+      /// Update subsequent pages
+      internal static let updateSubsequentPages = L10n.tr("Localizable", "pdf.annotation_popover.update_subsequent_pages")
     }
     internal enum AnnotationsSidebar {
       /// Add comment

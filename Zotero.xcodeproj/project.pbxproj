@@ -402,6 +402,15 @@
 		B34C410025711C990057D5F5 /* ColorPickerCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34C40FE25711C990057D5F5 /* ColorPickerCell.xib */; };
 		B34C4108257122BF0057D5F5 /* AnnotationViewLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */; };
 		B34C410C257132730057D5F5 /* AnnotationPopoverLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C410B257132730057D5F5 /* AnnotationPopoverLayout.swift */; };
+		B34DF1A1257684590019CCD1 /* AnnotationPageLabelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF19F257684590019CCD1 /* AnnotationPageLabelViewController.swift */; };
+		B34DF1A2257684590019CCD1 /* AnnotationPageLabelViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1A0257684590019CCD1 /* AnnotationPageLabelViewController.xib */; };
+		B34DF1A825768AAC0019CCD1 /* AnnotationPageLabelActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1A725768AAC0019CCD1 /* AnnotationPageLabelActionHandler.swift */; };
+		B34DF1AC25768AD40019CCD1 /* AnnotationPageLabelState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1AB25768AD40019CCD1 /* AnnotationPageLabelState.swift */; };
+		B34DF1B025768ADF0019CCD1 /* AnnotationPageLabelAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1AF25768ADF0019CCD1 /* AnnotationPageLabelAction.swift */; };
+		B34DF1B525768BB70019CCD1 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */; };
+		B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */; };
+		B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */; };
+		B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */; };
 		B34F274F220E20370038B3B1 /* SyncControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */; };
 		B34F9FA323743C36004ED34C /* CreatorSummaryFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */; };
 		B34F9FA523743C42004ED34C /* ItemTitleFormatterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */; };
@@ -1008,6 +1017,15 @@
 		B34C40FE25711C990057D5F5 /* ColorPickerCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ColorPickerCell.xib; sourceTree = "<group>"; };
 		B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationViewLayout.swift; sourceTree = "<group>"; };
 		B34C410B257132730057D5F5 /* AnnotationPopoverLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationPopoverLayout.swift; sourceTree = "<group>"; };
+		B34DF19F257684590019CCD1 /* AnnotationPageLabelViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPageLabelViewController.swift; sourceTree = "<group>"; };
+		B34DF1A0257684590019CCD1 /* AnnotationPageLabelViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationPageLabelViewController.xib; sourceTree = "<group>"; };
+		B34DF1A725768AAC0019CCD1 /* AnnotationPageLabelActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPageLabelActionHandler.swift; sourceTree = "<group>"; };
+		B34DF1AB25768AD40019CCD1 /* AnnotationPageLabelState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPageLabelState.swift; sourceTree = "<group>"; };
+		B34DF1AF25768ADF0019CCD1 /* AnnotationPageLabelAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPageLabelAction.swift; sourceTree = "<group>"; };
+		B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
+		B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TextFieldCell.xib; sourceTree = "<group>"; };
+		B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchCell.swift; sourceTree = "<group>"; };
+		B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SwitchCell.xib; sourceTree = "<group>"; };
 		B34F274E220E20370038B3B1 /* SyncControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncControllerSpec.swift; sourceTree = "<group>"; };
 		B34F9FA223743C36004ED34C /* CreatorSummaryFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSummaryFormatterSpec.swift; sourceTree = "<group>"; };
 		B34F9FA423743C42004ED34C /* ItemTitleFormatterSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemTitleFormatterSpec.swift; sourceTree = "<group>"; };
@@ -1876,6 +1894,7 @@
 			isa = PBXGroup;
 			children = (
 				B36C5085257521DE00A370D3 /* AnnotationEditActionHandler.swift */,
+				B34DF1A725768AAC0019CCD1 /* AnnotationPageLabelActionHandler.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -1885,10 +1904,16 @@
 			children = (
 				B34C40F325710B430057D5F5 /* AnnotationEditViewController.swift */,
 				B34C40F425710B430057D5F5 /* AnnotationEditViewController.xib */,
+				B34DF19F257684590019CCD1 /* AnnotationPageLabelViewController.swift */,
+				B34DF1A0257684590019CCD1 /* AnnotationPageLabelViewController.xib */,
 				B3401D552567D8F700BB8D6E /* AnnotationViewController.swift */,
 				B34C40FD25711C990057D5F5 /* ColorPickerCell.swift */,
 				B34C40FE25711C990057D5F5 /* ColorPickerCell.xib */,
 				B3764D9C2574F2DE0024274F /* ColorPickerCircleView.swift */,
+				B34DF1BB2576956F0019CCD1 /* SwitchCell.swift */,
+				B34DF1BC2576956F0019CCD1 /* SwitchCell.xib */,
+				B34DF1B325768BB70019CCD1 /* TextFieldCell.swift */,
+				B34DF1B425768BB70019CCD1 /* TextFieldCell.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1898,6 +1923,8 @@
 			children = (
 				B36C50892575221400A370D3 /* AnnotationEditAction.swift */,
 				B36C508D2575221C00A370D3 /* AnnotationEditState.swift */,
+				B34DF1AF25768ADF0019CCD1 /* AnnotationPageLabelAction.swift */,
+				B34DF1AB25768AD40019CCD1 /* AnnotationPageLabelState.swift */,
 				B34C410B257132730057D5F5 /* AnnotationPopoverLayout.swift */,
 			);
 			path = Models;
@@ -2623,6 +2650,7 @@
 				B30566D923FC0769003304F2 /* tinymce in Resources */,
 				B3BC1F61254322D200BA3388 /* ItemDetailAbstractEditCell.xib in Resources */,
 				B3D16BF324E161C70002663B /* LoginViewController.xib in Resources */,
+				B34DF1A2257684590019CCD1 /* AnnotationPageLabelViewController.xib in Resources */,
 				B3593F32241A61C700760E20 /* ItemDetailAbstractCell.xib in Resources */,
 				B3830CF725545EE400910FE0 /* TagPickerCell.xib in Resources */,
 				B3E1BECA254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib in Resources */,
@@ -2636,6 +2664,7 @@
 				B3593F42241A61C700760E20 /* ItemsViewController.xib in Resources */,
 				B3593F29241A61C700760E20 /* ItemDetailTitleCell.xib in Resources */,
 				B3593F27241A61C700760E20 /* ItemDetailFieldCell.xib in Resources */,
+				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
@@ -2644,6 +2673,7 @@
 				B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */,
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
 				B30BA8C4255D415600361D25 /* Bundled in Resources */,
+				B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
@@ -2884,6 +2914,7 @@
 				B3593F4A241A61C700760E20 /* LibrariesState.swift in Sources */,
 				B3F3D63C255EC98600F310C2 /* AnnotationViewButton.swift in Sources */,
 				B36C508E2575221C00A370D3 /* AnnotationEditState.swift in Sources */,
+				B34DF1A825768AAC0019CCD1 /* AnnotationPageLabelActionHandler.swift in Sources */,
 				B30565D523FC051E003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B3235C9224ADE11E0034113B /* StringAttributes.swift in Sources */,
 				B30565F923FC051E003304F2 /* DragDropController.swift in Sources */,
@@ -2917,6 +2948,7 @@
 				B3F184A4253F067100498F32 /* WebViewController.swift in Sources */,
 				B30565BD23FC051E003304F2 /* DeleteGroupDbRequest.swift in Sources */,
 				B3593F1D241A61C700760E20 /* ItemDetailAction.swift in Sources */,
+				B34DF1B025768ADF0019CCD1 /* AnnotationPageLabelAction.swift in Sources */,
 				B3593ADC24B60A7600CA0B57 /* UISearchBar+Extensions.swift in Sources */,
 				B305678E23FC1305003304F2 /* FileStorage+Extension.swift in Sources */,
 				B305669C23FC051F003304F2 /* RVersions.swift in Sources */,
@@ -2953,6 +2985,7 @@
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
 				B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */,
+				B34DF1B525768BB70019CCD1 /* TextFieldCell.swift in Sources */,
 				B3593F50241A61C700760E20 /* CollectionsState.swift in Sources */,
 				B3401D5B2567DAAE00BB8D6E /* AnnotationPopoverCoordinator.swift in Sources */,
 				B3B953D22459B4D800FC96DB /* UITableViewCell+SwiftUI.swift in Sources */,
@@ -3077,6 +3110,7 @@
 				B305662423FC051F003304F2 /* LoadLibraryDataSyncAction.swift in Sources */,
 				B30566BC23FC051F003304F2 /* WriteBatch.swift in Sources */,
 				B3F0C3FD250A1DB8002D557A /* LibraryCell.swift in Sources */,
+				B34DF1AC25768AD40019CCD1 /* AnnotationPageLabelState.swift in Sources */,
 				B3593F20241A61C700760E20 /* ItemDetailError.swift in Sources */,
 				B30566A523FC051F003304F2 /* SyncableObject.swift in Sources */,
 				B37491402488FC170042FF85 /* StorageSettingsListView.swift in Sources */,
@@ -3101,6 +3135,7 @@
 				B3DCDF23240945FA0039ED0D /* CollectionPickerAction.swift in Sources */,
 				B3593F5D241A61C700760E20 /* CollectionTreeBuilder.swift in Sources */,
 				B30565DA23FC051E003304F2 /* UpdateVersionsDbRequest.swift in Sources */,
+				B34DF1A1257684590019CCD1 /* AnnotationPageLabelViewController.swift in Sources */,
 				B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */,
 				B3C6AB2D248E3F840009AC96 /* AsynchronousOperation.swift in Sources */,
 				B305662723FC051F003304F2 /* SyncController.swift in Sources */,
@@ -3157,6 +3192,7 @@
 				B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */,
 				B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */,
 				B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */,
+				B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */,
 				B37491332488D7040042FF85 /* SyncSettingsView.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
 				B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */,

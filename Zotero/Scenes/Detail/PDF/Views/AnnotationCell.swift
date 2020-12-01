@@ -84,6 +84,10 @@ class AnnotationCell: UITableViewCell {
     }
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
+        if !selected {
+            self.annotationView.resignFirstResponder()
+        }
+
         self.key = annotation.key
         self.selectionView.layer.borderWidth = selected ? PDFReaderLayout.cellSelectionLineWidth : 0
         let availableWidth = availableWidth - (PDFReaderLayout.annotationLayout.horizontalInset * 2)

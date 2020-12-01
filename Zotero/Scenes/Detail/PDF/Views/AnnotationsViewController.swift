@@ -89,7 +89,7 @@ class AnnotationsViewController: UIViewController {
         case .options(let sender):
             self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender,
                                                       saveAction: { [weak self] annotation in
-                                                          self?.viewModel.process(action: .updateAnnotation(annotation))
+                                                          self?.viewModel.process(action: .updateAnnotationProperties(annotation))
                                                       },
                                                       deleteAction: { [weak self] annotation in
                                                           self?.viewModel.process(action: .removeAnnotation(annotation))
@@ -131,7 +131,7 @@ class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
-        if state.changes.contains(.selection) {
+        if state.changes == .selection {
             // Reload updated cells which are visible
             if let indexPaths = state.updatedAnnotationIndexPaths {
                 for indexPath in indexPaths {
@@ -147,7 +147,10 @@ class AnnotationsViewController: UIViewController {
             return
         }
 
-        guard state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) else { return }
+        guard state.changes.contains(.annotations) || state.changes.contains(.interfaceStyle) else {
+            completion()
+            return
+        }
 
         if state.insertedAnnotationIndexPaths == nil && state.removedAnnotationIndexPaths == nil && state.updatedAnnotationIndexPaths == nil {
             self.tableView.reloadData()
@@ -182,7 +185,8 @@ class AnnotationsViewController: UIViewController {
                 self.tableView.insertRows(at: indexPaths, with: .automatic)
             }
             if let indexPaths = deletions {
-                self.tableView.deleteRows(at: indexPaths, with: .automatic)
+                let animation: UITableView.RowAnimation = insertions == nil ? .left : .automatic
+                self.tableView.deleteRows(at: indexPaths, with: animation)
             }
             if let indexPaths = updates {
                 self.tableView.reloadRows(at: indexPaths, with: .none)

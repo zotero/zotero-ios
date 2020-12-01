@@ -20,9 +20,10 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
                 state.changes = .color
             }
             
-        case .setPageLabel(let label):
+        case .setPageLabel(let label, let updateSubsequentPages):
             self.update(viewModel: viewModel) { state in
                 state.annotation = state.annotation.copy(pageLabel: label)
+                state.updateSubsequentLabels = updateSubsequentPages
                 state.changes = .pageLabel
             }
         }

@@ -33,7 +33,7 @@ class AnnotationEditViewController: UIViewController {
     private let viewModel: ViewModel<AnnotationEditActionHandler>
     private let saveAction: AnnotationEditSaveAction
     private let deleteAction: AnnotationEditDeleteAction
-    private let disposeBag = DisposeBag()
+    private let disposeBag: DisposeBag
 
     weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
 
@@ -41,6 +41,7 @@ class AnnotationEditViewController: UIViewController {
         self.viewModel = viewModel
         self.saveAction = saveAction
         self.deleteAction = deleteAction
+        self.disposeBag = DisposeBag()
         super.init(nibName: "AnnotationEditViewController", bundle: nil)
     }
 
@@ -115,10 +116,10 @@ class AnnotationEditViewController: UIViewController {
     private func setupTableView() {
         self.tableView.delegate = self
         self.tableView.dataSource = self
+        self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.colorPicker.cellId)
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId)
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId)
-        self.tableView.rowHeight = 44
     }
 }
 
@@ -165,7 +166,11 @@ extension AnnotationEditViewController: UITableViewDelegate {
         case .actions:
             self.confirmDeletion()
         case .pageLabel:
-            // TODO: show page label input
+            self.coordinatorDelegate?.showPageLabelEditor(label: self.viewModel.state.annotation.pageLabel,
+                                                          updateSubsequentPages: self.viewModel.state.updateSubsequentLabels,
+                                                          saveAction: { [weak self] newLabel, shouldUpdateSubsequentPages in
+                self?.viewModel.process(action: .setPageLabel(newLabel, shouldUpdateSubsequentPages))
+            })
         break
         }
     }

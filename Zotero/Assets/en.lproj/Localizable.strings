@@ -142,6 +142,8 @@
 "pdf.annotation_popover.title" = "Edit Annotation";
 "pdf.annotation_popover.delete" = "Delete Annotation";
 "pdf.annotation_popover.delete_confirm" = "Do you really want to delete this annotation?";
+"pdf.annotation_popover.update_subsequent_pages" = "Update subsequent pages";
+"pdf.annotation_popover.page_label_title" = "Edit Page Number";
 
 "settings.title" = "Settings";
 "settings.profile" = "Profile";

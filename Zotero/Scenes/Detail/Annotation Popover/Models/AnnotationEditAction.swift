@@ -10,5 +10,5 @@ import Foundation
 
 enum AnnotationEditAction {
     case setColor(String)
-    case setPageLabel(String)
+    case setPageLabel(String, Bool)
 }

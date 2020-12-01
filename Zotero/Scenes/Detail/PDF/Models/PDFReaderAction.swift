@@ -8,7 +8,7 @@
 
 #if PDFENABLED
 
-import Foundation
+import UIKit
 
 import PSPDFKit
 
@@ -19,14 +19,14 @@ enum PDFReaderAction {
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)
     case removeAnnotation(Annotation)
-    case updateAnnotation(Annotation)
-    case annotationChanged(PSPDFKit.Annotation)
     case annotationsAdded([PSPDFKit.Annotation])
     case annotationsRemoved([PSPDFKit.Annotation])
     case requestPreviews(keys: [String], notify: Bool)
     case setComment(key: String, comment: NSAttributedString)
     case setTags([Tag], String)
-    case setHighlight(String, String)
+    case setHighlight(text: String, key: String)
+    case setBoundingBox(PSPDFKit.Annotation)
+    case updateAnnotationProperties(Annotation)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
     case setActiveColor(String)
