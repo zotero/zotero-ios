@@ -104,7 +104,7 @@ class AnnotationViewController: UIViewController {
               let annotation = state.selectedAnnotation else { return }
 
         switch action {
-        case .highlight, .options:
+        case .options:
             self.coordinatorDelegate?.showEdit(annotation: annotation,
                                                saveAction: { [weak self] annotation in
                                                    self?.viewModel.process(action: .updateAnnotationProperties(annotation))

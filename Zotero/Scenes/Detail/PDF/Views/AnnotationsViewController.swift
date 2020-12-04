@@ -77,15 +77,6 @@ class AnnotationsViewController: UIViewController {
                 self?.viewModel.process(action: .setTags(tags, annotation.key))
             })
 
-        case .highlight: break
-            // TODO: - move editing to cell
-//            guard annotation.isAuthor else { return }
-//            guard annotation.type == .highlight else { return }
-//            let preview = self.preview(for: annotation, parentKey: state.key, document: state.document)
-//            self.coordinatorDelegate?.showHighlight(with: (annotation.text ?? ""), imageLoader: preview, save: { [weak self] highlight in
-//                self?.viewModel.process(action: .setHighlight(highlight, annotation.key))
-//            })
-
         case .options(let sender):
             self.coordinatorDelegate?.showCellOptions(for: annotation, sender: sender,
                                                       saveAction: { [weak self] annotation in

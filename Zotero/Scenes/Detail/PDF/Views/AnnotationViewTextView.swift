@@ -54,12 +54,6 @@ class AnnotationViewTextView: UIView {
         self.textView.resignFirstResponder()
     }
 
-    func clearPlaceholderIfNeeded() {
-        guard self.textView.text == self.placeholder else { return }
-        self.textView.text = ""
-        self.textView.textColor = .black
-    }
-
     // MARK: - Setups
 
     func setup(text: NSAttributedString?, halfTopInset: Bool) {
@@ -133,23 +127,37 @@ class AnnotationViewTextView: UIView {
 
 extension AnnotationViewTextView: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        self.clearPlaceholderIfNeeded()
         self.setupMenuItems()
+        if textView.text == self.placeholder {
+            textView.selectedRange = NSRange(location: 0, length: 0)
+        }
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.isEmpty {
             textView.text = self.placeholder
             textView.textColor = .lightGray
+            self.label.text = self.placeholder
         }
+    }
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if textView.text == self.placeholder {
+            textView.text = ""
+            textView.textColor = .black
+            self.label.text = " "
+        }
+        return true
     }
 
     func textViewDidChange(_ textView: UITextView) {
         let height = self.label.frame.height
 
-        // If last line is an empty newline, the label doesn't grow appropriately and we get misaligned view. Add a whitespace to the last line so that the label grows.
-        if let attributedString = textView.attributedText,
-           let lastChar = attributedString.string.unicodeScalars.last, CharacterSet.newlines.contains(lastChar) {
+        if textView.attributedText.string.isEmpty {
+            self.label.text = " "
+        } else if let attributedString = textView.attributedText,
+                  let lastChar = attributedString.string.unicodeScalars.last, CharacterSet.newlines.contains(lastChar) {
+            // If last line is an empty newline, the label doesn't grow appropriately and we get misaligned view. Add a whitespace to the last line so that the label grows.
             let mutableString = NSMutableAttributedString(attributedString: attributedString)
             mutableString.append(NSAttributedString(string: " "))
             self.label.attributedText = mutableString
