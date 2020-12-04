@@ -26,6 +26,11 @@ struct AnnotationEditActionHandler: ViewModelActionHandler {
                 state.updateSubsequentLabels = updateSubsequentPages
                 state.changes = .pageLabel
             }
+
+        case .setHighlight(let text):
+            self.update(viewModel: viewModel) { state in
+                state.annotation = state.annotation.copy(text: text)
+            }
         }
     }
 }

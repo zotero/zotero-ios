@@ -15,15 +15,14 @@ typealias AnnotationEditDeleteAction = (Annotation) -> Void
 
 class AnnotationEditViewController: UIViewController {
     private enum Section {
-        case colorPicker, pageLabel, actions
-
-        static let sortedAllCases: [Section] = [.colorPicker, .pageLabel, .actions]
+        case colorPicker, pageLabel, actions, highlight
 
         var cellId: String {
             switch self {
             case .colorPicker: return "ColorPickerCell"
             case .actions: return "ActionCell"
             case .pageLabel: return "PageLabelCell"
+            case .highlight: return "HighlightCell"
             }
         }
     }
@@ -31,6 +30,7 @@ class AnnotationEditViewController: UIViewController {
     @IBOutlet private weak var tableView: UITableView!
 
     private let viewModel: ViewModel<AnnotationEditActionHandler>
+    private let sections: [Section]
     private let saveAction: AnnotationEditSaveAction
     private let deleteAction: AnnotationEditDeleteAction
     private let disposeBag: DisposeBag
@@ -38,7 +38,13 @@ class AnnotationEditViewController: UIViewController {
     weak var coordinatorDelegate: AnnotationEditCoordinatorDelegate?
 
     init(viewModel: ViewModel<AnnotationEditActionHandler>, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction) {
+        var sections: [Section] = [.colorPicker, .pageLabel, .actions]
+        if viewModel.state.annotation.type == .highlight {
+            sections.insert(.highlight, at: 0)
+        }
+
         self.viewModel = viewModel
+        self.sections = sections
         self.saveAction = saveAction
         self.deleteAction = deleteAction
         self.disposeBag = DisposeBag()
@@ -75,7 +81,7 @@ class AnnotationEditViewController: UIViewController {
     }
 
     private func reload(section: Section) {
-        guard let index = Section.sortedAllCases.firstIndex(of: section) else { return }
+        guard let index = self.sections.firstIndex(of: section) else { return }
         self.tableView.reloadSections(IndexSet(integer: index), with: .none)
     }
 
@@ -90,6 +96,22 @@ class AnnotationEditViewController: UIViewController {
 
         controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
         self.present(controller, animated: true, completion: nil)
+    }
+
+    private func reloadHeight() {
+        self.tableView.beginUpdates()
+        self.tableView.endUpdates()
+    }
+
+    private func focusHighlightCell() {
+        let indexPath = IndexPath(row: 0, section: 0)
+
+        let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
+        let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+
+        guard cellBottom > tableViewBottom else { return }
+
+        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
 
     // MARK: - Setups
@@ -116,8 +138,8 @@ class AnnotationEditViewController: UIViewController {
     private func setupTableView() {
         self.tableView.delegate = self
         self.tableView.dataSource = self
-        self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.colorPicker.cellId)
+        self.tableView.register(UINib(nibName: "HighlightEditCell", bundle: nil), forCellReuseIdentifier: Section.highlight.cellId)
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.actions.cellId)
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: Section.pageLabel.cellId)
     }
@@ -125,7 +147,7 @@ class AnnotationEditViewController: UIViewController {
 
 extension AnnotationEditViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return Section.sortedAllCases.count
+        return self.sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -133,7 +155,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let section = Section.sortedAllCases[indexPath.section]
+        let section = self.sections[indexPath.section]
         let cell = tableView.dequeueReusableCell(withIdentifier: section.cellId, for: indexPath)
 
         switch section {
@@ -141,6 +163,20 @@ extension AnnotationEditViewController: UITableViewDataSource {
             if let cell = cell as? ColorPickerCell {
                 cell.setup(selectedColor: self.viewModel.state.annotation.color)
                 cell.colorChange.subscribe(onNext: { hex in self.viewModel.process(action: .setColor(hex)) }).disposed(by: cell.disposeBag)
+            }
+
+        case .highlight:
+            if let cell = cell as? HighlightEditCell {
+                cell.setup(with: (self.viewModel.state.annotation.text ?? ""), color: self.viewModel.state.annotation.color)
+                cell.textObservable
+                    .subscribe(onNext: { [weak self] text, needsHeightReload in
+                        if needsHeightReload {
+                            self?.reloadHeight()
+                            self?.focusHighlightCell()
+                        }
+                        self?.viewModel.process(action: .setHighlight(text.string))
+                    })
+                    .disposed(by: self.disposeBag)
             }
 
         case .pageLabel:
@@ -161,8 +197,8 @@ extension AnnotationEditViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        switch Section.sortedAllCases[indexPath.section] {
-        case .colorPicker: break
+        switch self.sections[indexPath.section] {
+        case .colorPicker, .highlight: break
         case .actions:
             self.confirmDeletion()
         case .pageLabel:

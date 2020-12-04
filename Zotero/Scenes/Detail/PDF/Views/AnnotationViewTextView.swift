@@ -18,12 +18,9 @@ class AnnotationViewTextView: UIView {
     private let layout: AnnotationViewLayout
     private let placeholder: String
 
-    private var observer: AnyObserver<(NSAttributedString, Bool)>?
+    private var textViewDelegate: GrowingTextViewCellDelegate!
     var textObservable: Observable<(NSAttributedString, Bool)> {
-        return Observable.create { observer -> Disposable in
-            self.observer = observer
-            return Disposables.create()
-        }
+        return self.textViewDelegate.textObservable
     }
 
     // MARK: - Lifecycle
@@ -37,6 +34,7 @@ class AnnotationViewTextView: UIView {
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .white
         self.setupView()
+        self.setupTextViewDelegate()
     }
 
     required init?(coder: NSCoder) {
@@ -71,14 +69,6 @@ class AnnotationViewTextView: UIView {
         self.topInsetConstraint.constant = topInset - topFontOffset
     }
 
-    private func setupMenuItems() {
-        let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
-        let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
-        let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
-        let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
-        UIMenuController.shared.menuItems = [bold, italics, superscript, `subscript`]
-    }
-
     private func setupView() {
         let label = UILabel()
         label.font = self.layout.font
@@ -94,7 +84,6 @@ class AnnotationViewTextView: UIView {
         textView.textColor = .lightGray
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.delegate = self
 
         self.addSubview(textView)
         self.addSubview(label)
@@ -123,51 +112,16 @@ class AnnotationViewTextView: UIView {
         self.textView = textView
         self.topInsetConstraint = topInset
     }
-}
 
-extension AnnotationViewTextView: UITextViewDelegate {
-    func textViewDidBeginEditing(_ textView: UITextView) {
-        self.setupMenuItems()
-        if textView.text == self.placeholder {
-            textView.selectedRange = NSRange(location: 0, length: 0)
-        }
-    }
-
-    func textViewDidEndEditing(_ textView: UITextView) {
-        if textView.text.isEmpty {
-            textView.text = self.placeholder
-            textView.textColor = .lightGray
-            self.label.text = self.placeholder
-        }
-    }
-
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if textView.text == self.placeholder {
-            textView.text = ""
-            textView.textColor = .black
-            self.label.text = " "
-        }
-        return true
-    }
-
-    func textViewDidChange(_ textView: UITextView) {
-        let height = self.label.frame.height
-
-        if textView.attributedText.string.isEmpty {
-            self.label.text = " "
-        } else if let attributedString = textView.attributedText,
-                  let lastChar = attributedString.string.unicodeScalars.last, CharacterSet.newlines.contains(lastChar) {
-            // If last line is an empty newline, the label doesn't grow appropriately and we get misaligned view. Add a whitespace to the last line so that the label grows.
-            let mutableString = NSMutableAttributedString(attributedString: attributedString)
-            mutableString.append(NSAttributedString(string: " "))
-            self.label.attributedText = mutableString
-        } else {
-            self.label.attributedText = textView.attributedText
-        }
-
-        self.label.layoutIfNeeded()
-        let needsReload = height != self.label.frame.height
-        self.observer?.on(.next((textView.attributedText, needsReload)))
+    private func setupTextViewDelegate() {
+        let bold = UIMenuItem(title: "Bold", action: #selector(UITextView.toggleBoldface(_:)))
+        let italics = UIMenuItem(title: "Italics", action: #selector(UITextView.toggleItalics(_:)))
+        let superscript = UIMenuItem(title: "Superscript", action: #selector(AnnotationTextView.toggleSuperscript))
+        let `subscript` = UIMenuItem(title: "Subscript", action: #selector(AnnotationTextView.toggleSubscript))
+        let items = [bold, italics, superscript, `subscript`]
+        let delegate = GrowingTextViewCellDelegate(label: self.label, placeholder: self.placeholder, menuItems: items)
+        self.textView.delegate = delegate
+        self.textViewDelegate = delegate
     }
 }
 
