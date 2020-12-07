@@ -18,7 +18,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="xil-z2-BhX">
-                        <rect key="frame" x="5" y="0.0" width="288" height="44"/>
+                        <rect key="frame" x="5" y="8" width="288" height="28"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="288" placeholder="YES" id="uoG-3l-74h"/>
                         </constraints>
@@ -26,8 +26,8 @@
                 </subviews>
                 <constraints>
                     <constraint firstItem="xil-z2-BhX" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="5" id="0HN-Fm-nzn"/>
-                    <constraint firstAttribute="bottom" secondItem="xil-z2-BhX" secondAttribute="bottom" id="4fL-al-Q57"/>
-                    <constraint firstItem="xil-z2-BhX" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" id="nnV-jc-pd2"/>
+                    <constraint firstAttribute="bottom" secondItem="xil-z2-BhX" secondAttribute="bottom" constant="8" id="4fL-al-Q57"/>
+                    <constraint firstItem="xil-z2-BhX" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="nnV-jc-pd2"/>
                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="xil-z2-BhX" secondAttribute="trailing" constant="5" id="qrr-lz-8i5"/>
                 </constraints>
             </tableViewCellContentView>

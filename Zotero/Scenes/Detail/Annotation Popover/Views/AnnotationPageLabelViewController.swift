@@ -54,6 +54,12 @@ class AnnotationPageLabelViewController: UIViewController {
         self.setupTableView()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.preferredContentSize = AnnotationPopoverLayout.pageEditPreferredSize
+        self.navigationController?.preferredContentSize = AnnotationPopoverLayout.pageEditPreferredSize
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 

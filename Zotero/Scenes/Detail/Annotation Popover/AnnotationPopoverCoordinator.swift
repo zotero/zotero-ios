@@ -56,7 +56,6 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, saveAction: saveAction, deleteAction: deleteAction)
         controller.coordinatorDelegate = self
-        controller.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
         self.navigationController.pushViewController(controller, animated: true)
     }
 

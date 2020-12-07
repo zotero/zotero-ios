@@ -69,20 +69,29 @@ class AnnotationEditViewController: UIViewController {
                       .disposed(by: self.disposeBag)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.view.layoutIfNeeded()
+        self.tableView.reloadData()
+        self.updatePreferredContentSize()
+    }
+
     // MARK: - Actions
 
     private func update(to state: AnnotationEditState) {
         if state.changes.contains(.color) {
-            self.reload(section: .colorPicker)
+            self.reload(sections: [.colorPicker, .highlight])
         }
         if state.changes.contains(.pageLabel) {
-            self.reload(section: .pageLabel)
+            self.reload(sections: [.pageLabel])
         }
     }
 
-    private func reload(section: Section) {
-        guard let index = self.sections.firstIndex(of: section) else { return }
-        self.tableView.reloadSections(IndexSet(integer: index), with: .none)
+    private func reload(sections: [Section]) {
+        for section in sections {
+            guard let index = self.sections.firstIndex(of: section) else { continue }
+            self.tableView.reloadSections(IndexSet(integer: index), with: .none)
+        }
     }
 
     private func confirmDeletion() {
@@ -114,6 +123,12 @@ class AnnotationEditViewController: UIViewController {
         self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
 
+    private func updatePreferredContentSize() {
+        let size = self.tableView.contentSize
+        self.preferredContentSize = size
+        self.navigationController?.preferredContentSize = size
+    }
+
     // MARK: - Setups
 
     private func setupNavigationBar() {
@@ -136,6 +151,7 @@ class AnnotationEditViewController: UIViewController {
     }
 
     private func setupTableView() {
+        self.tableView.widthAnchor.constraint(equalToConstant: AnnotationPopoverLayout.width).isActive = true
         self.tableView.delegate = self
         self.tableView.dataSource = self
         self.tableView.register(UINib(nibName: "ColorPickerCell", bundle: nil), forCellReuseIdentifier: Section.colorPicker.cellId)
@@ -172,6 +188,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
                     .subscribe(onNext: { [weak self] text, needsHeightReload in
                         if needsHeightReload {
                             self?.reloadHeight()
+                            self?.updatePreferredContentSize()
                             self?.focusHighlightCell()
                         }
                         self?.viewModel.process(action: .setHighlight(text.string))

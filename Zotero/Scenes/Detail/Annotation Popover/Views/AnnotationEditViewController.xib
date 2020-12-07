@@ -17,11 +17,11 @@
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
-            <rect key="frame" x="0.0" y="0.0" width="522" height="443"/>
+            <rect key="frame" x="0.0" y="0.0" width="460" height="443"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" translatesAutoresizingMaskIntoConstraints="NO" id="4h4-dZ-owc">
-                    <rect key="frame" x="0.0" y="0.0" width="522" height="443"/>
+                    <rect key="frame" x="0.0" y="0.0" width="460" height="443"/>
                     <color key="backgroundColor" red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                 </tableView>
             </subviews>
@@ -34,7 +34,7 @@
                 <constraint firstItem="4h4-dZ-owc" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="vyD-y4-rWr"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
-            <point key="canvasLocation" x="215.94202898550725" y="-25.111607142857142"/>
+            <point key="canvasLocation" x="171.01449275362319" y="-25.111607142857142"/>
         </view>
     </objects>
     <resources>

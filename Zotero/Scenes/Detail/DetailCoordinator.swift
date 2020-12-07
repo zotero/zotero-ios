@@ -536,12 +536,10 @@ extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
         let viewModel = ViewModel(initialState: state, handler: handler)
         let controller = AnnotationEditViewController(viewModel: viewModel, saveAction: saveAction, deleteAction: deleteAction)
         controller.coordinatorDelegate = self
-        controller.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
 
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .popover
         navigationController.popoverPresentationController?.sourceView = sender
-        navigationController.preferredContentSize = AnnotationPopoverLayout.editPreferredSize
         navigationController.popoverPresentationController?.permittedArrowDirections = .left
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
