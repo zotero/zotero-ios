@@ -53,6 +53,9 @@ class AnnotationView: UIView {
 
         super.init(frame: CGRect())
 
+        self.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+            return traitCollection.userInterfaceStyle == .dark ? .black : .white
+        })
         self.translatesAutoresizingMaskIntoConstraints = false
         self.setupView()
     }
@@ -77,7 +80,11 @@ class AnnotationView: UIView {
         self.commentButton?.isHidden = true
         self.commentTextView.setup(text: nil, halfTopInset: self.shouldHalveTopInset)
         self.commentTextView.isHidden = false
-        self.commentTextView.becomeFirstResponder()
+        self.layoutIfNeeded()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.commentTextView.becomeFirstResponder()
+        }
     }
 
     private func scrollToBottomIfNeeded() {

@@ -49,12 +49,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.searchAnnotations(with: term, in: viewModel)
 
         case .selectAnnotation(let annotation):
+            guard annotation?.key != viewModel.state.selectedAnnotation?.key else { return }
             let index = annotation.flatMap({ annotation in
                 viewModel.state.annotations[annotation.page]?.firstIndex(where: { annotation.key == $0.key })
             })
             self.select(annotation: annotation, index: index, didSelectInDocument: false, in: viewModel)
 
         case .selectAnnotationFromDocument(let key, let page):
+            guard key != viewModel.state.selectedAnnotation?.key else { return }
             guard let index = viewModel.state.annotations[page]?.firstIndex(where: { $0.key == key }) else { return }
             let annotation = viewModel.state.annotations[page]?[index]
             self.select(annotation: annotation, index: index, didSelectInDocument: true, in: viewModel)
@@ -203,10 +205,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 let newIndex = annotations.index(of: newAnnotation, sortedBy: { $0.sortIndex > $1.sortIndex })
                 annotations.insert(newAnnotation, at: newIndex)
                 state.annotations[indexPath.section] = annotations
-
-                state.removedAnnotationIndexPaths = [indexPath]
-                state.insertedAnnotationIndexPaths = [IndexPath(row: newIndex, section: indexPath.section)]
                 state.changes.insert(.annotations)
+
+                if indexPath.row == newIndex {
+                    state.updatedAnnotationIndexPaths = [indexPath]
+                } else {
+                    state.removedAnnotationIndexPaths = [indexPath]
+                    state.insertedAnnotationIndexPaths = [IndexPath(row: newIndex, section: indexPath.section)]
+                }
             } else {
                 state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
                 if shouldReload?(annotation, newAnnotation) ?? true {

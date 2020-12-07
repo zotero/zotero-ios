@@ -32,7 +32,9 @@ class AnnotationViewTextView: UIView {
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.backgroundColor = .white
+        self.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+            return traitCollection.userInterfaceStyle == .dark ? .black : .white
+        })
         self.setupView()
         self.setupTextViewDelegate()
     }
@@ -45,11 +47,11 @@ class AnnotationViewTextView: UIView {
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
-        self.textView.becomeFirstResponder()
+        return self.textView.becomeFirstResponder()
     }
 
     override func resignFirstResponder() -> Bool {
-        self.textView.resignFirstResponder()
+        return self.textView.resignFirstResponder()
     }
 
     // MARK: - Setups

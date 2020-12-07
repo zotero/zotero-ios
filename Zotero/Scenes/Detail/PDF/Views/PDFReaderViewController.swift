@@ -228,6 +228,8 @@ class PDFReaderViewController: UIViewController {
 
         if shouldShow {
             self.annotationsController.view.isHidden = false
+        } else {
+            self.view.endEditing(true)
         }
 
         self.isSidebarTransitioning = true

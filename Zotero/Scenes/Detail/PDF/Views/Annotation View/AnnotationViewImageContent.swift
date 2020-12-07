@@ -21,7 +21,9 @@ class AnnotationViewImageContent: UIView {
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.backgroundColor = .white
+        self.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+            return traitCollection.userInterfaceStyle == .dark ? .black : .white
+        })
         self.setupView()
     }
 

@@ -1831,16 +1831,9 @@
 		B31941D924531F6600BF6296 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B3482E57257E3ED1008E817A /* Annotation View */,
 				B3B953D32459B62D00FC96DB /* AnnotationCell.swift */,
 				B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */,
-				B3981426257A5A16002C755C /* AnnotationView.swift */,
-				B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */,
-				B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */,
-				B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */,
-				B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */,
-				B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */,
-				B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */,
-				B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */,
 				B33AB487246D315F00490DDE /* CheckboxButton.swift */,
 				B39A402F24BC902600205172 /* ColorPickerView.swift */,
 				B3B953CD245981DA00FC96DB /* PDFReaderViewController.swift */,
@@ -1937,6 +1930,21 @@
 				B34C410B257132730057D5F5 /* AnnotationPopoverLayout.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		B3482E57257E3ED1008E817A /* Annotation View */ = {
+			isa = PBXGroup;
+			children = (
+				B3981426257A5A16002C755C /* AnnotationView.swift */,
+				B3F3D63B255EC98600F310C2 /* AnnotationViewButton.swift */,
+				B3F3D62B255EBE3500F310C2 /* AnnotationViewHeader.swift */,
+				B3F3D631255EC5F200F310C2 /* AnnotationViewHighlightContent.swift */,
+				B3F3D635255EC8F300F310C2 /* AnnotationViewImageContent.swift */,
+				B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */,
+				B3F3D63F255ECA4700F310C2 /* AnnotationViewText.swift */,
+				B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */,
+			);
+			path = "Annotation View";
 			sourceTree = "<group>";
 		};
 		B357DEE024165DEE00E06153 /* Debugging */ = {
