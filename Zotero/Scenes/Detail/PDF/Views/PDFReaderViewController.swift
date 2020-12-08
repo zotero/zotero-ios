@@ -159,10 +159,7 @@ class PDFReaderViewController: UIViewController {
 
         let frame = self.view.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
 
-        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame,
-                                                        dismissHandler: { [weak self] in
-                                                            self?.viewModel.process(action: .selectAnnotation(nil))
-                                                        })
+        self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self)
     }
 
     private func updateSelection(on pageView: PDFPageView, selectedAnnotation: Annotation?, pageIndex: Int) {
@@ -171,8 +168,7 @@ class PDFReaderViewController: UIViewController {
             view.removeFromSuperview()
         }
 
-        if let selection = selectedAnnotation,
-           selection.type == .highlight && selection.page == pageIndex {
+        if let selection = selectedAnnotation, selection.type == .highlight && selection.page == pageIndex {
             // Add custom highlight selection view if needed
             let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
             let selectionView = SelectionView()
@@ -690,10 +686,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         self.pageController.store(page: pageIndex, for: self.viewModel.state.key)
     }
 
-    func pdfViewController(_ pdfController: PDFViewController,
-                           shouldShow controller: UIViewController,
-                           options: [String : Any]? = nil,
-                           animated: Bool) -> Bool {
+    func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {
         return false
     }
 
@@ -773,6 +766,15 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
 
         redoItem?.isEnabled = redoEnabled
         undoItem?.isEnabled = undoEnabled
+    }
+}
+
+extension PDFReaderViewController: UIPopoverPresentationControllerDelegate {
+    func popoverPresentationControllerShouldDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) -> Bool {
+        if self.viewModel.state.selectedAnnotation?.type == .highlight {
+            self.viewModel.process(action: .selectAnnotation(nil))
+        }
+        return true
     }
 }
 

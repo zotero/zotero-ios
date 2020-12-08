@@ -52,7 +52,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
     #if PDFENABLED
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, dismissHandler: @escaping () -> Void)
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
     #endif
 }
 
@@ -506,11 +506,12 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     #if PDFENABLED
-    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, dismissHandler: @escaping () -> Void) {
+    func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate) {
         let navigationController = UINavigationController()
         navigationController.modalPresentationStyle = .popover
         navigationController.popoverPresentationController?.sourceView = self.navigationController.presentedViewController?.view
         navigationController.popoverPresentationController?.sourceRect = sourceRect
+        navigationController.popoverPresentationController?.delegate = popoverDelegate
 
         let coordinator = AnnotationPopoverCoordinator(navigationController: navigationController, controllers: self.controllers, viewModel: viewModel)
         coordinator.parentCoordinator = self
