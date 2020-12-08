@@ -50,6 +50,7 @@ class AnnotationPageLabelViewController: UIViewController {
         super.viewDidLoad()
 
         self.title = L10n.Pdf.AnnotationPopover.pageLabelTitle
+        self.view.backgroundColor = Asset.Colors.annotationPopoverBackground.color
         self.setupNavigationItems()
         self.setupTableView()
     }

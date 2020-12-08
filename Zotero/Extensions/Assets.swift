@@ -24,8 +24,10 @@ internal enum Asset {
   internal enum Colors {
     internal static let annotationCellBackground = ColorAsset(name: "annotationCellBackground")
     internal static let annotationHighlightSelection = ColorAsset(name: "annotationHighlightSelection")
+    internal static let annotationPopoverBackground = ColorAsset(name: "annotationPopoverBackground")
     internal static let annotationSelectedCellBorder = ColorAsset(name: "annotationSelectedCellBorder")
     internal static let annotationSeparator = ColorAsset(name: "annotationSeparator")
+    internal static let annotationSidebarBorderColor = ColorAsset(name: "annotationSidebarBorderColor")
     internal static let annotationText = ColorAsset(name: "annotationText")
     internal static let cellHighlighted = ColorAsset(name: "cellHighlighted")
     internal static let cellSelected = ColorAsset(name: "cellSelected")

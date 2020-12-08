@@ -29,9 +29,7 @@ class AnnotationViewHighlightContent: UIView {
         super.init(frame: CGRect())
 
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        self.backgroundColor = layout.backgroundColor
         self.setupView()
     }
 

@@ -84,7 +84,7 @@ class PDFReaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = .secondarySystemBackground
+        self.view.backgroundColor = .systemGray6
         self.setupViews()
         self.setupNavigationBar()
         self.setupAnnotationControls(forCompactSize: self.isCompactSize)
@@ -367,9 +367,7 @@ class PDFReaderViewController: UIViewController {
 
         let separator = UIView()
         separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-            return traitCollection.userInterfaceStyle == .light ? UIColor(hex: "#C6C6C8") : .systemGray4
-        })
+        separator.backgroundColor = Asset.Colors.annotationSidebarBorderColor.color
 
         self.add(controller: pdfController)
         self.add(controller: sidebarController)
@@ -388,8 +386,8 @@ class PDFReaderViewController: UIViewController {
             separator.topAnchor.constraint(equalTo: self.view.topAnchor),
             separator.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
             pdfController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
-            pdfController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
-            pdfController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor),
+            pdfController.view.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+            pdfController.view.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
             pdfLeftConstraint
         ])
 

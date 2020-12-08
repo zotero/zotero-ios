@@ -42,7 +42,7 @@ class AnnotationViewController: UIViewController {
         self.annotationView = annotationView
 
         let view = UIView()
-        view.backgroundColor = .white
+        view.backgroundColor = Asset.Colors.annotationPopoverBackground.color
         view.addSubview(annotationView)
 
         NSLayoutConstraint.activate([

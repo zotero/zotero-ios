@@ -22,9 +22,7 @@ class ColorPickerCell: UITableViewCell {
         AnnotationsConfig.colors.forEach { hexColor in
             let circleView = ColorPickerCircleView(hexColor: hexColor)
             circleView.contentInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 11)
-            circleView.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-                return traitCollection.userInterfaceStyle == .dark ? .black : .white
-            })
+            circleView.backgroundColor = .clear
             circleView.tap.bind(to: self.colorChange).disposed(by: self.disposeBag)
             self.stackView.addArrangedSubview(circleView)
         }

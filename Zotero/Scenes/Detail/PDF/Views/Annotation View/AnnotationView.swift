@@ -53,9 +53,7 @@ class AnnotationView: UIView {
 
         super.init(frame: CGRect())
 
-        self.backgroundColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
-            return traitCollection.userInterfaceStyle == .dark ? .black : .white
-        })
+        self.backgroundColor = layout.backgroundColor
         self.translatesAutoresizingMaskIntoConstraints = false
         self.setupView()
     }

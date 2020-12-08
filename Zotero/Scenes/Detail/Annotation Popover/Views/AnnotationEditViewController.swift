@@ -59,6 +59,7 @@ class AnnotationEditViewController: UIViewController {
         super.viewDidLoad()
 
         self.title = L10n.Pdf.AnnotationPopover.title
+        self.view.backgroundColor = Asset.Colors.annotationPopoverBackground.color
         self.setupTableView()
         self.setupNavigationBar()
 

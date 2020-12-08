@@ -23,6 +23,8 @@ struct AnnotationViewLayout {
     let font: UIFont
     let pageLabelFont: UIFont
 
+    let backgroundColor: UIColor
+
     let showsContent: Bool
     let alwaysShowComment: Bool
     let scrollableBody: Bool
@@ -45,6 +47,7 @@ struct AnnotationViewLayout {
             self.commentMinHeight = nil
             self.alwaysShowComment = false
             self.scrollableBody = false
+            self.backgroundColor = Asset.Colors.annotationCellBackground.color
             
         case .popover:
             self.headerHeight = 50
@@ -57,6 +60,7 @@ struct AnnotationViewLayout {
             self.commentMinHeight = self.lineHeight * 3
             self.alwaysShowComment = true
             self.scrollableBody = true
+            self.backgroundColor = Asset.Colors.annotationPopoverBackground.color
         }
     }
 }

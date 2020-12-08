@@ -51,7 +51,7 @@ class AnnotationCell: UITableViewCell {
 
     private func setupView() {
         let selectionView = UIView()
-        selectionView.backgroundColor = Asset.Colors.annotationCellBackground.color
+        selectionView.backgroundColor = .systemGray6
         selectionView.layer.cornerRadius = 10
         selectionView.layer.borderColor = Asset.Colors.annotationSelectedCellBorder.color.cgColor
         selectionView.layer.masksToBounds = true
@@ -61,7 +61,6 @@ class AnnotationCell: UITableViewCell {
         let annotationView = AnnotationView(layout: PDFReaderLayout.annotationLayout)
         annotationView.layer.cornerRadius = 10
         annotationView.layer.masksToBounds = true
-        annotationView.backgroundColor = Asset.Colors.annotationCellBackground.color
         self.annotationView = annotationView
 
         self.contentView.addSubview(selectionView)
