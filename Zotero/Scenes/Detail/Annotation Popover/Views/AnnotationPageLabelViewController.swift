@@ -51,7 +51,6 @@ class AnnotationPageLabelViewController: UIViewController {
 
         self.title = L10n.Pdf.AnnotationPopover.pageLabelTitle
         self.view.backgroundColor = Asset.Colors.annotationPopoverBackground.color
-        self.setupNavigationItems()
         self.setupTableView()
     }
 
@@ -65,6 +64,11 @@ class AnnotationPageLabelViewController: UIViewController {
         super.viewDidAppear(animated)
 
         self.focusPageLabel()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.saveAction(self.viewModel.state.label, self.viewModel.state.updateSubsequentPages)
     }
 
     // MARK: - Actions
@@ -82,28 +86,6 @@ class AnnotationPageLabelViewController: UIViewController {
         self.tableView.rowHeight = 44
         self.tableView.register(UINib(nibName: "TextFieldCell", bundle: nil), forCellReuseIdentifier: Section.labelInput.cellId)
         self.tableView.register(UINib(nibName: "SwitchCell", bundle: nil), forCellReuseIdentifier: Section.switches.cellId)
-    }
-
-    private func setupNavigationItems() {
-        self.navigationItem.hidesBackButton = true
-
-        let cancel = UIBarButtonItem(title: L10n.cancel, style: .plain, target: nil, action: nil)
-        cancel.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.navigationController?.popViewController(animated: true)
-            })
-            .disposed(by: self.disposeBag)
-        self.navigationItem.leftBarButtonItem = cancel
-
-        let save = UIBarButtonItem(title: L10n.save, style: .done, target: nil, action: nil)
-        save.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                guard let `self` = self else { return }
-                self.saveAction(self.viewModel.state.label, self.viewModel.state.updateSubsequentPages)
-                self.navigationController?.popViewController(animated: true)
-            })
-            .disposed(by: self.disposeBag)
-        self.navigationItem.rightBarButtonItem = save
     }
 }
 

@@ -24,6 +24,7 @@ class ColorPickerCell: UITableViewCell {
             circleView.contentInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 11)
             circleView.backgroundColor = .clear
             circleView.tap.bind(to: self.colorChange).disposed(by: self.disposeBag)
+            circleView.backgroundColor = Asset.Colors.defaultCellBackground.color
             self.stackView.addArrangedSubview(circleView)
         }
     }

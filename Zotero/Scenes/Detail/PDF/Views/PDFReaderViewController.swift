@@ -526,7 +526,7 @@ class PDFReaderViewController: UIViewController {
             button.adjustsImageWhenHighlighted = false
             button.selectedBackgroundColor = Asset.Colors.zoteroBlue.color
             button.selectedTintColor = .white
-            button.layer.cornerRadius = 6
+            button.layer.cornerRadius = 4
             button.layer.masksToBounds = true
         }
 
@@ -540,15 +540,17 @@ class PDFReaderViewController: UIViewController {
                  .disposed(by: self.disposeBag)
         self.colorPickerbutton = picker
 
+        let size: CGFloat = 36
+
         NSLayoutConstraint.activate([
-            highlight.widthAnchor.constraint(equalToConstant: 44),
-            highlight.heightAnchor.constraint(equalToConstant: 44),
-            note.widthAnchor.constraint(equalToConstant: 44),
-            note.heightAnchor.constraint(equalToConstant: 44),
-            area.widthAnchor.constraint(equalToConstant: 44),
-            area.heightAnchor.constraint(equalToConstant: 44),
-            picker.widthAnchor.constraint(equalToConstant: 44),
-            picker.heightAnchor.constraint(equalToConstant: 44),
+            highlight.widthAnchor.constraint(equalToConstant: size),
+            highlight.heightAnchor.constraint(equalToConstant: size),
+            note.widthAnchor.constraint(equalToConstant: size),
+            note.heightAnchor.constraint(equalToConstant: size),
+            area.widthAnchor.constraint(equalToConstant: size),
+            area.heightAnchor.constraint(equalToConstant: size),
+            picker.widthAnchor.constraint(equalToConstant: size),
+            picker.heightAnchor.constraint(equalToConstant: size),
         ])
 
         return [highlight, note, area, picker]

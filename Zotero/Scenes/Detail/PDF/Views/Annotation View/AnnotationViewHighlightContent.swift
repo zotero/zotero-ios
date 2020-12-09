@@ -43,7 +43,9 @@ class AnnotationViewHighlightContent: UIView {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = self.layout.lineHeight
         paragraphStyle.maximumLineHeight = self.layout.lineHeight
-        let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle])
+        let attributedString = NSAttributedString(string: text, attributes: [.paragraphStyle: paragraphStyle,
+                                                                             .font: self.layout.font,
+                                                                             .foregroundColor: Asset.Colors.annotationText.color])
         self.textLabel.attributedText = attributedString
 
         self.bottomInsetConstraint.constant = halfBottomInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
@@ -54,8 +56,6 @@ class AnnotationViewHighlightContent: UIView {
         lineView.translatesAutoresizingMaskIntoConstraints = false
 
         let label = UILabel()
-        label.font = self.layout.font
-        label.textColor = Asset.Colors.annotationText.color
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
 

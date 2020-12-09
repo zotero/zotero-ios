@@ -24,12 +24,12 @@ struct ColorPickerView: View {
             ForEach(0..<self.numberOfRows) { row in
                 HStack(spacing: 12) {
                     ForEach(AnnotationsConfig.colors, id: \.self) { color in
-                        Rectangle().foregroundColor(Color(hex: color))
-                                   .aspectRatio(1, contentMode: .fit)
-                                   .border(self.borderColor(for: color), width: 2)
-                                   .onTapGesture {
-                                       self.selectionAction(color)
-                                   }
+                        Circle().foregroundColor(Color(hex: color))
+                                .aspectRatio(1, contentMode: .fit)
+                                .overlay(self.borderOverlay(for: color))
+                                .onTapGesture {
+                                    self.selectionAction(color)
+                                }
                     }
                 }
             }
@@ -37,8 +37,14 @@ struct ColorPickerView: View {
         .padding(12)
     }
 
-    private func borderColor(for color: String) -> Color {
-        return self.selected == color ? .blue : .clear
+    private func borderOverlay(for color: String) -> some View {
+        return Group {
+            if self.selected == color {
+                Circle().strokeBorder(Asset.Colors.defaultCellBackground.swiftUiColor, lineWidth: 3)
+                        .aspectRatio(1, contentMode: .fit)
+                        .padding(4)
+            }
+        }
     }
 }
 

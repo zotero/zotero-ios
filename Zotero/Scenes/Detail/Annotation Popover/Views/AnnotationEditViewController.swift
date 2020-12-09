@@ -72,8 +72,6 @@ class AnnotationEditViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.view.layoutIfNeeded()
-        self.tableView.reloadData()
         self.updatePreferredContentSize()
     }
 
@@ -125,7 +123,21 @@ class AnnotationEditViewController: UIViewController {
     }
 
     private func updatePreferredContentSize() {
-        let size = self.tableView.contentSize
+        var height: CGFloat = 282
+
+        if let text = self.viewModel.state.annotation.text {
+            let width = AnnotationPopoverLayout.width - ((AnnotationPopoverLayout.annotationLayout.horizontalInset * 2) +
+                                                          AnnotationPopoverLayout.annotationLayout.highlightContentLeadingOffset +
+                                                          AnnotationPopoverLayout.annotationLayout.highlightLineWidth)
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.minimumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
+            paragraphStyle.maximumLineHeight = AnnotationPopoverLayout.annotationLayout.lineHeight
+            let attributedText = NSAttributedString(string: text, attributes: [.font: AnnotationPopoverLayout.annotationLayout.font, .paragraphStyle: paragraphStyle])
+            let boundingRect = attributedText.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, context: nil)
+            height += boundingRect.height + 56
+        }
+
+        let size = CGSize(width: AnnotationPopoverLayout.width, height: height)
         self.preferredContentSize = size
         self.navigationController?.preferredContentSize = size
     }

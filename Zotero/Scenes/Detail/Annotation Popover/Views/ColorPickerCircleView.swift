@@ -81,6 +81,11 @@ class ColorPickerCircleView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.selectionLayer.strokeColor = self.backgroundColor?.cgColor
+    }
+
     override func layoutSubviews() {
         super.layoutIfNeeded()
 

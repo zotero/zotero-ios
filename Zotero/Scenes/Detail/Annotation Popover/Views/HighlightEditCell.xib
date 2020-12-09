@@ -26,14 +26,14 @@
                         </constraints>
                     </view>
                     <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CIb-5o-jcs">
-                        <rect key="frame" x="27" y="10" width="261" height="20.5"/>
+                        <rect key="frame" x="27" y="10" width="277" height="20.5"/>
                         <color key="backgroundColor" systemColor="systemGray5Color"/>
                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                         <color key="textColor" systemColor="systemRedColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" scrollEnabled="NO" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="1e7-1a-Yjo">
-                        <rect key="frame" x="27" y="10" width="261" height="20.5"/>
+                        <rect key="frame" x="27" y="10" width="277" height="20.5"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <color key="textColor" systemColor="labelColor"/>
                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
@@ -43,13 +43,13 @@
                 <constraints>
                     <constraint firstItem="1e7-1a-Yjo" firstAttribute="top" secondItem="CIb-5o-jcs" secondAttribute="top" id="0m1-rQ-7mD"/>
                     <constraint firstAttribute="bottom" secondItem="CIb-5o-jcs" secondAttribute="bottom" priority="999" constant="10" id="8XP-vq-mGn"/>
-                    <constraint firstAttribute="trailingMargin" secondItem="CIb-5o-jcs" secondAttribute="trailing" constant="16" id="AfT-SB-5BX"/>
+                    <constraint firstAttribute="trailing" secondItem="CIb-5o-jcs" secondAttribute="trailing" constant="16" id="AfT-SB-5BX"/>
                     <constraint firstItem="1e7-1a-Yjo" firstAttribute="bottom" secondItem="CIb-5o-jcs" secondAttribute="bottom" id="Bmv-Gz-0aI"/>
                     <constraint firstItem="CIb-5o-jcs" firstAttribute="top" secondItem="gf6-8w-ocC" secondAttribute="top" id="CPE-LK-i0e"/>
                     <constraint firstItem="CIb-5o-jcs" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="10" id="Gld-sw-DjQ"/>
                     <constraint firstItem="CIb-5o-jcs" firstAttribute="bottom" secondItem="gf6-8w-ocC" secondAttribute="bottom" id="HSG-XY-Ijy"/>
                     <constraint firstItem="1e7-1a-Yjo" firstAttribute="leading" secondItem="gf6-8w-ocC" secondAttribute="trailing" constant="8" id="SHJ-Ev-XJp"/>
-                    <constraint firstAttribute="trailingMargin" secondItem="1e7-1a-Yjo" secondAttribute="trailing" constant="16" id="fba-Wu-6qV"/>
+                    <constraint firstAttribute="trailing" secondItem="1e7-1a-Yjo" secondAttribute="trailing" constant="16" id="fba-Wu-6qV"/>
                     <constraint firstItem="CIb-5o-jcs" firstAttribute="leading" secondItem="gf6-8w-ocC" secondAttribute="trailing" constant="8" id="tF3-dr-UBU"/>
                     <constraint firstItem="gf6-8w-ocC" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="z3N-0h-Ka7"/>
                 </constraints>

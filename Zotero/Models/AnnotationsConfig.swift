@@ -13,8 +13,8 @@ import PSPDFKit
 #endif
 
 struct AnnotationsConfig {
-    static let defaultActiveColor = "#ff8c19"
-    static let colors: [String] = ["#ff6666", "#ff8c19", "#5fb236", "#2ea8e5", "#a28ae5"]
+    static let defaultActiveColor = "#ffd400"
+    static let colors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5"]
 
     static let isZoteroKey = "isZoteroAnnotation"
     static let keyKey = "zoteroKey"
