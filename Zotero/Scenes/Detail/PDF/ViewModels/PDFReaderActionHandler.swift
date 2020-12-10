@@ -18,6 +18,23 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
+    fileprivate struct PdfAnnotationChanges: OptionSet {
+        typealias RawValue = UInt8
+
+        let rawValue: UInt8
+
+        static let color = PdfAnnotationChanges(rawValue: 1 << 0)
+        static let comment = PdfAnnotationChanges(rawValue: 1 << 1)
+
+        static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
+            switch changes {
+            case .color: return ["alpha", "color"]
+            case .comment: return ["contents"]
+            default: return []
+            }
+        }
+    }
+
     private unowned let dbStorage: DbStorage
     private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let htmlAttributedStringConverter: HtmlAttributedStringConverter
@@ -74,24 +91,29 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             self.loadPreviews(for: keys, notify: notify, in: viewModel)
 
         case .setHighlight(let highlight, let key):
-            self.updateAnnotation(with: key, transformAnnotation: { $0.copy(text: highlight) }, in: viewModel)
+            self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(text: highlight), []) }, in: viewModel)
 
         case .setComment(let key, let comment):
             let convertedComment = self.htmlAttributedStringConverter.convert(attributedString: comment)
             self.updateAnnotation(with: key,
-                                  transformAnnotation: { $0.copy(comment: convertedComment) },
+                                  transformAnnotation: { ($0.copy(comment: convertedComment), .comment) },
                                   shouldReload: { _, _ in false }, // doesn't need reload, text is already written in textView in cell
                                   additionalStateChange: { $0.comments[key] = comment },
                                   in: viewModel)
 
         case .setTags(let tags, let key):
-            self.updateAnnotation(with: key, transformAnnotation: { $0.copy(tags: tags) }, in: viewModel)
+            self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(tags: tags), []) }, in: viewModel)
 
         case .setBoundingBox(let pdfAnnotation):
             self.updateBoundingBoxAndRects(for: pdfAnnotation, in: viewModel)
 
         case .updateAnnotationProperties(let annotation):
-            self.updateAnnotationProperties(of: annotation, in: viewModel)
+            self.updateAnnotation(with: annotation.key,
+                                  transformAnnotation: { originalAnnotation in
+                                    let changes: PdfAnnotationChanges = originalAnnotation.color != annotation.color ? .color : []
+                                    return (annotation, changes)
+                                  },
+                                  in: viewModel)
 
         case .userInterfaceStyleChanged(let interfaceStyle):
             self.userInterfaceChanged(interfaceStyle: interfaceStyle, in: viewModel)
@@ -184,77 +206,76 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func updateAnnotation(with key: String,
-                                  transformAnnotation: (Annotation) -> Annotation,
+                                  transformAnnotation: (Annotation) -> (Annotation, PdfAnnotationChanges),
                                   shouldReload: ((Annotation, Annotation) -> Bool)? = nil,
                                   additionalStateChange: ((inout PDFReaderState) -> Void)? = nil,
                                   in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let indexPath = self.indexPath(for: key, in: viewModel.state.annotations),
               let annotation = viewModel.state.annotations[indexPath.section]?[indexPath.row] else { return }
 
+        let (newAnnotation, changes) = transformAnnotation(annotation)
+        let shouldReload = shouldReload?(annotation, newAnnotation) ?? true
+
         self.update(viewModel: viewModel) { state in
-            let newAnnotation = transformAnnotation(annotation)
-
-            if key == state.selectedAnnotation?.key {
-                state.selectedAnnotation = newAnnotation
-            }
-
-            if annotation.sortIndex != newAnnotation.sortIndex,
-               var annotations = state.annotations[indexPath.section] {
-                // Reorder annotations
-                annotations.remove(at: indexPath.row)
-                let newIndex = annotations.index(of: newAnnotation, sortedBy: { $0.sortIndex > $1.sortIndex })
-                annotations.insert(newAnnotation, at: newIndex)
-                state.annotations[indexPath.section] = annotations
-                state.changes.insert(.annotations)
-
-                if indexPath.row == newIndex {
-                    state.updatedAnnotationIndexPaths = [indexPath]
-                } else {
-                    state.removedAnnotationIndexPaths = [indexPath]
-                    state.insertedAnnotationIndexPaths = [IndexPath(row: newIndex, section: indexPath.section)]
-                }
-            } else {
-                state.annotations[indexPath.section]?[indexPath.row] = newAnnotation
-                if shouldReload?(annotation, newAnnotation) ?? true {
-                    state.updatedAnnotationIndexPaths = [indexPath]
-                    state.changes.insert(.annotations)
-                }
-            }
-
+            self.update(state: &state, with: newAnnotation, from: annotation, at: indexPath, shouldReload: shouldReload)
             additionalStateChange?(&state)
         }
+
+        self.updatePdfAnnotation(to: newAnnotation, changes: changes, state: viewModel.state)
     }
 
-    private func updateAnnotationProperties(of annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        var colorDidChange = false
-        self.updateAnnotation(with: annotation.key,
-                              transformAnnotation: { original in
-                                  colorDidChange = original.color != annotation.color
-                                  return annotation
-                              },
-                              in: viewModel)
+    private func update(state: inout PDFReaderState, with annotation: Annotation, from oldAnnotation: Annotation, at indexPath: IndexPath, shouldReload: Bool) {
+        // Update selected annotation if needed
+        if annotation.key == state.selectedAnnotation?.key {
+            state.selectedAnnotation = annotation
+        }
 
-        if colorDidChange {
-            self.updatePdfAnnotationColor(for: annotation, state: viewModel.state)
+        // If sort index didn't change, reload in place
+        if annotation.sortIndex == oldAnnotation.sortIndex {
+            state.annotations[indexPath.section]?[indexPath.row] = annotation
+            if shouldReload {
+                state.updatedAnnotationIndexPaths = [indexPath]
+                state.changes.insert(.annotations)
+            }
+            return
+        }
+
+        // Otherwise move the annotation to appropriate position
+        var annotations = state.annotations[indexPath.section] ?? []
+        annotations.remove(at: indexPath.row)
+        let newIndex = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+        annotations.insert(annotation, at: newIndex)
+
+        state.annotations[indexPath.section] = annotations
+        state.changes.insert(.annotations)
+
+        if indexPath.row == newIndex {
+            state.updatedAnnotationIndexPaths = [indexPath]
+        } else {
+            state.removedAnnotationIndexPaths = [indexPath]
+            state.insertedAnnotationIndexPaths = [IndexPath(row: newIndex, section: indexPath.section)]
         }
     }
 
-    private func updatePdfAnnotationColor(for annotation: Annotation, state: PDFReaderState) {
-        let page = UInt(annotation.page)
-        guard let pdfAnnotation = state.document.annotations(at: page).first(where: { $0.key == annotation.key }) else { return }
+    private func updatePdfAnnotation(to annotation: Annotation, changes: PdfAnnotationChanges, state: PDFReaderState) {
+        guard !changes.isEmpty, let pdfAnnotation = state.document.annotations(at: UInt(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
 
-        let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
-                                                            isHighlight: (annotation.type == .highlight),
-                                                            userInterfaceStyle: state.interfaceStyle)
-        pdfAnnotation.baseColor = annotation.color
-        pdfAnnotation.color = color
-        pdfAnnotation.alpha = alpha
+        if changes.contains(.color) {
+            let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
+                                                                isHighlight: (annotation.type == .highlight),
+                                                                userInterfaceStyle: state.interfaceStyle)
+            pdfAnnotation.baseColor = annotation.color
+            pdfAnnotation.color = color
+            pdfAnnotation.alpha = alpha
+        }
+
+        if changes.contains(.comment) {
+            pdfAnnotation.contents = annotation.comment
+        }
 
         NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: pdfAnnotation,
-                                        userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: ["color", "alpha"]])
+                                        userInfo: [PSPDFAnnotationChangedNotificationKeyPathKey: PdfAnnotationChanges.stringValues(from: changes)])
     }
-
-
 
     /// Updates corresponding Zotero annotation to updated PSPDFKit annotation in document.
     /// - parameter annotation: Updated PSPDFKit annotation.
@@ -266,7 +287,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
 
         self.updateAnnotation(with: key,
-                              transformAnnotation: { $0.copy(rects: rects, sortIndex: sortIndex) },
+                              transformAnnotation: { ($0.copy(rects: rects, sortIndex: sortIndex), []) },
                               shouldReload: { original, new in
                                   // Reload only if aspect ratio changed.
                                   return original.boundingBox.heightToWidthRatio.rounded(to: 2) != new.boundingBox.heightToWidthRatio.rounded(to: 2)
@@ -746,6 +767,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         square.pageIndex = UInt(annotation.page)
         square.boundingBox = annotation.boundingBox
         square.borderColor = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle).color
+        square.contents = annotation.comment
         square.isZotero = true
         square.isEditable = annotation.editableInDocument
         square.baseColor = annotation.color
@@ -763,6 +785,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         highlight.rects = annotation.rects
         highlight.color = color
         highlight.alpha = alpha
+        highlight.contents = annotation.comment
         highlight.isZotero = true
         highlight.isEditable = annotation.editableInDocument
         highlight.baseColor = annotation.color
@@ -777,6 +800,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
         note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteAnnotationSize)
+        note.contents = annotation.comment
         note.isZotero = true
         note.isEditable = annotation.editableInDocument
         note.key = annotation.key
