@@ -333,6 +333,7 @@
 		B305678E23FC1305003304F2 /* FileStorage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678D23FC1305003304F2 /* FileStorage+Extension.swift */; };
 		B305679023FC1D9B003304F2 /* CollectionDifference+Separated.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */; };
 		B307E55E22D4A87B00592B3C /* SyncActionsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */; };
+		B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30A8C662582690900EC56FB /* HighlightAnnotation.swift */; };
 		B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B30B405E2490CAFC00FAAF6D /* ItemCell.xib */; };
 		B30B40612490D84300FAAF6D /* ItemCellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40602490D84300FAAF6D /* ItemCellModel.swift */; };
 		B30B40632490F09400FAAF6D /* FileAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30B40622490F09400FAAF6D /* FileAttachmentView.swift */; };
@@ -604,6 +605,7 @@
 		B398142E257A649D002C755C /* HighlightEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B398142C257A649D002C755C /* HighlightEditCell.swift */; };
 		B3981435257A82D4002C755C /* GrowingTextViewCellDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981434257A82D4002C755C /* GrowingTextViewCellDelegate.swift */; };
 		B398143F257A8EB2002C755C /* HighlightEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B398143E257A8EB2002C755C /* HighlightEditCell.xib */; };
+		B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3981B75258399AA00F8D15A /* NoteAnnotation.swift */; };
 		B39A403024BC902600205172 /* ColorPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39A402F24BC902600205172 /* ColorPickerView.swift */; };
 		B39B18E8223947050019F467 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39B18E7223947050019F467 /* main.swift */; };
 		B39C7BDE251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift */; };
@@ -955,6 +957,7 @@
 		B305678D23FC1305003304F2 /* FileStorage+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileStorage+Extension.swift"; sourceTree = "<group>"; };
 		B305678F23FC1D9B003304F2 /* CollectionDifference+Separated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CollectionDifference+Separated.swift"; sourceTree = "<group>"; };
 		B307E55D22D4A87B00592B3C /* SyncActionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActionsSpec.swift; sourceTree = "<group>"; };
+		B30A8C662582690900EC56FB /* HighlightAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightAnnotation.swift; sourceTree = "<group>"; };
 		B30B405E2490CAFC00FAAF6D /* ItemCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemCell.xib; sourceTree = "<group>"; };
 		B30B40602490D84300FAAF6D /* ItemCellModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCellModel.swift; sourceTree = "<group>"; };
 		B30B40622490F09400FAAF6D /* FileAttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachmentView.swift; sourceTree = "<group>"; };
@@ -1178,6 +1181,7 @@
 		B398142C257A649D002C755C /* HighlightEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightEditCell.swift; sourceTree = "<group>"; };
 		B3981434257A82D4002C755C /* GrowingTextViewCellDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowingTextViewCellDelegate.swift; sourceTree = "<group>"; };
 		B398143E257A8EB2002C755C /* HighlightEditCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = HighlightEditCell.xib; sourceTree = "<group>"; };
+		B3981B75258399AA00F8D15A /* NoteAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteAnnotation.swift; sourceTree = "<group>"; };
 		B39A402F24BC902600205172 /* ColorPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerView.swift; sourceTree = "<group>"; };
 		B39B18E7223947050019F467 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B39C7BDD251237D600C2CCF1 /* ReadUpdatedItemUpdateParametersDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadUpdatedItemUpdateParametersDbRequest.swift; sourceTree = "<group>"; };
@@ -2357,6 +2361,8 @@
 			children = (
 				B3B953C22459780600FC96DB /* Annotation.swift */,
 				B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */,
+				B30A8C662582690900EC56FB /* HighlightAnnotation.swift */,
+				B3981B75258399AA00F8D15A /* NoteAnnotation.swift */,
 				B3B953C9245981AD00FC96DB /* PDFReaderAction.swift */,
 				B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */,
 				B3B953C7245981A600FC96DB /* PDFReaderState.swift */,
@@ -3211,11 +3217,13 @@
 				B3BC6B1D250F797B006A8B9C /* FieldKeys.swift in Sources */,
 				B3830CEA255451DC00910FE0 /* TagPickerViewController.swift in Sources */,
 				B36C5086257521DE00A370D3 /* AnnotationEditActionHandler.swift in Sources */,
+				B30A8C672582690900EC56FB /* HighlightAnnotation.swift in Sources */,
 				B305667923FC051F003304F2 /* UserDefault+Extensions.swift in Sources */,
 				B34DF1BD2576956F0019CCD1 /* SwitchCell.swift in Sources */,
 				B37491332488D7040042FF85 /* SyncSettingsView.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
 				B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */,
+				B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */,
 				B30565E223FC051E003304F2 /* StoreCollectionsDbRequest.swift in Sources */,
 				B30565FA23FC051E003304F2 /* KeyGenerator.swift in Sources */,
 				B30566B923FC051F003304F2 /* SchemaResponse.swift in Sources */,

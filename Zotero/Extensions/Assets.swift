@@ -43,6 +43,8 @@ internal enum Asset {
   }
   internal enum Images {
     internal enum Annotations {
+      internal static let annotationNoteColor = ImageAsset(name: "Annotations/annotation-note-color")
+      internal static let annotationNote = ImageAsset(name: "Annotations/annotation-note")
       internal static let areaLarge = ImageAsset(name: "Annotations/area.large")
       internal static let areaMedium = ImageAsset(name: "Annotations/area.medium")
       internal static let highlighterLarge = ImageAsset(name: "Annotations/highlighter.large")

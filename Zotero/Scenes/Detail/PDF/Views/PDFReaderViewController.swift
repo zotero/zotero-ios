@@ -403,6 +403,8 @@ class PDFReaderViewController: UIViewController {
             builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation]
             builder.scrubberBarType = .horizontal
             builder.thumbnailBarMode = .scrubberBar
+            builder.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
+            builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
