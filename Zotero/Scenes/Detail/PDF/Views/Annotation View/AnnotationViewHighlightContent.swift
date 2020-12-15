@@ -37,7 +37,7 @@ class AnnotationViewHighlightContent: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with color: UIColor, text: String, halfBottomInset: Bool) {
+    func setup(with color: UIColor, text: String, bottomInset: CGFloat) {
         self.lineView.backgroundColor = color
 
         let paragraphStyle = NSMutableParagraphStyle()
@@ -48,7 +48,7 @@ class AnnotationViewHighlightContent: UIView {
                                                                              .foregroundColor: Asset.Colors.annotationText.color])
         self.textLabel.attributedText = attributedString
 
-        self.bottomInsetConstraint.constant = halfBottomInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
+        self.bottomInsetConstraint.constant = bottomInset
     }
 
     private func setupView() {
@@ -58,6 +58,7 @@ class AnnotationViewHighlightContent: UIView {
         let label = UILabel()
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -66,8 +67,7 @@ class AnnotationViewHighlightContent: UIView {
         self.addSubview(label)
         self.addSubview(button)
 
-        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
-        let bottomInset = self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight)
+        let bottomInset = self.bottomAnchor.constraint(equalTo: lineView.bottomAnchor, constant: self.layout.highlightLineVerticalInsets)
 
         NSLayoutConstraint.activate([
             // Horizontal
@@ -82,7 +82,7 @@ class AnnotationViewHighlightContent: UIView {
             // Vertical
             lineView.topAnchor.constraint(equalTo: label.topAnchor),
             lineView.bottomAnchor.constraint(equalTo: label.bottomAnchor),
-            label.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
+            lineView.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.highlightLineVerticalInsets),
             bottomInset,
             button.topAnchor.constraint(equalTo: self.topAnchor),
             button.bottomAnchor.constraint(equalTo: self.bottomAnchor)

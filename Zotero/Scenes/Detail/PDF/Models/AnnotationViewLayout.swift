@@ -18,6 +18,7 @@ struct AnnotationViewLayout {
     let verticalSpacerHeight: CGFloat
     // Line width shown next to the highlighted text in highlight annotation (sidebar or popover).
     let highlightLineWidth: CGFloat
+    let highlightLineVerticalInsets: CGFloat
     let commentMinHeight: CGFloat?
 
     let font: UIFont
@@ -34,6 +35,7 @@ struct AnnotationViewLayout {
         self.pageLabelLeadingOffset = 8
         self.highlightContentLeadingOffset = 8
         self.highlightLineWidth = 3
+        self.highlightLineVerticalInsets = 8
 
         switch type {
         case .cell:

@@ -15,7 +15,7 @@ class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
 
     override var noteIconPoint: CGPoint {
         var point = self.boundingBox.origin
-        point.y += self.boundingBox.height
+        point.y += self.boundingBox.height - (HighlightAnnotation.noteIconSize.height / 2)
         point.x -= HighlightAnnotation.noteIconSize.width
         return point
     }
@@ -33,11 +33,11 @@ class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
 
         let boundingBox = CGRect(origin: self.noteIconPoint, size: HighlightAnnotation.noteIconSize)
 
-        context.draw(outlineCgImage, in: boundingBox)
-
-        context.setBlendMode(.plusDarker)
         context.clip(to: boundingBox, mask: colorizedCgImage)
         color.setFill()
         context.fill(boundingBox)
+
+        context.resetClip()
+        context.draw(outlineCgImage, in: boundingBox)
     }
 }

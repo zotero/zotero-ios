@@ -104,7 +104,7 @@ class AnnotationView: UIView {
 
         self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel,
                           author: annotation.author, showsMenuButton: (hasWritePermission && selected))
-        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, availableWidth: availableWidth)
+        self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
         self.setupComments(for: annotation, attributedComment: attributedComment, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit)
         self.setupObserving()
@@ -119,7 +119,7 @@ class AnnotationView: UIView {
         self.bottomSeparator.isHidden = (self.tags.isHidden && self.tagsButton.isHidden) || (self.commentTextView.isHidden && commentButtonIsHidden && highlightContentIsHidden && imageContentIsHidden)
     }
 
-    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, availableWidth: CGFloat) {
+    private func setupContent(for annotation: Annotation, preview: UIImage?, color: UIColor, canEdit: Bool, selected: Bool, availableWidth: CGFloat) {
         guard let highlightContent = self.highlightContent, let imageContent = self.imageContent else { return }
 
         highlightContent.isUserInteractionEnabled = false
@@ -130,14 +130,23 @@ class AnnotationView: UIView {
         case .note: break
 
         case .highlight:
-            highlightContent.setup(with: color, text: (annotation.text ?? ""), halfBottomInset: !annotation.comment.isEmpty)
+            let bottomInset = self.inset(from: self.layout.highlightLineVerticalInsets, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset)
 
         case .image:
             let size = annotation.boundingBox.size
             let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
             let maxHeight = (size.height / size.width) * maxWidth
-            imageContent.setup(with: preview, height: maxHeight, halfBottomInset: annotation.comment.isEmpty)
+            let bottomInset = self.inset(from: self.layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
+            imageContent.setup(with: preview, height: maxHeight, bottomInset: bottomInset)
         }
+    }
+
+    private func inset(from baseInset: CGFloat, hasComment: Bool, selected: Bool, canEdit: Bool) -> CGFloat {
+        if hasComment {
+            return self.layout.highlightLineVerticalInsets / 2
+        }
+        return (selected && canEdit) ? 0 : self.layout.highlightLineVerticalInsets
     }
 
     private func setupComments(for annotation: Annotation, attributedComment: NSAttributedString?, canEdit: Bool) {
