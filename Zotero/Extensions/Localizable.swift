@@ -46,6 +46,8 @@ internal enum L10n {
   internal static let no = L10n.tr("Localizable", "no")
   /// Ok
   internal static let ok = L10n.tr("Localizable", "ok")
+  /// Page
+  internal static let page = L10n.tr("Localizable", "page")
   /// Publication Title
   internal static let publicationTitle = L10n.tr("Localizable", "publication_title")
   /// Publisher
@@ -329,8 +331,6 @@ internal enum L10n {
       internal static let addComment = L10n.tr("Localizable", "pdf.annotations_sidebar.add_comment")
       /// Add tags
       internal static let addTags = L10n.tr("Localizable", "pdf.annotations_sidebar.add_tags")
-      /// Page
-      internal static let page = L10n.tr("Localizable", "pdf.annotations_sidebar.page")
       /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
     }

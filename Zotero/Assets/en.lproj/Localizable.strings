@@ -32,6 +32,7 @@
 "add" = "Add";
 "unknown" = "Unknown";
 "retry" = "Retry";
+"page" = "Page";
 
 "day_suffixes" = "st,nd,rd,th";
 
@@ -131,7 +132,6 @@
 "pdf.pageTransition" = "Page Transition: %@";
 "pdf.pageTransition.jump" = "Jump";
 "pdf.pageTransition.continuous" = "Continuous";
-"pdf.annotations_sidebar.page" = "Page";
 "pdf.annotations_sidebar.search_title" = "Search";
 "pdf.annotations_sidebar.add_comment" = "Add comment";
 "pdf.annotations_sidebar.add_tags" = "Add tags";

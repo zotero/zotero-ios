@@ -62,6 +62,10 @@ extension PSPDFKit.Annotation {
             }
         }
     }
+
+    var previewBoundingBox: CGRect {
+        return self.boundingBox.insetBy(dx: (self.lineWidth + 1), dy: (self.lineWidth + 1))
+    }
 }
 
 #endif

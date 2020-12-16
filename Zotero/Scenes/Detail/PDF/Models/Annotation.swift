@@ -28,6 +28,10 @@ struct Annotation {
     let didChange: Bool
     let editableInDocument: Bool
 
+    var previewBoundingBox: CGRect {
+        return self.boundingBox.insetBy(dx: (PDFReaderLayout.imageAnnotationLineWidth + 1), dy: (PDFReaderLayout.imageAnnotationLineWidth + 1))
+    }
+
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
          text: String?, isLocked: Bool, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editableInDocument: Bool) {
         self.key = key

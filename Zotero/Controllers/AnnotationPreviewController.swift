@@ -87,7 +87,7 @@ extension AnnotationPreviewController {
         guard let key = annotation.key, let document = annotation.document else { return }
 
         // Cache and report original color
-        let rect = annotation.boundingBox.insetBy(dx: (annotation.lineWidth + 1), dy: (annotation.lineWidth + 1))
+        let rect = annotation.previewBoundingBox
         self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
                      invertColors: false, isDark: isDark, type: .cachedAndReported)
         // If in dark mode, only cache light mode version, which is required for backend upload

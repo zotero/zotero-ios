@@ -46,7 +46,7 @@ class AnnotationViewHeader: UIView {
     func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
-        self.pageLabel.text = pageLabel
+        self.pageLabel.text = L10n.page + " " + pageLabel
         self.authorLabel.text = author
         self.menuButton.isHidden = !showsMenuButton
         self.authorTrailingToButton.isActive = showsMenuButton

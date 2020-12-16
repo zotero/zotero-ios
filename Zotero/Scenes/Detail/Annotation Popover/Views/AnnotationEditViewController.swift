@@ -210,7 +210,7 @@ extension AnnotationEditViewController: UITableViewDataSource {
             }
 
         case .pageLabel:
-            cell.textLabel?.text = self.viewModel.state.annotation.pageLabel
+            cell.textLabel?.text = L10n.page + " " + self.viewModel.state.annotation.pageLabel
             cell.accessoryType = .disclosureIndicator
 
         case .actions:

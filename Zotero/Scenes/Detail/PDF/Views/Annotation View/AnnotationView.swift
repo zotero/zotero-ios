@@ -134,9 +134,9 @@ class AnnotationView: UIView {
             highlightContent.setup(with: color, text: (annotation.text ?? ""), bottomInset: bottomInset)
 
         case .image:
-            let size = annotation.boundingBox.size
+            let size = annotation.previewBoundingBox.size
             let maxWidth = availableWidth - (self.layout.horizontalInset * 2)
-            let maxHeight = (size.height / size.width) * maxWidth
+            let maxHeight = ceil((size.height / size.width) * maxWidth)
             let bottomInset = self.inset(from: self.layout.verticalSpacerHeight, hasComment: !annotation.comment.isEmpty, selected: selected, canEdit: canEdit)
             imageContent.setup(with: preview, height: maxHeight, bottomInset: bottomInset)
         }
@@ -144,9 +144,9 @@ class AnnotationView: UIView {
 
     private func inset(from baseInset: CGFloat, hasComment: Bool, selected: Bool, canEdit: Bool) -> CGFloat {
         if hasComment {
-            return self.layout.highlightLineVerticalInsets / 2
+            return baseInset / 2
         }
-        return (selected && canEdit) ? 0 : self.layout.highlightLineVerticalInsets
+        return (selected && canEdit) ? 0 : baseInset
     }
 
     private func setupComments(for annotation: Annotation, attributedComment: NSAttributedString?, canEdit: Bool) {
