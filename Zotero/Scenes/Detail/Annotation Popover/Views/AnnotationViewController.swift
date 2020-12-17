@@ -23,6 +23,13 @@ class AnnotationViewController: UIViewController {
 
     weak var coordinatorDelegate: AnnotationPopoverAnnotationCoordinatorDelegate?
 
+    private var commentPlaceholder: String {
+        if self.viewModel.state.library.metadataEditable || self.viewModel.state.selectedAnnotation?.isAuthor == true {
+            return L10n.Pdf.AnnotationsSidebar.addComment
+        }
+        return L10n.Pdf.AnnotationPopover.noComment
+    }
+
     // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, attributedStringConverter: HtmlAttributedStringConverter) {
@@ -37,7 +44,7 @@ class AnnotationViewController: UIViewController {
     }
 
     override func loadView() {
-        let annotationView = AnnotationView(layout: AnnotationPopoverLayout.annotationLayout)
+        let annotationView = AnnotationView(layout: AnnotationPopoverLayout.annotationLayout, commentPlaceholder: self.commentPlaceholder)
         annotationView.widthAnchor.constraint(equalToConstant: AnnotationPopoverLayout.width).isActive = true
         self.annotationView = annotationView
 
@@ -114,8 +121,12 @@ class AnnotationViewController: UIViewController {
                                                })
         case .setComment(let comment):
             self.viewModel.process(action: .setComment(key: annotation.key, comment: comment))
+
+        case .setCommentActive: break
+
         case .reloadHeight:
             self.updatePreferredContentSize()
+
         case .tags:
             guard annotation.isAuthor else { return }
 
@@ -129,7 +140,7 @@ class AnnotationViewController: UIViewController {
     private func update(annotationView: AnnotationView, state: PDFReaderState) {
         guard let annotation = state.selectedAnnotation else { return }
         let comment = self.attributedStringConverter.convert(text: annotation.comment, baseFont: AnnotationPopoverLayout.annotationLayout.font)
-        annotationView.setup(with: annotation, attributedComment: comment, preview: nil, selected: true,
+        annotationView.setup(with: annotation, attributedComment: comment, preview: nil, selected: true, commentActive: true,
                              availableWidth: AnnotationPopoverLayout.width, hasWritePermission: state.library.metadataEditable)
     }
 

@@ -12,7 +12,7 @@ import RxSwift
 
 class GrowingTextViewCellDelegate: NSObject {
     private unowned let label: UILabel
-    private let placeholder: String?
+    private let placeholder: NSAttributedString?
     private let menuItems: [UIMenuItem]?
 
     private var observer: AnyObserver<(NSAttributedString, Bool)>?
@@ -23,7 +23,7 @@ class GrowingTextViewCellDelegate: NSObject {
         }
     }
 
-    init(label: UILabel, placeholder: String?, menuItems: [UIMenuItem]?) {
+    init(label: UILabel, placeholder: NSAttributedString?, menuItems: [UIMenuItem]?) {
         self.label = label
         self.placeholder = placeholder
         self.menuItems = menuItems
@@ -49,21 +49,21 @@ extension GrowingTextViewCellDelegate: UITextViewDelegate {
         if let menuItems = self.menuItems {
             UIMenuController.shared.menuItems = menuItems
         }
-        if textView.text == self.placeholder {
+        if textView.text == self.placeholder?.string {
             textView.selectedRange = NSRange(location: 0, length: 0)
         }
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
         if let placeholder = self.placeholder, textView.text.isEmpty {
-            textView.text = placeholder
+            textView.attributedText = placeholder
             textView.textColor = .lightGray
-            self.label.text = self.placeholder
+            self.label.attributedText = placeholder
         }
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if textView.text == self.placeholder {
+        if textView.text == self.placeholder?.string {
             textView.text = ""
             textView.textColor = .black
             self.label.text = " "

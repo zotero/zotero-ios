@@ -16,7 +16,7 @@ class AnnotationViewTextView: UIView {
     private weak var topInsetConstraint: NSLayoutConstraint!
 
     private let layout: AnnotationViewLayout
-    private let placeholder: String
+    private let placeholder: NSAttributedString
 
     private var textViewDelegate: GrowingTextViewCellDelegate!
     var textObservable: Observable<(NSAttributedString, Bool)> {
@@ -26,8 +26,13 @@ class AnnotationViewTextView: UIView {
     // MARK: - Lifecycle
 
     init(layout: AnnotationViewLayout, placeholder: String) {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.minimumLineHeight = layout.lineHeight
+        paragraphStyle.maximumLineHeight = layout.lineHeight
+        let attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [.font: layout.font, .paragraphStyle: paragraphStyle])
+
         self.layout = layout
-        self.placeholder = placeholder
+        self.placeholder = attributedPlaceholder
 
         super.init(frame: CGRect())
 
@@ -55,13 +60,14 @@ class AnnotationViewTextView: UIView {
     // MARK: - Setups
 
     func setup(text: NSAttributedString?, halfTopInset: Bool) {
-        self.label.attributedText = text
         if let text = text, !text.string.isEmpty {
-            self.textView.textColor = .black
             self.textView.attributedText = text
+            self.textView.textColor = .black
+            self.label.attributedText = text
         } else {
+            self.textView.attributedText = self.placeholder
             self.textView.textColor = .lightGray
-            self.textView.text = self.placeholder
+            self.label.attributedText = self.placeholder
         }
 
         let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
@@ -80,7 +86,7 @@ class AnnotationViewTextView: UIView {
         let textView = AnnotationTextView(defaultFont: self.layout.font)
         textView.textContainerInset = UIEdgeInsets()
         textView.textContainer.lineFragmentPadding = 0
-        textView.text = self.placeholder
+        textView.attributedText = self.placeholder
         textView.textColor = .lightGray
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false

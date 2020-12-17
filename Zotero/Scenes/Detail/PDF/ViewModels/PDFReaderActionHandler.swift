@@ -101,6 +101,16 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                                   additionalStateChange: { $0.comments[key] = comment },
                                   in: viewModel)
 
+        case .setCommentActive(let isActive):
+            guard let annotation = viewModel.state.selectedAnnotation else { return }
+            self.update(viewModel: viewModel) { state in
+                state.selectedAnnotationCommentActive = isActive
+                if let index = state.annotations[annotation.page]?.firstIndex(where: { annotation.key == $0.key }) {
+                    state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: annotation.page)]
+                }
+                state.changes = .activeComment
+            }
+
         case .setTags(let tags, let key):
             self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(tags: tags), []) }, in: viewModel)
 
@@ -372,6 +382,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             if let existing = state.selectedAnnotation,
                let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
                 state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
+                state.selectedAnnotationCommentActive = false
+                state.changes.insert(.activeComment)
             }
 
             if let annotation = annotation, let index = index {
@@ -573,7 +585,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             if shouldRemoveSelection {
                 state.selectedAnnotation = nil
+                state.selectedAnnotationCommentActive = false
                 state.changes.insert(.selection)
+                state.changes.insert(.activeComment)
             }
 
             state.removedAnnotationIndexPaths = toRemove

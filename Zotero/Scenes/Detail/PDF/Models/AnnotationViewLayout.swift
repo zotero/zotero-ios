@@ -27,7 +27,6 @@ struct AnnotationViewLayout {
     let backgroundColor: UIColor
 
     let showsContent: Bool
-    let alwaysShowComment: Bool
     let scrollableBody: Bool
 
     init(type: AnnotationView.Kind) {
@@ -47,7 +46,6 @@ struct AnnotationViewLayout {
             self.pageLabelFont = .systemFont(ofSize: 15, weight: .bold)
             self.showsContent = true
             self.commentMinHeight = nil
-            self.alwaysShowComment = false
             self.scrollableBody = false
             self.backgroundColor = Asset.Colors.annotationCellBackground.color
             
@@ -60,7 +58,6 @@ struct AnnotationViewLayout {
             self.pageLabelFont = .preferredFont(for: .body, weight: .bold)
             self.showsContent = false
             self.commentMinHeight = self.lineHeight * 3
-            self.alwaysShowComment = true
             self.scrollableBody = true
             self.backgroundColor = Asset.Colors.annotationPopoverBackground.color
         }

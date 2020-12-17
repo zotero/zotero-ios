@@ -24,6 +24,7 @@ struct PDFReaderState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 1)
         static let interfaceStyle = Changes(rawValue: 1 << 2)
         static let activeColor = Changes(rawValue: 1 << 3)
+        static let activeComment = Changes(rawValue: 1 << 4)
     }
 
     static let activeColorKey = "PDFReaderState.activeColor"
@@ -43,6 +44,7 @@ struct PDFReaderState: ViewModelState {
     var currentFilter: String?
     var changes: Changes
     var selectedAnnotation: Annotation?
+    var selectedAnnotationCommentActive: Bool
     /// Location to focus in document
     var focusDocumentLocation: AnnotationDocumentLocation?
     /// Annotation key to focus in annotation sidebar
@@ -66,6 +68,7 @@ struct PDFReaderState: ViewModelState {
         self.document = Document(url: url)
         self.annotations = [:]
         self.comments = [:]
+        self.selectedAnnotationCommentActive = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
         self.commentFont = PDFReaderLayout.annotationLayout.font
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)

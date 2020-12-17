@@ -32,6 +32,7 @@ enum PDFReaderAction {
     case setActiveColor(String)
     case saveChanges
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
+    case setCommentActive(Bool)
 }
 
 #endif

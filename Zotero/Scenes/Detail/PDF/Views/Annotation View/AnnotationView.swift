@@ -20,6 +20,7 @@ class AnnotationView: UIView {
         case options(UIButton)
         case reloadHeight
         case setComment(NSAttributedString)
+        case setCommentActive(Bool)
     }
 
     private let layout: AnnotationViewLayout
@@ -39,15 +40,9 @@ class AnnotationView: UIView {
 
     private(set) var disposeBag: DisposeBag!
 
-    private var shouldHalveTopInset: Bool {
-        let highlightContentIsHidden = self.highlightContent?.isHidden ?? true
-        let imageContentIsHidden = self.imageContent?.isHidden ?? true
-        return !highlightContentIsHidden || !imageContentIsHidden
-    }
-
     // MARK: - Lifecycle
 
-    init(layout: AnnotationViewLayout) {
+    init(layout: AnnotationViewLayout, commentPlaceholder: String) {
         self.layout = layout
         self.actionPublisher = PublishSubject()
 
@@ -55,7 +50,7 @@ class AnnotationView: UIView {
 
         self.backgroundColor = layout.backgroundColor
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.setupView()
+        self.setupView(commentPlaceholder: commentPlaceholder)
     }
 
     required init?(coder: NSCoder) {
@@ -74,17 +69,6 @@ class AnnotationView: UIView {
         imageContent.setup(with: image)
     }
 
-    private func addComment() {
-        self.commentButton?.isHidden = true
-        self.commentTextView.setup(text: nil, halfTopInset: self.shouldHalveTopInset)
-        self.commentTextView.isHidden = false
-        self.layoutIfNeeded()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            self.commentTextView.becomeFirstResponder()
-        }
-    }
-
     private func scrollToBottomIfNeeded() {
         guard let scrollView = self.scrollView, let contentView = self.scrollViewContent, contentView.frame.height > scrollView.frame.height else { return }
         let yOffset = scrollView.contentSize.height - scrollView.bounds.height + scrollView.contentInset.bottom
@@ -98,14 +82,14 @@ class AnnotationView: UIView {
         self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: annotation.author, showsMenuButton: (hasWritePermission && selected))
     }
 
-    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
+    func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
-        let canEdit = selected && (hasWritePermission || annotation.isAuthor)
+        let canEdit = selected && (hasWritePermission)// || annotation.isAuthor)
 
         self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel,
                           author: annotation.author, showsMenuButton: (hasWritePermission && selected))
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
-        self.setupComments(for: annotation, attributedComment: attributedComment, canEdit: canEdit)
+        self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit)
         self.setupObserving()
 
@@ -149,20 +133,22 @@ class AnnotationView: UIView {
         return (selected && canEdit) ? 0 : baseInset
     }
 
-    private func setupComments(for annotation: Annotation, attributedComment: NSAttributedString?, canEdit: Bool) {
-        guard self.layout.alwaysShowComment || !annotation.comment.isEmpty else {
+    private func setupComments(for annotation: Annotation, attributedComment: NSAttributedString?, isActive: Bool, canEdit: Bool) {
+        guard isActive || !annotation.comment.isEmpty else {
             self.commentButton?.isHidden = !canEdit
             self.commentTextView.isHidden = true
             return
         }
 
         let comment = attributedComment.flatMap({ self.attributedString(from: $0) })
-
-        self.commentTextView.setup(text: comment, halfTopInset: self.shouldHalveTopInset)
+        self.commentTextView.setup(text: comment, halfTopInset: false)
 
         self.commentButton?.isHidden = true
         self.commentTextView.isHidden = false
         self.commentTextView.isUserInteractionEnabled = canEdit
+        if canEdit && isActive {
+            self.commentTextView.becomeFirstResponder()
+        }
     }
 
     private func setupTags(for annotation: Annotation, canEdit: Bool) {
@@ -182,7 +168,10 @@ class AnnotationView: UIView {
     private func setupObserving() {
         self.disposeBag = DisposeBag()
 
-        self.commentButton?.rx.tap.subscribe(onNext: { [weak self] _ in self?.addComment() }).disposed(by: self.disposeBag)
+        self.commentButton?.rx.tap.subscribe(onNext: { [weak self] _ in
+            self?.actionPublisher.on(.next(.setCommentActive(true)))
+        })
+        .disposed(by: self.disposeBag)
 
         self.commentTextView.textObservable.subscribe(onNext: { [weak self] text, needsHeightReload in
             self?.actionPublisher.on(.next(.setComment(text)))
@@ -198,10 +187,10 @@ class AnnotationView: UIView {
         self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
     }
 
-    private func setupView() {
+    private func setupView(commentPlaceholder: String) {
         self.header = AnnotationViewHeader(layout: self.layout)
         self.topSeparator = AnnotationViewSeparator()
-        self.commentTextView = AnnotationViewTextView(layout: self.layout, placeholder: L10n.Pdf.AnnotationsSidebar.addComment)
+        self.commentTextView = AnnotationViewTextView(layout: self.layout, placeholder: commentPlaceholder)
         self.bottomSeparator = AnnotationViewSeparator()
         self.tagsButton = AnnotationViewButton(layout: self.layout)
         self.tagsButton.setTitle(L10n.Pdf.AnnotationsSidebar.addTags, for: .normal)
