@@ -37,6 +37,8 @@ internal enum Asset {
     internal static let navbarBackground = ColorAsset(name: "navbarBackground")
     internal static let onboardingTitle = ColorAsset(name: "onboardingTitle")
     internal static let pdfScrubberBarBackground = ColorAsset(name: "pdfScrubberBarBackground")
+    internal static let searchBackground = ColorAsset(name: "searchBackground")
+    internal static let searchMagnifyingGlass = ColorAsset(name: "searchMagnifyingGlass")
     internal static let zoteroBlue = ColorAsset(name: "zoteroBlue")
     internal static let zoteroBlueWithDarkMode = ColorAsset(name: "zoteroBlueWithDarkMode")
     internal static let zoteroDarkBlue = ColorAsset(name: "zoteroDarkBlue")

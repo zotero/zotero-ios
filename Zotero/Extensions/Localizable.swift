@@ -362,6 +362,11 @@ internal enum L10n {
     }
   }
 
+  internal enum Searchbar {
+    /// Search
+    internal static let placeholder = L10n.tr("Localizable", "searchbar.placeholder")
+  }
+
   internal enum Settings {
     /// Debug
     internal static let debug = L10n.tr("Localizable", "settings.debug")

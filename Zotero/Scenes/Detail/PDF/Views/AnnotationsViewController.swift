@@ -244,26 +244,38 @@ class AnnotationsViewController: UIViewController {
     }
 
     private func setupSearchController() {
-        let controller = UISearchController(searchResultsController: nil)
-        controller.searchBar.searchBarStyle = .minimal
-        controller.searchBar.placeholder = L10n.Pdf.AnnotationsSidebar.searchTitle
-        controller.searchBar.barTintColor = .systemGray6
-        controller.obscuresBackgroundDuringPresentation = false
-        controller.hidesNavigationBarDuringPresentation = false
+//        let controller = UISearchController(searchResultsController: nil)
+//        controller.searchBar.searchBarStyle = .minimal
+//        controller.searchBar.placeholder = L10n.Pdf.AnnotationsSidebar.searchTitle
+//        controller.searchBar.barTintColor = .systemGray6
+//        controller.obscuresBackgroundDuringPresentation = false
+//        controller.hidesNavigationBarDuringPresentation = false
+//
+//        var frame = controller.searchBar.frame
+//        frame.size.height = 52
+//        controller.searchBar.frame = frame
 
-        var frame = controller.searchBar.frame
-        frame.size.height = 52
-        controller.searchBar.frame = frame
+//        self.tableView.tableHeaderView = controller.searchBar
+//        self.searchController = controller
 
-        self.tableView.tableHeaderView = controller.searchBar
-        self.searchController = controller
+//        controller.searchBar.rx
 
-        controller.searchBar.rx.text.observeOn(MainScheduler.instance)
-                                    .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
-                                    .subscribe(onNext: { [weak self] text in
-                                        self?.viewModel.process(action: .searchAnnotations(text ?? ""))
-                                    })
-                                    .disposed(by: self.disposeBag)
+        let insets = UIEdgeInsets(top: PDFReaderLayout.searchBarVerticalInset,
+                                  left: PDFReaderLayout.annotationLayout.horizontalInset,
+                                  bottom: PDFReaderLayout.searchBarVerticalInset - PDFReaderLayout.cellSelectionLineWidth,
+                                  right: PDFReaderLayout.annotationLayout.horizontalInset)
+
+        var frame = self.tableView.frame
+        frame.size.height = 65
+
+        let searchBar = SearchBar(frame: frame, insets: insets, cornerRadius: 10)
+        searchBar.text.observeOn(MainScheduler.instance)
+                                .debounce(.milliseconds(150), scheduler: MainScheduler.instance)
+                                .subscribe(onNext: { [weak self] text in
+                                    self?.viewModel.process(action: .searchAnnotations(text))
+                                })
+                                .disposed(by: self.disposeBag)
+        self.tableView.tableHeaderView = searchBar
     }
 
     private func setupTableView(with keyboardData: KeyboardData) {

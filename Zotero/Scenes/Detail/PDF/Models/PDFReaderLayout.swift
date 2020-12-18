@@ -14,6 +14,7 @@ struct PDFReaderLayout {
     static let separatorWidth: CGFloat = 1 / UIScreen.main.scale
     static let cellSeparatorHeight: CGFloat = 13
     static let cellSelectionLineWidth: CGFloat = 3
+    static let searchBarVerticalInset: CGFloat = 16
 
     private static func createSidebarWidth() -> CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
