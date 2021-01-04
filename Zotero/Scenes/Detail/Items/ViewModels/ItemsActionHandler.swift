@@ -400,7 +400,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         let attachments = urls.map({ Files.file(from: $0) })
                               .map({
                                   Attachment(key: KeyGenerator.newKey,
-                                             title: $0.name,
+                                             title: $0.name + "." + $0.ext,
                                              type: .file(file: $0, filename: $0.name, location: .local, linkType: .imported),
                                              libraryId: viewModel.state.library.identifier)
                               })

@@ -132,10 +132,9 @@ class ExtensionStore {
             init(item: ItemResponse, attachmentKey: String, attachmentData: [String: String], attachmentFile: File, defaultTitle: String,
                  collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
-                let filename = attachmentData["title"] ?? defaultTitle
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
-                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported),
-                                            libraryId: libraryId)
+                let filename = (attachmentData["title"] ?? defaultTitle) + "." + file.ext
+                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported), libraryId: libraryId)
 
                 self.type = .translated(item: newItem, location: attachmentFile)
                 self.attachment = attachment
@@ -146,10 +145,9 @@ class ExtensionStore {
             }
 
             init(localFile: File, attachmentKey: String, collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
-                let filename = localFile.name
+                let filename = localFile.name + "." + localFile.ext
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: localFile.ext)
-                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported),
-                                            libraryId: libraryId)
+                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported), libraryId: libraryId)
 
                 self.type = .localFile(location: localFile, collections: collections)
                 self.attachment = attachment

@@ -449,7 +449,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             let key = KeyGenerator.newKey
             let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, ext: originalFile.ext)
             let attachment = Attachment(key: key,
-                                        title: originalFile.name,
+                                        title: originalFile.name + "." + originalFile.ext,
                                         type: .file(file: file, filename: originalFile.name, location: .local, linkType: .imported),
                                         libraryId: viewModel.state.library.identifier)
 
