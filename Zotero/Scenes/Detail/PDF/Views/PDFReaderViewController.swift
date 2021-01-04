@@ -151,7 +151,7 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
-        guard UIDevice.current.userInterfaceIdiom == .pad && !self.isSidebarOpened,
+        guard !self.isSidebarOpened,
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
