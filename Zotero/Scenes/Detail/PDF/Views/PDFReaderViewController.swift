@@ -22,7 +22,6 @@ class PDFReaderViewController: UIViewController {
     }
 
     private let viewModel: ViewModel<PDFReaderActionHandler>
-    private unowned let annotationPreviewController: AnnotationPreviewController
     private unowned let pageController: PdfPageController
     private let disposeBag: DisposeBag
 
@@ -67,10 +66,9 @@ class PDFReaderViewController: UIViewController {
 
     // MARK: - Lifecycle
 
-    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, annotationPreviewController: AnnotationPreviewController, pageController: PdfPageController) {
+    init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool, pageController: PdfPageController) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
-        self.annotationPreviewController = annotationPreviewController
         self.pageController = pageController
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()

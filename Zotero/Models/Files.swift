@@ -106,7 +106,7 @@ struct Files {
 
     static func annotationPreview(annotationKey: String, pdfKey: String, isDark: Bool) -> File {
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", pdfKey],
-                        name: annotationKey + (isDark ? "_dark" : ""), ext: "jpg")
+                        name: annotationKey + (isDark ? "_dark" : ""), ext: "png")
     }
 
     static func annotationContainer(pdfKey: String) -> File {
