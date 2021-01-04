@@ -26,12 +26,14 @@ class ItemDetailViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private var tableViewHandler: ItemDetailTableViewHandler!
+    private var downloadingViaNavigationBar: Bool
 
     weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
 
     init(viewModel: ViewModel<ItemDetailActionHandler>, controllers: Controllers) {
         self.viewModel = viewModel
         self.controllers = controllers
+        self.downloadingViaNavigationBar = false
         self.disposeBag = DisposeBag()
         super.init(nibName: "ItemDetailViewController", bundle: nil)
     }
@@ -247,13 +249,18 @@ class ItemDetailViewController: UIViewController {
 
         switch state {
         case .ready(let index):
+            self.downloadingViaNavigationBar = false
+
             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
+                self?.downloadingViaNavigationBar = true
                 self?.viewModel.process(action: .openAttachment(index))
             }).disposed(by: self.disposeBag)
             items.append(button)
 
         case .error(let index, let error):
+            self.downloadingViaNavigationBar = false
+
             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
@@ -263,10 +270,15 @@ class ItemDetailViewController: UIViewController {
             items.append(button)
 
         case .downloading:
-            let activityIndicator = UIActivityIndicatorView(style: .medium)
-            activityIndicator.startAnimating()
-            let item = UIBarButtonItem(customView: activityIndicator)
-            items.append(item)
+            if self.downloadingViaNavigationBar {
+                let activityIndicator = UIActivityIndicatorView(style: .medium)
+                activityIndicator.startAnimating()
+                let item = UIBarButtonItem(customView: activityIndicator)
+                items.append(item)
+            } else {
+                let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
+                items.append(button)
+            }
         }
 
         return items
