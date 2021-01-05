@@ -153,17 +153,25 @@ extension AnnotationPreviewController {
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
     private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
-        let options = RenderOptions()
-        options.skipAnnotationArray = document.annotations(at: pageIndex)
-        if invertColors {
-            if let invertFilter = CIFilter(name: "CIColorInvert") {
-                options.additionalCIFilters = [invertFilter]
-            }
-//            options.filters = [.colorCorrectInverted]
-        }
-//        options.invertRenderColor = true
+        /*
+         Workaround for PSPDFKit issue.
 
-        let request = MutableRenderRequest(document: document)
+         The way these render options work is that they are applied on top of the original document page colors.
+
+         So if the appearance mode of a PDFViewController is set to night mode and enabling invertRenderColor at that point for a render request of a document displayed in that PDFViewController
+         will not result into reverting the rendering back to light mode. You will have to not enable invertRenderColor option when
+         PDFViewController.appearanceModeManager.appearanceMode is set to night.
+
+         However, even while setting invertRenderColor to false with the appearance mode set to night results in the rendering to be inverted. This should not be the case. So create a dummy document
+         just for rendering and invert only when inverting from light to dark mode
+         */
+        let newDoc = Document(url: document.fileURL!)
+
+        let options = RenderOptions()
+        options.skipAnnotationArray = newDoc.annotations(at: pageIndex)
+        options.invertRenderColor = !invertColors && isDark
+
+        let request = MutableRenderRequest(document: newDoc)
         request.imageSize = self.size
         request.pageIndex = pageIndex
         request.pdfRect = rect
