@@ -152,8 +152,7 @@ extension AnnotationPreviewController {
     /// - parameter isDark: `true` if rendered image is in dark mode, `false` otherwise.
     /// - parameter type: Type of preview image. If `temporary`, requested image is temporary and is returned as `Single<UIImage>`. Otherwise image is
     ///                   cached locally and reported through `PublishSubject`.
-    private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, invertColors: Bool = false,
-                         isDark: Bool = false, type: PreviewType) {
+    private func enqueue(key: String, parentKey: String, document: Document, pageIndex: PageIndex, rect: CGRect, invertColors: Bool = false, isDark: Bool = false, type: PreviewType) {
         let options = RenderOptions()
         options.skipAnnotationArray = document.annotations(at: pageIndex)
         if invertColors {
@@ -162,7 +161,7 @@ extension AnnotationPreviewController {
             }
 //            options.filters = [.colorCorrectInverted]
         }
-//        options.invertRenderColor = invertColors
+//        options.invertRenderColor = true
 
         let request = MutableRenderRequest(document: document)
         request.imageSize = self.size
