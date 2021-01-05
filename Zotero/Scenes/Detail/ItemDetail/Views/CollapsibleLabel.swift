@@ -145,7 +145,8 @@ class CollapsibleLabel: UILabel {
         }
 
         let size = CGSize(width: self.frame.width, height: .greatestFiniteMagnitude)
-        return text.boundingRect(with: size, options: [.usesLineFragmentOrigin], context: nil).size.height <= lineHeight
+        let height = text.boundingRect(with: size, options: [.usesLineFragmentOrigin], context: nil).size.height
+        return height <= lineHeight
     }
 }
 

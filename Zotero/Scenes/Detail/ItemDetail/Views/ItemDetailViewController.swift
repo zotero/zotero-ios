@@ -27,6 +27,7 @@ class ItemDetailViewController: UIViewController {
 
     private var tableViewHandler: ItemDetailTableViewHandler!
     private var downloadingViaNavigationBar: Bool
+    private var didAppear: Bool
 
     weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
 
@@ -34,6 +35,7 @@ class ItemDetailViewController: UIViewController {
         self.viewModel = viewModel
         self.controllers = controllers
         self.downloadingViaNavigationBar = false
+        self.didAppear = false
         self.disposeBag = DisposeBag()
         super.init(nibName: "ItemDetailViewController", bundle: nil)
     }
@@ -69,8 +71,30 @@ class ItemDetailViewController: UIViewController {
                              .disposed(by: self.disposeBag)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.didAppear = true
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        if !self.didAppear {
+            // Collapsed abstract is sometimes rendered incorrectly initially. The height of cell has proper height, but only 1 line is shown instead of 2.
+            self.tableView.reloadData()
+        }
+    }
+
     deinit {
         DDLogInfo("ItemDetailViewController deinitialized")
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: { _ in
+            self.tableView.reloadData()
+        }, completion: nil)
     }
 
     // MARK: - Navigation
@@ -166,8 +190,7 @@ class ItemDetailViewController: UIViewController {
             self.tableViewHandler.reloadTitleWidth(from: state.data)
         }
 
-        if state.changes.contains(.editing) ||
-           state.changes.contains(.type) {
+        if state.changes.contains(.editing) || state.changes.contains(.type) {
             self.tableViewHandler.reloadSections(to: state)
         } else {
             if state.changes.contains(.attachmentFilesRemoved) {

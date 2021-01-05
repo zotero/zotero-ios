@@ -19,19 +19,41 @@ class ItemDetailAbstractCell: RxTableViewCell {
     @IBOutlet private weak var contentLabel: CollapsibleLabel!
     @IBOutlet private weak var contentBottom: NSLayoutConstraint!
 
+    private static let paragraphStyle: NSMutableParagraphStyle = {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.hyphenationFactor = 1
+        paragraphStyle.alignment = .justified
+        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
+        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
+        return paragraphStyle
+    }()
+
+    private var titleFont: UIFont {
+        return UIFont.preferredFont(for: .headline, weight: .regular)
+    }
+
+    private var bodyFont: UIFont {
+        return UIFont.preferredFont(forTextStyle: .body)
+    }
+
+    private var showMoreLessFont: UIFont {
+        return UIFont.systemFont(ofSize: 13)
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.separatorHeight.constant = ItemDetailLayout.separatorHeight
 
-        let font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.titleLabel.font = font
-        self.titleTop.constant = ItemDetailLayout.separatorHeight - (font.ascender - font.capHeight)
+        let titleFont = self.titleFont
+        self.titleLabel.font = titleFont
+        self.titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
         self.contentBottom.constant = -ItemDetailLayout.separatorHeight
 
-        let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13),
-                                                         .foregroundColor: Asset.Colors.zoteroBlue.color]
-        let showMore = NSMutableAttributedString(string: " ... ")
+        let attributes: [NSAttributedString.Key: Any] = [.font: self.showMoreLessFont,
+                                                         .foregroundColor: Asset.Colors.zoteroBlue.color,
+                                                         .paragraphStyle: ItemDetailAbstractCell.paragraphStyle]
+        let showMore = NSMutableAttributedString(string: " ... ", attributes: [.font: self.bodyFont, .paragraphStyle: ItemDetailAbstractCell.paragraphStyle])
         showMore.append(NSAttributedString(string: L10n.ItemDetail.showMore, attributes: attributes))
 
         self.contentLabel.collapsedNumberOfLines = 2
@@ -40,13 +62,8 @@ class ItemDetailAbstractCell: RxTableViewCell {
     }
 
     func setup(with abstract: String, isCollapsed: Bool) {
-        let font = UIFont.preferredFont(forTextStyle: .body)
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.hyphenationFactor = 1
-        paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle, .font: font]
+        let font = self.bodyFont
+        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: ItemDetailAbstractCell.paragraphStyle, .font: font]
         let hyphenatedText = NSAttributedString(string: abstract, attributes: attributes)
 
         self.contentLabel.set(text: hyphenatedText, isCollapsed: isCollapsed)
