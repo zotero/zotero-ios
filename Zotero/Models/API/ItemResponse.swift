@@ -229,12 +229,8 @@ struct ItemResponse {
             let value: String
             if let val = object.value as? String {
                 value = val
-            } else if let val = object.value as? Int {
-                value = "\(val)"
-            } else if let val = object.value as? Double {
-                value = "\(val)"
             } else {
-                value = ""
+                value = "\(object.value)"
             }
 
             switch object.key {
@@ -354,7 +350,10 @@ struct ItemResponse {
                  FieldKeys.Item.Attachment.filename,
                  FieldKeys.Item.Attachment.linkMode,
                  FieldKeys.Item.Attachment.charset,
-                 FieldKeys.Item.Attachment.path:
+                 FieldKeys.Item.Attachment.path,
+                 FieldKeys.Item.Attachment.page,
+                 FieldKeys.Item.Attachment.hasUnimportedAnnotations,
+                 FieldKeys.Item.Attachment.lastChecked:
                 return true
             default:
                 return false

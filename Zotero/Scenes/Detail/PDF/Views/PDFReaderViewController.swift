@@ -93,7 +93,9 @@ class PDFReaderViewController: UIViewController {
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
 
-        self.viewModel.process(action: .loadAnnotations)
+        self.viewModel.process(action: .loadDocumentData)
+
+        self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
     }
 
     deinit {
@@ -430,7 +432,6 @@ class PDFReaderViewController: UIViewController {
         if self.traitCollection.userInterfaceStyle == .dark {
             controller.appearanceModeManager.appearanceMode = .night
         }
-        controller.setPageIndex(PageIndex(self.pageController.page(for: self.viewModel.state.key)), animated: false)
         controller.annotationStateManager.add(self)
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)

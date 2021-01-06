@@ -14,7 +14,7 @@ import PSPDFKit
 
 enum PDFReaderAction {
     case startObservingAnnotationChanges
-    case loadAnnotations
+    case loadDocumentData
     case searchAnnotations(String)
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)

@@ -59,6 +59,8 @@ struct PDFReaderState: ViewModelState {
     /// Used when user interface style (dark mode) changes. Indicates that annotation previews need to be stored for new appearance
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
+    var visiblePage: Int
+    var needsImport: Bool
 
     init(url: URL, key: String, library: Library, userId: Int, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
@@ -71,6 +73,8 @@ struct PDFReaderState: ViewModelState {
         self.comments = [:]
         self.selectedAnnotationCommentActive = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
+        self.visiblePage = 0
+        self.needsImport = false
         self.commentFont = PDFReaderLayout.annotationLayout.font
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
                                                 .flatMap({ UIColor(hex: $0) }) ?? UIColor(hex: AnnotationsConfig.defaultActiveColor)
