@@ -25,6 +25,7 @@ struct PDFReaderState: ViewModelState {
         static let interfaceStyle = Changes(rawValue: 1 << 2)
         static let activeColor = Changes(rawValue: 1 << 3)
         static let activeComment = Changes(rawValue: 1 << 4)
+        static let save = Changes(rawValue: 1 << 5)
     }
 
     static let activeColorKey = "PDFReaderState.activeColor"

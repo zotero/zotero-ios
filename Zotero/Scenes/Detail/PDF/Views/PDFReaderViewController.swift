@@ -21,22 +21,25 @@ class PDFReaderViewController: UIViewController {
         case undo = 2
     }
 
-    private let viewModel: ViewModel<PDFReaderActionHandler>
-    private unowned let pageController: PdfPageController
-    private let disposeBag: DisposeBag
-
     private weak var annotationsController: AnnotationsViewController!
     private weak var pdfController: PDFViewController!
     private weak var annotationsControllerLeft: NSLayoutConstraint!
     private weak var pdfControllerLeft: NSLayoutConstraint!
-    private var isCompactSize: Bool
-    private var isSidebarTransitioning: Bool
-    weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
     // Annotation toolbar
     private weak var createNoteButton: CheckboxButton!
     private weak var createHighlightButton: CheckboxButton!
     private weak var createAreaButton: CheckboxButton!
     private weak var colorPickerbutton: UIButton!
+
+    private static let saveDelay: Int = 3
+    private let viewModel: ViewModel<PDFReaderActionHandler>
+    private unowned let pageController: PdfPageController
+    private let disposeBag: DisposeBag
+
+    private var isCompactSize: Bool
+    private var isSidebarTransitioning: Bool
+    private var timerDisposeBag: DisposeBag
+    weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
     private var isSidebarOpened: Bool {
         return self.annotationsControllerLeft.constant == 0
@@ -72,6 +75,7 @@ class PDFReaderViewController: UIViewController {
         self.pageController = pageController
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
+        self.timerDisposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -148,6 +152,19 @@ class PDFReaderViewController: UIViewController {
            let key = state.selectedAnnotation?.key {
             self.focusAnnotation(at: location, key: key, document: state.document)
         }
+
+        if state.changes.contains(.save) {
+            self.enqueueSave()
+        }
+    }
+
+    private func enqueueSave() {
+        self.timerDisposeBag = DisposeBag()
+        Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.viewModel.process(action: .saveChanges)
+                   })
+                   .disposed(by: self.timerDisposeBag)
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
@@ -664,6 +681,15 @@ class PDFReaderViewController: UIViewController {
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .updateAnnotationPreviews)
+                                  })
+                                  .disposed(by: self.disposeBag)
+
+        NotificationCenter.default.rx
+                                  .notification(UIApplication.willResignActiveNotification)
+                                  .observeOn(MainScheduler.instance)
+                                  .subscribe(onNext: { [weak self] notification in
+                                      guard let `self` = self else { return }
+                                      self.viewModel.process(action: .saveChanges)
                                   })
                                   .disposed(by: self.disposeBag)
     }

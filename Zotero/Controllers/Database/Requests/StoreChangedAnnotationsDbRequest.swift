@@ -21,12 +21,13 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     unowned let schemaController: SchemaController
 
     func process(in database: Realm) throws {
-        let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId)
-                                            .process(in: database)
-                                            .filter(.key(notIn: self.annotations.map({ $0.key })))
+        let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId).process(in: database)
+                                                                                                                 .filter(.key(notIn: self.annotations.map({ $0.key })))
 
-        let deleteRequest = MarkObjectsAsDeletedDbRequest<RItem>(keys: toRemove.map({ $0.key }), libraryId: self.libraryId)
-        try deleteRequest.process(in: database)
+        if !toRemove.isEmpty {
+            let deleteRequest = MarkObjectsAsDeletedDbRequest<RItem>(keys: toRemove.map({ $0.key }), libraryId: self.libraryId)
+            try deleteRequest.process(in: database)
+        }
 
         guard let parent = database.objects(RItem.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return }
 

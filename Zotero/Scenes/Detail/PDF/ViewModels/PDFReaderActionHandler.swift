@@ -188,15 +188,24 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let key = viewModel.state.key
         let libraryId = viewModel.state.library.identifier
 
+        var groupedAnnotations: [Int: [Annotation]] = viewModel.state.annotations
         var allAnnotations: [Annotation] = []
-        viewModel.state.annotations.forEach { _, annotations in
+
+        for (page, annotations) in viewModel.state.annotations {
             allAnnotations.append(contentsOf: annotations)
+            for (idx, annotation) in annotations.enumerated() {
+                guard annotation.didChange else { continue }
+                groupedAnnotations[page]?[idx] = annotation.copy(didChange: false)
+            }
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.annotations = groupedAnnotations
         }
 
         self.queue.async {
             do {
-                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations,
-                                                               schemaController: self.schemaController)
+                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations, schemaController: self.schemaController)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 // TODO: - Show error
@@ -239,6 +248,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         if annotation.key == state.selectedAnnotation?.key {
             state.selectedAnnotation = annotation
         }
+
+        state.changes.insert(.save)
 
         // If sort index didn't change, reload in place
         if annotation.sortIndex == oldAnnotation.sortIndex {
@@ -539,7 +550,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             }
 
             state.focusSidebarIndexPath = focus
-            state.changes = .annotations
+            state.changes = [.annotations, .save]
         }
     }
 
@@ -592,6 +603,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             state.removedAnnotationIndexPaths = toRemove
             state.changes.insert(.annotations)
+            state.changes.insert(.save)
         }
     }
 

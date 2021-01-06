@@ -265,6 +265,25 @@ struct Annotation {
                           didChange: true,
                           editableInDocument: self.editableInDocument)
     }
+
+    func copy(didChange: Bool) -> Annotation {
+        return Annotation(key: self.key,
+                          type: self.type,
+                          page: self.page,
+                          pageLabel: self.pageLabel,
+                          rects: self.rects,
+                          author: self.author,
+                          isAuthor: self.isAuthor,
+                          color: self.color,
+                          comment: self.comment,
+                          text: self.text,
+                          isLocked: self.isLocked,
+                          sortIndex: self.sortIndex,
+                          dateModified: self.dateModified,
+                          tags: self.tags,
+                          didChange: false,
+                          editableInDocument: self.editableInDocument)
+    }
 }
 
 extension RItem {
