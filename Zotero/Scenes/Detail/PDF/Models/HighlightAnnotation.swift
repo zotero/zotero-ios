@@ -14,8 +14,9 @@ class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
     private static let noteIconSize: CGSize = CGSize(width: 12, height: 12)
 
     override var noteIconPoint: CGPoint {
-        var point = self.boundingBox.origin
-        point.y += self.boundingBox.height - (HighlightAnnotation.noteIconSize.height / 2)
+        let boundingBox = self.rects?.first ?? self.boundingBox
+        var point = boundingBox.origin
+        point.y += boundingBox.height - (HighlightAnnotation.noteIconSize.height / 2)
         point.x -= HighlightAnnotation.noteIconSize.width
         return point
     }

@@ -420,6 +420,7 @@ class PDFReaderViewController: UIViewController {
             builder.thumbnailBarMode = .scrubberBar
             builder.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
             builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
+            builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
         }
 
         let controller = PDFViewController(document: document, configuration: pdfConfiguration)
