@@ -10,22 +10,16 @@ import Foundation
 
 import RealmSwift
 
-typealias DocumentData = (page: Int, needsImport: Bool)
-
 struct ReadDocumentDataDbRequest: DbResponseRequest {
-    typealias Response = DocumentData
+    typealias Response = Int
 
     let attachmentKey: String
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
 
-    func process(in database: Realm) throws -> DocumentData {
-        guard let item = database.objects(RItem.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return (0, false) }
-
-        let page = (item.fields.filter(.key(FieldKeys.Item.Attachment.page)).first?.value).flatMap(Int.init) ?? 0
-        let needsImport = (item.fields.filter(.key(FieldKeys.Item.Attachment.hasUnimportedAnnotations)).first?.value).flatMap(Bool.init) ?? false
-
-        return (page, needsImport)
+    func process(in database: Realm) throws -> Int {
+        guard let item = database.objects(RItem.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return 0 }
+        return (item.fields.filter(.key(FieldKeys.Item.Attachment.page)).first?.value).flatMap(Int.init) ?? 0
     }
 }

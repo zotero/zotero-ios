@@ -139,6 +139,26 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         case .create(let annotation, let pageIndex, let origin):
             self.add(annotationType: annotation, pageIndex: pageIndex, origin: origin, in: viewModel)
+
+        case .setVisiblePage(let page):
+            self.set(page: page, in: viewModel)
+        }
+    }
+
+    private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.visiblePage = page
+        }
+
+        let request = StorePageForItemDbRequest(key: viewModel.state.key, libraryId: viewModel.state.library.identifier, page: page)
+
+        self.queue.async {
+            do {
+                try self.dbStorage.createCoordinator().perform(request: request)
+            } catch let error {
+                // TODO: - handle error
+                DDLogError("PDFReaderActionHandler: can't store page - \(error)")
+            }
         }
     }
 
@@ -649,15 +669,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
-            let (zoteroAnnotations, comments, page, needsImport) = try self.documentData(for: viewModel.state.key, libraryId: viewModel.state.library.identifier,
-                                                                                         baseFont: viewModel.state.commentFont, userId: viewModel.state.userId)
+            let (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, libraryId: viewModel.state.library.identifier,
+                                                                            baseFont: viewModel.state.commentFont, userId: viewModel.state.userId)
             let pspdfkitAnnotations = self.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
                 state.comments = comments
                 state.visiblePage = page
-                state.needsImport = needsImport
                 state.changes = .annotations
 
                 UndoController.performWithoutUndo(undoController: state.document.undoController) {
@@ -678,10 +697,10 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
     private func documentData(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont, userId: Int) throws
-                                                            -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString], page: Int, needsImport: Bool) {
+                                                            -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString], page: Int) {
         let coordinator = try self.dbStorage.createCoordinator()
 
-        let documentData = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
+        let page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
         let items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
 
         var annotations: [Int: [Annotation]] = [:]
@@ -700,7 +719,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: baseFont)
         }
 
-        return (annotations, comments, documentData.page, documentData.needsImport)
+        return (annotations, comments, page)
     }
 
     /// Create Zotero annotation from existing PSPDFKit annotation.

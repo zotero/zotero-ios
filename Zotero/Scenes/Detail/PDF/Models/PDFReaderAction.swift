@@ -33,6 +33,7 @@ enum PDFReaderAction {
     case saveChanges
     case create(annotation: AnnotationType, pageIndex: PageIndex, origin: CGPoint)
     case setCommentActive(Bool)
+    case setVisiblePage(Int)
 }
 
 #endif

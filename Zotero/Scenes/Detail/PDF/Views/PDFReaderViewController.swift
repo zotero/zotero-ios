@@ -38,7 +38,8 @@ class PDFReaderViewController: UIViewController {
 
     private var isCompactSize: Bool
     private var isSidebarTransitioning: Bool
-    private var timerDisposeBag: DisposeBag
+    private var annotationTimerDisposeBag: DisposeBag
+    private var pageTimerDisposeBag: DisposeBag
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
     private var isSidebarOpened: Bool {
@@ -75,7 +76,8 @@ class PDFReaderViewController: UIViewController {
         self.pageController = pageController
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
-        self.timerDisposeBag = DisposeBag()
+        self.annotationTimerDisposeBag = DisposeBag()
+        self.pageTimerDisposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -156,17 +158,27 @@ class PDFReaderViewController: UIViewController {
         }
 
         if state.changes.contains(.save) {
-            self.enqueueSave()
+            self.enqueueAnnotationSave()
         }
     }
 
-    private func enqueueSave() {
-        self.timerDisposeBag = DisposeBag()
+    private func enqueueAnnotationSave() {
+        self.annotationTimerDisposeBag = DisposeBag()
         Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
                    .subscribe(onSuccess: { [weak self] _ in
                        self?.viewModel.process(action: .saveChanges)
                    })
-                   .disposed(by: self.timerDisposeBag)
+                   .disposed(by: self.annotationTimerDisposeBag)
+    }
+
+    private func enqueueSave(for page: Int) {
+        guard page != self.viewModel.state.visiblePage else { return }
+        self.pageTimerDisposeBag = DisposeBag()
+        Single<Int>.timer(.seconds(PDFReaderViewController.saveDelay), scheduler: MainScheduler.instance)
+                   .subscribe(onSuccess: { [weak self] _ in
+                       self?.viewModel.process(action: .setVisiblePage(page))
+                   })
+                   .disposed(by: self.pageTimerDisposeBag)
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
@@ -713,7 +725,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.
         guard !self.isSidebarTransitioning else { return }
         // Save current page
-        self.pageController.store(page: pageIndex, for: self.viewModel.state.key)
+        self.enqueueSave(for: pageIndex)
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow controller: UIViewController, options: [String : Any]? = nil, animated: Bool) -> Bool {
