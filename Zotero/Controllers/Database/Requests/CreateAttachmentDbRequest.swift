@@ -108,6 +108,10 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 } else {
                     continue
                 }
+            case FieldKeys.Item.Attachment.page:
+                value = "0"
+            case FieldKeys.Item.Attachment.hasUnimportedAnnotations:
+                value = "true"
             default: continue
             }
 
