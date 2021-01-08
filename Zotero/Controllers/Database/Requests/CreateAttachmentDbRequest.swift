@@ -20,8 +20,6 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> RItem {
-        let attachmentKeys = FieldKeys.Item.Attachment.fieldKeys
-
         // Basic info
 
         let item = RItem()
@@ -41,6 +39,12 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
         database.add(item)
 
         // Fields
+
+        var attachmentKeys = FieldKeys.Item.Attachment.fieldKeys
+        // PDFs require extra fields for annotation import and page sync
+        if case .file(let file, _, _, _) = self.attachment.contentType, file.mimeType == "application/pdf" {
+            attachmentKeys.append(contentsOf: [FieldKeys.Item.Attachment.page, FieldKeys.Item.Attachment.hasUnimportedAnnotations, FieldKeys.Item.Attachment.lastChecked])
+        }
 
         for fieldKey in attachmentKeys {
             let value: String
