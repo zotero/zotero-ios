@@ -377,7 +377,7 @@ class ItemsViewController: UIViewController {
                 self?.viewModel.process(action: .startEditing)
             }
         case .sort:
-            image = UIImage(systemName: "line.horizontal.3.decrease")
+            image = UIImage(systemName: "arrow.up.arrow.down")
             title = nil
             action = { [weak self] item in
                 guard let `self` = self else { return }
