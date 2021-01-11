@@ -31,6 +31,22 @@ class FileAttachmentView: UIView {
         case list
         case detail
     }
+
+    enum State {
+        case ready(Attachment.ContentType)
+        case progress(CGFloat)
+        case failed(Attachment.ContentType, Error)
+
+        static func stateFrom(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?) -> State {
+            if let progress = progress {
+                return .progress(progress)
+            }
+            if let error = error {
+                return .failed(contentType, error)
+            }
+            return .ready(contentType)
+        }
+    }
     
     private static let size: CGFloat = 28
     private static let badgeBorderWidth: CGFloat = 1.5
@@ -141,8 +157,8 @@ class FileAttachmentView: UIView {
         self.stopLayer.opacity = opacity
     }
 
-    func set(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) {
-        guard let data = self.layerData(contentType: contentType, progress: progress, error: error, style: style) else { return }
+    func set(state: State, style: Style) {
+        guard let data = self.layerData(state: state, style: style) else { return }
 
         if let border = data.border {
             switch border {
@@ -188,10 +204,21 @@ class FileAttachmentView: UIView {
         }
     }
 
-    private func layerData(contentType: Attachment.ContentType, progress: CGFloat?, error: Error?, style: Style) -> LayerData? {
-        if let progress = progress {
+    private func layerData(state: State, style: Style) -> LayerData? {
+        let contentType: Attachment.ContentType
+        let error: Error?
+
+        switch state {
+        case .progress(let progress):
             return LayerData(border: .progressLine(progress), content: .stopSign, badgeName: nil)
+        case .ready(let _contentType):
+            contentType = _contentType
+            error = nil
+        case .failed(let _contentType, let _error):
+            contentType = _contentType
+            error = _error
         }
+
         switch style {
         case .list:
             let image = self.listImage(for: contentType, error: error)

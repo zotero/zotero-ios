@@ -10,6 +10,10 @@ import UIKit
 
 import RxSwift
 
+protocol ItemDetailTableViewHandlerDelegate: class {
+    func isDownloadingFromNavigationBar(for index: Int) -> Bool
+}
+
 /// Class for handling the `UITableView` of `ItemDetailViewController`. It takes care of showing appropriate data in the `tableView`, keeping track
 /// of visible sections and reports actions that need to take place after user interaction with the `tableView`.
 class ItemDetailTableViewHandler: NSObject {
@@ -82,6 +86,7 @@ class ItemDetailTableViewHandler: NSObject {
     }
     private var abstractTextViewHeight: CGFloat = 0
     private weak var fileDownloader: FileDownloader?
+    weak var delegate: ItemDetailTableViewHandlerDelegate?
 
     var attachmentSection: Int {
         return self.sections.firstIndex(of: .attachments) ?? 0
@@ -123,12 +128,8 @@ class ItemDetailTableViewHandler: NSObject {
     func updateAttachmentCell(with attachment: Attachment, at index: Int) {
         guard let section = self.sections.firstIndex(of: .attachments) else { return }
         let indexPath = IndexPath(row: index, section: section)
-
-        if let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAttachmentCell {
-            let (progress, _) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-            let error = self.viewModel.state.attachmentErrors[attachment.key]
-            cell.setup(with: attachment, progress: progress, error: error)
-        }
+        guard let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAttachmentCell else { return }
+        self.setup(attachmentCell: cell, at: indexPath.row)
     }
 
     /// Recalculates title width for current data.
@@ -427,6 +428,27 @@ class ItemDetailTableViewHandler: NSObject {
         return UIMenu(title: "", children: [delete])
     }
 
+    // MARK: - Cells
+
+    private func setup(attachmentCell: ItemDetailAttachmentCell, at index: Int) {
+        let attachment = self.viewModel.state.data.attachments[index]
+        let enabled = self.delegate?.isDownloadingFromNavigationBar(for: index) == false
+        let progress: CGFloat?
+        let error: Error?
+
+        if !enabled {
+            progress = nil
+            error = nil
+        } else {
+            let (_progress, _) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            let _error = self.viewModel.state.attachmentErrors[attachment.key]
+            progress = _progress
+            error = _error
+        }
+
+        attachmentCell.setup(with: attachment, progress: progress, error: error, enabled: enabled)
+    }
+
     // MARK: - Setups
 
     /// Sets `tableView` dataSource, delegate and registers appropriate cells and sections.
@@ -568,10 +590,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         case .attachments:
             if let cell = cell as? ItemDetailAttachmentCell {
-                let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                let (progress, _) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-                let error = self.viewModel.state.attachmentErrors[attachment.key]
-                cell.setup(with: attachment, progress: progress, error: error)
+                self.setup(attachmentCell: cell, at: indexPath.row)
             } else if let cell = cell as? ItemDetailAddCell {
                 cell.setup(with: L10n.ItemDetail.addAttachment)
             }

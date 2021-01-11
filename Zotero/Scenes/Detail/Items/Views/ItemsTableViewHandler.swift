@@ -97,7 +97,7 @@ class ItemsTableViewHandler: NSObject {
 
         if let attachment = attachment {
             let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-            cell.set(contentType: attachment.contentType, progress: progress, error: error)
+            cell.set(state: .stateFrom(contentType: attachment.contentType, progress: progress, error: error))
         } else {
             cell.clearAttachment()
         }
@@ -306,12 +306,12 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
             let parentKey = item.key
             let attachment = self.viewModel.state.attachments[parentKey]
-            let attachmentData: ItemCellAttachmentData? = attachment.flatMap({ attachment in
+            let attachmentState: FileAttachmentView.State? = attachment.flatMap({ attachment in
                 let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-                return (attachment.contentType, progress, error)
+                return .stateFrom(contentType: attachment.contentType, progress: progress, error: error)
             })
 
-            cell.set(item: ItemCellModel(item: item, attachment: attachmentData), tapAction: { [weak self] in
+            cell.set(item: ItemCellModel(item: item, attachment: attachmentState), tapAction: { [weak self] in
                 guard let key = attachment?.key else { return }
                 self?.viewModel.process(action: .openAttachment(key: key, parentKey: parentKey))
             })

@@ -15,7 +15,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 fileprivate enum MainAttachmentButtonState {
-    case ready(Int), downloading, error(Int, Error)
+    case ready(Int), downloading(Int, CGFloat), error(Int, Error)
 }
 
 class ItemDetailViewController: UIViewController {
@@ -54,6 +54,7 @@ class ItemDetailViewController: UIViewController {
                                                            containerWidth: width,
                                                            viewModel: self.viewModel,
                                                            fileDownloader: self.controllers.userControllers?.fileDownloader)
+        self.tableViewHandler.delegate = self
         self.setupFileObservers()
 
         self.viewModel.stateObservable
@@ -196,10 +197,18 @@ class ItemDetailViewController: UIViewController {
             if state.changes.contains(.attachmentFilesRemoved) {
                 self.tableViewHandler.reload(section: .attachments)
             } else if let index = state.updateAttachmentIndex {
-                self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
                 if state.data.mainAttachmentIndex == index {
+                    // Update main-attachment related UI
+                    let key = state.data.attachments[index].key
+                    if self.controllers.userControllers?.fileDownloader.data(for: key, libraryId: state.library.identifier).progress == nil {
+                        // Reset navbar download flag after download finishes
+                        self.downloadingViaNavigationBar = false
+                    }
+
                     self.setNavigationBarButtons(to: state)
                 }
+
+                self.tableViewHandler.updateAttachmentCell(with: state.data.attachments[index], at: index)
             }
 
             if state.changes.contains(.abstractCollapsed) {
@@ -216,6 +225,8 @@ class ItemDetailViewController: UIViewController {
         }
 
         if let (attachment, index) = state.openAttachment {
+            // Reset navbar download flag if the attachment didn't need to be downloaded
+            self.downloadingViaNavigationBar = false
             self.open(attachment: attachment, at: index)
         }
     }
@@ -244,13 +255,20 @@ class ItemDetailViewController: UIViewController {
         if let error = error {
             return .error(index, error)
         }
-        if progress != nil {
-            return .downloading
+        if let progress = progress {
+            return .downloading(index, progress)
         }
         return .ready(index)
     }
 
     private func setPreviewNavigationBarButtons(attachmentButtonState: MainAttachmentButtonState?) {
+        if let state = attachmentButtonState, case .downloading(_, let progress) = state,
+           let rightBarButtonItems = self.navigationItem.rightBarButtonItems,
+           rightBarButtonItems.count == 3,
+           let attachmentFileView = rightBarButtonItems[2].customView as? FileAttachmentView {
+            attachmentFileView.set(state: .progress(progress), style: .list)
+        }
+
         self.navigationItem.setHidesBackButton(false, animated: false)
 
         let button = UIBarButtonItem(title: L10n.edit, style: .plain, target: nil, action: nil)
@@ -272,8 +290,6 @@ class ItemDetailViewController: UIViewController {
 
         switch state {
         case .ready(let index):
-            self.downloadingViaNavigationBar = false
-
             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.downloadingViaNavigationBar = true
@@ -282,8 +298,6 @@ class ItemDetailViewController: UIViewController {
             items.append(button)
 
         case .error(let index, let error):
-            self.downloadingViaNavigationBar = false
-
             let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
             button.rx.tap.subscribe(onNext: { [weak self] _ in
                 self?.coordinatorDelegate?.showAttachmentError(error, retryAction: {
@@ -292,14 +306,18 @@ class ItemDetailViewController: UIViewController {
             }).disposed(by: self.disposeBag)
             items.append(button)
 
-        case .downloading:
+        case .downloading(let index, let progress):
             if self.downloadingViaNavigationBar {
-                let activityIndicator = UIActivityIndicatorView(style: .medium)
-                activityIndicator.startAnimating()
-                let item = UIBarButtonItem(customView: activityIndicator)
-                items.append(item)
+                let view = FileAttachmentView()
+                view.set(state: .progress(progress), style: .list)
+                view.tapAction = { [weak self] in
+                    self?.viewModel.process(action: .openAttachment(index))
+                }
+
+                items.append(UIBarButtonItem(customView: view))
             } else {
                 let button = UIBarButtonItem(title: L10n.ItemDetail.viewPdf, style: .plain, target: nil, action: nil)
+                button.isEnabled = false
                 items.append(button)
             }
         }
@@ -385,5 +403,11 @@ class ItemDetailViewController: UIViewController {
     private func droppedFieldsMessage(for names: [String]) -> String {
         let formattedNames = names.map({ "- \($0)\n" }).joined()
         return L10n.Errors.ItemDetail.droppedFieldsMessage(formattedNames)
+    }
+}
+
+extension ItemDetailViewController: ItemDetailTableViewHandlerDelegate {
+    func isDownloadingFromNavigationBar(for index: Int) -> Bool {
+        return self.downloadingViaNavigationBar && index == self.viewModel.state.data.mainAttachmentIndex
     }
 }

@@ -119,7 +119,7 @@ class FileDownloader {
     }
 
     private func didFinish(download: Download, parentKey: String?, error: Error?) {
-        let isCancelError = error.flatMap({ ($0 as NSError).code == NSURLErrorCancelled }) == true
+        let isCancelError = (error as? Alamofire.AFError)?.isExplicitlyCancelledError == true
 
         self.requests[download] = nil
         self.progresses[download] = nil
@@ -143,7 +143,7 @@ class FileDownloader {
         self.requests[Download(key: key, libraryId: libraryId)]?.cancel()
     }
 
-    func data(for key: String, libraryId: LibraryIdentifier) -> (CGFloat?, Error?) {
+    func data(for key: String, libraryId: LibraryIdentifier) -> (progress: CGFloat?, error: Error?) {
         let download = Download(key: key, libraryId: libraryId)
         return (self.progresses[download], self.errors[download])
     }

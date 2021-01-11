@@ -10,8 +10,6 @@ import UIKit
 
 import RealmSwift
 
-typealias ItemCellAttachmentData = (Attachment.ContentType, CGFloat?, Error?)
-
 struct ItemCellModel {
     let key: String
     let typeIconName: String
@@ -19,9 +17,9 @@ struct ItemCellModel {
     let subtitle: String
     let hasNote: Bool
     let tagColors: [UIColor]
-    let attachment: ItemCellAttachmentData?
+    let attachment: FileAttachmentView.State?
 
-    init(item: RItem, attachment: ItemCellAttachmentData?) {
+    init(item: RItem, attachment: FileAttachmentView.State?) {
         self.key = item.key
         self.typeIconName = ItemCellModel.iconName(for: item)
         self.title = item.displayTitle

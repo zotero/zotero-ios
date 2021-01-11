@@ -33,10 +33,10 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.fileView.set(backgroundColor: (highlighted ? self.selectedBackgroundView?.backgroundColor : self.backgroundColor))
     }
 
-    func setup(with attachment: Attachment, progress: CGFloat?, error: Error?) {
+    func setup(with attachment: Attachment, progress: CGFloat?, error: Error?, enabled: Bool) {
         switch attachment.contentType {
         case .file, .snapshot:
-            self.fileView.set(contentType: attachment.contentType, progress: progress, error: error, style: .detail)
+            self.fileView.set(state: .stateFrom(contentType: attachment.contentType, progress: progress, error: error), style: .detail)
             self.fileView.isHidden = false
             self.attachmentIcon.isHidden = true
         case .url:
@@ -56,5 +56,8 @@ class ItemDetailAttachmentCell: UITableViewCell {
         let font = self.label.font!
         self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
         self.labelLeft.constant = self.layoutMargins.left
+
+        self.label.textColor = enabled ? .black : .gray
+        self.isUserInteractionEnabled = enabled
     }
 }
