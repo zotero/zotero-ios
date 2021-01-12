@@ -14,10 +14,8 @@ import RxSwift
 protocol SynchronizationScheduler: class {
     var syncController: SynchronizationController { get }
 
-    func requestFullSync()
-    func requestFullSync(type: SyncController.SyncType)
-    func requestSync(for libraries: [LibraryIdentifier])
-    func requestSync(for libraries: [LibraryIdentifier], type: SyncController.SyncType)
+    func request(syncType: SyncController.SyncType)
+    func request(syncType: SyncController.SyncType, for libraries: [LibraryIdentifier])
     func cancelSync()
 }
 
@@ -62,20 +60,12 @@ final class SyncScheduler: SynchronizationScheduler {
                   .disposed(by: self.disposeBag)
     }
 
-    func requestFullSync() {
-        self.enqueueAndStartTimer(action: (.normal, .all))
+    func request(syncType: SyncController.SyncType) {
+        self.enqueue(action: (syncType, .all))
     }
 
-    func requestFullSync(type: SyncController.SyncType) {
-        self.enqueueAndStartTimer(action: (type, .all))
-    }
-
-    func requestSync(for libraries: [LibraryIdentifier]) {
-        self.enqueueAndStartTimer(action: (.normal, .specific(libraries)))
-    }
-
-    func requestSync(for libraries: [LibraryIdentifier], type: SyncController.SyncType) {
-        self.enqueueAndStartTimer(action: (type, .specific(libraries)))
+    func request(syncType: SyncController.SyncType, for libraries: [LibraryIdentifier]) {
+        self.enqueue(action: (syncType, .specific(libraries)))
     }
 
     func cancelSync() {
@@ -145,7 +135,10 @@ final class SyncScheduler: SynchronizationScheduler {
 extension SyncController.SyncType: Comparable {
     static func < (lhs: SyncController.SyncType, rhs: SyncController.SyncType) -> Bool {
         switch (lhs, rhs) {
-        case (.normal, .ignoreIndividualDelays),
+        case (.collectionsOnly, .normal),
+             (.collectionsOnly, .ignoreIndividualDelays),
+             (.collectionsOnly, .all),
+             (.normal, .ignoreIndividualDelays),
              (.normal, .all),
              (.ignoreIndividualDelays, .all):
             return true

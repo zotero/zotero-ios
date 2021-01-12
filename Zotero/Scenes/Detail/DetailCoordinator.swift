@@ -48,18 +48,20 @@ protocol DetailCreatorEditCoordinatorDelegate: class {
     func showCreatorTypePicker(itemType: String, selected: String, picked: @escaping (String) -> Void)
 }
 
+#if PDFENABLED
+
 protocol DetailPdfCoordinatorDelegate: class {
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
-    #if PDFENABLED
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
-    #endif
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
     func showCellOptions(for annotation: Annotation, sender: UIButton, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
 }
+
+#endif
 
 protocol DetailItemActionSheetCoordinatorDelegate: class {
     func showSortTypePicker(sortBy: Binding<ItemsSortType.Field>)
@@ -491,6 +493,8 @@ extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
     }
 }
 
+#if PDFENABLED
+
 extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void) {
         let view = ColorPickerView(selected: selected, selectionAction: { [weak self] color in
@@ -504,7 +508,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    #if PDFENABLED
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate) {
         let navigationController = UINavigationController()
         navigationController.setNavigationBarHidden(true, animated: false)
@@ -530,7 +533,6 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         viewController.popoverPresentationController?.barButtonItem = sender
         self.topViewController.present(viewController, animated: true, completion: nil)
     }
-    #endif
 }
 
 extension DetailCoordinator: DetailAnnotationsCoordinatorDelegate {
@@ -566,3 +568,5 @@ extension DetailCoordinator: AnnotationEditCoordinatorDelegate {
         (self.topViewController as? UINavigationController)?.pushViewController(controller, animated: true)
     }
 }
+
+#endif

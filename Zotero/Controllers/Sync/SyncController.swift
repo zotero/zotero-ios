@@ -42,75 +42,79 @@ protocol SynchronizationController: class {
 }
 
 final class SyncController: SynchronizationController {
-    /// Type of sync.
-    /// - normal: Only objects which need to be synced are fetched. Either synced objects with old version or unsynced objects with backoff schedule.
-    /// - ignoreIndividualDelays: Same as .normal, but individual backoff schedule is ignored.
-    /// - all: All objects are fetched. Both individual backoff schedule and local versions are ignored.
+    /// Type of sync
     enum SyncType {
+        /// Only objects which need to be synced are fetched. Either synced objects with old version or unsynced objects with backoff schedule.
         case normal
+        /// Same as .normal, but individual backoff schedule is ignored.
         case ignoreIndividualDelays
+        /// All objects are fetched. Both individual backoff schedule and local versions are ignored.
         case all
+        /// Synchronize only collections.
+        case collectionsOnly
     }
 
     /// Specifies which libraries need to be synced.
-    /// - all: All libraries will be synced.
-    /// - specific: Only specified libraries will be synced.
     enum LibrarySyncType: Equatable {
+        /// All libraries will be synced.
         case all
+        /// Only specified libraries will be synced.
         case specific([LibraryIdentifier])
     }
 
     /// Specifies which actions should be created for libraries.
-    /// - automatic: Create all types of actions, which are needed.
-    /// - onlyWrites: Create only "write" actions - item submission, uploads, etc.
-    /// - forceDownloads: Create only "download" actions - version check, item data, etc.
     enum CreateLibraryActionsOptions: Equatable {
-        case automatic, onlyWrites, forceDownloads
+        /// Create all types of actions, which are needed.
+        case automatic
+        /// Create only "write" actions - item submission, uploads, etc.
+        case onlyWrites
+        /// Create only "download" actions - version check, item data, etc.
+        case forceDownloads
     }
 
     /// Sync action represents a step that the synchronization controller needs to take.
-    /// - loadKeyPermissions: Checks current key for access permissions.
-    /// - syncGroupVersions: Fetch group versions from API, update DB based on response.
-    /// - syncVersions: Fetch `SyncObject` versions from API, update DB based on response.
-    /// - createLibraryActions: Loads required libraries, spawns actions for each.
-    /// - createUploadActions: Loads items that need upload, spawns actions for each.
-    /// - syncBatchesToDb: Starts `SyncBatchProcessor` which downloads and stores all batches.
-    /// - storeVersion: Store new version for given library-object.
-    /// - syncDeletions: Synchronize deletions of objects in library.
-    /// - syncSettings: Synchronize settings for library.
-    /// - storeSettingsVersion: Store new version for settings in library.
-    /// - submitWriteBatch: Submit local changes to backend.
-    /// - uploadAttachment: Upload local attachment to backend.
-    /// - submitDeleteBatch: Submit local deletions to backend.
-    /// - resolveConflict: Handle conflict resolution.
-    /// - resolveDeletedGroup: Handle group that was deleted remotely - (Id, Name).
-    /// - resolveGroupMetadataWritePermission: Resolve when group had metadata editing allowed, but it was disabled and we try to upload new data.
-    /// - revertLibraryToOriginal: Revert all changes to original cached version of this group.
-    /// - markChangesAsResolved: Local changes couldn't be written remotely, but we want to keep them locally anyway.
-    /// - deleteGroup: Removes group from db.
-    /// - markGroupAsLocalOnly: Marks group as local only (not synced with backend).
-    /// - syncGroupToDb: Fetch group data and store to db.
     enum Action: Equatable {
+        /// Checks current key for access permissions.
         case loadKeyPermissions
+        /// Fetch group versions from API, update DB based on response.
         case syncGroupVersions
+        /// Fetch `SyncObject` versions from API, update DB based on response.
         case syncVersions(libraryId: LibraryIdentifier, object: SyncObject, version: Int, checkRemote: Bool)
+        /// Loads required libraries, spawns actions for each.
         case createLibraryActions(LibrarySyncType, CreateLibraryActionsOptions)
+        /// Loads items that need upload, spawns actions for each.
         case createUploadActions(LibraryIdentifier)
+        /// Starts `SyncBatchProcessor` which downloads and stores all batches.
         case syncBatchesToDb([DownloadBatch])
+        /// Store new version for given library-object.
         case storeVersion(Int, LibraryIdentifier, SyncObject)
+        /// Synchronize deletions of objects in library.
         case syncDeletions(LibraryIdentifier, Int)
+        /// Synchronize settings for library.
         case syncSettings(LibraryIdentifier, Int)
+        /// Store new version for settings in library.
         case storeSettingsVersion(Int, LibraryIdentifier)
+        /// Submit local changes to backend.
         case submitWriteBatch(WriteBatch)
+        /// Upload local attachment to backend.
         case uploadAttachment(AttachmentUpload)
+        /// Submit local deletions to backend.
         case submitDeleteBatch(DeleteBatch)
+        /// Handle conflict resolution.
         case resolveConflict(String, LibraryIdentifier)
+        /// Handle group that was deleted remotely - (Id, Name).
         case resolveDeletedGroup(Int, String)
+        /// Resolve when group had metadata editing allowed, but it was disabled and we try to upload new data.
         case resolveGroupMetadataWritePermission(Int, String)
+        /// Revert all changes to original cached version of this group.
         case revertLibraryToOriginal(LibraryIdentifier)
+        /// Local changes couldn't be written remotely, but we want to keep them locally anyway.
         case markChangesAsResolved(LibraryIdentifier)
+        /// Removes group from db.
         case deleteGroup(Int)
+        /// Marks group as local only (not synced with backend).
         case markGroupAsLocalOnly(Int)
+        /// Fetch group data and store to db.
         case syncGroupToDb(Int)
     }
 
@@ -707,12 +711,17 @@ final class SyncController: SynchronizationController {
     }
 
     private func createDownloadActions(for libraryId: LibraryIdentifier, versions: Versions) -> [Action] {
-        return [.syncSettings(libraryId, versions.settings),
-                .syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true),
-//                .syncVersions(libraryId, .search, versions.searches),
-                .syncVersions(libraryId: libraryId, object: .item, version: versions.items, checkRemote: true),
-                .syncVersions(libraryId: libraryId, object: .trash, version: versions.trash, checkRemote: true),
-                .syncDeletions(libraryId, versions.deletions)]
+        switch self.type {
+        case .collectionsOnly:
+            return [.syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true)]
+        default:
+            return [.syncSettings(libraryId, versions.settings),
+                    .syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true),
+    //                .syncVersions(libraryId, .search, versions.searches),
+                    .syncVersions(libraryId: libraryId, object: .item, version: versions.items, checkRemote: true),
+                    .syncVersions(libraryId: libraryId, object: .trash, version: versions.trash, checkRemote: true),
+                    .syncDeletions(libraryId, versions.deletions)]
+        }
     }
 
     private func processCreateUploadActions(for libraryId: LibraryIdentifier) {

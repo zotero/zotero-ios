@@ -10,6 +10,8 @@ import UIKit
 
 import RxSwift
 
+#if PDFENABLED
+
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: class {
     func showEdit(annotation: Annotation, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
@@ -96,3 +98,5 @@ extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 }
+
+#endif

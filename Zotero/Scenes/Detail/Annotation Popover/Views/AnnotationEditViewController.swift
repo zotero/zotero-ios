@@ -10,6 +10,8 @@ import UIKit
 
 import RxSwift
 
+#if PDFENABLED
+
 typealias AnnotationEditSaveAction = (Annotation) -> Void
 typealias AnnotationEditDeleteAction = (Annotation) -> Void
 
@@ -241,3 +243,5 @@ extension AnnotationEditViewController: UITableViewDelegate {
         }
     }
 }
+
+#endif

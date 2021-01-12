@@ -217,7 +217,7 @@ class ExtensionStore {
 
     func start(with extensionItem: NSExtensionItem) {
         // Start sync in background, so that collections are available for user to pick
-        self.syncController.start(type: .normal, libraries: .all)
+        self.syncController.start(type: .collectionsOnly, libraries: .all)
 
         self.loadAttachment(from: extensionItem)
             .subscribe(onSuccess: { [weak self] attachment in

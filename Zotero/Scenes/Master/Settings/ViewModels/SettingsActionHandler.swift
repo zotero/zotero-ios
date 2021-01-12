@@ -50,7 +50,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
             }
 
         case .startSync:
-            self.syncScheduler.requestFullSync()
+            self.syncScheduler.request(syncType: .normal)
 
         case .cancelSync:
             self.syncScheduler.cancelSync()

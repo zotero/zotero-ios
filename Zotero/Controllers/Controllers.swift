@@ -90,7 +90,7 @@ class Controllers {
         self.crashReporter.processPendingReports()
         self.translatorsController.update()
         self.userControllers?.itemLocaleController.loadLocale()
-        self.userControllers?.syncScheduler.requestFullSync()
+        self.userControllers?.syncScheduler.request(syncType: .normal)
         self.userControllers?.startObserving()
     }
 
@@ -112,7 +112,7 @@ class Controllers {
         self.userControllers?.cleanup()
         self.userControllers = sessionData.flatMap { UserControllers(userId: $0.userId, controllers: self) }
         // Enqueue full sync after successful login (
-        self.userControllers?.syncScheduler.requestFullSync()
+        self.userControllers?.syncScheduler.request(syncType: .normal)
     }
 }
 
@@ -192,7 +192,7 @@ class UserControllers {
         self.changeObserver.observable
                            .observeOn(MainScheduler.instance)
                            .subscribe(onNext: { [weak self] changedLibraries in
-                               self?.syncScheduler.requestSync(for: changedLibraries)
+                               self?.syncScheduler.request(syncType: .normal, for: changedLibraries)
                            })
                            .disposed(by: self.disposeBag)
     }

@@ -378,6 +378,7 @@
 		B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C89248008A2009E2C5D /* translators_delete.xml */; };
 		B32A3C90248008A2009E2C5D /* translators.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C8A248008A2009E2C5D /* translators.xml */; };
 		B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */; };
+		B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B30BA8C3255D415600361D25 /* Bundled */; };
 		B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F942475544700F78A05 /* SyncToolbarController.swift */; };
 		B32B4F972475636600F78A05 /* RxTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F962475636600F78A05 /* RxTableViewCell.swift */; };
 		B32EE26124A092B700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
@@ -2755,6 +2756,7 @@
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
 				B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */,
 				B355B8FF239951E800E837B9 /* translation in Resources */,
+				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
 				B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */,
 			);
