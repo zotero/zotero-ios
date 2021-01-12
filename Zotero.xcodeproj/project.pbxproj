@@ -377,6 +377,7 @@
 		B32A3C8E248008A2009E2C5D /* test_item.json in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C87248008A2009E2C5D /* test_item.json */; };
 		B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C89248008A2009E2C5D /* translators_delete.xml */; };
 		B32A3C90248008A2009E2C5D /* translators.xml in Resources */ = {isa = PBXBuildFile; fileRef = B32A3C8A248008A2009E2C5D /* translators.xml */; };
+		B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */; };
 		B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F942475544700F78A05 /* SyncToolbarController.swift */; };
 		B32B4F972475636600F78A05 /* RxTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32B4F962475636600F78A05 /* RxTableViewCell.swift */; };
 		B32EE26124A092B700442974 /* RUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32EE26024A092B700442974 /* RUser.swift */; };
@@ -1005,6 +1006,7 @@
 		B32A3C87248008A2009E2C5D /* test_item.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_item.json; sourceTree = "<group>"; };
 		B32A3C89248008A2009E2C5D /* translators_delete.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators_delete.xml; sourceTree = "<group>"; };
 		B32A3C8A248008A2009E2C5D /* translators.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = translators.xml; sourceTree = "<group>"; };
+		B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentIconDrawingController.swift; sourceTree = "<group>"; };
 		B32B4F942475544700F78A05 /* SyncToolbarController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncToolbarController.swift; sourceTree = "<group>"; };
 		B32B4F962475636600F78A05 /* RxTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxTableViewCell.swift; sourceTree = "<group>"; };
 		B32EE26024A092B700442974 /* RUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RUser.swift; sourceTree = "<group>"; };
@@ -1408,6 +1410,7 @@
 				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
 				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
+				B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -2909,6 +2912,7 @@
 				B3593F37241A61C700760E20 /* ItemDetailViewController.swift in Sources */,
 				B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */,
 				B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */,
+				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
 				B37CA5222497B30B00C6B5EF /* PdfPageController.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
 				B30565FE23FC051E003304F2 /* BackgroundUploader.swift in Sources */,
