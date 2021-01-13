@@ -61,11 +61,11 @@ final class SyncScheduler: SynchronizationScheduler {
     }
 
     func request(syncType: SyncController.SyncType) {
-        self.enqueue(action: (syncType, .all))
+        self.enqueueAndStartTimer(action: (syncType, .all))
     }
 
     func request(syncType: SyncController.SyncType, for libraries: [LibraryIdentifier]) {
-        self.enqueue(action: (syncType, .specific(libraries)))
+        self.enqueueAndStartTimer(action: (syncType, .specific(libraries)))
     }
 
     func cancelSync() {
