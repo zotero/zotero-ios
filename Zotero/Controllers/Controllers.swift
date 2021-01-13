@@ -29,8 +29,12 @@ class Controllers {
     let fileCleanupController: AttachmentFileCleanupController
     let pageController: PdfPageController
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
+    let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
 
     var userControllers: UserControllers?
+    // Stores initial error when initializing `UserControllers`. It's needed in case the error happens on app launch.
+    // The event sent through `userInitialized` publisher is not received by scene, because this happens in AppDelegate `didFinishLaunchingWithOptions`.
+    var userControllerError: Error?
     private var sessionCancellable: AnyCancellable?
 
     init() {
@@ -51,7 +55,6 @@ class Controllers {
         crashReporter.start()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage)
-        apiClient.set(authToken: sessionController.sessionData?.apiToken)
         let translatorsController = TranslatorsController(apiClient: apiClient,
                                                           indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
                                                           fileStorage: fileStorage)
@@ -73,17 +76,10 @@ class Controllers {
         self.fileCleanupController = fileCleanupController
         self.pageController = PdfPageController()
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
+        self.userInitialized = PassthroughSubject()
 
-        if let userId = sessionController.sessionData?.userId {
-            self.userControllers = UserControllers(userId: userId, controllers: self)
-        }
-
-        self.sessionCancellable = sessionController.$sessionData
-                                                   .receive(on: DispatchQueue.main)
-                                                   .dropFirst()
-                                                   .sink { [weak self] data in
-                                                       self?.update(sessionData: data)
-                                                   }
+        self.startObservingSession()
+        self.update(with: self.sessionController.sessionData)
     }
 
     func willEnterForeground() {
@@ -105,14 +101,58 @@ class Controllers {
         self.pageController.save()
     }
 
-    private func update(sessionData: SessionData?) {
-        self.apiClient.set(authToken: sessionData?.apiToken)
+    private func startObservingSession() {
+        self.sessionCancellable = self.sessionController.$sessionData
+                                                        .receive(on: DispatchQueue.main)
+                                                        .dropFirst()
+                                                        .sink { [weak self] data in
+                                                            self?.update(with: data)
+                                                        }
+    }
 
+    private func update(with data: SessionData?) {
         // Cleanup user controllers on logout
         self.userControllers?.cleanup()
-        self.userControllers = sessionData.flatMap { UserControllers(userId: $0.userId, controllers: self) }
-        // Enqueue full sync after successful login (
-        self.userControllers?.syncScheduler.request(syncType: .normal)
+
+        if let data = data {
+            self.initializeSession(with: data)
+        } else {
+            self.clearSession()
+        }
+    }
+
+    private func initializeSession(with data: SessionData) {
+        do {
+            let controllers = try UserControllers(userId: data.userId, controllers: self)
+            controllers.syncScheduler.request(syncType: .normal)
+            self.userControllers = controllers
+
+            self.apiClient.set(authToken: data.apiToken)
+
+            self.userControllerError = nil
+            self.userInitialized.send(.success(true))
+        } catch let error {
+            DDLogError("Controllers: can't create UserControllers - \(error)")
+
+            // Initialization failed, clear everything
+            self.apiClient.set(authToken: nil)
+            self.userControllers = nil
+            // Stop observing session so that we don't get another event after reset
+            self.sessionCancellable = nil
+            self.sessionController.reset()
+            // Re-start session observing
+            self.startObservingSession()
+
+            self.userControllerError = error
+            self.userInitialized.send(.failure(error))
+        }
+    }
+
+    private func clearSession() {
+        self.apiClient.set(authToken: nil)
+        self.userControllers = nil
+        self.userControllerError = nil
+        self.userInitialized.send(.success(false))
     }
 }
 
@@ -129,8 +169,10 @@ class UserControllers {
 
     private var disposeBag: DisposeBag
 
-    init(userId: Int, controllers: Controllers) {
-        let dbStorage = UserControllers.createDbStorage(for: userId, controllers: controllers)
+    init(userId: Int, controllers: Controllers) throws {
+        throw SyncError.Fatal.cancelled
+
+        let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
                                                                   dbStorage: dbStorage,
                                                                   fileStorage: controllers.fileStorage)
@@ -155,13 +197,8 @@ class UserControllers {
         self.fileDownloader = fileDownloader
         self.disposeBag = DisposeBag()
 
-        do {
-            let coordinator = try dbStorage.createCoordinator()
-            try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
-        } catch let error {
-            // TODO: - handle the error a bit more graciously
-            fatalError("UserControllers: can't create custom user library - \(error)")
-        }
+        let coordinator = try dbStorage.createCoordinator()
+        try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
     }
 
     /// Called when user logs out and we need to cleanup stored/cached data
@@ -201,17 +238,10 @@ class UserControllers {
         self.disposeBag = DisposeBag()
     }
 
-    private class func createDbStorage(for userId: Int, controllers: Controllers) -> DbStorage {
-        do {
-            let file = Files.dbFile(for: userId)
-            try controllers.fileStorage.createDirectories(for: file)
-
-            DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
-
-            return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl()))
-        } catch let error {
-            // TODO: - handle the error a bit more graciously
-            fatalError("UserControllers: can't create DB file - \(error)")
-        }
+    private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
+        let file = Files.dbFile(for: userId)
+        try controllers.fileStorage.createDirectories(for: file)
+        DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
+        return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl()))
     }
 }

@@ -52,6 +52,8 @@ internal enum L10n {
   internal static let publicationTitle = L10n.tr("Localizable", "publication_title")
   /// Publisher
   internal static let publisher = L10n.tr("Localizable", "publisher")
+  /// Report
+  internal static let report = L10n.tr("Localizable", "report")
   /// Retry
   internal static let retry = L10n.tr("Localizable", "retry")
   /// Save
@@ -112,6 +114,8 @@ internal enum L10n {
     }
     /// Could not connect to database. Device storage might be full.
     internal static let db = L10n.tr("Localizable", "errors.db")
+    /// User couldn't be initialized. Please try logging in again.
+    internal static let dbFailure = L10n.tr("Localizable", "errors.db_failure")
     /// Could not parse some data. Other data will continue to sync.
     internal static let parsing = L10n.tr("Localizable", "errors.parsing")
     /// Some data in My Library could not be downloaded. It may have been saved with a newer version of Zotero.\n\nOther data will continue to sync.

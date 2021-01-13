@@ -9,10 +9,12 @@
 import Combine
 import UIKit
 
+import CocoaLumberjackSwift
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
-    private var coordinator: AppCoordinator!
+    private var coordinator: AppDelegateCoordinatorDelegate!
     private weak var activityCounter: SceneActivityCounter?
     private var sessionCancellable: AnyCancellable?
 
@@ -29,8 +31,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window?.windowScene = windowScene
         self.window?.makeKeyAndVisible()
         // Setup app coordinator and present initial screen
-        self.coordinator = AppCoordinator(window: self.window, controllers: delegate.controllers)
-        self.coordinator.start()
+        let coordinator = AppCoordinator(window: self.window, controllers: delegate.controllers)
+        coordinator.start()
+        self.coordinator = coordinator
         // Start observing
         self.setupObservers(controllers: delegate.controllers)
     }
@@ -44,11 +47,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func setupObservers(controllers: Controllers) {
-        self.sessionCancellable = controllers.sessionController.$isLoggedIn
-                                                               .receive(on: DispatchQueue.main)
-                                                               .dropFirst()
-                                                               .sink { [weak self] isLoggedIn in
-                                                                   self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
-                                                               }
+        self.sessionCancellable = controllers.userInitialized
+                                             .receive(on: DispatchQueue.main)
+                                             .sink(receiveCompletion: { _ in },
+                                                   receiveValue: { [weak self] result in
+                                                 switch result {
+                                                 case .success(let isLoggedIn):
+                                                     self?.coordinator.showMainScreen(isLoggedIn: isLoggedIn)
+                                                 case .failure(let error):
+                                                     self?.userInitializationFailed(with: error)
+                                                 }
+                                             })
+    }
+
+    private func userInitializationFailed(with error: Error) {
+        self.coordinator.showMainScreen(isLoggedIn: false)
+        self.coordinator.show(error: error)
     }
 }

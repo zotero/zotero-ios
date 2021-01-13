@@ -33,6 +33,7 @@
 "unknown" = "Unknown";
 "retry" = "Retry";
 "page" = "Page";
+"report" = "Report";
 
 "day_suffixes" = "st,nd,rd,th";
 
@@ -208,3 +209,4 @@
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
 "errors.shareext.unknown" = "Unknown error occured";
+"errors.db_failure" = "User couldn't be initialized. Please try logging in again.";

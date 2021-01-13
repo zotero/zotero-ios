@@ -6,11 +6,13 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+import MessageUI
 import SwiftUI
 import UIKit
 
 protocol AppDelegateCoordinatorDelegate: class {
     func showMainScreen(isLoggedIn: Bool)
+    func show(error: Error)
 }
 
 protocol AppOnboardingCoordinatorDelegate: class {
@@ -23,7 +25,7 @@ protocol AppLoginCoordinatorDelegate: class {
     func showForgotPassword()
 }
 
-class AppCoordinator {
+class AppCoordinator: NSObject {
     private typealias Action = (UIViewController) -> Void
 
     private let controllers: Controllers
@@ -39,10 +41,14 @@ class AppCoordinator {
     init(window: UIWindow?, controllers: Controllers) {
         self.window = window
         self.controllers = controllers
+        super.init()
     }
 
     func start() {
         self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
+        if let error = self.controllers.userControllerError {
+            self.show(error: error)
+        }
 
         self.controllers.debugLogging.coordinator = self
         self.controllers.crashReporter.coordinator = self
@@ -98,6 +104,33 @@ class AppCoordinator {
 extension AppCoordinator: AppDelegateCoordinatorDelegate {
     func showMainScreen(isLoggedIn: Bool) {
         self.showMainScreen(isLogged: isLoggedIn, animated: true)
+    }
+
+    func show(error: Error) {
+        let controller = UIAlertController(title: L10n.error, message: L10n.Errors.dbFailure, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: L10n.report, style: .default, handler: { [weak self] _ in
+            self?.report(error: error)
+        }))
+        self.viewController?.present(controller, animated: true, completion: nil)
+    }
+
+    private func report(error: Error) {
+        guard MFMailComposeViewController.canSendMail() else {
+            return
+        }
+
+        let controller = MFMailComposeViewController()
+        controller.mailComposeDelegate = self
+        controller.setToRecipients(["michalrentka@gmail.com"])
+        controller.setMessageBody("Error:\n\(error)", isHTML: false)
+        self.viewController?.present(controller, animated: true, completion: nil)
+    }
+}
+
+extension AppCoordinator: MFMailComposeViewControllerDelegate {
+    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
     }
 }
 

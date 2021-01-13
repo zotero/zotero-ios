@@ -22,7 +22,9 @@ struct DebugSessionConstants {
 
 class SessionController: ObservableObject {
     @Published var sessionData: SessionData?
-    @Published var isLoggedIn: Bool
+    var isLoggedIn: Bool {
+        return self.sessionData != nil
+    }
 
     private let defaults: Defaults
     private let secureStorage: SecureStorage
@@ -47,10 +49,8 @@ class SessionController: ObservableObject {
 
         if let token = apiToken, userId > 0 {
             self.sessionData = (userId, token)
-            self.isLoggedIn = true
         } else {
             self.sessionData = nil
-            self.isLoggedIn = false
         }
     }
 
@@ -58,21 +58,12 @@ class SessionController: ObservableObject {
         self.defaults.userId = userId
         self.defaults.username = username
         self.secureStorage.apiToken = apiToken
-
-        self.set(data: (userId, apiToken))
+        self.sessionData = (userId, apiToken)
     }
 
     func reset() {
         Defaults.shared.reset()
         self.secureStorage.apiToken = nil
-
-        self.set(data: nil)
-    }
-
-    private func set(data: SessionData?) {
-        // Order of these updates needs to be kept! We update sessionData first, so that UserControllers are updated. Then isLoggedIn is updated
-        // and with it a proper screen is shown in AppDelegate.
-        self.sessionData = data
-        self.isLoggedIn = data != nil
+        self.sessionData = nil
     }
 }
