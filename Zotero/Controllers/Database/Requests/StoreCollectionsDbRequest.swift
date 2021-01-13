@@ -39,6 +39,7 @@ struct StoreCollectionsDbRequest: DbRequest {
         collection.syncRetries = 0
         collection.lastSyncDate = Date(timeIntervalSince1970: 0)
         collection.libraryId = libraryId
+        collection.trash = data.data.isTrash
 
         // No CR for collections, if it was changed or deleted locally, just restore it
         collection.deleted = false

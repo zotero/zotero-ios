@@ -50,6 +50,8 @@ class RSearch: Object {
     @objc dynamic var rawChangeType: Int = 0
     /// Indicates whether the object is deleted locally and needs to be synced with backend
     @objc dynamic var deleted: Bool = false
+    /// Indicates whether the object is trashed locally and needs to be synced with backend
+    @objc dynamic var trash: Bool = false
 
     // MARK: - Object properties
 

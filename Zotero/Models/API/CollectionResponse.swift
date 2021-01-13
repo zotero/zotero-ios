@@ -12,6 +12,7 @@ struct CollectionResponse: KeyedResponse {
     struct Data {
         let name: String
         let parentCollection: String?
+        let isTrash: Bool
     }
 
     let key: String
@@ -42,5 +43,6 @@ extension CollectionResponse.Data {
 
         self.name = try response.apiGet(key: "name")
         self.parentCollection = response["parentCollection"] as? String
+        self.isTrash = (response["deleted"] as? Bool) ?? ((response["deleted"] as? Int) == 1)
     }
 }

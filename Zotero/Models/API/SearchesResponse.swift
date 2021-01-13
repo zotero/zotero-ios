@@ -12,6 +12,7 @@ struct SearchResponse {
     struct Data {
         let name: String
         let conditions: [ConditionResponse]
+        let isTrash: Bool
     }
 
     let key: String
@@ -44,6 +45,7 @@ extension SearchResponse.Data {
 
         self.name = try response.apiGet(key: "name")
         self.conditions = try conditions.map({ try ConditionResponse(response: $0) })
+        self.isTrash = (response["deleted"] as? Bool) ?? ((response["deleted"] as? Int) == 1)
     }
 }
 

@@ -38,6 +38,7 @@ struct StoreSearchesDbRequest: DbRequest {
         search.syncRetries = 0
         search.lastSyncDate = Date(timeIntervalSince1970: 0)
         search.libraryId = libraryId
+        search.trash = data.data.isTrash
 
         // No CR for searches, if it was changed or deleted locally, just restore it
         search.deleted = false

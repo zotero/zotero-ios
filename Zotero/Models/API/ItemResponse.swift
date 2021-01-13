@@ -100,7 +100,7 @@ struct ItemResponse {
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.parsedDate = parsedDate
-        self.isTrash = (data["deleted"] as? Int) == 1
+        self.isTrash = (data["deleted"] as? Bool) ?? ((data["deleted"] as? Int) == 1)
         self.library = library
         self.links = links
         self.tags = try tags.map({ try TagResponse(response: $0) })
@@ -136,7 +136,7 @@ struct ItemResponse {
         self.dateAdded = dateAdded.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.dateModified = dateModified.flatMap({ Formatter.iso8601.date(from: $0) }) ?? Date()
         self.parsedDate = parsedDate
-        self.isTrash = (data["deleted"] as? Int) == 1
+        self.isTrash = (data["deleted"] as? Bool) ?? ((data["deleted"] as? Int) == 1)
         self.library = library
         self.links = links
         self.tags = try tags.map({ try TagResponse(response: $0) })
