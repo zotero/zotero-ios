@@ -170,8 +170,6 @@ class UserControllers {
     private var disposeBag: DisposeBag
 
     init(userId: Int, controllers: Controllers) throws {
-        throw SyncError.Fatal.cancelled
-
         let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
                                                                   dbStorage: dbStorage,
