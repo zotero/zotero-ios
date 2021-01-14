@@ -288,7 +288,18 @@ class AnnotationView: UIView {
     private func attributedString(from tags: [Tag]) -> NSAttributedString {
         let wholeString = NSMutableAttributedString()
         for (index, tag) in tags.enumerated() {
-            let string = NSAttributedString(string: tag.name, attributes: [.foregroundColor: TagColorGenerator.uiColor(for: tag.color).color])
+            let tagInfo = TagColorGenerator.uiColor(for: tag.color)
+            let color: UIColor
+            switch tagInfo.style {
+            case .border:
+                // Overwrite default gray color
+                color = UIColor(dynamicProvider: { traitCollection -> UIColor in
+                    return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
+                })
+            case .filled:
+                color = tagInfo.color
+            }
+            let string = NSAttributedString(string: tag.name, attributes: [.foregroundColor: color])
             wholeString.append(string)
             if index != (tags.count - 1) {
                 wholeString.append(NSAttributedString(string: ", "))

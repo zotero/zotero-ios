@@ -57,7 +57,7 @@ extension GrowingTextViewCellDelegate: UITextViewDelegate {
     func textViewDidEndEditing(_ textView: UITextView) {
         if let placeholder = self.placeholder, textView.text.isEmpty {
             textView.attributedText = placeholder
-            textView.textColor = .lightGray
+            textView.textColor = .placeholderText
             self.label.attributedText = placeholder
         }
     }
@@ -65,7 +65,9 @@ extension GrowingTextViewCellDelegate: UITextViewDelegate {
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if textView.text == self.placeholder?.string {
             textView.text = ""
-            textView.textColor = .black
+            textView.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
+            })
             self.label.text = " "
         }
         return true

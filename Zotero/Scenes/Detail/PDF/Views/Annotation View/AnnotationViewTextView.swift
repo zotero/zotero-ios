@@ -62,11 +62,13 @@ class AnnotationViewTextView: UIView {
     func setup(text: NSAttributedString?, halfTopInset: Bool) {
         if let text = text, !text.string.isEmpty {
             self.textView.attributedText = text
-            self.textView.textColor = .black
+            self.textView.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
+            })
             self.label.attributedText = text
         } else {
             self.textView.attributedText = self.placeholder
-            self.textView.textColor = .lightGray
+            self.textView.textColor = .placeholderText
             self.label.attributedText = self.placeholder
         }
 
@@ -87,7 +89,7 @@ class AnnotationViewTextView: UIView {
         textView.textContainerInset = UIEdgeInsets()
         textView.textContainer.lineFragmentPadding = 0
         textView.attributedText = self.placeholder
-        textView.textColor = .lightGray
+        textView.textColor = .placeholderText
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
 
