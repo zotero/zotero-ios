@@ -57,7 +57,16 @@ class ItemDetailAttachmentCell: UITableViewCell {
         self.labelTop.constant = -(font.ascender - font.capHeight) - (ItemDetailLayout.lineHeight - font.lineHeight)
         self.labelLeft.constant = self.layoutMargins.left
 
-        self.label.textColor = enabled ? .black : .gray
+        let textColor: UIColor
+        if !enabled {
+            textColor = .placeholderText
+        } else {
+            textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+                return traitCollection.userInterfaceStyle == .dark ? .white : .darkText
+            })
+        }
+
+        self.label.textColor = textColor
         self.isUserInteractionEnabled = enabled
     }
 }
