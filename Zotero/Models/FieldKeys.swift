@@ -36,6 +36,7 @@ struct FieldKeys {
             static let contentType = "contentType"
             static let md5 = "md5"
             static let mtime = "mtime"
+            static let title = "title"
             static let filename = "filename"
             static let url = "url"
             static let charset = "charset"
