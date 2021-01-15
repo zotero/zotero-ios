@@ -391,11 +391,9 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 
-
     func showNoteCreation(save: @escaping (String) -> Void) {
         self.showNote(with: "", readOnly: false, save: save)
     }
-
 
     func showAttachmentPicker(save: @escaping ([URL]) -> Void) {
         let documentTypes = [String(kUTTypePDF), String(kUTTypePNG), String(kUTTypeJPEG)]
@@ -409,7 +407,6 @@ extension DetailCoordinator: DetailItemActionSheetCoordinatorDelegate {
                   .disposed(by: self.disposeBag)
         self.topViewController.present(controller, animated: true, completion: nil)
     }
-
 
     func showItemCreation(library: Library, collectionKey: String?) {
         self.showTypePicker(selected: "") { [weak self] type in

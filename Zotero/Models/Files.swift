@@ -127,7 +127,7 @@ struct Files {
 
     static func file(from url: URL) -> File {
         return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],
-                        name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension.lowercased())
+                        name: url.deletingPathExtension().lastPathComponent, ext: url.pathExtension)
     }
 
     private static func split(filename: String) -> (name: String, extension: String) {

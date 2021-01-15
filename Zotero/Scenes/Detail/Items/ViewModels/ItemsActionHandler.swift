@@ -390,13 +390,6 @@ struct ItemsActionHandler: ViewModelActionHandler {
     }
 
     private func addAttachments(urls: [URL], in viewModel: ViewModel<ItemsActionHandler>) {
-        self.backgroundQueue.async { [weak viewModel] in
-            guard let viewModel = viewModel else { return }
-            self._addAttachments(urls: urls, in: viewModel)
-        }
-    }
-
-    private func _addAttachments(urls: [URL], in viewModel: ViewModel<ItemsActionHandler>) {
         let attachments = urls.map({ Files.file(from: $0) })
                               .map({
                                   Attachment(key: KeyGenerator.newKey,
@@ -404,20 +397,29 @@ struct ItemsActionHandler: ViewModelActionHandler {
                                              type: .file(file: $0, filename: $0.name, location: .local, linkType: .imported),
                                              libraryId: viewModel.state.library.identifier)
                               })
-        let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []
 
         do {
             try self.fileStorage.copyAttachmentFilesIfNeeded(for: attachments)
 
+            let collections: Set<String> = viewModel.state.type.collectionKey.flatMap({ [$0] }) ?? []
             let type = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
             let request = CreateAttachmentsDbRequest(attachments: attachments, localizedType: type, collections: collections)
-            let failedTitles = try self.dbStorage.createCoordinator().perform(request: request)
 
-            if !failedTitles.isEmpty {
-                self.update(viewModel: viewModel) { state in
-                    state.error = .attachmentAdding(.someFailed(failedTitles))
-                }
-            }
+            self.perform(request: request,
+                         responseAction: { [weak viewModel] failedTitles in
+                             guard let viewModel = viewModel else { return }
+                             if !failedTitles.isEmpty {
+                                 self.update(viewModel: viewModel) { state in
+                                     state.error = .attachmentAdding(.someFailed(failedTitles))
+                                 }
+                             }
+                         }, errorAction: { [weak viewModel] error in
+                             guard let viewModel = viewModel else { return }
+                             DDLogError("ItemsStore: can't add attachment: \(error)")
+                             self.update(viewModel: viewModel) { state in
+                                 state.error = .attachmentAdding(.couldNotSave)
+                             }
+                         })
         } catch let error {
             DDLogError("ItemsStore: can't add attachment: \(error)")
             self.update(viewModel: viewModel) { state in
@@ -473,12 +475,17 @@ struct ItemsActionHandler: ViewModelActionHandler {
         state.changes.insert(.editing)
     }
 
-    private func perform<Request: DbResponseRequest>(request: Request, errorAction: @escaping (Swift.Error) -> Void) {
+    private func perform<Request: DbResponseRequest>(request: Request, responseAction: ((Request.Response) -> Void)? = nil, errorAction: @escaping (Swift.Error) -> Void) {
         self.backgroundQueue.async {
             do {
-                _ = try self.dbStorage.createCoordinator().perform(request: request)
+                let response = try self.dbStorage.createCoordinator().perform(request: request)
+                DispatchQueue.main.async {
+                    responseAction?(response)
+                }
             } catch let error {
-                errorAction(error)
+                DispatchQueue.main.async {
+                    errorAction(error)
+                }
             }
         }
     }
@@ -488,7 +495,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
             do {
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
-                errorAction(error)
+                DispatchQueue.main.async {
+                    errorAction(error)
+                }
             }
         }
     }
