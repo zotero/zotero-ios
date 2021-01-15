@@ -633,7 +633,11 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         if field.key == FieldKeys.Item.date || field.baseField == FieldKeys.Item.date,
            let order = self.dateParser.parse(string: value)?.orderWithSpaces {
-            field.additionalInfo?[.dateOrder] = order
+            var info = field.additionalInfo ?? [:]
+            info[.dateOrder] = order
+            field.additionalInfo = info
+        } else if field.additionalInfo != nil {
+            field.additionalInfo = nil
         }
 
         self.update(viewModel: viewModel) { state in
