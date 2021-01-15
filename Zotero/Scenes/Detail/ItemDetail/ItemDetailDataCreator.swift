@@ -200,10 +200,7 @@ struct ItemDetailDataCreator {
             var additionalInfo: [ItemDetailState.Field.AdditionalInfoKey: String]?
 
             if key == FieldKeys.Item.date || baseField == FieldKeys.Item.date,
-               var order = dateParser.parse(string: value)?.order {
-                for index in (1..<order.count).reversed() {
-                    order.insert(" ", at: order.index(order.startIndex, offsetBy: index))
-                }
+               let order = dateParser.parse(string: value)?.orderWithSpaces {
                 additionalInfo = [.dateOrder: order]
             }
 

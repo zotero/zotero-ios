@@ -118,13 +118,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             }
 
         case .setFieldValue(let id, let value):
-            guard var field = viewModel.state.data.fields[id] else { return }
-            field.value = value
-            field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value,
-                                                                urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
-            self.update(viewModel: viewModel) { state in
-                state.data.fields[id] = field
-            }
+            self.setField(value: value, for: id, in: viewModel)
 
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
@@ -624,7 +618,26 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             formatter.dateFormat = "yyyy-MM-dd"
 
             field.value = formatter.string(from: date)
+            if let order = self.dateParser.parse(string: field.value)?.orderWithSpaces {
+                field.additionalInfo?[.dateOrder] = order
+            }
             state.data.fields[field.key] = field
+        }
+    }
+
+    private func setField(value: String, for id: String, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard var field = viewModel.state.data.fields[id] else { return }
+
+        field.value = value
+        field.isTappable = ItemDetailDataCreator.isTappable(key: field.key, value: field.value, urlDetector: self.urlDetector, doiDetector: FieldKeys.Item.isDoi)
+
+        if field.key == FieldKeys.Item.date || field.baseField == FieldKeys.Item.date,
+           let order = self.dateParser.parse(string: value)?.orderWithSpaces {
+            field.additionalInfo?[.dateOrder] = order
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.data.fields[id] = field
         }
     }
 
