@@ -79,7 +79,7 @@ class Controllers {
         self.userInitialized = PassthroughSubject()
 
         self.startObservingSession()
-        self.update(with: self.sessionController.sessionData)
+        self.update(with: self.sessionController.sessionData, requiresSync: false)
     }
 
     func willEnterForeground() {
@@ -110,24 +110,26 @@ class Controllers {
                                                         }
     }
 
-    private func update(with data: SessionData?) {
+    private func update(with data: SessionData?, requiresSync: Bool = true) {
         // Cleanup user controllers on logout
         self.userControllers?.cleanup()
 
         if let data = data {
-            self.initializeSession(with: data)
+            self.initializeSession(with: data, requiresSync: requiresSync)
         } else {
             self.clearSession()
         }
     }
 
-    private func initializeSession(with data: SessionData) {
+    private func initializeSession(with data: SessionData, requiresSync: Bool) {
         do {
-            let controllers = try UserControllers(userId: data.userId, controllers: self)
-            controllers.syncScheduler.request(syncType: .normal)
-            self.userControllers = controllers
-
             self.apiClient.set(authToken: data.apiToken)
+
+            let controllers = try UserControllers(userId: data.userId, controllers: self)
+            if requiresSync {
+                controllers.syncScheduler.request(syncType: .normal)
+            }
+            self.userControllers = controllers
 
             self.userControllerError = nil
             self.userInitialized.send(.success(true))
