@@ -52,7 +52,7 @@
 "libraries.my_library" = "My Library";
 "libraries.group_libraries" = "Group Libraries";
 
-"collections.search_title" = "Search Collections";
+"collections.search_title" = "Find Collection";
 "collections.all_items" = "All Items";
 "collections.my_publications" = "My Publications";
 "collections.trash" = "Trash";
