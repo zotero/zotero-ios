@@ -223,6 +223,7 @@ class ExtensionStore {
             .subscribe(onSuccess: { [weak self] attachment in
                 self?.process(attachment: attachment)
             }, onError: { [weak self] error in
+                DDLogError("ExtensionStore: could not load attachment - \(error)")
                 self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
             })
             .disposed(by: self.disposeBag)
@@ -264,6 +265,7 @@ class ExtensionStore {
                                .subscribe(onSuccess: { [weak self] attachment in
                                    self?.process(attachment: attachment)
                                }, onError: { [weak self] error in
+                                   DDLogError("ExtensionStore: webview could not load data - \(error)")
                                    self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
                                })
                                .disposed(by: self.disposeBag)
@@ -288,6 +290,7 @@ class ExtensionStore {
                 .subscribe(onNext: { [weak self] progress in
                     self?.state.attachmentState = .downloading(progress.completed)
                 }, onError: { [weak self] error in
+                    DDLogError("ExtensionStore: could not download shared file - \(url.absoluteString) - \(error)")
                     self?.state.attachmentState = .failed(.downloadFailed)
                 }, onCompleted: { [weak self] in
                     guard let `self` = self else { return }
@@ -385,6 +388,7 @@ class ExtensionStore {
                                    self?.state.attachmentState = .translating(progress)
                                }
                            }, onError: { [weak self] error in
+                               DDLogError("ExtensionStore: web view error - \(error)")
                                self?.state.attachmentState = .failed((error as? WebViewHandler.Error).flatMap({ .webViewError($0) }) ?? .unknown)
                            })
                            .disposed(by: self.disposeBag)
@@ -407,6 +411,7 @@ class ExtensionStore {
                     .subscribe(onNext: { [weak self] progress in
                         self?.state.attachmentState = .downloading(progress.completed)
                     }, onError: { [weak self] error in
+                        DDLogError("ExtensionStore: could not download translated file - \(url.absoluteString) - \(error)")
                         self?.state.attachmentState = .failed(.downloadFailed)
                     }, onCompleted: { [weak self] in
                         guard let `self` = self else { return }
@@ -424,12 +429,16 @@ class ExtensionStore {
                 self.state = state
             }
         } catch let error as Parsing.Error {
+            DDLogError("ExtensionStore: could not parse item - \(error)")
             self.state.attachmentState = .failed(.parseError(error))
         } catch let error as SchemaError {
+            DDLogError("ExtensionStore: schema failed - \(error)")
             self.state.attachmentState = .failed(.schemaError(error))
         } catch let error as State.AttachmentState.Error {
+            DDLogError("ExtensionStore: attachment processing failed - \(error)")
             self.state.attachmentState = .failed(error)
         } catch {
+            DDLogError("ExtensionStore: could not process item - \(error)")
             self.state.attachmentState = .failed(.unknown)
         }
     }
@@ -556,6 +565,7 @@ class ExtensionStore {
             .subscribe(onSuccess: { [weak self] _ in
                 self?.state.attachmentState = .done
             }, onError: { [weak self] error in
+                DDLogError("ExtensionStore: could not submit standalone item - \(error)")
                 self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
             })
             .disposed(by: self.disposeBag)
@@ -619,6 +629,7 @@ class ExtensionStore {
                    self?.backgroundUploader = nil
                    self?.state.attachmentState = .done
                }, onError: { [weak self] error in
+                   DDLogError("ExtensionStore: could not submit item or attachment - \(error)")
                    self?.state.attachmentState = .failed((error as? State.AttachmentState.Error) ?? .unknown)
                })
                .disposed(by: self.disposeBag)

@@ -16,28 +16,40 @@ import CocoaLumberjackSwift
 
 class ShareViewController: UIViewController {
     // Outlets
+    @IBOutlet private weak var webView: WKWebView!
+    @IBOutlet private weak var stackView: UIStackView!
+    // Title
+    @IBOutlet private weak var titleContainer: UIView!
+    @IBOutlet private weak var titleLabel: UILabel!
+    // Collection picker
+    @IBOutlet private weak var collectionPickerStackContainer: UIView!
     @IBOutlet private weak var collectionPickerContainer: UIView!
     @IBOutlet private weak var collectionPickerLabel: UILabel!
     @IBOutlet private weak var collectionPickerChevron: UIImageView!
     @IBOutlet private weak var collectionPickerIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var collectionPickerButton: UIButton!
+    // Item picker
     @IBOutlet private weak var itemPickerStackContainer: UIView!
     @IBOutlet private weak var itemPickerTitleLabel: UILabel!
     @IBOutlet private weak var itemPickerContainer: UIView!
     @IBOutlet private weak var itemPickerLabel: UILabel!
     @IBOutlet private weak var itemPickerChevron: UIImageView!
     @IBOutlet private weak var itemPickerButton: UIButton!
-    @IBOutlet private weak var translationErrorLabel: UILabel!
-    @IBOutlet private weak var toolbarContainer: UIView!
-    @IBOutlet private weak var toolbarLabel: UILabel!
-    @IBOutlet private weak var toolbarProgressView: UIProgressView!
-    @IBOutlet private weak var preparingContainer: UIView!
-    @IBOutlet private weak var webView: WKWebView!
+    // Progress
+    @IBOutlet private weak var progressContainer: UIView!
+    @IBOutlet private weak var progressView: CircularProgressView!
+    @IBOutlet private weak var progressActivityIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var progressLabel: UILabel!
+    @IBOutlet private weak var failureLabel: UILabel!
+
     // Variables
     private var translatorsController: TranslatorsController!
     private var dbStorage: DbStorage!
     private var debugLogging: DebugLogging!
     private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
+    private var viewIsVisible: Bool = true
+
     // Constants
     private static let toolbarTitleIdx = 1
 
@@ -64,7 +76,6 @@ class ShareViewController: UIViewController {
 
         // Setup UI
         self.setupPickers()
-        self.setupPreparingIndicator()
 
         // Setup observing
         self.storeCancellable = self.store?.$state.receive(on: DispatchQueue.main)
@@ -80,7 +91,26 @@ class ShareViewController: UIViewController {
         }
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.viewIsVisible = true
+        self.updatePreferredContentSize()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.viewIsVisible = false
+    }
+
     // MARK: - Actions
+
+    private func updatePreferredContentSize() {
+        var size = self.stackView.systemLayoutSizeFitting(CGSize(width: 468.0, height: .greatestFiniteMagnitude))
+        size.height += 32
+
+        self.preferredContentSize = size
+        self.navigationController?.preferredContentSize = size
+    }
 
     private func showInitialError(message: String) {
         self.navigationController?.view.alpha = 0.0
@@ -100,7 +130,11 @@ class ShareViewController: UIViewController {
             self?.navigationController?.popViewController(animated: true)
         }
 
+        let size = CGSize(width: 468.0, height: 500.0)
+
         let controller = UIHostingController(rootView: view)
+        controller.preferredContentSize = size
+        self.navigationController?.preferredContentSize = size
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -114,7 +148,11 @@ class ShareViewController: UIViewController {
         }
         .environmentObject(store)
 
+        let size = CGSize(width: 468.0, height: 500.0)
+
         let controller = UIHostingController(rootView: view)
+        controller.preferredContentSize = size
+        self.navigationController?.preferredContentSize = size
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -130,27 +168,23 @@ class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        self.navigationItem.title = state.title
-        self.setupNavigationItems(for: state.attachmentState)
-        self.updateToolbar(for: state.attachmentState)
-        self.updateCollectionPicker(to: state.collectionPicker)
-        self.updateItemPicker(to: state.itemPicker)
+        self.titleContainer.isHidden = state.title == nil
+        self.titleLabel.text = state.title
+        self.update(attachmentState: state.attachmentState)
+        self.update(collectionPicker: state.collectionPicker)
+        self.update(itemPicker: state.itemPicker)
 
-        switch state.attachmentState {
-        case .done:
-            self.debugLogging.storeLogs { [unowned self] in
-                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-            }
-        case .submitting:
-            self.showPreparingIndicatorIfNeeded()
-        case .failed(let error):
-            self.hidePreparingIndicatorIfNeeded()
-            self.translationErrorLabel.isHidden = error.isFatal
-        default: break
+        if self.viewIsVisible {
+            self.updatePreferredContentSize()
         }
     }
 
-    private func setupNavigationItems(for state: ExtensionStore.State.AttachmentState) {
+    private func update(attachmentState state: ExtensionStore.State.AttachmentState) {
+        self.updateNavigationItems(for: state)
+        self.updateProgress(for: state)
+    }
+
+    private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
         switch state {
         case .submitting:
             // Disable "Upload" and "Cancel" button if the upload is being prepared so that the user can't start it multiple times or cancel
@@ -171,7 +205,101 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateItemPicker(to state: ExtensionStore.State.ItemPicker?) {
+    private func updateProgress(for state: ExtensionStore.State.AttachmentState) {
+        let progressData: (String, Float?)?
+
+        switch state {
+        case .decoding:
+            progressData = (L10n.Shareext.decodingAttachment, 0.1)
+
+        case .processed:
+            progressData = nil
+
+        case .translating(let message):
+            progressData = (message, 0.2)
+
+        case .downloading(let _progress):
+            let progress = 0.2 + (0.8 * _progress)
+            progressData = (L10n.Shareext.Translation.downloading, progress)
+
+        case .submitting:
+            progressData = ("Preparing for upload, please wait", nil)
+
+        case .failed(let error):
+            progressData = nil
+
+            self.collectionPickerStackContainer.isHidden = true
+            self.itemPickerStackContainer.isHidden = true
+            self.show(error: error)
+
+        case .done:
+            self.debugLogging.storeLogs { [unowned self] in
+                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
+            return
+        }
+
+        self.progressContainer.isHidden = progressData == nil
+        if let (text, progress) = progressData {
+            self.progressLabel.text = text.uppercased()
+
+            self.progressView.isHidden = progress == nil
+            self.progressView.progress = CGFloat(progress ?? 0)
+            self.progressActivityIndicator.isHidden = progress != nil
+        }
+    }
+
+    private func show(error: ExtensionStore.State.AttachmentState.Error) {
+        var message = self.errorMessage(for: error)
+
+        if error.isFatal {
+            self.failureLabel.textColor = .red
+        } else {
+            message += "\nYou can still save this web as Web Page item."
+            self.failureLabel.textColor = .darkGray
+        }
+
+        self.failureLabel.text = message
+        self.failureLabel.isHidden = false
+    }
+
+    private func errorMessage(for error: ExtensionStore.State.AttachmentState.Error) -> String {
+        switch error {
+        case .cantLoadSchema:
+            return L10n.Errors.Shareext.cantLoadSchema
+        case .cantLoadWebData:
+            return L10n.Errors.Shareext.cantLoadData
+        case .downloadFailed:
+            return L10n.Errors.Shareext.downloadFailed
+        case .itemsNotFound:
+            return L10n.Errors.Shareext.itemsNotFound
+        case .parseError:
+            return L10n.Errors.Shareext.parsingError
+        case .schemaError:
+            return L10n.Errors.Shareext.schemaError
+        case .webViewError(let error):
+            switch error {
+            case .incompatibleItem:
+                return L10n.Errors.Shareext.incompatibleItem
+            case .javascriptCallMissingResult:
+                return L10n.Errors.Shareext.javascriptFailed
+            case .noSuccessfulTranslators:
+                return L10n.Errors.Shareext.translationFailed
+            case .cantFindBaseFile, .webExtractionMissingJs: // should never happen
+                return L10n.Errors.Shareext.missingBaseFiles
+            case .webExtractionMissingData:
+                return L10n.Errors.Shareext.responseMissingData
+            }
+        case .unknown, .expired:
+            return L10n.Errors.Shareext.unknown
+        case .fileMissing:
+            return L10n.Errors.Shareext.missingFile
+        case .missingBackgroundUploader:
+            return L10n.Errors.Shareext.backgroundUploaderFailure
+        }
+    }
+
+    private func update(itemPicker state: ExtensionStore.State.ItemPicker?) {
         self.itemPickerStackContainer.isHidden = state == nil
         
         guard let state = state else { return }
@@ -189,7 +317,7 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateCollectionPicker(to state: ExtensionStore.State.CollectionPicker) {
+    private func update(collectionPicker state: ExtensionStore.State.CollectionPicker) {
         switch state {
         case .picked(let library, let collection):
             let title = collection?.name ?? library.name
@@ -197,136 +325,32 @@ class ShareViewController: UIViewController {
             self.collectionPickerChevron.isHidden = false
             self.collectionPickerLabel.text = title
             self.collectionPickerLabel.textColor = Asset.Colors.zoteroBlue.color
+            self.collectionPickerButton.isEnabled = true
         case .loading:
             self.collectionPickerIndicator.isHidden = false
             self.collectionPickerIndicator.startAnimating()
             self.collectionPickerChevron.isHidden = true
             self.collectionPickerLabel.text = "Loading collections"
             self.collectionPickerLabel.textColor = .gray
+            self.collectionPickerButton.isEnabled = false
         case .failed:
             self.collectionPickerIndicator.stopAnimating()
             self.collectionPickerChevron.isHidden = true
             self.collectionPickerLabel.text = "Can't sync collections"
             self.collectionPickerLabel.textColor = .red
+            self.collectionPickerButton.isEnabled = false
         }
-    }
-
-    private func updateToolbar(for state: ExtensionStore.State.AttachmentState) {
-        switch state {
-        case .decoding:
-            self.setToolbarData(title: L10n.Shareext.decodingAttachment, progress: nil)
-            self.showToolbarIfNeeded()
-
-        case .processed:
-            self.hideToolbarIfNeeded()
-
-        case .translating(let message):
-            self.setToolbarData(title: message, progress: nil)
-
-        case .downloading(let progress):
-            self.setToolbarData(title: L10n.Shareext.Translation.downloading, progress: progress)
-
-        case .failed(let error):
-            switch error {
-            case .cantLoadSchema:
-                self.showError(message: "Could not update schema. Close and try again.")
-            case .cantLoadWebData:
-                self.showError(message: "Could not load web data. Close and try again.")
-            case .downloadFailed:
-                self.showError(message: "Could not download attachment file")
-            case .itemsNotFound:
-                self.showError(message: "Translator couldn't find any items")
-            case .parseError:
-                self.showError(message: "Translator response couldn't be parsed")
-            case .schemaError:
-                self.showError(message: "Some data could not be downloaded. It may have been saved with a newer version of Zotero.")
-            case .webViewError(let error):
-                switch error {
-                case .incompatibleItem:
-                    self.showError(message: "Translated item contains incompatible data")
-                case .javascriptCallMissingResult:
-                    self.showError(message: "Javascript call failed")
-                case .noSuccessfulTranslators:
-                    self.showError(message: "Transation failed")
-                case .cantFindBaseFile: // should never happen
-                    self.showError(message: "Translator missing")
-                case .webExtractionMissingJs:
-                    self.showError(message: "Can't load shared url. Close and try again.")
-                case .webExtractionMissingData:
-                    self.showError(message: "Could not load web data. Close and try again.")
-                }
-            case .unknown, .expired:
-                self.showError(message: L10n.Errors.Shareext.unknown)
-            case .fileMissing:
-                self.showError(message: "Could not find file to upload.")
-            case .missingBackgroundUploader:
-                self.showError(message: "Background uploader not initialized.")
-            }
-        case .submitting, .done: break
-        }
-    }
-
-    private func showPreparingIndicatorIfNeeded() {
-        guard self.preparingContainer.isHidden else { return }
-        self.preparingContainer.isHidden = false
-        UIView.animate(withDuration: 0.2) {
-            self.preparingContainer.alpha = 1
-        }
-    }
-
-    private func hidePreparingIndicatorIfNeeded() {
-        guard !self.preparingContainer.isHidden else { return }
-        UIView.animate(withDuration: 0.2, animations: {
-            self.preparingContainer.alpha = 0
-        }, completion: { finished in
-            if finished {
-                self.preparingContainer.isHidden = true
-            }
-        })
-    }
-
-    private func showToolbarIfNeeded() {
-        guard self.toolbarContainer.isHidden else { return }
-        self.toolbarContainer.isHidden = false
-        UIView.animate(withDuration: 0.2) {
-            self.toolbarContainer.alpha = 1
-        }
-    }
-
-    private func hideToolbarIfNeeded() {
-        guard !self.toolbarContainer.isHidden else { return }
-        UIView.animate(withDuration: 0.2, animations: {
-            self.toolbarContainer.alpha = 0
-        }, completion: { finished in
-            if finished {
-                self.toolbarContainer.isHidden = true
-            }
-        })
-    }
-
-    private func setToolbarData(title: String, progress: Float?) {
-        self.toolbarLabel.text = title
-        if let progress = progress {
-            self.toolbarProgressView.progress = progress
-            self.toolbarProgressView.isHidden = false
-        } else {
-            self.toolbarProgressView.isHidden = true
-        }
-    }
-
-    private func showError(message: String) {
-        self.setToolbarData(title: "Error: \(message)", progress: nil)
     }
 
     // MARK: - Setups
 
     private func setupPickers() {
-        [self.collectionPickerContainer,
+        [self.titleContainer,
+         self.collectionPickerContainer,
          self.itemPickerContainer].forEach { container in
             container!.layer.cornerRadius = 8
             container!.layer.masksToBounds = true
-            container!.layer.borderWidth = 1
-            container!.layer.borderColor = UIColor.opaqueSeparator.cgColor
+            container?.backgroundColor = Asset.Colors.defaultCellBackground.color
         }
     }
 
@@ -341,11 +365,6 @@ class ShareViewController: UIViewController {
             done.isEnabled = false
             self.navigationItem.rightBarButtonItem = done
         }
-    }
-
-    private func setupPreparingIndicator() {
-        self.preparingContainer.layer.cornerRadius = 8
-        self.preparingContainer.layer.masksToBounds = true
     }
 
     private func setupControllers(with session: SessionData) {

@@ -60,7 +60,7 @@
       <RemoteRunnable
          runnableDebuggingMode = "1"
          BundleIdentifier = "org.zotero.ios.Zotero"
-         RemotePath = "/Users/michalrentka/Library/Developer/CoreSimulator/Devices/6F06624B-E797-4DE6-A572-5CFADFDD85A1/data/Containers/Bundle/Application/63D0B080-0484-455D-9D6A-8A25A7AAAEEB/Zotero.app">
+         RemotePath = "/Users/michalrentka/Library/Developer/CoreSimulator/Devices/C3309DBE-4DF9-4AB1-8E64-27B72F75B312/data/Containers/Bundle/Application/719C286C-3D35-4C4B-A781-B06C03C6A593/Zotero.app">
       </RemoteRunnable>
       <MacroExpansion>
          <BuildableReference

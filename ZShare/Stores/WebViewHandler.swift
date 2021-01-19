@@ -81,12 +81,17 @@ class WebViewHandler: NSObject {
         return self.load(url: url)
                    .flatMap({ _ -> Single<Any> in
                        guard let url = Bundle.main.url(forResource: "webview_extraction", withExtension: "js"),
-                             let script = try? String(contentsOf: url) else { return Single.error(Error.webExtractionMissingJs) }
+                             let script = try? String(contentsOf: url) else {
+                           DDLogError("WebViewHandler: can't load extraction javascript")
+                           return Single.error(Error.webExtractionMissingJs)
+                       }
                        return self.callJavascript(script)
                    })
                    .flatMap({ data -> Single<ExtensionStore.State.RawAttachment> in
                        guard let payload = data as? [String: Any],
                              let isFile = payload["isFile"] as? Bool else {
+                           DDLogError("WebViewHandler: extracted data missing response")
+                           DDLogError("\(data as? [String: Any])")
                            return Single.error(Error.webExtractionMissingData)
                        }
 
@@ -98,6 +103,8 @@ class WebViewHandler: NSObject {
                                  let frames = payload["frames"] as? [String] {
                            return Single.just(.web(title: title, url: url, html: html, cookies: cookies, frames: frames))
                        } else {
+                           DDLogError("WebViewHandler: extracted data incompatible")
+                           DDLogError("\(payload)")
                            return Single.error(Error.webExtractionMissingData)
                        }
                    })
@@ -112,6 +119,7 @@ class WebViewHandler: NSObject {
     func translate(url: URL, title: String, html: String, cookies: String, frames: [String]) {
         guard let containerUrl = Bundle.main.url(forResource: "src/index", withExtension: "html", subdirectory: "translation"),
               let containerHtml = try? String(contentsOf: containerUrl, encoding: .utf8) else {
+            DDLogError("WebViewHandler: can't load translator html")
             self.observable.on(.error(Error.cantFindBaseFile))
             return
         }
@@ -130,6 +138,7 @@ class WebViewHandler: NSObject {
                        return self.callJavascript("translate('\(url.absoluteString)', \(encodedHtml), \(encodedFrames), \(encodedTranslators));")
                    }
                    .subscribe(onError: { [weak self] error in
+                       DDLogError("WebViewHandler: translation failed - \(error)")
                        self?.observable.on(.error(error))
                    })
                    .disposed(by: self.disposeBag)
@@ -140,8 +149,7 @@ class WebViewHandler: NSObject {
     func selectItem(_ item: (String, String)) {
         guard let messageId = self.itemSelectionMessageId else { return }
         let (key, value) = item
-        self.webView?.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));",
-                                        completionHandler: nil)
+        self.webView?.evaluateJavaScript("Zotero.Messaging.receiveResponse('\(messageId)', \(self.encodeJSONForJavascript([key: value])));", completionHandler: nil)
         self.itemSelectionMessageId = nil
     }
 
@@ -251,7 +259,7 @@ class WebViewHandler: NSObject {
                         return
                     }
 
-                    DDLogError("Javascript call ('\(script)') error: \(error)")
+                    DDLogError("WebViewHandler: javascript call ('\(script)') error - \(error)")
 
                     subscriber(.error(error))
                 }

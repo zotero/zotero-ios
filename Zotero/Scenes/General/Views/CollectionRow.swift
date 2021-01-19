@@ -25,42 +25,11 @@ struct CollectionRow: View {
                         .foregroundColor(.primary)
                         .lineLimit(1)
                 }
-
-                if self.shouldShowCount {
-                    Spacer()
-
-                    Text("\(self.data.itemCount)")
-                        .font(.caption)
-                        .padding(.vertical, 2)
-                        .padding(.horizontal, 8)
-                        .background(
-                            Rectangle()
-                                .foregroundColor(self.badgeBackgroundColor)
-                                .cornerRadius(proxy.size.height/2.0)
-                        )
-                }
             }
             .padding(.vertical, 10)
             .padding(.leading, self.inset(for: self.data.level))
-            .padding(.trailing, self.shouldShowCount ? 10 : 16)
+            .padding(.trailing, 16)
             .frame(width: proxy.size.width, alignment: .leading)
-        }
-    }
-
-    private var shouldShowCount: Bool {
-        if self.data.itemCount == 0 {
-            return false
-        }
-
-        if Defaults.shared.showCollectionItemCount {
-            return true
-        }
-
-        switch self.data.type {
-        case .custom(let type):
-            return type == .all
-        case .collection, .search:
-            return false
         }
     }
 

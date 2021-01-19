@@ -209,4 +209,17 @@
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
 "errors.shareext.unknown" = "Unknown error occured";
+"errors.shareext.cant_load_schema" = "Could not load schema. Please go to Zotero app, sync and try again.";
+"errors.shareext.cant_load_data" = "Could not load web data. Close and try again.";
+"errors.shareext.download_failed" = "Could not download file.";
+"errors.shareext.items_not_found" = "Translator couldn't find any items.";
+"errors.shareext.parsing_error" = "Translator response couldn't be parsed";
+"errors.shareext.schema_error" = "Some data could not be downloaded. It may have been saved with a newer version of Zotero.";
+"errors.shareext.incompatible_item" = "Translated item contains incompatible data";
+"errors.shareext.javascript_failed" = "Javascript call failed";
+"errors.shareext.translation_failed" = "Translation failed";
+"errors.shareext.missing_base_files" = "Translator missing";
+"errors.shareext.response_missing_data" = "Could not load web data. Close and try again.";
+"errors.shareext.missing_file" = "Could not find file to upload.";
+"errors.shareext.background_uploader_failure" = "Background uploader not initialized.";
 "errors.db_failure" = "User couldn't be initialized. Please try logging in again.";

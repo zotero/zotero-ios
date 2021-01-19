@@ -167,10 +167,34 @@ internal enum L10n {
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage")
     }
     internal enum Shareext {
-      /// Failed to load data. Please try again.
+      /// Background uploader not initialized.
+      internal static let backgroundUploaderFailure = L10n.tr("Localizable", "errors.shareext.background_uploader_failure")
+      /// Could not load web data. Close and try again.
       internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data")
+      /// Could not load schema. Please go to Zotero app, sync and try again.
+      internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema")
+      /// Could not download file.
+      internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
+      /// Translated item contains incompatible data
+      internal static let incompatibleItem = L10n.tr("Localizable", "errors.shareext.incompatible_item")
+      /// Translator couldn't find any items.
+      internal static let itemsNotFound = L10n.tr("Localizable", "errors.shareext.items_not_found")
+      /// Javascript call failed
+      internal static let javascriptFailed = L10n.tr("Localizable", "errors.shareext.javascript_failed")
       /// Please log into the app before using this extension.
       internal static let loggedOut = L10n.tr("Localizable", "errors.shareext.logged_out")
+      /// Translator missing
+      internal static let missingBaseFiles = L10n.tr("Localizable", "errors.shareext.missing_base_files")
+      /// Could not find file to upload.
+      internal static let missingFile = L10n.tr("Localizable", "errors.shareext.missing_file")
+      /// Translator response couldn't be parsed
+      internal static let parsingError = L10n.tr("Localizable", "errors.shareext.parsing_error")
+      /// Could not load web data. Close and try again.
+      internal static let responseMissingData = L10n.tr("Localizable", "errors.shareext.response_missing_data")
+      /// Some data could not be downloaded. It may have been saved with a newer version of Zotero.
+      internal static let schemaError = L10n.tr("Localizable", "errors.shareext.schema_error")
+      /// Translation failed
+      internal static let translationFailed = L10n.tr("Localizable", "errors.shareext.translation_failed")
       /// Unknown error occured
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }

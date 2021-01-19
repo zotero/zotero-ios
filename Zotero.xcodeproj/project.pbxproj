@@ -720,6 +720,9 @@
 		B3F3D644255ECF3500F310C2 /* AnnotationViewSeparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */; };
 		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C02243B3960004F8B1E /* TestFileStorage.swift */; };
+		B3F47DF525B5BCFD006FA96F /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */; };
+		B3F47DFB25B5CB79006FA96F /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47DFA25B5CB79006FA96F /* CircularProgressView.swift */; };
+		B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550424B85A6200F94B59 /* Images.xcassets */; };
 		B3F785C6252488A000B08721 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = B3F785C5252488A000B08721 /* Realm */; };
 		B3F785C8252488A000B08721 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B3F785C7252488A000B08721 /* RealmSwift */; };
 		B3F7B0682524A78F00E51377 /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = B3F7B0672524A78F00E51377 /* CocoaLumberjack */; };
@@ -1287,6 +1290,8 @@
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
+		B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
+		B3F47DFA25B5CB79006FA96F /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -2336,6 +2341,7 @@
 		B3AB389F238EC02D008A1ABB /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */,
 				B3AB38A0238EC02D008A1ABB /* ShareViewController.swift */,
 			);
 			path = "View Controllers";
@@ -2345,6 +2351,7 @@
 			isa = PBXGroup;
 			children = (
 				B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */,
+				B3F47DFA25B5CB79006FA96F /* CircularProgressView.swift */,
 				B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */,
 			);
 			path = Views;
@@ -2751,6 +2758,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */,
 				B337A5AE244F35A900AFD13D /* Localizable.strings in Resources */,
 				B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */,
 				B3AB38B8238ED023008A1ABB /* Assets.xcassets in Resources */,
@@ -3406,6 +3414,7 @@
 				B305670F23FC08C1003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B325DBB024375D9E00EFF0F5 /* Conflict.swift in Sources */,
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
+				B3F47DF525B5BCFD006FA96F /* ContainerViewController.swift in Sources */,
 				B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */,
 				B30566E123FC080C003304F2 /* BackgroundUpload.swift in Sources */,
 				B305673023FC0921003304F2 /* SubmitDeletionSyncAction.swift in Sources */,
@@ -3453,6 +3462,7 @@
 				B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B305672B23FC0916003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
 				B305673323FC0927003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
+				B3F47DFB25B5CB79006FA96F /* CircularProgressView.swift in Sources */,
 				B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */,
 				B30566FD23FC0865003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B305671F23FC08E6003304F2 /* UpdateVersionsDbRequest.swift in Sources */,

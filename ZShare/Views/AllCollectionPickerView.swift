@@ -39,6 +39,7 @@ fileprivate struct ListView: View {
                     .onTapGesture {
                         self.picked(Collection(custom: .all), library)
                     }
+
                 self.store.state.collections[library.identifier].flatMap {
                     ForEach($0) { collection in
                         CollectionRow(data: collection)
