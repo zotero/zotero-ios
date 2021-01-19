@@ -228,7 +228,7 @@ class ShareViewController: UIViewController {
         case .failed(let error):
             progressData = nil
 
-            self.collectionPickerStackContainer.isHidden = true
+            self.collectionPickerStackContainer.isHidden = error.isFatal
             self.itemPickerStackContainer.isHidden = true
             self.show(error: error)
 
