@@ -459,7 +459,7 @@ internal enum L10n {
   }
 
   internal enum Shareext {
-    /// Loading attachment
+    /// Searching for items
     internal static let decodingAttachment = L10n.tr("Localizable", "shareext.decoding_attachment")
     /// Save to Zotero
     internal static let save = L10n.tr("Localizable", "shareext.save")

@@ -170,7 +170,7 @@ class ShareViewController: UIViewController {
     private func update(to state: ExtensionStore.State) {
         self.titleContainer.isHidden = state.title == nil
         self.titleLabel.text = state.title
-        self.update(attachmentState: state.attachmentState)
+        self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.update(collectionPicker: state.collectionPicker)
         self.update(itemPicker: state.itemPicker)
 
@@ -179,9 +179,9 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func update(attachmentState state: ExtensionStore.State.AttachmentState) {
+    private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
         self.updateNavigationItems(for: state)
-        self.updateProgress(for: state)
+        self.updateProgress(for: state, itemState: itemState)
     }
 
     private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
@@ -205,7 +205,13 @@ class ShareViewController: UIViewController {
         }
     }
 
-    private func updateProgress(for state: ExtensionStore.State.AttachmentState) {
+    private func updateProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
+        if let state = itemState, state.picked == nil {
+            // Don't show progress bar when waiting for item pick
+            self.progressContainer.isHidden = true
+            return
+        }
+
         let progressData: (String, Float?)?
 
         switch state {
@@ -306,13 +312,16 @@ class ShareViewController: UIViewController {
 
         if let text = state.picked {
             self.itemPickerLabel.text = text
-            self.itemPickerLabel.textColor = .gray
-            self.itemPickerChevron.tintColor = .gray
+            self.itemPickerLabel.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+                return traitCollection.userInterfaceStyle == .light ? .darkText : .white
+            })
+            self.itemPickerChevron.isHidden = true
             self.itemPickerButton.isEnabled = false
         } else {
             self.itemPickerLabel.text = L10n.Shareext.Translation.itemSelection
             self.itemPickerLabel.textColor = Asset.Colors.zoteroBlue.color
             self.itemPickerChevron.tintColor = Asset.Colors.zoteroBlue.color
+            self.itemPickerChevron.isHidden = false
             self.itemPickerButton.isEnabled = true
         }
     }

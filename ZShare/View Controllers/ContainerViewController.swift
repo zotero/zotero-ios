@@ -10,16 +10,20 @@ import UIKit
 
 class ContainerViewController: UIViewController {
     @IBOutlet private weak var containerView: UIView!
-    @IBOutlet private weak var containerHeight: NSLayoutConstraint!
 
+    private weak var containerHeight: NSLayoutConstraint?
     private var didAppear = false
+
+    private static let padWidth: CGFloat = 500
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = .clear
-        self.containerView.layer.cornerRadius = 8
-        self.containerView.layer.masksToBounds = true
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            self.setupForPad()
+        } else {
+            self.setupForPhone()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -29,12 +33,41 @@ class ContainerViewController: UIViewController {
 
     override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
         super.preferredContentSizeDidChange(forChildContentContainer: container)
-        self.containerHeight.constant = container.preferredContentSize.height
+
+        guard let height = self.containerHeight else { return }
+
+        height.constant = container.preferredContentSize.height
 
         guard self.didAppear else { return }
 
         UIView.animate(withDuration: 0.2) {
             self.view.layoutIfNeeded()
         }
+    }
+
+    private func setupForPad() {
+        self.view.backgroundColor = ProcessInfo().operatingSystemVersion.majorVersion == 13 ? UIColor.black.withAlphaComponent(0.085) : .clear
+
+        self.containerView.layer.cornerRadius = 8
+        self.containerView.layer.masksToBounds = true
+
+        let height = self.containerView.heightAnchor.constraint(equalToConstant: 100)
+        self.containerHeight = height
+
+        NSLayoutConstraint.activate([
+            self.view.centerXAnchor.constraint(equalTo: self.containerView.centerXAnchor),
+            self.view.centerYAnchor.constraint(equalTo: self.containerView.centerYAnchor),
+            height,
+            self.containerView.widthAnchor.constraint(equalToConstant: ContainerViewController.padWidth)
+        ])
+    }
+
+    private func setupForPhone() {
+        NSLayoutConstraint.activate([
+            self.containerView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            self.containerView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            self.containerView.topAnchor.constraint(equalTo: self.view.topAnchor),
+            self.containerView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+        ])
     }
 }

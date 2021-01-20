@@ -176,7 +176,7 @@
 "settings.storage.delete_library_question" = "Do you really want to delete all attachments in \"%@\"?";
 
 "shareext.save" = "Save to Zotero";
-"shareext.decoding_attachment" = "Loading attachment";
+"shareext.decoding_attachment" = "Searching for items";
 "shareext.translation.item_selection" = "Pick an item";
 "shareext.translation.translating_with" = "Translating with: \"%@\"";
 "shareext.translation.downloading" = "Downloading";
