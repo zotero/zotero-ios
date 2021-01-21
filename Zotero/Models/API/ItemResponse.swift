@@ -352,7 +352,6 @@ struct ItemResponse {
                  FieldKeys.Item.Attachment.charset,
                  FieldKeys.Item.Attachment.path,
                  FieldKeys.Item.Attachment.page,
-                 FieldKeys.Item.Attachment.hasUnimportedAnnotations,
                  FieldKeys.Item.Attachment.lastChecked:
                 return true
             default:
