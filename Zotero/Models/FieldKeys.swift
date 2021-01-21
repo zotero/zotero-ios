@@ -42,7 +42,6 @@ struct FieldKeys {
             static let charset = "charset"
             static let path = "path"
             static let page = "attachmentPageIndex"
-            static let lastChecked = "attachmentLastChecked"
 
             static var fieldKeys: [String] {
                 return [Item.title, Attachment.filename, Attachment.contentType, Attachment.linkMode,

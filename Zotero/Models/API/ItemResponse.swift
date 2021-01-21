@@ -351,8 +351,7 @@ struct ItemResponse {
                  FieldKeys.Item.Attachment.linkMode,
                  FieldKeys.Item.Attachment.charset,
                  FieldKeys.Item.Attachment.path,
-                 FieldKeys.Item.Attachment.page,
-                 FieldKeys.Item.Attachment.lastChecked:
+                 FieldKeys.Item.Attachment.page:
                 return true
             default:
                 return false
