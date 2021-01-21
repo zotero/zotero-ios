@@ -41,6 +41,9 @@ class ShareViewController: UIViewController {
     @IBOutlet private weak var progressActivityIndicator: UIActivityIndicatorView!
     @IBOutlet private weak var progressLabel: UILabel!
     @IBOutlet private weak var failureLabel: UILabel!
+    // Saving
+    @IBOutlet private weak var savingContainer: UIView!
+    @IBOutlet private weak var savingInnerContainer: UIView!
 
     // Variables
     private var translatorsController: TranslatorsController!
@@ -76,6 +79,7 @@ class ShareViewController: UIViewController {
 
         // Setup UI
         self.setupPickers()
+        self.setupSavingOverlay()
 
         // Setup observing
         self.storeCancellable = self.store?.$state.receive(on: DispatchQueue.main)
@@ -229,11 +233,13 @@ class ShareViewController: UIViewController {
             progressData = (L10n.Shareext.Translation.downloading, progress)
 
         case .submitting:
-            progressData = ("Preparing for upload, please wait", nil)
+            progressData = nil
+            self.showSavingOverlay()
 
         case .failed(let error):
             progressData = nil
 
+            self.hideSavingOverlay()
             self.collectionPickerStackContainer.isHidden = error.isFatal
             self.itemPickerStackContainer.isHidden = true
             self.show(error: error)
@@ -351,7 +357,35 @@ class ShareViewController: UIViewController {
         }
     }
 
+    private func showSavingOverlay() {
+        guard self.savingContainer.isHidden else { return }
+
+        self.savingContainer.alpha = 0
+        self.savingContainer.isHidden = false
+
+        UIView.animate(withDuration: 0.2) {
+            self.savingContainer.alpha = 1
+        }
+    }
+
+    private func hideSavingOverlay() {
+        guard !self.savingContainer.isHidden else { return }
+
+        UIView.animate(withDuration: 0.2, animations: {
+            self.savingContainer.alpha = 0
+        }, completion: { finished in
+            guard finished else { return }
+            self.savingContainer.isHidden = true
+        })
+    }
+
     // MARK: - Setups
+
+    private func setupSavingOverlay() {
+        self.savingContainer.isHidden = true
+        self.savingInnerContainer.layer.cornerRadius = 8
+        self.savingInnerContainer.layer.masksToBounds = true
+    }
 
     private func setupPickers() {
         [self.titleContainer,
