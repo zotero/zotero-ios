@@ -80,18 +80,7 @@ struct AttachmentCreator {
     }
 
     private static func importedFileContentType(for item: RItem, libraryId: LibraryIdentifier, fileStorage: FileStorage?) -> Attachment.ContentType? {
-        let fileType: FileType
-        if let title = item.fields.filter(.key(FieldKeys.Item.Attachment.title)).first?.value,
-           title.contains("."),
-           let ext = title.split(separator: ".").last.flatMap(String.init) {
-            fileType = .extension(ext)
-        } else if let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty {
-            fileType = .contentType(contentType)
-        } else {
-            DDLogError("AttachmentCreator: filename and contentType missing for item \(item.key)")
-            return nil
-        }
-
+        guard let fileType = self.fileType(for: item) else { return nil }
         return self.fileContentType(for: item, libraryId: libraryId, fileType: fileType, linkType: .imported, fileStorage: fileStorage)
     }
 
@@ -103,15 +92,10 @@ struct AttachmentCreator {
 
         switch contentType {
         case "application/pdf":
-            let fileType: FileType
-            if let title = item.fields.filter(.key(FieldKeys.Item.Attachment.title)).first?.value,
-               title.contains("."),
-               let ext = title.split(separator: ".").last.flatMap(String.init) {
-                fileType = .extension(ext)
-            } else {
-                fileType = .contentType(contentType)
+            if let fileType = self.fileType(for: item) {
+                return self.fileContentType(for: item, libraryId: libraryId, fileType: fileType, linkType: .imported, fileStorage: fileStorage)
             }
-            return self.fileContentType(for: item, libraryId: libraryId, fileType: fileType, linkType: .imported, fileStorage: fileStorage)
+            return nil
 
         case "text/html":
             guard let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value else {
@@ -127,6 +111,24 @@ struct AttachmentCreator {
             DDLogError("AttachmentCreator: content type invalid (\(contentType)) for snapshot \(item.key)")
             return nil
         }
+    }
+
+    private static func fileType(for item: RItem) -> FileType? {
+        if let title = item.fields.filter(.key(FieldKeys.Item.Attachment.title)).first?.value {
+            let split = title.split(separator: ".")
+            if split.count > 1, let ext = split.last.flatMap(String.init),
+               // Chech whether detected extension is valid
+               ext.mimeTypeFromExtension != nil {
+                return .extension(ext)
+            }
+        }
+
+        if let contentType = item.fields.filter(.key(FieldKeys.Item.Attachment.contentType)).first?.value, !contentType.isEmpty {
+            return .contentType(contentType)
+        }
+
+        DDLogError("AttachmentCreator: filename and contentType missing for item \(item.key)")
+        return nil
     }
 
     private static func fileContentType(for item: RItem, libraryId: LibraryIdentifier, fileType: FileType, linkType: Attachment.FileLinkType, fileStorage: FileStorage?) -> Attachment.ContentType {

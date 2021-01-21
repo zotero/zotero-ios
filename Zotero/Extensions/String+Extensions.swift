@@ -43,4 +43,21 @@ extension String {
 
         return nil
     }
+
+    var mimeTypeFromExtension: String? {
+        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, self as NSString, nil)?.takeRetainedValue() {
+            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
+                return mimetype as String
+            }
+        }
+        return nil
+    }
+
+    var extensionFromMimeType: String? {
+        guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, self as CFString, nil),
+              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
+            return nil
+        }
+        return ext.takeRetainedValue() as String
+    }
 }

@@ -71,9 +71,9 @@ struct FileData: File {
         switch type {
         case .contentType(let contentType):
             self.mimeType = contentType
-            self.ext = FileData.ext(from: contentType)
+            self.ext = contentType.extensionFromMimeType ?? ""
         case .ext(let ext):
-            self.mimeType = FileData.mimeType(from: ext)
+            self.mimeType = ext.mimeTypeFromExtension ?? "application/octet-stream"
             self.ext = ext
         case .directory:
             self.mimeType = ""
@@ -91,22 +91,5 @@ struct FileData: File {
 
     static func directory(rootPath: String, relativeComponents: [String]) -> FileData {
         return FileData(rootPath: rootPath, relativeComponents: relativeComponents, name: "", type: .directory)
-    }
-
-    private static func mimeType(from ext: String) -> String {
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, ext as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
-        }
-        return "application/octet-stream"
-    }
-
-    private static func ext(from mimeType: String) -> String {
-        guard let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType as CFString, nil),
-              let ext = UTTypeCopyPreferredTagWithClass(uti.takeRetainedValue(), kUTTagClassFilenameExtension) else{
-            return ""
-        }
-        return ext.takeRetainedValue() as String
     }
 }
