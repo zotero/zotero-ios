@@ -394,7 +394,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
                               .map({
                                   Attachment(key: KeyGenerator.newKey,
                                              title: $0.name + "." + $0.ext,
-                                             type: .file(file: $0, filename: $0.name, location: .local, linkType: .imported),
+                                             type: .file(file: $0, filename: ($0.name + "." + $0.ext), location: .local, linkType: .imported),
                                              libraryId: viewModel.state.library.identifier)
                               })
 

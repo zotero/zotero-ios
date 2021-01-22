@@ -440,11 +440,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         for url in urls {
             let originalFile = Files.file(from: url)
+            let nameWithExtension = originalFile.name + "." + originalFile.ext
             let key = KeyGenerator.newKey
             let file = Files.attachmentFile(in: viewModel.state.library.identifier, key: key, ext: originalFile.ext)
             let attachment = Attachment(key: key,
-                                        title: originalFile.name + "." + originalFile.ext,
-                                        type: .file(file: file, filename: originalFile.name, location: .local, linkType: .imported),
+                                        title: nameWithExtension,
+                                        type: .file(file: file, filename: nameWithExtension, location: .local, linkType: .imported),
                                         libraryId: viewModel.state.library.identifier)
 
             do {

@@ -114,6 +114,15 @@ struct AttachmentCreator {
     }
 
     private static func fileType(for item: RItem) -> FileType? {
+        if let filename = item.fields.filter(.key(FieldKeys.Item.Attachment.filename)).first?.value {
+            let split = filename.split(separator: ".")
+            if split.count > 1, let ext = split.last.flatMap(String.init),
+               // Chech whether detected extension is valid
+               ext.mimeTypeFromExtension != nil {
+                return .extension(ext)
+            }
+        }
+
         if let title = item.fields.filter(.key(FieldKeys.Item.Attachment.title)).first?.value {
             let split = title.split(separator: ".")
             if split.count > 1, let ext = split.last.flatMap(String.init),
