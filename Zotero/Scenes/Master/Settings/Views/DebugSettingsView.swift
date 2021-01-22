@@ -29,6 +29,12 @@ struct DebugSettingsView: View {
                     }) {
                         Text(L10n.Settings.startLogging).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
                     }
+
+                    Button(action: {
+                        self.viewModel.process(action: .startLoggingOnNextLaunch)
+                    }) {
+                        Text(L10n.Settings.startLoggingOnLaunch).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    }
                 }
             }
         }

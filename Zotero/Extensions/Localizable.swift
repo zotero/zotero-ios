@@ -422,6 +422,8 @@ internal enum L10n {
     internal static let resetToBundled = L10n.tr("Localizable", "settings.reset_to_bundled")
     /// Start logging
     internal static let startLogging = L10n.tr("Localizable", "settings.start_logging")
+    /// Start logging on next app launch
+    internal static let startLoggingOnLaunch = L10n.tr("Localizable", "settings.start_logging_on_launch")
     /// Stop logging
     internal static let stopLogging = L10n.tr("Localizable", "settings.stop_logging")
     /// Storage

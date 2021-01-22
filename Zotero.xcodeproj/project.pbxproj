@@ -1394,6 +1394,7 @@
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
+				B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
 				B3BC25CC247E6BA000AC27B5 /* DateParser.swift */,
@@ -1416,7 +1417,6 @@
 				B378F4CC242CD45700B88A05 /* TranslatorParserDelegate.swift */,
 				B36A988C2428E059005D5790 /* TranslatorsController.swift */,
 				B3972688247D403200A8B469 /* UrlDetector.swift */,
-				B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";

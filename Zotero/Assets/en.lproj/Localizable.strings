@@ -165,6 +165,7 @@
 "settings.reset_to_bundled" = "Reset to bundled";
 "settings.debug" = "Debug";
 "settings.start_logging" = "Start logging";
+"settings.start_logging_on_launch" = "Start logging on next app launch";
 "settings.stop_logging" = "Stop logging";
 "settings.logging_desc1" = "If you want to debug an issue on launch, kill the app and start it again.";
 "settings.logging_desc2" = "If you want to debug share extension issue, open the share extension.";

@@ -50,12 +50,10 @@ class DebugLogging {
         guard let logger = self.logger else { return }
 
         DDLog.remove(logger)
-        self.logger = nil
 
         logger.rollLogFile { [weak self] in
-            DispatchQueue.main.async {
-                self?.shareLogs()
-            }
+            self?.shareLogs()
+            self?.logger = nil
         }
     }
 
