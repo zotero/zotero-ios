@@ -130,11 +130,12 @@ class ExtensionStore {
             let userId: Int
 
             init(item: ItemResponse, attachmentKey: String, attachmentData: [String: String], attachmentFile: File, defaultTitle: String,
-                 collections: Set<String>, libraryId: LibraryIdentifier, userId: Int) {
+                 collections: Set<String>, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
-                let filename = (attachmentData["title"] ?? defaultTitle) + "." + file.ext
-                let attachment = Attachment(key: attachmentKey, title: filename, type: .file(file: file, filename: filename, location: .local, linkType: .imported), libraryId: libraryId)
+                let title = (attachmentData["title"] ?? defaultTitle) + "." + file.ext
+                let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: file.ext, dateParser: dateParser)
+                let attachment = Attachment(key: attachmentKey, title: title, type: .file(file: file, filename: filename, location: .local, linkType: .imported), libraryId: libraryId)
 
                 self.type = .translated(item: newItem, location: attachmentFile)
                 self.attachment = attachment
@@ -515,18 +516,16 @@ class ExtensionStore {
             switch attachment {
             case .item(let item):
                 self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys), libraryId: libraryId, userId: userId,
-                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage,
-                            schemaController: self.schemaController)
+                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController)
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData,
                                             attachmentFile: attachmentFile, defaultTitle: (self.state.title ?? "Unknown"),
-                                            collections: collectionKeys, libraryId: libraryId, userId: userId)
+                                            collections: collectionKeys, libraryId: libraryId, userId: userId, dateParser: self.dateParser)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
 
             case .localFile(let file):
-                let data = State.UploadData(localFile: file, attachmentKey: self.state.attachmentKey, collections: collectionKeys,
-                                            libraryId: libraryId, userId: userId)
+                let data = State.UploadData(localFile: file, attachmentKey: self.state.attachmentKey, collections: collectionKeys, libraryId: libraryId, userId: userId)
                 self.upload(data: data, apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage)
             }
         } else if let url = self.state.url {
