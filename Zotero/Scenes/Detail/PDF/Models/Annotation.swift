@@ -52,7 +52,7 @@ struct Annotation {
         self.editableInDocument = editableInDocument
     }
 
-    init?(item: RItem, currentUserId: Int) {
+    init?(item: RItem, currentUserId: Int, username: String) {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
               let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
@@ -78,13 +78,13 @@ struct Annotation {
         if item.customLibraryKey.value != nil {
             // In "My Library" current user is always author
             isAuthor = true
-            author = ""
+            author = username
         } else {
             // In group library compare `createdBy` user to current user
             isAuthor = item.createdBy?.identifier == currentUserId
             // Users can only edit their own annotations
             if isAuthor {
-                author = ""
+                author = username
             } else if let name = item.createdBy?.name, !name.isEmpty {
                 author = name
             } else if let name = item.createdBy?.username, !name.isEmpty {

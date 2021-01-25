@@ -142,6 +142,9 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         case .setVisiblePage(let page):
             self.set(page: page, in: viewModel)
+
+        case .export:
+            self.export(viewModel: viewModel)
         }
     }
 
@@ -160,6 +163,21 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 DDLogError("PDFReaderActionHandler: can't store page - \(error)")
             }
         }
+    }
+
+    private func export(viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let url = viewModel.state.document.fileURL else { return }
+
+        let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, interfaceStyle: .light)
+        PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
+                                   completed: { [weak viewModel] result in
+                                       guard let viewModel = viewModel else { return }
+                                       self.finishExport(result: result, viewModel: viewModel)
+                                   })
+    }
+
+    private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
+        // TODO: - handle UI
     }
 
     // MARK: - Dark mode changes
@@ -324,7 +342,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func updateBoundingBoxAndRects(for pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let key = pdfAnnotation.key else { return }
 
-        let sortIndex = self.sortIndex(from: pdfAnnotation)
+        let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation)
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
 
         self.updateAnnotation(with: key,
@@ -528,7 +546,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 continue
             }
 
-            guard let zoteroAnnotation = self.zoteroAnnotation(from: annotation, document: viewModel.state.document, isNew: true) else { continue }
+            guard let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, isNew: true, username: viewModel.state.username) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.isZoteroKey: true,
@@ -670,8 +688,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
             let (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, libraryId: viewModel.state.library.identifier,
-                                                                            baseFont: viewModel.state.commentFont, userId: viewModel.state.userId)
-            let pspdfkitAnnotations = self.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
+                                                                            baseFont: viewModel.state.commentFont, userId: viewModel.state.userId, username: viewModel.state.username)
+            let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
@@ -696,7 +714,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
-    private func documentData(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont, userId: Int) throws
+    private func documentData(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont, userId: Int, username: String) throws
                                                             -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString], page: Int) {
         let coordinator = try self.dbStorage.createCoordinator()
 
@@ -707,7 +725,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         var comments: [String: NSAttributedString] = [:]
 
         for item in items {
-            guard let annotation = Annotation(item: item, currentUserId: userId) else { continue }
+            guard let annotation = Annotation(item: item, currentUserId: userId, username: username) else { continue }
 
             if var array = annotations[annotation.page] {
                 array.append(annotation)
@@ -720,151 +738,6 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         }
 
         return (annotations, comments, page)
-    }
-
-    /// Create Zotero annotation from existing PSPDFKit annotation.
-    /// - parameter annotation: PSPDFKit annotation.
-    /// - parameter isNew: Indicating, whether the annotation has just been created.
-    /// - returns: Matching Zotero annotation.
-    private func zoteroAnnotation(from annotation: PSPDFKit.Annotation, document: Document, isNew: Bool) -> Annotation? {
-        guard AnnotationsConfig.supported.contains(annotation.type) else { return nil }
-
-        let page = Int(annotation.pageIndex)
-        let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
-
-        if let annotation = annotation as? NoteAnnotation {
-            return Annotation(key: KeyGenerator.newKey,
-                              type: .note,
-                              page: page,
-                              pageLabel: pageLabel,
-                              rects: [annotation.boundingBox],
-                              author: "",
-                              isAuthor: true,
-                              color: annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor,
-                              comment: (annotation.contents ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-                              text: nil,
-                              isLocked: false,
-                              sortIndex: self.sortIndex(from: annotation),
-                              dateModified: Date(),
-                              tags: [],
-                              didChange: isNew,
-                              editableInDocument: true)
-        } else if let annotation = annotation as? HighlightAnnotation {
-            return Annotation(key: KeyGenerator.newKey,
-                              type: .highlight,
-                              page: page,
-                              pageLabel: pageLabel,
-                              rects: annotation.rects ?? [annotation.boundingBox],
-                              author: "",
-                              isAuthor: true,
-                              color: annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor,
-                              comment: "",
-                              text: annotation.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines),
-                              isLocked: false,
-                              sortIndex: self.sortIndex(from: annotation),
-                              dateModified: Date(),
-                              tags: [],
-                              didChange: isNew,
-                              editableInDocument: true)
-        } else if let annotation = annotation as? SquareAnnotation {
-            return Annotation(key: KeyGenerator.newKey,
-                              type: .image,
-                              page: page,
-                              pageLabel: pageLabel,
-                              rects: [annotation.boundingBox],
-                              author: "",
-                              isAuthor: true,
-                              color: annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor,
-                              comment: "",
-                              text: nil,
-                              isLocked: false,
-                              sortIndex: self.sortIndex(from: annotation),
-                              dateModified: Date(),
-                              tags: [],
-                              didChange: isNew,
-                              editableInDocument: true)
-        }
-
-        return nil
-    }
-
-    /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
-    /// - parameter zoteroAnnotations: Annotations to convert.
-    /// - returns: Array of PSPDFKit annotations that can be added to document.
-    private func annotations(from zoteroAnnotations: [Int: [Annotation]], interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
-        return zoteroAnnotations.values.flatMap({ $0 }).map({
-            return self.annotation(from: $0, interfaceStyle: interfaceStyle)
-        })
-    }
-
-    private func annotation(from zoteroAnnotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.Annotation {
-        switch zoteroAnnotation.type {
-        case .image:
-            return self.areaAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
-        case .highlight:
-            return self.highlightAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
-        case .note:
-            return self.noteAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
-        }
-    }
-
-    /// Creates corresponding `SquareAnnotation`.
-    /// - parameter annotation: Zotero annotation.
-    private func areaAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> SquareAnnotation {
-        let square = SquareAnnotation()
-        square.pageIndex = UInt(annotation.page)
-        square.boundingBox = annotation.boundingBox
-        square.borderColor = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle).color
-        square.contents = annotation.comment
-        square.isZotero = true
-        square.isEditable = annotation.editableInDocument
-        square.baseColor = annotation.color
-        square.key = annotation.key
-        return square
-    }
-
-    /// Creates corresponding `HighlightAnnotation`.
-    /// - parameter annotation: Zotero annotation.
-    private func highlightAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> HighlightAnnotation {
-        let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: true, userInterfaceStyle: interfaceStyle)
-        let highlight = HighlightAnnotation()
-        highlight.pageIndex = UInt(annotation.page)
-        highlight.boundingBox = annotation.boundingBox
-        highlight.rects = annotation.rects
-        highlight.color = color
-        highlight.alpha = alpha
-        highlight.contents = annotation.comment
-        highlight.isZotero = true
-        highlight.isEditable = annotation.editableInDocument
-        highlight.baseColor = annotation.color
-        highlight.key = annotation.key
-        return highlight
-    }
-
-    /// Creates corresponding `NoteAnnotation`.
-    /// - parameter annotation: Zotero annotation.
-    private func noteAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> NoteAnnotation {
-        let note = NoteAnnotation(contents: annotation.comment)
-        note.pageIndex = UInt(annotation.page)
-        let boundingBox = annotation.boundingBox
-        note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteAnnotationSize)
-        note.contents = annotation.comment
-        note.isZotero = true
-        note.isEditable = annotation.editableInDocument
-        note.key = annotation.key
-        note.borderStyle = .dashed
-        note.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle).color
-        note.baseColor = annotation.color
-        return note
-    }
-
-    private func sortIndex(from annotation: PSPDFKit.Annotation) -> String {
-        return self.sortIndex(for: annotation.boundingBox, pageIndex: annotation.pageIndex)
-    }
-
-    private func sortIndex(for rect: CGRect, pageIndex: PageIndex) -> String {
-        let yPos = Int(round(rect.origin.y))
-        return String(format: "%05d|%06d|%05d", pageIndex, 0, yPos)
     }
 }
 

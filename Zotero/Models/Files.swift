@@ -52,7 +52,7 @@ struct Files {
 
     static func link(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: self.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
     }
 
     static var temporaryUploadFile: File {
@@ -100,6 +100,13 @@ struct Files {
     static func translator(filename: String) -> File {
         let name = self.split(filename: filename).name
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: name, ext: "")
+    }
+
+    // MARK: - PDF
+
+    static func pdfToShare(filename: String, key: String) -> File {
+        let (name, ext) = self.split(filename: filename)
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["sharing", key], name: name, contentType: ext)
     }
 
     // MARK: - Annotations

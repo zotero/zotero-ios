@@ -397,6 +397,9 @@
 		B340692424A60D83009ECE48 /* CGRect+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692324A60D83009ECE48 /* CGRect+Extensions.swift */; };
 		B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */; };
 		B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */; };
+		B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */; };
+		B34A9F6425BF1ABB007C9A4A /* PdfDocumentExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */; };
+		B34A9F6825BF1D27007C9A4A /* AnnotationConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A9F6725BF1D27007C9A4A /* AnnotationConverter.swift */; };
 		B34ACC7A2514EAAB00040C17 /* AnnotationColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */; };
 		B34ACC7F2514EB6100040C17 /* AnnotationColorGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */; };
 		B34C40F525710B430057D5F5 /* AnnotationEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34C40F325710B430057D5F5 /* AnnotationEditViewController.swift */; };
@@ -1027,6 +1030,9 @@
 		B340692324A60D83009ECE48 /* CGRect+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Extensions.swift"; sourceTree = "<group>"; };
 		B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+Extensions.swift"; sourceTree = "<group>"; };
 		B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapHeightLabel.swift; sourceTree = "<group>"; };
+		B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadFilenameDbRequest.swift; sourceTree = "<group>"; };
+		B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfDocumentExporter.swift; sourceTree = "<group>"; };
+		B34A9F6725BF1D27007C9A4A /* AnnotationConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationConverter.swift; sourceTree = "<group>"; };
 		B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationColorGenerator.swift; sourceTree = "<group>"; };
 		B34C40F325710B430057D5F5 /* AnnotationEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationEditViewController.swift; sourceTree = "<group>"; };
 		B34C40F425710B430057D5F5 /* AnnotationEditViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AnnotationEditViewController.xib; sourceTree = "<group>"; };
@@ -1393,6 +1399,7 @@
 				B305648223FC051E003304F2 /* Files */,
 				B305649F23FC051E003304F2 /* Sync */,
 				B34ACC792514EAAB00040C17 /* AnnotationColorGenerator.swift */,
+				B34A9F6725BF1D27007C9A4A /* AnnotationConverter.swift */,
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
@@ -1410,6 +1417,7 @@
 				B38CD21D241128D4004299EA /* KeysResponseProcessor.swift */,
 				B305649E23FC051E003304F2 /* Licenses.swift */,
 				B305646C23FC051E003304F2 /* ObjectChangeObserver.swift */,
+				B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */,
 				B37CA5212497B30B00C6B5EF /* PdfPageController.swift */,
 				B305646A23FC051E003304F2 /* RItemLocaleController.swift */,
 				B305646B23FC051E003304F2 /* SchemaController.swift */,
@@ -1469,6 +1477,7 @@
 				B305645723FC051E003304F2 /* ReadCollectionsDbRequest.swift */,
 				B305644B23FC051E003304F2 /* ReadDeletedObjectsDbRequest.swift */,
 				B37BF0B025A6035D00AE0268 /* ReadDocumentDataDbRequest.swift */,
+				B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */,
 				B305644023FC051E003304F2 /* ReadItemDbRequest.swift */,
 				B305645923FC051E003304F2 /* ReadItemsDbRequest.swift */,
 				B305645C23FC051E003304F2 /* ReadLibrariesDataDbRequest.swift */,
@@ -3066,6 +3075,7 @@
 				B30566B023FC051F003304F2 /* AuthorizeUploadResponse.swift in Sources */,
 				B30565E323FC051E003304F2 /* DbStorage.swift in Sources */,
 				B30566B423FC051F003304F2 /* LinksResponse.swift in Sources */,
+				B34A9F6825BF1D27007C9A4A /* AnnotationConverter.swift in Sources */,
 				B30565B623FC051E003304F2 /* StoreItemsDbRequest.swift in Sources */,
 				B3593F5A241A61C700760E20 /* CollectionsTableViewHandler.swift in Sources */,
 				B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */,
@@ -3145,6 +3155,7 @@
 				B361A3042511F9FB00271173 /* AnnotationType.swift in Sources */,
 				B36181FF24C9A7C000B30D56 /* LoginState.swift in Sources */,
 				B3B953C32459780600FC96DB /* Annotation.swift in Sources */,
+				B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */,
 				B39A403024BC902600205172 /* ColorPickerView.swift in Sources */,
 				B3593F3A241A61C700760E20 /* ItemsAction.swift in Sources */,
 				B305667823FC051F003304F2 /* Observable+Completable.swift in Sources */,
@@ -3227,6 +3238,7 @@
 				B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */,
 				B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B30D59592206F60400884C4A /* AppDelegate.swift in Sources */,
+				B34A9F6425BF1ABB007C9A4A /* PdfDocumentExporter.swift in Sources */,
 				B377F2A5249373F300022943 /* AttachmentFileCleanupController.swift in Sources */,
 				B305661823FC051E003304F2 /* LoadPermissionsSyncAction.swift in Sources */,
 				B3593F3E241A61C700760E20 /* ItemsTableViewHandler.swift in Sources */,

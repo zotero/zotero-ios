@@ -25,6 +25,10 @@ class SessionController: ObservableObject {
     var isLoggedIn: Bool {
         return self.sessionData != nil
     }
+    var username: String? {
+        let username = self.defaults.username
+        return username.isEmpty ? nil : username
+    }
 
     private let defaults: Defaults
     private let secureStorage: SecureStorage

@@ -36,6 +36,7 @@ struct PDFReaderState: ViewModelState {
     let previewCache: NSCache<NSString, UIImage>
     let commentFont: UIFont
     let userId: Int
+    let username: String
 
     var interfaceStyle: UIUserInterfaceStyle
     var annotations: [Int: [Annotation]]
@@ -61,10 +62,11 @@ struct PDFReaderState: ViewModelState {
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
     var visiblePage: Int
 
-    init(url: URL, key: String, library: Library, userId: Int, interfaceStyle: UIUserInterfaceStyle) {
+    init(url: URL, key: String, library: Library, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
         self.library = library
         self.userId = userId
+        self.username = username
         self.interfaceStyle = interfaceStyle
         self.previewCache = NSCache()
         self.document = Document(url: url)
