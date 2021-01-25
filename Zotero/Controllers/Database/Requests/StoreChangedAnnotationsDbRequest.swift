@@ -52,11 +52,6 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         self.sync(tags: annotation.tags, in: item, database: database)
         self.sync(rects: annotation.rects, in: item, database: database)
 
-        // If position changed add/update embedded_image attachment item
-        if annotation.type == .image && item.changedFields.contains(.rects) {
-            self.updateImageAttachment(for: annotation, item: item, database: database)
-        }
-
         if !item.changedFields.isEmpty {
             item.changeType = .user
         }
@@ -168,25 +163,6 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         }
     }
 
-    private func updateImageAttachment(for annotation: Annotation, item: RItem, database: Realm) {
-        // Don't create new attachment item for annotation if it doesn't exist. It's probably just not synced yet and we don't want one
-        // annotation to have multiple embeded image attachments.
-        guard let attachment = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first,
-              let pdfAttachment = item.parent else { return }
-
-        attachment.dateModified = annotation.dateModified
-        attachment.attachmentNeedsSync = true
-
-        if let field = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first {
-            let file = Files.annotationPreview(annotationKey: annotation.key, pdfKey: pdfAttachment.key, isDark: false)
-            field.value = md5(from: file.createUrl()) ?? ""
-        }
-        if let field = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first {
-            let modificationTime = Int(round(annotation.dateModified.timeIntervalSince1970 * 1000))
-            field.value = "\(modificationTime)"
-        }
-    }
-
     private func createItem(from annotation: Annotation, parent: RItem, database: Realm) throws -> RItem {
         let item = RItem()
         item.key = annotation.key
@@ -202,27 +178,8 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         item.parent = parent
 
         self.createMandatoryFields(for: item, annotationType: annotation.type, database: database)
-
-        if annotation.type == .image {
-            try self.createEmbeddedImageAttachment(for: item, parent: parent, database: database)
-        }
         
         return item
-    }
-
-    private func createEmbeddedImageAttachment(for item: RItem, parent: RItem, database: Realm) throws {
-        let localizedType = self.schemaController.localized(itemType: ItemTypes.attachment) ?? ""
-        let file = Files.annotationPreview(annotationKey: item.key, pdfKey: parent.key, isDark: false)
-        let attachmentKey = KeyGenerator.newKey
-        let attachment = Attachment(key: attachmentKey, title: attachmentKey,
-                                    type: .file(file: file, filename: "image.png", location: .local, linkType: .embeddedImage),
-                                    libraryId: self.libraryId)
-        let attachmentItem = try CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType,
-                                                           collections: []).process(in: database)
-        attachmentItem.dateAdded = item.dateAdded
-        attachmentItem.dateModified = item.dateAdded
-        attachmentItem.parent = item
-        attachmentItem.changedFields.insert(.parent)
     }
 
     private func createMandatoryFields(for item: RItem, annotationType: AnnotationType, database: Realm) {

@@ -90,11 +90,11 @@ extension AnnotationPreviewController {
         let rect = annotation.previewBoundingBox
         self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
                      invertColors: false, isDark: isDark, type: .cachedAndReported)
-        // If in dark mode, only cache light mode version, which is required for backend upload
-        if isDark {
-            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
-                         invertColors: true, isDark: !isDark, type: .cachedOnly)
-        }
+//        // If in dark mode, only cache light mode version, which is required for backend upload
+//        if isDark {
+//            self.enqueue(key: key, parentKey: parentKey, document: document, pageIndex: annotation.pageIndex, rect: rect,
+//                         invertColors: true, isDark: !isDark, type: .cachedOnly)
+//        }
     }
 
     /// Deletes cached preview for given annotation.
