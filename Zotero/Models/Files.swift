@@ -106,7 +106,7 @@ struct Files {
 
     static func pdfToShare(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["sharing", key], name: name, contentType: ext)
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["sharing", key], name: name, ext: ext)
     }
 
     // MARK: - Annotations

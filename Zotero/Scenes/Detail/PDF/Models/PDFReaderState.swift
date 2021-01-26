@@ -61,6 +61,7 @@ struct PDFReaderState: ViewModelState {
     /// if they are not available.
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
     var visiblePage: Int
+    var exportState: ExportState?
 
     init(url: URL, key: String, library: Library, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
@@ -85,6 +86,7 @@ struct PDFReaderState: ViewModelState {
 
     mutating func cleanup() {
         self.changes = []
+        self.exportState = nil
         self.focusDocumentLocation = nil
         self.focusSidebarIndexPath = nil
         self.updatedAnnotationIndexPaths = nil

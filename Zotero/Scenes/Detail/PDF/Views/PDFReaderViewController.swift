@@ -19,6 +19,7 @@ class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
         case redo = 1
         case undo = 2
+        case share = 3
     }
 
     private weak var annotationsController: AnnotationsViewController!
@@ -160,6 +161,43 @@ class PDFReaderViewController: UIViewController {
         if state.changes.contains(.save) {
             self.enqueueAnnotationSave()
         }
+
+        self.update(state: state.exportState)
+    }
+
+    private func update(state: ExportState?) {
+        var items = self.navigationItem.rightBarButtonItems ?? []
+
+        guard let shareId = items.firstIndex(where: { $0.tag == NavigationBarButton.share.rawValue }) else { return }
+
+        guard let state = state else {
+            if items[shareId].customView != nil { // if activity indicator is visible, replace it with share button
+                items[shareId] = self.createShareButton()
+                self.navigationItem.rightBarButtonItems = items
+            }
+            return
+        }
+
+        switch state {
+        case .preparing:
+            let indicator = UIActivityIndicatorView(style: .medium)
+            indicator.startAnimating()
+            let button = UIBarButtonItem(customView: indicator)
+            button.tag = NavigationBarButton.share.rawValue
+            items[shareId] = button
+
+        case .exported(let file):
+            DDLogInfo("PDFReaderViewController: share pdf file - \(file.createUrl().absoluteString)")
+            self.coordinatorDelegate?.share(url: file.createUrl(), barButton: items[shareId])
+            items[shareId] = self.createShareButton()
+
+        case .failed(let error):
+            DDLogError("PDFReaderViewController: could not export pdf - \(error)")
+            self.coordinatorDelegate?.show(error: error)
+            items[shareId] = self.createShareButton()
+        }
+
+        self.navigationItem.rightBarButtonItems = items
     }
 
     private func enqueueAnnotationSave() {
@@ -603,6 +641,17 @@ class PDFReaderViewController: UIViewController {
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
     }
 
+    private func createShareButton() -> UIBarButtonItem {
+        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        share.tag = NavigationBarButton.share.rawValue
+        share.rx.tap
+             .subscribe(onNext: { [weak self] _ in
+                 self?.viewModel.process(action: .export)
+             })
+             .disposed(by: self.disposeBag)
+        return share
+    }
+
     private func createRightBarButtonItems(forCompactSize isCompact: Bool) -> [UIBarButtonItem] {
         let settings = self.pdfController.settingsButtonItem
         settings.rx
@@ -619,13 +668,15 @@ class PDFReaderViewController: UIViewController {
               })
               .disposed(by: self.disposeBag)
 
+        let share = self.createShareButton()
+
         if isCompact {
-            return [settings, search]
+            return [settings, share, search]
         }
 
         let (undo, redo) = self.createUndoRedoButtons()
 
-        return [settings, redo, undo, search]
+        return [settings, share, redo, undo, search]
     }
 
     private func createUndoRedoButtons() -> (undo: UIBarButtonItem, redo: UIBarButtonItem) {

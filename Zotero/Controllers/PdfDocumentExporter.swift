@@ -29,6 +29,9 @@ struct PdfDocumentExporter {
 
         let toFile = Files.pdfToShare(filename: filename, key: key)
 
+        // Remove file if it exists
+        try? fileStorage.remove(toFile)
+
         do {
             // Create a copy of current pdf
             let fromFile = Files.file(from: url)

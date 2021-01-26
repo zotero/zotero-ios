@@ -97,6 +97,7 @@ struct AnnotationConverter {
         square.baseColor = annotation.color
         square.key = annotation.key
         square.user = annotation.author
+        square.name = "Zotero-\(annotation.key)"
         return square
     }
 
@@ -116,6 +117,7 @@ struct AnnotationConverter {
         highlight.baseColor = annotation.color
         highlight.key = annotation.key
         highlight.user = annotation.author
+        highlight.name = "Zotero-\(annotation.key)"
         return highlight
     }
 
@@ -134,6 +136,7 @@ struct AnnotationConverter {
         note.color = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle).color
         note.baseColor = annotation.color
         note.user = annotation.author
+        note.name = "Zotero-\(annotation.key)"
         return note
     }
 }

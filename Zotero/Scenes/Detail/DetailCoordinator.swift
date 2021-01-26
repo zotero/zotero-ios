@@ -54,6 +54,8 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showColorPicker(selected: String?, sender: UIButton, save: @escaping (String) -> Void)
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void)
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
+    func show(error: PdfDocumentExporter.Error)
+    func share(url: URL, barButton: UIBarButtonItem)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
@@ -71,6 +73,11 @@ protocol DetailItemActionSheetCoordinatorDelegate: class {
 }
 
 class DetailCoordinator: Coordinator {
+    enum ActivityViewControllerSource {
+        case view(UIView, CGRect?)
+        case barButton(UIBarButtonItem)
+    }
+
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 
@@ -223,21 +230,27 @@ class DetailCoordinator: Coordinator {
         let linkFile = Files.link(filename: filename, key: attachment.key)
         do {
             try self.controllers.fileStorage.link(file: file, to: linkFile)
-            self.showUnknownAttachment(at: linkFile.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
+            self.share(url: linkFile.createUrl(), source: .view(sourceView, sourceRect))
         } catch let error {
             DDLogError("DetailCoordinator: can't link file - \(error)")
-            self.showUnknownAttachment(at: file.createUrl(), sourceView: sourceView, sourceRect: sourceRect)
+            self.share(url: file.createUrl(), source: .view(sourceView, sourceRect))
         }
     }
 
-    private func showUnknownAttachment(at url: URL, sourceView: UIView, sourceRect: CGRect?) {
+    private func share(url: URL, source: ActivityViewControllerSource) {
         let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
-        controller.popoverPresentationController?.sourceView = sourceView
-        controller.popoverPresentationController?.sourceRect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0),
-                                                                                    y: (sourceView.frame.height * 2.0 / 3.0),
-                                                                                    width: (sourceView.frame.width / 3),
-                                                                                    height: (sourceView.frame.height / 3))
+
+        switch source {
+        case .barButton(let item):
+            controller.popoverPresentationController?.barButtonItem = item
+        case .view(let sourceView, let sourceRect):
+            controller.popoverPresentationController?.sourceView = sourceView
+            controller.popoverPresentationController?.sourceRect = sourceRect ?? CGRect(x: (sourceView.frame.width / 3.0),
+                                                                                        y: (sourceView.frame.height * 2.0 / 3.0),
+                                                                                        width: (sourceView.frame.width / 3),
+                                                                                        height: (sourceView.frame.height / 3))
+        }
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
@@ -530,6 +543,27 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         viewController.popoverPresentationController?.barButtonItem = sender
         self.topViewController.present(viewController, animated: true, completion: nil)
+    }
+
+    func share(url: URL, barButton: UIBarButtonItem) {
+        self.share(url: url, source: .barButton(barButton))
+    }
+
+    func show(error: PdfDocumentExporter.Error) {
+        let message: String
+        switch error {
+        case .filenameMissing:
+            message = "Could not find attachment item."
+        case .fileError:
+            // TODO: - show storage error or unknown error
+            message = "Could not create PDF file."
+        case .pdfError:
+            message = "Could not export PDF file."
+        }
+
+        let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 }
 

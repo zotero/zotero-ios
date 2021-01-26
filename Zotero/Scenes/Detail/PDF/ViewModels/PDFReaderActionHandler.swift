@@ -168,6 +168,10 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func export(viewModel: ViewModel<PDFReaderActionHandler>) {
         guard let url = viewModel.state.document.fileURL else { return }
 
+        self.update(viewModel: viewModel) { state in
+            state.exportState = .preparing
+        }
+
         let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, interfaceStyle: .light)
         PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
                                    completed: { [weak viewModel] result in
@@ -177,7 +181,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func finishExport(result: Result<File, PdfDocumentExporter.Error>, viewModel: ViewModel<PDFReaderActionHandler>) {
-        // TODO: - handle UI
+        self.update(viewModel: viewModel) { state in
+            switch result {
+            case .success(let file):
+                state.exportState = .exported(file)
+            case .failure(let error):
+                state.exportState = .failed(error)
+            }
+        }
     }
 
     // MARK: - Dark mode changes
