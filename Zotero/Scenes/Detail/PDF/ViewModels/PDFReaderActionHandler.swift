@@ -172,7 +172,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.exportState = .preparing
         }
 
-        let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, interfaceStyle: .light)
+        let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, style: .default, interfaceStyle: .light)
         PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
                                    completed: { [weak viewModel] result in
                                        guard let viewModel = viewModel else { return }

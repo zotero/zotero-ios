@@ -13,6 +13,10 @@ import UIKit
 import PSPDFKit
 
 struct AnnotationConverter {
+    enum Style {
+        case `default`
+        case zotero
+    }
 
     // MARK: - Helpers
 
@@ -67,27 +71,35 @@ struct AnnotationConverter {
     /// Converts Zotero annotations to actual document (PSPDFKit) annotations with custom flags.
     /// - parameter zoteroAnnotations: Annotations to convert.
     /// - returns: Array of PSPDFKit annotations that can be added to document.
-    static func annotations(from zoteroAnnotations: [Int: [Annotation]], interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
+    static func annotations(from zoteroAnnotations: [Int: [Annotation]], style: Style = .zotero, interfaceStyle: UIUserInterfaceStyle) -> [PSPDFKit.Annotation] {
         return zoteroAnnotations.values.flatMap({ $0 }).map({
-            return self.annotation(from: $0, interfaceStyle: interfaceStyle)
+            return self.annotation(from: $0, style: style, interfaceStyle: interfaceStyle)
         })
     }
 
-    static func annotation(from zoteroAnnotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.Annotation {
+    static func annotation(from zoteroAnnotation: Annotation, style: Style, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.Annotation {
         switch zoteroAnnotation.type {
         case .image:
-            return self.areaAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
+            return self.areaAnnotation(from: zoteroAnnotation, style: style, interfaceStyle: interfaceStyle)
         case .highlight:
-            return self.highlightAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
+            return self.highlightAnnotation(from: zoteroAnnotation, style: style, interfaceStyle: interfaceStyle)
         case .note:
-            return self.noteAnnotation(from: zoteroAnnotation, interfaceStyle: interfaceStyle)
+            return self.noteAnnotation(from: zoteroAnnotation, style: style, interfaceStyle: interfaceStyle)
         }
     }
 
     /// Creates corresponding `SquareAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func areaAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> SquareAnnotation {
-        let square = SquareAnnotation()
+    private static func areaAnnotation(from annotation: Annotation, style: Style, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.SquareAnnotation {
+        let square: PSPDFKit.SquareAnnotation
+
+        switch style {
+        case .default:
+            square = PSPDFKit.SquareAnnotation()
+        case .zotero:
+            square = SquareAnnotation()
+        }
+
         square.pageIndex = UInt(annotation.page)
         square.boundingBox = annotation.boundingBox
         square.borderColor = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: false, userInterfaceStyle: interfaceStyle).color
@@ -103,9 +115,17 @@ struct AnnotationConverter {
 
     /// Creates corresponding `HighlightAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func highlightAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> HighlightAnnotation {
+    private static func highlightAnnotation(from annotation: Annotation, style: Style, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.HighlightAnnotation {
         let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color), isHighlight: true, userInterfaceStyle: interfaceStyle)
-        let highlight = HighlightAnnotation()
+        let highlight: PSPDFKit.HighlightAnnotation
+
+        switch style {
+        case .default:
+            highlight = PSPDFKit.HighlightAnnotation()
+        case .zotero:
+            highlight = HighlightAnnotation()
+        }
+
         highlight.pageIndex = UInt(annotation.page)
         highlight.boundingBox = annotation.boundingBox
         highlight.rects = annotation.rects
@@ -123,8 +143,16 @@ struct AnnotationConverter {
 
     /// Creates corresponding `NoteAnnotation`.
     /// - parameter annotation: Zotero annotation.
-    private static func noteAnnotation(from annotation: Annotation, interfaceStyle: UIUserInterfaceStyle) -> NoteAnnotation {
-        let note = NoteAnnotation(contents: annotation.comment)
+    private static func noteAnnotation(from annotation: Annotation, style: Style, interfaceStyle: UIUserInterfaceStyle) -> PSPDFKit.NoteAnnotation {
+        let note: PSPDFKit.NoteAnnotation
+
+        switch style {
+        case .default:
+            note = PSPDFKit.NoteAnnotation(contents: annotation.comment)
+        case .zotero:
+            note = NoteAnnotation(contents: annotation.comment)
+        }
+
         note.pageIndex = UInt(annotation.page)
         let boundingBox = annotation.boundingBox
         note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteAnnotationSize)
