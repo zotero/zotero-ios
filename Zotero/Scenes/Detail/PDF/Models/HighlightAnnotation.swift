@@ -17,6 +17,9 @@ class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
 
     override func draw(context: CGContext, options: RenderOptions?) {
         super.draw(context: context, options: options)
+
+        guard self.contents != nil else { return }
+
         CommentIconDrawingController.draw(context: context, boundingBox: (self.rects?.first ?? self.boundingBox), color: (self.color ?? .black))
     }
 }
