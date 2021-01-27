@@ -4474,7 +4474,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 10.1.1;
+				version = 10.1.2;
 			};
 		};
 		B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */ = {

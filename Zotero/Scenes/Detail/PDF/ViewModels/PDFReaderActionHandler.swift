@@ -172,7 +172,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
             state.exportState = .preparing
         }
 
-        let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, style: .default, interfaceStyle: .light)
+        let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, type: .export, interfaceStyle: .light)
         PdfDocumentExporter.export(annotations: annotations, key: viewModel.state.key, libraryId: viewModel.state.library.identifier, url: url, fileStorage: self.fileStorage, dbStorage: self.dbStorage,
                                    completed: { [weak viewModel] result in
                                        guard let viewModel = viewModel else { return }
@@ -557,7 +557,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 continue
             }
 
-            guard let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, isNew: true, username: viewModel.state.username) else { continue }
+            guard let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, editability: .editable, isNew: true,
+                                                                        generateKey: true, username: viewModel.state.username) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.isZoteroKey: true,
@@ -698,9 +699,13 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
-            let (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, libraryId: viewModel.state.library.identifier,
+            // Load Zotero annotations from DB
+            var (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, libraryId: viewModel.state.library.identifier,
                                                                             baseFont: viewModel.state.commentFont, userId: viewModel.state.userId, username: viewModel.state.username)
+            // Create PSPDFKit annotations from Zotero annotations
             let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
+            // Create Zotero non-editable annotations from supported document annotations
+            self.loadAnnotations(from: viewModel.state.document, username: viewModel.state.username, addTo: &zoteroAnnotations, comments: &comments)
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
@@ -708,15 +713,25 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 state.visiblePage = page
                 state.changes = .annotations
 
+                guard !pspdfkitAnnotations.isEmpty else { return }
+
                 UndoController.performWithoutUndo(undoController: state.document.undoController) {
-                    // Hide external supported annotations
-                    state.document.allAnnotations(of: AnnotationsConfig.supported).values.flatMap({ $0 }).forEach({ $0.isHidden = true })
-                    // Add zotero annotations
+                    // Add zotero annotations to document
                     state.document.add(annotations: pspdfkitAnnotations, options: nil)
                 }
             }
         } catch let error {
             // TODO: - show error
+        }
+    }
+
+    private func loadAnnotations(from document: Document, username: String, addTo allAnnotations: inout [Int: [Annotation]], comments: inout [String: NSAttributedString]) {
+        for (page, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
+            for pdfAnnotation in pdfAnnotations {
+                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, editability: .notEditable, isNew: false,
+                                                                      generateKey: false, username: username) else { continue }
+
+            }
         }
     }
 
@@ -736,7 +751,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         var comments: [String: NSAttributedString] = [:]
 
         for item in items {
-            guard let annotation = Annotation(item: item, currentUserId: userId, username: username) else { continue }
+            guard let annotation = AnnotationConverter.annotation(from: item, currentUserId: userId, username: username) else { continue }
 
             if var array = annotations[annotation.page] {
                 array.append(annotation)

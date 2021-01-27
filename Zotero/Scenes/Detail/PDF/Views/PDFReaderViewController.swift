@@ -505,8 +505,9 @@ class PDFReaderViewController: UIViewController {
     }
 
     private func setup(interactions: DocumentViewInteractions) {
+        // Only supported annotations can be selected
         interactions.selectAnnotation.addActivationCondition { context, _, _ -> Bool in
-            return context.annotation.isZotero
+            return AnnotationsConfig.supported.contains(context.annotation.type)
         }
 
         interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
@@ -516,6 +517,11 @@ class PDFReaderViewController: UIViewController {
 
         interactions.deselectAnnotation.addActivationCallback { [weak self] _, _, _ in
             self?.viewModel.process(action: .selectAnnotation(nil))
+        }
+
+        // Only Zotero annotations can be edited
+        interactions.editAnnotation.addActivationCondition { context, _, _ -> Bool in
+            return context.annotation.isZotero && context.annotation.isEditable
         }
     }
 

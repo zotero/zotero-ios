@@ -84,7 +84,7 @@ class AnnotationView: UIView {
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
-        let canEdit = selected && (hasWritePermission)// || annotation.isAuthor)
+        let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
 
         self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel,
                           author: (annotation.isAuthor ? "" : annotation.author), showsMenuButton: (hasWritePermission && selected))

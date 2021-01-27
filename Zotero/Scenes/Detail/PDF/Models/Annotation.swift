@@ -11,6 +11,12 @@ import UIKit
 import CocoaLumberjackSwift
 
 struct Annotation {
+    enum Editability {
+        case notEditable
+        case metadataEditable
+        case editable
+    }
+
     let key: String
     let type: AnnotationType
     let page: Int
@@ -21,19 +27,18 @@ struct Annotation {
     let color: String
     let comment: String
     let text: String?
-    let isLocked: Bool
     let sortIndex: String
     let dateModified: Date
     let tags: [Tag]
     let didChange: Bool
-    let editableInDocument: Bool
+    let editability: Editability
 
     var previewBoundingBox: CGRect {
         return self.boundingBox.insetBy(dx: (PDFReaderLayout.imageAnnotationLineWidth + 1), dy: (PDFReaderLayout.imageAnnotationLineWidth + 1))
     }
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
-         text: String?, isLocked: Bool, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editableInDocument: Bool) {
+                 text: String?, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editability: Editability) {
         self.key = key
         self.type = type
         self.page = page
@@ -44,84 +49,11 @@ struct Annotation {
         self.color = color
         self.comment = comment
         self.text = text
-        self.isLocked = isLocked
         self.sortIndex = sortIndex
         self.dateModified = dateModified
         self.tags = tags
         self.didChange = didChange
-        self.editableInDocument = editableInDocument
-    }
-
-    init?(item: RItem, currentUserId: Int, username: String) {
-        guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
-              let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
-              let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
-              let color = item.fieldValue(for: FieldKeys.Item.Annotation.color) else {
-            return nil
-        }
-        guard let type = AnnotationType(rawValue: rawType) else {
-            DDLogError("Annotation: unknown annotation type '\(rawType)'")
-            return nil
-        }
-
-        let text = item.fields.filter(.key(FieldKeys.Item.Annotation.text)).first?.value
-
-        if type == .highlight && text == nil {
-            DDLogError("Annotation: highlight annotation is missing text property")
-            return nil
-        }
-
-        let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
-
-        let isAuthor: Bool
-        let author: String
-        if item.customLibraryKey.value != nil {
-            // In "My Library" current user is always author
-            isAuthor = true
-            author = username
-        } else {
-            // In group library compare `createdBy` user to current user
-            isAuthor = item.createdBy?.identifier == currentUserId
-            // Users can only edit their own annotations
-            if isAuthor {
-                author = username
-            } else if let name = item.createdBy?.name, !name.isEmpty {
-                author = name
-            } else if let name = item.createdBy?.username, !name.isEmpty {
-                author = name
-            } else {
-                author = L10n.unknown
-            }
-        }
-
-        let editable: Bool
-        if type != .image {
-            editable = true
-        } else {
-            // Check whether image annotation has synced embedded image attachment item, if not, the annotation can't be moved or resized
-            // (can't be edited in document). The user can still update comment or tags.
-            let embeddedImage = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first(where: { item in
-                item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }) == .embeddedImage
-            })
-            editable = embeddedImage != nil
-        }
-
-        self.key = item.key
-        self.type = type
-        self.page = pageIndex
-        self.pageLabel = pageLabel
-        self.rects = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
-        self.author = author
-        self.isAuthor = isAuthor
-        self.color = color
-        self.comment = comment
-        self.text = text
-        self.isLocked = false
-        self.sortIndex = item.annotationSortIndex
-        self.dateModified = item.dateModified
-        self.tags = item.tags.map({ Tag(tag: $0) })
-        self.didChange = false
-        self.editableInDocument = editable
+        self.editability = editability
     }
 
     var boundingBox: CGRect {
@@ -163,12 +95,11 @@ struct Annotation {
                           color: self.color,
                           comment: self.comment,
                           text: self.text,
-                          isLocked: self.isLocked,
                           sortIndex: sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editableInDocument: self.editableInDocument)
+                          editability: self.editability)
     }
 
     func copy(comment: String) -> Annotation {
@@ -182,12 +113,11 @@ struct Annotation {
                           color: self.color,
                           comment: comment,
                           text: self.text,
-                          isLocked: self.isLocked,
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editableInDocument: self.editableInDocument)
+                          editability: self.editability)
     }
 
     func copy(tags: [Tag]) -> Annotation {
@@ -201,12 +131,11 @@ struct Annotation {
                           color: self.color,
                           comment: self.comment,
                           text: self.text,
-                          isLocked: self.isLocked,
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: tags,
                           didChange: true,
-                          editableInDocument: self.editableInDocument)
+                          editability: self.editability)
     }
 
     func copy(text: String?) -> Annotation {
@@ -220,12 +149,11 @@ struct Annotation {
                           color: self.color,
                           comment: self.comment,
                           text: text,
-                          isLocked: self.isLocked,
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editableInDocument: self.editableInDocument)
+                          editability: self.editability)
     }
 
     func copy(color: String) -> Annotation {
@@ -239,12 +167,11 @@ struct Annotation {
                           color: color,
                           comment: self.comment,
                           text: self.text,
-                          isLocked: self.isLocked,
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editableInDocument: self.editableInDocument)
+                          editability: self.editability)
     }
 
     func copy(pageLabel: String) -> Annotation {
@@ -258,12 +185,11 @@ struct Annotation {
                           color: self.color,
                           comment: self.comment,
                           text: self.text,
-                          isLocked: self.isLocked,
                           sortIndex: self.sortIndex,
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editableInDocument: self.editableInDocument)
+                          editability: self.editability)
     }
 
     func copy(didChange: Bool) -> Annotation {
@@ -277,21 +203,10 @@ struct Annotation {
                           color: self.color,
                           comment: self.comment,
                           text: self.text,
-                          isLocked: self.isLocked,
                           sortIndex: self.sortIndex,
                           dateModified: self.dateModified,
                           tags: self.tags,
                           didChange: false,
-                          editableInDocument: self.editableInDocument)
-    }
-}
-
-extension RItem {
-    fileprivate func fieldValue(for key: String) -> String? {
-        let value = self.fields.filter(.key(key)).first?.value
-        if value == nil {
-            DDLogError("Annotation: missing value for `\(key)`")
-        }
-        return value
+                          editability: self.editability)
     }
 }
