@@ -77,12 +77,16 @@ class DebugLogging {
                 throw Error.noLogsRecorded
             }
 
-            self.coordinator?.share(logs: logs) { [weak self] in
-                self?.clearDebugDirectory()
+            inMainThread {
+                self.coordinator?.share(logs: logs) { [weak self] in
+                    self?.clearDebugDirectory()
+                }
             }
         } catch let error {
             DDLogError("DebugLogging: can't read debug directory contents - \(error)")
-            self.coordinator?.show(error: (error as? Error) ?? .contentReading)
+            inMainThread {
+                self.coordinator?.show(error: (error as? Error) ?? .contentReading)
+            }
         }
     }
 
