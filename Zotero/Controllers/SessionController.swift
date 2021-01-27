@@ -25,17 +25,11 @@ class SessionController: ObservableObject {
     var isLoggedIn: Bool {
         return self.sessionData != nil
     }
-    var username: String? {
-        let username = self.defaults.username
-        return username.isEmpty ? nil : username
-    }
 
     private let defaults: Defaults
     private let secureStorage: SecureStorage
 
-    init(secureStorage: SecureStorage) {
-        let defaults = Defaults.shared
-
+    init(secureStorage: SecureStorage, defaults: Defaults) {
         self.defaults = defaults
         self.secureStorage = secureStorage
 
@@ -66,7 +60,7 @@ class SessionController: ObservableObject {
     }
 
     func reset() {
-        Defaults.shared.reset()
+        self.defaults.reset()
         self.secureStorage.apiToken = nil
         self.sessionData = nil
     }

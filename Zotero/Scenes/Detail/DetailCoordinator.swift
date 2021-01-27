@@ -200,9 +200,10 @@ class DetailCoordinator: Coordinator {
 
     private func showPdf(at url: URL, key: String, library: Library) {
         #if PDFENABLED
+        let username = Defaults.shared.username
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
               let userId = self.controllers.sessionController.sessionData?.userId,
-              let username = self.controllers.sessionController.username else { return }
+              !username.isEmpty else { return }
 
         let handler = PDFReaderActionHandler(dbStorage: dbStorage,
                                              annotationPreviewController: self.controllers.annotationPreviewController,

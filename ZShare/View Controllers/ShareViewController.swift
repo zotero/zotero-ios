@@ -66,7 +66,7 @@ class ShareViewController: UIViewController {
         self.debugLogging = DebugLogging(fileStorage: FileStorageController())
         self.debugLogging.startLoggingOnLaunchIfNeeded()
 
-        let session = SessionController(secureStorage: KeychainSecureStorage()).sessionData
+        let session = SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared).sessionData
 
         self.setupNavbar(loggedIn: (session != nil))
 

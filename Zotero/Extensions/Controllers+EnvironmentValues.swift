@@ -43,7 +43,7 @@ struct SecureStorageEnvironmentKey: EnvironmentKey {
 
 struct SessionControllerEnvironmentKey: EnvironmentKey {
     static var defaultValue: SessionController {
-        return SessionController(secureStorage: KeychainSecureStorage())
+        return SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared)
     }
 }
 

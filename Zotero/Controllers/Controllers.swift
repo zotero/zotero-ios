@@ -54,7 +54,7 @@ class Controllers {
         // Start crash reporter as soon as possible to catch all crashes.
         crashReporter.start()
         let secureStorage = KeychainSecureStorage()
-        let sessionController = SessionController(secureStorage: secureStorage)
+        let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
         let translatorsController = TranslatorsController(apiClient: apiClient,
                                                           indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
                                                           fileStorage: fileStorage)
