@@ -11,11 +11,6 @@ import Foundation
 struct DirectoryData {
     let fileCount: Int
     let mbSize: Double
-
-    init(fileCount: Int, totalSize: Int) {
-        self.fileCount = fileCount
-        self.mbSize = Double(totalSize) / 1048576
-    }
 }
 
 protocol FileStorage: class {
@@ -31,7 +26,7 @@ protocol FileStorage: class {
     func contentsOfDirectory(at file: File) throws -> [URL]
     func contentsOfDirectory(at file: File) throws -> [File]
     func link(file fromFile: File, to toFile: File) throws
-    func directoryData(for file: File) -> DirectoryData?
+    func directoryData(for files: [File]) -> DirectoryData?
 }
 
 class FileStorageController: FileStorage {
@@ -98,7 +93,24 @@ class FileStorageController: FileStorage {
         try self.fileManager.linkItem(at: fromFile.createUrl(), to: toUrl)
     }
 
-    func directoryData(for file: File) -> DirectoryData? {
+    func directoryData(for files: [File]) -> DirectoryData? {
+        var all: DirectoryData?
+
+        for file in files {
+            if let fileData = self.directoryData(for: file) {
+                if let _all = all {
+                    all = DirectoryData(fileCount: fileData.fileCount + _all.fileCount,
+                                        mbSize: fileData.mbSize + _all.mbSize)
+                } else {
+                    all = fileData
+                }
+            }
+        }
+
+        return all
+    }
+
+    private func directoryData(for file: File) -> DirectoryData? {
         let properties: Set<URLResourceKey> = [.totalFileSizeKey, .fileSizeKey, .isRegularFileKey]
         guard let enumerator = self.fileManager.enumerator(at: file.createUrl(), includingPropertiesForKeys: Array(properties)) else { return nil }
 
@@ -113,6 +125,6 @@ class FileStorageController: FileStorage {
             count += 1
         }
 
-        return DirectoryData(fileCount: count, totalSize: totalSize)
+        return DirectoryData(fileCount: count, mbSize: (Double(totalSize) / 1048576))
     }
 }

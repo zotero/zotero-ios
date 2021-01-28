@@ -17,11 +17,10 @@ extension Array {
         }
     }
 
-    /// If the element exists it finds an index of given element in array. If the element doesn't exist it
-    /// finds an insertion index for given element in array. The array has to be sorted! Implemented as binary search.
+    /// Finds an insertion index for given element in array. The array has to be sorted! Implemented as binary search.
     /// - parameter element: Element to be found/inserted
     /// - parameter areInIncreasingOrder: sorting function to be used to compare elements in array.
-    /// - returns: Index of found element or appropriate insertion index into sorted array.
+    /// - returns: Insertion index into sorted array.
     func index(of element: Element, sortedBy areInIncreasingOrder: (Element, Element) -> Bool) -> Int {
         var (low, high) = (0, self.count - 1)
         while low <= high {

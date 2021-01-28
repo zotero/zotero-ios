@@ -60,8 +60,21 @@ extension RItem: Deletable {
         switch self.rawType {
         case ItemTypes.attachment:
             self.cleanupAttachmentFiles()
+        case ItemTypes.annotation:
+            self.cleanupAnnotationFiles()
         default: break
         }
+    }
+
+    private func cleanupAnnotationFiles() {
+        guard let parentKey = self.parent?.key,
+              let libraryId = self.libraryId else { return }
+
+        let light = Files.annotationPreview(annotationKey: self.key, pdfKey: parentKey, libraryId: libraryId, isDark: false)
+        let dark = Files.annotationPreview(annotationKey: self.key, pdfKey: parentKey, libraryId: libraryId, isDark: true)
+
+        NotificationCenter.default.post(name: .attachmentDeleted, object: light)
+        NotificationCenter.default.post(name: .attachmentDeleted, object: dark)
     }
 
     private func cleanupAttachmentFiles() {
@@ -82,14 +95,12 @@ extension RItem: Deletable {
 
             // Delete attachment file
             NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+
+            guard let libraryId = self.libraryId else { return }
+
             if file.mimeType == "application/pdf" {
                 // This is a PDF file, remove all annotations.
-                NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationContainer(pdfKey: self.key))
-            } else if file.relativeComponents.first == "annotations",
-                      let darkContentType = AttachmentCreator.attachmentContentType(for: self, options: .dark, fileStorage: nil, urlDetector: nil),
-                      case .file(let file, _, _, _) = darkContentType {
-                // This is an embedded image for image annotation, remove dark version as well.
-                NotificationCenter.default.post(name: .attachmentDeleted, object: file)
+                NotificationCenter.default.post(name: .attachmentDeleted, object: Files.annotationPreviews(for: self.key, libraryId: libraryId))
             }
         }
     }

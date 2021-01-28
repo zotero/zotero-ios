@@ -118,19 +118,25 @@ class PDFReaderViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         let isCompactSize = UIDevice.current.isCompactWidth(size: size)
-
-        guard self.isCompactSize != isCompactSize else { return }
-
+        let sizeDidChange = isCompactSize != self.isCompactSize
         self.isCompactSize = isCompactSize
 
-        if self.isSidebarOpened {
+        if self.isSidebarOpened && sizeDidChange {
             self.pdfControllerLeft.constant = isCompactSize ? 0 : PDFReaderLayout.sidebarWidth
         }
 
         coordinator.animate(alongsideTransition: { _ in
-            self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: isCompactSize)
-            self.setupAnnotationControls(forCompactSize: isCompactSize)
-            self.view.layoutIfNeeded()
+            if sizeDidChange {
+                self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: isCompactSize)
+                self.setupAnnotationControls(forCompactSize: isCompactSize)
+                self.view.layoutIfNeeded()
+            }
+
+            // Update highlight selection if needed
+            if let annotation = self.viewModel.state.selectedAnnotation,
+               let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
+                self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: Int(self.pdfController.pageIndex))
+            }
         }, completion: nil)
     }
 
@@ -141,21 +147,26 @@ class PDFReaderViewController: UIViewController {
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
         }
 
-        if state.changes.contains(.selection) {
-            if let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
-                self.updateSelection(on: pageView, selectedAnnotation: state.selectedAnnotation, pageIndex: Int(self.pdfController.pageIndex))
+        if state.changes.contains(.selection), let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
+            if let annotation = state.selectedAnnotation {
+                if let location = state.focusDocumentLocation {
+                    // If annotation was selected, focus if needed
+                    self.focus(annotation: annotation, at: location, document: state.document)
+                } else {
+                    // Update custom selection if needed
+                    self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: Int(self.pdfController.pageIndex))
+                }
+            } else {
+                // Otherwise remove selection if needed
+                self.updateSelection(on: pageView, selectedAnnotation: nil, pageIndex: Int(self.pdfController.pageIndex))
             }
+
             self.showPopupAnnotationIfNeeded(state: state)
         }
 
         if state.changes.contains(.activeColor) {
             self.set(toolColor: state.activeColor, in: self.pdfController.annotationStateManager)
             self.colorPickerbutton.tintColor = state.activeColor
-        }
-
-        if let location = state.focusDocumentLocation,
-           let key = state.selectedAnnotation?.key {
-            self.focusAnnotation(at: location, key: key, document: state.document)
         }
 
         if state.changes.contains(.save) {
@@ -264,19 +275,17 @@ class PDFReaderViewController: UIViewController {
         })
     }
 
-    private func focusAnnotation(at location: AnnotationDocumentLocation, key: String, document: Document) {
+    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: Document) {
         let pageIndex = PageIndex(location.page)
         self.scrollIfNeeded(to: pageIndex, animated: true) {
             guard let pageView = self.pdfController.pageViewForPage(at: pageIndex),
-                  let annotation = document.annotation(on: location.page, with: key) else { return }
+                  let pdfAnnotation = document.annotation(on: location.page, with: annotation.key) else { return }
 
-            if !pageView.selectedAnnotations.contains(annotation) {
-                pageView.selectedAnnotations = [annotation]
+            if !pageView.selectedAnnotations.contains(pdfAnnotation) {
+                pageView.selectedAnnotations = [pdfAnnotation]
             }
 
-            if annotation is HighlightAnnotation {
-                self.updateSelection(on: pageView, selectedAnnotation: self.viewModel.state.selectedAnnotation, pageIndex: location.page)
-            }
+            self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: location.page)
         }
     }
 
@@ -511,7 +520,7 @@ class PDFReaderViewController: UIViewController {
         }
 
         interactions.selectAnnotation.addActivationCallback { [weak self] context, _, _ in
-            guard let key = context.annotation.key else { return }
+            let key = context.annotation.key ?? context.annotation.uuid
             self?.viewModel.process(action: .selectAnnotationFromDocument(key: key, page: Int(context.pageView.pageIndex)))
         }
 
@@ -767,16 +776,6 @@ class PDFReaderViewController: UIViewController {
 }
 
 extension PDFReaderViewController: PDFViewControllerDelegate {
-    func pdfViewController(_ pdfController: PDFViewController, didConfigurePageView pageView: PDFPageView, forPageAt pageIndex: Int) {
-        guard !self.isSidebarTransitioning,
-              let selected = self.viewModel.state.selectedAnnotation,
-              let annotation = self.viewModel.state.document.annotation(on: pageIndex, with: selected.key) else { return }
-
-        if !pageView.selectedAnnotations.contains(annotation) {
-            pageView.selectedAnnotations = [annotation]
-        }
-    }
-
     func pdfViewController(_ pdfController: PDFViewController, willBeginDisplaying pageView: PDFPageView, forPageAt pageIndex: Int) {
         // This delegate method is called for incorrect page index when sidebar is changing size. So if the sidebar is opened/closed, incorrect page
         // is stored in `pageController` and if the user closes the pdf reader without further scrolling, incorrect page is shown on next opening.

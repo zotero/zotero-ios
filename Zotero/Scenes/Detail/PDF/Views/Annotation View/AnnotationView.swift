@@ -87,7 +87,7 @@ class AnnotationView: UIView {
         let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
 
         self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel,
-                          author: (annotation.isAuthor ? "" : annotation.author), showsMenuButton: (hasWritePermission && selected))
+                          author: (annotation.isAuthor ? "" : annotation.author), showsMenuButton: canEdit)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
         self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit)

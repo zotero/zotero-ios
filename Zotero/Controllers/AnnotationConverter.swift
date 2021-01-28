@@ -72,18 +72,6 @@ struct AnnotationConverter {
             }
         }
 
-        let editability: Annotation.Editability
-        if type != .image {
-            editability = .editable
-        } else {
-            // Check whether image annotation has synced embedded image attachment item, if not, the annotation can't be moved or resized
-            // (can't be edited in document). The user can still update comment or tags.
-            let embeddedImage = item.children.filter(.items(type: ItemTypes.attachment, notSyncState: .dirty)).first(where: { item in
-                item.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first.flatMap({ LinkMode(rawValue: $0.value) }) == .embeddedImage
-            })
-            editability = (embeddedImage != nil) ? .editable : .metadataEditable
-        }
-
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
 
@@ -101,7 +89,8 @@ struct AnnotationConverter {
                           dateModified: item.dateModified,
                           tags: item.tags.map({ Tag(tag: $0) }),
                           didChange: false,
-                          editability: editability)
+                          editability: .editable,
+                          isSyncable: true)
     }
 
     // MARK: - PSPDFKit -> Zotero
@@ -112,10 +101,10 @@ struct AnnotationConverter {
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, editability: Annotation.Editability, isNew: Bool, generateKey: Bool, username: String) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
-        let key = generateKey ? KeyGenerator.newKey : annotation.uuid
+        let key = isSyncable ? KeyGenerator.newKey : annotation.uuid
         let page = Int(annotation.pageIndex)
         let pageLabel = document.pageLabelForPage(at: annotation.pageIndex, substituteWithPlainLabel: false) ?? "\(annotation.pageIndex + 1)"
         let author = isNew ? username : (annotation.user ?? "")
@@ -129,15 +118,15 @@ struct AnnotationConverter {
         let rects: [CGRect]
         let text: String?
 
-        if let annotation = annotation as? NoteAnnotation {
+        if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
             rects = [annotation.boundingBox]
             text = nil
-        } else if let annotation = annotation as? HighlightAnnotation {
+        } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
             rects = annotation.rects ?? [annotation.boundingBox]
             text = annotation.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
-        } else if let annotation = annotation as? SquareAnnotation {
+        } else if let annotation = annotation as? PSPDFKit.SquareAnnotation {
             type = .image
             rects = [annotation.boundingBox]
             text = nil
@@ -159,7 +148,8 @@ struct AnnotationConverter {
                           dateModified: date,
                           tags: [],
                           didChange: isNew,
-                          editability: editability)
+                          editability: editability,
+                          isSyncable: isSyncable)
     }
 
     // MARK: - Zotero -> PSPDFKit
@@ -190,7 +180,9 @@ struct AnnotationConverter {
             annotation.customData = [AnnotationsConfig.isZoteroKey: true,
                                      AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
                                      AnnotationsConfig.keyKey: zoteroAnnotation.key]
-            annotation.isEditable = zoteroAnnotation.editability == .editable
+            if zoteroAnnotation.editability != .editable {
+                annotation.flags.update(with: .locked)
+            }
         }
 
         annotation.pageIndex = UInt(zoteroAnnotation.page)

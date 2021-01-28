@@ -73,7 +73,7 @@ struct AttachmentCreator {
             DDLogError("AttachmentCreator: embedded image (\(item.key)) annotation without assigned parent \(parent.key)")
             return nil
         }
-        let file = Files.annotationPreview(annotationKey: parent.key, pdfKey: attachmentItem.key, isDark: (options == .dark))
+        let file = Files.annotationPreview(annotationKey: parent.key, pdfKey: attachmentItem.key, libraryId: libraryId, isDark: (options == .dark))
         let location = fileStorage.flatMap({ self.location(for: item, file: file, fileStorage: $0) })
         let filename = self.filename(for: item, file: file)
         return .file(file: file, filename: filename, location: location, linkType: .imported)

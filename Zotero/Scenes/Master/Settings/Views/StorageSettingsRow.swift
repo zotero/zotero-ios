@@ -39,6 +39,6 @@ struct StorageSettingsRow: View {
 
 struct StorageSettingsRow_Previews: PreviewProvider {
     static var previews: some View {
-        StorageSettingsRow(title: "TOTAL", data: DirectoryData(fileCount: 2, totalSize: 10000)) {}
+        StorageSettingsRow(title: "TOTAL", data: DirectoryData(fileCount: 2, mbSize: 1)) {}
     }
 }

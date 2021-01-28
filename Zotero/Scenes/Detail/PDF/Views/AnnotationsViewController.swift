@@ -125,7 +125,7 @@ class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
-        if state.changes.contains(.selection) || state.changes.contains(.activeComment) {
+        if !state.changes.contains(.annotations) && (state.changes.contains(.selection) || state.changes.contains(.activeComment)) {
             // Reload updated cells which are visible
             if let indexPaths = state.updatedAnnotationIndexPaths {
                 for indexPath in indexPaths {

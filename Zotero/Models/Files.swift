@@ -25,11 +25,11 @@ struct Files {
 
     // MARK: - Attachments
 
-    static var downloadDirectory: File {
+    static var downloads: File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads"])
     }
 
-    static func libraryDirectory(for libraryId: LibraryIdentifier) -> File {
+    static func downloads(for libraryId: LibraryIdentifier) -> File {
         return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["downloads", libraryId.folderName])
     }
 
@@ -94,7 +94,7 @@ struct Files {
     // MARK: - Bundled
 
     static var translators: File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["translators"], name: "", ext: "")
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["translators"])
     }
 
     static func translator(filename: String) -> File {
@@ -111,13 +111,21 @@ struct Files {
 
     // MARK: - Annotations
 
-    static func annotationPreview(annotationKey: String, pdfKey: String, isDark: Bool) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", pdfKey],
+    static func annotationPreview(annotationKey: String, pdfKey: String, libraryId: LibraryIdentifier, isDark: Bool) -> File {
+        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", libraryId.folderName, pdfKey],
                         name: annotationKey + (isDark ? "_dark" : ""), ext: "png")
     }
 
-    static func annotationContainer(pdfKey: String) -> File {
-        return FileData(rootPath: Files.appGroupPath, relativeComponents: ["annotations", pdfKey], name: "", ext: "")
+    static func annotationPreviews(for pdfKey: String, libraryId: LibraryIdentifier) -> File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations", libraryId.folderName, pdfKey])
+    }
+
+    static func annotationPreviews(for libraryId: LibraryIdentifier) -> File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations", libraryId.folderName])
+    }
+
+    static var annotationPreviews: File {
+        return FileData.directory(rootPath: Files.appGroupPath, relativeComponents: ["annotations"])
     }
 
     // MARK: - Share extension

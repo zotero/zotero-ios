@@ -32,13 +32,14 @@ struct Annotation {
     let tags: [Tag]
     let didChange: Bool
     let editability: Editability
+    let isSyncable: Bool
 
     var previewBoundingBox: CGRect {
         return self.boundingBox.insetBy(dx: (PDFReaderLayout.imageAnnotationLineWidth + 1), dy: (PDFReaderLayout.imageAnnotationLineWidth + 1))
     }
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,
-                 text: String?, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editability: Editability) {
+         text: String?, sortIndex: String, dateModified: Date, tags: [Tag], didChange: Bool, editability: Editability, isSyncable: Bool) {
         self.key = key
         self.type = type
         self.page = page
@@ -54,6 +55,7 @@ struct Annotation {
         self.tags = tags
         self.didChange = didChange
         self.editability = editability
+        self.isSyncable = isSyncable
     }
 
     var boundingBox: CGRect {
@@ -99,7 +101,8 @@ struct Annotation {
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 
     func copy(comment: String) -> Annotation {
@@ -117,7 +120,8 @@ struct Annotation {
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 
     func copy(tags: [Tag]) -> Annotation {
@@ -135,7 +139,8 @@ struct Annotation {
                           dateModified: Date(),
                           tags: tags,
                           didChange: true,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 
     func copy(text: String?) -> Annotation {
@@ -153,7 +158,8 @@ struct Annotation {
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 
     func copy(color: String) -> Annotation {
@@ -171,7 +177,8 @@ struct Annotation {
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 
     func copy(pageLabel: String) -> Annotation {
@@ -189,7 +196,8 @@ struct Annotation {
                           dateModified: Date(),
                           tags: self.tags,
                           didChange: true,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 
     func copy(didChange: Bool) -> Annotation {
@@ -207,6 +215,7 @@ struct Annotation {
                           dateModified: self.dateModified,
                           tags: self.tags,
                           didChange: false,
-                          editability: self.editability)
+                          editability: self.editability,
+                          isSyncable: self.isSyncable)
     }
 }

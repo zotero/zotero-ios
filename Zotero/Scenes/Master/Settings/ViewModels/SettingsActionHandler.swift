@@ -117,13 +117,14 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
     private func removeAllDownloads(in viewModel: ViewModel<SettingsActionHandler>) {
         do {
-            try self.fileStorage.remove(Files.downloadDirectory)
+            try self.fileStorage.remove(Files.downloads)
+            try self.fileStorage.remove(Files.annotationPreviews)
 
             self.update(viewModel: viewModel) { state in
                 for (key, _) in state.storageData {
-                    state.storageData[key] = DirectoryData(fileCount: 0, totalSize: 0)
+                    state.storageData[key] = DirectoryData(fileCount: 0, mbSize: 0)
                 }
-                state.totalStorageData = DirectoryData(fileCount: 0, totalSize: 0)
+                state.totalStorageData = DirectoryData(fileCount: 0, mbSize: 0)
                 state.showDeleteAllQuestion = false
             }
 
@@ -136,11 +137,13 @@ struct SettingsActionHandler: ViewModelActionHandler {
 
     private func removeDownloads(for libraryId: LibraryIdentifier, in viewModel: ViewModel<SettingsActionHandler>) {
         do {
-            try self.fileStorage.remove(Files.libraryDirectory(for: libraryId))
-            let newTotal = self.fileStorage.directoryData(for: Files.downloadDirectory)
+            try self.fileStorage.remove(Files.downloads(for: libraryId))
+            try self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
+
+            let newTotal = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews])
 
             self.update(viewModel: viewModel) { state in
-                state.storageData[libraryId] = DirectoryData(fileCount: 0, totalSize: 0)
+                state.storageData[libraryId] = DirectoryData(fileCount: 0, mbSize: 0)
                 state.totalStorageData = newTotal
                 state.showDeleteLibraryQuestion = nil
             }
@@ -174,11 +177,12 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private func storageData(for libraries: [Library]) -> (libraryData: [LibraryIdentifier: DirectoryData], totalData: DirectoryData?) {
         var storageData: [LibraryIdentifier: DirectoryData] = [:]
         for library in libraries {
-            if let data = self.fileStorage.directoryData(for: Files.libraryDirectory(for: library.identifier)) {
+            let libraryId = library.identifier
+            if let data = self.fileStorage.directoryData(for: [Files.downloads(for: libraryId), Files.annotationPreviews(for: libraryId)]) {
                 storageData[library.identifier] = data
             }
         }
-        let totalData = self.fileStorage.directoryData(for: Files.downloadDirectory)
+        let totalData = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews])
         return (storageData, totalData)
     }
 

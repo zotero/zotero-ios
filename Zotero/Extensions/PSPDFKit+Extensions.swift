@@ -14,7 +14,7 @@ import PSPDFKit
 
 extension Document {
     func annotation(on page: Int, with key: String) -> PSPDFKit.Annotation? {
-        return self.annotations(at: UInt(page)).first(where: { $0.key == key })
+        return self.annotations(at: UInt(page)).first(where: { $0.key == key || $0.uuid == key })
     }
 }
 
@@ -65,6 +65,12 @@ extension PSPDFKit.Annotation {
 
     var previewBoundingBox: CGRect {
         return self.boundingBox.insetBy(dx: (self.lineWidth + 1), dy: (self.lineWidth + 1))
+    }
+}
+
+extension PSPDFKit.SquareAnnotation {
+    var isImageAnnotation: Bool {
+        return (self.name ?? "").contains("Zotero")
     }
 }
 
