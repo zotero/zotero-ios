@@ -43,12 +43,14 @@ class SyncToolbarController {
         if case .aborted(let error) = progress {
             switch error {
             case .cancelled:
+                self.pendingErrors = nil
                 controller.setToolbarHidden(true, animated: true)
             default:
                 self.pendingErrors = [error]
             }
         } else if case .finished(let errors) = progress {
             if errors.isEmpty {
+                self.pendingErrors = nil
                 self.hideToolbarWithDelay(in: controller)
             } else {
                 self.pendingErrors = errors
