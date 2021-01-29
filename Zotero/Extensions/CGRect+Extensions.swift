@@ -16,4 +16,8 @@ extension CGRect {
     var widthToHeightRatio: CGFloat {
         return self.width / self.height
     }
+
+    func rounded(to places: Int) -> CGRect {
+        return CGRect(x: self.minX.rounded(to: places), y: self.minY.rounded(to: places), width: self.width.rounded(to: places), height: self.height.rounded(to: places))
+    }
 }

@@ -209,7 +209,7 @@ struct AnnotationConverter {
             square = SquareAnnotation()
         }
 
-        square.boundingBox = annotation.boundingBox
+        square.boundingBox = annotation.boundingBox.rounded(to: 3)
         square.borderColor = color
 
         return square
@@ -226,8 +226,8 @@ struct AnnotationConverter {
             highlight = HighlightAnnotation()
         }
 
-        highlight.boundingBox = annotation.boundingBox
-        highlight.rects = annotation.rects
+        highlight.boundingBox = annotation.boundingBox.rounded(to: 3)
+        highlight.rects = annotation.rects.map({ $0.rounded(to: 3) })
         highlight.color = color
         highlight.alpha = alpha
 
@@ -245,7 +245,7 @@ struct AnnotationConverter {
             note = NoteAnnotation(contents: annotation.comment)
         }
 
-        let boundingBox = annotation.boundingBox
+        let boundingBox = annotation.boundingBox.rounded(to: 3)
         note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteAnnotationSize)
         note.borderStyle = .dashed
         note.color = color
