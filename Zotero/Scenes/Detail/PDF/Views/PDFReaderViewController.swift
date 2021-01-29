@@ -743,6 +743,9 @@ class PDFReaderViewController: UIViewController {
                                       if let annotations = notification.object as? [PSPDFKit.Annotation] {
                                           self.viewModel.process(action: .annotationsAdded(annotations))
                                       }
+                                      if let tool = self.pdfController.annotationStateManager.state {
+                                          self.toggle(annotationTool: tool)
+                                      }
                                   })
                                   .disposed(by: self.disposeBag)
 

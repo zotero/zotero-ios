@@ -591,6 +591,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         self.update(viewModel: viewModel) { state in
             var focus: IndexPath?
+            var selectedAnnotation: Annotation?
 
             for annotation in newZoteroAnnotations {
                 if var snapshot = state.annotationsSnapshot {
@@ -604,6 +605,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
                         if focus == nil {
                             focus = IndexPath(row: index, section: annotation.page)
+                            selectedAnnotation = annotation
                         }
                     }
                 } else {
@@ -612,12 +614,14 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
                     if focus == nil {
                         focus = IndexPath(row: index, section: annotation.page)
+                        selectedAnnotation = annotation
                     }
                 }
             }
 
             state.focusSidebarIndexPath = focus
-            state.changes = [.annotations, .save]
+            state.selectedAnnotation = selectedAnnotation
+            state.changes = [.annotations, .save, .selection]
         }
     }
 
