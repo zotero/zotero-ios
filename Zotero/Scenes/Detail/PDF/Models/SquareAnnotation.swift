@@ -18,8 +18,8 @@ class SquareAnnotation: PSPDFKit.SquareAnnotation {
     override func draw(context: CGContext, options: RenderOptions?) {
         super.draw(context: context, options: options)
 
-        guard self.contents != nil else { return }
-        
+        guard let comment = self.contents, !comment.isEmpty else { return }
+
         CommentIconDrawingController.draw(context: context, boundingBox: self.boundingBox, color: (self.color ?? .black))
     }
 }

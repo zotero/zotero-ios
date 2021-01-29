@@ -97,11 +97,12 @@ struct AnnotationConverter {
 
     /// Create Zotero annotation from existing PSPDFKit annotation.
     /// - parameter annotation: PSPDFKit annotation.
+    /// - parameter color: Base color of annotation (can differ from current `PSPDPFKit.Annotation.color`)
     /// - parameter editability: Type of editability for given annotation.
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, color: String, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = isSyncable ? KeyGenerator.newKey : annotation.uuid
@@ -110,7 +111,6 @@ struct AnnotationConverter {
         let author = isNew ? username : (annotation.user ?? "")
         let isAuthor = isNew ? true : (annotation.user == username)
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
-        let color = annotation.color?.hexString ?? AnnotationsConfig.defaultActiveColor
         let sortIndex = self.sortIndex(from: annotation)
         let date = Date()
 

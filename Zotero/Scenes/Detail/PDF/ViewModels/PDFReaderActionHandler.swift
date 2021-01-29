@@ -572,14 +572,15 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         let isDark = viewModel.state.interfaceStyle == .dark
         let libraryId = viewModel.state.library.identifier
+        let activeColor = viewModel.state.activeColor.hexString
 
         for annotation in annotations {
             guard !annotation.syncable,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, editability: .editable, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, editability: .editable, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
-                                     AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
+                                     AnnotationsConfig.baseColorKey: activeColor,
                                      AnnotationsConfig.syncableKey: true]
 
             if let annotation = annotation as? PSPDFKit.SquareAnnotation {
@@ -765,8 +766,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                     continue
                 }
 
-                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, editability: .notEditable, isNew: false,
-                                                                      isSyncable: false, username: username) else { continue }
+                let color = pdfAnnotation.color?.hexString ?? "#000000"
+                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: color, editability: .notEditable, isNew: false, isSyncable: false, username: username) else { continue }
 
                 var annotations = allAnnotations[annotation.page] ?? []
                 let index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
