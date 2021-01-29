@@ -145,6 +145,10 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         case .export:
             self.export(viewModel: viewModel)
+
+        case .clearTmpAnnotationPreviews:
+            self.clearTmpAnnotationPreviews(in: viewModel)
+
         }
     }
 
@@ -464,6 +468,18 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
             state.selectedAnnotation = annotation
             state.changes.insert(.selection)
+        }
+    }
+
+    /// Annotations which originate from document and are not synced generate their previews based on annotation UUID, which is in-memory and is not stored in PDF. So these previews are only
+    /// temporary and should be cleared when user closes the document.
+    private func clearTmpAnnotationPreviews(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        let libraryId = viewModel.state.library.identifier
+        let unsyncableAnnotations = viewModel.state.annotations.flatMap({ $1.filter({ !$0.isSyncable }) })
+
+        for annotation in unsyncableAnnotations {
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: false))
+            try? self.fileStorage.remove(Files.annotationPreview(annotationKey: annotation.key, pdfKey: viewModel.state.key, libraryId: libraryId, isDark: true))
         }
     }
 

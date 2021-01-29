@@ -395,6 +395,7 @@ class PDFReaderViewController: UIViewController {
 
     private func close() {
         self.viewModel.process(action: .saveChanges)
+        self.viewModel.process(action: .clearTmpAnnotationPreviews)
         self.navigationController?.presentingViewController?.dismiss(animated: true, completion: nil)
     }
 
@@ -770,6 +771,7 @@ class PDFReaderViewController: UIViewController {
                                   .subscribe(onNext: { [weak self] notification in
                                       guard let `self` = self else { return }
                                       self.viewModel.process(action: .saveChanges)
+                                      self.viewModel.process(action: .clearTmpAnnotationPreviews)
                                   })
                                   .disposed(by: self.disposeBag)
     }

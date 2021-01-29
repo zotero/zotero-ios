@@ -35,6 +35,7 @@ enum PDFReaderAction {
     case setCommentActive(Bool)
     case setVisiblePage(Int)
     case export
+    case clearTmpAnnotationPreviews
 }
 
 #endif
