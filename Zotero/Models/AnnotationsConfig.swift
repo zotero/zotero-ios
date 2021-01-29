@@ -16,9 +16,9 @@ struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
     static let colors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5"]
 
-    static let isZoteroKey = "isZoteroAnnotation"
-    static let keyKey = "zoteroKey"
-    static let baseColorKey = "zoteroBaseColor"
+    static let keyKey = "ZOTERO:Key"
+    static let baseColorKey = "ZOTERO:BaseColor"
+    static let syncableKey = "ZOTERO:Syncable"
 
     #if PDFENABLED
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]

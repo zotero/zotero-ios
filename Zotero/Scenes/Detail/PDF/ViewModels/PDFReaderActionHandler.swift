@@ -333,7 +333,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func updatePdfAnnotation(to annotation: Annotation, changes: PdfAnnotationChanges, state: PDFReaderState) {
-        guard !changes.isEmpty, let pdfAnnotation = state.document.annotations(at: UInt(annotation.page)).first(where: { $0.key == annotation.key }) else { return }
+        guard !changes.isEmpty, let pdfAnnotation = state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) else { return }
 
         if changes.contains(.color) {
             let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
@@ -356,7 +356,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotation: Updated PSPDFKit annotation.
     /// - parameter viewModel: ViewModel.
     private func updateBoundingBoxAndRects(for pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let key = pdfAnnotation.key else { return }
+        guard pdfAnnotation.syncable, let key = pdfAnnotation.key else { return }
 
         let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation)
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
@@ -382,8 +382,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotation: Annotation to remove.
     /// - parameter viewModel: ViewModel.
     private func remove(annotation: Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
-        guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page))
-                                                               .first(where: { $0.key == annotation.key }) else { return }
+        guard let documentAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) else { return }
         documentAnnotation.isEditable = true
         viewModel.state.document.remove(annotations: [documentAnnotation], options: nil)
     }
@@ -559,14 +558,13 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         let libraryId = viewModel.state.library.identifier
 
         for annotation in annotations {
-            guard !annotation.isZotero,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, editability: .editable, isNew: true,
-                                                                        isSyncable: true, username: viewModel.state.username) else { continue }
+            guard !annotation.syncable,
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, editability: .editable, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
-            annotation.customData = [AnnotationsConfig.isZoteroKey: true,
-                                     AnnotationsConfig.keyKey: zoteroAnnotation.key,
-                                     AnnotationsConfig.baseColorKey: zoteroAnnotation.color]
+            annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
+                                     AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
+                                     AnnotationsConfig.syncableKey: true]
 
             if let annotation = annotation as? PSPDFKit.SquareAnnotation {
                 self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: libraryId, isDark: isDark)
@@ -665,7 +663,7 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
         var removedSelection = false
 
         for annotation in annotations {
-            guard annotation.isZotero, let key = annotation.key else { continue }
+            guard annotation.syncable, let key = annotation.key else { continue }
 
             if selectedKey == key {
                 removedSelection = true

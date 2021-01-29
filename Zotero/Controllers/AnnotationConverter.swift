@@ -176,10 +176,15 @@ struct AnnotationConverter {
             annotation = self.noteAnnotation(from: zoteroAnnotation, type: type, color: color)
         }
 
-        if type == .zotero {
-            annotation.customData = [AnnotationsConfig.isZoteroKey: true,
-                                     AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
-                                     AnnotationsConfig.keyKey: zoteroAnnotation.key]
+        switch type {
+        case .export:
+            annotation.key = zoteroAnnotation.key
+
+        case .zotero:
+            annotation.customData = [AnnotationsConfig.baseColorKey: zoteroAnnotation.color,
+                                     AnnotationsConfig.keyKey: zoteroAnnotation.key,
+                                     AnnotationsConfig.syncableKey: true]
+
             if zoteroAnnotation.editability != .editable {
                 annotation.flags.update(with: .locked)
             }

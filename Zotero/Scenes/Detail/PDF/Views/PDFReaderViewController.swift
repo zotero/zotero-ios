@@ -528,9 +528,9 @@ class PDFReaderViewController: UIViewController {
             self?.viewModel.process(action: .selectAnnotation(nil))
         }
 
-        // Only Zotero annotations can be edited
+        // Only Zotero-synced annotations can be edited
         interactions.editAnnotation.addActivationCondition { context, _, _ -> Bool in
-            return context.annotation.isZotero && context.annotation.isEditable
+            return context.annotation.syncable && context.annotation.isEditable
         }
     }
 
