@@ -14,6 +14,8 @@ internal enum L10n {
   internal static let abstract = L10n.tr("Localizable", "abstract")
   /// Add
   internal static let add = L10n.tr("Localizable", "add")
+  /// Cache
+  internal static let cache = L10n.tr("Localizable", "cache")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel")
   /// Close
@@ -60,6 +62,8 @@ internal enum L10n {
   internal static let save = L10n.tr("Localizable", "save")
   /// Title
   internal static let title = L10n.tr("Localizable", "title")
+  /// Total
+  internal static let total = L10n.tr("Localizable", "total")
   /// Unknown
   internal static let unknown = L10n.tr("Localizable", "unknown")
   /// Warning
@@ -447,6 +451,10 @@ internal enum L10n {
       internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")
       /// Do you really want to delete all attachments?
       internal static let deleteAllQuestion = L10n.tr("Localizable", "settings.storage.delete_all_question")
+      /// Delete Cache
+      internal static let deleteCache = L10n.tr("Localizable", "settings.storage.delete_cache")
+      /// Do you really want to delete cache?
+      internal static let deleteCacheQuestion = L10n.tr("Localizable", "settings.storage.delete_cache_question")
       /// Do you really want to delete all attachments in "%@"?
       internal static func deleteLibraryQuestion(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1))

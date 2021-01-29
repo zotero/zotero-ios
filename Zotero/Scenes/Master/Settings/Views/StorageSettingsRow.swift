@@ -19,7 +19,7 @@ struct StorageSettingsRow: View {
 
             Spacer()
 
-            self.data.flatMap({ Text(self.storageDataString(for: $0)) }) ?? Text("-")
+            Text(self.storageDataString(for: self.data))
 
             if (self.data?.fileCount ?? 0) > 0 {
                 self.deleteAction.flatMap {
@@ -31,7 +31,8 @@ struct StorageSettingsRow: View {
         }
     }
 
-    private func storageDataString(for data: DirectoryData) -> String {
+    private func storageDataString(for data: DirectoryData?) -> String {
+        guard let data = data, data.fileCount > 0 else { return "-" }
         let mbString = String(format: "%.2f", data.mbSize)
         return (data.fileCount == 1 ? L10n.Settings.Storage.oneFile : L10n.Settings.Storage.multipleFiles(data.fileCount)) + " (\(mbString) MB)"
     }

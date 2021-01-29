@@ -26,7 +26,7 @@ protocol FileStorage: class {
     func contentsOfDirectory(at file: File) throws -> [URL]
     func contentsOfDirectory(at file: File) throws -> [File]
     func link(file fromFile: File, to toFile: File) throws
-    func directoryData(for files: [File]) -> DirectoryData?
+    func directoryData(for files: [File]) -> DirectoryData
 }
 
 class FileStorageController: FileStorage {
@@ -93,17 +93,12 @@ class FileStorageController: FileStorage {
         try self.fileManager.linkItem(at: fromFile.createUrl(), to: toUrl)
     }
 
-    func directoryData(for files: [File]) -> DirectoryData? {
-        var all: DirectoryData?
+    func directoryData(for files: [File]) -> DirectoryData {
+        var all = DirectoryData(fileCount: 0, mbSize: 0)
 
         for file in files {
             if let fileData = self.directoryData(for: file) {
-                if let _all = all {
-                    all = DirectoryData(fileCount: fileData.fileCount + _all.fileCount,
-                                        mbSize: fileData.mbSize + _all.mbSize)
-                } else {
-                    all = fileData
-                }
+                all = DirectoryData(fileCount: fileData.fileCount + all.fileCount, mbSize: fileData.mbSize + all.mbSize)
             }
         }
 

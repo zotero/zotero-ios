@@ -19,14 +19,10 @@ struct StorageSettingsListView: View {
                         self.viewModel.process(action: .showDeleteLibraryQuestion(library))
                     })
                 }
-            }
 
-            Section {
-                StorageSettingsRow(title: "TOTAL", data: self.viewModel.state.totalStorageData, deleteAction: nil)
-            }
+                StorageSettingsRow(title: L10n.total.uppercased(), data: self.viewModel.state.totalStorageData, deleteAction: nil)
 
-            if (self.viewModel.state.totalStorageData?.fileCount ?? 0) > 0 {
-                Section {
+                if self.viewModel.state.totalStorageData.fileCount > 0 {
                     Button(action: {
                         self.viewModel.process(action: .showDeleteAllQuestion(true))
                     }) {
@@ -34,7 +30,19 @@ struct StorageSettingsListView: View {
                     }
                 }
             }
-        }
+
+            Section {
+                StorageSettingsRow(title: L10n.cache, data: self.viewModel.state.cacheData, deleteAction: nil)
+
+                if self.viewModel.state.cacheData.fileCount > 0 {
+                    Button(action: {
+                        self.viewModel.process(action: .showDeleteAllQuestion(true))
+                    }) {
+                        Text(L10n.Settings.Storage.deleteCache).foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    }
+                }
+            }
+        }.listStyle(GroupedListStyle())
     }
 }
 

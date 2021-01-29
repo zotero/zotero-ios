@@ -26,4 +26,6 @@ enum SettingsAction {
     case deleteDownloadsInLibrary(LibraryIdentifier)
     case showDeleteAllQuestion(Bool)
     case showDeleteLibraryQuestion(Library?)
+    case deleteCache
+    case showDeleteCacheQuestion(Bool)
 }

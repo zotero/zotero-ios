@@ -52,7 +52,7 @@ struct Files {
 
     static func link(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["links", key], name: name, ext: ext)
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "links", key], name: name, ext: ext)
     }
 
     static var temporaryUploadFile: File {
@@ -106,7 +106,7 @@ struct Files {
 
     static func pdfToShare(filename: String, key: String) -> File {
         let (name, ext) = self.split(filename: filename)
-        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["sharing", key], name: name, ext: ext)
+        return FileData(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero", "sharing", key], name: name, ext: ext)
     }
 
     // MARK: - Annotations
@@ -139,6 +139,10 @@ struct Files {
     }
 
     // MARK: - Helper
+
+    static var cache: File {
+        return FileData.directory(rootPath: Files.cachesRootPath, relativeComponents: ["Zotero"])
+    }
 
     static func file(from url: URL) -> File {
         return FileData(rootPath: url.deletingLastPathComponent().relativePath, relativeComponents: [],

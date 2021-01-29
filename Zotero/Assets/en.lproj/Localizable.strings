@@ -34,6 +34,8 @@
 "retry" = "Retry";
 "page" = "Page";
 "report" = "Report";
+"total" = "Total";
+"cache" = "Cache";
 
 "day_suffixes" = "st,nd,rd,th";
 
@@ -175,6 +177,8 @@
 "settings.storage.delete_all" = "Delete All Attachments";
 "settings.storage.delete_all_question" = "Do you really want to delete all attachments?";
 "settings.storage.delete_library_question" = "Do you really want to delete all attachments in \"%@\"?";
+"settings.storage.delete_cache" = "Delete Cache";
+"settings.storage.delete_cache_question" = "Do you really want to delete cache?";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

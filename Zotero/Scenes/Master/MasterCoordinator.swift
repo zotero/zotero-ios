@@ -107,6 +107,10 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                      if let library = state.showDeleteLibraryQuestion {
                          self.showDeleteLibraryStorageAlert(for: library, viewModel: viewModel)
                      }
+
+                    if state.showDeleteCacheQuestion {
+                        self.showDeleteCacheStorageAlert(viewModel: viewModel)
+                    }
                  })
                  .disposed(by: self.disposeBag)
 
@@ -120,29 +124,44 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     }
 
     private func showDeleteAllStorageAlert(viewModel: ViewModel<SettingsActionHandler>) {
-        let controller = UIAlertController(title: L10n.Settings.Storage.deleteAllQuestion, message: nil, preferredStyle: .alert)
-
-        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak viewModel] _ in
-            viewModel?.process(action: .deleteAllDownloads)
-        }))
-
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak viewModel] _ in
-            viewModel?.process(action: .showDeleteAllQuestion(false))
-        }))
-
-        // Settings are already presented, so present over them
-        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+        self.showDeleteQuestion(title: L10n.Settings.Storage.deleteAllQuestion,
+                                deleteAction: { [weak viewModel] in
+                                    viewModel?.process(action: .deleteAllDownloads)
+                                },
+                                cancelAction: { [weak viewModel] in
+                                    viewModel?.process(action: .showDeleteAllQuestion(false))
+                                })
     }
 
     private func showDeleteLibraryStorageAlert(for library: Library, viewModel: ViewModel<SettingsActionHandler>) {
-        let controller = UIAlertController(title: L10n.Settings.Storage.deleteLibraryQuestion(library.name), message: nil, preferredStyle: .alert)
+        self.showDeleteQuestion(title: L10n.Settings.Storage.deleteLibraryQuestion(library.name),
+                                deleteAction: { [weak viewModel] in
+                                    viewModel?.process(action: .deleteDownloadsInLibrary(library.identifier))
+                                },
+                                cancelAction: { [weak viewModel] in
+                                    viewModel?.process(action: .showDeleteLibraryQuestion(nil))
+                                })
+    }
 
-        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { [weak viewModel] _ in
-            viewModel?.process(action: .deleteDownloadsInLibrary(library.identifier))
+    private func showDeleteCacheStorageAlert(viewModel: ViewModel<SettingsActionHandler>) {
+        self.showDeleteQuestion(title: L10n.Settings.Storage.deleteCacheQuestion,
+                                deleteAction: { [weak viewModel] in
+                                    viewModel?.process(action: .deleteCache)
+                                },
+                                cancelAction: { [weak viewModel] in
+                                    viewModel?.process(action: .showDeleteCacheQuestion(false))
+                                })
+    }
+
+    private func showDeleteQuestion(title: String, deleteAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
+        let controller = UIAlertController(title: title, message: nil, preferredStyle: .alert)
+
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
+            deleteAction()
         }))
 
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak viewModel] _ in
-            viewModel?.process(action: .showDeleteLibraryQuestion(nil))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { _ in
+            cancelAction()
         }))
 
         // Settings are already presented, so present over them
