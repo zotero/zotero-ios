@@ -27,7 +27,6 @@ class Controllers {
     let urlDetector: UrlDetector
     let dateParser: DateParser
     let fileCleanupController: AttachmentFileCleanupController
-    let pageController: PdfPageController
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
 
@@ -35,6 +34,7 @@ class Controllers {
     // Stores initial error when initializing `UserControllers`. It's needed in case the error happens on app launch.
     // The event sent through `userInitialized` publisher is not received by scene, because this happens in AppDelegate `didFinishLaunchingWithOptions`.
     var userControllerError: Error?
+    private var apiKey: String?
     private var sessionCancellable: AnyCancellable?
 
     init() {
@@ -74,31 +74,33 @@ class Controllers {
         self.urlDetector = UrlDetector()
         self.dateParser = DateParser()
         self.fileCleanupController = fileCleanupController
-        self.pageController = PdfPageController()
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
         self.userInitialized = PassthroughSubject()
 
         self.startObservingSession()
-        self.update(with: self.sessionController.sessionData, requiresSync: false)
+        self.update(with: self.sessionController.sessionData, isLogin: false)
     }
 
     func willEnterForeground() {
         self.crashReporter.processPendingReports()
         self.translatorsController.update()
-        self.userControllers?.itemLocaleController.loadLocale()
-        self.userControllers?.syncScheduler.request(syncType: .normal)
-        self.userControllers?.startObserving()
+
+        guard let controllers = self.userControllers, let session = self.sessionController.sessionData else { return }
+
+        controllers.prepareForForeground()
+        controllers.enableSync(apiKey: session.apiToken)
     }
 
     func didEnterBackground() {
-        self.pageController.save()
-        self.userControllers?.itemLocaleController.storeLocale()
-        self.userControllers?.syncScheduler.cancelSync()
-        self.userControllers?.stopObserving()
+        guard let controllers = self.userControllers else { return }
+        controllers.disableSync(apiKey: nil)
+        controllers.prepareForBackground()
     }
     
     func willTerminate() {
-        self.pageController.save()
+        guard let controllers = self.userControllers else { return }
+        controllers.disableSync(apiKey: nil)
+        controllers.prepareForBackground()
     }
 
     private func startObservingSession() {
@@ -106,28 +108,29 @@ class Controllers {
                                                         .receive(on: DispatchQueue.main)
                                                         .dropFirst()
                                                         .sink { [weak self] data in
-                                                            self?.update(with: data)
+                                                            self?.update(with: data, isLogin: true)
                                                         }
     }
 
-    private func update(with data: SessionData?, requiresSync: Bool = true) {
-        // Cleanup user controllers on logout
-        self.userControllers?.cleanup()
-
+    private func update(with data: SessionData?, isLogin: Bool) {
         if let data = data {
-            self.initializeSession(with: data, requiresSync: requiresSync)
+            self.initializeSession(with: data, isLogin: isLogin)
+            self.apiKey = data.apiToken
         } else {
             self.clearSession()
+            self.apiKey = nil
+            // Clear cache files on logout
+            try? self.fileStorage.remove(Files.cache)
         }
     }
 
-    private func initializeSession(with data: SessionData, requiresSync: Bool) {
+    private func initializeSession(with data: SessionData, isLogin: Bool) {
         do {
             self.apiClient.set(authToken: data.apiToken)
 
             let controllers = try UserControllers(userId: data.userId, controllers: self)
-            if requiresSync {
-                controllers.syncScheduler.request(syncType: .normal)
+            if isLogin {
+                controllers.enableSync(apiKey: data.apiToken)
             }
             self.userControllers = controllers
 
@@ -151,10 +154,20 @@ class Controllers {
     }
 
     private func clearSession() {
+        let controllers = self.userControllers
+
+        // `controllers.logout()` is called last so that the user is first redirected to login screen and then the DB is cleared. Otherwise the user would briefly see all data gone before being redirected.
+
+        // Disable ongoing sync and unsubscribe from websocket
+        controllers?.disableSync(apiKey: self.apiKey)
+        // Clear session and controllers
         self.apiClient.set(authToken: nil)
         self.userControllers = nil
         self.userControllerError = nil
+        // Report user logged out
         self.userInitialized.send(.success(false))
+        // Clear data
+        controllers?.logout()
     }
 }
 
@@ -166,11 +179,15 @@ class UserControllers {
     let itemLocaleController: RItemLocaleController
     let backgroundUploader: BackgroundUploader
     let fileDownloader: FileDownloader
+    let webSocketController: WebSocketController
 
     private static let schemaVersion: UInt64 = 9
 
     private var disposeBag: DisposeBag
 
+    // MARK: - Lifecycle
+
+    /// Instance is initialized on login or when app launches while user is logged in
     init(userId: Int, controllers: Controllers) throws {
         let dbStorage = try UserControllers.createDbStorage(for: userId, controllers: controllers)
         let backgroundUploadProcessor = BackgroundUploadProcessor(apiClient: controllers.apiClient,
@@ -188,6 +205,7 @@ class UserControllers {
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
         let fileDownloader = FileDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
+        let webSocketController = WebSocketController()
 
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
@@ -195,24 +213,38 @@ class UserControllers {
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploader = backgroundUploader
         self.fileDownloader = fileDownloader
+        self.webSocketController = webSocketController
         self.disposeBag = DisposeBag()
 
         let coordinator = try dbStorage.createCoordinator()
         try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
     }
 
-    /// Called when user logs out and we need to cleanup stored/cached data
-    func cleanup() {
-        // Stop ongoing sync
+    /// Connects to websocket to monitor changes and performs initial sync.
+    fileprivate func enableSync(apiKey: String) {
+        self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
+            self?.syncScheduler.request(syncType: .normal)
+        })
+    }
+
+    /// Cancels ongoing sync and stops websocket connection.
+    /// - parameter apiKey: If `apiKey` is provided, websocket sends and unsubscribe message before disconnecting.
+    fileprivate func disableSync(apiKey: String?) {
         self.syncScheduler.cancelSync()
+        self.webSocketController.disconnect(apiKey: apiKey)
+    }
+
+    fileprivate func logout() {
         // Clear DB storage
         self.dbStorage.clear()
         // Cancel all pending background uploads
         self.backgroundUploader.cancel()
-        // TODO: - remove cached files
     }
 
-    func startObserving() {
+    /// Loads appropriate data and starts observing.
+    fileprivate func prepareForForeground() {
+        self.itemLocaleController.loadLocale()
+
         self.syncScheduler
             .syncController
             .progressObservable.observeOn(MainScheduler.instance)
@@ -234,9 +266,13 @@ class UserControllers {
                            .disposed(by: self.disposeBag)
     }
 
-    func stopObserving() {
+    /// Stops observing services and caches appropriate data.
+    fileprivate func prepareForBackground() {
         self.disposeBag = DisposeBag()
+        self.itemLocaleController.storeLocale()
     }
+
+    // MARK: - Helpers
 
     private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
         let file = Files.dbFile(for: userId)

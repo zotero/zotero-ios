@@ -212,8 +212,7 @@ class DetailCoordinator: Coordinator {
                                              fileStorage: self.controllers.fileStorage)
         let state = PDFReaderState(url: url, key: key, library: library, userId: userId, username: username, interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                                 compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size),
-                                                 pageController: self.controllers.pageController)
+                                                 compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
         let navigationController = UINavigationController(rootViewController: controller)
         navigationController.modalPresentationStyle = .fullScreen
