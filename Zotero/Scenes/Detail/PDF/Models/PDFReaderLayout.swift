@@ -27,7 +27,7 @@ struct PDFReaderLayout {
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
     // Size of note annotation in PDF document.
-    static let noteAnnotationSize: CGSize = CGSize(width: 32, height: 32)
+    static let noteAnnotationSize: CGSize = CGSize(width: 24, height: 24)
 
     // Annotation
     static let annotationLayout = AnnotationViewLayout(type: .cell)
