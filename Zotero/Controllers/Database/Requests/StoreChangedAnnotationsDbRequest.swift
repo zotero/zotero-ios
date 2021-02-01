@@ -73,6 +73,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
                 newValue = annotation.pageLabel
             case FieldKeys.Item.Annotation.sortIndex:
                 newValue = annotation.sortIndex
+                item.annotationSortIndex = annotation.sortIndex
             case FieldKeys.Item.Annotation.text:
                 newValue = annotation.text ?? ""
             default: continue
