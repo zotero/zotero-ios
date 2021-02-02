@@ -661,6 +661,8 @@
 		B3BC6B1E250F79C4006A8B9C /* FieldKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */; };
 		B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1F250FA437006A8B9C /* SchemaError.swift */; };
 		B3BC6B21250FA50F006A8B9C /* SchemaError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BC6B1F250FA437006A8B9C /* SchemaError.swift */; };
+		B3BD2BA025C95ED300275EF9 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = B3BD2B9F25C95ED300275EF9 /* Starscream */; };
+		B3BD2BB325C98D2900275EF9 /* BackgroundTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */; };
 		B3BD86BC258CBCD600EF6674 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3BD86BB258CBCD600EF6674 /* SearchBar.swift */; };
 		B3C4802D222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */; };
 		B3C6AB28248E1B720009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
@@ -1248,6 +1250,7 @@
 		B3BC25CC247E6BA000AC27B5 /* DateParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateParser.swift; sourceTree = "<group>"; };
 		B3BC6B1C250F797B006A8B9C /* FieldKeys.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FieldKeys.swift; sourceTree = "<group>"; };
 		B3BC6B1F250FA437006A8B9C /* SchemaError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaError.swift; sourceTree = "<group>"; };
+		B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BackgroundTimer.swift; sourceTree = "<group>"; };
 		B3BD86BB258CBCD600EF6674 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		B3C4802C222EE8FE00BAD19E /* OHHTTPStubs+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OHHTTPStubs+Helpers.swift"; sourceTree = "<group>"; };
 		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
@@ -1333,6 +1336,7 @@
 				B3A6C59F252CA08300F24CBE /* PSPDFKit in Frameworks */,
 				B35E4B9525248BAD000EA134 /* RxBlocking in Frameworks */,
 				B356A3842524A66A003F1943 /* ZIPFoundation in Frameworks */,
+				B3BD2BA025C95ED300275EF9 /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1411,6 +1415,7 @@
 				B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */,
 				B30B40642491222000FAAF6D /* AttachmentCreator.swift */,
 				B377F2A4249373F300022943 /* AttachmentFileCleanupController.swift */,
+				B3BD2BB225C98D2900275EF9 /* BackgroundTimer.swift */,
 				B32AB57A25ADB891003CF0C6 /* CommentIconDrawingController.swift */,
 				B305647023FC051E003304F2 /* Controllers.swift */,
 				B305646D23FC051E003304F2 /* CreatorSummaryFormatter.swift */,
@@ -2563,6 +2568,7 @@
 				B356A39F2524A703003F1943 /* CocoaLumberjack */,
 				B3A6C59E252CA08300F24CBE /* PSPDFKit */,
 				B3ED688C255AE46D00D4DE78 /* Differ */,
+				B3BD2B9F25C95ED300275EF9 /* Starscream */,
 			);
 			productName = Zotero;
 			productReference = B30D59552206F60400884C4A /* Zotero.app */;
@@ -2705,6 +2711,7 @@
 				B356A39C2524A703003F1943 /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
 				B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */,
 				B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */,
+				B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
 			productRefGroup = B30D59562206F60400884C4A /* Products */;
 			projectDirPath = "";
@@ -2938,6 +2945,7 @@
 				B30566B223FC051F003304F2 /* UpdatesResponse.swift in Sources */,
 				B3593F39241A61C700760E20 /* ItemsActionHandler.swift in Sources */,
 				B30565C923FC051E003304F2 /* UpdateItemLocaleDbRequest.swift in Sources */,
+				B3BD2BB325C98D2900275EF9 /* BackgroundTimer.swift in Sources */,
 				B3593F48241A61C700760E20 /* LibrariesActionHandler.swift in Sources */,
 				B30565D623FC051E003304F2 /* CreateAttachmentDbRequest.swift in Sources */,
 				B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */,
@@ -4497,6 +4505,14 @@
 				version = 10.1.2;
 			};
 		};
+		B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/daltoniam/Starscream";
+			requirement = {
+				kind = exactVersion;
+				version = 4.0.4;
+			};
+		};
 		B3ED688B255AE46D00D4DE78 /* XCRemoteSwiftPackageReference "Differ" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/tonyarnold/Differ";
@@ -4630,6 +4646,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B3A6C59D252CA08200F24CBE /* XCRemoteSwiftPackageReference "PSPDFKit-SP" */;
 			productName = PSPDFKit;
+		};
+		B3BD2B9F25C95ED300275EF9 /* Starscream */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */;
+			productName = Starscream;
 		};
 		B3ED688C255AE46D00D4DE78 /* Differ */ = {
 			isa = XCSwiftPackageProductDependency;
