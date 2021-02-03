@@ -26,6 +26,7 @@ struct ProfileView: View {
                 }
             }
         }
+        .navigationBarTitle(L10n.Settings.profile)
         .alert(isPresented: self.viewModel.binding(keyPath: \.logoutAlertVisible, action: { .setLogoutAlertVisible($0) })) {
             Alert(title: Text(L10n.warning),
                   message: Text(L10n.Settings.logoutWarning),
@@ -47,10 +48,12 @@ struct ProfileView_Previews: PreviewProvider {
         let state = SettingsState(isSyncing: false,
                                   isLogging: controllers.debugLogging.isEnabled,
                                   isUpdatingTranslators: controllers.translatorsController.isLoading.value,
-                                  lastTranslatorUpdate: controllers.translatorsController.lastUpdate)
+                                  lastTranslatorUpdate: controllers.translatorsController.lastUpdate,
+                                  websocketConnectionState: .disconnected)
         let handler = SettingsActionHandler(dbStorage: controllers.userControllers!.dbStorage,
                                             fileStorage: controllers.fileStorage,
                                             sessionController: controllers.sessionController,
+                                            webSocketController: controllers.userControllers!.webSocketController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController)

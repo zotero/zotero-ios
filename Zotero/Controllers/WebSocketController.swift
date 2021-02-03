@@ -9,6 +9,8 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import RxCocoa
+import RxSwift
 import Starscream
 
 fileprivate struct Response {
@@ -59,22 +61,24 @@ class WebSocketController {
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let queue: DispatchQueue
+    let observable: PublishSubject<Void>
 
     private var apiKey: String?
     private var webSocket: WebSocket?
     private var responseListeners: [WsResponse.Event: Response]
-    private var connectionState: ConnectionState
+    private(set) var connectionState: BehaviorRelay<ConnectionState>
     private var connectionRetryCount: Int
     private var connectionTimer: BackgroundTimer?
 
     init() {
-        self.connectionState = .disconnected
+        self.connectionState = BehaviorRelay(value: .disconnected)
         self.connectionRetryCount = 0
         self.responseListeners = [:]
         self.url = URL(string: "wss://stream.zotero.org")!
         self.jsonDecoder = JSONDecoder()
         self.jsonEncoder = JSONEncoder()
         self.queue = DispatchQueue(label: "org.zotero.WebSocketQueue", qos: .utility)
+        self.observable = PublishSubject()
     }
 
     // MARK: - Connection
@@ -82,14 +86,14 @@ class WebSocketController {
     /// Attempts to connect to server and subscribe with given api key.
     /// - parameter apiKey: Api key to subscribe with
     /// - parameter completed: Completion block which is called after successful subscription or after first unsuccessful retry.
-    func connect(apiKey: String, completed: @escaping () -> Void) {
+    func connect(apiKey: String, completed: (() -> Void)? = nil) {
         self.queue.async { [weak self] in
             self?._connect(apiKey: apiKey, completed: completed)
         }
     }
 
     private func _connect(apiKey: String, completed: (() -> Void)?) {
-        guard self.connectionState == .disconnected else {
+        guard self.connectionState.value == .disconnected else {
             DDLogWarn("WebSocketController: tried to connect while \(self.connectionState)")
             return
         }
@@ -100,7 +104,7 @@ class WebSocketController {
         self.connectionTimer?.suspend()
         self.connectionTimer = nil
 
-        self.connectionState = .connecting
+        self.connectionState.accept(.connecting)
         self.apiKey = apiKey
 
         self.createResponse(for: .connected) { [weak self] error in
@@ -123,13 +127,13 @@ class WebSocketController {
     /// - parameter completed: Completion block called after successful subscription or after first unsuccessful retry.
     private func processConnectionResponse(with error: Error?, apiKey: String, completed: (() -> Void)?) {
         if error == nil {
-            switch self.connectionState {
+            switch self.connectionState.value {
             case .connected, .disconnected:
                 DDLogWarn("WebSocketController: connection response processed while already \(self.connectionState)")
                 completed?()
 
             case .connecting:
-                self.connectionState = .subscribing
+                self.connectionState.accept(.subscribing)
                 DDLogInfo("WebSocketController: subscribe")
                 self.subscribe(apiKey: apiKey) { [weak self] error in
                     self?.processConnectionResponse(with: error, apiKey: apiKey, completed: completed)
@@ -138,7 +142,7 @@ class WebSocketController {
             case .subscribing:
                 DDLogInfo("WebSocketController: connected & subscribed")
 
-                self.connectionState = .connected
+                self.connectionState.accept(.connected)
                 self.connectionRetryCount = 0
                 self.connectionTimer?.suspend()
                 self.connectionTimer = nil
@@ -161,7 +165,7 @@ class WebSocketController {
 
     /// Retries connection after unsuccessful attempt.
     private func retryConnection(apiKey: String, completed: (() -> Void)?) {
-        switch self.connectionState {
+        switch self.connectionState.value {
         case .connected, .disconnected:
             DDLogWarn("WebSocketController: tried to retry connection while already \(self.connectionState)")
             completed?()
@@ -178,7 +182,7 @@ class WebSocketController {
         timer.eventHandler = { [weak self] in
             guard let `self` = self else { return }
 
-            switch self.connectionState {
+            switch self.connectionState.value {
             case .connecting:
                 self._connect(apiKey: apiKey, completed: completed)
             case .subscribing:
@@ -195,9 +199,9 @@ class WebSocketController {
 
     /// Reconnects to server after disconnection.
     private func reconnect() {
-        guard self.connectionState == .connected else { return }
+        guard self.connectionState.value == .connected else { return }
 
-        self.connectionState = .disconnected
+        self.connectionState.accept(.disconnected)
 
         guard let apiKey = self.apiKey else {
             DDLogError("WebSocketController: attempting reconnect, but apiKey is missing")
@@ -218,9 +222,9 @@ class WebSocketController {
     /// - parameter apiKey: Api key to unsubscribe from. If none is provided, websocket is just disconnected.
     func disconnect(apiKey: String?) {
         self.queue.async { [weak self] in
-            guard let `self` = self, self.connectionState != .disconnected else { return }
+            guard let `self` = self, self.connectionState.value != .disconnected else { return }
 
-            if let key = apiKey, self.connectionState == .connected {
+            if let key = apiKey, self.connectionState.value == .connected {
                 self.unsubscribe(apiKey: key)
             } else {
                 self.disconnect()
@@ -298,6 +302,9 @@ class WebSocketController {
 
         switch event {
         case .subscriptionDeleted, .subscriptionCreated, .connected: break
+
+        case .topicAdded, .topicRemoved, .topicUpdated:
+            self.observable.on(.next(()))
         }
     }
 
@@ -317,7 +324,7 @@ class WebSocketController {
     /// - parameter responseEvent: Event which is a response to this message.
     /// - parameter completion: Completion block called after response message is received.
     private func send<Message: Encodable>(message: Message, responseEvent: WsResponse.Event, completion: @escaping (Error?) -> Void) {
-        guard self.connectionState != .disconnected, let webSocket = self.webSocket else {
+        guard self.connectionState.value != .disconnected, let webSocket = self.webSocket else {
             completion(.notConnected)
             return
         }
@@ -339,7 +346,7 @@ class WebSocketController {
     /// Disconnects from websocket and cleans up.
     private func disconnect() {
         // Set state to disconnected
-        self.connectionState = .disconnected
+        self.connectionState.accept(.disconnected)
         // Reset retry counter
         self.connectionRetryCount = 0
         // Suspend connection timer if connection is in progress

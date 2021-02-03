@@ -28,4 +28,6 @@ enum SettingsAction {
     case showDeleteLibraryQuestion(Library?)
     case deleteCache
     case showDeleteCacheQuestion(Bool)
+    case disconnectFromWebSocket
+    case connectToWebSocket
 }

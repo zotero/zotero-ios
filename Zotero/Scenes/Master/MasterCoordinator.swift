@@ -81,14 +81,17 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
 
     func showSettings() {
         guard let syncScheduler = self.controllers.userControllers?.syncScheduler,
+              let webSocketController = self.controllers.userControllers?.webSocketController,
               let dbStorage = self.controllers.userControllers?.dbStorage else { return }
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
                                   isLogging: self.controllers.debugLogging.isEnabled,
                                   isUpdatingTranslators: self.controllers.translatorsController.isLoading.value,
-                                  lastTranslatorUpdate: self.controllers.translatorsController.lastUpdate)
+                                  lastTranslatorUpdate: self.controllers.translatorsController.lastUpdate,
+                                  websocketConnectionState: webSocketController.connectionState.value)
         let handler = SettingsActionHandler(dbStorage: dbStorage,
                                             fileStorage: self.controllers.fileStorage,
                                             sessionController: self.controllers.sessionController,
+                                            webSocketController: webSocketController,
                                             syncScheduler: syncScheduler,
                                             debugLogging: self.controllers.debugLogging,
                                             translatorsController: self.controllers.translatorsController)

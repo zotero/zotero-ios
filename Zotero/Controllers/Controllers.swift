@@ -86,21 +86,17 @@ class Controllers {
         self.translatorsController.update()
 
         guard let controllers = self.userControllers, let session = self.sessionController.sessionData else { return }
-
-        controllers.prepareForForeground()
         controllers.enableSync(apiKey: session.apiToken)
     }
 
     func didEnterBackground() {
         guard let controllers = self.userControllers else { return }
         controllers.disableSync(apiKey: nil)
-        controllers.prepareForBackground()
     }
     
     func willTerminate() {
         guard let controllers = self.userControllers else { return }
         controllers.disableSync(apiKey: nil)
-        controllers.prepareForBackground()
     }
 
     private func startObservingSession() {
@@ -222,32 +218,11 @@ class UserControllers {
 
     /// Connects to websocket to monitor changes and performs initial sync.
     fileprivate func enableSync(apiKey: String) {
-        self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            self?.syncScheduler.request(syncType: .normal)
-        })
-    }
-
-    /// Cancels ongoing sync and stops websocket connection.
-    /// - parameter apiKey: If `apiKey` is provided, websocket sends and unsubscribe message before disconnecting.
-    fileprivate func disableSync(apiKey: String?) {
-        self.syncScheduler.cancelSync()
-        self.webSocketController.disconnect(apiKey: apiKey)
-    }
-
-    fileprivate func logout() {
-        // Clear DB storage
-        self.dbStorage.clear()
-        // Cancel all pending background uploads
-        self.backgroundUploader.cancel()
-    }
-
-    /// Loads appropriate data and starts observing.
-    fileprivate func prepareForForeground() {
         self.itemLocaleController.loadLocale()
 
-        self.syncScheduler
-            .syncController
-            .progressObservable.observeOn(MainScheduler.instance)
+        // Observe sync to enable/disable the device falling asleep
+        self.syncScheduler.syncController.progressObservable
+            .observeOn(MainScheduler.instance)
             .subscribe(onNext: { progress in
                 switch progress {
                 case .aborted, .finished:
@@ -258,18 +233,42 @@ class UserControllers {
             })
             .disposed(by: self.disposeBag)
 
+        // Observe local changes to start sync
         self.changeObserver.observable
-                           .observeOn(MainScheduler.instance)
-                           .subscribe(onNext: { [weak self] changedLibraries in
-                               self?.syncScheduler.request(syncType: .normal, for: changedLibraries)
-                           })
-                           .disposed(by: self.disposeBag)
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] changedLibraries in
+                self?.syncScheduler.request(syncType: .normal, for: changedLibraries)
+            })
+            .disposed(by: self.disposeBag)
+
+        // Observe remote changes to start sync
+        self.webSocketController.observable
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                self?.syncScheduler.request(syncType: .normal)
+            })
+            .disposed(by: self.disposeBag)
+
+        // Connect to websockets and start sync
+        self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
+            self?.syncScheduler.request(syncType: .normal)
+        })
     }
 
-    /// Stops observing services and caches appropriate data.
-    fileprivate func prepareForBackground() {
+    /// Cancels ongoing sync and stops websocket connection.
+    /// - parameter apiKey: If `apiKey` is provided, websocket sends and unsubscribe message before disconnecting.
+    fileprivate func disableSync(apiKey: String?) {
+        self.syncScheduler.cancelSync()
+        self.webSocketController.disconnect(apiKey: apiKey)
         self.disposeBag = DisposeBag()
         self.itemLocaleController.storeLocale()
+    }
+
+    fileprivate func logout() {
+        // Clear DB storage
+        self.dbStorage.clear()
+        // Cancel all pending background uploads
+        self.backgroundUploader.cancel()
     }
 
     // MARK: - Helpers

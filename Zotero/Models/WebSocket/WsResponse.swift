@@ -9,8 +9,13 @@
 import Foundation
 
 struct WsResponse {
-    enum Event {
-        case connected, subscriptionCreated, subscriptionDeleted
+    enum Event: String {
+        case connected = "connected"
+        case subscriptionCreated = "subscriptionsCreated"
+        case subscriptionDeleted = "subscriptionsDeleted"
+        case topicAdded = "topicAdded"
+        case topicRemoved = "topicRemoved"
+        case topicUpdated = "topicUpdated"
     }
 
     enum Error: Swift.Error {
@@ -28,16 +33,11 @@ extension WsResponse: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: Keys.self)
         let eventStr = try container.decode(String.self, forKey: .event)
-        let event = try WsResponse.event(from: eventStr)
-        self.init(event: event)
-    }
 
-    private static func event(from string: String) throws -> Event {
-        switch string {
-        case "connected": return .connected
-        case "subscriptionsCreated": return .subscriptionCreated
-        case "subscriptionsDeleted": return .subscriptionDeleted
-        default: throw WsResponse.Error.unknownEvent(string)
+        guard let event = Event(rawValue: eventStr) else {
+            throw WsResponse.Error.unknownEvent(eventStr)
         }
+
+        self.init(event: event)
     }
 }

@@ -23,14 +23,16 @@ struct SettingsState: ViewModelState {
     var showDeleteAllQuestion: Bool
     var showDeleteLibraryQuestion: Library?
     var showDeleteCacheQuestion: Bool
+    var websocketConnectionState: WebSocketController.ConnectionState
 
-    init(isSyncing: Bool, isLogging: Bool, isUpdatingTranslators: Bool, lastTranslatorUpdate: Date) {
+    init(isSyncing: Bool, isLogging: Bool, isUpdatingTranslators: Bool, lastTranslatorUpdate: Date, websocketConnectionState: WebSocketController.ConnectionState) {
         self.isSyncing = isSyncing
         self.isLogging = isLogging
         self.lastTranslatorUpdate = lastTranslatorUpdate
         self.isUpdatingTranslators = isUpdatingTranslators
         self.totalStorageData = DirectoryData(fileCount: 0, mbSize: 0)
         self.cacheData = DirectoryData(fileCount: 0, mbSize: 0)
+        self.websocketConnectionState = websocketConnectionState
         self.askForSyncPermission = Defaults.shared.askForSyncPermission
         self.showCollectionItemCount = Defaults.shared.showCollectionItemCount
         self.logoutAlertVisible = false

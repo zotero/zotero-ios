@@ -22,13 +22,15 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private unowned let syncScheduler: SynchronizationScheduler
     private unowned let debugLogging: DebugLogging
     private unowned let translatorsController: TranslatorsController
+    private unowned let webSocketController: WebSocketController
     private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController,
+    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webSocketController: WebSocketController,
          syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging, translatorsController: TranslatorsController) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionController = sessionController
+        self.webSocketController = webSocketController
         self.syncScheduler = syncScheduler
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
@@ -69,6 +71,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
         case .startObserving:
             self.observeTranslatorUpdate(in: viewModel)
             self.observeSyncChanges(in: viewModel)
+            self.observeWebSocketConnection(in: viewModel)
 
         case .startImmediateLogging:
             self.debugLogging.start(type: .immediate)
@@ -120,6 +123,14 @@ struct SettingsActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.showDeleteCacheQuestion = show
             }
+
+        case .connectToWebSocket:
+            guard let apiKey = self.sessionController.sessionData?.apiToken else { return }
+            self.webSocketController.connect(apiKey: apiKey)
+
+        case .disconnectFromWebSocket:
+            guard let apiKey = self.sessionController.sessionData?.apiToken else { return }
+            self.webSocketController.disconnect(apiKey: apiKey)
         }
     }
 
@@ -207,6 +218,18 @@ struct SettingsActionHandler: ViewModelActionHandler {
         let totalData = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews])
         let cacheData = self.fileStorage.directoryData(for: [Files.cache])
         return (storageData, totalData, cacheData)
+    }
+
+    private func observeWebSocketConnection(in viewModel: ViewModel<SettingsActionHandler>) {
+        self.webSocketController.connectionState
+                                .observeOn(MainScheduler.instance)
+                                .subscribe(onNext: { [weak viewModel] connectionState in
+                                    guard let viewModel = viewModel else { return }
+                                    self.update(viewModel: viewModel) { state in
+                                        state.websocketConnectionState = connectionState
+                                    }
+                                })
+                                .disposed(by: self.disposeBag)
     }
 
     private func observeTranslatorUpdate(in viewModel: ViewModel<SettingsActionHandler>) {

@@ -34,6 +34,7 @@ struct SyncSettingsView: View {
                                   value: self.viewModel.binding(keyPath: \.askForSyncPermission, action: { .setAskForSyncPermission($0) }))
             }
         }
+        .navigationBarTitle(L10n.Settings.sync)
     }
 }
 
@@ -43,10 +44,12 @@ struct SyncSettingsView_Previews: PreviewProvider {
         let state = SettingsState(isSyncing: false,
                                   isLogging: controllers.debugLogging.isEnabled,
                                   isUpdatingTranslators: controllers.translatorsController.isLoading.value,
-                                  lastTranslatorUpdate: controllers.translatorsController.lastUpdate)
+                                  lastTranslatorUpdate: controllers.translatorsController.lastUpdate,
+                                  websocketConnectionState: .disconnected)
         let handler = SettingsActionHandler(dbStorage: controllers.userControllers!.dbStorage,
                                             fileStorage: controllers.fileStorage,
                                             sessionController: controllers.sessionController,
+                                            webSocketController: controllers.userControllers!.webSocketController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController)

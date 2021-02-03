@@ -17,6 +17,7 @@ struct GeneralSettingsView: View {
                               subtitle: L10n.Settings.itemCountSubtitle,
                               value: self.viewModel.binding(keyPath: \.showCollectionItemCount, action: { .setShowCollectionItemCounts($0) }))
         }
+        .navigationBarTitle(L10n.Settings.general)
     }
 }
 

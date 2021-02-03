@@ -412,6 +412,8 @@ internal enum L10n {
     internal static let loggingDesc1 = L10n.tr("Localizable", "settings.logging_desc1")
     /// If you want to debug share extension issue, open the share extension.
     internal static let loggingDesc2 = L10n.tr("Localizable", "settings.logging_desc2")
+    /// Logging
+    internal static let loggingTitle = L10n.tr("Localizable", "settings.logging_title")
     /// Log out
     internal static let logout = L10n.tr("Localizable", "settings.logout")
     /// Your local data that were not synced will be deleted. Do you really want to log out?
@@ -446,6 +448,18 @@ internal enum L10n {
     internal static let translatorsUpdate = L10n.tr("Localizable", "settings.translators_update")
     /// Updating...
     internal static let translatorsUpdating = L10n.tr("Localizable", "settings.translators_updating")
+    /// Connect to Server
+    internal static let websocketConnect = L10n.tr("Localizable", "settings.websocket_connect")
+    /// Connected
+    internal static let websocketConnected = L10n.tr("Localizable", "settings.websocket_connected")
+    /// Connecting
+    internal static let websocketConnecting = L10n.tr("Localizable", "settings.websocket_connecting")
+    /// Disconnect from Server
+    internal static let websocketDisconnect = L10n.tr("Localizable", "settings.websocket_disconnect")
+    /// Disconnected
+    internal static let websocketDisconnected = L10n.tr("Localizable", "settings.websocket_disconnected")
+    /// Server Connection
+    internal static let websocketTitle = L10n.tr("Localizable", "settings.websocket_title")
     internal enum Storage {
       /// Delete All Attachments
       internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")
