@@ -399,6 +399,9 @@
 		B3401D612568047D00BB8D6E /* AnnotationViewTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */; };
 		B340692224A60D6A009ECE48 /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */; };
 		B340692424A60D83009ECE48 /* CGRect+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340692324A60D83009ECE48 /* CGRect+Extensions.swift */; };
+		B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
+		B341C8CF25CBFCE4005562E5 /* ChangeWsResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */; };
+		B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */; };
 		B3429B8124BDE73A008359FC /* UIDevice+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */; };
 		B347F2BA24DC4D5D000D5FF6 /* CapHeightLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */; };
 		B34A9F5E25BF12F7007C9A4A /* ReadFilenameDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */; };
@@ -1038,6 +1041,8 @@
 		B3401D602568047D00BB8D6E /* AnnotationViewTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewTextView.swift; sourceTree = "<group>"; };
 		B340692124A60D6A009ECE48 /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
 		B340692324A60D83009ECE48 /* CGRect+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Extensions.swift"; sourceTree = "<group>"; };
+		B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryIdentifier.swift; sourceTree = "<group>"; };
+		B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeWsResponse.swift; sourceTree = "<group>"; };
 		B3429B8024BDE73A008359FC /* UIDevice+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+Extensions.swift"; sourceTree = "<group>"; };
 		B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapHeightLabel.swift; sourceTree = "<group>"; };
 		B34A9F5D25BF12F7007C9A4A /* ReadFilenameDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadFilenameDbRequest.swift; sourceTree = "<group>"; };
@@ -1688,6 +1693,7 @@
 				B3CBB122248A44D100C4228F /* KeyboardData.swift */,
 				B305653823FC051E003304F2 /* KeyedResponse.swift */,
 				B305653923FC051E003304F2 /* Library.swift */,
+				B341C8CA25CBFAD3005562E5 /* LibraryIdentifier.swift */,
 				B305656023FC051E003304F2 /* LibraryObject.swift */,
 				B361A3002511F98700271173 /* LinkMode.swift */,
 				B3E44641248FBE9B007FE8AB /* LinkType.swift */,
@@ -1897,6 +1903,7 @@
 		B324277025C82D6900567504 /* WebSocket */ = {
 			isa = PBXGroup;
 			children = (
+				B341C8CE25CBFCE4005562E5 /* ChangeWsResponse.swift */,
 				B324277125C82DBF00567504 /* SubscribeWsMessage.swift */,
 				B324277725C82E6500567504 /* UnsubscribeWsMessage.swift */,
 				B324278125C841A600567504 /* WsResponse.swift */,
@@ -3314,9 +3321,11 @@
 				B3593F4F241A61C700760E20 /* CollectionsActionHandler.swift in Sources */,
 				B305660023FC051E003304F2 /* BackgroundUploaderContext.swift in Sources */,
 				B30566BD23FC051F003304F2 /* AccessPermissions.swift in Sources */,
+				B341C8CF25CBFCE4005562E5 /* ChangeWsResponse.swift in Sources */,
 				B36BEC7324485FC700A60552 /* TagColorGenerator.swift in Sources */,
 				B3593F2A241A61C700760E20 /* ItemDetailNoteCell.swift in Sources */,
 				B30565CF23FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift in Sources */,
+				B341C8CB25CBFAD3005562E5 /* LibraryIdentifier.swift in Sources */,
 				B34C410C257132730057D5F5 /* AnnotationPopoverLayout.swift in Sources */,
 				B30565D923FC051E003304F2 /* ReadCollectionDbRequest.swift in Sources */,
 				B305660723FC051E003304F2 /* LoginRequest.swift in Sources */,
@@ -3491,6 +3500,7 @@
 				B353F1FC242E23680062EE24 /* ResetTranslatorsDbRequest.swift in Sources */,
 				B3902DE62480DBB7007EE48E /* DateParser.swift in Sources */,
 				B3DCDF19240918E50039ED0D /* ActivityIndicatorView.swift in Sources */,
+				B341C8D425CBFF8A005562E5 /* LibraryIdentifier.swift in Sources */,
 				B30566FF23FC0869003304F2 /* MarkItemsAsTrashedDbRequest.swift in Sources */,
 				B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */,
 				B30566ED23FC082F003304F2 /* SchemaRequest.swift in Sources */,

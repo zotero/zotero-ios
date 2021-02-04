@@ -244,8 +244,12 @@ class UserControllers {
         // Observe remote changes to start sync
         self.webSocketController.observable
             .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] _ in
-                self?.syncScheduler.request(syncType: .normal)
+            .subscribe(onNext: { [weak self] libraryId in
+                if let libraryId = libraryId {
+                    self?.syncScheduler.request(syncType: .normal, for: [libraryId])
+                } else {
+                    self?.syncScheduler.request(syncType: .normal)
+                }
             })
             .disposed(by: self.disposeBag)
 

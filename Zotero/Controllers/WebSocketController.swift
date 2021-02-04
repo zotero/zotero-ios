@@ -61,7 +61,7 @@ class WebSocketController {
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let queue: DispatchQueue
-    let observable: PublishSubject<Void>
+    let observable: PublishSubject<LibraryIdentifier?>
 
     private var apiKey: String?
     private var webSocket: WebSocket?
@@ -287,24 +287,19 @@ class WebSocketController {
                 return
             }
 
-            self.handle(event: event)
+            DDLogInfo("WebSocketController: handle event - \(event)")
+
+            switch event {
+            case .topicAdded, .topicRemoved, .topicUpdated:
+                let changeResponse = try? self.jsonDecoder.decode(ChangeWsResponse.self, from: data)
+                self.observable.on(.next(changeResponse?.libraryId))
+
+            case .connected, .subscriptionCreated, .subscriptionDeleted: break
+            }
 
         } catch let error {
             let message = String(data: data, encoding: .utf8) ?? ""
             DDLogError("WebSocketController: received unknown message - \(error). Original message: \(message)")
-        }
-    }
-
-    /// Handles received events which are not a response to previously sent message.
-    /// - parameter event: Event to process.
-    private func handle(event: WsResponse.Event) {
-        DDLogInfo("WebSocketController: handle event - \(event)")
-
-        switch event {
-        case .subscriptionDeleted, .subscriptionCreated, .connected: break
-
-        case .topicAdded, .topicRemoved, .topicUpdated:
-            self.observable.on(.next(()))
         }
     }
 
