@@ -26,7 +26,7 @@ protocol MasterSettingsCoordinatorDelegate: class {
     func dismiss()
 }
 
-class MasterCoordinator: NSObject, Coordinator {
+final class MasterCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 

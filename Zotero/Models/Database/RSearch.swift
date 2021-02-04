@@ -26,7 +26,7 @@ extension RSearchChanges {
     static let all: RSearchChanges = [.name, .conditions]
 }
 
-class RSearch: Object {
+final class RSearch: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
@@ -72,7 +72,7 @@ class RSearch: Object {
     }
 }
 
-class RCondition: Object {
+final class RCondition: Object {
     @objc dynamic var condition: String = ""
     @objc dynamic var `operator`: String = ""
     @objc dynamic var value: String = ""

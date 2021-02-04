@@ -23,7 +23,7 @@ extension RCustomLibraryType {
     }
 }
 
-class RCustomLibrary: Object {
+final class RCustomLibrary: Object {
     @objc dynamic var rawType: Int = 0
     @objc dynamic var orderId: Int = 0
     @objc dynamic var versions: RVersions?

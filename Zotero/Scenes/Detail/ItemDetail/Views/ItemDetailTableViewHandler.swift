@@ -16,7 +16,7 @@ protocol ItemDetailTableViewHandlerDelegate: class {
 
 /// Class for handling the `UITableView` of `ItemDetailViewController`. It takes care of showing appropriate data in the `tableView`, keeping track
 /// of visible sections and reports actions that need to take place after user interaction with the `tableView`.
-class ItemDetailTableViewHandler: NSObject {
+final class ItemDetailTableViewHandler: NSObject {
     /// Actions that need to take place when user taps on some cells
     enum Action {
         case openCreatorCreation

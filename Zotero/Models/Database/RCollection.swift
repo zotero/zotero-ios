@@ -26,7 +26,7 @@ extension RCollectionChanges {
     static let all: RCollectionChanges = [.name, .parent]
 }
 
-class RCollection: Object {
+final class RCollection: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)

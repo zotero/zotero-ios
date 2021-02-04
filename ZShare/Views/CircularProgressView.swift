@@ -8,7 +8,7 @@
 
 import UIKit
 
-class CircularProgressView: UIView {
+final class CircularProgressView: UIView {
     private static let size: CGFloat = 20
     private static let lineWidth: CGFloat = 1.5
 

@@ -17,7 +17,7 @@ import RxSwift
 import RealmSwift
 import Quick
 
-class TranslatorsControllerSpec: QuickSpec {
+final class TranslatorsControllerSpec: QuickSpec {
     private let baseUrl = URL(string: ApiConstants.baseUrlString)!
     private let version = TranslatorsControllerSpec.createVersion()
     private let fileStorage: FileStorageController = FileStorageController()

@@ -25,7 +25,7 @@ protocol AppLoginCoordinatorDelegate: class {
     func showForgotPassword()
 }
 
-class AppCoordinator: NSObject {
+final class AppCoordinator: NSObject {
     private typealias Action = (UIViewController) -> Void
 
     private let controllers: Controllers

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class OnboardingViewController: UIViewController {
+final class OnboardingViewController: UIViewController {
     @IBOutlet private weak var spacer: UIView!
     @IBOutlet private weak var spacerAboveScrollViewContent: UIView!
     @IBOutlet private weak var spacerBelowScrollViewContent: UIView!

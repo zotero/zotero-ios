@@ -72,7 +72,7 @@ protocol DetailItemActionSheetCoordinatorDelegate: class {
     func showItemCreation(library: Library, collectionKey: String?)
 }
 
-class DetailCoordinator: Coordinator {
+final class DetailCoordinator: Coordinator {
     enum ActivityViewControllerSource {
         case view(UIView, CGRect?)
         case barButton(UIBarButtonItem)

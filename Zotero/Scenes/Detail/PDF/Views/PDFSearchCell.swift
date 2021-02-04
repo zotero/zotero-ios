@@ -13,7 +13,7 @@ import UIKit
 import PSPDFKit
 import PSPDFKitUI
 
-class PDFSearchCell: UITableViewCell {
+final class PDFSearchCell: UITableViewCell {
     @IBOutlet private weak var pageLabel: UILabel!
     @IBOutlet private weak var contentLabel: UILabel!
 

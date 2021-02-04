@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class HighlightEditCell: UITableViewCell {
+final class HighlightEditCell: UITableViewCell {
     @IBOutlet private weak var lineView: UIView!
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var textView: UITextView!

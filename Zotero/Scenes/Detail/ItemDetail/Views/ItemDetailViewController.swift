@@ -18,7 +18,7 @@ fileprivate enum MainAttachmentButtonState {
     case ready(Int), downloading(Int, CGFloat), error(Int, Error)
 }
 
-class ItemDetailViewController: UIViewController {
+final class ItemDetailViewController: UIViewController {
     @IBOutlet private var tableView: UITableView!
 
     private let viewModel: ViewModel<ItemDetailActionHandler>

@@ -10,7 +10,7 @@ import UIKit
 
 import PSPDFKit
 
-class SquareAnnotation: PSPDFKit.SquareAnnotation {
+final class SquareAnnotation: PSPDFKit.SquareAnnotation {
     override var shouldDrawNoteIconIfNeeded: Bool {
         return false
     }

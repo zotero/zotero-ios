@@ -10,7 +10,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-class TestAppDelegate: NSObject, UIApplicationDelegate {
+final class TestAppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidFinishLaunching(_ application: UIApplication) {
         DDLog.add(DDOSLogger.sharedInstance)
         dynamicLogLevel = .info

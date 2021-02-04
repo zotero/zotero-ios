@@ -22,7 +22,7 @@ enum ZoteroApiError: Error {
     case unchanged(version: Int)
 }
 
-class ZoteroApiClient: ApiClient {
+final class ZoteroApiClient: ApiClient {
     private let url: URL
     private let manager: Alamofire.Session
 

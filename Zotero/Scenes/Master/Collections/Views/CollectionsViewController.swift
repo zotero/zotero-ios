@@ -13,7 +13,7 @@ import SwiftUI
 import RealmSwift
 import RxSwift
 
-class CollectionsViewController: UIViewController {
+final class CollectionsViewController: UIViewController {
     @IBOutlet private weak var tableView: UITableView!
 
     private static let cellId = "CollectionRow"

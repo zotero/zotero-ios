@@ -10,7 +10,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-class DebugLogFormatter: NSObject, DDLogFormatter {
+final class DebugLogFormatter: NSObject, DDLogFormatter {
     private let targetName: String
     private var lastTimestamp: Date?
 

@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class GrowingTextViewCellDelegate: NSObject {
+final class GrowingTextViewCellDelegate: NSObject {
     private unowned let label: UILabel
     private let placeholder: NSAttributedString?
     private let menuItems: [UIMenuItem]?

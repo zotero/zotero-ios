@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-class RVersions: Object {
+final class RVersions: Object {
     @objc dynamic var collections: Int = 0
     @objc dynamic var items: Int = 0
     @objc dynamic var trash: Int = 0

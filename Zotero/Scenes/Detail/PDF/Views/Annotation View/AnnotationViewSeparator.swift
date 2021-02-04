@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AnnotationViewSeparator: UIView {
+final class AnnotationViewSeparator: UIView {
     init() {
         super.init(frame: CGRect())
         self.translatesAutoresizingMaskIntoConstraints = false

@@ -26,7 +26,7 @@ extension RTagChanges {
     static let all: RTagChanges = [.name, .color]
 }
 
-class RTag: Object {
+final class RTag: Object {
     @objc dynamic var name: String = ""
     @objc dynamic var color: String = ""
     let customLibraryKey = RealmOptional<Int>()

@@ -15,7 +15,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-class PDFReaderViewController: UIViewController {
+final class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
         case redo = 1
         case undo = 2
@@ -886,7 +886,7 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
     }
 }
 
-class SelectionView: UIView {
+final class SelectionView: UIView {
     static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
 
     init() {

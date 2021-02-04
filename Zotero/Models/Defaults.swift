@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Defaults {
+final class Defaults {
     static let shared = Defaults()
 
     @UserDefault(key: "AskForSyncPermission", defaultValue: false)

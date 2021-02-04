@@ -11,7 +11,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
     private var coordinator: AppDelegateCoordinatorDelegate!

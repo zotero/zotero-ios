@@ -20,7 +20,7 @@ protocol SceneActivityCounter: class {
     func sceneDidEnterBackground()
 }
 
-class AppDelegate: UIResponder {
+final class AppDelegate: UIResponder {
     var controllers: Controllers!
     private var foregroundSceneCount = 0
 

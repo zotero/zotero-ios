@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 
-class AnnotationViewText: UIView {
+final class AnnotationViewText: UIView {
     private weak var textLabel: UILabel!
     private weak var button: UIButton!
     private weak var topInsetConstraint: NSLayoutConstraint!

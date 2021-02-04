@@ -10,7 +10,7 @@ import Foundation
 
 import PSPDFKit
 
-class NoteAnnotation: PSPDFKit.NoteAnnotation {
+final class NoteAnnotation: PSPDFKit.NoteAnnotation {
 
     override var fixedSize: CGSize {
         return CGSize(width: 20, height: 20)

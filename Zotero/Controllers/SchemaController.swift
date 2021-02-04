@@ -25,7 +25,7 @@ protocol SchemaDataSource: class {
     func localized(creator: String) -> String?
 }
 
-class SchemaController {
+final class SchemaController {
     private(set) var itemSchemas: [String: ItemSchema] = [:]
     private(set) var locales: [String: SchemaLocale] = [:]
     private(set) var version: Int = 0

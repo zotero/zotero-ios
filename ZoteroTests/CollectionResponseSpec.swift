@@ -13,7 +13,7 @@ import Foundation
 import Nimble
 import Quick
 
-class CollectionResponseSpec: QuickSpec {
+final class CollectionResponseSpec: QuickSpec {
     override func spec() {
         it("parses collection with all known fields") {
             let url = Bundle(for: type(of: self)).url(forResource: "collectionresponse_knownfields", withExtension: "json")!

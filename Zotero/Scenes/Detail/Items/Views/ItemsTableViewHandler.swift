@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
-class ItemsTableViewHandler: NSObject {
+final class ItemsTableViewHandler: NSObject {
     enum Action {
         case editing(isEditing: Bool, animated: Bool)
         case reloadAll

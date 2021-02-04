@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 
 typealias SyncBatchResponse = (failedIds: [String], parsingErrors: [Error], conflicts: [StoreItemsError])
 
-class SyncBatchProcessor {
+final class SyncBatchProcessor {
     private let storageQueue: DispatchQueue
     private let requestQueue: OperationQueue
     private let batches: [DownloadBatch]

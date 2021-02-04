@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Licenses {
+final class Licenses {
     static let shared = Licenses()
 
     let pspdfkitKey: String?

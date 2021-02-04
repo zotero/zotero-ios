@@ -11,7 +11,7 @@ import WebKit
 
 import RxSwift
 
-class WebViewController: UIViewController {
+final class WebViewController: UIViewController {
     private let url: URL
     private let disposeBag: DisposeBag
 

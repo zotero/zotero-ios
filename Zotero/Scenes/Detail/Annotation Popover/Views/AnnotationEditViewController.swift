@@ -15,7 +15,7 @@ import RxSwift
 typealias AnnotationEditSaveAction = (Annotation) -> Void
 typealias AnnotationEditDeleteAction = (Annotation) -> Void
 
-class AnnotationEditViewController: UIViewController {
+final class AnnotationEditViewController: UIViewController {
     private enum Section {
         case colorPicker, pageLabel, actions, highlight
 

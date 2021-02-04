@@ -14,7 +14,7 @@ struct TestErrors {
     static let file = NSError(domain: "file", code: 123, userInfo: nil)
 }
 
-class TestFileStorage: FileStorage {
+final class TestFileStorage: FileStorage {
     var fileManager: FileManager = .default
 
     private var data: Data?

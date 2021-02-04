@@ -20,7 +20,7 @@ struct DebugSessionConstants {
     #endif
 }
 
-class SessionController: ObservableObject {
+final class SessionController: ObservableObject {
     @Published var sessionData: SessionData?
     var isLoggedIn: Bool {
         return self.sessionData != nil

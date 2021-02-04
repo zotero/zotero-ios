@@ -12,7 +12,7 @@ import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 
-class BackgroundUploadProcessor {
+final class BackgroundUploadProcessor {
     private let apiClient: ApiClient
     private let dbStorage: DbStorage
     private let fileStorage: FileStorage

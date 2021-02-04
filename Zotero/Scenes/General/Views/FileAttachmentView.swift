@@ -26,7 +26,7 @@ fileprivate struct LayerData {
     let badgeName: String?
 }
 
-class FileAttachmentView: UIView {
+final class FileAttachmentView: UIView {
     enum Style {
         case list
         case detail

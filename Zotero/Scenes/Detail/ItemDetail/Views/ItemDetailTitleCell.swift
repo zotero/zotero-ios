@@ -11,7 +11,7 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-class ItemDetailTitleCell: RxTableViewCell {
+final class ItemDetailTitleCell: RxTableViewCell {
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!
     @IBOutlet private weak var textField: UITextField!

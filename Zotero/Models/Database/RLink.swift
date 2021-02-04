@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-class RLink: Object {
+final class RLink: Object {
     @objc dynamic var type: String = ""
     @objc dynamic var href: String = ""
     @objc dynamic var contentType: String = ""

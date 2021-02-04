@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class DocumentPickerViewController: UIDocumentPickerViewController {
+final class DocumentPickerViewController: UIDocumentPickerViewController {
     let observable: PublishSubject<[URL]> = PublishSubject()
 
     override func viewDidLoad() {

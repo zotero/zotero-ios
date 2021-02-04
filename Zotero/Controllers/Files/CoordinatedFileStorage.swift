@@ -13,7 +13,7 @@ protocol CoordinatedFileStorage {
     func write(_ data: Data, to file: File, dataOptions: Data.WritingOptions, coordinatorOptions: NSFileCoordinator.WritingOptions) throws
 }
 
-class CoordinatedFileStorageController: CoordinatedFileStorage {
+final class CoordinatedFileStorageController: CoordinatedFileStorage {
     private let fileManager: FileManager = .default
     private let coordinator: NSFileCoordinator = NSFileCoordinator()
 

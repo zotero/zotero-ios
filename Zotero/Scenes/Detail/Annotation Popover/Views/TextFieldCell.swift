@@ -11,7 +11,7 @@ import UIKit
 import RxCocoa
 import RxSwift
 
-class TextFieldCell: RxTableViewCell {
+final class TextFieldCell: RxTableViewCell {
     @IBOutlet private weak var textField: UITextField!
 
     var textObservable: Observable<String> {

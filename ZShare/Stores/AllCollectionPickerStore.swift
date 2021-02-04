@@ -11,7 +11,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-class AllCollectionPickerStore: ObservableObject {
+final class AllCollectionPickerStore: ObservableObject {
     struct State {
         var libraries: [Library]
         var collections: [LibraryIdentifier: [Collection]]

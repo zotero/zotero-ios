@@ -8,7 +8,7 @@
 
 import UIKit
 
-class DragDropController {
+final class DragDropController {
     func dragItem(from item: RItem) -> UIDragItem {
         let provider = NSItemProvider(object: item.key as NSString)
         let dragItem = UIDragItem(itemProvider: provider)

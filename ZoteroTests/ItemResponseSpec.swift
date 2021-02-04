@@ -13,7 +13,7 @@ import Foundation
 import Nimble
 import Quick
 
-class ItemResponseSpec: QuickSpec {
+final class ItemResponseSpec: QuickSpec {
     private static let schemaController = SchemaController()
 
     override func spec() {

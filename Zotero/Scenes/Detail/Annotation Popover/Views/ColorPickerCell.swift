@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class ColorPickerCell: UITableViewCell {
+final class ColorPickerCell: UITableViewCell {
     @IBOutlet private weak var stackView: UIStackView!
 
     let colorChange: PublishSubject<String> = PublishSubject()

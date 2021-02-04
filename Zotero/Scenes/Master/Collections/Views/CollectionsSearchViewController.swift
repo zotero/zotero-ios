@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class CollectionsSearchViewController: UIViewController {
+final class CollectionsSearchViewController: UIViewController {
     @IBOutlet private weak var searchBar: UISearchBar!
     @IBOutlet private weak var searchBarSeparatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var tableView: UITableView!

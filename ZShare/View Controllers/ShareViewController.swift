@@ -14,7 +14,7 @@ import WebKit
 
 import CocoaLumberjackSwift
 
-class ShareViewController: UIViewController {
+final class ShareViewController: UIViewController {
     // Outlets
     @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var stackView: UIStackView!

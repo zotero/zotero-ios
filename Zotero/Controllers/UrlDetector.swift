@@ -10,7 +10,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-class UrlDetector {
+final class UrlDetector {
     private let detector: NSDataDetector?
 
     init() {

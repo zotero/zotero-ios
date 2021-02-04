@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TagCirclesView: UIView {
+final class TagCirclesView: UIView {
     private static let borderWidth: CGFloat = 1
     private var aspectRatioConstraint: NSLayoutConstraint?
 

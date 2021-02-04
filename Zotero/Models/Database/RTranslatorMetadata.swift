@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-class RTranslatorMetadata: Object {
+final class RTranslatorMetadata: Object {
     @objc dynamic var id: String = ""
     @objc dynamic var lastUpdated: Date = Date(timeIntervalSince1970: 0)
 

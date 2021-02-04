@@ -8,7 +8,7 @@
 
 import UIKit
 
-class CheckboxButton: UIButton {
+final class CheckboxButton: UIButton {
     var selectedBackgroundColor: UIColor = .clear {
         didSet {
             if self.isSelected {

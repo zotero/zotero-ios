@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RxSwift
 import RxCocoa
 
-class BackgroundUploader: NSObject {
+final class BackgroundUploader: NSObject {
     enum Error: Swift.Error {
         case uploadFromMemoryOrStream
     }

@@ -10,7 +10,7 @@ import UIKit
 
 import PSPDFKit
 
-class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
+final class HighlightAnnotation: PSPDFKit.HighlightAnnotation {
     override var shouldDrawNoteIconIfNeeded: Bool {
         return false
     }

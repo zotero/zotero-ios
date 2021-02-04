@@ -8,7 +8,7 @@
 
 import UIKit
 
-@IBDesignable class InsetLabel: UILabel {
+@IBDesignable final class InsetLabel: UILabel {
     @IBInspectable var topInset: CGFloat = 0.0
     @IBInspectable var bottomInset: CGFloat = 0.0
     @IBInspectable var leftInset: CGFloat = 0.0

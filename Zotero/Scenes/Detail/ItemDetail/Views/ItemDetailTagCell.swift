@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ItemDetailTagCell: UITableViewCell {
+final class ItemDetailTagCell: UITableViewCell {
     @IBOutlet private weak var tagView: UIView!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var label: UILabel!

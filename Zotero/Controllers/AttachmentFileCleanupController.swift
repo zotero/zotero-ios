@@ -11,7 +11,7 @@ import Foundation
 import RxSwift
 
 /// This controller listens to notification center for .attachmentDeleted notification and removes attachment files if needed.
-class AttachmentFileCleanupController {
+final class AttachmentFileCleanupController {
     let fileStorage: FileStorage
     private let disposeBag: DisposeBag
 

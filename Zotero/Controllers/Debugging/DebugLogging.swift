@@ -15,7 +15,7 @@ protocol DebugLoggingCoordinator: class {
     func show(error: DebugLogging.Error)
 }
 
-class DebugLogging {
+final class DebugLogging {
     enum LoggingType {
         case immediate, nextLaunch
     }

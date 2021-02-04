@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AnnotationViewButton: UIButton {
+final class AnnotationViewButton: UIButton {
 
     init(layout: AnnotationViewLayout) {
         super.init(frame: CGRect())

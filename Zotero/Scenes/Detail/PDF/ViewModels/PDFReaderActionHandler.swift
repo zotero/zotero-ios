@@ -652,7 +652,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func remove(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            let libraryId = state.library.identifier
             let shouldRemoveSelection: Bool
             let toRemove: [IndexPath]
 

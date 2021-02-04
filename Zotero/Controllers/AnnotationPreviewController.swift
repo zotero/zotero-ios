@@ -18,7 +18,7 @@ fileprivate struct SubscriberKey: Hashable {
     let parentKey: String
 }
 
-class AnnotationPreviewController: NSObject {
+final class AnnotationPreviewController: NSObject {
     enum Error: Swift.Error {
         case imageNotAvailable
     }

@@ -11,7 +11,7 @@ import UIKit
 import Differ
 import RxSwift
 
-class CollectionsTableViewHandler: NSObject {
+final class CollectionsTableViewHandler: NSObject {
     private static let cellId = "CollectionRow"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<CollectionsActionHandler>

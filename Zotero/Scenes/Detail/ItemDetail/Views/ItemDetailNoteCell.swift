@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ItemDetailNoteCell: UITableViewCell {
+final class ItemDetailNoteCell: UITableViewCell {
     @IBOutlet private weak var containerHeight: NSLayoutConstraint!
     @IBOutlet private weak var labelTop: NSLayoutConstraint!
     @IBOutlet private weak var labelLeft: NSLayoutConstraint!

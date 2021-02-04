@@ -29,7 +29,7 @@ protocol FileStorage: class {
     func directoryData(for files: [File]) -> DirectoryData
 }
 
-class FileStorageController: FileStorage {
+final class FileStorageController: FileStorage {
     let fileManager: FileManager = .default
 
     func read(_ file: File) throws -> Data {

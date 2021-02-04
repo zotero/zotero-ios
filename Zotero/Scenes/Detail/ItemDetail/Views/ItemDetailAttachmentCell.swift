@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ItemDetailAttachmentCell: UITableViewCell {
+final class ItemDetailAttachmentCell: UITableViewCell {
     @IBOutlet private weak var containerHeight: NSLayoutConstraint!
     @IBOutlet private weak var fileView: FileAttachmentView!
     @IBOutlet private weak var attachmentIcon: UIImageView!

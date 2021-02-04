@@ -15,7 +15,7 @@ enum GroupType: String {
     case `private` = "Private"
 }
 
-class RGroup: Object {
+final class RGroup: Object {
     @objc dynamic var identifier: Int = 0
     @objc dynamic var owner: Int = 0
     @objc dynamic var name: String = ""

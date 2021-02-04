@@ -12,7 +12,7 @@ import RxSwift
 
 typealias AnnotationPageLabelSaveAction = (String, Bool) -> Void
 
-class AnnotationPageLabelViewController: UIViewController {
+final class AnnotationPageLabelViewController: UIViewController {
     enum Section {
         case labelInput
         case switches

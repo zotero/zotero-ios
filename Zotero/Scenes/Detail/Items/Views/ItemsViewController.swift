@@ -12,7 +12,7 @@ import CocoaLumberjackSwift
 import RealmSwift
 import RxSwift
 
-class ItemsViewController: UIViewController {
+final class ItemsViewController: UIViewController {
     private enum SearchBarPosition {
         case titleView
         case navigationItem
@@ -570,7 +570,7 @@ class ItemsViewController: UIViewController {
 /// constraint to current width of search bar. When the animation finishes the parent controller has to call `unfreezeWidth()` to set the width back
 /// to `.greatestFiniteMagnitude`, so that it stretches to appropriate size when needed (for example when the device rotates).
 ///
-fileprivate class SearchBarContainer: UIView {
+fileprivate final class SearchBarContainer: UIView {
     unowned let searchBar: UISearchBar
     private var widthConstraint: NSLayoutConstraint!
 

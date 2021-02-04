@@ -31,7 +31,7 @@ fileprivate struct Response {
     }
 }
 
-class WebSocketController {
+final class WebSocketController {
     enum ConnectionState {
         case disconnected, connecting, subscribing, connected
     }

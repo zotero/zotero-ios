@@ -20,7 +20,7 @@ import RxAlamofire
 import RxSwift
 import Quick
 
-class SyncControllerSpec: QuickSpec {
+final class SyncControllerSpec: QuickSpec {
     private static let userId = 100
     private static let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: URLSessionConfiguration.default)
     private static let fileStorage = FileStorageController()

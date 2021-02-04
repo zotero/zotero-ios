@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class SyncToolbarController {
+final class SyncToolbarController {
     private static let finishVisibilityTime: RxTimeInterval = .seconds(2)
     private unowned let viewController: UINavigationController
     private let disposeBag: DisposeBag

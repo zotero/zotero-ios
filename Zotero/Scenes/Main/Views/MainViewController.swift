@@ -21,7 +21,7 @@ protocol SplitControllerDelegate: class {
     var isSplit: Bool { get }
 }
 
-class MainViewController: UISplitViewController {
+final class MainViewController: UISplitViewController {
     // Constants
     private let controllers: Controllers
     private let defaultCollection: Collection

@@ -13,7 +13,7 @@ import CocoaLumberjackSwift
 import RxSwift
 
 /// Global controllers which don't need user session
-class Controllers {
+final class Controllers {
     let sessionController: SessionController
     let apiClient: ApiClient
     let secureStorage: SecureStorage
@@ -168,7 +168,7 @@ class Controllers {
 }
 
 /// Global controllers for logged in user
-class UserControllers {
+final class UserControllers {
     let syncScheduler: SynchronizationScheduler
     let changeObserver: ObjectChangeObserver
     let dbStorage: DbStorage

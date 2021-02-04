@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ContainerViewController: UIViewController {
+final class ContainerViewController: UIViewController {
     @IBOutlet private weak var containerView: UIView!
 
     private weak var containerHeight: NSLayoutConstraint?

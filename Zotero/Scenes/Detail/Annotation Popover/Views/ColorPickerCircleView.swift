@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class ColorPickerCircleView: UIView {
+final class ColorPickerCircleView: UIView {
     private let circleLayer: CAShapeLayer
     private let selectionLayer: CAShapeLayer
     let tap: PublishSubject<String>

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ItemDetailAddCell: UITableViewCell {
+final class ItemDetailAddCell: UITableViewCell {
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleBottom: NSLayoutConstraint!

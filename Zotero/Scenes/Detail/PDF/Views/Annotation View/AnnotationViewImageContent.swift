@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AnnotationViewImageContent: UIView {
+final class AnnotationViewImageContent: UIView {
     private weak var imageView: UIImageView!
     private var imageViewHeight: NSLayoutConstraint!
     private weak var bottomInsetConstraint: NSLayoutConstraint!

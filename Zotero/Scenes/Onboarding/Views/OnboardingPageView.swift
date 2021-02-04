@@ -8,7 +8,7 @@
 
 import UIKit
 
-class OnboardingPageView: UIView {
+final class OnboardingPageView: UIView {
     @IBOutlet weak var textLabel: UILabel!
     @IBOutlet weak var textWidth: NSLayoutConstraint!
     @IBOutlet weak var spacer: UIView!

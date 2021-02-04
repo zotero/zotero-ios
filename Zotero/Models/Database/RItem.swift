@@ -33,7 +33,7 @@ extension RItemChanges {
     static let all: RItemChanges = [.type, .trash, .parent, .collections, .fields, .tags, .creators, .relations]
 }
 
-class RItem: Object {
+final class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
     @objc dynamic var baseTitle: String = ""
@@ -218,7 +218,7 @@ class RItem: Object {
     }
 }
 
-class RItemField: Object {
+final class RItemField: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var baseKey: String?
     @objc dynamic var value: String = ""

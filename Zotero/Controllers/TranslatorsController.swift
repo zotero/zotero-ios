@@ -21,7 +21,7 @@ protocol TranslatorsControllerCoordinatorDelegate: class {
     func showResetToBundleError()
 }
 
-class TranslatorsController {
+final class TranslatorsController {
     enum UpdateType: Int {
         case manual = 1
         case initial = 2

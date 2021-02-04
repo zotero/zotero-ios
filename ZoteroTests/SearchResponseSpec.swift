@@ -13,7 +13,7 @@ import Foundation
 import Nimble
 import Quick
 
-class SearchResponseSpec: QuickSpec {
+final class SearchResponseSpec: QuickSpec {
     override func spec() {
         it("parses search with all known fields") {
             let url = Bundle(for: type(of: self)).url(forResource: "searchresponse_knownfields", withExtension: "json")!

@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class SearchBar: UIView {
+final class SearchBar: UIView {
     private static let cancelOffset: CGFloat = 8
 
     private weak var textField: UITextField!

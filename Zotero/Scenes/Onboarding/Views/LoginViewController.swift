@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 
-class LoginViewController: UIViewController {
+final class LoginViewController: UIViewController {
     @IBOutlet private weak var navbarHeight: NSLayoutConstraint!
     @IBOutlet private weak var closeButton: UIButton!
     @IBOutlet private weak var containerLeft: NSLayoutConstraint!

@@ -14,7 +14,7 @@ protocol SecureStorage: class {
     var apiToken: String? { get set }
 }
 
-class KeychainSecureStorage: SecureStorage {
+final class KeychainSecureStorage: SecureStorage {
     private struct Keys {
         static let apiToken = "api_token_key"
     }

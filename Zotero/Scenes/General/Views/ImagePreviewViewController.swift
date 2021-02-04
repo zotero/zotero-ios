@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class ImagePreviewViewController: UIViewController {
+final class ImagePreviewViewController: UIViewController {
     @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var scrollView: UIScrollView!
 

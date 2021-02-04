@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-class RRect: Object {
+final class RRect: Object {
     @objc dynamic var minX: Double = 0
     @objc dynamic var minY: Double = 0
     @objc dynamic var maxX: Double = 0

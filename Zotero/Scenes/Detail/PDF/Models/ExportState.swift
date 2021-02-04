@@ -8,8 +8,12 @@
 
 import Foundation
 
+#if PDFENABLED
+
 enum ExportState {
     case preparing
     case exported(File)
     case failed(PdfDocumentExporter.Error)
 }
+
+#endif

@@ -10,7 +10,7 @@ import SafariServices
 import UIKit
 import WebKit
 
-class NoteEditorViewController: UIViewController {
+final class NoteEditorViewController: UIViewController {
     let text: String
     let readOnly: Bool
     let saveAction: (String) -> Void

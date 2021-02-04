@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class SwitchCell: RxTableViewCell {
+final class SwitchCell: RxTableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var `switch`: UISwitch!
 

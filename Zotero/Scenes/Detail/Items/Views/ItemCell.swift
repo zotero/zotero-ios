@@ -10,7 +10,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-class ItemCell: UITableViewCell {
+final class ItemCell: UITableViewCell {
     @IBOutlet private weak var typeImageView: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleLabelsToContainerBottom: NSLayoutConstraint!

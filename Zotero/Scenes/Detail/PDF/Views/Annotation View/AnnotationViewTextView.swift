@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class AnnotationViewTextView: UIView {
+final class AnnotationViewTextView: UIView {
     private weak var label: UILabel!
     private weak var textView: AnnotationTextView!
     private weak var topInsetConstraint: NSLayoutConstraint!
@@ -133,7 +133,7 @@ class AnnotationViewTextView: UIView {
     }
 }
 
-fileprivate class AnnotationTextView: UITextView {
+fileprivate final class AnnotationTextView: UITextView {
     private static let allowedActions: [String] = ["cut:", "copy:", "paste:", "toggleBoldface:", "toggleItalics:", "toggleSuperscript", "toggleSubscript"]
 
     private let defaultFont: UIFont

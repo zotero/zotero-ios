@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HtmlAttributedStringConverter {
+final class HtmlAttributedStringConverter {
     private struct Attribute {
         let type: StringAttribute
         let index: Int

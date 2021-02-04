@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class AnnotationCell: UITableViewCell {
+final class AnnotationCell: UITableViewCell {
     private(set) var key: String = ""
     private weak var annotationView: AnnotationView!
     private weak var selectionView: UIView!

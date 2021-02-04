@@ -13,7 +13,7 @@ import Foundation
 import Nimble
 import Quick
 
-class DateParserSpec: QuickSpec {
+final class DateParserSpec: QuickSpec {
     let parser = DateParser()
 
     override func spec() {

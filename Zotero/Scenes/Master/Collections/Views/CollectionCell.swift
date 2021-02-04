@@ -8,7 +8,7 @@
 
 import UIKit
 
-class CollectionCell: UITableViewCell {
+final class CollectionCell: UITableViewCell {
     private static let imageWidth: CGFloat = 44
     private static let levelOffset: CGFloat = 16.0
 

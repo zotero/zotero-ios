@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TagPickerCell: UITableViewCell {
+final class TagPickerCell: UITableViewCell {
     @IBOutlet private weak var tagView: UIView!
     @IBOutlet private weak var label: UILabel!
 

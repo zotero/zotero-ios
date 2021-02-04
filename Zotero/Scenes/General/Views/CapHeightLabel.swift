@@ -8,7 +8,7 @@
 
 import UIKit
 
-class CapHeightLabel: UILabel {
+final class CapHeightLabel: UILabel {
     override var alignmentRectInsets: UIEdgeInsets {
         let scale = UIScreen.main.scale
         let top = ((ceil(self.font.ascender * scale)  - ceil(self.font.capHeight * scale)) / scale)

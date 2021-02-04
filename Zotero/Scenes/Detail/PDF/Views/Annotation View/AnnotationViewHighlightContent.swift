@@ -11,7 +11,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 
-class AnnotationViewHighlightContent: UIView {
+final class AnnotationViewHighlightContent: UIView {
     private weak var lineView: UIView!
     private weak var textLabel: UILabel!
     private weak var button: UIButton!

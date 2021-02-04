@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class ItemDetailAbstractEditCell: RxTableViewCell {
+final class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!

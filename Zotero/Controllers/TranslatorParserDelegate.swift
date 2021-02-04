@@ -8,7 +8,7 @@
 
 import Foundation
 
-class TranslatorParserDelegate: NSObject, XMLParserDelegate {
+final class TranslatorParserDelegate: NSObject, XMLParserDelegate {
     private(set) var translators: [Translator]
     private(set) var timestamp: Int
     private var currentElement: Element?

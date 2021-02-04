@@ -9,7 +9,7 @@
 import UIKit
 import SwiftUI
 
-class NoRotationHostingController<Content>: UIHostingController<Content> where Content : View {
+final class NoRotationHostingController<Content>: UIHostingController<Content> where Content : View {
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return UIDevice.current.userInterfaceIdiom == .pad ? .all : [.portrait, .portraitUpsideDown]
     }

@@ -10,7 +10,7 @@ import Foundation
 
 import CocoaLumberjackSwift
 
-class RItemLocaleController {
+final class RItemLocaleController {
     @UserDefault(key: "LastLocalization", defaultValue: nil)
     private var previousLocale: String?
 

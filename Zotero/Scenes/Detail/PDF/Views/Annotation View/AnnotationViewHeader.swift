@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class AnnotationViewHeader: UIView {
+final class AnnotationViewHeader: UIView {
     private weak var typeImageView: UIImageView!
     private weak var pageLabel: UILabel!
     private weak var authorLabel: UILabel!

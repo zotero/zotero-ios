@@ -16,7 +16,7 @@ protocol CrashReporterCoordinator: class {
     func report(crash: String, completed: @escaping () -> Void)
 }
 
-class CrashReporter {
+final class CrashReporter {
     private let reporter: PLCrashReporter
     private let apiClient: ApiClient
     private let disposeBag: DisposeBag

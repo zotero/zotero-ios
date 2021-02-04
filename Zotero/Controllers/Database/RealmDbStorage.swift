@@ -15,7 +15,7 @@ enum RealmDbError: Error {
     case autocreateMissingPrimaryKey
 }
 
-class RealmDbStorage {
+final class RealmDbStorage {
     private let config: Realm.Configuration
 
     init(config: Realm.Configuration) {

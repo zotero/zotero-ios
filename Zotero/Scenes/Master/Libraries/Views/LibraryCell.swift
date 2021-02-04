@@ -8,7 +8,7 @@
 
 import UIKit
 
-class LibraryCell: UITableViewCell {
+final class LibraryCell: UITableViewCell {
     enum LibraryState {
         case normal, locked, archived
     }

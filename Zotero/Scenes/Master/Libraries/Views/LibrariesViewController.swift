@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class LibrariesViewController: UIViewController {
+final class LibrariesViewController: UIViewController {
     @IBOutlet private weak var tableView: UITableView!
 
     private static let cellId = "LibraryCell"

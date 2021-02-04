@@ -15,7 +15,7 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
-class PDFSearchViewController: UIViewController {
+final class PDFSearchViewController: UIViewController {
     private static let cellId = "SearchCell"
     private unowned let pdfController: PDFViewController
     private let searchSelected: (SearchResult) -> Void

@@ -10,7 +10,7 @@
 
 import Foundation
 
-class BackgroundTimer {
+final class BackgroundTimer {
     private enum State {
         case suspended
         case resumed

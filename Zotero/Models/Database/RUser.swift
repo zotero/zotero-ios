@@ -10,7 +10,7 @@ import Foundation
 
 import RealmSwift
 
-class RUser: Object {
+final class RUser: Object {
     @objc dynamic var identifier: Int = 0
     @objc dynamic var name: String = ""
     @objc dynamic var username: String = ""

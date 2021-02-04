@@ -31,7 +31,7 @@ import RxAlamofire
 /// and sends additional request to Zotero API to register the upload.
 ///
 /// Sync is also run in background so that the user can see a current list of collections and pick a Collection where the item should be stored.
-class ExtensionStore {
+final class ExtensionStore {
     struct State {
         enum CollectionPicker {
             case loading, failed

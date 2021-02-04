@@ -23,7 +23,7 @@ protocol AnnotationEditCoordinatorDelegate: class {
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction)
 }
 
-class AnnotationPopoverCoordinator: NSObject, Coordinator {
+final class AnnotationPopoverCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
 

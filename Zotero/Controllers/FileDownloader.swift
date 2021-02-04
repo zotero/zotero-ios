@@ -12,7 +12,7 @@ import Alamofire
 import RxAlamofire
 import RxSwift
 
-class FileDownloader {
+final class FileDownloader {
     struct Update {
         enum Kind {
             case progress(CGFloat)

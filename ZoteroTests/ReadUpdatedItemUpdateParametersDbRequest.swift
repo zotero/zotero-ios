@@ -14,7 +14,7 @@ import RealmSwift
 import Nimble
 import Quick
 
-class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
+final class ReadUpdatedItemUpdateParametersSpec: QuickSpec {
     private static var realm: Realm!
     
     override func spec() {

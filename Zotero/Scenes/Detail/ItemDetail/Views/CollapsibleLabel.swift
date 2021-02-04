@@ -8,7 +8,7 @@
 
 import UIKit
 
-class CollapsibleLabel: UILabel {
+final class CollapsibleLabel: UILabel {
     var collapsedNumberOfLines: Int = 0
     var showMoreString: NSAttributedString?
     var showLessString: NSAttributedString?

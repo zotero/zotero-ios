@@ -14,7 +14,7 @@ import Nimble
 import RealmSwift
 import Quick
 
-class CreatorSummaryFormatterSpec: QuickSpec {
+final class CreatorSummaryFormatterSpec: QuickSpec {
     private static let realmConfig = Realm.Configuration(inMemoryIdentifier: "TestsRealmConfig")
     private static let realm = try! Realm(configuration: realmConfig) // Retain realm with inMemoryIdentifier so that data are not deleted
 

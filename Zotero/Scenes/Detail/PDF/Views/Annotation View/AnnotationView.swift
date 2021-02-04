@@ -10,7 +10,7 @@ import UIKit
 
 import RxSwift
 
-class AnnotationView: UIView {
+final class AnnotationView: UIView {
     enum Kind {
         case cell, popover
     }

@@ -24,7 +24,7 @@ fileprivate struct Part {
 
 /// Rewritten from JS https://github.com/zotero/zotero/blob/master/chrome/content/zotero/xpcom/date.js.
 /// Parser inspects unknown string and parses date while detecting the order of day/month/year if possible.
-class DateParser {
+final class DateParser {
     private let enLocale: Locale
     private let partsPattern = #"^(.*?)\b([0-9]{1,4})(?:([\-\/\.\u5e74])([0-9]{1,2}))?(?:([\-\/\.\u6708])([0-9]{1,4}))?((?:\b|[^0-9]).*?)$"#
     private let yearPattern = #"^(.*?)\b((?:circa |around |about |c\.? ?)?[0-9]{1,4}(?: ?B\.? ?C\.?(?: ?E\.?)?| ?C\.? ?E\.?| ?A\.? ?D\.?)|[0-9]{3,4})\b(.*?)$"#

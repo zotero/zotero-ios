@@ -8,7 +8,7 @@
 
 import Foundation
 
-class BackgroundUploaderContext {
+final class BackgroundUploaderContext {
     private static let key = "uploads"
 
     private let userDefault = UserDefaults(suiteName: AppGroup.identifier) ?? UserDefaults.standard

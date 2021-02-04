@@ -17,7 +17,7 @@ import RxSwift
 
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
-class AnnotationsViewController: UIViewController {
+final class AnnotationsViewController: UIViewController {
     private static let cellId = "AnnotationCell"
     private let viewModel: ViewModel<PDFReaderActionHandler>
     private let disposeBag: DisposeBag

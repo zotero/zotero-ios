@@ -30,7 +30,7 @@ extension ViewModelActionHandler {
     }
 }
 
-class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
+final class ViewModel<Handler: ViewModelActionHandler>: ObservableObject {
     private let handler: Handler
     private let disposeBag: DisposeBag
 
