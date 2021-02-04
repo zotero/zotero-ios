@@ -34,6 +34,16 @@ struct LibrariesActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.groupLibraries = results
             }
+
+        case .showDeleteGroupQuestion(let question):
+            self.update(viewModel: viewModel) { state in
+                state.deleteGroupQuestion = question
+            }
+
+        case .deleteGroup(let groupId):
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.deleteGroup(id: groupId, dbStorage: self.dbStorage)
+            }
         }
     }
 
@@ -77,6 +87,14 @@ struct LibrariesActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.error = .cantLoadData
             }
+        }
+    }
+
+    private func deleteGroup(id: Int, dbStorage: DbStorage) {
+        do {
+            try dbStorage.createCoordinator().perform(request: DeleteGroupDbRequest(groupId: id))
+        } catch let error {
+            DDLogError("LibrariesActionHandler: can't delete group - \(error)")
         }
     }
 }

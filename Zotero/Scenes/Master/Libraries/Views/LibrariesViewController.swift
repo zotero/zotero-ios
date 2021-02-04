@@ -56,23 +56,12 @@ class LibrariesViewController: UIViewController {
         self.tableView.reloadData()
 
         if let error = state.error {
-            self.show(error: error)
-        }
-    }
-
-    private func show(error: LibrariesError) {
-        let title: String
-        let message: String
-
-        switch error {
-        case .cantLoadData:
-            title = L10n.error
-            message = L10n.Errors.Libraries.cantLoad
+            self.coordinatorDelegate?.show(error: error)
         }
 
-        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
+        if let question = state.deleteGroupQuestion {
+            self.coordinatorDelegate?.showDeleteGroupQuestion(id: question.id, name: question.name, viewModel: self.viewModel)
+        }
     }
 
     // MARK: - Setups
@@ -121,8 +110,8 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: LibrariesViewController.cellId, for: indexPath)
 
         if let cell = cell as? LibraryCell,
-           let (name, isReadOnly) = self.libraryData(for: indexPath) {
-            cell.setup(with: name, isReadOnly: isReadOnly)
+           let (name, state) = self.libraryData(for: indexPath) {
+            cell.setup(with: name, libraryState: state)
         }
 
         return cell
@@ -136,14 +125,42 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         }
     }
 
-    private func libraryData(for indexPath: IndexPath) -> (name: String, isReadOnly: Bool)? {
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard indexPath.section == LibrariesViewController.groupLibrariesSection,
+              let group = self.viewModel.state.groupLibraries?[indexPath.row],
+              group.isLocalOnly else { return nil }
+
+        let groupId = group.identifier
+        let groupName = group.name
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
+            return self?.createContextMenu(for: groupId, groupName: groupName)
+        }
+    }
+
+    private func createContextMenu(for groupId: Int, groupName: String) -> UIMenu {
+        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .showDeleteGroupQuestion((groupId, groupName)))
+        }
+        return UIMenu(title: "", children: [delete])
+    }
+
+    private func libraryData(for indexPath: IndexPath) -> (name: String, state: LibraryCell.LibraryState)? {
         switch indexPath.section {
         case LibrariesViewController.customLibrariesSection:
             let library = self.viewModel.state.customLibraries?[indexPath.row]
-            return library.flatMap({ ($0.type.libraryName, false) })
+            return library.flatMap({ ($0.type.libraryName, .normal) })
         case LibrariesViewController.groupLibrariesSection:
-            let library = self.viewModel.state.groupLibraries?[indexPath.row]
-            return library.flatMap({ ($0.name, !$0.canEditMetadata) })
+            guard let library = self.viewModel.state.groupLibraries?[indexPath.row] else { return nil }
+            let state: LibraryCell.LibraryState
+            if library.isLocalOnly {
+                state = .archived
+            } else if !library.canEditMetadata {
+                state = .locked
+            } else {
+                state = .normal
+            }
+            return (library.name, state)
         default:
             return nil
         }

@@ -14,4 +14,6 @@ enum LibrariesAction {
     case loadData
     case setCustomLibraries(Results<RCustomLibrary>)
     case setGroupLibraries(Results<RGroup>)
+    case showDeleteGroupQuestion(DeleteGroupQuestion?)
+    case deleteGroup(Int)
 }

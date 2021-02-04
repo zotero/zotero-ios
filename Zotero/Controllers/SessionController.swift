@@ -12,8 +12,8 @@ typealias SessionData = (userId: Int, apiToken: String)
 
 struct DebugSessionConstants {
     #if DEBUG
-    static let userId: Int? = nil//5487222
-    static let apiToken: String? = nil//"EG4p735j5tUhixLCtTg37WAs"
+    static let userId: Int? = 5487222
+    static let apiToken: String? = "EG4p735j5tUhixLCtTg37WAs"
     #else
     static let userId: Int? = nil
     static let apiToken: String? = nil

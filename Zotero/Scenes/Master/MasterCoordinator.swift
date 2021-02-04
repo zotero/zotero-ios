@@ -14,6 +14,8 @@ import RxSwift
 protocol MasterLibrariesCoordinatorDelegate: class {
     func showCollections(for library: Library)
     func showSettings()
+    func show(error: LibrariesError)
+    func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
@@ -73,6 +75,30 @@ class MasterCoordinator: NSObject, Coordinator {
 }
 
 extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
+    func show(error: LibrariesError) {
+        let title: String
+        let message: String
+
+        switch error {
+        case .cantLoadData:
+            title = L10n.error
+            message = L10n.Errors.Libraries.cantLoad
+        }
+
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
+    func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>) {
+        let controller = UIAlertController(title: L10n.delete, message: L10n.Libraries.deleteQuestion(name), preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: .destructive, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .deleteGroup(id))
+        }))
+        controller.addAction(UIAlertAction(title: L10n.no, style: .cancel, handler: nil))
+        self.navigationController.present(controller, animated: true, completion: nil)
+    }
+
     func showCollections(for library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
         let controller = self.createCollectionsViewController(library: library, dbStorage: dbStorage)
@@ -83,6 +109,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         guard let syncScheduler = self.controllers.userControllers?.syncScheduler,
               let webSocketController = self.controllers.userControllers?.webSocketController,
               let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
                                   isLogging: self.controllers.debugLogging.isEnabled,
                                   isUpdatingTranslators: self.controllers.translatorsController.isLoading.value,

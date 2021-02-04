@@ -303,6 +303,10 @@ internal enum L10n {
   }
 
   internal enum Libraries {
+    /// Do you really want to delete "%@"?
+    internal static func deleteQuestion(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "libraries.delete_question", String(describing: p1))
+    }
     /// Group Libraries
     internal static let groupLibraries = L10n.tr("Localizable", "libraries.group_libraries")
     /// My Library

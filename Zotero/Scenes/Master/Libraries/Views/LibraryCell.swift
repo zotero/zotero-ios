@@ -9,6 +9,10 @@
 import UIKit
 
 class LibraryCell: UITableViewCell {
+    enum LibraryState {
+        case normal, locked, archived
+    }
+
     @IBOutlet private weak var iconLeftConstraint: NSLayoutConstraint!
     @IBOutlet private weak var iconView: UIImageView!
     @IBOutlet private weak var iconToLabelConstraint: NSLayoutConstraint!
@@ -17,14 +21,21 @@ class LibraryCell: UITableViewCell {
 
     private static let horizontalPadding: CGFloat = 16
 
-    func setup(with name: String, isReadOnly: Bool) {
-        let image = isReadOnly ? Asset.Images.Cells.libraryReadonly.image :
-                                 Asset.Images.Cells.library.image
-        self.iconView.image = image.withRenderingMode(.alwaysTemplate)
+    func setup(with name: String, libraryState: LibraryState) {
+        self.iconView.image = self.image(for: libraryState).withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = name
 
-        self.iconLeftConstraint.constant = LibraryCell.horizontalPadding - (isReadOnly ? 2 : 0)
-        self.iconToLabelConstraint.constant = LibraryCell.horizontalPadding - (isReadOnly ? 2 : 0)
+        let hasExtraPadding = libraryState != .normal
+        self.iconLeftConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
+        self.iconToLabelConstraint.constant = LibraryCell.horizontalPadding - (hasExtraPadding ? 2 : 0)
         self.titleRightConstraint.constant = LibraryCell.horizontalPadding
+    }
+
+    private func image(for state: LibraryState) -> UIImage {
+        switch state {
+        case .normal: return Asset.Images.Cells.library.image
+        case .locked: return Asset.Images.Cells.libraryReadonly.image
+        case .archived: return Asset.Images.Cells.libraryArchived.image
+        }
     }
 }
