@@ -879,6 +879,13 @@ extension PDFReaderViewController: UIPopoverPresentationControllerDelegate {
     }
 }
 
+extension PDFReaderViewController: AnnotationBoundingBoxConverter {
+    func convert(for annotation: PSPDFKit.Annotation) -> CGRect? {
+        guard let pageView = self.pdfController.pageViewForPage(at: annotation.pageIndex) else { return nil }
+        return self.view.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
+    }
+}
+
 class SelectionView: UIView {
     static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
 

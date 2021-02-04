@@ -21,8 +21,12 @@ struct AnnotationConverter {
 
     // MARK: - Helpers
 
-    static func sortIndex(from annotation: PSPDFKit.Annotation) -> String {
-        return self.sortIndex(for: annotation.boundingBox, pageIndex: annotation.pageIndex)
+    /// Creates sort index from annotation and bounding box.
+    /// - parameter annotation: PSPDFKit annotation from which sort index is created
+    /// - parameter boundingBox; Bounding box converted to screen coordinates.
+    /// - returns: Sort index (5 places for page, 6 places for character offset, 5 places for y position)
+    static func sortIndex(from annotation: PSPDFKit.Annotation, boundingBox: CGRect) -> String {
+        return self.sortIndex(for: boundingBox, pageIndex: annotation.pageIndex)
     }
 
     static func sortIndex(for rect: CGRect, pageIndex: PageIndex) -> String {
@@ -97,12 +101,13 @@ struct AnnotationConverter {
 
     /// Create Zotero annotation from existing PSPDFKit annotation.
     /// - parameter annotation: PSPDFKit annotation.
+    /// - parameter boundingBox; Bounding box converted to screen coordinates.
     /// - parameter color: Base color of annotation (can differ from current `PSPDPFKit.Annotation.color`)
     /// - parameter editability: Type of editability for given annotation.
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, color: String, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, boundingBox: CGRect, color: String, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = isSyncable ? KeyGenerator.newKey : annotation.uuid
@@ -111,7 +116,7 @@ struct AnnotationConverter {
         let author = isNew ? username : (annotation.user ?? "")
         let isAuthor = isNew ? true : (annotation.user == username)
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
-        let sortIndex = self.sortIndex(from: annotation)
+        let sortIndex = self.sortIndex(from: annotation, boundingBox: boundingBox)
         let date = Date()
 
         let type: AnnotationType

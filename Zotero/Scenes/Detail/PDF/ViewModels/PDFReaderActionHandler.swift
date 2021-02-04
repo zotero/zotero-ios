@@ -14,7 +14,11 @@ import CocoaLumberjackSwift
 import PSPDFKit
 import RxSwift
 
-struct PDFReaderActionHandler: ViewModelActionHandler {
+protocol AnnotationBoundingBoxConverter: class {
+    func convert(for annotation: PSPDFKit.Annotation) -> CGRect?
+}
+
+final class PDFReaderActionHandler: ViewModelActionHandler {
     typealias Action = PDFReaderAction
     typealias State = PDFReaderState
 
@@ -42,6 +46,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private unowned let fileStorage: FileStorage
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
+
+    var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
     init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter,
          schemaController: SchemaController, fileStorage: FileStorage) {
@@ -362,7 +368,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
     private func updateBoundingBoxAndRects(for pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard pdfAnnotation.syncable, let key = pdfAnnotation.key else { return }
 
-        let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation)
+        let boundingBox = self.boundingBoxConverter?.convert(for: pdfAnnotation) ?? CGRect()
+        let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBox: boundingBox)
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
 
         self.updateAnnotation(with: key,
@@ -576,7 +583,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
 
         for annotation in annotations {
             guard !annotation.syncable,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, editability: .editable, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, boundingBox: (self.boundingBoxConverter?.convert(for: annotation) ?? CGRect()), color: activeColor,
+                                                                        editability: .editable, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
@@ -767,7 +775,8 @@ struct PDFReaderActionHandler: ViewModelActionHandler {
                 }
 
                 let color = pdfAnnotation.color?.hexString ?? "#000000"
-                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: color, editability: .notEditable, isNew: false, isSyncable: false, username: username) else { continue }
+                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, boundingBox: (self.boundingBoxConverter?.convert(for: pdfAnnotation) ?? CGRect()), color: color,
+                                                                      editability: .notEditable, isNew: false, isSyncable: false, username: username) else { continue }
 
                 var annotations = allAnnotations[annotation.page] ?? []
                 let index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
