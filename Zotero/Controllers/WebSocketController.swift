@@ -61,7 +61,7 @@ class WebSocketController {
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let queue: DispatchQueue
-    let observable: PublishSubject<LibraryIdentifier?>
+    let observable: PublishSubject<ChangeWsResponse.Kind>
 
     private var apiKey: String?
     private var webSocket: WebSocket?
@@ -291,8 +291,9 @@ class WebSocketController {
 
             switch event {
             case .topicAdded, .topicRemoved, .topicUpdated:
-                let changeResponse = try? self.jsonDecoder.decode(ChangeWsResponse.self, from: data)
-                self.observable.on(.next(changeResponse?.libraryId))
+                if let changeResponse = (try? self.jsonDecoder.decode(ChangeWsResponse.self, from: data)) {
+                    self.observable.on(.next(changeResponse.type))
+                }
 
             case .connected, .subscriptionCreated, .subscriptionDeleted: break
             }

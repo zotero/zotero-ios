@@ -176,6 +176,7 @@ class UserControllers {
     let backgroundUploader: BackgroundUploader
     let fileDownloader: FileDownloader
     let webSocketController: WebSocketController
+    unowned let translatorsController: TranslatorsController
 
     private static let schemaVersion: UInt64 = 9
 
@@ -210,6 +211,7 @@ class UserControllers {
         self.backgroundUploader = backgroundUploader
         self.fileDownloader = fileDownloader
         self.webSocketController = webSocketController
+        self.translatorsController = controllers.translatorsController
         self.disposeBag = DisposeBag()
 
         let coordinator = try dbStorage.createCoordinator()
@@ -241,14 +243,15 @@ class UserControllers {
             })
             .disposed(by: self.disposeBag)
 
-        // Observe remote changes to start sync
+        // Observe remote changes to start sync/translator update
         self.webSocketController.observable
             .observeOn(MainScheduler.instance)
-            .subscribe(onNext: { [weak self] libraryId in
-                if let libraryId = libraryId {
+            .subscribe(onNext: { [weak self] change in
+                switch change {
+                case .translators:
+                    self?.translatorsController.updateFromRepo(type: .notification)
+                case .library(let libraryId):
                     self?.syncScheduler.request(syncType: .normal, for: [libraryId])
-                } else {
-                    self?.syncScheduler.request(syncType: .normal)
                 }
             })
             .disposed(by: self.disposeBag)

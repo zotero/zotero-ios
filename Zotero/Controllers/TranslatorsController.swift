@@ -27,6 +27,7 @@ class TranslatorsController {
         case initial = 2
         case startup = 3
         case notification = 4
+        case shareExtension = 5
     }
 
     enum Error: Swift.Error {
@@ -102,7 +103,7 @@ class TranslatorsController {
                 self?.lastTimestamp = timestamp
                 self?.isLoading.accept(false)
             }, onError: { [weak self] error in
-                self?.process(error: error)
+                self?.process(error: error, updateType: type)
             })
             .disposed(by: self.disposeBag)
     }
@@ -141,16 +142,16 @@ class TranslatorsController {
     }
 
     /// Manual update of translators from remote repo.
-    func updateFromRepo() {
+    func updateFromRepo(type: UpdateType) {
         self.isLoading.accept(true)
-        self._updateFromRepo(type: .manual)
+        self._updateFromRepo(type: type)
             .subscribeOn(self.scheduler)
             .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] timestamp in
                 self?.lastTimestamp = timestamp
                 self?.isLoading.accept(false)
             }, onError: { [weak self] error in
-                self?.process(error: error)
+                self?.process(error: error, updateType: type)
             })
             .disposed(by: self.disposeBag)
     }
@@ -159,6 +160,9 @@ class TranslatorsController {
     /// - parameter type: Type of repo update.
     /// - returns: Timestamp of repo update.
     private func _updateFromRepo(type: UpdateType) -> Single<Int> {
+        // Startup update is limited to once daily, other updates happen always
+        guard type != .startup || self.didDayChange(from: Date(timeIntervalSince1970: Double(self.lastTimestamp))) else { return Single.just(self.lastTimestamp) }
+
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? ""
         let request = TranslatorsRequest(timestamp: self.lastTimestamp, version: "\(version)-iOS", type: type.rawValue)
         return self.apiClient.send(request: request, queue: self.queue)
@@ -176,9 +180,18 @@ class TranslatorsController {
                              }
     }
 
+    private func didDayChange(from date: Date) -> Bool {
+        let calendar = Calendar.current
+
+        let dateComponents = calendar.dateComponents([.day, .month, .year], from: date)
+        let todayComponents = calendar.dateComponents([.day, .month, .year], from: Date())
+
+        return dateComponents.day != todayComponents.day || dateComponents.month != todayComponents.month || dateComponents.year != todayComponents.year
+    }
+
     /// Checks whether the error was caused by bundled or remote loading and shows appropriate error.
     /// - parameter error: Error to check.
-    private func process(error: Swift.Error) {
+    private func process(error: Swift.Error, updateType: UpdateType) {
         guard let delegate = self.coordinator else {
             self.isLoading.accept(false)
             return
@@ -198,7 +211,7 @@ class TranslatorsController {
 
         delegate.showRemoteLoadTranslatorsError { retry in
             if retry {
-                self.updateFromRepo()
+                self.updateFromRepo(type: updateType)
             } else {
                 self.isLoading.accept(false)
             }

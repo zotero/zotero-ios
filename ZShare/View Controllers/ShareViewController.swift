@@ -425,7 +425,7 @@ class ShareViewController: UIViewController {
                                                           fileStorage: fileStorage)
 
         apiClient.set(authToken: session.apiToken)
-        translatorsController.updateFromRepo()
+        translatorsController.updateFromRepo(type: .shareExtension)
 
         self.dbStorage = dbStorage
         self.translatorsController = translatorsController

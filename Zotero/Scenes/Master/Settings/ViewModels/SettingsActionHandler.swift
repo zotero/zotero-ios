@@ -92,7 +92,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
             }
 
         case .updateTranslators:
-            self.translatorsController.updateFromRepo()
+            self.translatorsController.updateFromRepo(type: .manual)
 
         case .resetTranslators:
             self.translatorsController.resetToBundle()

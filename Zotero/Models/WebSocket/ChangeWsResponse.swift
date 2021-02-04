@@ -9,11 +9,16 @@
 import Foundation
 
 struct ChangeWsResponse {
-    enum Error: Swift.Error {
-        case unknownLibrary(String)
+    enum Kind {
+        case library(LibraryIdentifier)
+        case translators
     }
 
-    let libraryId: LibraryIdentifier
+    enum Error: Swift.Error {
+        case unknownChange(String)
+    }
+
+    let type: Kind
 }
 
 extension ChangeWsResponse: Decodable {
@@ -25,10 +30,14 @@ extension ChangeWsResponse: Decodable {
         let container = try decoder.container(keyedBy: Keys.self)
         let topic = try container.decode(String.self, forKey: .topic)
 
-        guard let libraryId = LibraryIdentifier.from(apiPath: topic) else {
-            throw ChangeWsResponse.Error.unknownLibrary(topic)
+        if topic.contains("translators") || topic.contains("styles") {
+            self.init(type: .translators)
         }
 
-        self.init(libraryId: libraryId)
+        if let libraryId = LibraryIdentifier.from(apiPath: topic) {
+            self.init(type: .library(libraryId))
+        }
+
+        throw ChangeWsResponse.Error.unknownChange(topic)
     }
 }
