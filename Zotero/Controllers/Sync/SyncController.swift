@@ -1402,6 +1402,11 @@ final class SyncController: SynchronizationController {
             self.abort(error: .uploadObjectConflict)
 
         case .libraryConflict:
+            guard self.conflictRetries < self.conflictDelays.count else {
+                self.abort(error: .cantResolveConflict)
+                return true
+            }
+
             let delay = self.conflictDelays[min(self.conflictRetries, (self.conflictDelays.count - 1))]
             let actions: [Action] = [.createLibraryActions(.specific([libraryId]), .forceDownloads),
                                      .createLibraryActions(.specific([libraryId]), .onlyWrites)]
