@@ -13,7 +13,6 @@ import RxSwift
 final class AnnotationViewTextView: UIView {
     private weak var label: UILabel!
     private weak var textView: AnnotationTextView!
-    private weak var topInsetConstraint: NSLayoutConstraint!
 
     private let layout: AnnotationViewLayout
     private let placeholder: NSAttributedString
@@ -59,7 +58,7 @@ final class AnnotationViewTextView: UIView {
 
     // MARK: - Setups
 
-    func setup(text: NSAttributedString?, halfTopInset: Bool) {
+    func setup(text: NSAttributedString?) {
         if let text = text, !text.string.isEmpty {
             self.textView.attributedText = text
             self.textView.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
@@ -71,10 +70,6 @@ final class AnnotationViewTextView: UIView {
             self.textView.textColor = .placeholderText
             self.label.attributedText = self.placeholder
         }
-
-        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
-        let topInset = halfTopInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
-        self.topInsetConstraint.constant = topInset - topFontOffset
     }
 
     private func setupView() {
@@ -97,7 +92,6 @@ final class AnnotationViewTextView: UIView {
         self.addSubview(label)
 
         let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
-        let topInset = label.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset)
 
         if let minHeight = self.layout.commentMinHeight {
             label.heightAnchor.constraint(greaterThanOrEqualToConstant: minHeight).isActive = true
@@ -110,7 +104,7 @@ final class AnnotationViewTextView: UIView {
             textView.leadingAnchor.constraint(equalTo: label.leadingAnchor),
             textView.trailingAnchor.constraint(equalTo: label.trailingAnchor),
             // Vertical
-            topInset,
+            label.topAnchor.constraint(equalTo: self.topAnchor, constant: self.layout.verticalSpacerHeight - topFontOffset),
             self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight),
             textView.topAnchor.constraint(equalTo: label.topAnchor),
             textView.bottomAnchor.constraint(equalTo: label.bottomAnchor)
@@ -118,7 +112,6 @@ final class AnnotationViewTextView: UIView {
 
         self.label = label
         self.textView = textView
-        self.topInsetConstraint = topInset
     }
 
     private func setupTextViewDelegate() {

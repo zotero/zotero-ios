@@ -141,7 +141,7 @@ final class AnnotationView: UIView {
         }
 
         let comment = attributedComment.flatMap({ self.attributedString(from: $0) })
-        self.commentTextView.setup(text: comment, halfTopInset: false)
+        self.commentTextView.setup(text: comment)
 
         self.commentButton?.isHidden = true
         self.commentTextView.isHidden = false
@@ -158,7 +158,7 @@ final class AnnotationView: UIView {
             return
         }
 
-        self.tags.setup(with: self.attributedString(from: annotation.tags), halfTopInset: false)
+        self.tags.setup(with: self.attributedString(from: annotation.tags))
 
         self.tagsButton.isHidden = true
         self.tags.isHidden = false

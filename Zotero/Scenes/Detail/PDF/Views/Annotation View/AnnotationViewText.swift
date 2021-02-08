@@ -14,7 +14,6 @@ import RxCocoa
 final class AnnotationViewText: UIView {
     private weak var textLabel: UILabel!
     private weak var button: UIButton!
-    private weak var topInsetConstraint: NSLayoutConstraint!
 
     private let layout: AnnotationViewLayout
 
@@ -36,12 +35,8 @@ final class AnnotationViewText: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setup(with attributedString: NSAttributedString?, halfTopInset: Bool) {
+    func setup(with attributedString: NSAttributedString?) {
         self.textLabel.attributedText = attributedString
-
-        let topFontOffset = self.layout.font.ascender - self.layout.font.xHeight
-        let topInset = halfTopInset ? (self.layout.verticalSpacerHeight / 2) : self.layout.verticalSpacerHeight
-        self.topInsetConstraint.constant = topInset - topFontOffset
     }
 
     private func setupView() {
@@ -58,7 +53,7 @@ final class AnnotationViewText: UIView {
         self.addSubview(label)
         self.addSubview(button)
 
-        let topInset = label.topAnchor.constraint(equalTo: self.topAnchor, constant: 0)
+        let topFontInset = self.layout.verticalSpacerHeight - (self.layout.font.ascender - self.layout.font.xHeight)
 
         NSLayoutConstraint.activate([
             // Horizontal
@@ -67,7 +62,7 @@ final class AnnotationViewText: UIView {
             button.leadingAnchor.constraint(equalTo: self.leadingAnchor),
             button.trailingAnchor.constraint(equalTo: self.trailingAnchor),
             // Vertical
-            topInset,
+            label.topAnchor.constraint(equalTo: self.topAnchor, constant: topFontInset),
             self.bottomAnchor.constraint(equalTo: label.lastBaselineAnchor, constant: self.layout.verticalSpacerHeight),
             button.topAnchor.constraint(equalTo: self.topAnchor),
             button.bottomAnchor.constraint(equalTo: self.bottomAnchor)
@@ -75,6 +70,5 @@ final class AnnotationViewText: UIView {
 
         self.textLabel = label
         self.button = button
-        self.topInsetConstraint = topInset
     }
 }
