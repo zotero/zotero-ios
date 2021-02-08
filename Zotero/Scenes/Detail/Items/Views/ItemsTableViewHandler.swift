@@ -206,7 +206,24 @@ final class ItemsTableViewHandler: NSObject {
 
     private func performNextAction() {
         guard !self.isPerformingAction && !self.queue.isEmpty else { return }
-        self.perform(action: self.queue.removeFirst())
+
+        let action = self.queue.removeFirst()
+
+        if case .reloadAll = action {
+            // Remove all reload (for specific indices) and update cell actions. The tableView will be reloaded completely and these can cause crashes.
+            var queue = self.queue
+            for (idx, action) in self.queue.reversed().enumerated() {
+                switch action {
+                case .deselectAll, .editing, .selectAll, .reloadAll:
+                    continue
+                case .reload, .updateVisibleCell:
+                    queue.remove(at: idx)
+                }
+            }
+            self.queue = queue
+        }
+
+        self.perform(action: action)
     }
 
     private func perform(action: Action) {
