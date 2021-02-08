@@ -32,10 +32,12 @@ extension ChangeWsResponse: Decodable {
 
         if topic.contains("translators") || topic.contains("styles") {
             self.init(type: .translators)
+            return
         }
 
         if let libraryId = LibraryIdentifier.from(apiPath: topic) {
             self.init(type: .library(libraryId))
+            return
         }
 
         throw ChangeWsResponse.Error.unknownChange(topic)
