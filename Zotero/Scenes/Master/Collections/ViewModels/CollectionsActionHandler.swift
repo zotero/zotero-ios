@@ -192,11 +192,22 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
     private func update(collections: [Collection], in viewModel: ViewModel<CollectionsActionHandler>) {
         guard !collections.isEmpty else { return }
+
         var original = viewModel.state.collections
+        var selected = viewModel.state.selectedCollection
+
         self.update(original: &original, with: collections)
+        if !original.contains(selected) {
+            selected = Collection(custom: .all)
+        }
+
         self.update(viewModel: viewModel) { state in
             state.collections = original
             state.changes.insert(.results)
+            if selected != state.selectedCollection {
+                state.changes.insert(.selection)
+                state.selectedCollection = selected
+            }
         }
     }
 

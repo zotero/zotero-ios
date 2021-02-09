@@ -21,16 +21,6 @@ protocol SyncAction {
     var result: Single<Result> { get }
 }
 
-protocol ConflictReceiver {
-    func resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void)
-}
-
-protocol DebugPermissionReceiver {
-    func askForPermission(message: String, completed: @escaping (DebugPermissionResponse) -> Void)
-}
-
-typealias ConflictCoordinator = ConflictReceiver & DebugPermissionReceiver
-
 protocol SynchronizationController: class {
     var inProgress: Bool { get }
     var libraryIdInProgress: LibraryIdentifier? { get }
@@ -88,8 +78,10 @@ final class SyncController: SynchronizationController {
         case syncBatchesToDb([DownloadBatch])
         /// Store new version for given library-object.
         case storeVersion(Int, LibraryIdentifier, SyncObject)
-        /// Synchronize deletions of objects in library.
+        /// Load deletions of objects in library. If an object is currently being edited by user, we need to ask for permissions or alert the user.
         case syncDeletions(LibraryIdentifier, Int)
+        /// Performs deletions on objects.
+        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], version: Int)
         /// Synchronize settings for library.
         case syncSettings(LibraryIdentifier, Int)
         /// Store new version for settings in library.
@@ -234,8 +226,7 @@ final class SyncController: SynchronizationController {
             self?.conflictCoordinator = coordinator
 
             guard coordinator != nil, let action = self?.processingAction else { return }
-            // ConflictReceiver was nil and we are waiting for CR action. Which means it was ignored previously and
-            // we need to restart it.
+            // ConflictReceiver was nil and we are waiting for CR action. Which means it was ignored previously and we need to restart it.
             if action.requiresConflictReceiver || (Defaults.shared.askForSyncPermission && action.requiresDebugPermissionPrompt) {
                 self?.workQueue.async {
                     self?.process(action: action)
@@ -437,6 +428,11 @@ final class SyncController: SynchronizationController {
         }
 
         self.processingAction = action
+
+        if action.requiresConflictReceiver && self.conflictCoordinator == nil {
+            return
+        }
+
         if Defaults.shared.askForSyncPermission && action.requiresDebugPermissionPrompt {
             self.askForUserPermission(action: action)
         } else {
@@ -476,6 +472,8 @@ final class SyncController: SynchronizationController {
         case .syncDeletions(let libraryId, let version):
             self.progressHandler.reportDeletions(for: libraryId)
             self.processDeletionsSync(libraryId: libraryId, since: version)
+        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let version):
+            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version)
         case .syncSettings(let libraryId, let version):
             self.progressHandler.reportLibrarySync(for: libraryId)
             self.processSettingsSync(for: libraryId, since: version)
@@ -534,6 +532,8 @@ final class SyncController: SynchronizationController {
             return [.markGroupAsLocalOnly(id)]
         case .revertLibraryToOriginal(let id):
             return [.revertLibraryToOriginal(id)]
+        case .deleteObjects(let libraryId, let collections, let items, let searches, let tags, let version):
+            return [.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version)]
         }
     }
 
@@ -1035,10 +1035,21 @@ final class SyncController: SynchronizationController {
     }
 
     private func processDeletionsSync(libraryId: LibraryIdentifier, since sinceVersion: Int) {
-        let result = SyncDeletionsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: sinceVersion,
-                                             libraryId: libraryId, userId: self.userId,
-                                             apiClient: self.apiClient, dbStorage: self.dbStorage,
+        let result = LoadDeletionsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: sinceVersion, libraryId: libraryId, userId: self.userId, apiClient: self.apiClient,
                                              queue: self.workQueue, scheduler: self.workScheduler).result
+        result.subscribeOn(self.workScheduler)
+              .subscribe(onSuccess: { [weak self] collections, items, searches, tags, version in
+                  self?.resolve(conflict: .objectsRemoved(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version))
+              }, onError: { [weak self] error in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
+                  }
+              })
+              .disposed(by: self.disposeBag)
+    }
+
+    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], version: Int) {
+        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version, dbStorage: self.dbStorage).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] conflicts in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1487,6 +1498,7 @@ fileprivate extension SyncController.Action {
         case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
              .syncDeletions(let libraryId, _),
+             .performDeletions(let libraryId, _, _, _, _, _),
              .syncSettings(let libraryId, _),
              .storeSettingsVersion(_, let libraryId),
              .resolveConflict(_, let libraryId),
@@ -1499,12 +1511,12 @@ fileprivate extension SyncController.Action {
 
     var requiresConflictReceiver: Bool {
         switch self {
-        case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission:
+        case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
-             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .syncDeletions, .deleteGroup,
+             .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
-             .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb:
+             .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions:
             return false
         }
     }
@@ -1517,7 +1529,7 @@ fileprivate extension SyncController.Action {
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
-             .syncGroupToDb, .syncBatchesToDb:
+             .syncGroupToDb, .syncBatchesToDb, .performDeletions:
             return false
         }
     }
@@ -1534,7 +1546,7 @@ fileprivate extension SyncController.Action {
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
-             .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb:
+             .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions:
             return "Unknown action"
         }
     }

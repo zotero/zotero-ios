@@ -15,6 +15,8 @@ import RxSwift
 protocol AnnotationPopoverAnnotationCoordinatorDelegate: class {
     func showEdit(annotation: Annotation, saveAction: @escaping AnnotationEditSaveAction, deleteAction: @escaping AnnotationEditDeleteAction)
     func showTagPicker(libraryId: LibraryIdentifier, selected: Set<String>, picked: @escaping ([Tag]) -> Void)
+    func dismiss()
+    func didFinish()
 }
 
 protocol AnnotationEditCoordinatorDelegate: class {
@@ -71,6 +73,10 @@ extension AnnotationPopoverCoordinator: AnnotationPopoverAnnotationCoordinatorDe
         tagController.preferredContentSize = AnnotationPopoverLayout.tagPickerPreferredSize
         self.navigationController.pushViewController(tagController, animated: true)
     }
+
+    func didFinish() {
+        self.parentCoordinator?.childDidFinish(self)
+    }
 }
 
 extension AnnotationPopoverCoordinator: UINavigationControllerDelegate {
@@ -87,7 +93,10 @@ extension AnnotationPopoverCoordinator: AnnotationEditCoordinatorDelegate {
     }
 
     func dismiss() {
-        self.navigationController.dismiss(animated: true, completion: nil)
+        self.navigationController.dismiss(animated: true, completion: { [weak self] in
+            guard let `self` = self else { return }
+            self.parentCoordinator?.childDidFinish(self)
+        })
     }
 
     func showPageLabelEditor(label: String, updateSubsequentPages: Bool, saveAction: @escaping AnnotationPageLabelSaveAction) {

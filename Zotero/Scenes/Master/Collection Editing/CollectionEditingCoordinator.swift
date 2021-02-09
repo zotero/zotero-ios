@@ -11,6 +11,7 @@ import SwiftUI
 
 protocol CollectionEditingCoordinatorDelegate: class {
     func showCollectionPicker(viewModel: ViewModel<CollectionEditActionHandler>)
+    func showDeletedAlertAndClose()
     func dismiss()
 }
 
@@ -44,11 +45,23 @@ final class CollectionEditingCoordinator: Coordinator {
         let viewModel = ViewModel(initialState: state, handler: handler)
         var view = CollectionEditView()
         view.coordinatorDelegate = self
-        return UIHostingController(rootView: view.environmentObject(viewModel))
+        let controller = CollectionEditHostingViewController(viewModel: viewModel, rootView: view.environmentObject(viewModel))
+        controller.coordinatorDelegate = self
+        return controller
     }
 }
 
 extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
+    func showDeletedAlertAndClose() {
+        let presentingController = self.navigationController.presentingViewController
+
+        self.navigationController.dismiss(animated: true) {
+            let controller = UIAlertController(title: "Deleted", message: "This collection has been deleted.", preferredStyle: .alert)
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+            presentingController?.present(controller, animated: true, completion: nil)
+        }
+    }
+
     func showCollectionPicker(viewModel: ViewModel<CollectionEditActionHandler>) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 

@@ -14,16 +14,19 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     typealias Response = [String]
 
     let libraryId: LibraryIdentifier
-    let response: DeletionsResponse
+    let collections: [String]
+    let items: [String]
+    let searches: [String]
+    let tags: [String]
     let version: Int
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> [String] {
-        self.deleteCollections(with: self.response.collections, database: database)
-        self.deleteSearches(with: self.response.searches, database: database)
-        let conflicts = self.deleteItems(with: self.response.items, database: database)
-        self.deleteTags(with: self.response.tags, database: database)
+        self.deleteCollections(with: self.collections, database: database)
+        self.deleteSearches(with: self.searches, database: database)
+        let conflicts = self.deleteItems(with: self.items, database: database)
+        self.deleteTags(with: self.tags, database: database)
 
         try UpdateVersionsDbRequest(version: self.version, libraryId: self.libraryId, type: .deletions).process(in: database)
 

@@ -13,4 +13,5 @@ enum ConflictResolution {
     case markGroupAsLocalOnly(Int)
     case revertLibraryToOriginal(LibraryIdentifier)
     case markChangesAsResolved(LibraryIdentifier)
+    case deleteObjects(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], version: Int)
 }

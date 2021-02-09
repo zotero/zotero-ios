@@ -230,6 +230,41 @@ extension AppCoordinator: ConflictReceiver {
     }
 
     private func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
+        switch conflict {
+        case .objectsRemoved(let libraryId, let collections, let items, let searches, let tags, let version):
+            self.reportToConflictReceiver(action: {
+                $0.willDelete(items: items, collections: collections, in: libraryId)
+            })
+            completed(.deleteObjects(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version))
+
+        case .groupRemoved, .groupWriteDenied:
+            self.presentAlert(for: conflict, completed: completed)
+        }
+    }
+
+    private func reportToConflictReceiver(action: (ConflictViewControllerReceiver) -> Void) {
+        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
+        self.call(action: { action($0) }, on: mainController.viewControllers)
+    }
+
+    private func call(action: (ConflictViewControllerReceiver) -> Void, on viewControllers: [UIViewController]) {
+        for controller in viewControllers {
+            // Call action on all presented controllers
+            if let presented = controller.presentedViewController {
+                self.call(action: action, on: [presented])
+            }
+
+            if let receiver = controller as? ConflictViewControllerReceiver {
+                action(receiver)
+            }
+
+            if let navigationController = controller as? UINavigationController {
+                self.call(action: action, on: navigationController.viewControllers)
+            }
+        }
+    }
+
+    private func presentAlert(for conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         let (title, message, actions) = self.createAlert(for: conflict, completed: completed)
 
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -239,8 +274,7 @@ extension AppCoordinator: ConflictReceiver {
         self.viewController?.present(alert, animated: true, completion: nil)
     }
 
-    private func createAlert(for conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void)
-                                                                                       -> (title: String, message: String, actions: [UIAlertAction]) {
+    private func createAlert(for conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) -> (title: String, message: String, actions: [UIAlertAction]) {
         switch conflict {
         case .groupRemoved(let groupId, let groupName):
             let actions = [UIAlertAction(title: "Remove", style: .destructive, handler: { _ in
@@ -263,6 +297,9 @@ extension AppCoordinator: ConflictReceiver {
             return ("Warning",
                     "You can't write to group '\(groupName)' anymore. What would you like to do?",
                     actions)
+
+        case .objectsRemoved:
+            return ("", "", [])
         }
     }
 }

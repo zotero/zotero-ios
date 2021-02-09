@@ -11,7 +11,7 @@ import SwiftUI
 struct CollectionEditView: View {
     @EnvironmentObject var viewModel: ViewModel<CollectionEditActionHandler>
 
-    weak var coordinatorDelegate: (CollectionEditingCoordinatorDelegate & Coordinator)?
+    weak var coordinatorDelegate: CollectionEditingCoordinatorDelegate?
 
     private var title: Text {
         return Text(self.viewModel.state.key == nil ? L10n.Collections.createTitle : L10n.Collections.editTitle)

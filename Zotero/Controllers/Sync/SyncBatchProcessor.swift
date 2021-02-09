@@ -173,8 +173,7 @@ final class SyncBatchProcessor {
 
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
             let conflicts = try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreItemsDbRequest(response: items, schemaController: self.schemaController,
-                                                                     dateParser: self.dateParser, preferRemoteData: true))
+                try coordinator.perform(request: StoreItemsDbRequest(response: items, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: true))
             }
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 

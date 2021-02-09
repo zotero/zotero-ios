@@ -1,5 +1,5 @@
 //
-//  ObjectChangeObserver.swift
+//  ObjectUserChangeObserver.swift
 //  Zotero
 //
 //  Created by Michal Rentka on 13/03/2019.
@@ -12,11 +12,11 @@ import CocoaLumberjackSwift
 import RxSwift
 import RealmSwift
 
-protocol ObjectChangeObserver: class {
+protocol ObjectUserChangeObserver: class {
     var observable: PublishSubject<[LibraryIdentifier]> { get }
 }
 
-final class RealmObjectChangeObserver: ObjectChangeObserver {
+final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
     let observable: PublishSubject<[LibraryIdentifier]>
     private let dbStorage: DbStorage
 

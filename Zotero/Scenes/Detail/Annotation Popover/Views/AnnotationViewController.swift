@@ -90,7 +90,7 @@ final class AnnotationViewController: UIViewController {
 
     private func update(state: PDFReaderState) {
         guard let annotation = state.selectedAnnotation else {
-            self.dismiss(animated: true, completion: nil)
+            self.coordinatorDelegate?.dismiss()
             return
         }
 

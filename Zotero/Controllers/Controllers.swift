@@ -170,7 +170,7 @@ final class Controllers {
 /// Global controllers for logged in user
 final class UserControllers {
     let syncScheduler: SynchronizationScheduler
-    let changeObserver: ObjectChangeObserver
+    let changeObserver: ObjectUserChangeObserver
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
     let backgroundUploader: BackgroundUploader
@@ -206,7 +206,7 @@ final class UserControllers {
 
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
-        self.changeObserver = RealmObjectChangeObserver(dbStorage: dbStorage)
+        self.changeObserver = RealmObjectUserChangeObserver(dbStorage: dbStorage)
         self.itemLocaleController = RItemLocaleController(schemaController: controllers.schemaController, dbStorage: dbStorage)
         self.backgroundUploader = backgroundUploader
         self.fileDownloader = fileDownloader
