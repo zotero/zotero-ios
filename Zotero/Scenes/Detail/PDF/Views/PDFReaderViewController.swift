@@ -886,6 +886,13 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
     }
 }
 
+extension PDFReaderViewController: ConflictViewControllerReceiver {
+    func willDelete(items: [String], collections: [String], in libraryId: LibraryIdentifier) {
+        guard self.viewModel.state.library.identifier == libraryId, items.contains(self.viewModel.state.key) else { return }
+        self.coordinatorDelegate?.showDeletedAlertAndClosePdf()
+    }
+}
+
 final class SelectionView: UIView {
     static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
 

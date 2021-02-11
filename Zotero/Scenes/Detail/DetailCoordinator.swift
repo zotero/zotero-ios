@@ -42,6 +42,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
     func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
+    func showDeletedAlertAndCloseItem()
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: class {
@@ -56,6 +57,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
+    func showDeletedAlertAndClosePdf()
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
@@ -487,6 +489,13 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         controller.modalPresentationStyle = .formSheet
         self.topViewController.present(controller, animated: true, completion: nil)
     }
+
+    func showDeletedAlertAndCloseItem() {
+        self.navigationController.popViewController(animated: true)
+        let controller = UIAlertController(title: "Deleted", message: "This item has been deleted.", preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.topViewController.present(controller, animated: true, completion: nil)
+    }
 }
 
 extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
@@ -565,6 +574,16 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         let controller = UIAlertController(title: L10n.error, message: message, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func showDeletedAlertAndClosePdf() {
+        let presentingController = self.topViewController.presentingViewController
+
+        self.topViewController.dismiss(animated: true) {
+            let controller = UIAlertController(title: "Deleted", message: "This document has been deleted.", preferredStyle: .alert)
+            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+            presentingController?.present(controller, animated: true, completion: nil)
+        }
     }
 }
 

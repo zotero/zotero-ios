@@ -411,3 +411,10 @@ extension ItemDetailViewController: ItemDetailTableViewHandlerDelegate {
         return self.downloadingViaNavigationBar && index == self.viewModel.state.data.mainAttachmentIndex
     }
 }
+
+extension ItemDetailViewController: ConflictViewControllerReceiver {
+    func willDelete(items: [String], collections: [String], in libraryId: LibraryIdentifier) {
+        guard self.viewModel.state.library.identifier == libraryId, let key = self.viewModel.state.type.previewKey, items.contains(key) else { return }
+        self.coordinatorDelegate?.showDeletedAlertAndCloseItem()
+    }
+}
