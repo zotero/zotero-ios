@@ -169,7 +169,7 @@ final class Controllers {
 
 /// Global controllers for logged in user
 final class UserControllers {
-    let syncScheduler: SynchronizationScheduler
+    let syncScheduler: (SynchronizationScheduler & WebSocketScheduler)
     let changeObserver: ObjectUserChangeObserver
     let dbStorage: DbStorage
     let itemLocaleController: RItemLocaleController
@@ -251,7 +251,7 @@ final class UserControllers {
                 case .translators:
                     self?.translatorsController.updateFromRepo(type: .notification)
                 case .library(let libraryId):
-                    self?.syncScheduler.request(syncType: .normal, for: [libraryId])
+                    self?.syncScheduler.webSocketUpdate(libraries: [libraryId])
                 }
             })
             .disposed(by: self.disposeBag)
