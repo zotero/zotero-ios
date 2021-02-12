@@ -31,11 +31,12 @@ final class AppCoordinator: NSObject {
     private let controllers: Controllers
 
     private weak var window: UIWindow?
+    private var conflictQueue: ConflictQueueController?
+
     private var viewController: UIViewController? {
         guard let viewController = self.window?.rootViewController else { return nil }
-        var topController = viewController.topController
-        topController = (topController as? MainViewController)?.viewControllers.last ?? topController
-        return topController
+        let topController = viewController.topController
+        return (topController as? MainViewController)?.viewControllers.last ?? topController
     }
 
     init(window: UIWindow?, controllers: Controllers) {
@@ -65,11 +66,17 @@ final class AppCoordinator: NSObject {
             let controller = OnboardingViewController(size: window.frame.size, htmlConverter: self.controllers.htmlAttributedStringConverter)
             controller.coordinatorDelegate = self
             viewController = controller
+
+            self.conflictQueue = nil
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
-            viewController = MainViewController(controllers: self.controllers)
+            let controller = MainViewController(controllers: self.controllers)
+            viewController = controller
+
+            self.conflictQueue = ConflictQueueController(mainController: controller)
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
         }
+
         self.show(viewController: viewController, in: window, animated: animated)
     }
 
@@ -231,36 +238,20 @@ extension AppCoordinator: ConflictReceiver {
 
     private func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
-        case .objectsRemoved(let libraryId, let collections, let items, let searches, let tags, let version):
-            self.reportToConflictReceiver(action: {
-                $0.willDelete(items: items, collections: collections, in: libraryId)
+        case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
+            guard let conflictQueue = self.conflictQueue else {
+                completed(.remoteDeletion(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
+                                          toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
+                return
+            }
+
+            conflictQueue.resolveRemoteDeletion(collections: collections, items: items, libraryId: libraryId, completion: { toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems in
+                completed(.remoteDeletion(libraryId: libraryId, toDeleteCollections: toDeleteCollections, toRestoreCollections: toRestoreCollections,
+                                          toDeleteItems: toDeleteItems, toRestoreItems: toRestoreItems, searches: searches, tags: tags))
             })
-            completed(.deleteObjects(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version))
 
         case .groupRemoved, .groupWriteDenied:
             self.presentAlert(for: conflict, completed: completed)
-        }
-    }
-
-    private func reportToConflictReceiver(action: (ConflictViewControllerReceiver) -> Void) {
-        guard let mainController = self.window?.rootViewController as? MainViewController else { return }
-        self.call(action: { action($0) }, on: mainController.viewControllers)
-    }
-
-    private func call(action: (ConflictViewControllerReceiver) -> Void, on viewControllers: [UIViewController]) {
-        for controller in viewControllers {
-            // Call action on all presented controllers
-            if let presented = controller.presentedViewController {
-                self.call(action: action, on: [presented])
-            }
-
-            if let receiver = controller as? ConflictViewControllerReceiver {
-                action(receiver)
-            }
-
-            if let navigationController = controller as? UINavigationController {
-                self.call(action: action, on: navigationController.viewControllers)
-            }
         }
     }
 
@@ -298,7 +289,7 @@ extension AppCoordinator: ConflictReceiver {
                     "You can't write to group '\(groupName)' anymore. What would you like to do?",
                     actions)
 
-        case .objectsRemoved:
+        case .objectsRemovedRemotely:
             return ("", "", [])
         }
     }

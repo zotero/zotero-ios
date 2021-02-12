@@ -42,7 +42,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
     func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
-    func showDeletedAlertAndCloseItem()
+    func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: class {
@@ -57,7 +57,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
-    func showDeletedAlertAndClosePdf()
+    func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
@@ -490,10 +490,25 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showDeletedAlertAndCloseItem() {
-        self.navigationController.popViewController(animated: true)
-        let controller = UIAlertController(title: "Deleted", message: "This item has been deleted.", preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+    func showDeletedAlertForItem(completion: @escaping (Bool) -> Void) {
+        let popAction: () -> Void = {
+            if self.navigationController.presentedViewController != nil {
+                self.navigationController.dismiss(animated: true, completion: {
+                    self.navigationController.popViewController(animated: true)
+                })
+            } else {
+                self.navigationController.popViewController(animated: true)
+            }
+        }
+
+        let controller = UIAlertController(title: "Deleted", message: "This item has been deleted. Do you want to revert it?", preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { _ in
+            completion(false)
+        }))
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
+            completion(true)
+            popAction()
+        }))
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 }
@@ -576,14 +591,16 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
-    func showDeletedAlertAndClosePdf() {
-        let presentingController = self.topViewController.presentingViewController
-
-        self.topViewController.dismiss(animated: true) {
-            let controller = UIAlertController(title: "Deleted", message: "This document has been deleted.", preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-            presentingController?.present(controller, animated: true, completion: nil)
-        }
+    func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void) {
+        let controller = UIAlertController(title: "Deleted", message: "This document has been deleted. Do you want to revert it?", preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { _ in
+            completion(false)
+        }))
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
+            completion(true)
+            self.topViewController.dismiss(animated: true, completion: nil)
+        }))
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 }
 

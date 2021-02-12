@@ -11,5 +11,5 @@ import Foundation
 enum Conflict {
     case groupRemoved(Int, String)
     case groupWriteDenied(Int, String)
-    case objectsRemoved(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], version: Int)
+    case objectsRemovedRemotely(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String])
 }

@@ -11,7 +11,7 @@ import SwiftUI
 
 protocol CollectionEditingCoordinatorDelegate: class {
     func showCollectionPicker(viewModel: ViewModel<CollectionEditActionHandler>)
-    func showDeletedAlertAndClose()
+    func showDeletedAlert(completion: @escaping (Bool) -> Void)
     func dismiss()
 }
 
@@ -52,14 +52,16 @@ final class CollectionEditingCoordinator: Coordinator {
 }
 
 extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
-    func showDeletedAlertAndClose() {
-        let presentingController = self.navigationController.presentingViewController
-
-        self.navigationController.dismiss(animated: true) {
-            let controller = UIAlertController(title: "Deleted", message: "This collection has been deleted.", preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-            presentingController?.present(controller, animated: true, completion: nil)
-        }
+    func showDeletedAlert(completion: @escaping (Bool) -> Void) {
+        let controller = UIAlertController(title: "Deleted", message: "This collection has been deleted. Do you want to revert it?", preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { _ in
+            completion(false)
+        }))
+        controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
+            completion(true)
+            self.navigationController.dismiss(animated: true, completion: nil)
+        }))
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 
     func showCollectionPicker(viewModel: ViewModel<CollectionEditActionHandler>) {

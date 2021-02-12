@@ -413,8 +413,12 @@ extension ItemDetailViewController: ItemDetailTableViewHandlerDelegate {
 }
 
 extension ItemDetailViewController: ConflictViewControllerReceiver {
-    func willDelete(items: [String], collections: [String], in libraryId: LibraryIdentifier) {
-        guard self.viewModel.state.library.identifier == libraryId, let key = self.viewModel.state.type.previewKey, items.contains(key) else { return }
-        self.coordinatorDelegate?.showDeletedAlertAndCloseItem()
+    func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String? {
+        guard object == .item && libraryId == self.viewModel.state.library.identifier else { return nil }
+        return self.viewModel.state.type.previewKey
+    }
+
+    func canDeleteObject(completion: @escaping (Bool) -> Void) {
+        self.coordinatorDelegate?.showDeletedAlertForItem(completion: completion)
     }
 }

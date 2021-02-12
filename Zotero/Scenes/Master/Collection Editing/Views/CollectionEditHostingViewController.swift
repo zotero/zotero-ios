@@ -26,10 +26,12 @@ class CollectionEditHostingViewController<Content>: UIHostingController<Content>
 }
 
 extension CollectionEditHostingViewController: ConflictViewControllerReceiver {
-    func willDelete(items: [String], collections: [String], in libraryId: LibraryIdentifier) {
-        guard let key = self.viewModel.state.key,
-              self.viewModel.state.library.identifier == libraryId,
-              collections.contains(key) else { return }
-        self.coordinatorDelegate?.showDeletedAlertAndClose()
+    func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String? {
+        guard object == .collection && libraryId == self.viewModel.state.library.identifier else { return nil }
+        return self.viewModel.state.key
+    }
+
+    func canDeleteObject(completion: @escaping (Bool) -> Void) {
+        self.coordinatorDelegate?.showDeletedAlert(completion: completion)
     }
 }

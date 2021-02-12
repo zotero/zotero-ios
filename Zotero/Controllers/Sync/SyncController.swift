@@ -81,7 +81,11 @@ final class SyncController: SynchronizationController {
         /// Load deletions of objects in library. If an object is currently being edited by user, we need to ask for permissions or alert the user.
         case syncDeletions(LibraryIdentifier, Int)
         /// Performs deletions on objects.
-        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], version: Int)
+        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String])
+        /// Restores remote deletions
+        case restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String])
+        /// Stores version for deletions in given library.
+        case storeDeletionVersion(libraryId: LibraryIdentifier, version: Int)
         /// Synchronize settings for library.
         case syncSettings(LibraryIdentifier, Int)
         /// Store new version for settings in library.
@@ -472,8 +476,12 @@ final class SyncController: SynchronizationController {
         case .syncDeletions(let libraryId, let version):
             self.progressHandler.reportDeletions(for: libraryId)
             self.processDeletionsSync(libraryId: libraryId, since: version)
-        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let version):
-            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version)
+        case .performDeletions(let libraryId, let collections, let items, let searches, let tags):
+            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags)
+        case .restoreDeletions(let libraryId, let collections, let items):
+            self.restoreDeletions(libraryId: libraryId, collections: collections, items: items)
+        case .storeDeletionVersion(let libraryId, let version):
+            self.processStoreVersion(libraryId: libraryId, type: .deletions, version: version)
         case .syncSettings(let libraryId, let version):
             self.progressHandler.reportLibrarySync(for: libraryId)
             self.processSettingsSync(for: libraryId, since: version)
@@ -532,8 +540,15 @@ final class SyncController: SynchronizationController {
             return [.markGroupAsLocalOnly(id)]
         case .revertLibraryToOriginal(let id):
             return [.revertLibraryToOriginal(id)]
-        case .deleteObjects(let libraryId, let collections, let items, let searches, let tags, let version):
-            return [.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version)]
+        case .remoteDeletion(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags):
+            var actions: [Action] = []
+            if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty {
+                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags))
+            }
+            if !toRestoreCollections.isEmpty || !toRestoreItems.isEmpty {
+                actions.append(.restoreDeletions(libraryId: libraryId, collections: toRestoreCollections, items: toRestoreItems))
+            }
+            return actions
         }
     }
 
@@ -720,7 +735,8 @@ final class SyncController: SynchronizationController {
     //                .syncVersions(libraryId, .search, versions.searches),
                     .syncVersions(libraryId: libraryId, object: .item, version: versions.items, checkRemote: true),
                     .syncVersions(libraryId: libraryId, object: .trash, version: versions.trash, checkRemote: true),
-                    .syncDeletions(libraryId, versions.deletions)]
+                    .syncDeletions(libraryId, versions.deletions),
+                    .storeDeletionVersion(libraryId: libraryId, version: versions.deletions)]
         }
     }
 
@@ -1039,7 +1055,10 @@ final class SyncController: SynchronizationController {
                                              queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] collections, items, searches, tags, version in
-                  self?.resolve(conflict: .objectsRemoved(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version))
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.updateDeletionVersion(for: libraryId, to: version)
+                  }
+                  self?.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
@@ -1048,8 +1067,8 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], version: Int) {
-        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, version: version, dbStorage: self.dbStorage).result
+    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String]) {
+        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, dbStorage: self.dbStorage).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] conflicts in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1085,6 +1104,21 @@ final class SyncController: SynchronizationController {
                 self.processNextAction()
             }
         }
+    }
+
+    private func restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String]) {
+        let result = RestoreDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, dbStorage: self.dbStorage).result
+        result.subscribeOn(self.workScheduler)
+              .subscribe(onSuccess: { [weak self] data in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                      self?.finishCompletableAction(error: nil)
+                  }
+              }, onError: { [weak self] error in
+                  self?.accessQueue.async(flags: .barrier) { [weak self] in
+                    self?.finishCompletableAction(error: error)
+                  }
+              })
+              .disposed(by: self.disposeBag)
     }
 
     private func processSettingsSync(for libraryId: LibraryIdentifier, since version: Int) {
@@ -1312,6 +1346,21 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    /// Updates `.storeDeletionVersion` action in queue for given library to new version.
+    /// - parameter libraryId: LibraryIdentifier of action
+    /// - parameter version: Version number to which the action should be updated
+    private func updateDeletionVersion(for libraryId: LibraryIdentifier, to version: Int) {
+        for (idx, action) in self.queue.enumerated() {
+            switch action {
+            case .storeDeletionVersion(let actionLibraryId, _):
+                guard actionLibraryId == libraryId else { continue }
+                self.queue[idx] = .storeDeletionVersion(libraryId: libraryId, version: version)
+                return
+            default: continue
+            }
+        }
+    }
+
     private func nonFatalError(from error: Error) -> SyncError.NonFatal {
         if let error = error as? SyncError.NonFatal {
             return error
@@ -1498,7 +1547,9 @@ fileprivate extension SyncController.Action {
         case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
              .syncDeletions(let libraryId, _),
-             .performDeletions(let libraryId, _, _, _, _, _),
+             .performDeletions(let libraryId, _, _, _, _),
+             .restoreDeletions(let libraryId, _, _),
+             .storeDeletionVersion(let libraryId, _),
              .syncSettings(let libraryId, _),
              .storeSettingsVersion(_, let libraryId),
              .resolveConflict(_, let libraryId),
@@ -1516,7 +1567,8 @@ fileprivate extension SyncController.Action {
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
-             .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions:
+             .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions,
+             .storeDeletionVersion:
             return false
         }
     }
@@ -1529,7 +1581,7 @@ fileprivate extension SyncController.Action {
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
-             .syncGroupToDb, .syncBatchesToDb, .performDeletions:
+             .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions, .storeDeletionVersion:
             return false
         }
     }
@@ -1546,7 +1598,7 @@ fileprivate extension SyncController.Action {
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
-             .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions:
+             .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions, .storeDeletionVersion:
             return "Unknown action"
         }
     }

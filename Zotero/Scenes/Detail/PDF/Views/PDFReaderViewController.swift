@@ -887,9 +887,13 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
 }
 
 extension PDFReaderViewController: ConflictViewControllerReceiver {
-    func willDelete(items: [String], collections: [String], in libraryId: LibraryIdentifier) {
-        guard self.viewModel.state.library.identifier == libraryId, items.contains(self.viewModel.state.key) else { return }
-        self.coordinatorDelegate?.showDeletedAlertAndClosePdf()
+    func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String? {
+        guard object == .item && libraryId == self.viewModel.state.library.identifier else { return nil }
+        return self.viewModel.state.key
+    }
+
+    func canDeleteObject(completion: @escaping (Bool) -> Void) {
+        self.coordinatorDelegate?.showDeletedAlertForPdf(completion: completion)
     }
 }
 

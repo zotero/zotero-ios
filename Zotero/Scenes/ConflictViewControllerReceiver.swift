@@ -9,5 +9,6 @@
 import UIKit
 
 protocol ConflictViewControllerReceiver: class {
-    func willDelete(items: [String], collections: [String], in libraryId: LibraryIdentifier)
+    func shows(object: SyncObject, libraryId: LibraryIdentifier) -> String?
+    func canDeleteObject(completion: @escaping (Bool) -> Void)
 }

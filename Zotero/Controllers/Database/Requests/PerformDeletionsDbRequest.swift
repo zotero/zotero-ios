@@ -18,7 +18,6 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     let items: [String]
     let searches: [String]
     let tags: [String]
-    let version: Int
 
     var needsWrite: Bool { return true }
 
@@ -27,9 +26,6 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         self.deleteSearches(with: self.searches, database: database)
         let conflicts = self.deleteItems(with: self.items, database: database)
         self.deleteTags(with: self.tags, database: database)
-
-        try UpdateVersionsDbRequest(version: self.version, libraryId: self.libraryId, type: .deletions).process(in: database)
-
         return conflicts
     }
 
