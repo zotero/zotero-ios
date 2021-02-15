@@ -384,10 +384,11 @@ final class ItemDetailTableViewHandler: NSObject {
 
         switch section {
         case .abstract, .title, .notes: break
-        case .attachments:
-            if !isAddCell {
-                accessoryType = .detailButton
-            }
+        case .attachments: break
+            // TODO: implement attachment metadata screen
+//            if !isAddCell {
+//                accessoryType = .detailButton
+//            }
         case .tags, .type, .fields:
             if !isAddCell {
                 hasSeparator = isEditing
