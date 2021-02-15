@@ -35,7 +35,7 @@ struct Annotation {
     let isSyncable: Bool
 
     var previewBoundingBox: CGRect {
-        return self.boundingBox.insetBy(dx: (PDFReaderLayout.imageAnnotationLineWidth + 1), dy: (PDFReaderLayout.imageAnnotationLineWidth + 1))
+        return self.boundingBox.insetBy(dx: (AnnotationsConfig.imageAnnotationLineWidth + 1), dy: (AnnotationsConfig.imageAnnotationLineWidth + 1))
     }
 
     init(key: String, type: AnnotationType, page: Int, pageLabel: String, rects: [CGRect], author: String, isAuthor: Bool, color: String, comment: String,

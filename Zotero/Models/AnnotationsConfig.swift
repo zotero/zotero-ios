@@ -20,6 +20,11 @@ struct AnnotationsConfig {
     static let baseColorKey = "ZOTERO:BaseColor"
     static let syncableKey = "ZOTERO:Syncable"
 
+    // Line width of image annotation in PDF document.
+    static let imageAnnotationLineWidth: CGFloat = 2
+    // Size of note annotation in PDF document.
+    static let noteAnnotationSize: CGSize = CGSize(width: 22, height: 22)
+
     #if PDFENABLED
     static let supported: PSPDFKit.Annotation.Kind = [.note, .highlight, .square]
     #endif

@@ -81,7 +81,7 @@ extension AppDelegate: UIApplicationDelegate {
         if let key = Licenses.shared.pspdfkitKey {
             PSPDFKit.SDK.setLicenseKey(key)
         }
-        PSPDFKit.SDK.shared.styleManager.setLastUsedValue(PDFReaderLayout.imageAnnotationLineWidth,
+        PSPDFKit.SDK.shared.styleManager.setLastUsedValue(AnnotationsConfig.imageAnnotationLineWidth,
                                                           forProperty: "lineWidth",
                                                           forKey: PSPDFKit.Annotation.ToolVariantID(tool: .square))
         #endif

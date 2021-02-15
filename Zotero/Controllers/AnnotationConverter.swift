@@ -251,7 +251,7 @@ struct AnnotationConverter {
         }
 
         let boundingBox = annotation.boundingBox.rounded(to: 3)
-        note.boundingBox = CGRect(origin: boundingBox.origin, size: PDFReaderLayout.noteAnnotationSize)
+        note.boundingBox = CGRect(origin: boundingBox.origin, size: AnnotationsConfig.noteAnnotationSize)
         note.borderStyle = .dashed
         note.color = color
 

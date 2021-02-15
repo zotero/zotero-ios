@@ -559,7 +559,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             square.borderColor = color
             pdfAnnotation = square
         case .note:
-            let rect = CGRect(origin: origin, size: PDFReaderLayout.noteAnnotationSize)
+            let rect = CGRect(origin: origin, size: AnnotationsConfig.noteAnnotationSize)
             let note = NoteAnnotation(contents: "")
             note.pageIndex = pageIndex
             note.boundingBox = rect
