@@ -164,9 +164,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func droppedFields(from fromData: ItemDetailState.Data, to toData: ItemDetailState.Data) -> [String] {
-        let newFieldNames = Set(toData.fields.values.map({ $0.name }))
-        let oldFieldNames = Set(fromData.fields.values.filter({ !$0.value.isEmpty }).map({ $0.name }))
-        return oldFieldNames.subtracting(newFieldNames).sorted()
+        let newFields = Set(toData.fields.values)
+        var subtracted = Set(fromData.fields.values.filter({ !$0.value.isEmpty }))
+        for field in newFields {
+            guard let oldField = subtracted.first(where: { ($0.baseField ?? $0.name) == (field.baseField ?? field.name) }) else { continue }
+            subtracted.remove(oldField)
+        }
+        return subtracted.map({ $0.name }).sorted()
     }
 
     private func data(for type: String, from originalData: ItemDetailState.Data) throws -> ItemDetailState.Data {

@@ -143,7 +143,7 @@ internal enum L10n {
       }
     }
     internal enum ItemDetail {
-      /// Are you sure you want to change the item type?\n                                               The following fields will be lost:\n                                               %@
+      /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
       internal static func droppedFieldsMessage(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.item_detail.dropped_fields_message", String(describing: p1))
       }

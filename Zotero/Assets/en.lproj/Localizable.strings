@@ -215,9 +215,7 @@
 "errors.sync_toolbar.multiple_errors" = "%d issues";
 "errors.items.open_detail" = "Can't open item detail. Please try again.";
 "errors.item_detail.dropped_fields_title" = "Change Item Type";
-"errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?
-                                               The following fields will be lost:
-                                               %@";
+"errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\nThe following fields will be lost:\n%@";
 "errors.settings.storage" = "Could not collect storage data";
 "errors.shareext.logged_out" = "Please log into the app before using this extension.";
 "errors.shareext.cant_load_data" = "Failed to load data. Please try again.";
