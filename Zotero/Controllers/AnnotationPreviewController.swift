@@ -173,13 +173,14 @@ extension AnnotationPreviewController {
          However, even while setting invertRenderColor to false with the appearance mode set to night results in the rendering to be inverted. This should not be the case. So create a dummy document
          just for rendering and invert only when inverting from light to dark mode
          */
-        let newDoc = Document(url: document.fileURL!)
+//        let newDoc = Document(url: document.fileURL!)
 
         let options = RenderOptions()
-        options.skipAnnotationArray = newDoc.annotations(at: pageIndex)
-        options.invertRenderColor = !invertColors && isDark
+        options.skipAnnotationArray = document.annotations(at: pageIndex)
+        // Color inversion disabled because of PSPDFKit rendering issues. It's not needed now, but just in case this is needed later let's keep it here.
+//        options.invertRenderColor = !invertColors && isDark
 
-        let request = MutableRenderRequest(document: newDoc)
+        let request = MutableRenderRequest(document: document)
         request.imageSize = self.size
         request.pageIndex = pageIndex
         request.pdfRect = rect
