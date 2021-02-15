@@ -579,12 +579,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         let isDark = viewModel.state.interfaceStyle == .dark
         let libraryId = viewModel.state.library.identifier
+        // TODO: - group editability temporarily disabled
+        let editability: Annotation.Editability //= viewModel.state.library.metadataEditable ? .editable : .notEditable
+        switch libraryId {
+        case .custom:
+            editability = .editable
+        case .group:
+            editability = .notEditable
+        }
         let activeColor = viewModel.state.activeColor.hexString
 
         for annotation in annotations {
             guard !annotation.syncable,
                   let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, boundingBox: (self.boundingBoxConverter?.convert(for: annotation) ?? CGRect()), color: activeColor,
-                                                                        editability: .editable, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
+                                                                        editability: editability, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
@@ -722,10 +730,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
         do {
-            let libraryId = viewModel.state.library.identifier
             let isDark = viewModel.state.interfaceStyle == .dark
             // Load Zotero annotations from DB
-            var (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, libraryId: libraryId, baseFont: viewModel.state.commentFont,
+            var (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, library: viewModel.state.library, baseFont: viewModel.state.commentFont,
                                                                             userId: viewModel.state.userId, username: viewModel.state.username)
             // Create PSPDFKit annotations from Zotero annotations
             let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
@@ -746,7 +753,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                             annotation.flags.update(with: .locked)
 
                             if let annotation = annotation as? PSPDFKit.SquareAnnotation {
-                                self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: libraryId, isDark: isDark)
+                                self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
                             }
                         })
                     }
@@ -755,7 +762,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                     // Store previews
                     pspdfkitAnnotations.forEach { annotation in
                         if let annotation = annotation as? PSPDFKit.SquareAnnotation {
-                            self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: libraryId, isDark: isDark)
+                            self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
                         }
                     }
                 }
@@ -792,18 +799,26 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
-    private func documentData(for key: String, libraryId: LibraryIdentifier, baseFont: UIFont, userId: Int, username: String) throws
+    private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String) throws
                                                             -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString], page: Int) {
         let coordinator = try self.dbStorage.createCoordinator()
 
-        let page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: libraryId))
-        let items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId))
+        let page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
+        let items = try coordinator.perform(request: ReadAnnotationsDbRequest(attachmentKey: key, libraryId: library.identifier))
+        // TODO: - group editability temporarily disabled
+        let editability: Annotation.Editability // = library.metadataEditable ? .editable : .notEditable
+        switch library.identifier {
+        case .custom:
+            editability = .editable
+        case .group:
+            editability = .notEditable
+        }
 
         var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]
 
         for item in items {
-            guard let annotation = AnnotationConverter.annotation(from: item, currentUserId: userId, username: username) else { continue }
+            guard let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: userId, username: username) else { continue }
 
             if var array = annotations[annotation.page] {
                 array.append(annotation)

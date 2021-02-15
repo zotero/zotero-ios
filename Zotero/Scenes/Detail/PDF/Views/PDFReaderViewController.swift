@@ -565,9 +565,14 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func createAnnotationControlButtons() -> [UIButton] {
-        guard self.viewModel.state.library.metadataEditable else {
-            return []
+        switch self.viewModel.state.library.identifier {
+        case .group: return []
+        case .custom: break
         }
+        // TODO: - group editing temporarily disabled
+//        guard self.viewModel.state.library.metadataEditable else {
+//            return []
+//        }
 
         let symbolConfig = UIImage.SymbolConfiguration(scale: .large)
 
@@ -799,6 +804,12 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
                            on pageView: PDFPageView) -> [MenuItem] {
         guard annotations == nil else { return [] }
 
+        // TODO: - group editing disabled temporarily
+        switch self.viewModel.state.library.identifier {
+        case .group: return []
+        case .custom: break
+        }
+
         let pageRect = pageView.convert(rect, to: pageView.pdfCoordinateSpace)
 
         return [MenuItem(title: "Note", block: { [weak self] in
@@ -811,8 +822,16 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
 
     func pdfViewController(_ pdfController: PDFViewController, shouldShow menuItems: [MenuItem], atSuggestedTargetRect rect: CGRect,
                            forSelectedText selectedText: String, in textRect: CGRect, on pageView: PDFPageView) -> [MenuItem] {
-        return menuItems.filter({ $0.identifier != TextMenu.annotationMenuUnderline.rawValue && $0.identifier != TextMenu.annotationMenuSquiggle.rawValue &&
-                                  $0.identifier != TextMenu.annotationMenuStrikeout.rawValue && $0.identifier != TextMenu.createLink.rawValue })
+        let identifiers: [String]
+        // TODO: - group editing disabled temporarily
+        switch self.viewModel.state.library.identifier {
+        case .custom: identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
+        case .group: identifiers = [TextMenu.copy.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
+        }
+        return menuItems.filter({ item in
+            guard let identifier = item.identifier else { return false }
+            return identifiers.contains(identifier)
+        })
     }
 
     func pdfViewController(_ pdfController: PDFViewController,

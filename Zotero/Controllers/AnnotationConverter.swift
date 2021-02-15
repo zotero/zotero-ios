@@ -36,7 +36,7 @@ struct AnnotationConverter {
 
     // MARK: - DB -> Memory
 
-    static func annotation(from item: RItem, currentUserId: Int, username: String) -> Annotation? {
+    static func annotation(from item: RItem, editability: Annotation.Editability, currentUserId: Int, username: String) -> Annotation? {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
               let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
@@ -93,7 +93,7 @@ struct AnnotationConverter {
                           dateModified: item.dateModified,
                           tags: item.tags.map({ Tag(tag: $0) }),
                           didChange: false,
-                          editability: .editable,
+                          editability: editability,
                           isSyncable: true)
     }
 
