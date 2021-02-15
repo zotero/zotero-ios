@@ -96,8 +96,6 @@ final class SyncController: SynchronizationController {
         case uploadAttachment(AttachmentUpload)
         /// Submit local deletions to backend.
         case submitDeleteBatch(DeleteBatch)
-        /// Handle conflict resolution.
-        case resolveConflict(String, LibraryIdentifier)
         /// Handle group that was deleted remotely - (Id, Name).
         case resolveDeletedGroup(Int, String)
         /// Resolve when group had metadata editing allowed, but it was disabled and we try to upload new data.
@@ -501,9 +499,6 @@ final class SyncController: SynchronizationController {
             self.revertGroupData(in: libraryId)
         case .markChangesAsResolved(let libraryId):
             self.markChangesAsResolved(in: libraryId)
-        case .resolveConflict://(let key, let libraryId):
-            // TODO: - resolve conflict...
-            self.processNextAction()
         case .resolveDeletedGroup(let groupId, let name):
             self.resolve(conflict: .groupRemoved(groupId, name))
         case .resolveGroupMetadataWritePermission(let groupId, let name):
@@ -1084,14 +1079,12 @@ final class SyncController: SynchronizationController {
 
     private func finishDeletionsSync(result: Result<[String], Error>, libraryId: LibraryIdentifier) {
         switch result {
-        case .success://(let conflicts):
-                // BETA: - no conflicts are created in beta, we prefer remote over everything local, so the conflicts
-                // should be always empty now, but let's comment it just to be sure we don't unnecessarily create conflicts
-//                if !conflicts.isEmpty {
-//                    let actions: [Action] = conflicts.map({ .resolveConflict($0, library) })
-//                    self.queue.insert(contentsOf: actions, at: 0)
-//                }
-            self.processNextAction()
+        case .success(let conflicts):
+            if !conflicts.isEmpty {
+                self.resolve(conflict: .removedItemsHaveLocalChanges(keys: conflicts, libraryId: libraryId))
+            } else {
+                self.processNextAction()
+            }
 
         case .failure(let error):
             if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }

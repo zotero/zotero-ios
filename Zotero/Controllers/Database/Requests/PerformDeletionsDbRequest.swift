@@ -32,46 +32,45 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     private func deleteItems(with keys: [String], database: Realm) -> [String] {
         let objects = database.objects(RItem.self).filter(.keys(keys, in: self.libraryId))
 
-//        var conflicts: [String] = []
+        var conflicts: [String] = []
 
         for object in objects {
-            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
-            // locally, even if the user changed it
-//            if object.isChanged {
+            guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
+
+            if object.isSelfOrChildrenChanged {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
-//                conflicts.append(object.key)
-//            } else {
-                guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
-                let wasMainAttachment = object.parent?.mainAttachment?.key == object.key
-                let parent = object.parent
+                conflicts.append(object.key)
+                continue
+            }
 
-                object.willRemove(in: database)
-                database.delete(object)
+            let wasMainAttachment = object.parent?.mainAttachment?.key == object.key
+            let parent = object.parent
 
-                if wasMainAttachment {
-                    parent?.updateMainAttachment()
-                }
-//            }
+            object.willRemove(in: database)
+            database.delete(object)
+
+            if wasMainAttachment {
+                parent?.updateMainAttachment()
+            }
         }
 
-//        return conflicts
-        return []
+        return conflicts
     }
 
     private func deleteCollections(with keys: [String], database: Realm) {
         let objects = database.objects(RCollection.self).filter(.keys(keys, in: self.libraryId))
 
         for object in objects {
-            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
-            // locally, even if the user changed it
-//            if object.isChanged {
+            guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
+
+            if object.isChanged {
                 // If remotely deleted collection is changed locally, we want to keep the collection, so we mark that
                 // this collection is new and it will be reinserted by sync
-//                object.changedFields = .all
-//            } else {
+                object.markAsChanged(in: database)
+            } else {
                 object.willRemove(in: database)
                 database.delete(object)
-//            }
+            }
         }
     }
 
@@ -79,34 +78,20 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         let objects = database.objects(RSearch.self).filter(.keys(keys, in: self.libraryId))
 
         for object in objects {
-            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
-            // locally, even if the user changed it
-//            if object.isChanged {
+            if object.isChanged {
                 // If remotely deleted search is changed locally, we want to keep the search, so we mark that
                 // this search is new and it will be reinserted by sync
-//                object.changedFields = .all
-//            } else {
+                object.markAsChanged(in: database)
+            } else {
                 object.willRemove(in: database)
                 database.delete(object)
-//            }
+            }
         }
     }
 
     private func deleteTags(with names: [String], database: Realm) {
-        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.name(in: names),
-                                                                               .library(with: self.libraryId)])
+        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.name(in: names), .library(with: self.libraryId)])
         let tags = database.objects(RTag.self).filter(tagPredicate)
-        for object in tags {
-            // BETA: - for beta we prefer all remote changes, so if something was deleted remotely we always delete it
-            // locally, even if the user changed it
-//            if object.rawChangedFields > 0 {
-                // If remotely deleted tag is changed locally, we want to keep the tag, so we mark that
-                // this tag is new and it will be reinserted by sync
-//                object.changedFields = .all
-//            } else {
-                database.delete(object)
-//            }
-        }
         database.delete(tags)
     }
 }

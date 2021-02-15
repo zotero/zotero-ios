@@ -22,6 +22,7 @@ protocol Updatable: class {
     var rawChangeType: Int { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
+    var isSelfOrChildrenChanged: Bool { get }
 
     func resetChanges()
 }
@@ -69,6 +70,16 @@ extension RCollection: Updatable {
 
         return parameters
     }
+
+    var isSelfOrChildrenChanged: Bool {
+        if self.isChanged { return true }
+
+        for child in self.children {
+            if child.isSelfOrChildrenChanged { return true }
+        }
+
+        return false
+    }
 }
 
 extension RSearch: Updatable {
@@ -92,6 +103,10 @@ extension RSearch: Updatable {
 
     private var sortedConditionParameters: [[String: Any]] {
         return self.conditions.sorted(byKeyPath: "sortId").map({ $0.updateParameters })
+    }
+
+    var isSelfOrChildrenChanged: Bool {
+        return self.isChanged
     }
 }
 
@@ -179,6 +194,16 @@ extension RItem: Updatable {
         self.fields.filter("changed = true").forEach { field in
             field.changed = false
         }
+    }
+
+    var isSelfOrChildrenChanged: Bool {
+        if self.isChanged { return true }
+
+        for child in self.children {
+            if child.isSelfOrChildrenChanged { return true }
+        }
+
+        return false
     }
 }
 

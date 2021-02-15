@@ -346,6 +346,8 @@
 		B30D59592206F60400884C4A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D59582206F60400884C4A /* AppDelegate.swift */; };
 		B30D59652206F60500884C4A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B30D59632206F60500884C4A /* LaunchScreen.storyboard */; };
 		B30D597B2206F60500884C4A /* ZoteroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30D597A2206F60500884C4A /* ZoteroUITests.swift */; };
+		B310C6AF25DAA2FF009E3F6A /* SyncObject+Restore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310C6AE25DAA2FF009E3F6A /* SyncObject+Restore.swift */; };
+		B310C6B225DAA30F009E3F6A /* SyncObject+Restore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B310C6AE25DAA2FF009E3F6A /* SyncObject+Restore.swift */; };
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
@@ -1009,6 +1011,7 @@
 		B30D59762206F60500884C4A /* ZoteroUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZoteroUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30D597A2206F60500884C4A /* ZoteroUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoteroUITests.swift; sourceTree = "<group>"; };
 		B30D597C2206F60500884C4A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B310C6AE25DAA2FF009E3F6A /* SyncObject+Restore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncObject+Restore.swift"; sourceTree = "<group>"; };
 		B311B31C2386A39800BCF592 /* ZShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -1673,6 +1676,7 @@
 				B305651223FC051E003304F2 /* UIView+Extensions.swift */,
 				B305650E23FC051E003304F2 /* UIViewController+Extensions.swift */,
 				B305650C23FC051E003304F2 /* UserDefault+Extensions.swift */,
+				B310C6AE25DAA2FF009E3F6A /* SyncObject+Restore.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -3239,6 +3243,7 @@
 				B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */,
 				B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */,
 				B3593F54241A61C700760E20 /* CollectionsError.swift in Sources */,
+				B310C6AF25DAA2FF009E3F6A /* SyncObject+Restore.swift in Sources */,
 				B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */,
 				B30565DE23FC051E003304F2 /* SyncVersionsDbRequest.swift in Sources */,
 				B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */,
@@ -3493,6 +3498,7 @@
 				B30566FB23FC085E003304F2 /* MarkAttachmentUploadedDbRequest.swift in Sources */,
 				B30566EE23FC0831003304F2 /* AuthorizeUploadRequest.swift in Sources */,
 				B3902DE72480DBC1007EE48E /* ComponentDate.swift in Sources */,
+				B310C6B225DAA30F009E3F6A /* SyncObject+Restore.swift in Sources */,
 				B305677323FC0B5D003304F2 /* Array+Utils.swift in Sources */,
 				B305673423FC092A003304F2 /* SyncSettingsSyncAction.swift in Sources */,
 				B30566EC23FC082D003304F2 /* CrashUploadRequest.swift in Sources */,
