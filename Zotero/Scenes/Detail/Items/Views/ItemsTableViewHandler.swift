@@ -323,7 +323,7 @@ extension ItemsTableViewHandler: UITableViewDataSource {
         if let item = self.viewModel.state.results?[indexPath.row],
            let cell = cell as? ItemCell {
             // Create and cache attachment if needed
-            self.viewModel.process(action: .cacheItemData(item: item))
+            self.viewModel.process(action: .cacheAttachment(item: item))
 
             let parentKey = item.key
             let attachment = self.viewModel.state.attachments[parentKey]
@@ -353,7 +353,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
             if let attachment = self.viewModel.state.attachments[item.key] {
                 self.viewModel.process(action: .openAttachment(key: attachment.key, parentKey: item.key))
-            } else if let doi = self.viewModel.state.dois[item.key] {
+            } else if let doi = item.doi {
                 self.tapObserver.on(.next(.doi(doi)))
             } else {
                 self.tapObserver.on(.next(.metadata(item)))

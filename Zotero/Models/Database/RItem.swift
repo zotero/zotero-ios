@@ -121,6 +121,13 @@ final class RItem: Object {
         return self.mainAttachment
     }
 
+    var doi: String? {
+        return self.fields.filter(.key(FieldKeys.Item.doi)).first.flatMap({ field -> String? in
+            let doi = FieldKeys.Item.clean(doi: field.value)
+            return !doi.isEmpty ? doi : nil
+        })
+    }
+
     // MARK: - Object properties
 
     override class func indexedProperties() -> [String] {

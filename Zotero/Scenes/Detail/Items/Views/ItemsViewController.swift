@@ -226,7 +226,7 @@ final class ItemsViewController: UIViewController {
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 let items = (insertions + correctedModifications).map({ results[$0] })
-                self.viewModel.process(action: .cacheItemDataUpdates(items: items))
+                self.viewModel.process(action: .cacheAttachmentUpdates(items: items))
                 self.tableViewHandler.enqueue(action: .reload(modifications: modifications, insertions: insertions, deletions: deletions))
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
