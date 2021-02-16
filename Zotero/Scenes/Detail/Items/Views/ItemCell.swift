@@ -37,6 +37,8 @@ final class ItemCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        self.accessoryType = .detailButton
+
         let font = UIFont.preferredFont(for: .headline, weight: .regular)
         self.titleLabel.font = font
         self.titleLabelsToContainerBottom.constant = 12  + ItemDetailLayout.separatorHeight // + bottom separator

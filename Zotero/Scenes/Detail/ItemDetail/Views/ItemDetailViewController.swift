@@ -135,13 +135,11 @@ final class ItemDetailViewController: UIViewController {
                                                      })
         case .openUrl(let string):
             if let url = URL(string: string) {
-                self.showWeb(for: url)
+                self.coordinatorDelegate?.showWeb(url: url)
             }
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
-            if let url = URL(string: "https://doi.org/\(encoded)") {
-                self.showWeb(for: url)
-            }
+            self.coordinatorDelegate?.show(doi: encoded)
         case .showAttachmentError(let error, let index):
             self.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
                 self?.viewModel.process(action: .openAttachment(index))
@@ -162,20 +160,6 @@ final class ItemDetailViewController: UIViewController {
         let indexPath = IndexPath(row: index, section: self.tableViewHandler.attachmentSection)
         let (sourceView, sourceRect) = self.tableViewHandler.sourceDataForCell(at: indexPath)
         self.coordinatorDelegate?.show(attachment: attachment, library: self.viewModel.state.library, sourceView: sourceView, sourceRect: sourceRect)
-    }
-
-    private func showWeb(for url: URL) {
-        if url.scheme == "http" || url.scheme == "https" {
-            self.coordinatorDelegate?.showWeb(url: url)
-            return
-        }
-
-        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
-        components.scheme = "http"
-
-        if let url = components.url {
-            self.coordinatorDelegate?.showWeb(url: url)
-        }
     }
 
     // MARK: - UI state

@@ -72,6 +72,8 @@ struct FieldKeys {
         }
 
         static func clean(doi: String) -> String {
+            guard !doi.isEmpty else { return "" }
+
             do {
                 let regex = try NSRegularExpression(pattern: #"10(?:\.[0-9]{4,})?\/[^\s]*[^\s\.,]"#)
                 if let match = regex.firstMatch(in: doi, range: NSRange(doi.startIndex..., in: doi)),

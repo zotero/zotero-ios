@@ -11,7 +11,7 @@ import Foundation
 import RxSwift
 
 struct PerformDeletionsSyncAction: SyncAction {
-    typealias Result = [String]
+    typealias Result = [(String, String)]
 
     let libraryId: LibraryIdentifier
     let collections: [String]
@@ -21,7 +21,7 @@ struct PerformDeletionsSyncAction: SyncAction {
 
     unowned let dbStorage: DbStorage
 
-    var result: Single<[String]> {
+    var result: Single<[(String, String)]> {
         return Single.create { subscriber -> Disposable in
             do {
                 let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags)

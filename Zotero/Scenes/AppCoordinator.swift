@@ -251,7 +251,7 @@ extension AppCoordinator: ConflictReceiver {
             }
             conflictQueue.start(with: handler)
 
-        case .removedItemsHaveLocalChanges(let keys, let libraryId): break
+        case .removedItemsHaveLocalChanges(let conflicts, let libraryId): break
 
         case .groupRemoved, .groupWriteDenied:
             self.presentAlert(for: conflict, completed: completed)

@@ -29,9 +29,10 @@ struct ItemsState: ViewModelState {
     var sortType: ItemsSortType
     var searchTerm: String?
     var results: Results<RItem>?
-    // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item,
-    // or item if it's a standalone attachment.
+    // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item, or item if it's a standalone attachment.
     var attachments: [String: Attachment]
+    // Cache of DOIs so that they don't need to be re-fetched in tableView.
+    var dois: [String: String]
     var selectedItems: Set<String>
     var isEditing: Bool
     var changes: Changes
@@ -46,6 +47,7 @@ struct ItemsState: ViewModelState {
         self.library = library
         self.results = results
         self.attachments = [:]
+        self.dois = [:]
         self.error = error
         self.isEditing = false
         self.selectedItems = []

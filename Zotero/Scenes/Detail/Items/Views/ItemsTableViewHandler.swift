@@ -22,12 +22,17 @@ final class ItemsTableViewHandler: NSObject {
         case deselectAll
     }
 
+    enum TapAction {
+        case metadata(RItem)
+        case doi(String)
+    }
+
     private static let maxUpdateCount = 150
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
     private unowned let dragDropController: DragDropController
-    let tapObserver: PublishSubject<RItem>
+    let tapObserver: PublishSubject<TapAction>
     private let disposeBag: DisposeBag
 
     private var queue: [Action]
@@ -37,7 +42,6 @@ final class ItemsTableViewHandler: NSObject {
     private var batchTimerScheduler: ConcurrentDispatchQueueScheduler
     private var batchTimerDisposeBag: DisposeBag?
     private weak var fileDownloader: FileDownloader?
-    private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
         self.tableView = tableView
@@ -319,7 +323,7 @@ extension ItemsTableViewHandler: UITableViewDataSource {
         if let item = self.viewModel.state.results?[indexPath.row],
            let cell = cell as? ItemCell {
             // Create and cache attachment if needed
-            self.viewModel.process(action: .cacheAttachment(item: item))
+            self.viewModel.process(action: .cacheItemData(item: item))
 
             let parentKey = item.key
             let attachment = self.viewModel.state.attachments[parentKey]
@@ -346,8 +350,20 @@ extension ItemsTableViewHandler: UITableViewDelegate {
             self.viewModel.process(action: .selectItem(item.key))
         } else {
             tableView.deselectRow(at: indexPath, animated: true)
-            self.tapObserver.on(.next(item))
+
+            if let attachment = self.viewModel.state.attachments[item.key] {
+                self.viewModel.process(action: .openAttachment(key: attachment.key, parentKey: item.key))
+            } else if let doi = self.viewModel.state.dois[item.key] {
+                self.tapObserver.on(.next(.doi(doi)))
+            } else {
+                self.tapObserver.on(.next(.metadata(item)))
+            }
         }
+    }
+
+    func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
+        guard let item = self.viewModel.state.results?[indexPath.row] else { return }
+        self.tapObserver.on(.next(.metadata(item)))
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {

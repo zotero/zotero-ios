@@ -12,5 +12,5 @@ enum Conflict {
     case groupRemoved(Int, String)
     case groupWriteDenied(Int, String)
     case objectsRemovedRemotely(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String])
-    case removedItemsHaveLocalChanges(keys: [String], libraryId: LibraryIdentifier)
+    case removedItemsHaveLocalChanges(keys: [(String, String)], libraryId: LibraryIdentifier)
 }

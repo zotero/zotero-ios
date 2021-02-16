@@ -1077,7 +1077,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[String], Error>, libraryId: LibraryIdentifier) {
+    private func finishDeletionsSync(result: Result<[(String, String)], Error>, libraryId: LibraryIdentifier) {
         switch result {
         case .success(let conflicts):
             if !conflicts.isEmpty {
@@ -1545,7 +1545,6 @@ fileprivate extension SyncController.Action {
              .storeDeletionVersion(let libraryId, _),
              .syncSettings(let libraryId, _),
              .storeSettingsVersion(_, let libraryId),
-             .resolveConflict(_, let libraryId),
              .markChangesAsResolved(let libraryId),
              .revertLibraryToOriginal(let libraryId),
              .createUploadActions(let libraryId):
@@ -1555,7 +1554,7 @@ fileprivate extension SyncController.Action {
 
     var requiresConflictReceiver: Bool {
         switch self {
-        case .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
+        case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
             return true
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup,
@@ -1573,7 +1572,7 @@ fileprivate extension SyncController.Action {
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
-             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
+             .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
              .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions, .storeDeletionVersion:
             return false
         }
@@ -1590,7 +1589,7 @@ fileprivate extension SyncController.Action {
         case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
-             .createUploadActions, .resolveConflict, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
+             .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,
              .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions, .storeDeletionVersion:
             return "Unknown action"
         }

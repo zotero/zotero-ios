@@ -120,11 +120,12 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 state.changes = [.selection, .selectAll]
             }
 
-        case .cacheAttachment(let item):
+        case .cacheItemData(let item):
             self.cacheAttachment(for: item, in: viewModel)
+            self.cacheDOI(for: item, in: viewModel)
 
-        case .cacheAttachmentUpdates(let items):
-            self.cacheAttachmentUpdates(from: items, in: viewModel)
+        case .cacheItemDataUpdates(let items):
+            self.cacheItemDataUpdates(from: items, in: viewModel)
 
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
@@ -149,6 +150,29 @@ struct ItemsActionHandler: ViewModelActionHandler {
             state.results = results
             state.sortType = sortType
             state.error = (results == nil ? .dataLoading : nil)
+        }
+    }
+
+    // MARK: - DOI
+
+    private func cacheDOI(for item: RItem, in viewModel: ViewModel<ItemsActionHandler>) {
+        // Item has DOI, which is not cached, cache it.
+        if let field = item.fields.filter(.key(FieldKeys.Item.doi)).first {
+            let doi = FieldKeys.Item.clean(doi: field.value)
+            if !doi.isEmpty {
+                guard viewModel.state.attachments[item.key] == nil else { return }
+                self.update(viewModel: viewModel) { state in
+                    state.dois[item.key] = doi
+                }
+                return
+            }
+        }
+
+        // Item doesn't have DOI, but there is something in cache, clear it.
+        if viewModel.state.dois[item.key] != nil {
+            self.update(viewModel: viewModel) { state in
+                state.dois[item.key] = nil
+            }
         }
     }
 
@@ -246,10 +270,16 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func cacheAttachmentUpdates(from items: [RItem], in viewModel: ViewModel<ItemsActionHandler>) {
+    private func cacheItemDataUpdates(from items: [RItem], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
             items.forEach { item in
                 state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
+                
+                let doi = item.fields.filter(.key(FieldKeys.Item.doi)).first.flatMap({ field -> String? in
+                    let doi = FieldKeys.Item.clean(doi: field.value)
+                    return !doi.isEmpty ? doi : nil
+                })
+                state.dois[item.key] = doi
             }
         }
     }

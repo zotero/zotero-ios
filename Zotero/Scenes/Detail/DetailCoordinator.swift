@@ -30,6 +30,8 @@ protocol DetailItemsCoordinatorDelegate: class {
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func showSortActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
+    func showWeb(url: URL)
+    func show(doi: String)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: class {
@@ -39,6 +41,7 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showTypePicker(selected: String, picked: @escaping (String) -> Void)
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
+    func show(doi: String)
     func showCreatorCreation(for itemType: String, saved: @escaping CreatorEditSaveAction)
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
     func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
@@ -257,7 +260,21 @@ final class DetailCoordinator: Coordinator {
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 
+    func show(doi: String) {
+        guard let url = URL(string: "https://doi.org/\(doi)") else { return }
+        self.showWeb(url: url)
+    }
+
     func showWeb(url: URL) {
+        if url.scheme == "http" || url.scheme == "https" {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            return
+        }
+
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return }
+        components.scheme = "http"
+        guard let url = components.url else { return }
+
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 
