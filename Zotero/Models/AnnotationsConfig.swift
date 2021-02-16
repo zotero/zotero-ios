@@ -16,9 +16,9 @@ struct AnnotationsConfig {
     static let defaultActiveColor = "#ffd400"
     static let colors: [String] = ["#ffd400", "#ff6666", "#5fb236", "#2ea8e5", "#a28ae5"]
 
-    static let keyKey = "ZOTERO:Key"
-    static let baseColorKey = "ZOTERO:BaseColor"
-    static let syncableKey = "ZOTERO:Syncable"
+    static let keyKey = "Zotero:Key"
+    static let baseColorKey = "Zotero:BaseColor"
+    static let syncableKey = "Zotero:Syncable"
 
     // Line width of image annotation in PDF document.
     static let imageAnnotationLineWidth: CGFloat = 2
