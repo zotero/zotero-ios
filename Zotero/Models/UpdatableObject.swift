@@ -196,14 +196,22 @@ extension RItem: Updatable {
         }
     }
 
-    var isSelfOrChildrenChanged: Bool {
-        if self.isChanged { return true }
-
-        for child in self.children {
-            if child.isSelfOrChildrenChanged { return true }
+    var selfOrChildTitleIfChanged: String? {
+        if self.isChanged {
+            if !self.displayTitle.isEmpty {
+                return self.displayTitle
+            } else {
+                return self.baseTitle
+            }
         }
 
-        return false
+        for child in self.children {
+            if let title = child.selfOrChildTitleIfChanged {
+                return title
+            }
+        }
+
+        return nil
     }
 }
 

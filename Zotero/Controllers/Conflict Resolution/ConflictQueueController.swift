@@ -35,48 +35,52 @@ class ConflictQueueController {
 
     // MARK: - Resolution
 
-    func resolveRemoteDeletion(collections: [String], items: [String], libraryId: LibraryIdentifier, completion: @escaping ([String], [String], [String], [String]) -> Void) {
-        var toDeleteCollections: [String] = collections
-        var toRestoreCollections: [String] = []
-        var toDeleteItems: [String] = items
-        var toRestoreItems: [String] = []
+//    func resolveRemoteDeletion(collections: [String], items: [String], libraryId: LibraryIdentifier, completion: @escaping ([String], [String], [String], [String]) -> Void) {
+//        var toDeleteCollections: [String] = collections
+//        var toRestoreCollections: [String] = []
+//        var toDeleteItems: [String] = items
+//        var toRestoreItems: [String] = []
+//
+//        self.callOnActiveReceivers { receiver, completion in
+//            if let key = receiver.shows(object: .collection, libraryId: libraryId), toDeleteCollections.contains(key) {
+//                // If receiver shows a collection, ask whether it can be deleted
+//                receiver.canDeleteObject { delete in
+//                    // If deletion was not allowed, move the key to restore array
+//                    if !delete {
+//                        toRestoreCollections.append(key)
+//                        if let idx = toDeleteCollections.firstIndex(of: key) {
+//                            toDeleteCollections.remove(at: idx)
+//                        }
+//                    }
+//                    completion()
+//                }
+//            } else if let key = receiver.shows(object: .item, libraryId: libraryId), toDeleteItems.contains(key) {
+//                // If receiver shows an item, ask whether it can be deleted
+//                receiver.canDeleteObject { delete in
+//                    // If deletion was not allowed, move the key to restore array
+//                    if !delete {
+//                        toRestoreItems.append(key)
+//                        if let idx = toDeleteItems.firstIndex(of: key) {
+//                            toDeleteItems.remove(at: idx)
+//                        }
+//                    }
+//                    completion()
+//                }
+//            } else {
+//                completion()
+//            }
+//        } completed: {
+//            completion(toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems)
+//        }
+//    }
 
-        self.callOnActiveReceivers { receiver, completion in
-            if let key = receiver.shows(object: .collection, libraryId: libraryId), toDeleteCollections.contains(key) {
-                // If receiver shows a collection, ask whether it can be deleted
-                receiver.canDeleteObject { delete in
-                    // If deletion was not allowed, move the key to restore array
-                    if !delete {
-                        toRestoreCollections.append(key)
-                        if let idx = toDeleteCollections.firstIndex(of: key) {
-                            toDeleteCollections.remove(at: idx)
-                        }
-                    }
-                    completion()
-                }
-            } else if let key = receiver.shows(object: .item, libraryId: libraryId), toDeleteItems.contains(key) {
-                // If receiver shows an item, ask whether it can be deleted
-                receiver.canDeleteObject { delete in
-                    // If deletion was not allowed, move the key to restore array
-                    if !delete {
-                        toRestoreItems.append(key)
-                        if let idx = toDeleteItems.firstIndex(of: key) {
-                            toDeleteItems.remove(at: idx)
-                        }
-                    }
-                    completion()
-                }
-            } else {
-                completion()
-            }
-        } completed: {
-            completion(toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems)
-        }
+    func start(with handler: ConflictHandler) {
+        self.start(receiverAction: handler.receiverAction, completed: handler.completion)
     }
 
     // MARK: - Helpers
 
-    private func callOnActiveReceivers(action: @escaping ConflictQueueAction, completed: @escaping () -> Void) {
+    private func start(receiverAction action: @escaping ConflictQueueAction, completed: @escaping () -> Void) {
         guard self.receiverQueue.isEmpty else {
             completed()
             return

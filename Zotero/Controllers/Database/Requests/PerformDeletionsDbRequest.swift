@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct PerformDeletionsDbRequest: DbResponseRequest {
-    typealias Response = [String]
+    typealias Response = [(String, String)]
 
     let libraryId: LibraryIdentifier
     let collections: [String]
@@ -21,7 +21,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
 
     var needsWrite: Bool { return true }
 
-    func process(in database: Realm) throws -> [String] {
+    func process(in database: Realm) throws -> [(String, String)] {
         self.deleteCollections(with: self.collections, database: database)
         self.deleteSearches(with: self.searches, database: database)
         let conflicts = self.deleteItems(with: self.items, database: database)
@@ -29,17 +29,17 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         return conflicts
     }
 
-    private func deleteItems(with keys: [String], database: Realm) -> [String] {
+    private func deleteItems(with keys: [String], database: Realm) -> [(String, String)] {
         let objects = database.objects(RItem.self).filter(.keys(keys, in: self.libraryId))
 
-        var conflicts: [String] = []
+        var conflicts: [(String, String)] = []
 
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
 
-            if object.isSelfOrChildrenChanged {
+            if let title = object.selfOrChildTitleIfChanged {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
-                conflicts.append(object.key)
+                conflicts.append((object.key, title))
                 continue
             }
 

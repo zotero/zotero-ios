@@ -245,10 +245,13 @@ extension AppCoordinator: ConflictReceiver {
                 return
             }
 
-            conflictQueue.resolveRemoteDeletion(collections: collections, items: items, libraryId: libraryId, completion: { toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems in
+            let handler = ActiveObjectDeletedConflictHandler(collections: collections, items: items, libraryId: libraryId) { toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems in
                 completed(.remoteDeletion(libraryId: libraryId, toDeleteCollections: toDeleteCollections, toRestoreCollections: toRestoreCollections,
                                           toDeleteItems: toDeleteItems, toRestoreItems: toRestoreItems, searches: searches, tags: tags))
-            })
+            }
+            conflictQueue.start(with: handler)
+
+        case .removedItemsHaveLocalChanges(let keys, let libraryId): break
 
         case .groupRemoved, .groupWriteDenied:
             self.presentAlert(for: conflict, completed: completed)
@@ -289,7 +292,7 @@ extension AppCoordinator: ConflictReceiver {
                     "You can't write to group '\(groupName)' anymore. What would you like to do?",
                     actions)
 
-        case .objectsRemovedRemotely:
+        case .objectsRemovedRemotely, .removedItemsHaveLocalChanges:
             return ("", "", [])
         }
     }
