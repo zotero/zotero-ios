@@ -11,8 +11,9 @@ import Foundation
 enum ConflictResolution {
     case deleteGroup(Int)
     case markGroupAsLocalOnly(Int)
-    case revertLibraryToOriginal(LibraryIdentifier)
-    case markChangesAsResolved(LibraryIdentifier)
-    case remoteDeletion(libraryId: LibraryIdentifier, toDeleteCollections: [String], toRestoreCollections: [String],
-                        toDeleteItems: [String], toRestoreItems: [String], searches: [String], tags: [String])
+    case revertGroupChanges(LibraryIdentifier)
+    case keepGroupChanges(LibraryIdentifier)
+    case remoteDeletionOfActiveObject(libraryId: LibraryIdentifier, toDeleteCollections: [String], toRestoreCollections: [String],
+                                      toDeleteItems: [String], toRestoreItems: [String], searches: [String], tags: [String])
+    case remoteDeletionOfChangedItem(libraryId: LibraryIdentifier, toDelete: [String], toRestore: [String])
 }

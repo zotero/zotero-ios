@@ -31,7 +31,8 @@ final class AppCoordinator: NSObject {
     private let controllers: Controllers
 
     private weak var window: UIWindow?
-    private var conflictQueue: ConflictQueueController?
+    private var conflictReceiverAlertController: ConflictReceiverAlertController?
+    private var conflictAlertQueueController: ConflictAlertQueueController?
 
     private var viewController: UIViewController? {
         guard let viewController = self.window?.rootViewController else { return nil }
@@ -67,13 +68,15 @@ final class AppCoordinator: NSObject {
             controller.coordinatorDelegate = self
             viewController = controller
 
-            self.conflictQueue = nil
+            self.conflictReceiverAlertController = nil
+            self.conflictAlertQueueController = nil
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: nil)
         } else {
             let controller = MainViewController(controllers: self.controllers)
             viewController = controller
 
-            self.conflictQueue = ConflictQueueController(mainController: controller)
+            self.conflictReceiverAlertController = ConflictReceiverAlertController(viewController: controller)
+            self.conflictAlertQueueController = ConflictAlertQueueController(viewController: controller)
             self.controllers.userControllers?.syncScheduler.syncController.set(coordinator: self)
         }
 
@@ -239,19 +242,28 @@ extension AppCoordinator: ConflictReceiver {
     private func _resolve(conflict: Conflict, completed: @escaping (ConflictResolution?) -> Void) {
         switch conflict {
         case .objectsRemovedRemotely(let libraryId, let collections, let items, let searches, let tags):
-            guard let conflictQueue = self.conflictQueue else {
-                completed(.remoteDeletion(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
-                                          toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
+            guard let controller = self.conflictReceiverAlertController else {
+                completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: collections, toRestoreCollections: [],
+                                                        toDeleteItems: items, toRestoreItems: [], searches: searches, tags: tags))
                 return
             }
 
-            let handler = ActiveObjectDeletedConflictHandler(collections: collections, items: items, libraryId: libraryId) { toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems in
-                completed(.remoteDeletion(libraryId: libraryId, toDeleteCollections: toDeleteCollections, toRestoreCollections: toRestoreCollections,
-                                          toDeleteItems: toDeleteItems, toRestoreItems: toRestoreItems, searches: searches, tags: tags))
+            let handler = ActiveObjectDeletedConflictReceiverHandler(collections: collections, items: items, libraryId: libraryId) { toDeleteCollections, toRestoreCollections, toDeleteItems, toRestoreItems in
+                completed(.remoteDeletionOfActiveObject(libraryId: libraryId, toDeleteCollections: toDeleteCollections, toRestoreCollections: toRestoreCollections,
+                                                        toDeleteItems: toDeleteItems, toRestoreItems: toRestoreItems, searches: searches, tags: tags))
             }
-            conflictQueue.start(with: handler)
+            controller.start(with: handler)
 
-        case .removedItemsHaveLocalChanges(let conflicts, let libraryId): break
+        case .removedItemsHaveLocalChanges(let items, let libraryId):
+            guard let controller = self.conflictAlertQueueController else {
+                completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: items.map({ $0.0 }), toRestore: []))
+                return
+            }
+
+            let handler = ChangedItemsDeletedAlertQueueHandler(items: items) { toDelete, toRestore in
+                completed(.remoteDeletionOfChangedItem(libraryId: libraryId, toDelete: toDelete, toRestore: toRestore))
+            }
+            controller.start(with: handler)
 
         case .groupRemoved, .groupWriteDenied:
             self.presentAlert(for: conflict, completed: completed)
@@ -283,10 +295,10 @@ extension AppCoordinator: ConflictReceiver {
 
         case .groupWriteDenied(let groupId, let groupName):
             let actions = [UIAlertAction(title: "Revert to original", style: .cancel, handler: { _ in
-                               completed(.revertLibraryToOriginal(.group(groupId)))
+                               completed(.revertGroupChanges(.group(groupId)))
                            }),
                            UIAlertAction(title: "Keep changes", style: .default, handler: { _ in
-                               completed(.markChangesAsResolved(.group(groupId)))
+                               completed(.keepGroupChanges(.group(groupId)))
                            })]
             return ("Warning",
                     "You can't write to group '\(groupName)' anymore. What would you like to do?",

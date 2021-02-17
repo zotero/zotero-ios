@@ -36,6 +36,7 @@
 "report" = "Report";
 "total" = "Total";
 "cache" = "Cache";
+"restore" = "Restore";
 
 "day_suffixes" = "st,nd,rd,th";
 
@@ -82,6 +83,8 @@
 "sync_toolbar.object.items" = "items";
 "sync_toolbar.object.searches" = "searches";
 
+"sync.conflict_resolution.changed_item_deleted" = "Item \"%@\" has been removed. Do you want to keep your changes?";
+
 "items.search_title" = "Search Items";
 "items.select" = "Select";
 "items.select_all" = "Select All";
@@ -101,7 +104,6 @@
 "items.trash_multiple_question" = "Are you sure you want to move selected items to the Trash?";
 "items.delete_question" = "Are you sure you want to delete the selected item?";
 "items.delete_multiple_question" = "Are you sure you want to delete selected items?";
-"items.restore_title" = "Restore";
 "items.restore_question" = "Are you sure you want to restore the selected item?";
 "items.restore_multiple_question" = "Are you sure you want to restore selected items?";
 "items.remove_from_collection_title" = "Remove from Collection";

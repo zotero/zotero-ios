@@ -18,6 +18,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     let items: [String]
     let searches: [String]
     let tags: [String]
+    let ignoreConflicts: Bool
 
     var needsWrite: Bool { return true }
 
@@ -37,7 +38,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
 
-            if let title = object.selfOrChildTitleIfChanged {
+            if !self.ignoreConflicts, let title = object.selfOrChildTitleIfChanged {
                 // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
                 conflicts.append((object.key, title))
                 continue

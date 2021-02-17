@@ -18,13 +18,14 @@ struct PerformDeletionsSyncAction: SyncAction {
     let items: [String]
     let searches: [String]
     let tags: [String]
+    let ignoreConflicts: Bool
 
     unowned let dbStorage: DbStorage
 
     var result: Single<[(String, String)]> {
         return Single.create { subscriber -> Disposable in
             do {
-                let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags)
+                let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags, ignoreConflicts: self.ignoreConflicts)
                 let conflicts = try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(conflicts))
             } catch let error {

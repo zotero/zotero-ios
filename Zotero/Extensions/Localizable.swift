@@ -56,6 +56,8 @@ internal enum L10n {
   internal static let publisher = L10n.tr("Localizable", "publisher")
   /// Report
   internal static let report = L10n.tr("Localizable", "report")
+  /// Restore
+  internal static let restore = L10n.tr("Localizable", "restore")
   /// Retry
   internal static let retry = L10n.tr("Localizable", "retry")
   /// Save
@@ -280,8 +282,6 @@ internal enum L10n {
     internal static let restoreMultipleQuestion = L10n.tr("Localizable", "items.restore_multiple_question")
     /// Are you sure you want to restore the selected item?
     internal static let restoreQuestion = L10n.tr("Localizable", "items.restore_question")
-    /// Restore
-    internal static let restoreTitle = L10n.tr("Localizable", "items.restore_title")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title")
     /// Select
@@ -499,6 +499,15 @@ internal enum L10n {
       /// Translating with: "%@"
       internal static func translatingWith(_ p1: Any) -> String {
         return L10n.tr("Localizable", "shareext.translation.translating_with", String(describing: p1))
+      }
+    }
+  }
+
+  internal enum Sync {
+    internal enum ConflictResolution {
+      /// Item "%@" has been removed. Do you want to keep your changes?
+      internal static func changedItemDeleted(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "sync.conflict_resolution.changed_item_deleted", String(describing: p1))
       }
     }
   }

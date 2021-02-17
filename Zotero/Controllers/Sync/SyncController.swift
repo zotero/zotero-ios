@@ -81,7 +81,7 @@ final class SyncController: SynchronizationController {
         /// Load deletions of objects in library. If an object is currently being edited by user, we need to ask for permissions or alert the user.
         case syncDeletions(LibraryIdentifier, Int)
         /// Performs deletions on objects.
-        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String])
+        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], ignoreConflicts: Bool)
         /// Restores remote deletions
         case restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String])
         /// Stores version for deletions in given library.
@@ -474,8 +474,8 @@ final class SyncController: SynchronizationController {
         case .syncDeletions(let libraryId, let version):
             self.progressHandler.reportDeletions(for: libraryId)
             self.processDeletionsSync(libraryId: libraryId, since: version)
-        case .performDeletions(let libraryId, let collections, let items, let searches, let tags):
-            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags)
+        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let ignoreConflicts):
+            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, ignoreConflicts: ignoreConflicts)
         case .restoreDeletions(let libraryId, let collections, let items):
             self.restoreDeletions(libraryId: libraryId, collections: collections, items: items)
         case .storeDeletionVersion(let libraryId, let version):
@@ -529,19 +529,33 @@ final class SyncController: SynchronizationController {
         switch resolution {
         case .deleteGroup(let id):
             return [.deleteGroup(id)]
-        case .markChangesAsResolved(let id):
+
+        case .keepGroupChanges(let id):
             return [.markChangesAsResolved(id)]
+
         case .markGroupAsLocalOnly(let id):
             return [.markGroupAsLocalOnly(id)]
-        case .revertLibraryToOriginal(let id):
+
+        case .revertGroupChanges(let id):
             return [.revertLibraryToOriginal(id)]
-        case .remoteDeletion(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags):
+
+        case .remoteDeletionOfActiveObject(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags):
             var actions: [Action] = []
             if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty {
-                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags))
+                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags, ignoreConflicts: false))
             }
             if !toRestoreCollections.isEmpty || !toRestoreItems.isEmpty {
                 actions.append(.restoreDeletions(libraryId: libraryId, collections: toRestoreCollections, items: toRestoreItems))
+            }
+            return actions
+
+        case .remoteDeletionOfChangedItem(let libraryId, let toDelete, let toRestore):
+            var actions: [Action] = []
+            if !toDelete.isEmpty {
+                actions.append(.performDeletions(libraryId: libraryId, collections: [], items: toDelete, searches: [], tags: [], ignoreConflicts: true))
+            }
+            if !toRestore.isEmpty {
+                actions.append(.restoreDeletions(libraryId: libraryId, collections: [], items: toRestore))
             }
             return actions
         }
@@ -1062,8 +1076,8 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String]) {
-        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, dbStorage: self.dbStorage).result
+    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], ignoreConflicts: Bool) {
+        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, ignoreConflicts: ignoreConflicts, dbStorage: self.dbStorage).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] conflicts in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
@@ -1540,7 +1554,7 @@ fileprivate extension SyncController.Action {
         case .syncVersions(let libraryId, _, _, _),
              .storeVersion(_, let libraryId, _),
              .syncDeletions(let libraryId, _),
-             .performDeletions(let libraryId, _, _, _, _),
+             .performDeletions(let libraryId, _, _, _, _, _),
              .restoreDeletions(let libraryId, _, _),
              .storeDeletionVersion(let libraryId, _),
              .syncSettings(let libraryId, _),

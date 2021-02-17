@@ -8,8 +8,8 @@
 
 import Foundation
 
-struct ActiveObjectDeletedConflictHandler: ConflictHandler {
-    let receiverAction: ConflictQueueAction
+struct ActiveObjectDeletedConflictReceiverHandler: ConflictReceiverAlertHandler {
+    let receiverAction: ConflictReceiverAlertAction
     let completion: () -> Void
 
     init(collections: [String], items: [String], libraryId: LibraryIdentifier, completion: @escaping ([String], [String], [String], [String]) -> Void) {
