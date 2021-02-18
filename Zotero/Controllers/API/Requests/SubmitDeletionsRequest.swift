@@ -36,6 +36,8 @@ struct SubmitDeletionsRequest: ApiRequest {
             return ["itemKey": joinedKeys]
         case .search:
             return ["searchKey": joinedKeys]
+        case .settings:
+            return nil
         }
     }
 

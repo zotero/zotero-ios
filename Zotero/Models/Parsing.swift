@@ -10,6 +10,7 @@ import Foundation
 
 struct Parsing {
     enum Error: Swift.Error {
+        case incompatibleValue(String)
         case missingKey(String)
         case notArray
         case notDictionary

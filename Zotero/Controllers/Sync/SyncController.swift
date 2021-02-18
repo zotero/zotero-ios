@@ -88,8 +88,6 @@ final class SyncController: SynchronizationController {
         case storeDeletionVersion(libraryId: LibraryIdentifier, version: Int)
         /// Synchronize settings for library.
         case syncSettings(LibraryIdentifier, Int)
-        /// Store new version for settings in library.
-        case storeSettingsVersion(Int, LibraryIdentifier)
         /// Submit local changes to backend.
         case submitWriteBatch(WriteBatch)
         /// Upload local attachment to backend.
@@ -483,8 +481,6 @@ final class SyncController: SynchronizationController {
         case .syncSettings(let libraryId, let version):
             self.progressHandler.reportLibrarySync(for: libraryId)
             self.processSettingsSync(for: libraryId, since: version)
-        case .storeSettingsVersion(let version, let libraryId):
-            self.processStoreVersion(libraryId: libraryId, type: .settings, version: version)
         case .submitWriteBatch(let batch):
             self.processSubmitUpdate(for: batch)
         case .uploadAttachment(let upload):
@@ -1151,7 +1147,7 @@ final class SyncController: SynchronizationController {
         case .success(let (hasNewSettings, version)):
             self.lastReturnedVersion = version
             if hasNewSettings {
-                self.enqueue(actions: [.storeSettingsVersion(version, libraryId)], at: 0)
+                self.enqueue(actions: [.storeVersion(version, libraryId, .settings)], at: 0)
             } else {
                 self.processNextAction()
             }
@@ -1558,7 +1554,6 @@ fileprivate extension SyncController.Action {
              .restoreDeletions(let libraryId, _, _),
              .storeDeletionVersion(let libraryId, _),
              .syncSettings(let libraryId, _),
-             .storeSettingsVersion(_, let libraryId),
              .markChangesAsResolved(let libraryId),
              .revertLibraryToOriginal(let libraryId),
              .createUploadActions(let libraryId):
@@ -1570,7 +1565,7 @@ fileprivate extension SyncController.Action {
         switch self {
         case .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncDeletions:
             return true
-        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions,
              .storeVersion, .submitDeleteBatch, .submitWriteBatch, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal, .uploadAttachment,
              .createUploadActions, .syncGroupVersions, .syncGroupToDb, .syncBatchesToDb, .performDeletions, .restoreDeletions,
@@ -1583,7 +1578,7 @@ fileprivate extension SyncController.Action {
         switch self {
         case .submitDeleteBatch, .submitWriteBatch, .uploadAttachment:
             return true
-        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions,
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission, .syncGroupVersions,
@@ -1600,7 +1595,7 @@ fileprivate extension SyncController.Action {
             return "Write \(batch.parameters.count) changes for \(batch.object) in \(batch.libraryId.debugName)\n\(batch.parameters)"
         case .uploadAttachment(let upload):
             return "Upload \(upload.filename) (\(upload.contentType)) in \(upload.libraryId.debugName)\n\(upload.file.createUrl().absoluteString)"
-        case .loadKeyPermissions, .createLibraryActions, .storeSettingsVersion, .syncSettings, .syncVersions,
+        case .loadKeyPermissions, .createLibraryActions, .syncSettings, .syncVersions,
              .storeVersion, .syncDeletions, .deleteGroup,
              .markChangesAsResolved, .markGroupAsLocalOnly, .revertLibraryToOriginal,
              .createUploadActions, .resolveDeletedGroup, .resolveGroupMetadataWritePermission,

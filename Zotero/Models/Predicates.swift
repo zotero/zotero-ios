@@ -112,6 +112,11 @@ extension NSPredicate {
         return NSPredicate(format: "rawChangeType = %d", UpdatableChangeType.user.rawValue)
     }
 
+    static func changes(in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.changed,
+                                                                   .library(with: libraryId)])
+    }
+
     static func changesWithoutDeletions(in libraryId: LibraryIdentifier) -> NSPredicate {
         return NSCompoundPredicate(andPredicateWithSubpredicates: [.changed,
                                                                    .library(with: libraryId),

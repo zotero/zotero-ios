@@ -152,7 +152,7 @@ final class SyncBatchProcessor {
             return (failedKeys, errors, [])
 
         case .search:
-        let (searches, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: { try SearchResponse(response: $0) })
+            let (searches, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: { try SearchResponse(response: $0) })
 
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .search, libraryId: libraryId)
@@ -178,6 +178,9 @@ final class SyncBatchProcessor {
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
             return (failedKeys, errors, conflicts)
+
+        case .settings:
+            return ([], [], [])
         }
     }
 

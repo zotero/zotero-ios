@@ -33,6 +33,7 @@ struct LibraryData {
         appendBatch(.collection)
         appendBatch(.search)
         appendBatch(.item)
+        appendBatch(.settings)
 
         return batches
     }

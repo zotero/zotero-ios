@@ -13,7 +13,6 @@ import RealmSwift
 enum UpdateVersionType {
     case object(SyncObject)
     case deletions
-    case settings
 }
 
 struct UpdateVersionsDbRequest: DbRequest {
@@ -48,8 +47,6 @@ struct UpdateVersionsDbRequest: DbRequest {
 
     private func update(versions: RVersions, type: UpdateVersionType, version: Int) throws {
         switch type {
-        case .settings:
-            versions.settings = version
         case .deletions:
             versions.deletions = version
         case .object(let object):
@@ -62,6 +59,8 @@ struct UpdateVersionsDbRequest: DbRequest {
                 versions.trash = version
             case .search:
                 versions.searches = version
+            case .settings:
+                versions.settings = version
             }
         }
     }

@@ -70,6 +70,8 @@ struct Files {
             objectName = "item"
         case .search:
             objectName = "search"
+        case .settings:
+            objectName = "settings"
         }
         return FileData(rootPath: Files.appGroupPath, relativeComponents: ["jsons"],
                         name: "\(libraryId.folderName)_\(objectName)_\(key)", ext: "json")

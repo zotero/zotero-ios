@@ -108,6 +108,7 @@ extension RSearch: Updatable {
     }
 
     var selfOrChildTitleIfChanged: String? {
+        guard self.isChanged else { return nil }
         return self.name
     }
 }
@@ -228,5 +229,26 @@ extension RCreator {
             parameters["lastName"] = self.lastName
         }
         return parameters
+    }
+}
+
+extension RPageIndex: Updatable {
+    var updateParameters: [String : Any]? {
+        guard let libraryId = self.libraryId else { return nil }
+        
+        let libraryPart: String
+        switch libraryId {
+        case .custom:
+            libraryPart = "u"
+        case .group(let groupId):
+            libraryPart = "g\(groupId)"
+        }
+
+        return ["lastPageIndex_\(libraryPart)_\(self.key)": ["value": self.index]]
+    }
+
+    var selfOrChildTitleIfChanged: String? {
+        guard self.isChanged else { return nil }
+        return "\(self.index)"
     }
 }

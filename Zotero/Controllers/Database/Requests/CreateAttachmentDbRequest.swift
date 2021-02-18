@@ -40,11 +40,7 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
 
         // Fields
 
-        var attachmentKeys = FieldKeys.Item.Attachment.fieldKeys
-        // PDFs require extra fields for annotation import and page sync
-        if case .file(let file, _, _, _) = self.attachment.contentType, file.mimeType == "application/pdf" {
-            attachmentKeys.append(FieldKeys.Item.Attachment.page)
-        }
+        let attachmentKeys = FieldKeys.Item.Attachment.fieldKeys
 
         for fieldKey in attachmentKeys {
             let value: String
@@ -108,8 +104,6 @@ struct CreateAttachmentDbRequest: DbResponseRequest {
                 } else {
                     continue
                 }
-            case FieldKeys.Item.Attachment.page:
-                value = "0"
             default: continue
             }
 

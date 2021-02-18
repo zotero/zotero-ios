@@ -10,6 +10,22 @@ import Foundation
 
 import RealmSwift
 
+struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
+    typealias Response = [[String: Any]]
+
+    let libraryId: LibraryIdentifier
+
+    var needsWrite: Bool {
+        return false
+    }
+
+    func process(in database: Realm) throws -> [[String : Any]] {
+        return database.objects(RPageIndex.self)
+                       .filter(.changes(in: self.libraryId))
+                       .compactMap({ $0.updateParameters })
+    }
+}
+
 struct ReadUpdatedSearchUpdateParametersDbRequest: DbResponseRequest {
     typealias Response = [[String: Any]]
 

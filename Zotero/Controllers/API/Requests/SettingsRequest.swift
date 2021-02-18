@@ -8,9 +8,7 @@
 
 import Foundation
 
-struct SettingsRequest: ApiResponseRequest {
-    typealias Response = SettingsResponse
-
+struct SettingsRequest: ApiRequest {
     let libraryId: LibraryIdentifier
     let userId: Int
     let version: Int

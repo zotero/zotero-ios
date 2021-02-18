@@ -19,27 +19,19 @@ struct StorePageForItemDbRequest: DbRequest {
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws {
-        guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first else { return }
+        let pageIndex: RPageIndex
 
-        if let pageField = item.fields.filter(.key(FieldKeys.Item.Attachment.page)).first {
-            guard Int(pageField.value) != self.page else { return }
-
-            pageField.value = "\(self.page)"
-            pageField.changed = true
-            item.changedFields.insert(.fields)
-            item.changeType = .user
-
-            return
+        if let existing = database.objects(RPageIndex.self).filter(.key(self.key, in: self.libraryId)).first {
+            pageIndex = existing
+        } else {
+            pageIndex = RPageIndex()
+            database.add(pageIndex)
+            pageIndex.key = self.key
+            pageIndex.libraryId = self.libraryId
         }
 
-        let pageField = RItemField()
-        pageField.key = FieldKeys.Item.Attachment.page
-        pageField.value = "\(self.page)"
-        pageField.changed = true
-        database.add(pageField)
-
-        pageField.item = item
-        item.changedFields.insert(.fields)
-        item.changeType = .user
+        pageIndex.index = self.page
+        pageIndex.changedFields = .index
+        pageIndex.changeType = .user
     }
 }

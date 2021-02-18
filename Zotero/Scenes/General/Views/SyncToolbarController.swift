@@ -183,6 +183,8 @@ final class SyncToolbarController {
             return L10n.SyncToolbar.Object.items
         case .search:
             return L10n.SyncToolbar.Object.searches
+        case .settings:
+            return ""
         }
     }
 }

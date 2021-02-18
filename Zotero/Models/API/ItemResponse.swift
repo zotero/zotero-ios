@@ -350,8 +350,7 @@ struct ItemResponse {
                  FieldKeys.Item.Attachment.filename,
                  FieldKeys.Item.Attachment.linkMode,
                  FieldKeys.Item.Attachment.charset,
-                 FieldKeys.Item.Attachment.path,
-                 FieldKeys.Item.Attachment.page:
+                 FieldKeys.Item.Attachment.path:
                 return true
             default:
                 return false

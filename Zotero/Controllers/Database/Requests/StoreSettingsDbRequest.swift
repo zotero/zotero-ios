@@ -19,21 +19,45 @@ struct StoreSettingsDbRequest: DbRequest {
     }
 
     func process(in database: Realm) throws {
-        guard let colors = self.response.tagColors else { return }
+        if let response = self.response.tagColors {
+            self.syncTags(tags: response.value, in: database)
+        }
+        self.syncPages(pages: self.response.pageIndices.indices, in: database)
+    }
 
-        let allTags = database.objects(RTag.self)
-        
-        colors.value.forEach { tagColor in
-            let tag: RTag
-            if let existing = allTags.filter(.name(tagColor.name, in: self.libraryId)).first {
-                tag = existing
+    private func syncPages(pages: [PageIndexResponse], in database: Realm) {
+        let indices = database.objects(RPageIndex.self).filter(.library(with: self.libraryId))
+
+        pages.forEach { index in
+            let rIndex: RPageIndex
+            if let existing = indices.filter(.key(index.key)).first {
+                rIndex = existing
             } else {
-                tag = RTag()
-                database.add(tag)
-                tag.name = tagColor.name
-                tag.libraryId = libraryId
+                rIndex = RPageIndex()
+                database.add(rIndex)
+                rIndex.key = index.key
+                rIndex.libraryId = self.libraryId
             }
-            tag.color = tagColor.color
+            rIndex.index = index.value
+            rIndex.version = index.version
+            rIndex.resetChanges()
+        }
+    }
+
+    private func syncTags(tags: [TagColorResponse], in database: Realm) {
+        let allTags = database.objects(RTag.self)
+
+        tags.forEach { tag in
+            let rTag: RTag
+            if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
+                rTag = existing
+            } else {
+                rTag = RTag()
+                database.add(rTag)
+                rTag.name = tag.name
+                rTag.libraryId = self.libraryId
+            }
+            rTag.color = tag.color
         }
     }
 }

@@ -23,6 +23,7 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
     private var collectionsToken: NotificationToken?
     private var itemsToken: NotificationToken?
     private var searchesToken: NotificationToken?
+    private var pagesToken: NotificationToken?
 
     init(dbStorage: DbStorage) {
         self.dbStorage = dbStorage
@@ -36,6 +37,7 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
             self.collectionsToken = try self.registerObserver(for: RCollection.self, coordinator: coordinator)
             self.itemsToken = try self.registerObserver(for: RItem.self, coordinator: coordinator)
             self.searchesToken = try self.registerObserver(for: RSearch.self, coordinator: coordinator)
+            self.pagesToken = try self.registerObserver(for: RPageIndex.self, coordinator: coordinator)
         } catch let error {
             DDLogError("RealmObjectChangeObserver: can't load objects to observe - \(error)")
         }

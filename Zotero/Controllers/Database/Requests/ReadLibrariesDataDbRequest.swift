@@ -82,9 +82,11 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         guard self.fetchUpdates else { return ([:], false) }
         let chunkSize = WriteBatch.maxCount
         let (itemParams, hasUpload) = try ReadUpdatedItemUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
+        let settings = try ReadUpdatedSettingsUpdateParametersDbRequest(libraryId: libraryId).process(in: database)
         return ([.collection: try ReadUpdatedCollectionUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
                  .search: try ReadUpdatedSearchUpdateParametersDbRequest(libraryId: libraryId).process(in: database).chunked(into: chunkSize),
-                 .item: itemParams.chunked(into: chunkSize)],
+                 .item: itemParams.chunked(into: chunkSize),
+                 .settings: (settings.isEmpty ? [] : [settings])],
                 hasUpload)
     }
 }

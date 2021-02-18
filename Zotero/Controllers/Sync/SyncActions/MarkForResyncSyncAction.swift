@@ -33,6 +33,9 @@ struct MarkForResyncSyncAction: SyncAction {
                 case .search:
                     let request = try MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
                     try self.dbStorage.createCoordinator().perform(request: request)
+                case .settings:
+                    let request = try MarkForResyncDbAction<RPageIndex>(libraryId: self.libraryId, keys: self.keys)
+                    try self.dbStorage.createCoordinator().perform(request: request)
                 }
                 subscriber(.success(()))
             } catch let error {

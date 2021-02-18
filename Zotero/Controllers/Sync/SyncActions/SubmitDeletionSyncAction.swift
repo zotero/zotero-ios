@@ -43,6 +43,7 @@ struct SubmitDeletionSyncAction: SyncAction {
                                     case .search:
                                         let request = DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId)
                                         try coordinator.perform(request: request)
+                                    case .settings: break
                                     }
 
                                     let newVersion = headers.lastModifiedVersion

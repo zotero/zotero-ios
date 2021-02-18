@@ -66,6 +66,11 @@ struct SubmitUpdateSyncAction: SyncAction {
                                                                                             keys: syncedKeys,
                                                                                             version: response.newVersion)
                                         try coordinator.perform(request: request)
+                                     case .settings:
+                                        let request = MarkObjectsAsSyncedDbRequest<RPageIndex>(libraryId: self.libraryId,
+                                                                                            keys: syncedKeys,
+                                                                                            version: response.newVersion)
+                                        try coordinator.perform(request: request)
                                      }
 
                                      let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,

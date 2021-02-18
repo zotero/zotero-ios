@@ -72,3 +72,4 @@ extension Syncable {
 extension RCollection: Syncable {}
 extension RItem: Syncable {}
 extension RSearch: Syncable {}
+extension RPageIndex: Syncable {}

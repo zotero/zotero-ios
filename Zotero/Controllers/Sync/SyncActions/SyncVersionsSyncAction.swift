@@ -47,6 +47,8 @@ struct SyncVersionsSyncAction: SyncAction {
         case .search:
             return self.synchronizeVersions(for: RSearch.self, libraryId: self.libraryId, userId: self.userId, object: self.object,
                                             since: self.sinceVersion, current: self.currentVersion, syncType: self.syncType)
+        case .settings:
+            return Single.just((0, []))
         }
     }
 
