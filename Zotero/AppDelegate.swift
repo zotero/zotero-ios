@@ -32,13 +32,11 @@ final class AppDelegate: UIResponder {
         let logger = DDOSLogger.sharedInstance
         logger.logFormatter = DebugLogFormatter(targetName: "Zotero")
         DDLog.add(logger)
+        #endif
 
         // Change to .info to enable server logging
         // Change to .warning/.error to disable server logging
         dynamicLogLevel = .info
-        #else
-        dynamicLogLevel = .off
-        #endif
     }
 
     private func setupAppearance() {
