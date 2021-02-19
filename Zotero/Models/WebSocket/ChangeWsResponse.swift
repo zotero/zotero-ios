@@ -10,7 +10,7 @@ import Foundation
 
 struct ChangeWsResponse {
     enum Kind {
-        case library(LibraryIdentifier)
+        case library(LibraryIdentifier, Int?)
         case translators
     }
 
@@ -23,7 +23,8 @@ struct ChangeWsResponse {
 
 extension ChangeWsResponse: Decodable {
     enum Keys: String, CodingKey {
-        case topic = "topic"
+        case topic
+        case version
     }
 
     init(from decoder: Decoder) throws {
@@ -36,7 +37,8 @@ extension ChangeWsResponse: Decodable {
         }
 
         if let libraryId = LibraryIdentifier.from(apiPath: topic) {
-            self.init(type: .library(libraryId))
+            let version = try? container.decode(Int.self, forKey: .version)
+            self.init(type: .library(libraryId, version))
             return
         }
 

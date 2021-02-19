@@ -61,6 +61,7 @@ final class WebSocketController {
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let queue: DispatchQueue
+    private unowned let dbStorage: DbStorage
     let observable: PublishSubject<ChangeWsResponse.Kind>
 
     private var apiKey: String?
@@ -70,7 +71,8 @@ final class WebSocketController {
     private var connectionRetryCount: Int
     private var connectionTimer: BackgroundTimer?
 
-    init() {
+    init(dbStorage: DbStorage) {
+        self.dbStorage = dbStorage
         self.connectionState = BehaviorRelay(value: .disconnected)
         self.connectionRetryCount = 0
         self.responseListeners = [:]
@@ -249,8 +251,6 @@ final class WebSocketController {
         })
     }
 
-    // MARK: - Event processing
-
     // MARK: - Helpers
 
     /// Handles received websocket event.
@@ -291,9 +291,8 @@ final class WebSocketController {
 
             switch event {
             case .topicAdded, .topicRemoved, .topicUpdated:
-                if let changeResponse = (try? self.jsonDecoder.decode(ChangeWsResponse.self, from: data)) {
-                    self.observable.on(.next(changeResponse.type))
-                }
+                guard let changeResponse = (try? self.jsonDecoder.decode(ChangeWsResponse.self, from: data)) else { return }
+                self.publishChangeIfNeeded(response: changeResponse)
 
             case .connected, .subscriptionCreated, .subscriptionDeleted: break
             }
@@ -301,6 +300,30 @@ final class WebSocketController {
         } catch let error {
             let message = String(data: data, encoding: .utf8) ?? ""
             DDLogError("WebSocketController: received unknown message - \(error). Original message: \(message)")
+        }
+    }
+
+    private func publishChangeIfNeeded(response: ChangeWsResponse) {
+        switch response.type {
+        case .translators:
+            self.observable.on(.next(response.type))
+
+        case .library(let libraryId, let version):
+            guard let version = version else {
+                // If version was not received in message, publish change.
+                self.observable.on(.next(response.type))
+                return
+            }
+
+            // If version was received in message, check whether it's higher than local one.
+
+            do {
+                let localVersion = try self.dbStorage.createCoordinator().perform(request: ReadVersionDbRequest(libraryId: libraryId))
+                guard localVersion < version else { return }
+                self.observable.on(.next(response.type))
+            } catch let error {
+                DDLogWarn("WebSocketController: can't read version for received message - \(error)")
+            }
         }
     }
 

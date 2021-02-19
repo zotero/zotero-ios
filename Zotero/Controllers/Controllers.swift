@@ -202,7 +202,7 @@ final class UserControllers {
                                             syncDelayIntervals: DelayIntervals.sync,
                                             conflictDelays: DelayIntervals.conflict)
         let fileDownloader = FileDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
-        let webSocketController = WebSocketController()
+        let webSocketController = WebSocketController(dbStorage: dbStorage)
 
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
@@ -250,8 +250,8 @@ final class UserControllers {
                 switch change {
                 case .translators:
                     self?.translatorsController.updateFromRepo(type: .notification)
-                case .library(let libraryId):
-                    self?.syncScheduler.webSocketUpdate(libraries: [libraryId])
+                case .library(let libraryId, _):
+                    self?.syncScheduler.webSocketUpdate(libraryId: libraryId)
                 }
             })
             .disposed(by: self.disposeBag)
