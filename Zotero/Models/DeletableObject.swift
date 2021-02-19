@@ -59,11 +59,17 @@ extension RItem: Deletable {
         // Cleanup leftover files
         switch self.rawType {
         case ItemTypes.attachment:
+            self.deletePageIndex(in: database)
             self.cleanupAttachmentFiles()
         case ItemTypes.annotation:
             self.cleanupAnnotationFiles()
         default: break
         }
+    }
+
+    private func deletePageIndex(in database: Realm) {
+        guard let libraryId = self.libraryId, let pageIndex = database.objects(RPageIndex.self).filter(.key(self.key, in: libraryId)).first else { return }
+        database.delete(pageIndex)
     }
 
     private func cleanupAnnotationFiles() {
