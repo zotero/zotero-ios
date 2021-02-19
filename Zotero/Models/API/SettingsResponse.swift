@@ -33,6 +33,7 @@ struct PageIndexResponse {
     let key: String
     let value: Int
     let version: Int
+    let libraryId: LibraryIdentifier
 
     init?(key: String, data: Any) throws {
         guard key.contains("lastPageIndex") else { return nil }
@@ -43,9 +44,25 @@ struct PageIndexResponse {
         let parts = key.split(separator: "_")
         guard parts.count == 3 else { throw Parsing.Error.incompatibleValue(key) }
 
+        let libraryPart = parts[1]
+        let libraryId: LibraryIdentifier
+
+        switch libraryPart[libraryPart.startIndex] {
+        case "u":
+            libraryId = .custom(.myLibrary)
+        case "g":
+            guard let groupId = Int(libraryPart[libraryPart.index(libraryPart.startIndex, offsetBy: 1)..<libraryPart.endIndex]) else {
+                throw Parsing.Error.incompatibleValue("groupId=\(libraryPart)")
+            }
+            libraryId = .group(groupId)
+        default:
+            throw Parsing.Error.incompatibleValue("libraryPart=\(libraryPart)")
+        }
+
         self.key = String(parts[2])
         self.value = try Parsing.parse(key: "value", from: dictionary)
         self.version = try Parsing.parse(key: "version", from: dictionary)
+        self.libraryId = libraryId
     }
 }
 

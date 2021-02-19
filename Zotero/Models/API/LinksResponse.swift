@@ -24,13 +24,13 @@ struct LinksResponse {
 
 struct LinkResponse {
     let href: String
-    let type: String
+    let type: String?
     let title: String?
     let length: Int?
 
     init(response: [String: Any]) throws {
         self.href = try response.apiGet(key: "href")
-        self.type = try response.apiGet(key: "type")
+        self.type = response["type"] as? String
         self.title = response["title"] as? String
         self.length = response["length"] as? Int
     }

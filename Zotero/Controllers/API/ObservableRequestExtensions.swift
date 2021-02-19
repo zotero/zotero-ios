@@ -29,7 +29,7 @@ fileprivate struct ApiLogger {
         DDLogInfo("--- API request '\(type(of: request))' ---")
         DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
         if let params = request.parameters {
-            DDLogInfo("\(request.redact(parameters: params))")
+            DDLogInfo("(\(request.encoding)) \(request.redact(parameters: params))")
         }
     }
 

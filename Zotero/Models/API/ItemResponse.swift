@@ -116,7 +116,7 @@ struct ItemResponse {
         if rawType == ItemTypes.attachment,
            let linkMode = self.fields[FieldKeys.Item.Attachment.linkMode].flatMap({ LinkMode(rawValue: $0) }),
            linkMode == .embeddedImage && self.parentKey == nil {
-            throw SchemaError.embeddedImageMissingParent(key: key)
+            throw SchemaError.embeddedImageMissingParent(key: key, libraryId: library.libraryId ?? .custom(.myLibrary))
         }
     }
 

@@ -333,7 +333,7 @@ struct StoreItemsDbRequest: DbResponseRequest {
     private func syncLink(data: LinkResponse, type: String, item: RItem, database: Realm) {
         let link = RLink()
         link.type = type
-        link.contentType = data.type
+        link.contentType = data.type ?? ""
         link.href = data.href
         link.title = data.title ?? ""
         link.length = data.length ?? 0

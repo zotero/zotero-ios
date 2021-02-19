@@ -19,5 +19,5 @@ enum SchemaError: Error {
     case unknownField(key: String, field: String)
     case missingField(key: String, field: String, itemType: String)
     case invalidValue(value: String, field: String, key: String)
-    case embeddedImageMissingParent(key: String)
+    case embeddedImageMissingParent(key: String, libraryId: LibraryIdentifier)
 }

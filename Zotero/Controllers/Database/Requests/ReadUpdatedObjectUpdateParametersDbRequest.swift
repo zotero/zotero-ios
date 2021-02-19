@@ -20,9 +20,13 @@ struct ReadUpdatedSettingsUpdateParametersDbRequest: DbResponseRequest {
     }
 
     func process(in database: Realm) throws -> [[String : Any]] {
-        return database.objects(RPageIndex.self)
-                       .filter(.changes(in: self.libraryId))
-                       .compactMap({ $0.updateParameters })
+        // Page indices are sent only for user library, even though they are assigned to groups also.
+        switch self.libraryId {
+        case .group:
+            return []
+        case .custom:
+            return database.objects(RPageIndex.self).filter(.changed).compactMap({ $0.updateParameters })
+        }
     }
 }
 

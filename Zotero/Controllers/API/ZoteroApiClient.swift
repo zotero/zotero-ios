@@ -19,7 +19,7 @@ struct ApiConstants {
 }
 
 enum ZoteroApiError: Error {
-    case unchanged(version: Int)
+    case unchanged
 }
 
 final class ZoteroApiClient: ApiClient {
@@ -55,8 +55,7 @@ final class ZoteroApiClient: ApiClient {
                               .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
                                   do {
                                       if response.statusCode == 304 {
-                                          let version = request.headers?["If-Modified-Since-Version"].flatMap(Int.init) ?? 0
-                                          return Observable.error(ZoteroApiError.unchanged(version: version))
+                                          return Observable.error(ZoteroApiError.unchanged)
                                       }
 
                                       let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
@@ -81,8 +80,7 @@ final class ZoteroApiClient: ApiClient {
                               .retryIfNeeded()
                               .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
                                   if response.statusCode == 304 {
-                                      let version = response.allHeaderFields.lastModifiedVersion
-                                      return Observable.error(ZoteroApiError.unchanged(version: version))
+                                      return Observable.error(ZoteroApiError.unchanged)
                                   }
 
                                   return Observable.just((data, response.allHeaderFields))

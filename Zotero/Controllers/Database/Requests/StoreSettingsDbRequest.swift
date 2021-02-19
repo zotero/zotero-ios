@@ -26,6 +26,12 @@ struct StoreSettingsDbRequest: DbRequest {
     }
 
     private func syncPages(pages: [PageIndexResponse], in database: Realm) {
+        // Pages should be returned only by user library, just to be sure, let's ignore group sync
+        switch self.libraryId {
+        case .group: return
+        case .custom: break
+        }
+
         let indices = database.objects(RPageIndex.self).filter(.library(with: self.libraryId))
 
         pages.forEach { index in
@@ -36,7 +42,7 @@ struct StoreSettingsDbRequest: DbRequest {
                 rIndex = RPageIndex()
                 database.add(rIndex)
                 rIndex.key = index.key
-                rIndex.libraryId = self.libraryId
+                rIndex.libraryId = index.libraryId
             }
             rIndex.index = index.value
             rIndex.version = index.version

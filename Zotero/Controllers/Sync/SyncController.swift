@@ -298,6 +298,7 @@ final class SyncController: SynchronizationController {
 
     /// Cleans up helper variables for current sync.
     private func cleanup() {
+        DDLogInfo("Cleanup")
         self.processingAction = nil
         self.queue = []
         self.nonFatalErrors = []
@@ -424,6 +425,7 @@ final class SyncController: SynchronizationController {
 
         // Library is changing, reset "lastReturnedVersion"
         if self.lastReturnedVersion != nil && action.libraryId != self.processingAction?.libraryId {
+            DDLogInfo("Library changed, clear version")
             self.lastReturnedVersion = nil
         }
 
@@ -837,7 +839,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishFailedSyncVersions(libraryId: libraryId, object: object, error: error)
+                      self?.finishFailedSyncVersions(libraryId: libraryId, object: object, error: error, version: version)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -881,8 +883,8 @@ final class SyncController: SynchronizationController {
         return batches
     }
 
-    private func finishFailedSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, error: Error) {
-        if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
+    private func finishFailedSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, error: Error, version: Int) {
+        if self.handleUnchangedFailureIfNeeded(for: error, lastVersion: version, libraryId: libraryId) { return }
 
         switch self.syncError(from: error) {
         case .fatal(let error):
@@ -1066,7 +1068,7 @@ final class SyncController: SynchronizationController {
                   self?.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
+                      self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId, version: sinceVersion)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -1087,7 +1089,7 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func finishDeletionsSync(result: Result<[(String, String)], Error>, libraryId: LibraryIdentifier) {
+    private func finishDeletionsSync(result: Result<[(String, String)], Error>, libraryId: LibraryIdentifier, version: Int? = nil) {
         switch result {
         case .success(let conflicts):
             if !conflicts.isEmpty {
@@ -1097,7 +1099,7 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
+            if let version = version, self.handleUnchangedFailureIfNeeded(for: error, lastVersion: version, libraryId: libraryId) { return }
 
             switch self.syncError(from: error) {
             case .fatal(let error):
@@ -1132,19 +1134,20 @@ final class SyncController: SynchronizationController {
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishSettingsSync(result: .success(data), libraryId: libraryId)
+                      self?.finishSettingsSync(result: .success(data), libraryId: libraryId, version: version)
                   }
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishSettingsSync(result: .failure(error), libraryId: libraryId)
+                      self?.finishSettingsSync(result: .failure(error), libraryId: libraryId, version: version)
                   }
               })
               .disposed(by: self.disposeBag)
     }
 
-    private func finishSettingsSync(result: Result<(Bool, Int), Error>, libraryId: LibraryIdentifier) {
+    private func finishSettingsSync(result: Result<(Bool, Int), Error>, libraryId: LibraryIdentifier, version: Int) {
         switch result {
         case .success(let (hasNewSettings, version)):
+            DDLogInfo("Store version: \(version)")
             self.lastReturnedVersion = version
             if hasNewSettings {
                 self.enqueue(actions: [.storeVersion(version, libraryId, .settings)], at: 0)
@@ -1153,7 +1156,7 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            if self.handleUnchangedFailureIfNeeded(for: error, libraryId: libraryId) { return }
+            if self.handleUnchangedFailureIfNeeded(for: error, lastVersion: version, libraryId: libraryId) { return }
 
             switch self.syncError(from: error) {
             case .fatal(let error):
@@ -1488,11 +1491,13 @@ final class SyncController: SynchronizationController {
     /// However, some objects may be out of sync (if sync interrupted previously), so other object versions need to be checked. If other object
     /// versions match current version, they can be removed from sync, otherwise they need to sync anyway.
     /// - parameter error: Error to check.
+    /// - parameter version: Current version number which returned this error.
     /// - parameter libraryId: Identifier of current library, which is being synced.
     /// - returns: `true` if there was a unchanged error, `false` otherwise.
-    private func handleUnchangedFailureIfNeeded(for error: Error, libraryId: LibraryIdentifier) -> Bool {
-        guard case ZoteroApiError.unchanged(let lastVersion) = error else { return false }
+    private func handleUnchangedFailureIfNeeded(for error: Error, lastVersion: Int, libraryId: LibraryIdentifier) -> Bool {
+        guard case ZoteroApiError.unchanged = error else { return false }
 
+        DDLogInfo("Received unchanged error, store version: \(lastVersion)")
         self.lastReturnedVersion = lastVersion
 
         // If current sync type is `.all` we don't want to skip anything.

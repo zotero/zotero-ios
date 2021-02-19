@@ -37,14 +37,28 @@ final class RealmObjectUserChangeObserver: ObjectUserChangeObserver {
             self.collectionsToken = try self.registerObserver(for: RCollection.self, coordinator: coordinator)
             self.itemsToken = try self.registerObserver(for: RItem.self, coordinator: coordinator)
             self.searchesToken = try self.registerObserver(for: RSearch.self, coordinator: coordinator)
-            self.pagesToken = try self.registerObserver(for: RPageIndex.self, coordinator: coordinator)
+            self.pagesToken = try self.registerSettingsObserver(coordinator: coordinator)
         } catch let error {
             DDLogError("RealmObjectChangeObserver: can't load objects to observe - \(error)")
         }
     }
 
-    private func registerObserver<Obj: UpdatableObject&Syncable>(for: Obj.Type,
-                                                                 coordinator: DbCoordinator) throws -> NotificationToken {
+    private func registerSettingsObserver(coordinator: DbCoordinator) throws -> NotificationToken {
+        let objects = try coordinator.perform(request: ReadUserChangedObjectsDbRequest<RPageIndex>())
+        return objects.observe({ [weak self] changes in
+            switch changes {
+            case .update(_, _, let insertions, let modifications):
+                guard !insertions.isEmpty || !modifications.isEmpty else { return }
+                // Settings are always reported by user library, even if they belong to groups.
+                self?.observable.on(.next([.custom(.myLibrary)]))
+            case .initial: break // ignore the initial change, initially a full sync is performed anyway
+            case .error(let error):
+                DDLogError("RealmObjectChangeObserver: RPageIndex observing error - \(error)")
+            }
+        })
+    }
+
+    private func registerObserver<Obj: UpdatableObject&Syncable>(for: Obj.Type, coordinator: DbCoordinator) throws -> NotificationToken {
         let objects = try coordinator.perform(request: ReadUserChangedObjectsDbRequest<Obj>())
         return objects.observe({ [weak self] changes in
             switch changes {
