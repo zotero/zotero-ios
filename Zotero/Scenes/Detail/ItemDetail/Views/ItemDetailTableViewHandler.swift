@@ -151,7 +151,13 @@ final class ItemDetailTableViewHandler: NSObject {
 
     /// Reloads all sections based on given state.
     /// - parameter state: New state that changes sections.
-    func reloadSections(to state: ItemDetailState) {
+    func reloadSections(to state: ItemDetailState, animated: Bool) {
+        if !animated {
+            self.sections = self.sections(for: state.data, isEditing: state.isEditing)
+            self.tableView.reloadData()
+            return
+        }
+
         let sections = self.sections(for: state.data, isEditing: state.isEditing)
         let (insertions, deletions) = sections.difference(from: self.sections).separated
         let reloads = Set(0..<self.sections.count).subtracting(Set(deletions))

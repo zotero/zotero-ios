@@ -61,6 +61,9 @@ struct ItemDetailDataCreator {
                                     notes: [],
                                     attachments: [],
                                     tags: [],
+                                    deletedAttachments: [],
+                                    deletedNotes: [],
+                                    deletedTags: [],
                                     dateModified: date,
                                     dateAdded: date)
     }
@@ -156,6 +159,9 @@ struct ItemDetailDataCreator {
                                          notes: Array(notes),
                                           attachments: attachments,
                                          tags: Array(tags),
+                                         deletedAttachments: [],
+                                         deletedNotes: [],
+                                         deletedTags: [],
                                          dateModified: item.dateModified,
                                          dateAdded: item.dateAdded)
         return (data, attachmentErrors)

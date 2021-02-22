@@ -20,6 +20,7 @@ struct ItemDetailState: ViewModelState {
         static let type = Changes(rawValue: 1 << 1)
         static let attachmentFilesRemoved = Changes(rawValue: 1 << 2)
         static let abstractCollapsed = Changes(rawValue: 1 << 3)
+        static let reloadedData = Changes(rawValue: 1 >> 4)
     }
 
     enum DetailType {
@@ -183,6 +184,10 @@ struct ItemDetailState: ViewModelState {
         var attachments: [Attachment]
         var tags: [Tag]
 
+        var deletedAttachments: Set<String>
+        var deletedNotes: Set<String>
+        var deletedTags: Set<String>
+
         var dateModified: Date
         let dateAdded: Date
 
@@ -223,6 +228,12 @@ struct ItemDetailState: ViewModelState {
 
 
             return allFields
+        }
+
+        static var empty: Data {
+            let date = Date()
+            return Data(title: "", type: "", localizedType: "", creators: [:], creatorIds: [], fields: [:], fieldIds: [], abstract: nil, notes: [], attachments: [], tags: [],
+                        deletedAttachments: [], deletedNotes: [], deletedTags: [], dateModified: date, dateAdded: date, maxFieldTitleWidth: 0, maxNonemptyFieldTitleWidth: 0)
         }
     }
 
@@ -279,45 +290,29 @@ struct ItemDetailState: ViewModelState {
     var openAttachment: (Attachment, Int)?
     var updateAttachmentIndex: Int?
     var attachmentErrors: [String: Error]
+    var isLoadingData: Bool
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool
 
-    init(type: DetailType, library: Library, userId: Int, data: Data, attachmentErrors: [String: Error], error: ItemDetailError? = nil) {
+    init(type: DetailType, library: Library, userId: Int) {
         self.changes = []
         self.userId = userId
         self.library = library
         self.type = type
-        self.data = data
+        self.data = .empty
         self.metadataTitleMaxWidth = 0
-        self.error = error
+        self.error = nil
         self.isSaving = false
-        self.attachmentErrors = attachmentErrors
+        self.isLoadingData = true
+        self.attachmentErrors = [:]
 
         switch type {
         case .preview, .duplication:
             self.isEditing = type.isCreation
-            if !self.isEditing {
-                // Filter fieldIds to show only non-empty values
-                self.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: self.data.fieldIds, fields: self.data.fields)
-            }
         case .creation:
             self.isEditing = true
         }
-    }
-
-    init(type: DetailType, library: Library, userId: Int, error: ItemDetailError) {
-        self.init(type: type,
-                  library: library,
-                  userId: userId,
-                  data: Data(title: "", type: "", localizedType: "",
-                             creators: [:], creatorIds: [],
-                             fields: [:], fieldIds: [],
-                             abstract: nil, notes: [],
-                             attachments: [], tags: [],
-                             dateModified: Date(), dateAdded: Date()),
-                  attachmentErrors: [:],
-                  error: error)
     }
 
     mutating func cleanup() {

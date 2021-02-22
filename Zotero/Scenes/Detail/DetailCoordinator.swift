@@ -46,6 +46,8 @@ protocol DetailItemDetailCoordinatorDelegate: class {
     func showCreatorEditor(for creator: ItemDetailState.Creator, itemType: String, saved: @escaping CreatorEditSaveAction, deleted: @escaping CreatorEditDeleteAction)
     func showAttachmentError(_ error: Error, retryAction: @escaping () -> Void)
     func showDeletedAlertForItem(completion: @escaping (Bool) -> Void)
+    func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>)
+    func showDataReloaded(completion: @escaping () -> Void)
 }
 
 protocol DetailCreatorEditCoordinatorDelegate: class {
@@ -361,13 +363,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                 hidesBackButton = true
             }
 
-            let (data, attachmentErrors) = try ItemDetailDataCreator.createData(from: type,
-                                                                                schemaController: self.controllers.schemaController,
-                                                                                dateParser: self.controllers.dateParser,
-                                                                                fileStorage: self.controllers.fileStorage,
-                                                                                urlDetector: self.controllers.urlDetector,
-                                                                                doiDetector: FieldKeys.Item.isDoi)
-            let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId, data: data, attachmentErrors: attachmentErrors)
+            let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId)
             let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
                                                   fileStorage: self.controllers.fileStorage,
                                                   dbStorage: dbStorage,
@@ -525,6 +521,55 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
         controller.addAction(UIAlertAction(title: L10n.delete, style: .destructive, handler: { _ in
             completion(true)
             popAction()
+        }))
+        self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func show(error: ItemDetailError, viewModel: ViewModel<ItemDetailActionHandler>) {
+        let title: String
+        let message: String
+        var actions: [UIAlertAction] = []
+        
+        switch error {
+        case .droppedFields(let fields):
+            title = L10n.Errors.ItemDetail.droppedFieldsTitle
+            message = self.droppedFieldsMessage(for: fields)
+            actions.append(UIAlertAction(title: L10n.ok, style: .default, handler: { [weak viewModel] _ in
+                viewModel?.process(action: .acceptPrompt)
+            }))
+            actions.append(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak viewModel] _ in
+                viewModel?.process(action: .cancelPrompt)
+            }))
+
+        case .cantCreateData:
+            title = L10n.error
+            message = L10n.Errors.ItemDetail.cantLoadData
+            actions.append(UIAlertAction(title: L10n.ok, style: .cancel, handler: { [weak self] _ in
+                self?.navigationController.popViewController(animated: true)
+            }))
+
+        default:
+            // TODO: - handle other errors
+            return
+        }
+
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        actions.forEach({ controller.addAction($0) })
+        self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    /// Message for `ItemDetailError.droppedFields` error.
+    /// - parameter names: Names of fields with values that will disappear if type will change.
+    /// - returns: Error message.
+    private func droppedFieldsMessage(for names: [String]) -> String {
+        let formattedNames = names.map({ "- \($0)\n" }).joined()
+        return L10n.Errors.ItemDetail.droppedFieldsMessage(formattedNames)
+    }
+
+    func showDataReloaded(completion: @escaping () -> Void) {
+        let controller = UIAlertController(title: L10n.warning, message: L10n.ItemDetail.dataReloaded, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in
+            completion()
         }))
         self.topViewController.present(controller, animated: true, completion: nil)
     }

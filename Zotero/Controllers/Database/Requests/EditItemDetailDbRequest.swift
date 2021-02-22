@@ -136,9 +136,8 @@ struct EditItemDetailDbRequest: DbRequest {
     }
 
     private func updateNotes(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
-        let noteKeys = data.notes.map({ $0.key })
         let notesToRemove = item.children.filter(.item(type: ItemTypes.note))
-                                         .filter(.key(notIn: noteKeys))
+                                         .filter(.key(in: data.deletedNotes))
         notesToRemove.forEach {
             $0.trash = true
             $0.changedFields.insert(.trash)
@@ -166,9 +165,8 @@ struct EditItemDetailDbRequest: DbRequest {
     }
 
     private func updateAttachments(with data: ItemDetailState.Data, snapshot: ItemDetailState.Data, item: RItem, database: Realm) throws {
-        let attachmentKeys = data.attachments.map({ $0.key })
         let attachmentsToRemove = item.children.filter(.item(type: ItemTypes.attachment))
-                                               .filter(.key(notIn: attachmentKeys))
+                                               .filter(.key(in: data.deletedAttachments))
         var hasMainAttachmentChange = false
 
         attachmentsToRemove.forEach {
@@ -211,8 +209,7 @@ struct EditItemDetailDbRequest: DbRequest {
     private func updateTags(with data: ItemDetailState.Data, item: RItem, database: Realm) {
         var tagsDidChange = false
 
-        let tagNames = data.tags.map({ $0.name })
-        let tagsToRemove = item.tags.filter(.name(notIn: tagNames))
+        let tagsToRemove = item.tags.filter(.name(in: data.deletedTags))
         tagsToRemove.forEach { tag in
             if let index = tag.items.index(of: item) {
                 tag.items.remove(at: index)

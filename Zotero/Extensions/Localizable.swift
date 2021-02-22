@@ -145,6 +145,8 @@ internal enum L10n {
       }
     }
     internal enum ItemDetail {
+      /// Could not load data. Please try again.
+      internal static let cantLoadData = L10n.tr("Localizable", "errors.item_detail.cant_load_data")
       /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
       internal static func droppedFieldsMessage(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.item_detail.dropped_fields_message", String(describing: p1))
@@ -229,6 +231,8 @@ internal enum L10n {
     internal static let addTag = L10n.tr("Localizable", "item_detail.add_tag")
     /// Attachments
     internal static let attachments = L10n.tr("Localizable", "item_detail.attachments")
+    /// This item has been changed. Data will now reload.
+    internal static let dataReloaded = L10n.tr("Localizable", "item_detail.data_reloaded")
     /// Merge name
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name")
     /// Notes

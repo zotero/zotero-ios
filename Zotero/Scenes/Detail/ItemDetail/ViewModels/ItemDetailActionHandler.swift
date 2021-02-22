@@ -43,6 +43,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     func process(action: ItemDetailAction, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch action {
+        case .reloadData:
+            self.reloadData(in: viewModel)
+
         case .changeType(let type):
             self.changeType(to: type, in: viewModel)
 
@@ -59,6 +62,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         case .deleteAttachments(let offsets):
             self.update(viewModel: viewModel) { state in
+                state.data.deletedAttachments = state.data.deletedAttachments.union(offsets.map({ state.data.attachments[$0].key }))
                 state.data.attachments.remove(atOffsets: offsets)
                 state.diff = .attachments(insertions: [], deletions: Array(offsets), reloads: [])
             }
@@ -82,6 +86,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         case .deleteNotes(let offsets):
             self.update(viewModel: viewModel) { state in
+                state.data.deletedNotes = state.data.deletedNotes.union(offsets.map({ state.data.notes[$0].key }))
                 state.data.notes.remove(atOffsets: offsets)
                 state.diff = .notes(insertions: [], deletions: Array(offsets), reloads: [])
             }
@@ -94,6 +99,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         case .deleteTags(let offsets):
             self.update(viewModel: viewModel) { state in
+                state.data.deletedTags = state.data.deletedTags.union(offsets.map({ state.data.tags[$0].name }))
                 state.data.tags.remove(atOffsets: offsets)
                 state.diff = .tags(insertions: [], deletions: Array(offsets), reloads: [])
             }
@@ -133,6 +139,36 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.abstractCollapsed = !state.abstractCollapsed
                 state.changes = [.abstractCollapsed]
+            }
+        }
+    }
+
+    private func reloadData(in viewModel: ViewModel<ItemDetailActionHandler>) {
+        do {
+            var (data, attachmentErrors) = try ItemDetailDataCreator.createData(from: viewModel.state.type,
+                                                                                schemaController: self.schemaController,
+                                                                                dateParser: self.dateParser,
+                                                                                fileStorage: self.fileStorage,
+                                                                                urlDetector: self.urlDetector,
+                                                                                doiDetector: FieldKeys.Item.isDoi)
+            if !viewModel.state.isEditing {
+                data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
+            }
+
+            self.update(viewModel: viewModel) { state in
+                state.data = data
+                if state.snapshot != nil {
+                    state.snapshot = data
+                    state.snapshot?.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: data.fieldIds, fields: data.fields)
+                }
+                state.attachmentErrors = attachmentErrors
+                state.isLoadingData = false
+                state.changes.insert(.reloadedData)
+            }
+        } catch let error {
+            DDLogError("ItemDetailActionHandler: can't load data - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .cantCreateData
             }
         }
     }
@@ -569,7 +605,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 try self.fileStorage.copyAttachmentFilesIfNeeded(for: state.data.attachments)
 
                 var newState = state
-                var newType: State.DetailType?
+                var newType = state.type
 
                 self.updateDateFieldIfNeeded(in: &newState)
                 newState.data.dateModified = Date()
@@ -586,12 +622,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 }
 
                 newState.snapshot = nil
-                if let type = newType {
-                    newState.type = type
-                }
+                newState.type = newType
+                newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
+                newState.data.deletedNotes = []
+                newState.data.deletedTags = []
+                newState.data.deletedAttachments = []
                 newState.isEditing = false
                 newState.changes.insert(.editing)
-                newState.data.fieldIds = ItemDetailDataCreator.filteredFieldKeys(from: newState.data.fieldIds, fields: newState.data.fields)
 
                 subscriber(.success(newState))
             } catch let error {

@@ -11,10 +11,10 @@ import Foundation
 enum ItemDetailAction {
     case acceptPrompt
     case addAttachments([URL])
-    case saveCreator(ItemDetailState.Creator)
     case cancelEditing
     case cancelPrompt
     case changeType(String)
+    case deleteAttachmentFile(Attachment)
     case deleteAttachments(IndexSet)
     case deleteCreator(UUID)
     case deleteCreators(IndexSet)
@@ -22,15 +22,16 @@ enum ItemDetailAction {
     case deleteTags(IndexSet)
     case moveCreators(from: IndexSet, to: Int)
     case openAttachment(Int)
+    case reloadData
     case saveNote(key: String?, text: String)
     case setFieldValue(id: String, value: String)
     case setTags([Tag])
     case setTitle(String)
     case setAbstract(String)
     case save
+    case saveCreator(ItemDetailState.Creator)
     case startEditing
+    case toggleAbstractDetailCollapsed
     case updateDownload(FileDownloader.Update)
     case updateAttachments(AttachmentFileDeletedNotification)
-    case deleteAttachmentFile(Attachment)
-    case toggleAbstractDetailCollapsed
 }

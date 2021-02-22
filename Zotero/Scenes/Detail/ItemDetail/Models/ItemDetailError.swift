@@ -15,4 +15,5 @@ enum ItemDetailError: Error, Equatable, Hashable {
     case fileNotCopied(Int)
     case droppedFields([String])
     case cantUnzipSnapshot
+    case cantCreateData
 }

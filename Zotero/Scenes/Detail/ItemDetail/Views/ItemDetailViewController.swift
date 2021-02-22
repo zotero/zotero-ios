@@ -12,6 +12,7 @@ import UIKit
 import SafariServices
 
 import CocoaLumberjackSwift
+import RealmSwift
 import RxSwift
 
 fileprivate enum MainAttachmentButtonState {
@@ -19,7 +20,8 @@ fileprivate enum MainAttachmentButtonState {
 }
 
 final class ItemDetailViewController: UIViewController {
-    @IBOutlet private var tableView: UITableView!
+    @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
 
     private let viewModel: ViewModel<ItemDetailActionHandler>
     private let controllers: Controllers
@@ -28,6 +30,7 @@ final class ItemDetailViewController: UIViewController {
     private var tableViewHandler: ItemDetailTableViewHandler!
     private var downloadingViaNavigationBar: Bool
     private var didAppear: Bool
+    private var itemToken: NotificationToken?
 
     weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
 
@@ -47,15 +50,9 @@ final class ItemDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.setNavigationBarButtons(to: self.viewModel.state)
-
-        let width = self.navigationController?.view.frame.width ?? self.view.frame.width
-        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
-                                                           containerWidth: width,
-                                                           viewModel: self.viewModel,
-                                                           fileDownloader: self.controllers.userControllers?.fileDownloader)
-        self.tableViewHandler.delegate = self
+        self.setupTableViewHandler()
         self.setupFileObservers()
+        self.setupItemObservingIfNeeded()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -64,12 +61,7 @@ final class ItemDetailViewController: UIViewController {
                       })
                       .disposed(by: self.disposeBag)
 
-        self.tableViewHandler.observer
-                             .observeOn(MainScheduler.instance)
-                             .subscribe(onNext: { [weak self] action in
-                                 self?.perform(tableViewAction: action)
-                             })
-                             .disposed(by: self.disposeBag)
+        self.viewModel.process(action: .reloadData)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -167,6 +159,22 @@ final class ItemDetailViewController: UIViewController {
     /// Update UI based on new state.
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
+        if state.changes.contains(.reloadedData) {
+            let wasHidden = self.tableView.isHidden
+            self.tableView.isHidden = state.isLoadingData
+            self.activityIndicator.isHidden = !state.isLoadingData
+
+            self.setNavigationBarButtons(to: state)
+            self.tableViewHandler.reloadTitleWidth(from: state.data)
+            self.tableViewHandler.reloadSections(to: state, animated: !wasHidden)
+        }
+
+        if let error = state.error {
+            self.coordinatorDelegate?.show(error: error, viewModel: self.viewModel)
+        }
+
+        guard !state.isLoadingData else { return }
+
         if state.changes.contains(.editing) {
             self.setNavigationBarButtons(to: state)
         }
@@ -176,7 +184,7 @@ final class ItemDetailViewController: UIViewController {
         }
 
         if state.changes.contains(.editing) || state.changes.contains(.type) {
-            self.tableViewHandler.reloadSections(to: state)
+            self.tableViewHandler.reloadSections(to: state, animated: true)
         } else {
             if state.changes.contains(.attachmentFilesRemoved) {
                 self.tableViewHandler.reload(section: .attachments)
@@ -204,10 +212,6 @@ final class ItemDetailViewController: UIViewController {
             }
         }
 
-        if let error = state.error {
-            self.show(error: error)
-        }
-
         if let (attachment, index) = state.openAttachment {
             // Reset navbar download flag if the attachment didn't need to be downloaded
             self.downloadingViaNavigationBar = false
@@ -218,7 +222,7 @@ final class ItemDetailViewController: UIViewController {
     /// Updates navigation bar with appropriate buttons based on editing state.
     /// - parameter isEditing: Current editing state of tableView.
     private func setNavigationBarButtons(to state: ItemDetailState) {
-        guard state.library.metadataEditable else { return }
+        guard state.library.metadataEditable && !state.isLoadingData else { return }
 
         self.navigationItem.setHidesBackButton(state.isEditing, animated: false)
 
@@ -335,27 +339,36 @@ final class ItemDetailViewController: UIViewController {
         self.navigationItem.leftBarButtonItem = cancelButton
     }
 
-    /// Shows appropriate error alert for given error.
-    private func show(error: ItemDetailError) {
-        switch error {
-        case .droppedFields(let fields):
-            let controller = UIAlertController(title: L10n.Errors.ItemDetail.droppedFieldsTitle,
-                                               message: self.droppedFieldsMessage(for: fields),
-                                               preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: L10n.ok, style: .default, handler: { [weak self] _ in
-                self?.viewModel.process(action: .acceptPrompt)
-            }))
-            controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: { [weak self] _ in
-                self?.viewModel.process(action: .cancelPrompt)
-            }))
-            self.present(controller, animated: true, completion: nil)
-        default:
-            // TODO: - handle other errors
-            break
+    // MARK: - Actions
+
+    private func itemChanged() {
+        if !self.viewModel.state.isEditing {
+            self.viewModel.process(action: .reloadData)
+            return
         }
+
+        self.coordinatorDelegate?.showDataReloaded(completion: { [weak self] in
+            self?.viewModel.process(action: .reloadData)
+        })
     }
 
     // MARK: - Setups
+
+    private func setupTableViewHandler() {
+        let width = self.navigationController?.view.frame.width ?? self.view.frame.width
+        self.tableViewHandler = ItemDetailTableViewHandler(tableView: self.tableView,
+                                                           containerWidth: width,
+                                                           viewModel: self.viewModel,
+                                                           fileDownloader: self.controllers.userControllers?.fileDownloader)
+        self.tableViewHandler.delegate = self
+
+        self.tableViewHandler.observer
+                             .observeOn(MainScheduler.instance)
+                             .subscribe(onNext: { [weak self] action in
+                                 self?.perform(tableViewAction: action)
+                             })
+                             .disposed(by: self.disposeBag)
+    }
 
     private func setupFileObservers() {
         NotificationCenter.default
@@ -379,14 +392,18 @@ final class ItemDetailViewController: UIViewController {
             .disposed(by: self.disposeBag)
     }
 
-    // MARK: - Helpers
+    private func setupItemObservingIfNeeded() {
+        guard case .preview(let item) = self.viewModel.state.type else { return }
 
-    /// Message for `ItemDetailError.droppedFields` error.
-    /// - parameter names: Names of fields with values that will disappear if type will change.
-    /// - returns: Error message.
-    private func droppedFieldsMessage(for names: [String]) -> String {
-        let formattedNames = names.map({ "- \($0)\n" }).joined()
-        return L10n.Errors.ItemDetail.droppedFieldsMessage(formattedNames)
+        self.itemToken = item.observe({ [weak self] change in
+            switch change {
+            case .change:
+                self?.itemChanged()
+
+            // Deletion is handled by sync process, so we don't need to kick the user out here (the sync should always ask whether the user wants to delete the item or not).
+            case .deleted, .error: break
+            }
+        })
     }
 }
 
