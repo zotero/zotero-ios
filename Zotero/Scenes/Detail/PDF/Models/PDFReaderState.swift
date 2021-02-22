@@ -41,6 +41,7 @@ struct PDFReaderState: ViewModelState {
     var interfaceStyle: UIUserInterfaceStyle
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
+    var deletedKeys: Set<String>
     var comments: [String: NSAttributedString]
     var activeColor: UIColor
     var currentFilter: String?
@@ -69,6 +70,7 @@ struct PDFReaderState: ViewModelState {
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
+        self.deletedKeys = []
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]

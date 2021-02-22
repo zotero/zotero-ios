@@ -17,12 +17,12 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     let attachmentKey: String
     let libraryId: LibraryIdentifier
     let annotations: [Annotation]
+    let deletedKeys: Set<String>
 
     unowned let schemaController: SchemaController
 
     func process(in database: Realm) throws {
-        let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId).process(in: database)
-                                                                                                                 .filter(.key(notIn: self.annotations.map({ $0.key })))
+        let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId).process(in: database).filter(.key(in: self.deletedKeys))
 
         if !toRemove.isEmpty {
             let deleteRequest = MarkObjectsAsDeletedDbRequest<RItem>(keys: toRemove.map({ $0.key }), libraryId: self.libraryId)
