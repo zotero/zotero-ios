@@ -14,6 +14,7 @@ import CocoaLumberjackSwift
 import PSPDFKit
 import PSPDFKitUI
 import RxSwift
+import RealmSwift
 
 final class PDFReaderViewController: UIViewController {
     private enum NavigationBarButton: Int {
@@ -40,6 +41,7 @@ final class PDFReaderViewController: UIViewController {
     private var isSidebarTransitioning: Bool
     private var annotationTimerDisposeBag: DisposeBag
     private var pageTimerDisposeBag: DisposeBag
+    private var itemToken: NotificationToken?
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
     private var isSidebarOpened: Bool {
@@ -141,6 +143,10 @@ final class PDFReaderViewController: UIViewController {
     // MARK: - Actions
 
     private func update(state: PDFReaderState) {
+        if state.changes.contains(.itemObserving) {
+            self.setupItemObserving(items: state.dbItems)
+        }
+
         if state.changes.contains(.interfaceStyle) {
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
         }
@@ -417,6 +423,41 @@ final class PDFReaderViewController: UIViewController {
         self.addChild(controller)
         self.view.addSubview(controller.view)
         controller.didMove(toParent: self)
+    }
+
+    private func processAnnotationObserving(notification: Notification) {
+        switch notification.name {
+        case .PSPDFAnnotationChanged:
+            self.updateRects(from: notification)
+        case .PSPDFAnnotationsAdded:
+            if let tool = self.pdfController.annotationStateManager.state {
+                self.toggle(annotationTool: tool)
+            }
+
+            if let annotations = self.annotations(for: notification) {
+                self.viewModel.process(action: .annotationsAdded(annotations))
+            } else {
+                self.viewModel.process(action: .notificationReceived(notification.name))
+            }
+
+        case .PSPDFAnnotationsRemoved:
+            if let annotations = self.annotations(for: notification) {
+                self.viewModel.process(action: .annotationsAdded(annotations))
+            } else {
+                self.viewModel.process(action: .notificationReceived(notification.name))
+            }
+
+        default: break
+        }
+    }
+
+    private func annotations(for notification: Notification) -> [PSPDFKit.Annotation]? {
+        guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return nil }
+        guard let keys = self.viewModel.state.ignoreNotifications[notification.name] else { return annotations }
+        if Set(annotations.compactMap({ $0.key })) == keys {
+            return nil
+        }
+        return annotations
     }
 
     private func updateRects(from notification: Notification) {
@@ -734,7 +775,7 @@ final class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationChanged)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
-                                      self?.updateRects(from: notification)
+                                      self?.processAnnotationObserving(notification: notification)
                                   })
                                   .disposed(by: self.disposeBag)
 
@@ -742,13 +783,8 @@ final class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationsAdded)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
-                                      guard let `self` = self else { return }
-                                      if let annotations = notification.object as? [PSPDFKit.Annotation] {
-                                          self.viewModel.process(action: .annotationsAdded(annotations))
-                                      }
-                                      if let tool = self.pdfController.annotationStateManager.state {
-                                          self.toggle(annotationTool: tool)
-                                      }
+                                      self?.processAnnotationObserving(notification: notification)
+
                                   })
                                   .disposed(by: self.disposeBag)
 
@@ -756,9 +792,7 @@ final class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationsRemoved)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
-                                      if let annotations = notification.object as? [PSPDFKit.Annotation] {
-                                          self?.viewModel.process(action: .annotationsRemoved(annotations))
-                                      }
+                                      self?.processAnnotationObserving(notification: notification)
                                   })
                                   .disposed(by: self.disposeBag)
 
@@ -780,6 +814,21 @@ final class PDFReaderViewController: UIViewController {
                                       self.viewModel.process(action: .clearTmpAnnotationPreviews)
                                   })
                                   .disposed(by: self.disposeBag)
+    }
+
+    private func setupItemObserving(items: Results<RItem>?) {
+        guard let items = items else {
+            self.itemToken = nil
+            return
+        }
+
+        self.itemToken = items.observe({ changes in
+            switch changes {
+            case .update(let objects, let deletions, let insertions, let modifications):
+                self.viewModel.process(action: .itemsChange(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications))
+            case .initial, .error: break
+            }
+        })
     }
 }
 

@@ -11,6 +11,7 @@
 import UIKit
 
 import PSPDFKit
+import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
 
@@ -26,6 +27,7 @@ struct PDFReaderState: ViewModelState {
         static let activeColor = Changes(rawValue: 1 << 3)
         static let activeComment = Changes(rawValue: 1 << 4)
         static let save = Changes(rawValue: 1 << 5)
+        static let itemObserving = Changes(rawValue: 1 << 6)
     }
 
     static let activeColorKey = "PDFReaderState.activeColor"
@@ -42,6 +44,9 @@ struct PDFReaderState: ViewModelState {
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
     var deletedKeys: Set<String>
+    /// Array of annotation positions as they are returned from database. Used for diffing when an update from DB comes in.
+    var dbPositions: [AnnotationPosition]
+    var dbItems: Results<RItem>?
     var comments: [String: NSAttributedString]
     var activeColor: UIColor
     var currentFilter: String?
@@ -63,6 +68,10 @@ struct PDFReaderState: ViewModelState {
     var shouldStoreAnnotationPreviewsIfNeeded: Bool
     var visiblePage: Int
     var exportState: ExportState?
+    /// Used to ignore next insertion/deletion notification of annotations. Used when there is a remote change of annotations
+    /// PSPDFKit can't suppress notifications when adding/deleting annotations to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do
+    /// the same work again.
+    var ignoreNotifications: [Notification.Name: Set<String>]
 
     init(url: URL, key: String, library: Library, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
@@ -71,10 +80,12 @@ struct PDFReaderState: ViewModelState {
         self.username = username
         self.interfaceStyle = interfaceStyle
         self.deletedKeys = []
+        self.dbPositions = []
         self.previewCache = NSCache()
         self.document = Document(url: url)
         self.annotations = [:]
         self.comments = [:]
+        self.ignoreNotifications = [:]
         self.selectedAnnotationCommentActive = false
         self.shouldStoreAnnotationPreviewsIfNeeded = false
         self.visiblePage = 0

@@ -561,6 +561,7 @@
 		B36CBD4C25DD397D003C4613 /* ConflictAlertQueueController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD4B25DD397D003C4613 /* ConflictAlertQueueController.swift */; };
 		B36CBD5A25DD3BDD003C4613 /* ConflictAlertQueueHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD5925DD3BDD003C4613 /* ConflictAlertQueueHandler.swift */; };
 		B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36CBD6125DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift */; };
+		B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */; };
 		B371494C25D585EA00D6391E /* RestoreDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868825D574D6000F4446 /* RestoreDeletionsSyncAction.swift */; };
 		B371494F25D585EF00D6391E /* MarkObjectsAsChangedByUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */; };
 		B372CEE02486504600B423AE /* GroupVersionsRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */; };
@@ -1191,6 +1192,7 @@
 		B36CBD4B25DD397D003C4613 /* ConflictAlertQueueController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictAlertQueueController.swift; sourceTree = "<group>"; };
 		B36CBD5925DD3BDD003C4613 /* ConflictAlertQueueHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictAlertQueueHandler.swift; sourceTree = "<group>"; };
 		B36CBD6125DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangedItemsDeletedAlertQueueHandler.swift; sourceTree = "<group>"; };
+		B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
 		B37147422382B52300AC8758 /* Zotero-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Zotero-Bridging-Header.h"; sourceTree = "<group>"; };
 		B372CEDF2486504600B423AE /* GroupVersionsRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupVersionsRequest.swift; sourceTree = "<group>"; };
 		B372CEE22486512500B423AE /* GroupRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupRequest.swift; sourceTree = "<group>"; };
@@ -2495,14 +2497,15 @@
 			isa = PBXGroup;
 			children = (
 				B3B953C22459780600FC96DB /* Annotation.swift */,
+				B36E9D4825E51B0E00CD1109 /* AnnotationPosition.swift */,
 				B34C4107257122BF0057D5F5 /* AnnotationViewLayout.swift */,
+				B385B70D25C03E7E0073CA6F /* ExportState.swift */,
 				B30A8C662582690900EC56FB /* HighlightAnnotation.swift */,
 				B3981B75258399AA00F8D15A /* NoteAnnotation.swift */,
 				B3B953C9245981AD00FC96DB /* PDFReaderAction.swift */,
 				B3D0AC97255C14AB007648F5 /* PDFReaderLayout.swift */,
 				B3B953C7245981A600FC96DB /* PDFReaderState.swift */,
 				B37BF0AA25A5E2AD00AE0268 /* SquareAnnotation.swift */,
-				B385B70D25C03E7E0073CA6F /* ExportState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -3162,6 +3165,7 @@
 				B3DCDF1B24091EBE0039ED0D /* SinglePickerRow.swift in Sources */,
 				B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */,
 				B3593F30241A61C700760E20 /* ItemDetailAddCell.swift in Sources */,
+				B36E9D4925E51B0E00CD1109 /* AnnotationPosition.swift in Sources */,
 				B3C9D60824DA9D40003EA1EE /* CollectionsSearchState.swift in Sources */,
 				B34DF1B525768BB70019CCD1 /* TextFieldCell.swift in Sources */,
 				B3593F50241A61C700760E20 /* CollectionsState.swift in Sources */,

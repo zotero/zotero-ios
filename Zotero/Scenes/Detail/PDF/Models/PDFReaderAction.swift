@@ -11,6 +11,7 @@
 import UIKit
 
 import PSPDFKit
+import RealmSwift
 
 enum PDFReaderAction {
     case startObservingAnnotationChanges
@@ -36,6 +37,8 @@ enum PDFReaderAction {
     case setVisiblePage(Int)
     case export
     case clearTmpAnnotationPreviews
+    case itemsChange(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
+    case notificationReceived(Notification.Name)
 }
 
 #endif

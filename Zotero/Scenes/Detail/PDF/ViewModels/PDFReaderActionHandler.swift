@@ -12,6 +12,7 @@ import UIKit
 
 import CocoaLumberjackSwift
 import PSPDFKit
+import RealmSwift
 import RxSwift
 
 protocol AnnotationBoundingBoxConverter: class {
@@ -155,7 +156,157 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .clearTmpAnnotationPreviews:
             self.clearTmpAnnotationPreviews(in: viewModel)
 
+        case .itemsChange(let objects, let deletions, let insertions, let modifications):
+            self.syncItems(results: objects, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
+
+        case .notificationReceived(let name):
+            self.update(viewModel: viewModel) { state in
+                state.ignoreNotifications[name] = nil
+            }
         }
+    }
+
+    private func syncItems(results: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        // TODO: - group editability temporarily disabled
+        let editability: Annotation.Editability // = library.metadataEditable ? .editable : .notEditable
+        switch viewModel.state.library.identifier {
+        case .custom:
+            editability = .editable
+        case .group:
+            editability = .notEditable
+        }
+
+        var deletedAnnotations: [PSPDFKit.Annotation] = []
+        var addedAnnotations: [Annotation] = []
+
+        self.update(viewModel: viewModel) { state in
+            // Modify existing annotations
+            for idx in Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions) {
+                let item = results[idx]
+                guard !state.deletedKeys.contains(item.key), // If annotation was deleted, it'll be stored as deleted anyway or CR will happen
+                      let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: state.userId, username: state.username) else { continue }
+
+                if var snapshot = state.annotationsSnapshot {
+                    // If search is active, try updating snapshot
+                    guard self.modify(annotation: annotation, in: &snapshot) != nil else { continue }
+                    state.annotationsSnapshot = snapshot
+                    // If annotation was found in snapshot and was different, update visible results as well
+                    if let indexPath = self.modify(annotation: annotation, in: &state.annotations) {
+                        state.updatedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.updatedAnnotationIndexPaths)
+                    }
+                } else {
+                    // If search is not active, add modified index path for all annotations
+                    guard let indexPath = self.modify(annotation: annotation, in: &state.annotations) else { continue }
+                    state.updatedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.updatedAnnotationIndexPaths)
+                }
+
+                state.comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: state.commentFont)
+            }
+
+            // Delete annotations
+            var deletedKeys: Set<String> = []
+            for idx in deletions {
+                let position = state.dbPositions.remove(at: idx)
+
+                if let annotation = state.document.annotations(at: PageIndex(position.page)).first(where: { $0.key == position.key }) {
+                    deletedAnnotations.append(annotation)
+                    deletedKeys.insert(position.key)
+                }
+
+                state.comments[position.key] = nil
+                state.deletedKeys.remove(position.key)
+
+                if state.selectedAnnotation?.key == position.key {
+                    state.selectedAnnotation = nil
+                    state.changes.insert(.selection)
+
+                    if state.selectedAnnotationCommentActive {
+                        state.selectedAnnotationCommentActive = false
+                        state.changes.insert(.activeComment)
+                    }
+                }
+
+                if var snapshot = state.annotationsSnapshot {
+                    // If search is active, try removing in snapshot
+                    guard self.remove(at: position, from: &snapshot) != nil else { continue }
+                    state.annotationsSnapshot = snapshot
+                    // If annotation was found in snapshot, try removing in search results as well
+                    if let indexPath = self.remove(at: position, from: &state.annotations) {
+                        state.removedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.removedAnnotationIndexPaths)
+                    }
+                } else {
+                    // If search is not active, remove index path from all annotations
+                    guard let indexPath = self.remove(at: position, from: &state.annotations) else { continue }
+                    state.removedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.removedAnnotationIndexPaths)
+                }
+            }
+            state.ignoreNotifications[.PSPDFAnnotationsRemoved] = deletedKeys
+
+            // Add new annotations
+            var addedKeys: Set<String> = []
+            for idx in insertions {
+                guard let annotation = AnnotationConverter.annotation(from: results[idx], editability: editability, currentUserId: state.userId, username: state.username) else { continue }
+                state.dbPositions.insert(AnnotationPosition(page: annotation.page, key: annotation.key), at: idx)
+                addedAnnotations.append(annotation)
+                addedKeys.insert(annotation.key)
+            }
+            self.add(annotations: addedAnnotations, to: &state, selectFirst: false)
+            state.ignoreNotifications[.PSPDFAnnotationsAdded] = addedKeys
+
+            if state.removedAnnotationIndexPaths != nil || state.insertedAnnotationIndexPaths != nil || state.updatedAnnotationIndexPaths != nil {
+                state.changes.insert(.annotations)
+            }
+        }
+
+        // Update the document
+
+        UndoController.performWithoutUndo(undoController: viewModel.state.document.undoController) {
+            if !deletedAnnotations.isEmpty {
+                viewModel.state.document.remove(annotations: deletedAnnotations, options: nil)
+            }
+
+            if !addedAnnotations.isEmpty {
+                // Convert Zotero annotations to PSPDFKit annotations
+                let annotations = addedAnnotations.map({ AnnotationConverter.annotation(from: $0, type: .zotero, interfaceStyle: viewModel.state.interfaceStyle) })
+                // Add them to document, suppress notifications
+                viewModel.state.document.add(annotations: annotations, options: nil)
+                // Store preview for image annotations
+                let isDark = viewModel.state.interfaceStyle == .dark
+                annotations.compactMap({ $0 as? PSPDFKit.SquareAnnotation }).forEach { annotation in
+                    self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
+                }
+            }
+        }
+    }
+
+    private func added(indexPath: IndexPath, to optionalArray: [IndexPath]?) -> [IndexPath] {
+        guard var array = optionalArray else {
+            return [indexPath]
+        }
+        array.append(indexPath)
+        return array
+    }
+
+    /// Modifies dictionary of annotations if given annotation can be found and differs from existing annotation.
+    /// - parameter annotation: Modified annotation.
+    /// - parameter annotations: Dictionary of existing annotations.
+    /// - returns: Index path of annotation if it was found and was different from existing annotation.
+    @discardableResult
+    private func modify(annotation: Annotation, in annotations: inout [Int: [Annotation]]) -> IndexPath? {
+        guard var pageAnnotations = annotations[annotation.page],
+              let pageIdx = pageAnnotations.firstIndex(where: { $0.key == annotation.key }),
+              pageAnnotations[pageIdx] != annotation else { return nil }
+        pageAnnotations[pageIdx] = annotation
+        annotations[annotation.page] = pageAnnotations
+        return IndexPath(row: pageIdx, section: annotation.page)
+    }
+
+    private func remove(at position: AnnotationPosition, from annotations: inout [Int: [Annotation]]) -> IndexPath? {
+        guard var pageAnnotations = annotations[position.page],
+              let pageIdx = pageAnnotations.firstIndex(where: { $0.key == position.key }) else { return nil }
+        pageAnnotations.remove(at: pageIdx)
+        annotations[position.page] = pageAnnotations
+        return IndexPath(row: pageIdx, section: position.page)
     }
 
     private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -609,41 +760,52 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         guard !newZoteroAnnotations.isEmpty else { return }
 
         self.update(viewModel: viewModel) { state in
-            var focus: IndexPath?
-            var selectedAnnotation: Annotation?
+            self.add(annotations: newZoteroAnnotations, to: &state, selectFirst: true)
+            state.changes.insert(.save)
+        }
+    }
 
-            for annotation in newZoteroAnnotations {
-                if var snapshot = state.annotationsSnapshot {
-                    // Search is active, add new annotation to snapshot so that it's visible when search is cancelled
-                    self.add(annotation: annotation, to: &snapshot)
-                    state.annotationsSnapshot = snapshot
+    private func add(annotations: [Annotation], to state: inout PDFReaderState, selectFirst: Bool) {
+        guard !annotations.isEmpty else { return }
 
-                    // If new annotation passes filter, add it to current filtered list as well
-                    if let filter = state.currentFilter, self.filter(annotation: annotation, with: filter) {
-                        let index = self.add(annotation: annotation, to: &state.annotations)
+        var focus: IndexPath?
+        var selectedAnnotation: Annotation?
 
-                        if focus == nil {
-                            focus = IndexPath(row: index, section: annotation.page)
-                            selectedAnnotation = annotation
-                        }
-                    }
-                } else {
-                    // Search not active, just insert it to the list and focus
+        for annotation in annotations {
+            if var snapshot = state.annotationsSnapshot {
+                // Search is active, add new annotation to snapshot so that it's visible when search is cancelled
+                self.add(annotation: annotation, to: &snapshot)
+                state.annotationsSnapshot = snapshot
+
+                // If new annotation passes filter, add it to current filtered list as well
+                if let filter = state.currentFilter, self.filter(annotation: annotation, with: filter) {
                     let index = self.add(annotation: annotation, to: &state.annotations)
 
-                    if focus == nil {
+                    if selectFirst && focus == nil {
                         focus = IndexPath(row: index, section: annotation.page)
                         selectedAnnotation = annotation
                     }
                 }
+            } else {
+                // Search not active, just insert it to the list and focus
+                let index = self.add(annotation: annotation, to: &state.annotations)
 
-                // Remove from deleted in case user used undo/redo feature.
-                state.deletedKeys.remove(annotation.key)
+                if selectFirst && focus == nil {
+                    focus = IndexPath(row: index, section: annotation.page)
+                    selectedAnnotation = annotation
+                }
             }
 
-            state.focusSidebarIndexPath = focus
-            state.selectedAnnotation = selectedAnnotation
-            state.changes = [.annotations, .save, .selection]
+            // Remove from deleted in case user used undo/redo feature.
+            state.deletedKeys.remove(annotation.key)
+        }
+
+        state.focusSidebarIndexPath = focus
+        state.selectedAnnotation = selectedAnnotation
+        state.changes.insert(.annotations)
+
+        if selectedAnnotation != nil {
+            state.changes.insert(.selection)
         }
     }
 
@@ -690,11 +852,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
             if shouldRemoveSelection {
                 state.selectedAnnotation = nil
-                state.selectedAnnotationCommentActive = false
                 state.changes.insert(.selection)
-                state.changes.insert(.activeComment)
+
+                if state.selectedAnnotationCommentActive {
+                    state.selectedAnnotationCommentActive = false
+                    state.changes.insert(.activeComment)
+                }
             }
 
+            keys.forEach({ state.comments[$0] = nil })
             state.deletedKeys = state.deletedKeys.union(keys)
             state.removedAnnotationIndexPaths = indexPaths
             state.changes.insert(.annotations)
@@ -744,8 +910,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         do {
             let isDark = viewModel.state.interfaceStyle == .dark
             // Load Zotero annotations from DB
-            var (zoteroAnnotations, comments, page) = try self.documentData(for: viewModel.state.key, library: viewModel.state.library, baseFont: viewModel.state.commentFont,
-                                                                            userId: viewModel.state.userId, username: viewModel.state.username)
+            var (zoteroAnnotations, positions, comments, page, items) = try self.documentData(for: viewModel.state.key, library: viewModel.state.library, baseFont: viewModel.state.commentFont,
+                                                                                              userId: viewModel.state.userId, username: viewModel.state.username)
             // Create PSPDFKit annotations from Zotero annotations
             let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
             // Create Zotero non-editable annotations from supported document annotations
@@ -753,9 +919,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
+                state.dbPositions = positions
                 state.comments = comments
                 state.visiblePage = page
-                state.changes = .annotations
+                state.dbItems = items
+                state.changes = [.annotations, .itemObserving]
 
                 UndoController.performWithoutUndo(undoController: state.document.undoController) {
                     // Disable all non-zotero annotations, store previews if needed
@@ -812,7 +980,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
     private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String) throws
-                                                            -> (annotations: [Int: [Annotation]], comments: [String: NSAttributedString], page: Int) {
+                                                    -> (annotations: [Int: [Annotation]], positions: [AnnotationPosition], comments: [String: NSAttributedString], page: Int, items: Results<RItem>) {
         let coordinator = try self.dbStorage.createCoordinator()
 
         let page = try coordinator.perform(request: ReadDocumentDataDbRequest(attachmentKey: key, libraryId: library.identifier))
@@ -828,9 +996,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         var annotations: [Int: [Annotation]] = [:]
         var comments: [String: NSAttributedString] = [:]
+        var positions: [AnnotationPosition] = []
 
         for item in items {
             guard let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: userId, username: username) else { continue }
+
+            positions.append(AnnotationPosition(page: annotation.page, key: annotation.key))
 
             if var array = annotations[annotation.page] {
                 array.append(annotation)
@@ -842,7 +1013,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: baseFont)
         }
 
-        return (annotations, comments, page)
+        return (annotations, positions, comments, page, items)
     }
 }
 

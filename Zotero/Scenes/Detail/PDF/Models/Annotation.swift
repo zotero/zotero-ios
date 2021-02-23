@@ -10,8 +10,8 @@ import UIKit
 
 import CocoaLumberjackSwift
 
-struct Annotation {
-    enum Editability {
+struct Annotation: Equatable {
+    enum Editability: Equatable {
         case notEditable
         case metadataEditable
         case editable
