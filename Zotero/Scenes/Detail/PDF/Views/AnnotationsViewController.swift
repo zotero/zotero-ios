@@ -15,6 +15,10 @@ import PSPDFKit
 import PSPDFKitUI
 import RxSwift
 
+protocol SidebarParent: class {
+    var isSidebarVisible: Bool { get }
+}
+
 typealias AnnotationsViewControllerAction = (AnnotationView.Action, Annotation, UIButton) -> Void
 
 final class AnnotationsViewController: UIViewController {
@@ -23,14 +27,18 @@ final class AnnotationsViewController: UIViewController {
     private let disposeBag: DisposeBag
 
     private weak var tableView: UITableView!
+    private var dataSource: UITableViewDiffableDataSource<Int, Annotation>!
     private var searchController: UISearchController!
+    private var isVisible: Bool
 
+    weak var sidebarParent: SidebarParent?
     weak var coordinatorDelegate: DetailAnnotationsCoordinatorDelegate?
 
     // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>) {
         self.viewModel = viewModel
+        self.isVisible = false
         self.disposeBag = DisposeBag()
         super.init(nibName: nil, bundle: nil)
     }
@@ -56,6 +64,16 @@ final class AnnotationsViewController: UIViewController {
                       .disposed(by: self.disposeBag)
 
         self.viewModel.process(action: .startObservingAnnotationChanges)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.isVisible = true
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        self.isVisible = false
     }
 
     deinit {
@@ -146,13 +164,25 @@ final class AnnotationsViewController: UIViewController {
             return
         }
 
-        if state.insertedAnnotationIndexPaths == nil && state.removedAnnotationIndexPaths == nil && state.updatedAnnotationIndexPaths == nil {
-            self.tableView.reloadData()
-            completion()
-            return
-        }
+        let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
-        self.reload(insertions: state.insertedAnnotationIndexPaths, deletions: state.removedAnnotationIndexPaths, updates: state.updatedAnnotationIndexPaths, completion: completion)
+        var snapshot = NSDiffableDataSourceSnapshot<Int, Annotation>()
+        snapshot.appendSections(Array(0..<state.annotations.count))
+        var keys: [String] = []
+        for (page, annotations) in state.annotations {
+            keys.append(contentsOf: annotations.map({ $0.key }))
+            snapshot.appendItems(annotations, toSection: page)
+        }
+        NSLog("\(keys)")
+        self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+
+//        if state.insertedAnnotationIndexPaths == nil && state.removedAnnotationIndexPaths == nil && state.updatedAnnotationIndexPaths == nil {
+//            self.tableView.reloadData()
+//            completion()
+//            return
+//        }
+//
+//        self.reload(insertions: state.insertedAnnotationIndexPaths, deletions: state.removedAnnotationIndexPaths, updates: state.updatedAnnotationIndexPaths, completion: completion)
     }
 
     /// Updates tableView layout in case any cell changed height.
@@ -173,22 +203,22 @@ final class AnnotationsViewController: UIViewController {
         self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
 
-    private func reload(insertions: [IndexPath]?, deletions: [IndexPath]?, updates: [IndexPath]?, completion: @escaping () -> Void) {
-        self.tableView.performBatchUpdates {
-            if let indexPaths = insertions {
-                self.tableView.insertRows(at: indexPaths, with: .automatic)
-            }
-            if let indexPaths = deletions {
-                let animation: UITableView.RowAnimation = insertions == nil ? .left : .automatic
-                self.tableView.deleteRows(at: indexPaths, with: animation)
-            }
-            if let indexPaths = updates {
-                self.tableView.reloadRows(at: indexPaths, with: .none)
-            }
-        } completion: { _ in
-            completion()
-        }
-    }
+//    private func reload(insertions: [IndexPath]?, deletions: [IndexPath]?, updates: [IndexPath]?, completion: @escaping () -> Void) {
+//        self.tableView.performBatchUpdates {
+//            if let indexPaths = insertions {
+//                self.tableView.insertRows(at: indexPaths, with: .automatic)
+//            }
+//            if let indexPaths = deletions {
+//                let animation: UITableView.RowAnimation = insertions == nil ? .left : .automatic
+//                self.tableView.deleteRows(at: indexPaths, with: animation)
+//            }
+//            if let indexPaths = updates {
+//                self.tableView.reloadRows(at: indexPaths, with: .none)
+//            }
+//        } completion: { _ in
+//            completion()
+//        }
+//    }
 
     private func setup(cell: AnnotationCell, at indexPath: IndexPath, state: PDFReaderState) {
         guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }
@@ -225,7 +255,6 @@ final class AnnotationsViewController: UIViewController {
         let tableView = UITableView(frame: self.view.bounds, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
-        tableView.dataSource = self
         tableView.prefetchDataSource = self
         tableView.separatorStyle = .none
         tableView.backgroundView = backgroundView
@@ -240,26 +269,22 @@ final class AnnotationsViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor)
         ])
 
+        let dataSource = UITableViewDiffableDataSource<Int, Annotation>(tableView: tableView) { [weak self] tableView, indexPath, model -> UITableViewCell? in
+            guard let `self` = self else { return nil }
+
+            let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
+            cell.contentView.backgroundColor = self.view.backgroundColor
+            if let cell = cell as? AnnotationCell {
+                self.setup(cell: cell, at: indexPath, state: self.viewModel.state)
+            }
+            return cell
+        }
+
         self.tableView = tableView
+        self.dataSource = dataSource
     }
 
     private func setupSearchController() {
-//        let controller = UISearchController(searchResultsController: nil)
-//        controller.searchBar.searchBarStyle = .minimal
-//        controller.searchBar.placeholder = L10n.Pdf.AnnotationsSidebar.searchTitle
-//        controller.searchBar.barTintColor = .systemGray6
-//        controller.obscuresBackgroundDuringPresentation = false
-//        controller.hidesNavigationBarDuringPresentation = false
-//
-//        var frame = controller.searchBar.frame
-//        frame.size.height = 52
-//        controller.searchBar.frame = frame
-
-//        self.tableView.tableHeaderView = controller.searchBar
-//        self.searchController = controller
-
-//        controller.searchBar.rx
-
         let insets = UIEdgeInsets(top: PDFReaderLayout.searchBarVerticalInset,
                                   left: PDFReaderLayout.annotationLayout.horizontalInset,
                                   bottom: PDFReaderLayout.searchBarVerticalInset - PDFReaderLayout.cellSelectionLineWidth,
@@ -307,27 +332,10 @@ final class AnnotationsViewController: UIViewController {
     }
 }
 
-extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return Int(self.viewModel.state.document.pageCount)
-    }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.viewModel.state.annotations[section]?.count ?? 0
-    }
-
+extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         let keys = indexPaths.compactMap({ self.viewModel.state.annotations[$0.section]?[$0.row] }).map({ $0.key })
         self.viewModel.process(action: .requestPreviews(keys: keys, notify: false))
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
-        cell.contentView.backgroundColor = self.view.backgroundColor
-        if let cell = cell as? AnnotationCell {
-            self.setup(cell: cell, at: indexPath, state: self.viewModel.state)
-        }
-        return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

@@ -11,7 +11,7 @@ import UIKit
 import CocoaLumberjackSwift
 
 struct Annotation: Equatable {
-    enum Editability: Equatable {
+    enum Editability: Equatable, Hashable {
         case notEditable
         case metadataEditable
         case editable
@@ -217,5 +217,22 @@ struct Annotation: Equatable {
                           didChange: false,
                           editability: self.editability,
                           isSyncable: self.isSyncable)
+    }
+}
+
+extension Annotation: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.key)
+        hasher.combine(self.type)
+        hasher.combine(self.page)
+        hasher.combine(self.pageLabel)
+        hasher.combine(self.author)
+        hasher.combine(self.isAuthor)
+        hasher.combine(self.color)
+        hasher.combine(self.comment)
+        hasher.combine(self.text)
+        hasher.combine(self.sortIndex)
+        hasher.combine(self.tags)
+        hasher.combine(self.editability)
     }
 }

@@ -167,6 +167,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func syncItems(results: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard !deletions.isEmpty || !insertions.isEmpty || !modifications.isEmpty else { return }
+
         // TODO: - group editability temporarily disabled
         let editability: Annotation.Editability // = library.metadataEditable ? .editable : .notEditable
         switch viewModel.state.library.identifier {
@@ -188,16 +190,13 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
                 if var snapshot = state.annotationsSnapshot {
                     // If search is active, try updating snapshot
-                    guard self.modify(annotation: annotation, in: &snapshot) != nil else { continue }
+                    guard self.modify(annotation: annotation, in: &snapshot) else { continue }
                     state.annotationsSnapshot = snapshot
                     // If annotation was found in snapshot and was different, update visible results as well
-                    if let indexPath = self.modify(annotation: annotation, in: &state.annotations) {
-                        state.updatedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.updatedAnnotationIndexPaths)
-                    }
+                    self.modify(annotation: annotation, in: &state.annotations)
                 } else {
-                    // If search is not active, add modified index path for all annotations
-                    guard let indexPath = self.modify(annotation: annotation, in: &state.annotations) else { continue }
-                    state.updatedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.updatedAnnotationIndexPaths)
+                    // If search is not active, modify annotation in all annotations
+                    guard self.modify(annotation: annotation, in: &state.annotations) else { continue }
                 }
 
                 state.comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: state.commentFont)
@@ -228,34 +227,30 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
                 if var snapshot = state.annotationsSnapshot {
                     // If search is active, try removing in snapshot
-                    guard self.remove(at: position, from: &snapshot) != nil else { continue }
+                    guard self.remove(at: position, from: &snapshot) else { continue }
                     state.annotationsSnapshot = snapshot
                     // If annotation was found in snapshot, try removing in search results as well
-                    if let indexPath = self.remove(at: position, from: &state.annotations) {
-                        state.removedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.removedAnnotationIndexPaths)
-                    }
+                    self.remove(at: position, from: &state.annotations)
                 } else {
                     // If search is not active, remove index path from all annotations
-                    guard let indexPath = self.remove(at: position, from: &state.annotations) else { continue }
-                    state.removedAnnotationIndexPaths = self.added(indexPath: indexPath, to: state.removedAnnotationIndexPaths)
+                    guard self.remove(at: position, from: &state.annotations) else { continue }
                 }
             }
+
             state.ignoreNotifications[.PSPDFAnnotationsRemoved] = deletedKeys
 
             // Add new annotations
-            var addedKeys: Set<String> = []
+            var insertedKeys: Set<String> = []
             for idx in insertions {
                 guard let annotation = AnnotationConverter.annotation(from: results[idx], editability: editability, currentUserId: state.userId, username: state.username) else { continue }
                 state.dbPositions.insert(AnnotationPosition(page: annotation.page, key: annotation.key), at: idx)
                 addedAnnotations.append(annotation)
-                addedKeys.insert(annotation.key)
+                insertedKeys.insert(annotation.key)
             }
             self.add(annotations: addedAnnotations, to: &state, selectFirst: false)
-            state.ignoreNotifications[.PSPDFAnnotationsAdded] = addedKeys
+            state.ignoreNotifications[.PSPDFAnnotationsAdded] = insertedKeys
 
-            if state.removedAnnotationIndexPaths != nil || state.insertedAnnotationIndexPaths != nil || state.updatedAnnotationIndexPaths != nil {
-                state.changes.insert(.annotations)
-            }
+            state.changes.insert(.annotations)
         }
 
         // Update the document
@@ -279,34 +274,27 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func added(indexPath: IndexPath, to optionalArray: [IndexPath]?) -> [IndexPath] {
-        guard var array = optionalArray else {
-            return [indexPath]
-        }
-        array.append(indexPath)
-        return array
-    }
-
     /// Modifies dictionary of annotations if given annotation can be found and differs from existing annotation.
     /// - parameter annotation: Modified annotation.
     /// - parameter annotations: Dictionary of existing annotations.
     /// - returns: Index path of annotation if it was found and was different from existing annotation.
     @discardableResult
-    private func modify(annotation: Annotation, in annotations: inout [Int: [Annotation]]) -> IndexPath? {
+    private func modify(annotation: Annotation, in annotations: inout [Int: [Annotation]]) -> Bool {
         guard var pageAnnotations = annotations[annotation.page],
               let pageIdx = pageAnnotations.firstIndex(where: { $0.key == annotation.key }),
-              pageAnnotations[pageIdx] != annotation else { return nil }
+              pageAnnotations[pageIdx] != annotation else { return false }
         pageAnnotations[pageIdx] = annotation
         annotations[annotation.page] = pageAnnotations
-        return IndexPath(row: pageIdx, section: annotation.page)
+        return true
     }
 
-    private func remove(at position: AnnotationPosition, from annotations: inout [Int: [Annotation]]) -> IndexPath? {
+    @discardableResult
+    private func remove(at position: AnnotationPosition, from annotations: inout [Int: [Annotation]]) -> Bool {
         guard var pageAnnotations = annotations[position.page],
-              let pageIdx = pageAnnotations.firstIndex(where: { $0.key == position.key }) else { return nil }
+              let pageIdx = pageAnnotations.firstIndex(where: { $0.key == position.key }) else { return false }
         pageAnnotations.remove(at: pageIdx)
         annotations[position.page] = pageAnnotations
-        return IndexPath(row: pageIdx, section: position.page)
+        return true
     }
 
     private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
@@ -418,6 +406,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.annotations = groupedAnnotations
             state.deletedKeys = []
+            state.insertedKeys = []
+            state.modifiedKeys = []
         }
 
         self.queue.async {
@@ -466,13 +456,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             state.selectedAnnotation = annotation
         }
 
+        if !state.insertedKeys.contains(annotation.key) {
+            state.modifiedKeys.insert(annotation.key)
+        }
         state.changes.insert(.save)
 
         // If sort index didn't change, reload in place
         if annotation.sortIndex == oldAnnotation.sortIndex {
             state.annotations[indexPath.section]?[indexPath.row] = annotation
             if shouldReload {
-                state.updatedAnnotationIndexPaths = [indexPath]
                 state.changes.insert(.annotations)
             }
             return
@@ -486,13 +478,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         state.annotations[indexPath.section] = annotations
         state.changes.insert(.annotations)
-
-        if indexPath.row == newIndex {
-            state.updatedAnnotationIndexPaths = [indexPath]
-        } else {
-            state.removedAnnotationIndexPaths = [indexPath]
-            state.insertedAnnotationIndexPaths = [IndexPath(row: newIndex, section: indexPath.section)]
-        }
     }
 
     private func updatePdfAnnotation(to annotation: Annotation, changes: PdfAnnotationChanges, state: PDFReaderState) {
@@ -761,6 +746,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         self.update(viewModel: viewModel) { state in
             self.add(annotations: newZoteroAnnotations, to: &state, selectFirst: true)
+            let keys = newZoteroAnnotations.map({ $0.key })
+            state.insertedKeys = state.insertedKeys.union(keys)
+            state.deletedKeys = state.deletedKeys.subtracting(keys)
             state.changes.insert(.save)
         }
     }
@@ -795,9 +783,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                     selectedAnnotation = annotation
                 }
             }
-
-            // Remove from deleted in case user used undo/redo feature.
-            state.deletedKeys.remove(annotation.key)
         }
 
         state.focusSidebarIndexPath = focus
@@ -813,6 +798,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     private func add(annotation: Annotation, to allAnnotations: inout [Int: [Annotation]]) -> Int {
         let index: Int
         if let annotations = allAnnotations[annotation.page] {
+            if let existingId = annotations.firstIndex(where: { $0.key == annotation.key }) {
+                return existingId
+            }
+
             index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
             allAnnotations[annotation.page]?.insert(annotation, at: index)
         } else {
@@ -827,30 +816,20 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter viewModel: ViewModel.
     private func remove(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
         self.update(viewModel: viewModel) { state in
-            let shouldRemoveSelection: Bool
-            let indexPaths: [IndexPath]
             let keys: Set<String>
 
             if var snapshot = state.annotationsSnapshot {
                 // Search is active, delete annotation from snapshot so that it doesn't re-appear when search is cancelled
-                let (removedSelection, _keys, _indexPaths) = self.remove(annotations: annotations, from: &snapshot, selectedKey: state.selectedAnnotation?.key)
-                keys = _keys
-                indexPaths = _indexPaths
-                shouldRemoveSelection = removedSelection
-
+                keys = self.remove(annotations: annotations, from: &snapshot)
                 state.annotationsSnapshot = snapshot
-
                 // Remove annotations from search result as well
-                self.remove(annotations: annotations, from: &state.annotations, selectedKey: nil)
+                self.remove(annotations: annotations, from: &state.annotations)
             } else {
-                // Search not active, just remove annotations and deselect if needed
-                let (removedSelection, _keys, _indexPaths) = self.remove(annotations: annotations, from: &state.annotations, selectedKey: state.selectedAnnotation?.key)
-                keys = _keys
-                indexPaths = _indexPaths
-                shouldRemoveSelection = removedSelection
+                // Search not active, remove from all annotations
+                keys = self.remove(annotations: annotations, from: &state.annotations)
             }
 
-            if shouldRemoveSelection {
+            if let selectedKey = state.selectedAnnotation?.key, keys.contains(selectedKey) {
                 state.selectedAnnotation = nil
                 state.changes.insert(.selection)
 
@@ -862,38 +841,25 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
             keys.forEach({ state.comments[$0] = nil })
             state.deletedKeys = state.deletedKeys.union(keys)
-            state.removedAnnotationIndexPaths = indexPaths
+            state.insertedKeys = state.insertedKeys.subtracting(keys)
+            state.modifiedKeys = state.modifiedKeys.subtracting(keys)
             state.changes.insert(.annotations)
             state.changes.insert(.save)
         }
     }
 
     @discardableResult
-    private func remove(annotations: [PSPDFKit.Annotation], from zoteroAnnotations: inout [Int: [Annotation]], selectedKey: String?) -> (removedSelection: Bool, keys: Set<String>, indexPaths: [IndexPath]) {
+    private func remove(annotations: [PSPDFKit.Annotation], from zoteroAnnotations: inout [Int: [Annotation]]) -> Set<String> {
         var keys: Set<String> = []
-        var indexPaths: [IndexPath] = []
-        var removedSelection = false
-
         for annotation in annotations {
             guard annotation.syncable, let key = annotation.key else { continue }
-
-            keys.insert(key)
-
-            if selectedKey == key {
-                removedSelection = true
-            }
-
             let page = Int(annotation.pageIndex)
             if let index = zoteroAnnotations[page]?.firstIndex(where: { $0.key == key }) {
-                indexPaths.append(IndexPath(row: index, section: page))
+                zoteroAnnotations[page]?.remove(at: index)
+                keys.insert(key)
             }
         }
-
-        for indexPath in indexPaths {
-            zoteroAnnotations[indexPath.section]?.remove(at: indexPath.row)
-        }
-
-        return (removedSelection, keys, indexPaths)
+        return keys
     }
 
     private func indexPath(for key: String, in annotations: [Int: [Annotation]]) -> IndexPath? {

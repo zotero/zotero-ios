@@ -42,9 +42,14 @@ final class PDFReaderViewController: UIViewController {
     private var annotationTimerDisposeBag: DisposeBag
     private var pageTimerDisposeBag: DisposeBag
     private var itemToken: NotificationToken?
+    /// These 3 keys sets are used to skip unnecessary realm notifications, which are created by user actions and would result in duplicate actions.
+    private var insertedKeys: Set<String>
+    private var deletedKeys: Set<String>
+    private var modifiedKeys: Set<String>
+
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
-    private var isSidebarOpened: Bool {
+    var isSidebarVisible: Bool {
         return self.annotationsControllerLeft.constant == 0
     }
 
@@ -75,6 +80,9 @@ final class PDFReaderViewController: UIViewController {
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
         self.viewModel = viewModel
         self.isCompactSize = compactSize
+        self.insertedKeys = []
+        self.deletedKeys = []
+        self.modifiedKeys = []
         self.isSidebarTransitioning = false
         self.disposeBag = DisposeBag()
         self.annotationTimerDisposeBag = DisposeBag()
@@ -121,7 +129,7 @@ final class PDFReaderViewController: UIViewController {
         let sizeDidChange = isCompactSize != self.isCompactSize
         self.isCompactSize = isCompactSize
 
-        if self.isSidebarOpened && sizeDidChange {
+        if self.isSidebarVisible && sizeDidChange {
             self.pdfControllerLeft.constant = isCompactSize ? 0 : PDFReaderLayout.sidebarWidth
         }
 
@@ -174,6 +182,9 @@ final class PDFReaderViewController: UIViewController {
         }
 
         if state.changes.contains(.save) {
+            self.insertedKeys = self.insertedKeys.union(state.insertedKeys)
+            self.deletedKeys = self.deletedKeys.union(state.deletedKeys)
+            self.modifiedKeys = self.modifiedKeys.union(state.modifiedKeys)
             self.enqueueAnnotationSave()
         }
 
@@ -235,7 +246,7 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func showPopupAnnotationIfNeeded(state: PDFReaderState) {
-        guard !self.isSidebarOpened,
+        guard !self.isSidebarVisible,
               let annotation = state.selectedAnnotation,
               let pageView = self.pdfController.pageViewForPage(at: UInt(annotation.page)) else { return }
 
@@ -294,7 +305,7 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func toggleSidebar() {
-        let shouldShow = !self.isSidebarOpened
+        let shouldShow = !self.isSidebarVisible
 
         // If the layout is compact, show annotation sidebar above pdf document.
         if !UIDevice.current.isCompactWidth(size: self.view.frame.size) {
@@ -442,7 +453,7 @@ final class PDFReaderViewController: UIViewController {
 
         case .PSPDFAnnotationsRemoved:
             if let annotations = self.annotations(for: notification) {
-                self.viewModel.process(action: .annotationsAdded(annotations))
+                self.viewModel.process(action: .annotationsRemoved(annotations))
             } else {
                 self.viewModel.process(action: .notificationReceived(notification.name))
             }
@@ -467,6 +478,32 @@ final class PDFReaderViewController: UIViewController {
         self.viewModel.process(action: .setBoundingBox(pdfAnnotation))
     }
 
+    private func performObservingUpdateIfNeeded(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) {
+        let (filteredDeletions, filteredInsertions, filteredModifications) = self.filterObservingUpdateIndices(objects: objects, deletions: deletions,
+                                                                                                               insertions: insertions, modifications: modifications)
+        guard !filteredDeletions.isEmpty || !filteredInsertions.isEmpty || !filteredModifications.isEmpty else { return }
+        self.viewModel.process(action: .itemsChange(objects: objects, deletions: filteredDeletions, insertions: filteredInsertions, modifications: filteredModifications))
+    }
+
+    private func filterObservingUpdateIndices(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) -> (deletions: [Int], insertions: [Int], modifications: [Int]) {
+        let filteredModifications = modifications.compactMap { index -> Int? in
+            let key = self.viewModel.state.dbPositions[index].key
+            // If this key was modified by user action, ignore it. Otherwise add it to filtered array, so that the action can be processed.
+            return self.modifiedKeys.remove(key) == nil ? index : nil
+        }
+        let filteredDeletions = deletions.compactMap { index -> Int? in
+            let key = self.viewModel.state.dbPositions[index].key
+            // If this key was deleted by user action, ignore it. Otherwise add it to filtered array, so that the action can be processed.
+            return self.deletedKeys.remove(key) == nil ? index : nil
+        }
+        let filteredInsertions = insertions.compactMap { index -> Int? in
+            let key = objects[index].key
+            // If this key was inserted by user action, ignore it. Otherwise add it to filtered array, so that the action can be processed.
+            return self.insertedKeys.remove(key) == nil ? index : nil
+        }
+        return (filteredDeletions, filteredInsertions, filteredModifications)
+    }
+
     // MARK: - Setups
 
     private func setupViews() {
@@ -474,6 +511,7 @@ final class PDFReaderViewController: UIViewController {
         pdfController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let sidebarController = AnnotationsViewController(viewModel: self.viewModel)
+        sidebarController.sidebarParent = self
         sidebarController.view.translatesAutoresizingMaskIntoConstraints = false
         sidebarController.coordinatorDelegate = self.coordinatorDelegate
 
@@ -822,10 +860,10 @@ final class PDFReaderViewController: UIViewController {
             return
         }
 
-        self.itemToken = items.observe({ changes in
+        self.itemToken = items.observe({ [weak self] changes in
             switch changes {
             case .update(let objects, let deletions, let insertions, let modifications):
-                self.viewModel.process(action: .itemsChange(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications))
+                self?.performObservingUpdateIfNeeded(objects: objects, deletions: deletions, insertions: insertions, modifications: modifications)
             case .initial, .error: break
             }
         })
@@ -964,6 +1002,8 @@ extension PDFReaderViewController: ConflictViewControllerReceiver {
         self.coordinatorDelegate?.showDeletedAlertForPdf(completion: completion)
     }
 }
+
+extension PDFReaderViewController: SidebarParent {}
 
 final class SelectionView: UIView {
     static let inset: CGFloat = 4.5 // 2.5 for border, 2 for padding
