@@ -173,16 +173,7 @@ final class AnnotationsViewController: UIViewController {
             keys.append(contentsOf: annotations.map({ $0.key }))
             snapshot.appendItems(annotations, toSection: page)
         }
-        NSLog("\(keys)")
         self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
-
-//        if state.insertedAnnotationIndexPaths == nil && state.removedAnnotationIndexPaths == nil && state.updatedAnnotationIndexPaths == nil {
-//            self.tableView.reloadData()
-//            completion()
-//            return
-//        }
-//
-//        self.reload(insertions: state.insertedAnnotationIndexPaths, deletions: state.removedAnnotationIndexPaths, updates: state.updatedAnnotationIndexPaths, completion: completion)
     }
 
     /// Updates tableView layout in case any cell changed height.
@@ -202,23 +193,6 @@ final class AnnotationsViewController: UIViewController {
 
         self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
-
-//    private func reload(insertions: [IndexPath]?, deletions: [IndexPath]?, updates: [IndexPath]?, completion: @escaping () -> Void) {
-//        self.tableView.performBatchUpdates {
-//            if let indexPaths = insertions {
-//                self.tableView.insertRows(at: indexPaths, with: .automatic)
-//            }
-//            if let indexPaths = deletions {
-//                let animation: UITableView.RowAnimation = insertions == nil ? .left : .automatic
-//                self.tableView.deleteRows(at: indexPaths, with: animation)
-//            }
-//            if let indexPaths = updates {
-//                self.tableView.reloadRows(at: indexPaths, with: .none)
-//            }
-//        } completion: { _ in
-//            completion()
-//        }
-//    }
 
     private func setup(cell: AnnotationCell, at indexPath: IndexPath, state: PDFReaderState) {
         guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }

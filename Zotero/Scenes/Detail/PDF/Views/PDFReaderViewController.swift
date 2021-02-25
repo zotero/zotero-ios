@@ -439,7 +439,13 @@ final class PDFReaderViewController: UIViewController {
     private func processAnnotationObserving(notification: Notification) {
         switch notification.name {
         case .PSPDFAnnotationChanged:
-            self.updateRects(from: notification)
+            guard let pdfAnnotation = notification.object as? PSPDFKit.Annotation, let key = pdfAnnotation.key else { return }
+            if self.viewModel.state.ignoreNotifications[.PSPDFAnnotationChanged]?.contains(key) == true {
+                self.viewModel.process(action: .annotationChangeNotificationReceived(key))
+            } else {
+                self.updateRects(for: pdfAnnotation, from: notification)
+            }
+
         case .PSPDFAnnotationsAdded:
             if let tool = self.pdfController.annotationStateManager.state {
                 self.toggle(annotationTool: tool)
@@ -471,18 +477,21 @@ final class PDFReaderViewController: UIViewController {
         return annotations
     }
 
-    private func updateRects(from notification: Notification) {
+    private func updateRects(for annotation: PSPDFKit.Annotation, from notification: Notification) {
         guard let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String],
-              changes.contains("boundingBox") || changes.contains("rects"),
-              let pdfAnnotation = notification.object as? PSPDFKit.Annotation else { return }
-        self.viewModel.process(action: .setBoundingBox(pdfAnnotation))
+              changes.contains("boundingBox") || changes.contains("rects") else { return }
+        self.viewModel.process(action: .setBoundingBox(annotation))
     }
 
     private func performObservingUpdateIfNeeded(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) {
         let (filteredDeletions, filteredInsertions, filteredModifications) = self.filterObservingUpdateIndices(objects: objects, deletions: deletions,
                                                                                                                insertions: insertions, modifications: modifications)
-        guard !filteredDeletions.isEmpty || !filteredInsertions.isEmpty || !filteredModifications.isEmpty else { return }
-        self.viewModel.process(action: .itemsChange(objects: objects, deletions: filteredDeletions, insertions: filteredInsertions, modifications: filteredModifications))
+        if !filteredDeletions.isEmpty || !filteredInsertions.isEmpty || !filteredModifications.isEmpty {
+            // If there are any changes which need sync between database and memory, process them
+            self.viewModel.process(action: .itemsChange(objects: objects, deletions: filteredDeletions, insertions: filteredInsertions, modifications: filteredModifications))
+        }
+        // Keep `dbPositions` in sync with database
+        self.viewModel.process(action: .updateDbPositions(objects: objects, deletions: deletions, insertions: insertions))
     }
 
     private func filterObservingUpdateIndices(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) -> (deletions: [Int], insertions: [Int], modifications: [Int]) {

@@ -38,7 +38,9 @@ enum PDFReaderAction {
     case export
     case clearTmpAnnotationPreviews
     case itemsChange(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int])
+    case updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int])
     case notificationReceived(Notification.Name)
+    case annotationChangeNotificationReceived(String)
 }
 
 #endif

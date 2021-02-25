@@ -30,11 +30,15 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         static let color = PdfAnnotationChanges(rawValue: 1 << 0)
         static let comment = PdfAnnotationChanges(rawValue: 1 << 1)
+        static let boundingBox = PdfAnnotationChanges(rawValue: 1 << 2)
+        static let rects = PdfAnnotationChanges(rawValue: 1 << 2)
 
         static func stringValues(from changes: PdfAnnotationChanges) -> [String] {
             switch changes {
             case .color: return ["alpha", "color"]
             case .comment: return ["contents"]
+            case .rects: return ["rects"]
+            case .boundingBox: return ["boundingBox"]
             default: return []
             }
         }
@@ -159,9 +163,36 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .itemsChange(let objects, let deletions, let insertions, let modifications):
             self.syncItems(results: objects, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
 
+        case .updateDbPositions(let objects, let deletions, let insertions):
+            self.updateDbPositions(objects: objects, deletions: deletions, insertions: insertions, in: viewModel)
+
         case .notificationReceived(let name):
             self.update(viewModel: viewModel) { state in
                 state.ignoreNotifications[name] = nil
+            }
+
+        case .annotationChangeNotificationReceived(let key):
+            self.update(viewModel: viewModel) { state in
+                state.ignoreNotifications[.PSPDFAnnotationChanged]?.remove(key)
+            }
+        }
+    }
+
+    private func updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard !deletions.isEmpty || !insertions.isEmpty else { return }
+
+        self.update(viewModel: viewModel) { state in
+            deletions.reversed().forEach({ state.dbPositions.remove(at: $0) })
+            if !deletions.isEmpty {
+                DDLogInfo("PDFReaderActionHandler: removed dbPositions (\(state.dbPositions.count))")
+            }
+            for idx in insertions {
+                let item = objects[idx]
+                guard let page = item.fields.filter(.key(FieldKeys.Item.Annotation.pageIndex)).first.flatMap({ Int($0.value) }) else { continue }
+                state.dbPositions.insert(AnnotationPosition(page: page, key: item.key), at: idx)
+            }
+            if !insertions.isEmpty {
+                DDLogInfo("PDFReaderActionHandler: inserted dbPositions (\(state.dbPositions.count))")
             }
         }
     }
@@ -180,7 +211,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         var deletedAnnotations: [PSPDFKit.Annotation] = []
         var addedAnnotations: [Annotation] = []
+        var modifiedAnnotations: [(PSPDFKit.Annotation, Annotation, PdfAnnotationChanges)] = []
 
+        var modifiedKeys: Set<String> = []
         self.update(viewModel: viewModel) { state in
             // Modify existing annotations
             for idx in Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions) {
@@ -188,24 +221,34 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 guard !state.deletedKeys.contains(item.key), // If annotation was deleted, it'll be stored as deleted anyway or CR will happen
                       let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: state.userId, username: state.username) else { continue }
 
+                var changes: PdfAnnotationChanges = []
+
                 if var snapshot = state.annotationsSnapshot {
                     // If search is active, try updating snapshot
-                    guard self.modify(annotation: annotation, in: &snapshot) else { continue }
+                    guard let _changes = self.modify(annotation: annotation, in: &snapshot) else { continue }
+                    changes = _changes
                     state.annotationsSnapshot = snapshot
                     // If annotation was found in snapshot and was different, update visible results as well
                     self.modify(annotation: annotation, in: &state.annotations)
                 } else {
                     // If search is not active, modify annotation in all annotations
-                    guard self.modify(annotation: annotation, in: &state.annotations) else { continue }
+                    guard let _changes = self.modify(annotation: annotation, in: &state.annotations) else { continue }
+                    changes = _changes
+                }
+
+                if !changes.isEmpty, let pdfAnnotation = state.document.annotations(at: PageIndex(annotation.page)).first(where: { $0.key == annotation.key }) {
+                    modifiedAnnotations.append((pdfAnnotation, annotation, changes))
+                    modifiedKeys.insert(annotation.key)
                 }
 
                 state.comments[annotation.key] = self.htmlAttributedStringConverter.convert(text: annotation.comment, baseFont: state.commentFont)
             }
+            state.ignoreNotifications[.PSPDFAnnotationChanged] = modifiedKeys
 
             // Delete annotations
             var deletedKeys: Set<String> = []
             for idx in deletions {
-                let position = state.dbPositions.remove(at: idx)
+                let position = state.dbPositions[idx]
 
                 if let annotation = state.document.annotations(at: PageIndex(position.page)).first(where: { $0.key == position.key }) {
                     deletedAnnotations.append(annotation)
@@ -243,7 +286,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             var insertedKeys: Set<String> = []
             for idx in insertions {
                 guard let annotation = AnnotationConverter.annotation(from: results[idx], editability: editability, currentUserId: state.userId, username: state.username) else { continue }
-                state.dbPositions.insert(AnnotationPosition(page: annotation.page, key: annotation.key), at: idx)
                 addedAnnotations.append(annotation)
                 insertedKeys.insert(annotation.key)
             }
@@ -256,6 +298,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         // Update the document
 
         UndoController.performWithoutUndo(undoController: viewModel.state.document.undoController) {
+            if !modifiedAnnotations.isEmpty {
+                for (pdfAnnotation, annotation, changes) in modifiedAnnotations {
+                    self.update(pdfAnnotation: pdfAnnotation, with: annotation, changes: changes, state: viewModel.state)
+                }
+            }
+
             if !deletedAnnotations.isEmpty {
                 viewModel.state.document.remove(annotations: deletedAnnotations, options: nil)
             }
@@ -266,9 +314,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 // Add them to document, suppress notifications
                 viewModel.state.document.add(annotations: annotations, options: nil)
                 // Store preview for image annotations
-                let isDark = viewModel.state.interfaceStyle == .dark
                 annotations.compactMap({ $0 as? PSPDFKit.SquareAnnotation }).forEach { annotation in
-                    self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key, libraryId: viewModel.state.library.identifier, isDark: isDark)
+                    self.annotationPreviewController.store(for: annotation, parentKey: viewModel.state.key,
+                                                           libraryId: viewModel.state.library.identifier,
+                                                           isDark: (viewModel.state.interfaceStyle == .dark))
                 }
             }
         }
@@ -279,13 +328,30 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotations: Dictionary of existing annotations.
     /// - returns: Index path of annotation if it was found and was different from existing annotation.
     @discardableResult
-    private func modify(annotation: Annotation, in annotations: inout [Int: [Annotation]]) -> Bool {
+    private func modify(annotation: Annotation, in annotations: inout [Int: [Annotation]]) -> PdfAnnotationChanges? {
         guard var pageAnnotations = annotations[annotation.page],
               let pageIdx = pageAnnotations.firstIndex(where: { $0.key == annotation.key }),
-              pageAnnotations[pageIdx] != annotation else { return false }
+              pageAnnotations[pageIdx] != annotation else { return nil }
+
+        let oldAnnotation = pageAnnotations[pageIdx]
         pageAnnotations[pageIdx] = annotation
         annotations[annotation.page] = pageAnnotations
-        return true
+
+        var changes: PdfAnnotationChanges = []
+        if oldAnnotation.color != annotation.color {
+            changes.insert(.color)
+        }
+        if oldAnnotation.comment != annotation.comment {
+            changes.insert(.comment)
+        }
+        if oldAnnotation.boundingBox != annotation.boundingBox {
+            changes.insert(.boundingBox)
+        }
+        if oldAnnotation.rects != annotation.rects {
+            changes.insert(.rects)
+        }
+
+        return changes
     }
 
     @discardableResult
@@ -447,7 +513,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             additionalStateChange?(&state)
         }
 
-        self.updatePdfAnnotation(to: newAnnotation, changes: changes, state: viewModel.state)
+        if let pdfAnnotation = viewModel.state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) {
+            self.update(pdfAnnotation: pdfAnnotation, with: newAnnotation, changes: changes, state: viewModel.state)
+        }
     }
 
     private func update(state: inout PDFReaderState, with annotation: Annotation, from oldAnnotation: Annotation, at indexPath: IndexPath, shouldReload: Bool) {
@@ -480,8 +548,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         state.changes.insert(.annotations)
     }
 
-    private func updatePdfAnnotation(to annotation: Annotation, changes: PdfAnnotationChanges, state: PDFReaderState) {
-        guard !changes.isEmpty, let pdfAnnotation = state.document.annotations(at: UInt(annotation.page)).first(where: { $0.syncable && $0.key == annotation.key }) else { return }
+    private func update(pdfAnnotation: PSPDFKit.Annotation, with annotation: Annotation, changes: PdfAnnotationChanges, state: PDFReaderState) {
+        guard !changes.isEmpty else { return }
 
         if changes.contains(.color) {
             let (color, alpha) = AnnotationColorGenerator.color(from: UIColor(hex: annotation.color),
@@ -494,6 +562,17 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         if changes.contains(.comment) {
             pdfAnnotation.contents = annotation.comment
+        }
+
+        if changes.contains(.boundingBox) {
+            pdfAnnotation.boundingBox = annotation.boundingBox
+            if let annotation = pdfAnnotation as? PSPDFKit.SquareAnnotation {
+                self.annotationPreviewController.store(for: annotation, parentKey: state.key, libraryId: state.library.identifier, isDark: (state.interfaceStyle == .dark))
+            }
+        }
+
+        if changes.contains(.rects) {
+            pdfAnnotation.rects = annotation.rects
         }
 
         NotificationCenter.default.post(name: NSNotification.Name.PSPDFAnnotationChanged, object: pdfAnnotation,
@@ -885,6 +964,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
             self.update(viewModel: viewModel) { state in
                 state.annotations = zoteroAnnotations
+                DDLogInfo("PDFReaderActionHandler: loaded dbPositions (\(positions.count))")
                 state.dbPositions = positions
                 state.comments = comments
                 state.visiblePage = page
