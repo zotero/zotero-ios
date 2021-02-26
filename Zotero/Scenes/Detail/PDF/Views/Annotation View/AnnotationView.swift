@@ -79,15 +79,14 @@ final class AnnotationView: UIView {
 
     func setupHeader(with annotation: Annotation, selected: Bool, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
-        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: annotation.author, showsMenuButton: (hasWritePermission && selected))
+        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.sortIndex, author: annotation.author, showsMenuButton: (hasWritePermission && selected))
     }
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
         let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
 
-        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel,
-                          author: (annotation.isAuthor ? "" : annotation.author), showsMenuButton: canEdit)
+        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: (annotation.isAuthor ? "" : annotation.author), showsMenuButton: canEdit)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
         self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit)

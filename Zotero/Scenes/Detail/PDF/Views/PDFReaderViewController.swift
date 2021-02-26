@@ -104,9 +104,9 @@ final class PDFReaderViewController: UIViewController {
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
 
-        self.viewModel.process(action: .loadDocumentData)
-
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
+
+//        self.viewModel.process(action: .loadDocumentData)
     }
 
     deinit {
@@ -146,6 +146,12 @@ final class PDFReaderViewController: UIViewController {
                 self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: Int(self.pdfController.pageIndex))
             }
         }, completion: nil)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        self.viewModel.process(action: .loadDocumentData)
     }
 
     // MARK: - Actions
@@ -995,9 +1001,22 @@ extension PDFReaderViewController: UIPopoverPresentationControllerDelegate {
 }
 
 extension PDFReaderViewController: AnnotationBoundingBoxConverter {
-    func convert(for annotation: PSPDFKit.Annotation) -> CGRect? {
-        guard let pageView = self.pdfController.pageViewForPage(at: annotation.pageIndex) else { return nil }
-        return self.view.convert(annotation.boundingBox, from: pageView.pdfCoordinateSpace)
+    /// Converts from database to PSPDFKit rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = self.viewModel.state.document.pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform)
+    }
+
+    /// Converts from PSPDFKit to database rect. Database stores rects in RAW PDF Coordinate space. PSPDFKit works with Normalized PDF Coordinate Space.
+    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect? {
+        guard let pageInfo = self.viewModel.state.document.pageInfoForPage(at: page) else { return nil }
+        return rect.applying(pageInfo.transform.inverted())
+    }
+
+    /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
+    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
+        guard let pageInfo = self.viewModel.state.document.pageInfoForPage(at: page) else { return nil }
+        return pageInfo.size.height - rect.maxY
     }
 }
 

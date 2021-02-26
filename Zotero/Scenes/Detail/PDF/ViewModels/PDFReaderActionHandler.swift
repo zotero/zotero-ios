@@ -16,7 +16,9 @@ import RealmSwift
 import RxSwift
 
 protocol AnnotationBoundingBoxConverter: class {
-    func convert(for annotation: PSPDFKit.Annotation) -> CGRect?
+    func convertToDb(rect: CGRect, page: PageIndex) -> CGRect?
+    func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect?
+    func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat?
 }
 
 final class PDFReaderActionHandler: ViewModelActionHandler {
@@ -219,7 +221,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             for idx in Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions) {
                 let item = results[idx]
                 guard !state.deletedKeys.contains(item.key), // If annotation was deleted, it'll be stored as deleted anyway or CR will happen
-                      let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: state.userId, username: state.username) else { continue }
+                      let boundingBoxConverter = self.boundingBoxConverter,
+                      let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: state.userId,
+                                                                      username: state.username, boundingBoxConverter: boundingBoxConverter) else { continue }
 
                 var changes: PdfAnnotationChanges = []
 
@@ -285,7 +289,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             // Add new annotations
             var insertedKeys: Set<String> = []
             for idx in insertions {
-                guard let annotation = AnnotationConverter.annotation(from: results[idx], editability: editability, currentUserId: state.userId, username: state.username) else { continue }
+                guard let boundingBoxConverter = self.boundingBoxConverter,
+                      let annotation = AnnotationConverter.annotation(from: results[idx], editability: editability, currentUserId: state.userId,
+                                                                      username: state.username, boundingBoxConverter: boundingBoxConverter) else { continue }
                 addedAnnotations.append(annotation)
                 insertedKeys.insert(annotation.key)
             }
@@ -450,6 +456,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     // MARK: - Annotation actions
 
     private func saveChanges(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let boundingBoxConverter = self.boundingBoxConverter else { return }
+
         let key = viewModel.state.key
         let libraryId = viewModel.state.library.identifier
         let deletedKeys = viewModel.state.deletedKeys
@@ -478,7 +486,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         self.queue.async {
             do {
-                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations, deletedKeys: deletedKeys, schemaController: self.schemaController)
+                let request = StoreChangedAnnotationsDbRequest(attachmentKey: key, libraryId: libraryId, annotations: allAnnotations, deletedKeys: deletedKeys,
+                                                               schemaController: self.schemaController, boundingBoxConverter: boundingBoxConverter)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 // TODO: - Show error
@@ -541,7 +550,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         // Otherwise move the annotation to appropriate position
         var annotations = state.annotations[indexPath.section] ?? []
         annotations.remove(at: indexPath.row)
-        let newIndex = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+        let newIndex = annotations.index(of: annotation, sortedBy: { $0.sortIndex < $1.sortIndex })
         annotations.insert(annotation, at: newIndex)
 
         state.annotations[indexPath.section] = annotations
@@ -585,8 +594,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     private func updateBoundingBoxAndRects(for pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard pdfAnnotation.syncable, let key = pdfAnnotation.key else { return }
 
-        let boundingBox = self.boundingBoxConverter?.convert(for: pdfAnnotation) ?? CGRect()
-        let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBox: boundingBox)
+        let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBoxConverter: self.boundingBoxConverter)
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
 
         self.updateAnnotation(with: key,
@@ -808,8 +816,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         for annotation in annotations {
             guard !annotation.syncable,
-                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, boundingBox: (self.boundingBoxConverter?.convert(for: annotation) ?? CGRect()), color: activeColor,
-                                                                        editability: editability, isNew: true, isSyncable: true, username: viewModel.state.username) else { continue }
+                  let zoteroAnnotation = AnnotationConverter.annotation(from: annotation, color: activeColor, editability: editability, isNew: true, isSyncable: true,
+                                                                        username: viewModel.state.username, boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
             newZoteroAnnotations.append(zoteroAnnotation)
             annotation.customData = [AnnotationsConfig.keyKey: zoteroAnnotation.key,
@@ -881,7 +889,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 return existingId
             }
 
-            index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+            index = annotations.index(of: annotation, sortedBy: { $0.sortIndex < $1.sortIndex })
             allAnnotations[annotation.page]?.insert(annotation, at: index)
         } else {
             index = 0
@@ -952,11 +960,14 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
     /// Loads annotations from DB, converts them to Zotero annotations and adds matching PSPDFKit annotations to document.
     private func loadDocumentData(in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard let boundingBoxConverter = self.boundingBoxConverter else { return }
+
         do {
             let isDark = viewModel.state.interfaceStyle == .dark
             // Load Zotero annotations from DB
             var (zoteroAnnotations, positions, comments, page, items) = try self.documentData(for: viewModel.state.key, library: viewModel.state.library, baseFont: viewModel.state.commentFont,
-                                                                                              userId: viewModel.state.userId, username: viewModel.state.username)
+                                                                                              userId: viewModel.state.userId, username: viewModel.state.username,
+                                                                                              boundingBoxConverter: boundingBoxConverter)
             // Create PSPDFKit annotations from Zotero annotations
             let pspdfkitAnnotations = AnnotationConverter.annotations(from: zoteroAnnotations, interfaceStyle: viewModel.state.interfaceStyle)
             // Create Zotero non-editable annotations from supported document annotations
@@ -1007,11 +1018,11 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 }
 
                 let color = pdfAnnotation.color?.hexString ?? "#000000"
-                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, boundingBox: (self.boundingBoxConverter?.convert(for: pdfAnnotation) ?? CGRect()), color: color,
-                                                                      editability: .notEditable, isNew: false, isSyncable: false, username: username) else { continue }
+                guard let annotation = AnnotationConverter.annotation(from: pdfAnnotation, color: color, editability: .notEditable, isNew: false, isSyncable: false, username: username,
+                                                                      boundingBoxConverter: self.boundingBoxConverter) else { continue }
 
                 var annotations = allAnnotations[annotation.page] ?? []
-                let index = annotations.index(of: annotation, sortedBy: { $0.sortIndex > $1.sortIndex })
+                let index = annotations.index(of: annotation, sortedBy: { $0.sortIndex < $1.sortIndex })
                 annotations.insert(annotation, at: index)
                 allAnnotations[annotation.page] = annotations
 
@@ -1025,7 +1036,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter libraryId: Library identifier of item.
     /// - parameter baseFont: Font to be used as base for `NSAttributedString`.
     /// - returns: Tuple of grouped annotations and comments.
-    private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String) throws
+    private func documentData(for key: String, library: Library, baseFont: UIFont, userId: Int, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) throws
                                                     -> (annotations: [Int: [Annotation]], positions: [AnnotationPosition], comments: [String: NSAttributedString], page: Int, items: Results<RItem>) {
         let coordinator = try self.dbStorage.createCoordinator()
 
@@ -1045,7 +1056,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         var positions: [AnnotationPosition] = []
 
         for item in items {
-            guard let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: userId, username: username) else { continue }
+            guard let annotation = AnnotationConverter.annotation(from: item, editability: editability, currentUserId: userId,
+                                                                  username: username, boundingBoxConverter: boundingBoxConverter) else { continue }
 
             positions.append(AnnotationPosition(page: annotation.page, key: annotation.key))
 

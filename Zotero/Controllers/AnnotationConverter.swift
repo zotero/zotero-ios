@@ -25,18 +25,19 @@ struct AnnotationConverter {
     /// - parameter annotation: PSPDFKit annotation from which sort index is created
     /// - parameter boundingBox; Bounding box converted to screen coordinates.
     /// - returns: Sort index (5 places for page, 6 places for character offset, 5 places for y position)
-    static func sortIndex(from annotation: PSPDFKit.Annotation, boundingBox: CGRect) -> String {
-        return self.sortIndex(for: boundingBox, pageIndex: annotation.pageIndex)
+    static func sortIndex(from annotation: PSPDFKit.Annotation, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> String {
+        let minY = boundingBoxConverter?.sortIndexMinY(rect: (annotation.rects?.first ?? annotation.boundingBox), page: annotation.pageIndex) ?? 0
+        return self.sortIndex(for: minY, pageIndex: annotation.pageIndex)
     }
 
-    static func sortIndex(for rect: CGRect, pageIndex: PageIndex) -> String {
-        let yPos = Int(round(rect.origin.y))
+    static func sortIndex(for minY: CGFloat, pageIndex: PageIndex) -> String {
+        let yPos = Int(round(minY))
         return String(format: "%05d|%06d|%05d", pageIndex, 0, yPos)
     }
 
     // MARK: - DB -> Memory
 
-    static func annotation(from item: RItem, editability: Annotation.Editability, currentUserId: Int, username: String) -> Annotation? {
+    static func annotation(from item: RItem, editability: Annotation.Editability, currentUserId: Int, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter) -> Annotation? {
         guard let rawType = item.fieldValue(for: FieldKeys.Item.Annotation.type),
               let pageIndex = item.fieldValue(for: FieldKeys.Item.Annotation.pageIndex).flatMap({ Int($0) }),
               let pageLabel = item.fieldValue(for: FieldKeys.Item.Annotation.pageLabel),
@@ -78,6 +79,7 @@ struct AnnotationConverter {
 
         let comment = item.fieldValue(for: FieldKeys.Item.Annotation.comment) ?? ""
         let rects: [CGRect] = item.rects.map({ CGRect(x: $0.minX, y: $0.minY, width: ($0.maxX - $0.minX), height: ($0.maxY - $0.minY)) })
+                                        .compactMap({ boundingBoxConverter.convertFromDb(rect: $0, page: PageIndex(pageIndex)) })
 
         return Annotation(key: item.key,
                           type: type,
@@ -101,13 +103,13 @@ struct AnnotationConverter {
 
     /// Create Zotero annotation from existing PSPDFKit annotation.
     /// - parameter annotation: PSPDFKit annotation.
-    /// - parameter boundingBox; Bounding box converted to screen coordinates.
     /// - parameter color: Base color of annotation (can differ from current `PSPDPFKit.Annotation.color`)
     /// - parameter editability: Type of editability for given annotation.
     /// - parameter isNew: Indicating, whether the annotation has just been created.
     /// - parameter username: Username of current user.
     /// - returns: Matching Zotero annotation.
-    static func annotation(from annotation: PSPDFKit.Annotation, boundingBox: CGRect, color: String, editability: Annotation.Editability, isNew: Bool, isSyncable: Bool, username: String) -> Annotation? {
+    static func annotation(from annotation: PSPDFKit.Annotation, color: String, editability: Annotation.Editability, isNew: Bool,
+                           isSyncable: Bool, username: String, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> Annotation? {
         guard let document = annotation.document, AnnotationsConfig.supported.contains(annotation.type) else { return nil }
 
         let key = isSyncable ? KeyGenerator.newKey : annotation.uuid
@@ -116,7 +118,7 @@ struct AnnotationConverter {
         let author = isNew ? username : (annotation.user ?? "")
         let isAuthor = isNew ? true : (annotation.user == username)
         let comment = annotation.contents.flatMap({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }) ?? ""
-        let sortIndex = self.sortIndex(from: annotation, boundingBox: boundingBox)
+        let sortIndex = self.sortIndex(from: annotation, boundingBoxConverter: boundingBoxConverter)
         let date = Date()
 
         let type: AnnotationType

@@ -141,7 +141,6 @@ extension AnnotationPreviewController {
                     completed(UIImage(data: data))
                 }
             } catch let error {
-                DDLogWarn("AnnotationPreviewController: can't read preview - \(error)")
                 DispatchQueue.main.async {
                     completed(nil)
                 }

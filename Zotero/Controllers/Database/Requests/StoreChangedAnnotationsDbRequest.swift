@@ -20,6 +20,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     let deletedKeys: Set<String>
 
     unowned let schemaController: SchemaController
+    unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
 
     func process(in database: Realm) throws {
         let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId).process(in: database).filter(.key(in: self.deletedKeys))
@@ -50,7 +51,7 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
 
         self.syncFields(annotation: annotation, in: item, database: database)
         self.sync(tags: annotation.tags, in: item, database: database)
-        self.sync(rects: annotation.rects, in: item, database: database)
+        self.sync(rects: annotation.rects.compactMap({ self.boundingBoxConverter.convertToDb(rect: $0, page: UInt(annotation.page)) }), in: item, database: database)
 
         if !item.changedFields.isEmpty {
             item.changeType = .user
