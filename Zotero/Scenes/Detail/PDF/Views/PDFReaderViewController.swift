@@ -104,9 +104,8 @@ final class PDFReaderViewController: UIViewController {
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
 
-        self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
-
         self.viewModel.process(action: .loadDocumentData)
+        self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
     }
 
     deinit {
@@ -1014,7 +1013,7 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
     }
 
     func textOffset(rect: CGRect, page: PageIndex) -> Int? {
-        guard let parser = self.viewModel.state.document.textParserForPage(at: page) else { return nil }
+        guard let parser = self.viewModel.state.document.textParserForPage(at: page), !parser.glyphs.isEmpty else { return nil }
 
         var index = 0
         var minDistance: CGFloat = .greatestFiniteMagnitude
