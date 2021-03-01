@@ -167,10 +167,8 @@ final class AnnotationsViewController: UIViewController {
         let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
         var snapshot = NSDiffableDataSourceSnapshot<Int, Annotation>()
-        snapshot.appendSections(Array(0..<state.annotations.count))
-        var keys: [String] = []
+        snapshot.appendSections(Array(0..<Int(state.document.pageCount)))
         for (page, annotations) in state.annotations {
-            keys.append(contentsOf: annotations.map({ $0.key }))
             snapshot.appendItems(annotations, toSection: page)
         }
         self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
