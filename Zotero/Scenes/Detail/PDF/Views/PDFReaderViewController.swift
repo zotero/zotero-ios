@@ -1009,7 +1009,17 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
     /// Converts from PSPDFKit to sort index rect. PSPDFKit works with Normalized PDF Coordinate Space. Sort index stores y coordinate in RAW View Coordinate Space.
     func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
         guard let pageInfo = self.viewModel.state.document.pageInfoForPage(at: page) else { return nil }
-        return pageInfo.size.height - rect.maxY
+
+        switch pageInfo.savedRotation {
+        case .rotation0:
+            return pageInfo.size.height - rect.maxY
+        case .rotation180:
+            return rect.minY
+        case .rotation90:
+            return pageInfo.size.width - rect.minX
+        case .rotation270:
+            return rect.minX
+        }
     }
 
     func textOffset(rect: CGRect, page: PageIndex) -> Int? {
