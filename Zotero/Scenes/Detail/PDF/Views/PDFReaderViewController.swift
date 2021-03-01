@@ -106,7 +106,7 @@ final class PDFReaderViewController: UIViewController {
 
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
 
-//        self.viewModel.process(action: .loadDocumentData)
+        self.viewModel.process(action: .loadDocumentData)
     }
 
     deinit {
@@ -146,12 +146,6 @@ final class PDFReaderViewController: UIViewController {
                 self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: Int(self.pdfController.pageIndex))
             }
         }, completion: nil)
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        self.viewModel.process(action: .loadDocumentData)
     }
 
     // MARK: - Actions
@@ -1017,6 +1011,29 @@ extension PDFReaderViewController: AnnotationBoundingBoxConverter {
     func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat? {
         guard let pageInfo = self.viewModel.state.document.pageInfoForPage(at: page) else { return nil }
         return pageInfo.size.height - rect.maxY
+    }
+
+    func textOffset(rect: CGRect, page: PageIndex) -> Int? {
+        guard let parser = self.viewModel.state.document.textParserForPage(at: page) else { return nil }
+
+        var index = 0
+        var minDistance: CGFloat = .greatestFiniteMagnitude
+        var textOffset = 0
+
+        for glyph in parser.glyphs {
+            guard !glyph.isWordOrLineBreaker else { continue }
+
+            let distance = rect.distance(to: glyph.frame)
+
+            if distance < minDistance {
+                minDistance = distance
+                textOffset = index
+            }
+
+            index += 1
+        }
+
+        return textOffset
     }
 }
 

@@ -26,13 +26,14 @@ struct AnnotationConverter {
     /// - parameter boundingBox; Bounding box converted to screen coordinates.
     /// - returns: Sort index (5 places for page, 6 places for character offset, 5 places for y position)
     static func sortIndex(from annotation: PSPDFKit.Annotation, boundingBoxConverter: AnnotationBoundingBoxConverter?) -> String {
-        let minY = boundingBoxConverter?.sortIndexMinY(rect: (annotation.rects?.first ?? annotation.boundingBox), page: annotation.pageIndex) ?? 0
-        return self.sortIndex(for: minY, pageIndex: annotation.pageIndex)
+        let rect = annotation.rects?.first ?? annotation.boundingBox
+        let textOffset = boundingBoxConverter?.textOffset(rect: rect, page: annotation.pageIndex) ?? 0
+        let minY = boundingBoxConverter?.sortIndexMinY(rect: rect, page: annotation.pageIndex).flatMap({ Int(round($0)) }) ?? 0
+        return self.sortIndex(pageIndex: annotation.pageIndex, textOffset: textOffset, minY: minY)
     }
 
-    static func sortIndex(for minY: CGFloat, pageIndex: PageIndex) -> String {
-        let yPos = Int(round(minY))
-        return String(format: "%05d|%06d|%05d", pageIndex, 0, yPos)
+    static func sortIndex(pageIndex: PageIndex, textOffset: Int, minY: Int) -> String {
+        return String(format: "%05d|%06d|%05d", pageIndex, textOffset, minY)
     }
 
     // MARK: - DB -> Memory

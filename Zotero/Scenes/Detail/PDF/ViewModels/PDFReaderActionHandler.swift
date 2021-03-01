@@ -19,6 +19,7 @@ protocol AnnotationBoundingBoxConverter: class {
     func convertToDb(rect: CGRect, page: PageIndex) -> CGRect?
     func convertFromDb(rect: CGRect, page: PageIndex) -> CGRect?
     func sortIndexMinY(rect: CGRect, page: PageIndex) -> CGFloat?
+    func textOffset(rect: CGRect, page: PageIndex) -> Int?
 }
 
 final class PDFReaderActionHandler: ViewModelActionHandler {
