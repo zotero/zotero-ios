@@ -214,7 +214,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         var selected = viewModel.state.selectedCollection
 
         self.update(original: &original, with: collections)
-        if !original.contains(selected) {
+        if !original.contains(where: { $0.key == selected.key }) {
             selected = Collection(custom: .all)
         }
 
