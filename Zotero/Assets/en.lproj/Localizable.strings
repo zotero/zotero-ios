@@ -216,7 +216,6 @@
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
 "errors.sync_toolbar.one_error" = "1 issue";
 "errors.sync_toolbar.multiple_errors" = "%d issues";
-"errors.items.open_detail" = "Can't open item detail. Please try again.";
 "errors.item_detail.dropped_fields_title" = "Change Item Type";
 "errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\nThe following fields will be lost:\n%@";
 "errors.item_detail.cant_load_data" = "Could not load data. Please try again.";

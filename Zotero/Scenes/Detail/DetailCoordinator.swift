@@ -352,37 +352,30 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
-            let fileDownloader = self.controllers.userControllers?.fileDownloader else { return }
+              let fileDownloader = self.controllers.userControllers?.fileDownloader else { return }
 
-        do {
-            let hidesBackButton: Bool
-            switch type {
-            case .preview:
-                hidesBackButton = false
-            case .creation, .duplication:
-                hidesBackButton = true
-            }
-
-            let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId)
-            let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
-                                                  fileStorage: self.controllers.fileStorage,
-                                                  dbStorage: dbStorage,
-                                                  schemaController: self.controllers.schemaController,
-                                                  dateParser: self.controllers.dateParser,
-                                                  urlDetector: self.controllers.urlDetector,
-                                                  fileDownloader: fileDownloader)
-            let viewModel = ViewModel(initialState: state, handler: handler)
-
-            let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
-            controller.coordinatorDelegate = self
-            controller.navigationItem.setHidesBackButton(hidesBackButton, animated: false)
-            self.navigationController.pushViewController(controller, animated: true)
-        } catch let error {
-            DDLogError("DetailCoordinator: could not open item detail - \(error)")
-            let controller = UIAlertController(title: L10n.error, message: L10n.Errors.Items.openDetail, preferredStyle: .alert)
-            controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
-            self.topViewController.present(controller, animated: true, completion: nil)
+        let hidesBackButton: Bool
+        switch type {
+        case .preview:
+            hidesBackButton = false
+        case .creation, .duplication:
+            hidesBackButton = true
         }
+
+        let state = ItemDetailState(type: type, library: library, userId: Defaults.shared.userId)
+        let handler = ItemDetailActionHandler(apiClient: self.controllers.apiClient,
+                                              fileStorage: self.controllers.fileStorage,
+                                              dbStorage: dbStorage,
+                                              schemaController: self.controllers.schemaController,
+                                              dateParser: self.controllers.dateParser,
+                                              urlDetector: self.controllers.urlDetector,
+                                              fileDownloader: fileDownloader)
+        let viewModel = ViewModel(initialState: state, handler: handler)
+
+        let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
+        controller.coordinatorDelegate = self
+        controller.navigationItem.setHidesBackButton(hidesBackButton, animated: false)
+        self.navigationController.pushViewController(controller, animated: true)
     }
 
     func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>) {

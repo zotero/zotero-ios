@@ -154,10 +154,6 @@ internal enum L10n {
       /// Change Item Type
       internal static let droppedFieldsTitle = L10n.tr("Localizable", "errors.item_detail.dropped_fields_title")
     }
-    internal enum Items {
-      /// Can't open item detail. Please try again.
-      internal static let openDetail = L10n.tr("Localizable", "errors.items.open_detail")
-    }
     internal enum Libraries {
       /// Can't load libraries
       internal static let cantLoad = L10n.tr("Localizable", "errors.libraries.cantLoad")
