@@ -43,6 +43,13 @@ final class CollectionsTableViewHandler: NSObject {
         cell.updateBadge(for: collection)
     }
 
+    func updateTrashItemCell(with collection: Collection) {
+        let row = self.snapshot.count - 1
+        self.snapshot[row] = collection
+        guard let cell = self.tableView.cellForRow(at: IndexPath(row: row, section: 0)) as? CollectionCell else { return }
+        cell.updateBadge(for: collection)
+    }
+
     func update(collections: [Collection], animated: Bool, completed: (() -> Void)? = nil) {
         if !animated {
             // If animation is not needed, just update snapshot and reload tableView

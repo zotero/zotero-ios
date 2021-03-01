@@ -66,11 +66,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
             let allItems = try coordinator.perform(request: ReadItemsDbRequest(type: .all, libraryId: libraryId))
 //            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
-            let trashItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId)).count
+            let trashItems = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId))
 
             var allCollections: [Collection] = [Collection(custom: .all, itemCount: allItems.count),
                //                                 Collection(custom: .publications, itemCount: publicationItemsCount),
-                                                Collection(custom: .trash, itemCount: trashItemsCount)]
+                                                Collection(custom: .trash, itemCount: trashItems.count)]
             allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections, libraryId: libraryId) +
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
@@ -102,8 +102,17 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 switch changes {
                 case .update(let objects, _, _, _):
                     self.update(allItemsCount: objects.count, in: viewModel)
-                case .initial(let objects):
-                    self.update(allItemsCount: objects.count, in: viewModel)
+                case .initial: break
+                case .error: break
+                }
+            })
+
+            let trashToken = trashItems.observe({ [weak viewModel] changes in
+                guard let viewModel = viewModel else { return }
+                switch changes {
+                case .update(let objects, _, _, _):
+                    self.update(trashItemCount: objects.count, in: viewModel)
+                case .initial: break
                 case .error: break
                 }
             })
@@ -116,6 +125,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 state.collectionsToken = collectionsToken
                 state.searchesToken = searchesToken
                 state.itemsToken = itemsToken
+                state.trashToken = trashToken
             }
         } catch let error {
             DDLogError("CollectionsActionHandlers: can't load data - \(error)")
@@ -187,6 +197,13 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         self.update(viewModel: viewModel) { state in
             state.collections[0].itemCount = allItemsCount
             state.changes = .allItemCount
+        }
+    }
+
+    private func update(trashItemCount: Int, in viewModel: ViewModel<CollectionsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            state.collections[state.collections.count - 1] = Collection(custom: .trash, itemCount: trashItemCount)
+            state.changes = .trashItemCount
         }
     }
 

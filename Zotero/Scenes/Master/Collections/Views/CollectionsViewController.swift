@@ -79,6 +79,9 @@ final class CollectionsViewController: UIViewController {
         if state.changes.contains(.allItemCount) {
             self.tableViewHandler.updateAllItemCell(with: state.collections[0])
         }
+        if state.changes.contains(.trashItemCount) {
+            self.tableViewHandler.updateTrashItemCell(with: state.collections[state.collections.count - 1])
+        }
         if state.changes.contains(.selection) {
             self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)
         }
