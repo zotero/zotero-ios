@@ -28,69 +28,96 @@ struct SubmitUpdateSyncAction: SyncAction {
     let scheduler: SchedulerType
 
     var result: Single<(Int, Error?)> {
-        let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object,
-                                     params: self.parameters, version: self.sinceVersion)
+        switch self.object {
+        case .settings:
+            return self.submitSettings()
+        case .collection, .item, .search, .trash:
+            return self.submitOther()
+        }
+    }
+
+    private func submitSettings() -> Single<(Int, Error?)> {
+        let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
         return self.apiClient.send(request: request, queue: self.queue)
                              .observeOn(self.scheduler)
-                             .flatMap({ response, headers -> Single<UpdatesResponse> in
+                             .flatMap({ _, headers -> Single<([(String, LibraryIdentifier)], Int)> in
+                                 let newVersion = headers.lastModifiedVersion
+                                 var settings: [(String, LibraryIdentifier)] = []
+                                 for params in self.parameters {
+                                     guard let key = params.keys.first,
+                                           let setting = try? PageIndexResponse.parse(key: key) else { continue }
+                                    settings.append(setting)
+                                 }
+                                 return Single.just((settings, newVersion))
+                             })
+                             .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
+
+                                 do {
+                                     let coordinator = try self.dbStorage.createCoordinator()
+                                     let request = MarkSettingsAsSyncedDbRequest(settings: settings, version: newVersion)
+                                     try coordinator.perform(request: request)
+
+                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
+                                     try coordinator.perform(request: updateVersion)
+
+                                     return Single.just((newVersion, nil))
+                                 } catch let error {
+                                     return Single.just((newVersion, error))
+                                 }
+                             })
+    }
+
+    private func submitOther() -> Single<(Int, Error?)> {
+        let request = UpdatesRequest(libraryId: self.libraryId, userId: self.userId, objectType: self.object, params: self.parameters, version: self.sinceVersion)
+        return self.apiClient.send(request: request, queue: self.queue)
+                             .observeOn(self.scheduler)
+                             .flatMap({ response, headers -> Single<(UpdatesResponse, Int)> in
                                  do {
                                      let newVersion = headers.lastModifiedVersion
                                      let json = try JSONSerialization.jsonObject(with: response, options: .allowFragments)
-                                     return Single.just((try UpdatesResponse(json: json, newVersion: newVersion)))
+                                     return Single.just((try UpdatesResponse(json: json), newVersion))
                                  } catch let error {
                                      return Single.error(error)
                                  }
                              })
-                             .flatMap({ response -> Single<(Int, Error?)> in
+                             .flatMap({ response, newVersion -> Single<(Int, Error?)> in
                                 let syncedKeys = self.keys(from: (response.successful + response.unchanged), parameters: self.parameters)
 
                                  do {
                                      let coordinator = try self.dbStorage.createCoordinator()
                                      switch self.object {
                                      case .collection:
-                                         let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId,
-                                                                                                 keys: syncedKeys,
-                                                                                                 version: response.newVersion)
+                                         let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion)
                                          try coordinator.perform(request: request)
                                      case .item, .trash:
                                         // Cache JSONs locally for later use (in CR)
                                         self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects,
                                                                             libraryId: self.libraryId)
 
-                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId,
-                                                                                          keys: syncedKeys,
-                                                                                          version: response.newVersion)
+                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion)
                                         try coordinator.perform(request: request)
                                      case .search:
-                                        let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId,
-                                                                                            keys: syncedKeys,
-                                                                                            version: response.newVersion)
+                                        let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion)
                                         try coordinator.perform(request: request)
-                                     case .settings:
-                                        let request = MarkObjectsAsSyncedDbRequest<RPageIndex>(libraryId: self.libraryId,
-                                                                                            keys: syncedKeys,
-                                                                                            version: response.newVersion)
-                                        try coordinator.perform(request: request)
+                                     case .settings: break
                                      }
 
-                                     let updateVersion = UpdateVersionsDbRequest(version: response.newVersion,
-                                                                                 libraryId: self.libraryId,
-                                                                                 type: .object(self.object))
+                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
                                      try coordinator.perform(request: updateVersion)
                                  } catch let error {
-                                     return Single.just((response.newVersion, error))
+                                     return Single.just((newVersion, error))
                                  }
 
                                  if response.failed.first(where: { $0.code == 412 }) != nil {
-                                     return Single.just((response.newVersion, PreconditionErrorType.objectConflict))
+                                     return Single.just((newVersion, PreconditionErrorType.objectConflict))
                                  }
 
                                  if response.failed.first(where: { $0.code == 409 }) != nil {
                                      let error = AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 409))
-                                     return Single.just((response.newVersion, error))
+                                     return Single.just((newVersion, error))
                                  }
 
-                                 return Single.just((response.newVersion, nil))
+                                 return Single.just((newVersion, nil))
                              })
     }
 

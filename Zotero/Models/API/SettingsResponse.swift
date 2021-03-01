@@ -41,6 +41,15 @@ struct PageIndexResponse {
             throw Parsing.Error.notDictionary
         }
 
+        let (key, libraryId) = try PageIndexResponse.parse(key: key)
+
+        self.key = key
+        self.value = try Parsing.parse(key: "value", from: dictionary)
+        self.version = try Parsing.parse(key: "version", from: dictionary)
+        self.libraryId = libraryId
+    }
+
+    static func parse(key: String) throws -> (String, LibraryIdentifier) {
         let parts = key.split(separator: "_")
         guard parts.count == 3 else { throw Parsing.Error.incompatibleValue(key) }
 
@@ -59,10 +68,7 @@ struct PageIndexResponse {
             throw Parsing.Error.incompatibleValue("libraryPart=\(libraryPart)")
         }
 
-        self.key = String(parts[2])
-        self.value = try Parsing.parse(key: "value", from: dictionary)
-        self.version = try Parsing.parse(key: "version", from: dictionary)
-        self.libraryId = libraryId
+        return (String(parts[2]), libraryId)
     }
 }
 

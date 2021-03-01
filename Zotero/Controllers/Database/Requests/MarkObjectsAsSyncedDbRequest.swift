@@ -27,3 +27,20 @@ struct MarkObjectsAsSyncedDbRequest<Obj: UpdatableObject&Syncable>: DbRequest {
         }
     }
 }
+
+struct MarkSettingsAsSyncedDbRequest: DbRequest {
+    let settings: [(String, LibraryIdentifier)]
+    let version: Int
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        for setting in self.settings {
+            guard let object = database.objects(RPageIndex.self).filter(.key(setting.0, in: setting.1)).first else { continue }
+            if object.version != self.version {
+                object.version = self.version
+            }
+            object.resetChanges()
+        }
+    }
+}

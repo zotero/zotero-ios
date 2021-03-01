@@ -13,9 +13,8 @@ struct UpdatesResponse {
     let successfulJsonObjects: [Any]
     let unchanged: [String]
     let failed: [FailedUpdateResponse]
-    let newVersion: Int
 
-    init(json: Any, newVersion: Int) throws {
+    init(json: Any) throws {
         guard let dictionary = json as? [String: Any] else {
             throw Parsing.Error.notDictionary
         }
@@ -28,7 +27,6 @@ struct UpdatesResponse {
         self.unchanged = Array(unchanged.keys)
         let failed = (dictionary["failed"] as? [String: [String: Any]]) ?? [:]
         self.failed = failed.values.map(FailedUpdateResponse.init)
-        self.newVersion = newVersion
      }
 }
 
