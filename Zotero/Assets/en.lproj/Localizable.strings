@@ -37,6 +37,7 @@
 "total" = "Total";
 "cache" = "Cache";
 "restore" = "Restore";
+"copy" = "Copy";
 
 "day_suffixes" = "st,nd,rd,th";
 
@@ -176,6 +177,10 @@
 "settings.stop_logging" = "Stop logging";
 "settings.logging_desc1" = "If you want to debug an issue on launch, kill the app and start it again.";
 "settings.logging_desc2" = "If you want to debug share extension issue, open the share extension.";
+"settings.send_manually" = "Send Manually";
+"settings.log_alert.progress_title" = "Sending Logs";
+"settings.log_alert.title" = "Logs Sent";
+"settings.log_alert.message" = "Your debug id is: %@";
 "settings.websocket_title" = "Server Connection";
 "settings.websocket_connected" = "Connected";
 "settings.websocket_connecting" = "Connecting";
@@ -237,3 +242,9 @@
 "errors.shareext.missing_file" = "Could not find file to upload.";
 "errors.shareext.background_uploader_failure" = "Background uploader not initialized.";
 "errors.db_failure" = "User couldn't be initialized. Please try logging in again.";
+"errors.logging.title" = "Debugging error";
+"errors.logging.start" = "Can't start debug logging.";
+"errors.logging.content_reading" = "Can't find log files.";
+"errors.logging.no_logs_recorded" = "No logs occured during debug logging.";
+"errors.logging.upload" = "Could not upload logs. Try again.";
+"errors.logging.response_parsing" = "Unexpected response from server.";

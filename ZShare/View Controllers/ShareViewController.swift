@@ -63,7 +63,14 @@ final class ShareViewController: UIViewController {
 
         DDLog.add(DDOSLogger.sharedInstance)
 
-        self.debugLogging = DebugLogging(fileStorage: FileStorageController())
+        let schemaController = SchemaController()
+        let configuration = URLSessionConfiguration.default
+        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
+                                               "Zotero-Schema-Version": schemaController.version]
+        configuration.sharedContainerIdentifier = AppGroup.identifier
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+
+        self.debugLogging = DebugLogging(apiClient: apiClient, fileStorage: FileStorageController())
         self.debugLogging.startLoggingOnLaunchIfNeeded()
 
         let session = SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared).sessionData
@@ -71,7 +78,7 @@ final class ShareViewController: UIViewController {
         self.setupNavbar(loggedIn: (session != nil))
 
         if let session = session {
-            self.setupControllers(with: session)
+            self.setupControllers(with: session, apiClient: apiClient, schemaController: schemaController)
         } else {
             self.showInitialError(message: L10n.Errors.Shareext.loggedOut)
             return
@@ -410,13 +417,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func setupControllers(with session: SessionData) {
-        let schemaController = SchemaController()
-        let configuration = URLSessionConfiguration.default
-        configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
-                                               "Zotero-Schema-Version": schemaController.version]
-        configuration.sharedContainerIdentifier = AppGroup.identifier
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+    private func setupControllers(with session: SessionData, apiClient: ApiClient, schemaController: SchemaController) {
         let fileStorage = FileStorageController()
         let dbUrl = Files.dbFile(for: session.userId).createUrl()
         let dbStorage = RealmDbStorage(config: Database.mainConfiguration(url: dbUrl))

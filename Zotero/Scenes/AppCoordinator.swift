@@ -145,23 +145,95 @@ extension AppCoordinator: MFMailComposeViewControllerDelegate {
 }
 
 extension AppCoordinator: DebugLoggingCoordinator {
-    func share(logs: [URL], completed: @escaping () -> Void) {
-        self.presentActivityViewController(with: logs, completed: completed)
+    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Float) -> Void) {
+        var progressAlert: UIAlertController?
+        var progressView: CircularProgressView?
+
+        let createProgressAlert: (Float) -> Void = { [weak self] progress in
+            guard let `self` = self, progress > 0 else { return }
+
+            if progressAlert == nil {
+                let (controller, progress) = self.createCircularProgressAlertController(title: L10n.Settings.LogAlert.progressTitle)
+                self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+                progressAlert = controller
+                progressView = progress
+            }
+
+            progressView?.progress = CGFloat(progress)
+        }
+
+        let createCompletionAlert: (Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void = { [weak self] result, logs, completion in
+            if let controller = progressAlert {
+                controller.presentingViewController?.dismiss(animated: true, completion: {
+                    self?.showAlert(for: result, logs: logs, completion: completion)
+                })
+            } else {
+                self?.showAlert(for: result, logs: logs, completion: completion)
+            }
+        }
+
+        return (createCompletionAlert, createProgressAlert)
     }
 
-    func show(error: DebugLogging.Error) {
+    private func createCircularProgressAlertController(title: String) -> (UIAlertController, CircularProgressView) {
+        let progressView = CircularProgressView(size: 40, lineWidth: 3)
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+
+        let controller = UIAlertController(title: title, message: "\n\n\n", preferredStyle: .alert)
+        controller.view.addSubview(progressView)
+
+        NSLayoutConstraint.activate([
+            controller.view.bottomAnchor.constraint(equalTo: progressView.bottomAnchor, constant: 20),
+            progressView.centerXAnchor.constraint(equalTo: controller.view.centerXAnchor)
+        ])
+
+        return (controller, progressView)
+    }
+
+    private func showAlert(for result: Result<String, DebugLogging.Error>, logs: [URL]?, completion: (() -> Void)?) {
+        switch result {
+        case .success(let debugId):
+            self.share(debugId: debugId)
+            completion?()
+
+        case .failure(let error):
+            self.show(error: error, logs: logs, completed: completion)
+        }
+    }
+
+    private func share(debugId: String) {
+        let actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil),
+                       UIAlertAction(title: L10n.copy, style: .default, handler: { _ in
+                          UIPasteboard.general.string = debugId
+                       })]
+        self.showAlert(title: L10n.Settings.LogAlert.title, message: L10n.Settings.LogAlert.message(debugId), actions: actions)
+    }
+
+    func show(error: DebugLogging.Error, logs: [URL]?, completed: (() -> Void)?) {
         let message: String
         switch error {
         case .start:
-            message = "Can't start debug logging."
-        case .contentReading:
-            message = "Can't find log files."
+            message = L10n.Errors.Logging.start
+        case .contentReading, .cantCreateData:
+            message = L10n.Errors.Logging.contentReading
         case .noLogsRecorded:
-            message = "No logs occured during debug logging."
+            message = L10n.Errors.Logging.noLogsRecorded
+        case .upload:
+            message = L10n.Errors.Logging.upload
+        case .responseParsing:
+            message = L10n.Errors.Logging.responseParsing
         }
-        self.showAlert(title: "Debugging error",
-                       message: message,
-                       actions: [UIAlertAction(title: "Ok", style: .cancel, handler: nil)])
+
+        var actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in
+            completed?()
+        })]
+        if let logs = logs, let completed = completed {
+            actions.append(UIAlertAction(title: L10n.Settings.sendManually, style: .default, handler: { [weak self] _ in
+                self?.presentActivityViewController(with: logs, completed: completed)
+            }))
+        }
+
+        self.showAlert(title: L10n.Errors.Logging.title, message: message, actions: actions)
     }
 }
 

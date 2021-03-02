@@ -46,10 +46,10 @@ final class Controllers {
         configuration.sharedContainerIdentifier = AppGroup.identifier
 
         let fileStorage = FileStorageController()
-        let debugLogging = DebugLogging(fileStorage: fileStorage)
+        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
+        let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
         // Start logging as soon as possible to catch all errors/warnings.
         debugLogging.startLoggingOnLaunchIfNeeded()
-        let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         let crashReporter = CrashReporter(apiClient: apiClient)
         // Start crash reporter as soon as possible to catch all crashes.
         crashReporter.start()

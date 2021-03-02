@@ -25,6 +25,7 @@ protocol FileStorage: class {
     func createDirectories(for file: File) throws
     func contentsOfDirectory(at file: File) throws -> [URL]
     func contentsOfDirectory(at file: File) throws -> [File]
+    func sortedContentsOfDirectory(at file: File) throws -> [URL]
     func link(file fromFile: File, to toFile: File) throws
     func directoryData(for files: [File]) -> DirectoryData
 }
@@ -76,8 +77,15 @@ final class FileStorageController: FileStorage {
         try self.fileManager.createMissingDirectories(for: relativeUrl)
     }
 
+    func sortedContentsOfDirectory(at file: File) throws -> [URL] {
+        return try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles])
+                                   .map({ url in (url, (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date.distantPast) })
+                                   .sorted(by: { $0.1 < $1.1 })
+                                   .map({ $0.0 })
+    }
+
     func contentsOfDirectory(at file: File) throws -> [URL] {
-        return try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [])
+        return try self.fileManager.contentsOfDirectory(at: file.createUrl(), includingPropertiesForKeys: [], options: [.skipsHiddenFiles])
     }
 
     func contentsOfDirectory(at file: File) throws -> [File] {

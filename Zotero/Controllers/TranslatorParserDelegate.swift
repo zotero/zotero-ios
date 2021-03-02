@@ -41,8 +41,7 @@ final class TranslatorParserDelegate: NSObject, XMLParserDelegate {
         super.init()
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?,
-                qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         self.currentElement = Element(rawValue: elementName)
         if self.currentElement == .translator {
             self.currentTranslator = Translator(metadata: attributeDict, code: "")

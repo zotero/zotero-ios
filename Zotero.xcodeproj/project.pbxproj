@@ -711,6 +711,12 @@
 		B3D1ED1F2527282400C31465 /* CollapsibleLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */; };
 		B3D3F78B240D222C0018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
 		B3D3F78D240D24D10018F354 /* ItemFetchType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D3F78A240D222C0018F354 /* ItemFetchType.swift */; };
+		B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
+		B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */; };
+		B3D58D6225EE26A600D8FA31 /* DebugResponseParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */; };
+		B3D58D6725EE280300D8FA31 /* DebugResponseParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */; };
+		B3D58D6B25EE437700D8FA31 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */; };
+		B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */; };
 		B3DCDEE12408F5200039ED0D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDEE02408F5200039ED0D /* MainViewController.swift */; };
 		B3DCDF06240912060039ED0D /* DocumentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */; };
 		B3DCDF07240912060039ED0D /* NoteEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */; };
@@ -756,7 +762,6 @@
 		B3F47C01243B339F004F8B1E /* TranslatorsControllerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */; };
 		B3F47C03243B3960004F8B1E /* TestFileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47C02243B3960004F8B1E /* TestFileStorage.swift */; };
 		B3F47DF525B5BCFD006FA96F /* ContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */; };
-		B3F47DFB25B5CB79006FA96F /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F47DFA25B5CB79006FA96F /* CircularProgressView.swift */; };
 		B3F47E0025B5F550006FA96F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30B550424B85A6200F94B59 /* Images.xcassets */; };
 		B3F785C6252488A000B08721 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = B3F785C5252488A000B08721 /* Realm */; };
 		B3F785C8252488A000B08721 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B3F785C7252488A000B08721 /* RealmSwift */; };
@@ -1312,6 +1317,9 @@
 		B3D16BF124E161C70002663B /* LoginViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LoginViewController.xib; sourceTree = "<group>"; };
 		B3D1ED1E2527282300C31465 /* CollapsibleLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsibleLabel.swift; sourceTree = "<group>"; };
 		B3D3F78A240D222C0018F354 /* ItemFetchType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFetchType.swift; sourceTree = "<group>"; };
+		B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogUploadRequest.swift; sourceTree = "<group>"; };
+		B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugResponseParserDelegate.swift; sourceTree = "<group>"; };
+		B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B3DCDEE02408F5200039ED0D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocumentPickerViewController.swift; sourceTree = "<group>"; };
 		B3DCDF02240912060039ED0D /* NoteEditorViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoteEditorViewController.swift; sourceTree = "<group>"; };
@@ -1353,7 +1361,6 @@
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
 		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
 		B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
-		B3F47DFA25B5CB79006FA96F /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1601,6 +1608,7 @@
 				B305649723FC051E003304F2 /* AttachmentUploadRequest.swift */,
 				B305649B23FC051E003304F2 /* AuthorizeUploadRequest.swift */,
 				B305649923FC051E003304F2 /* CrashUploadRequest.swift */,
+				B3D58D5525ED856F00D8FA31 /* DebugLogUploadRequest.swift */,
 				B305648F23FC051E003304F2 /* DeletionsRequest.swift */,
 				B305649C23FC051E003304F2 /* FileRequest.swift */,
 				B372CEE22486512500B423AE /* GroupRequest.swift */,
@@ -2080,6 +2088,7 @@
 				B357DEE224165DEE00E06153 /* CrashReporter.swift */,
 				B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */,
 				B357DEE124165DEE00E06153 /* DebugLogging.swift */,
+				B3D58D6125EE26A600D8FA31 /* DebugResponseParserDelegate.swift */,
 			);
 			path = Debugging;
 			sourceTree = "<group>";
@@ -2464,7 +2473,6 @@
 			isa = PBXGroup;
 			children = (
 				B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */,
-				B3F47DFA25B5CB79006FA96F /* CircularProgressView.swift */,
 				B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */,
 			);
 			path = Views;
@@ -2548,6 +2556,7 @@
 			children = (
 				B3DCDF03240912060039ED0D /* ActivityIndicatorView.swift */,
 				B347F2B924DC4D5D000D5FF6 /* CapHeightLabel.swift */,
+				B3D58D6A25EE437700D8FA31 /* CircularProgressView.swift */,
 				B37D8E6824DC2BEE00F526C5 /* CollectionRow.swift */,
 				B3DCDF01240912060039ED0D /* DocumentPickerViewController.swift */,
 				B30B40622490F09400FAAF6D /* FileAttachmentView.swift */,
@@ -3092,6 +3101,7 @@
 				B34DF1A825768AAC0019CCD1 /* AnnotationPageLabelActionHandler.swift in Sources */,
 				B30565D523FC051E003304F2 /* MarkCollectionAndItemsAsDeletedDbRequest.swift in Sources */,
 				B3235C9224ADE11E0034113B /* StringAttributes.swift in Sources */,
+				B3D58D6B25EE437700D8FA31 /* CircularProgressView.swift in Sources */,
 				B30565F923FC051E003304F2 /* DragDropController.swift in Sources */,
 				B30566BE23FC051F003304F2 /* Versions.swift in Sources */,
 				B39B18E8223947050019F467 /* main.swift in Sources */,
@@ -3232,6 +3242,7 @@
 				B30566AC23FC051F003304F2 /* Predicates.swift in Sources */,
 				B30566A023FC051F003304F2 /* KeyedResponse.swift in Sources */,
 				B305667123FC051F003304F2 /* Threading+Extras.swift in Sources */,
+				B3D58D6225EE26A600D8FA31 /* DebugResponseParserDelegate.swift in Sources */,
 				B30565FF23FC051E003304F2 /* BackgroundUploadProcessor.swift in Sources */,
 				B30566BA23FC051F003304F2 /* Defaults.swift in Sources */,
 				B30565E423FC051E003304F2 /* RealmDbStorage.swift in Sources */,
@@ -3310,6 +3321,7 @@
 				B3593F7B241A76E600760E20 /* CollectionPickerView.swift in Sources */,
 				B30565BF23FC051E003304F2 /* CheckItemIsChangedDbRequest.swift in Sources */,
 				B3DCDF21240945D80039ED0D /* CollectionPickerState.swift in Sources */,
+				B3D58D5625ED856F00D8FA31 /* DebugLogUploadRequest.swift in Sources */,
 				B3E1BEC9254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift in Sources */,
 				B361820F24C9B9E800B30D56 /* SelectableTextField.swift in Sources */,
 				B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */,
@@ -3560,6 +3572,7 @@
 				B305670F23FC08C1003304F2 /* ReadSearchDbRequest.swift in Sources */,
 				B325DBB024375D9E00EFF0F5 /* Conflict.swift in Sources */,
 				B305672F23FC091F003304F2 /* StoreVersionSyncAction.swift in Sources */,
+				B3D58D7025EE43E700D8FA31 /* CircularProgressView.swift in Sources */,
 				B3F47DF525B5BCFD006FA96F /* ContainerViewController.swift in Sources */,
 				B337A5AF244F362D00AFD13D /* Localizable.swift in Sources */,
 				B30566E123FC080C003304F2 /* BackgroundUpload.swift in Sources */,
@@ -3570,6 +3583,7 @@
 				B30566E823FC0823003304F2 /* SubmitDeletionsRequest.swift in Sources */,
 				B372CEEA248675A200B423AE /* MarkGroupForResyncSyncAction.swift in Sources */,
 				B372CEE6248673C700B423AE /* FetchAndStoreGroupSyncAction.swift in Sources */,
+				B3D58D6725EE280300D8FA31 /* DebugResponseParserDelegate.swift in Sources */,
 				B305672C23FC0918003304F2 /* MarkForResyncSyncAction.swift in Sources */,
 				B305672023FC08EC003304F2 /* DbStorage.swift in Sources */,
 				B305677523FC0BD6003304F2 /* String+Extensions.swift in Sources */,
@@ -3610,7 +3624,7 @@
 				B300B33A24292B7300C1FE1E /* RTranslatorMetadata.swift in Sources */,
 				B305672B23FC0916003304F2 /* MarkChangesAsResolvedSyncAction.swift in Sources */,
 				B305673323FC0927003304F2 /* SyncGroupVersionsSyncAction.swift in Sources */,
-				B3F47DFB25B5CB79006FA96F /* CircularProgressView.swift in Sources */,
+				B3D58D5B25ED861500D8FA31 /* DebugLogUploadRequest.swift in Sources */,
 				B30566E323FC0815003304F2 /* UpdatesRequest.swift in Sources */,
 				B30566FD23FC0865003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B305671F23FC08E6003304F2 /* UpdateVersionsDbRequest.swift in Sources */,

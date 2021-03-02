@@ -9,10 +9,12 @@
 import Foundation
 
 import CocoaLumberjackSwift
+import RxAlamofire
+import RxSwift
 
 protocol DebugLoggingCoordinator: class {
-    func share(logs: [URL], completed: @escaping () -> Void)
-    func show(error: DebugLogging.Error)
+    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Float) -> Void)
+    func show(error: DebugLogging.Error, logs: [URL]?, completed: (() -> Void)?)
 }
 
 final class DebugLogging {
@@ -24,17 +26,29 @@ final class DebugLogging {
         case start
         case contentReading
         case noLogsRecorded
+        case upload
+        case responseParsing
+        case cantCreateData
     }
 
-    private let fileStorage: FileStorage
+    private unowned let apiClient: ApiClient
+    private unowned let fileStorage: FileStorage
+    private let queue: DispatchQueue
+    private let scheduler: ConcurrentDispatchQueueScheduler
+    private let disposeBag: DisposeBag
 
     @UserDefault(key: "IsDebugLoggingEnabled", defaultValue: false)
     private(set) var isEnabled: Bool
     private var logger: DDFileLogger?
     weak var coordinator: DebugLoggingCoordinator?
 
-    init(fileStorage: FileStorage) {
+    init(apiClient: ApiClient, fileStorage: FileStorage) {
+        let queue = DispatchQueue(label: "org.zotero.DebugLogging.Queue", qos: .userInitiated)
+        self.apiClient = apiClient
         self.fileStorage = fileStorage
+        self.queue = queue
+        self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
+        self.disposeBag = DisposeBag()
     }
 
     func start(type: LoggingType) {
@@ -52,8 +66,10 @@ final class DebugLogging {
         DDLog.remove(logger)
 
         logger.rollLogFile { [weak self] in
-            self?.shareLogs()
-            self?.logger = nil
+            self?.queue.async {
+                self?.shareLogs()
+                self?.logger = nil
+            }
         }
     }
 
@@ -71,23 +87,91 @@ final class DebugLogging {
     }
 
     private func shareLogs() {
+        DDLogInfo("DebugLogging: sharing logs")
+
         do {
-            let logs: [URL] = try self.fileStorage.contentsOfDirectory(at: Files.debugLogDirectory)
+            let logs: [URL] = try self.fileStorage.sortedContentsOfDirectory(at: Files.debugLogDirectory)
             if logs.isEmpty {
+                DDLogWarn("DebugLogging: no logs found")
                 throw Error.noLogsRecorded
             }
-
-            inMainThread {
-                self.coordinator?.share(logs: logs) { [weak self] in
-                    self?.clearDebugDirectory()
-                }
-            }
+            self.submit(logs: logs)
         } catch let error {
             DDLogError("DebugLogging: can't read debug directory contents - \(error)")
             inMainThread {
-                self.coordinator?.show(error: (error as? Error) ?? .contentReading)
+                self.coordinator?.show(error: (error as? Error) ?? .contentReading, logs: nil, completed: nil)
             }
         }
+    }
+
+    private func submit(logs: [URL]) {
+        guard let (completionAlert, progressAlert) = self.coordinator?.createDebugAlertActions() else { return }
+
+        let data: Data
+        do {
+            data = try self.data(from: logs)
+        } catch let error {
+            DDLogError("DebugLogging: can't read all logs - \(error)")
+            completionAlert(.failure((error as? Error) ?? .contentReading), logs, { [weak self] in
+                self?.clearDebugDirectory()
+            })
+            return
+        }
+
+        let debugRequest = DebugLogUploadRequest()
+        let upload = self.apiClient.upload(request: debugRequest, data: data)
+        upload.flatMap { request -> Single<(HTTPURLResponse, Data)> in
+                  ApiLogger.log(request: debugRequest, url: request.request?.url)
+                  return request.rx.responseData().asSingle()
+              }
+              .flatMap { response, data -> Single<String> in
+                  let delegate = DebugResponseParserDelegate()
+                  let parser = XMLParser(data: data)
+                  parser.delegate = delegate
+
+                  if parser.parse() {
+                      return Single.just(delegate.reportId)
+                  } else {
+                      return Single.error(Error.responseParsing)
+                  }
+              }
+              .observeOn(MainScheduler.instance)
+              .subscribe(onSuccess: { [weak self] debugId in
+                  DDLogInfo("DebugLogging: uploaded logs")
+                  self?.clearDebugDirectory()
+                  completionAlert(.success("D" + debugId), nil, nil)
+              }, onError: { [weak self] error in
+                  DDLogError("DebugLogging: can't upload logs - \(error)")
+                  completionAlert(.failure((error as? Error) ?? .upload), logs, {
+                      self?.clearDebugDirectory()
+                  })
+              })
+              .disposed(by: self.disposeBag)
+
+        upload.asObservable()
+              .flatMap { request -> Observable<RxProgress> in
+                  return request.rx.progress()
+              }
+              .observeOn(MainScheduler.instance)
+              .subscribe(onNext: { progress in
+                  DDLogInfo("DebugLogging: progress \(progress.completed)")
+                  progressAlert(progress.completed)
+              })
+              .disposed(by: self.disposeBag)
+    }
+
+    private func data(from logs: [URL]) throws -> Data {
+        var allLogs = ""
+
+        for url in logs {
+            let string = try String(contentsOf: url)
+            allLogs += string
+        }
+
+        guard let data = allLogs.data(using: .utf8) else {
+            throw Error.cantCreateData
+        }
+        return data
     }
 
     private func clearDebugDirectory() {
@@ -111,13 +195,13 @@ final class DebugLogging {
             let targetName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
             logger.logFormatter = DebugLogFormatter(targetName: targetName)
             logger.doNotReuseLogFiles = true
-            logger.rollingFrequency = 60
+            logger.maximumFileSize = 100 * 1024 * 1024 // 100mb
 
             DDLog.add(logger)
             self.logger = logger
         } catch let error {
             DDLogError("DebugLogging: can't start logger - \(error)")
-            self.coordinator?.show(error: .start)
+            self.coordinator?.show(error: .start, logs: nil, completed: nil)
         }
     }
 }

@@ -100,18 +100,16 @@ final class ZoteroApiClient: ApiClient {
                               }
     }
 
-    func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
-        self.upload(request: request, queue: .main, multipartFormData: multipartFormData)
-    }
-
-    func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
+    func upload(request: ApiRequest, data: Data) -> Single<UploadRequest> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
-        return self.manager.rx.upload(multipartFormData: multipartFormData,
-                                      to: convertible,
-                                      method: method,
-                                      headers: request.headers.flatMap(HTTPHeaders.init))
-                              .asSingle()
+        return self.manager.rx.upload(data, to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
+    }
+
+    func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest> {
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
+        return self.manager.rx.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
     }
 }
 

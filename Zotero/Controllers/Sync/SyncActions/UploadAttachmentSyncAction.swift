@@ -69,7 +69,8 @@ struct UploadAttachmentSyncAction: SyncAction {
                                     return Single.just(.failure(SyncActionError.attachmentAlreadyUploaded))
                                 case .new(let response):
                                     let request = AttachmentUploadRequest(url: response.url)
-                                    return self.apiClient.upload(request: request, queue: self.queue) { data in
+                                    ApiLogger.log(request: request, url: nil)
+                                    return self.apiClient.upload(request: request) { data in
                                         response.params.forEach({ (key, value) in
                                             if let stringData = value.data(using: .utf8) {
                                                 data.append(stringData, withName: key)

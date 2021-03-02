@@ -20,6 +20,8 @@ internal enum L10n {
   internal static let cancel = L10n.tr("Localizable", "cancel")
   /// Close
   internal static let close = L10n.tr("Localizable", "close")
+  /// Copy
+  internal static let copy = L10n.tr("Localizable", "copy")
   /// Creator
   internal static let creator = L10n.tr("Localizable", "creator")
   /// Date
@@ -157,6 +159,20 @@ internal enum L10n {
     internal enum Libraries {
       /// Can't load libraries
       internal static let cantLoad = L10n.tr("Localizable", "errors.libraries.cantLoad")
+    }
+    internal enum Logging {
+      /// Can't find log files.
+      internal static let contentReading = L10n.tr("Localizable", "errors.logging.content_reading")
+      /// No logs occured during debug logging.
+      internal static let noLogsRecorded = L10n.tr("Localizable", "errors.logging.no_logs_recorded")
+      /// Unexpected response from server.
+      internal static let responseParsing = L10n.tr("Localizable", "errors.logging.response_parsing")
+      /// Can't start debug logging.
+      internal static let start = L10n.tr("Localizable", "errors.logging.start")
+      /// Debugging error
+      internal static let title = L10n.tr("Localizable", "errors.logging.title")
+      /// Could not upload logs. Try again.
+      internal static let upload = L10n.tr("Localizable", "errors.logging.upload")
     }
     internal enum Login {
       /// Invalid password
@@ -430,6 +446,8 @@ internal enum L10n {
     internal static let profile = L10n.tr("Localizable", "settings.profile")
     /// Reset to bundled
     internal static let resetToBundled = L10n.tr("Localizable", "settings.reset_to_bundled")
+    /// Send Manually
+    internal static let sendManually = L10n.tr("Localizable", "settings.send_manually")
     /// Start logging
     internal static let startLogging = L10n.tr("Localizable", "settings.start_logging")
     /// Start logging on next app launch
@@ -464,6 +482,16 @@ internal enum L10n {
     internal static let websocketDisconnected = L10n.tr("Localizable", "settings.websocket_disconnected")
     /// Server Connection
     internal static let websocketTitle = L10n.tr("Localizable", "settings.websocket_title")
+    internal enum LogAlert {
+      /// Your debug id is: %@
+      internal static func message(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "settings.log_alert.message", String(describing: p1))
+      }
+      /// Sending Logs
+      internal static let progressTitle = L10n.tr("Localizable", "settings.log_alert.progress_title")
+      /// Logs Sent
+      internal static let title = L10n.tr("Localizable", "settings.log_alert.title")
+    }
     internal enum Storage {
       /// Delete All Attachments
       internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")

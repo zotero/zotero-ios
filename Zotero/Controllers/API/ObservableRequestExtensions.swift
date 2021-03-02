@@ -24,10 +24,10 @@ fileprivate enum RetryDelay {
     case progressive(initial: Double, multiplier: Double, maxDelay: Double)
 }
 
-fileprivate struct ApiLogger {
+struct ApiLogger {
     static func log(request: ApiRequest, url: URL?) {
         DDLogInfo("--- API request '\(type(of: request))' ---")
-        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? "")")
+        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? request.debugUrl)")
         if let params = request.parameters {
             DDLogInfo("(\(request.encoding)) \(request.redact(parameters: params))")
         }

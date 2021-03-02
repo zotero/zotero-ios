@@ -12,6 +12,9 @@ final class CircularProgressView: UIView {
     private static let size: CGFloat = 20
     private static let lineWidth: CGFloat = 1.5
 
+    private let size: CGFloat
+    private let lineWidth: CGFloat
+
     private var circleLayer: CAShapeLayer!
     private var progressLayer: CAShapeLayer!
 
@@ -27,12 +30,23 @@ final class CircularProgressView: UIView {
 
     // MARK: - Lifecycle
 
+    init(size: CGFloat, lineWidth: CGFloat) {
+        self.size = size
+        self.lineWidth = lineWidth
+        super.init(frame: CGRect())
+        self.setup()
+    }
+
     override init(frame: CGRect) {
+        self.size = CircularProgressView.size
+        self.lineWidth = CircularProgressView.lineWidth
         super.init(frame: frame)
         self.setup()
     }
 
     required init?(coder: NSCoder) {
+        self.size = CircularProgressView.size
+        self.lineWidth = CircularProgressView.lineWidth
         super.init(coder: coder)
         self.setup()
     }
@@ -42,9 +56,9 @@ final class CircularProgressView: UIView {
 
         let center = CGPoint(x: self.bounds.width / 2, y: self.bounds.height / 2)
 
-        // CAShapeLayer draws from center of path, so radius needs to be smaller to achieve outer size of `CircularProgressView.size`
+        // CAShapeLayer draws from center of path, so radius needs to be smaller to achieve outer size of `size`
         let path = UIBezierPath(arcCenter: center,
-                                radius: ((CircularProgressView.size - CircularProgressView.lineWidth) / 2),
+                                radius: ((self.size - self.lineWidth) / 2),
                                 startAngle: -.pi / 2,
                                 endAngle: 3 * .pi / 2,
                                 clockwise: true).cgPath
@@ -54,7 +68,7 @@ final class CircularProgressView: UIView {
     }
 
     override var intrinsicContentSize: CGSize {
-        return CGSize(width: CircularProgressView.size, height: CircularProgressView.size)
+        return CGSize(width: self.size, height: self.size)
     }
 
     // MARK: - Setups
@@ -74,7 +88,7 @@ final class CircularProgressView: UIView {
     private func createCircleLayer() -> CAShapeLayer {
         let layer = CAShapeLayer()
         layer.fillColor = UIColor.clear.cgColor
-        layer.lineWidth = 1.5
+        layer.lineWidth = self.lineWidth
         layer.strokeColor = UIColor.systemGray5.cgColor
         layer.shouldRasterize = true
         layer.rasterizationScale = UIScreen.main.scale
@@ -84,7 +98,7 @@ final class CircularProgressView: UIView {
     private func createProgressLayer() -> CAShapeLayer {
         let layer = CAShapeLayer()
         layer.fillColor = UIColor.clear.cgColor
-        layer.lineWidth = 1.5
+        layer.lineWidth = self.lineWidth
         layer.strokeColor = Asset.Colors.zoteroBlue.color.cgColor
         layer.strokeStart = 0
         layer.strokeEnd = 0

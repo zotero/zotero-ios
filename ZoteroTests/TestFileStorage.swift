@@ -55,6 +55,8 @@ final class TestFileStorage: FileStorage {
 
     func createDirectories(for file: File) throws {}
 
+    func sortedContentsOfDirectory(at file: File) throws -> [URL] { return [] }
+
     func contentsOfDirectory(at file: File) throws -> [File] {
         return []
     }

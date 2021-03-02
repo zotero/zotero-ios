@@ -39,6 +39,7 @@ protocol ApiRequest {
     var parameters: [String: Any]? { get }
     var encoding: ApiParameterEncoding { get }
     var headers: [String: String]? { get }
+    var debugUrl: String { get }
 
     func redact(parameters: [String: Any]) -> [String: Any]
     func redact(response: String) -> String
@@ -51,6 +52,15 @@ extension ApiRequest {
 
     func redact(response: String) -> String {
         return response
+    }
+
+    var debugUrl: String {
+        switch self.endpoint {
+        case .zotero(let path):
+            return path
+        case .other(let url):
+            return url.absoluteString
+        }
     }
 }
 
@@ -73,6 +83,6 @@ protocol ApiClient: class {
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, ResponseHeaders)>
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest>
     func upload(request: ApiRequest, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
-    func upload(request: ApiRequest, queue: DispatchQueue, multipartFormData: @escaping (MultipartFormData) -> Void) -> Single<UploadRequest>
+    func upload(request: ApiRequest, data: Data) -> Single<UploadRequest>
     func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation
 }
