@@ -26,7 +26,6 @@ struct DebugLogUploadRequest: ApiRequest {
     }
 
     var headers: [String : String]? {
-        return ["Content-Encoding": "gzip",
-                "Content-Type": "text/plain;charset=UTF-8"]
+        return nil
     }
 }
