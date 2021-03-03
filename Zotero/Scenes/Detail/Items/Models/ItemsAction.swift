@@ -12,15 +12,15 @@ import RealmSwift
 
 enum ItemsAction {
     case addAttachments([URL])
-    case assignSelectedItemsToCollections(Set<String>)
-    case deleteSelectedItemsFromCollection
-    case deleteSelectedItems
+    case assignItemsToCollections(items: Set<String>, collections: Set<String>)
+    case deleteItemsFromCollection(Set<String>)
+    case deleteItems(Set<String>)
     case deselectItem(String)
     case loadInitialState
     case loadItemToDuplicate(String)
     case moveItems([String], String)
     case observingFailed
-    case restoreSelectedItems
+    case restoreItems(Set<String>)
     case saveNote(String?, String)
     case search(String)
     case selectItem(String)
@@ -29,7 +29,7 @@ enum ItemsAction {
     case startEditing
     case stopEditing
     case toggleSortOrder
-    case trashSelectedItems
+    case trashItems(Set<String>)
     case cacheAttachment(item: RItem)
     case cacheAttachmentUpdates(items: [RItem])
     case updateAttachments(AttachmentFileDeletedNotification)

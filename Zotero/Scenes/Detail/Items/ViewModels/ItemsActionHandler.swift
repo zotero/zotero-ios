@@ -38,11 +38,11 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .addAttachments(let urls):
             self.addAttachments(urls: urls, in: viewModel)
 
-        case .assignSelectedItemsToCollections(let collections):
-            self.addSelectedItems(to: collections, in: viewModel)
+        case .assignItemsToCollections(let items, let collections):
+            self.add(items: items, to: collections, in: viewModel)
 
-        case .deleteSelectedItemsFromCollection:
-            self.deleteSelectedItemsFromCollection(in: viewModel)
+        case .deleteItemsFromCollection(let keys):
+            self.deleteItemsFromCollection(keys: keys, in: viewModel)
 
         case .deselectItem(let key):
             self.update(viewModel: viewModel) { state in
@@ -98,14 +98,14 @@ struct ItemsActionHandler: ViewModelActionHandler {
             sortType.ascending.toggle()
             self.changeSortType(to: sortType, in: viewModel)
 
-        case .trashSelectedItems:
-            self.setTrashedToSelectedItems(trashed: true, in: viewModel)
+        case .trashItems(let keys):
+            self.set(trashed: true, to: keys, in: viewModel)
 
-        case .restoreSelectedItems:
-            self.setTrashedToSelectedItems(trashed: false, in: viewModel)
+        case .restoreItems(let keys):
+            self.set(trashed: false, to: keys, in: viewModel)
 
-        case .deleteSelectedItems:
-            self.deleteSelectedItems(in: viewModel)
+        case .deleteItems(let keys):
+            self.delete(items: keys, in: viewModel)
 
         case .loadInitialState:
             self.loadInitialState(in: viewModel)
@@ -267,10 +267,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func addSelectedItems(to collectionKeys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys,
-                                                        itemKeys: viewModel.state.selectedItems,
-                                                        libraryId: viewModel.state.library.identifier)
+    private func add(items itemKeys: Set<String>, to collectionKeys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = AssignItemsToCollectionsDbRequest(collectionKeys: collectionKeys, itemKeys: itemKeys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't assign collections to items - \(error)")
@@ -282,12 +280,9 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     // MARK: - Toolbar actions
 
-    private func deleteSelectedItemsFromCollection(in viewModel: ViewModel<ItemsActionHandler>) {
+    private func deleteItemsFromCollection(keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
         guard let key = viewModel.state.type.collectionKey else { return }
-        let request = DeleteItemsFromCollectionDbRequest(collectionKey: key,
-                                                         itemKeys: viewModel.state.selectedItems,
-                                                         libraryId: viewModel.state.library.identifier)
-
+        let request = DeleteItemsFromCollectionDbRequest(collectionKey: key, itemKeys: keys, libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't delete items - \(error)")
@@ -297,9 +292,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func deleteSelectedItems(in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(viewModel.state.selectedItems),
-                                                           libraryId: viewModel.state.library.identifier)
+    private func delete(items keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = MarkObjectsAsDeletedDbRequest<RItem>(keys: Array(keys), libraryId: viewModel.state.library.identifier)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't delete items - \(error)")
@@ -309,10 +303,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func setTrashedToSelectedItems(trashed: Bool, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = MarkItemsAsTrashedDbRequest(keys: Array(viewModel.state.selectedItems),
-                                                  libraryId: viewModel.state.library.identifier,
-                                                  trashed: trashed)
+    private func set(trashed: Bool, to keys: Set<String>, in viewModel: ViewModel<ItemsActionHandler>) {
+        let request = MarkItemsAsTrashedDbRequest(keys: Array(keys), libraryId: viewModel.state.library.identifier, trashed: trashed)
         self.perform(request: request) { [weak viewModel] error in
             guard let viewModel = viewModel else { return }
             DDLogError("ItemsStore: can't trash items - \(error)")

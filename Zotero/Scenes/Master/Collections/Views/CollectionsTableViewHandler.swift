@@ -215,13 +215,8 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
             return nil
         }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let `self` = self else { return nil }
-
-            let collection = self.snapshot[indexPath.row]
-            if collection.type.isCollection {
-                return self.createContextMenu(for: collection)
-            }
-            return nil
+            guard let collection = self?.snapshot[indexPath.row], collection.type.isCollection else { return nil }
+            return self?.createContextMenu(for: collection)
         }
     }
 }

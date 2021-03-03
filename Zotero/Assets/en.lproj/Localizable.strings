@@ -110,6 +110,10 @@
 "items.remove_from_collection_title" = "Remove from Collection";
 "items.remove_from_collection_question" = "Are you sure you want to remove the selected item from this collection?";
 "items.remove_from_collection_multiple_question" = "Are you sure you want to remove selected items from this collection?";
+"items.action.add_to_collection" = "Add to Collection";
+"items.action.remove_from_collection" = "Remove from Collection";
+"items.action.trash" = "Move to Trash";
+"items.action.duplicate" = "Duplicate";
 
 "item_detail.add_creator" = "Add creator";
 "item_detail.notes" = "Notes";

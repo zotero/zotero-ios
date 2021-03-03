@@ -12,6 +12,10 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
+protocol ItemActionProcessor: class {
+    func process(action: ItemAction.Kind, for item: RItem)
+}
+
 final class ItemsTableViewHandler: NSObject {
     enum Action {
         case editing(isEditing: Bool, animated: Bool)
@@ -31,9 +35,13 @@ final class ItemsTableViewHandler: NSObject {
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
+    private unowned let actionProcessor: ItemActionProcessor
     private unowned let dragDropController: DragDropController
     let tapObserver: PublishSubject<TapAction>
     private let disposeBag: DisposeBag
+    private let contextMenuActions: [ItemAction]
+    private let leadingCellActions: [ItemAction]
+    private let trailingCellActions: [ItemAction]
 
     private var queue: [Action]
     private var isPerformingAction: Bool
@@ -43,11 +51,16 @@ final class ItemsTableViewHandler: NSObject {
     private var batchTimerDisposeBag: DisposeBag?
     private weak var fileDownloader: FileDownloader?
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, actionProcessor: ItemActionProcessor, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
+        let (leadingActions, trailingActions) = ItemsTableViewHandler.createCellActions(for: viewModel.state)
         self.tableView = tableView
         self.viewModel = viewModel
+        self.actionProcessor = actionProcessor
         self.dragDropController = dragDropController
         self.fileDownloader = fileDownloader
+        self.leadingCellActions = leadingActions
+        self.trailingCellActions = trailingActions
+        self.contextMenuActions = ItemsTableViewHandler.createContextMenuActions(for: viewModel.state)
         self.queue = []
         self.isPerformingAction = false
         self.shouldBatchReloads = false
@@ -60,6 +73,28 @@ final class ItemsTableViewHandler: NSObject {
 
         self.setupTableView()
         self.setupKeyboardObserving()
+    }
+
+    private static func createContextMenuActions(for state: ItemsState) -> [ItemAction] {
+        if state.type.isTrash {
+            return [ItemAction(type: .restore), ItemAction(type: .delete)]
+        }
+        var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+        if state.type.collectionKey != nil {
+            actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+        }
+        return actions
+    }
+
+    private static func createCellActions(for state: ItemsState) -> (leading: [ItemAction], trailing: [ItemAction]) {
+        if state.type.isTrash {
+            return ([ItemAction(type: .restore)], [ItemAction(type: .delete)])
+        }
+        var leadingActions: [ItemAction] = [ItemAction(type: .addToCollection)]
+        if state.type.collectionKey != nil {
+            leadingActions.append(ItemAction(type: .removeFromCollection))
+        }
+        return (leadingActions, [ItemAction(type: .trash), ItemAction(type: .duplicate)])
     }
 
     // MARK: - Data source
@@ -128,6 +163,39 @@ final class ItemsTableViewHandler: NSObject {
         self.tableView.indexPathsForSelectedRows?.forEach({ indexPath in
             self.tableView.deselectRow(at: indexPath, animated: false)
         })
+    }
+
+    private func createContextMenu(for item: RItem) -> UIMenu {
+        let actions: [UIAction] = self.contextMenuActions.map({ action in
+            return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
+                self?.actionProcessor.process(action: action.type, for: item)
+            }
+        })
+        return UIMenu(title: "", children: actions)
+    }
+
+    private func createSwipeConfiguration(from itemActions: [ItemAction], at indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard !self.tableView.isEditing && self.viewModel.state.library.metadataEditable else { return nil }
+        let actions = itemActions.map({ action -> UIContextualAction in
+            let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: action.title, handler: { [weak self] _, _, completion in
+                guard let item = self?.viewModel.state.results?[indexPath.row] else { return }
+                self?.actionProcessor.process(action: action.type, for: item)
+                completion(true)
+            })
+            contextualAction.image = action.image
+            switch action.type {
+            case .delete, .trash:
+                contextualAction.backgroundColor = .systemRed
+            case .duplicate, .restore:
+                contextualAction.backgroundColor = .systemBlue
+            case .addToCollection:
+                contextualAction.backgroundColor = .systemOrange
+            case .removeFromCollection:
+                contextualAction.backgroundColor = .systemPurple
+            }
+            return contextualAction
+        })
+        return UISwipeActionsConfiguration(actions: actions)
     }
 
     // MARK: - Queue
@@ -375,6 +443,23 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
         return tableView.isEditing
+    }
+
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard !tableView.isEditing && self.viewModel.state.library.metadataEditable else { return nil }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
+            guard let item = self?.viewModel.state.results?[indexPath.row] else { return nil }
+            return self?.createContextMenu(for: item)
+        }
+    }
+
+    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        return self.createSwipeConfiguration(from: self.leadingCellActions, at: indexPath)
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        return self.createSwipeConfiguration(from: self.trailingCellActions, at: indexPath)
     }
 }
 

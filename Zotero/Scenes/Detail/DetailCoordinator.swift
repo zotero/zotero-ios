@@ -24,7 +24,7 @@ import PSPDFKitUI
 #endif
 
 protocol DetailItemsCoordinatorDelegate: class {
-    func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>)
+    func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void)
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library)
     func showNote(with text: String, readOnly: Bool, save: @escaping (String) -> Void)
     func showAddActions(viewModel: ViewModel<ItemsActionHandler>, button: UIBarButtonItem)
@@ -378,7 +378,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         self.navigationController.pushViewController(controller, animated: true)
     }
 
-    func showCollectionPicker(in library: Library, selectedKeys: Binding<Set<String>>) {
+    func showCollectionPicker(in library: Library, completed: @escaping (Set<String>) -> Void) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
         let state = CollectionPickerState(library: library, excludedKeys: [], selected: [])
         let handler = CollectionPickerActionHandler(dbStorage: dbStorage)
@@ -389,7 +389,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         // is available immediately.
         viewModel.process(action: .loadData)
 
-        let view = CollectionsPickerView(selectedKeys: selectedKeys,
+        let view = CollectionsPickerView(completionAction: completed,
                                          closeAction: { [weak self] in
                                             self?.topViewController.dismiss(animated: true, completion: nil)
                                          })

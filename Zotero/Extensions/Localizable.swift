@@ -316,6 +316,16 @@ internal enum L10n {
     internal static let trashTitle = L10n.tr("Localizable", "items.trash_title")
     /// Select a Collection
     internal static let zeroCollectionsSelected = L10n.tr("Localizable", "items.zero_collections_selected")
+    internal enum Action {
+      /// Add to Collection
+      internal static let addToCollection = L10n.tr("Localizable", "items.action.add_to_collection")
+      /// Duplicate
+      internal static let duplicate = L10n.tr("Localizable", "items.action.duplicate")
+      /// Remove from Collection
+      internal static let removeFromCollection = L10n.tr("Localizable", "items.action.remove_from_collection")
+      /// Move to Trash
+      internal static let trash = L10n.tr("Localizable", "items.action.trash")
+    }
   }
 
   internal enum Libraries {
