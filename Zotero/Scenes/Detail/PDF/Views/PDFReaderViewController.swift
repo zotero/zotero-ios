@@ -451,7 +451,7 @@ final class PDFReaderViewController: UIViewController {
             }
 
             if let annotations = self.annotations(for: notification) {
-                self.viewModel.process(action: .annotationsAdded(annotations))
+                self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: self.isSidebarVisible))
             } else {
                 self.viewModel.process(action: .notificationReceived(notification.name))
             }

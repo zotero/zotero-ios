@@ -20,7 +20,7 @@ enum PDFReaderAction {
     case selectAnnotation(Annotation?)
     case selectAnnotationFromDocument(key: String, page: Int)
     case removeAnnotation(Annotation)
-    case annotationsAdded([PSPDFKit.Annotation])
+    case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case annotationsRemoved([PSPDFKit.Annotation])
     case requestPreviews(keys: [String], notify: Bool)
     case setComment(key: String, comment: NSAttributedString)

@@ -92,8 +92,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             let annotation = viewModel.state.annotations[page]?[index]
             self.select(annotation: annotation, index: index, didSelectInDocument: true, in: viewModel)
             
-        case .annotationsAdded(let annotations):
-            self.add(annotations: annotations, in: viewModel)
+        case .annotationsAdded(let annotations, let selectFirst):
+            self.add(annotations: annotations, selectFirst: selectFirst, in: viewModel)
 
         case .annotationsRemoved(let annotations):
             self.remove(annotations: annotations, in: viewModel)
@@ -800,7 +800,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// Updates annotations based on insertions to PSPDFKit document.
     /// - parameter annotations: Annotations that were added to the document.
     /// - parameter viewModel: ViewModel.
-    private func add(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func add(annotations: [PSPDFKit.Annotation], selectFirst: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
         var newZoteroAnnotations: [Annotation] = []
 
         let isDark = viewModel.state.interfaceStyle == .dark
@@ -833,7 +833,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         guard !newZoteroAnnotations.isEmpty else { return }
 
         self.update(viewModel: viewModel) { state in
-            self.add(annotations: newZoteroAnnotations, to: &state, selectFirst: true)
+            self.add(annotations: newZoteroAnnotations, to: &state, selectFirst: selectFirst)
             let keys = newZoteroAnnotations.map({ $0.key })
             state.insertedKeys = state.insertedKeys.union(keys)
             state.deletedKeys = state.deletedKeys.subtracting(keys)
