@@ -446,10 +446,6 @@ final class PDFReaderViewController: UIViewController {
             }
 
         case .PSPDFAnnotationsAdded:
-            if let tool = self.pdfController.annotationStateManager.state {
-                self.toggle(annotationTool: tool)
-            }
-
             if let annotations = self.annotations(for: notification) {
                 self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: self.isSidebarVisible))
             } else {
