@@ -54,7 +54,7 @@ final class FileAttachmentView: UIView {
     private static let progressCircleWidth: CGFloat = 1.5
     private let disposeBag: DisposeBag
 
-//    private var circleLayer: CAShapeLayer!
+    private var circleLayer: CAShapeLayer!
     private var progressLayer: CAShapeLayer!
     private var stopLayer: CALayer!
     private var imageLayer: CALayer!
@@ -117,7 +117,7 @@ final class FileAttachmentView: UIView {
                                 endAngle: 3 * .pi / 2,
                                 clockwise: true).cgPath
 
-//        self.circleLayer.path = path
+        self.circleLayer.path = path
         self.progressLayer.path = path
         self.stopLayer.position = center
         self.imageLayer.position = center
@@ -132,7 +132,7 @@ final class FileAttachmentView: UIView {
 
         guard self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) else { return }
 
-//        self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
+        self.circleLayer.strokeColor = UIColor.systemGray5.cgColor
         self.badgeBorder.borderColor = self.parentBackgroundColor?.cgColor
 
         if let name = self.badgeImageName {
@@ -164,15 +164,15 @@ final class FileAttachmentView: UIView {
             switch border {
             case .borderLine:
                 self.progressLayer.isHidden = true
-//                self.circleLayer.isHidden = false
+                self.circleLayer.isHidden = true
             case .progressLine(let progress):
                 self.progressLayer.strokeEnd = progress
                 self.progressLayer.isHidden = false
-//                self.circleLayer.isHidden = false
+                self.circleLayer.isHidden = false
             }
         } else {
             self.progressLayer.isHidden = true
-//            self.circleLayer.isHidden = true
+            self.circleLayer.isHidden = true
         }
 
         switch data.content {
@@ -289,9 +289,9 @@ final class FileAttachmentView: UIView {
         self.backgroundColor = .clear
         self.translatesAutoresizingMaskIntoConstraints = false
 
-//        let circleLayer = self.createCircleLayer()
-//        self.layer.addSublayer(circleLayer)
-//        self.circleLayer = circleLayer
+        let circleLayer = self.createCircleLayer()
+        self.layer.addSublayer(circleLayer)
+        self.circleLayer = circleLayer
 
         let progressLayer = self.createProgressLayer()
         self.layer.addSublayer(progressLayer)
@@ -377,15 +377,15 @@ final class FileAttachmentView: UIView {
         return layer
     }
 
-//    private func createCircleLayer() -> CAShapeLayer {
-//        let layer = CAShapeLayer()
-//        layer.fillColor = UIColor.clear.cgColor
-//        layer.lineWidth = 1.5
-//        layer.strokeColor = UIColor.systemGray5.cgColor
-//        layer.shouldRasterize = true
-//        layer.rasterizationScale = UIScreen.main.scale
-//        return layer
-//    }
+    private func createCircleLayer() -> CAShapeLayer {
+        let layer = CAShapeLayer()
+        layer.fillColor = UIColor.clear.cgColor
+        layer.lineWidth = 1.5
+        layer.strokeColor = UIColor.systemGray5.cgColor
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
+        return layer
+    }
 
     private func createProgressLayer() -> CAShapeLayer {
         let layer = CAShapeLayer()
