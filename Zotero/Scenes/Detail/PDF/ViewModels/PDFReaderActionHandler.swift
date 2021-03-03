@@ -801,6 +801,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotations: Annotations that were added to the document.
     /// - parameter viewModel: ViewModel.
     private func add(annotations: [PSPDFKit.Annotation], selectFirst: Bool, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        DDLogInfo("PDFReaderActionHandler: add annotations - \(annotations.map({ "\(type(of: $0));syncable=\($0.syncable);" }))")
+        
         var newZoteroAnnotations: [Annotation] = []
 
         let isDark = viewModel.state.interfaceStyle == .dark
@@ -903,6 +905,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// - parameter annotations: Annotations that were deleted in document.
     /// - parameter viewModel: ViewModel.
     private func remove(annotations: [PSPDFKit.Annotation], in viewModel: ViewModel<PDFReaderActionHandler>) {
+        DDLogInfo("PDFReaderActionHandler: delete annotations - \(annotations.map({ "\(type(of: $0));syncable=\($0.syncable);" }))")
+
         self.update(viewModel: viewModel) { state in
             let keys: Set<String>
 
@@ -941,6 +945,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         var keys: Set<String> = []
         for annotation in annotations {
             guard annotation.syncable, let key = annotation.key else { continue }
+            // Set syncable flag to false so that if user uses redo function this annotation is re-added.
+            annotation.syncable = false
             let page = Int(annotation.pageIndex)
             if let index = zoteroAnnotations[page]?.firstIndex(where: { $0.key == key }) {
                 zoteroAnnotations[page]?.remove(at: index)
