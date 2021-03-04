@@ -25,7 +25,8 @@ struct PerformDeletionsSyncAction: SyncAction {
     var result: Single<[(String, String)]> {
         return Single.create { subscriber -> Disposable in
             do {
-                let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches, tags: self.tags, ignoreConflicts: self.ignoreConflicts)
+                let request = PerformDeletionsDbRequest(libraryId: self.libraryId, collections: self.collections, items: self.items, searches: self.searches,
+                                                        tags: self.tags, ignoreConflicts: self.ignoreConflicts)
                 let conflicts = try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(conflicts))
             } catch let error {

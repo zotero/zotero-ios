@@ -23,20 +23,18 @@ struct MarkForResyncSyncAction: SyncAction {
     var result: Single<()> {
         return Single.create { subscriber -> Disposable in
             do {
+                let request: DbRequest
                 switch self.object {
                 case .collection:
-                    let request = try MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: self.keys)
-                    try self.dbStorage.createCoordinator().perform(request: request)
+                    request = try MarkForResyncDbAction<RCollection>(libraryId: self.libraryId, keys: self.keys)
                 case .item, .trash:
-                    let request = try MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: self.keys)
-                    try self.dbStorage.createCoordinator().perform(request: request)
+                    request = try MarkForResyncDbAction<RItem>(libraryId: self.libraryId, keys: self.keys)
                 case .search:
-                    let request = try MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
-                    try self.dbStorage.createCoordinator().perform(request: request)
+                    request = try MarkForResyncDbAction<RSearch>(libraryId: self.libraryId, keys: self.keys)
                 case .settings:
-                    let request = try MarkForResyncDbAction<RPageIndex>(libraryId: self.libraryId, keys: self.keys)
-                    try self.dbStorage.createCoordinator().perform(request: request)
+                    request = try MarkForResyncDbAction<RPageIndex>(libraryId: self.libraryId, keys: self.keys)
                 }
+                try self.dbStorage.createCoordinator().perform(request: request)
                 subscriber(.success(()))
             } catch let error {
                 subscriber(.error(error))

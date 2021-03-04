@@ -18,7 +18,7 @@
 		B30565B323FC051E003304F2 /* DeleteObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */; };
 		B30565B423FC051E003304F2 /* MarkForResyncDbAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */; };
 		B30565B523FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */; };
-		B30565B623FC051E003304F2 /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */; };
+		B30565B623FC051E003304F2 /* StoreItemsDbResponseRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643B23FC051E003304F2 /* StoreItemsDbResponseRequest.swift */; };
 		B30565B723FC051E003304F2 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */; };
 		B30565B823FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */; };
 		B30565B923FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */; };
@@ -238,7 +238,7 @@
 		B305671523FC08CD003304F2 /* EditCollectionDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */; };
 		B305671623FC08CF003304F2 /* StoreCollectionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */; };
 		B305671723FC08D3003304F2 /* StoreGroupDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */; };
-		B305671923FC08D8003304F2 /* StoreItemsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */; };
+		B305671923FC08D8003304F2 /* StoreItemsDbResponseRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643B23FC051E003304F2 /* StoreItemsDbResponseRequest.swift */; };
 		B305671B23FC08DC003304F2 /* StoreSearchesDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */; };
 		B305671C23FC08DF003304F2 /* StoreSettingsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305645123FC051E003304F2 /* StoreSettingsDbRequest.swift */; };
 		B305671D23FC08E2003304F2 /* SyncVersionsDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B305646323FC051E003304F2 /* SyncVersionsDbRequest.swift */; };
@@ -842,7 +842,7 @@
 		B305643823FC051E003304F2 /* DeleteObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkForResyncDbAction.swift; sourceTree = "<group>"; };
 		B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkObjectsAsSyncedDbRequest.swift; sourceTree = "<group>"; };
-		B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemsDbRequest.swift; sourceTree = "<group>"; };
+		B305643B23FC051E003304F2 /* StoreItemsDbResponseRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreItemsDbResponseRequest.swift; sourceTree = "<group>"; };
 		B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreSearchesDbRequest.swift; sourceTree = "<group>"; };
 		B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadUserChangedObjectsDbRequest.swift; sourceTree = "<group>"; };
 		B305643E23FC051E003304F2 /* DeleteItemsFromCollectionDbRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeleteItemsFromCollectionDbRequest.swift; sourceTree = "<group>"; };
@@ -1562,7 +1562,7 @@
 				B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
-				B305643B23FC051E003304F2 /* StoreItemsDbRequest.swift */,
+				B305643B23FC051E003304F2 /* StoreItemsDbResponseRequest.swift */,
 				B3A14DF725A7666C00DF5334 /* StorePageForItemDbRequest.swift */,
 				B305643C23FC051E003304F2 /* StoreSearchesDbRequest.swift */,
 				B305645123FC051E003304F2 /* StoreSettingsDbRequest.swift */,
@@ -3204,7 +3204,7 @@
 				B30566B423FC051F003304F2 /* LinksResponse.swift in Sources */,
 				B34A9F6825BF1D27007C9A4A /* AnnotationConverter.swift in Sources */,
 				B3A081C425D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift in Sources */,
-				B30565B623FC051E003304F2 /* StoreItemsDbRequest.swift in Sources */,
+				B30565B623FC051E003304F2 /* StoreItemsDbResponseRequest.swift in Sources */,
 				B3593F5A241A61C700760E20 /* CollectionsTableViewHandler.swift in Sources */,
 				B395EFEB25494B3200CEBD9F /* CreatorEditActionHandler.swift in Sources */,
 				B30565E623FC051E003304F2 /* SchemaController.swift in Sources */,
@@ -3641,7 +3641,7 @@
 				B30566FD23FC0865003304F2 /* MarkForResyncDbAction.swift in Sources */,
 				B305671F23FC08E6003304F2 /* UpdateVersionsDbRequest.swift in Sources */,
 				B30566EA23FC0828003304F2 /* AttachmentUploadRequest.swift in Sources */,
-				B305671923FC08D8003304F2 /* StoreItemsDbRequest.swift in Sources */,
+				B305671923FC08D8003304F2 /* StoreItemsDbResponseRequest.swift in Sources */,
 				B378F4D1242D0E4900B88A05 /* TranslatorParserDelegate.swift in Sources */,
 				B30566DE23FC0804003304F2 /* BackgroundUploader.swift in Sources */,
 				B372CEE1248650D600B423AE /* GroupVersionsRequest.swift in Sources */,

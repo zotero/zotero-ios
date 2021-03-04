@@ -26,41 +26,21 @@ struct RevertLibraryUpdatesSyncAction: SyncAction {
             do {
                 let coordinator = try self.dbStorage.createCoordinator()
 
-                let collections = try self.loadCachedJsonForObject(of: RCollection.self,
-                                                                   objectType: .collection,
-                                                                   in: self.libraryId,
-                                                                   coordinator: coordinator,
+                let collections = try self.loadCachedJsonForObject(of: RCollection.self, objectType: .collection, in: self.libraryId, coordinator: coordinator,
                                                                    createResponse: { try CollectionResponse(response: $0) })
-                let searches = try self.loadCachedJsonForObject(of: RSearch.self,
-                                                                objectType: .search,
-                                                                in: self.libraryId,
-                                                                coordinator: coordinator,
+                let searches = try self.loadCachedJsonForObject(of: RSearch.self, objectType: .search, in: self.libraryId, coordinator: coordinator,
                                                                 createResponse: { try SearchResponse(response: $0) })
-                let items = try self.loadCachedJsonForObject(of: RItem.self,
-                                                             objectType: .item,
-                                                             in: self.libraryId,
-                                                             coordinator: coordinator,
+                let items = try self.loadCachedJsonForObject(of: RItem.self, objectType: .item, in: self.libraryId, coordinator: coordinator,
                                                              createResponse: {
                                                                 try ItemResponse(response: $0, schemaController: self.schemaController)
                                                              })
 
                 let storeCollectionsRequest = StoreCollectionsDbRequest(response: collections.responses)
-                try coordinator.perform(request: storeCollectionsRequest)
-
-                let storeItemsRequest = StoreItemsDbRequest(response: items.responses,
-                                                            schemaController: self.schemaController,
-                                                            dateParser: self.dateParser,
-                                                            preferRemoteData: true)
-                _ = try coordinator.perform(request: storeItemsRequest)
-
+                let storeItemsRequest = StoreItemsDbRequest(responses: items.responses, schemaController: self.schemaController, dateParser: self.dateParser)
                 let storeSearchesRequest = StoreSearchesDbRequest(response: searches.responses)
-                try coordinator.perform(request: storeSearchesRequest)
+                try coordinator.perform(requests: [storeCollectionsRequest, storeItemsRequest, storeSearchesRequest])
 
-                let failures: [SyncObject : [String]] = [.collection: collections.failed,
-                                                         .search: searches.failed,
-                                                         .item: items.failed]
-
-                subscriber(.success(failures))
+                subscriber(.success([.collection: collections.failed, .search: searches.failed, .item: items.failed]))
             } catch let error {
                 subscriber(.error(error))
             }

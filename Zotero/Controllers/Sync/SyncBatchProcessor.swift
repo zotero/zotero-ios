@@ -164,16 +164,14 @@ final class SyncBatchProcessor {
             return (failedKeys, errors, [])
 
         case .item, .trash:
-            let (items, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: {
-                try ItemResponse(response: $0, schemaController: self.schemaController)
-            })
+            let (items, objects, errors) = try Parsing.parse(response: jsonObject, createResponse: { try ItemResponse(response: $0, schemaController: self.schemaController) })
 
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .item, libraryId: libraryId)
 
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
             let conflicts = try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreItemsDbRequest(response: items, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: true))
+                try coordinator.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
             }
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 

@@ -112,15 +112,11 @@ struct UploadAttachmentSyncAction: SyncAction {
 
                                 let markDbAction: (Int?) -> Single<()> = { version in
                                      do {
-                                         let coordinator = try self.dbStorage.createCoordinator()
-                                         let uploadedRequest = MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key)
-                                         try coordinator.perform(request: uploadedRequest)
-
+                                         var requests: [DbRequest] = [MarkAttachmentUploadedDbRequest(libraryId: self.libraryId, key: self.key)]
                                          if let version = version {
-                                             let versionRequest = UpdateVersionsDbRequest(version: version, libraryId: self.libraryId,
-                                                                                          type: .object(.item))
-                                             try coordinator.perform(request: versionRequest)
+                                             requests.append(UpdateVersionsDbRequest(version: version, libraryId: self.libraryId, type: .object(.item)))
                                          }
+                                         try self.dbStorage.createCoordinator().perform(requests: requests)
                                          return Single.just(())
                                      } catch let error {
                                          return Single.error(error)

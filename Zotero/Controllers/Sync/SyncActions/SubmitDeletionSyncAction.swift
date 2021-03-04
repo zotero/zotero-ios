@@ -31,24 +31,21 @@ struct SubmitDeletionSyncAction: SyncAction {
                              .observeOn(self.scheduler)
                              .flatMap({ _, headers -> Single<Int> in
                                 do {
-                                    let coordinator = try self.dbStorage.createCoordinator()
+                                    let newVersion = headers.lastModifiedVersion
+                                    let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
+                                    var requests: [DbRequest] = [updateVersion]
 
                                     switch self.object {
                                     case .collection:
-                                        let request = DeleteObjectsDbRequest<RCollection>(keys: self.keys, libraryId: self.libraryId)
-                                        try coordinator.perform(request: request)
+                                        requests.insert(DeleteObjectsDbRequest<RCollection>(keys: self.keys, libraryId: self.libraryId), at: 0)
                                     case .item, .trash:
-                                        let request = DeleteObjectsDbRequest<RItem>(keys: self.keys, libraryId: self.libraryId)
-                                        try coordinator.perform(request: request)
+                                        requests.insert(DeleteObjectsDbRequest<RItem>(keys: self.keys, libraryId: self.libraryId), at: 0)
                                     case .search:
-                                        let request = DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId)
-                                        try coordinator.perform(request: request)
+                                        requests.insert(DeleteObjectsDbRequest<RSearch>(keys: self.keys, libraryId: self.libraryId), at: 0)
                                     case .settings: break
                                     }
 
-                                    let newVersion = headers.lastModifiedVersion
-                                    let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
-                                    try coordinator.perform(request: updateVersion)
+                                    try self.dbStorage.createCoordinator().perform(requests: requests)
 
                                     return Single.just(newVersion)
                                 } catch let error {

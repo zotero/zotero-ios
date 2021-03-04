@@ -55,7 +55,7 @@ struct RealmDbCoordinator {
 }
 
 extension RealmDbCoordinator: DbCoordinator {
-    func perform<Request>(request: Request) throws where Request : DbRequest {
+    func perform(request: DbRequest) throws  {
         if !request.needsWrite {
             try request.process(in: self.realm)
             return
@@ -73,6 +73,16 @@ extension RealmDbCoordinator: DbCoordinator {
 
         return try self.realm.write {
             return try request.process(in: self.realm)
+        }
+    }
+
+    /// Writes multiple requests in single write transaction.
+    func perform(requests: [DbRequest]) throws {
+        try self.realm.write {
+            for request in requests {
+                guard request.needsWrite else { continue }
+                try request.process(in: self.realm)
+            }
         }
     }
 }

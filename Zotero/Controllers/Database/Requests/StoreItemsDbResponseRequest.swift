@@ -16,21 +16,35 @@ enum StoreItemsError: Error {
     case itemChanged(ItemResponse)
 }
 
-struct StoreItemsDbRequest: DbResponseRequest {
-    typealias Response = [StoreItemsError]
-
-    let response: [ItemResponse]
+struct StoreItemsDbRequest: DbRequest {
+    let responses: [ItemResponse]
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
-    let preferRemoteData: Bool
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        for response in self.responses {
+            try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: true).process(in: database)
+        }
+    }
+}
+
+struct StoreItemsDbResponseRequest: DbResponseRequest {
+    typealias Response = [StoreItemsError]
+
+    let responses: [ItemResponse]
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
+    let preferResponseData: Bool
 
     var needsWrite: Bool { return true }
 
     func process(in database: Realm) throws -> [StoreItemsError] {
         var errors: [StoreItemsError] = []
-        for data in self.response {
+        for response in self.responses {
             do {
-                try self.store(data: data, to: database, schemaController: self.schemaController)
+                try StoreItemDbRequest(response: response, schemaController: self.schemaController, dateParser: self.dateParser, preferRemoteData: self.preferResponseData).process(in: database)
             } catch let error as StoreItemsError {
                 errors.append(error)
             } catch let error {
@@ -39,12 +53,21 @@ struct StoreItemsDbRequest: DbResponseRequest {
         }
         return errors
     }
+}
 
-    private func store(data: ItemResponse, to database: Realm, schemaController: SchemaController) throws {
-        guard let libraryId = data.library.libraryId else { throw DbError.primaryKeyUnavailable }
+struct StoreItemDbRequest: DbRequest {
+    let response: ItemResponse
+    unowned let schemaController: SchemaController
+    unowned let dateParser: DateParser
+    let preferRemoteData: Bool
+
+    var needsWrite: Bool { return true }
+
+    func process(in database: Realm) throws {
+        guard let libraryId = self.response.library.libraryId else { throw DbError.primaryKeyUnavailable }
 
         let item: RItem
-        if let existing = database.objects(RItem.self).filter(.key(data.key, in: libraryId)).first {
+        if let existing = database.objects(RItem.self).filter(.key(self.response.key, in: libraryId)).first {
             item = existing
         } else {
             item = RItem()
@@ -53,21 +76,21 @@ struct StoreItemsDbRequest: DbResponseRequest {
 
         if !self.preferRemoteData {
             if item.deleted {
-                throw StoreItemsError.itemDeleted(data)
+                throw StoreItemsError.itemDeleted(self.response)
             }
 
             if item.isChanged {
-                throw StoreItemsError.itemChanged(data)
+                throw StoreItemsError.itemChanged(self.response)
             }
         }
 
-        item.key = data.key
-        item.rawType = data.rawType
-        item.localizedType = self.schemaController.localized(itemType: data.rawType) ?? ""
-        item.version = data.version
-        item.trash = data.isTrash
-        item.dateModified = data.dateModified
-        item.dateAdded = data.dateAdded
+        item.key = self.response.key
+        item.rawType = self.response.rawType
+        item.localizedType = self.schemaController.localized(itemType: self.response.rawType) ?? ""
+        item.version = self.response.version
+        item.trash = self.response.isTrash
+        item.dateModified = self.response.dateModified
+        item.dateAdded = self.response.dateAdded
         item.syncState = .synced
         item.syncRetries = 0
         item.lastSyncDate = Date(timeIntervalSince1970: 0)
@@ -79,15 +102,15 @@ struct StoreItemsDbRequest: DbResponseRequest {
             item.resetChanges()
         }
 
-        self.syncFields(data: data, item: item, database: database, schemaController: schemaController)
-        self.syncParent(key: data.parentKey, libraryId: libraryId, item: item, database: database)
-        self.syncCollections(keys: data.collectionKeys, libraryId: libraryId, item: item, database: database)
-        try self.syncTags(data.tags, libraryId: libraryId, item: item, database: database)
-        self.syncCreators(data: data, item: item, database: database)
-        self.syncRelations(data: data, item: item, database: database)
-        self.syncLinks(data: data, item: item, database: database)
-        self.syncUsers(createdBy: data.createdBy, lastModifiedBy: data.lastModifiedBy, item: item, database: database)
-        self.sync(rects: data.rects ?? [], in: item, database: database)
+        self.syncFields(data: self.response, item: item, database: database, schemaController: schemaController)
+        self.syncParent(key: self.response.parentKey, libraryId: libraryId, item: item, database: database)
+        self.syncCollections(keys: self.response.collectionKeys, libraryId: libraryId, item: item, database: database)
+        try self.syncTags(self.response.tags, libraryId: libraryId, item: item, database: database)
+        self.syncCreators(data: self.response, item: item, database: database)
+        self.syncRelations(data: self.response, item: item, database: database)
+        self.syncLinks(data: self.response, item: item, database: database)
+        self.syncUsers(createdBy: self.response.createdBy, lastModifiedBy: self.response.lastModifiedBy, item: item, database: database)
+        self.sync(rects: self.response.rects ?? [], in: item, database: database)
 
         // Item title depends on item type, creators and fields, so we update derived titles (displayTitle and sortTitle) after everything else synced
         item.updateDerivedTitles()

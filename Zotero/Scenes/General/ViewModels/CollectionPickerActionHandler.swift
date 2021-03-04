@@ -40,8 +40,7 @@ struct CollectionPickerActionHandler: ViewModelActionHandler {
     private func loadData(in viewModel: ViewModel<CollectionPickerActionHandler>) {
         do {
             let libraryId = viewModel.state.library.identifier
-            let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId,
-                                                              excludedKeys: viewModel.state.excludedKeys)
+            let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId, excludedKeys: viewModel.state.excludedKeys)
             let results = try self.dbStorage.createCoordinator().perform(request: collectionsRequest)
             let collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
 

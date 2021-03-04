@@ -33,7 +33,8 @@ protocol DbResponseRequest {
 
 protocol DbCoordinator {
     func perform<Request: DbResponseRequest>(request: Request) throws -> Request.Response
-    func perform<Request: DbRequest>(request: Request) throws
+    func perform(request: DbRequest) throws
+    func perform(requests: [DbRequest]) throws
 }
 
 extension DbCoordinator {

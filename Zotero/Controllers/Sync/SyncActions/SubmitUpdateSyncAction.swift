@@ -53,12 +53,9 @@ struct SubmitUpdateSyncAction: SyncAction {
                              .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
 
                                  do {
-                                     let coordinator = try self.dbStorage.createCoordinator()
                                      let request = MarkSettingsAsSyncedDbRequest(settings: settings, version: newVersion)
-                                     try coordinator.perform(request: request)
-
                                      let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
-                                     try coordinator.perform(request: updateVersion)
+                                     try self.dbStorage.createCoordinator().perform(requests: [request, updateVersion])
 
                                      return Single.just((newVersion, nil))
                                  } catch let error {
@@ -84,26 +81,19 @@ struct SubmitUpdateSyncAction: SyncAction {
                                 let syncedKeys = self.keys(from: (response.successful + response.unchanged), parameters: self.parameters)
 
                                  do {
-                                     let coordinator = try self.dbStorage.createCoordinator()
+                                     var requests: [DbRequest] = [UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))]
                                      switch self.object {
                                      case .collection:
-                                         let request = MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion)
-                                         try coordinator.perform(request: request)
+                                         requests.insert(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
                                      case .item, .trash:
                                         // Cache JSONs locally for later use (in CR)
-                                        self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects,
-                                                                            libraryId: self.libraryId)
-
-                                        let request = MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion)
-                                        try coordinator.perform(request: request)
+                                        self.storeIndividualItemJsonObjects(from: response.successfulJsonObjects, libraryId: self.libraryId)
+                                        requests.insert(MarkObjectsAsSyncedDbRequest<RItem>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
                                      case .search:
-                                        let request = MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion)
-                                        try coordinator.perform(request: request)
+                                        requests.insert(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
                                      case .settings: break
                                      }
-
-                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
-                                     try coordinator.perform(request: updateVersion)
+                                     try self.dbStorage.createCoordinator().perform(requests: requests)
                                  } catch let error {
                                      return Single.just((newVersion, error))
                                  }
