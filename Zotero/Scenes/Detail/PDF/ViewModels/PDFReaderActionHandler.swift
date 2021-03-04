@@ -55,7 +55,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     private let queue: DispatchQueue
     private let disposeBag: DisposeBag
 
-    var boundingBoxConverter: AnnotationBoundingBoxConverter?
+    weak var boundingBoxConverter: AnnotationBoundingBoxConverter?
 
     init(dbStorage: DbStorage, annotationPreviewController: AnnotationPreviewController, htmlAttributedStringConverter: HtmlAttributedStringConverter,
          schemaController: SchemaController, fileStorage: FileStorage) {
