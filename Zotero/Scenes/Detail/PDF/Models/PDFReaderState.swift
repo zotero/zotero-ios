@@ -11,6 +11,7 @@
 import UIKit
 
 import PSPDFKit
+import PSPDFKitUI
 import RealmSwift
 
 typealias AnnotationDocumentLocation = (page: Int, boundingBox: CGRect)
@@ -24,10 +25,36 @@ struct PDFReaderState: ViewModelState {
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
         static let interfaceStyle = Changes(rawValue: 1 << 2)
-        static let activeColor = Changes(rawValue: 1 << 3)
-        static let activeComment = Changes(rawValue: 1 << 4)
-        static let save = Changes(rawValue: 1 << 5)
-        static let itemObserving = Changes(rawValue: 1 << 6)
+        static let appearanceMode = Changes(rawValue: 1 << 3)
+        static let activeColor = Changes(rawValue: 1 << 4)
+        static let activeComment = Changes(rawValue: 1 << 5)
+        static let save = Changes(rawValue: 1 << 6)
+        static let itemObserving = Changes(rawValue: 1 << 8)
+    }
+
+    enum AppearanceMode {
+        case automatic
+        case manual(PDFAppearanceMode)
+
+        static func from(string: String) -> AppearanceMode? {
+            switch string {
+            case "auto": return .automatic
+            case "dark": return .manual(.night)
+            case "light": return .manual([])
+            default: return nil
+            }
+        }
+
+        var stringValue: String {
+            switch self {
+            case .automatic: return "auto"
+            case .manual(let mode):
+                if mode.contains(.night) {
+                    return "dark"
+                }
+                return "light"
+            }
+        }
     }
 
     static let activeColorKey = "PDFReaderState.activeColor"
@@ -41,6 +68,7 @@ struct PDFReaderState: ViewModelState {
     let username: String
 
     var interfaceStyle: UIUserInterfaceStyle
+    var appearanceMode: AppearanceMode
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
     /// These 3 sets of keys are stored for 2 purposes:
@@ -98,8 +126,8 @@ struct PDFReaderState: ViewModelState {
         self.activeColor = UserDefaults.standard.string(forKey: PDFReaderState.activeColorKey)
                                                 .flatMap({ UIColor(hex: $0) }) ?? UIColor(hex: AnnotationsConfig.defaultActiveColor)
         self.changes = []
-
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
+        self.appearanceMode = .automatic
     }
 
     mutating func cleanup() {

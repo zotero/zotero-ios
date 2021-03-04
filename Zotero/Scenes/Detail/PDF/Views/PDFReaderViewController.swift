@@ -155,8 +155,15 @@ final class PDFReaderViewController: UIViewController {
             self.setupItemObserving(items: state.dbItems)
         }
 
-        if state.changes.contains(.interfaceStyle) {
-            self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
+        if state.changes.contains(.interfaceStyle) || state.changes.contains(.appearanceMode) {
+            switch state.appearanceMode {
+            case .automatic:
+                self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
+                self.navigationController?.overrideUserInterfaceStyle = .unspecified
+            case .manual(let mode):
+                self.pdfController.appearanceModeManager.appearanceMode = mode
+                self.navigationController?.overrideUserInterfaceStyle = mode == .night ? .dark : .light
+            }
         }
 
         if state.changes.contains(.selection) {
@@ -346,36 +353,32 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        let direction = self.pdfController.configuration.scrollDirection
-        let directionTitle = direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
-        let transition = self.pdfController.configuration.pageTransition
-        let transitionTitle = transition == .scrollContinuous ? L10n.Pdf.PageTransition.continuous : L10n.Pdf.PageTransition.jump
-
-        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.popoverPresentationController?.barButtonItem = sender
-        controller.addAction(UIAlertAction(title: L10n.Pdf.scrollDirection(directionTitle), style: .default, handler: { [weak self] _ in
-            self?.toggleScrollDirection(from: direction)
-        }))
-        controller.addAction(UIAlertAction(title: L10n.Pdf.pageTransition(transitionTitle), style: .default, handler: { [weak self] _ in
-            self?.togglePageTransition(from: transition)
-        }))
-        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
-        self.present(controller, animated: true, completion: nil)
+        let state = PDFSettingsState(direction: self.pdfController.configuration.scrollDirection,
+                                     transition: self.pdfController.configuration.pageTransition,
+                                     appearanceMode: self.viewModel.state.appearanceMode)
+        self.coordinatorDelegate?.showSettings(state: state, sender: sender, completion: { [weak self] action in
+            switch action {
+            case .changeAppearanceMode(let mode):
+                self?.viewModel.process(action: .changeAppearanceMode(mode))
+            case .changeTransition(let transition):
+                self?.togglePageTransition(to: transition)
+            case .changeDirection(let direction):
+                self?.toggleScrollDirection(to: direction)
+            }
+        })
     }
 
-    private func toggleScrollDirection(from direction: ScrollDirection) {
-        let newDirection: ScrollDirection = direction == .horizontal ? .vertical : .horizontal
-        self.defaultScrollDirection = newDirection
+    private func toggleScrollDirection(to direction: ScrollDirection) {
+        self.defaultScrollDirection = direction
         self.pdfController.updateConfiguration { builder in
-            builder.scrollDirection = newDirection
+            builder.scrollDirection = direction
         }
     }
 
-    private func togglePageTransition(from transition: PageTransition) {
-        let newTransition: PageTransition = transition == .scrollPerSpread ? .scrollContinuous : .scrollPerSpread
-        self.defaultPageTransition = newTransition
+    private func togglePageTransition(to transition: PageTransition) {
+        self.defaultPageTransition = transition
         self.pdfController.updateConfiguration { builder in
-            builder.pageTransition = newTransition
+            builder.pageTransition = transition
         }
     }
 

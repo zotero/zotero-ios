@@ -41,6 +41,7 @@ enum PDFReaderAction {
     case updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int])
     case notificationReceived(Notification.Name)
     case annotationChangeNotificationReceived(String)
+    case changeAppearanceMode(PDFReaderState.AppearanceMode)
 }
 
 #endif

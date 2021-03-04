@@ -368,14 +368,6 @@ internal enum L10n {
   }
 
   internal enum Pdf {
-    /// Page Transition: %@
-    internal static func pageTransition(_ p1: Any) -> String {
-      return L10n.tr("Localizable", "pdf.pageTransition", String(describing: p1))
-    }
-    /// Scroll Direction: %@
-    internal static func scrollDirection(_ p1: Any) -> String {
-      return L10n.tr("Localizable", "pdf.scrollDirection", String(describing: p1))
-    }
     internal enum AnnotationPopover {
       /// Delete Annotation
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete")
@@ -398,17 +390,37 @@ internal enum L10n {
       /// Search
       internal static let searchTitle = L10n.tr("Localizable", "pdf.annotations_sidebar.search_title")
     }
+    internal enum Appearance {
+      /// Automatic
+      internal static let auto = L10n.tr("Localizable", "pdf.appearance.auto")
+      /// Dark Mode
+      internal static let darkMode = L10n.tr("Localizable", "pdf.appearance.dark_mode")
+      /// Light Mode
+      internal static let lightMode = L10n.tr("Localizable", "pdf.appearance.light_mode")
+      /// Appearance: %@
+      internal static func title(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "pdf.appearance.title", String(describing: p1))
+      }
+    }
     internal enum PageTransition {
       /// Continuous
-      internal static let continuous = L10n.tr("Localizable", "pdf.pageTransition.continuous")
+      internal static let continuous = L10n.tr("Localizable", "pdf.page_transition.continuous")
       /// Jump
-      internal static let jump = L10n.tr("Localizable", "pdf.pageTransition.jump")
+      internal static let jump = L10n.tr("Localizable", "pdf.page_transition.jump")
+      /// Page Transition: %@
+      internal static func title(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "pdf.page_transition.title", String(describing: p1))
+      }
     }
     internal enum ScrollDirection {
       /// Horizontal
-      internal static let horizontal = L10n.tr("Localizable", "pdf.scrollDirection.horizontal")
+      internal static let horizontal = L10n.tr("Localizable", "pdf.scroll_direction.horizontal")
+      /// Scroll Direction: %@
+      internal static func title(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "pdf.scroll_direction.title", String(describing: p1))
+      }
       /// Vertical
-      internal static let vertical = L10n.tr("Localizable", "pdf.scrollDirection.vertical")
+      internal static let vertical = L10n.tr("Localizable", "pdf.scroll_direction.vertical")
     }
     internal enum Search {
       /// Search failed

@@ -181,6 +181,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                     state.ignoreNotifications[.PSPDFAnnotationChanged] = nil
                 }
             }
+
+        case .changeAppearanceMode(let mode):
+            self.update(viewModel: viewModel) { state in
+                state.appearanceMode = mode
+                state.changes = .appearanceMode
+            }
         }
     }
 

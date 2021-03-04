@@ -64,6 +64,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func share(url: URL, barButton: UIBarButtonItem)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
+    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFSettingsAction) -> Void)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
@@ -671,6 +672,50 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 
     func pdfDidDeinitialize() {
         self.pdfSearchController = nil
+    }
+
+    private func showAppearanceModePicker(for current: PDFReaderState.AppearanceMode, completed: @escaping (PDFReaderState.AppearanceMode) -> Void) {
+        let models = [SinglePickerModel(id: PDFReaderState.AppearanceMode.automatic.stringValue, name: L10n.Pdf.Appearance.auto),
+                      SinglePickerModel(id: PDFReaderState.AppearanceMode.manual([]).stringValue, name: L10n.Pdf.Appearance.lightMode),
+                      SinglePickerModel(id: PDFReaderState.AppearanceMode.manual(.night).stringValue, name: L10n.Pdf.Appearance.darkMode)]
+        let state = SinglePickerState(objects: models, selectedRow: current.stringValue)
+        let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
+        self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: { picked in
+            guard let mode = PDFReaderState.AppearanceMode.from(string: picked) else { return }
+            completed(mode)
+        })
+    }
+
+    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFSettingsAction) -> Void) {
+        let directionString = state.direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
+        let transitionString = state.transition == .scrollContinuous ? L10n.Pdf.PageTransition.continuous : L10n.Pdf.PageTransition.jump
+        let appearanceString: String
+        switch state.appearanceMode {
+        case .automatic:
+            appearanceString = L10n.Pdf.Appearance.auto
+        case .manual(let mode):
+            if mode == .night {
+                appearanceString = L10n.Pdf.Appearance.darkMode
+            } else {
+                appearanceString = L10n.Pdf.Appearance.lightMode
+            }
+        }
+
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.popoverPresentationController?.barButtonItem = sender
+        controller.addAction(UIAlertAction(title: L10n.Pdf.Appearance.title(appearanceString), style: .default, handler: { [weak self] _ in
+            self?.showAppearanceModePicker(for: state.appearanceMode, completed: { appearanceMode in
+                completion(.changeAppearanceMode(appearanceMode))
+            })
+        }))
+        controller.addAction(UIAlertAction(title: L10n.Pdf.PageTransition.title(transitionString), style: .default, handler: { _ in
+            completion(.changeTransition(state.transition == .scrollContinuous ? .scrollPerSpread : .scrollContinuous))
+        }))
+        controller.addAction(UIAlertAction(title: L10n.Pdf.ScrollDirection.title(directionString), style: .default, handler: { _ in
+            completion(.changeDirection(state.direction == .vertical ? .horizontal : .vertical))
+        }))
+        controller.addAction(UIAlertAction(title: L10n.cancel, style: .cancel, handler: nil))
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 }
 

@@ -138,12 +138,16 @@
 "creator_editor.switch_to_dual" = "Switch to Dual Field";
 "creator_editor.delete_confirmation" = "Do you really want to delete this creator?";
 
-"pdf.scrollDirection" = "Scroll Direction: %@";
-"pdf.scrollDirection.horizontal" = "Horizontal";
-"pdf.scrollDirection.vertical" = "Vertical";
-"pdf.pageTransition" = "Page Transition: %@";
-"pdf.pageTransition.jump" = "Jump";
-"pdf.pageTransition.continuous" = "Continuous";
+"pdf.scroll_direction.title" = "Scroll Direction: %@";
+"pdf.scroll_direction.horizontal" = "Horizontal";
+"pdf.scroll_direction.vertical" = "Vertical";
+"pdf.page_transition.title" = "Page Transition: %@";
+"pdf.page_transition.jump" = "Jump";
+"pdf.page_transition.continuous" = "Continuous";
+"pdf.appearance.title" = "Appearance: %@";
+"pdf.appearance.auto" = "Automatic";
+"pdf.appearance.light_mode" = "Light Mode";
+"pdf.appearance.dark_mode" = "Dark Mode";
 "pdf.annotations_sidebar.search_title" = "Search";
 "pdf.annotations_sidebar.add_comment" = "Add comment";
 "pdf.annotations_sidebar.add_tags" = "Add tags";
