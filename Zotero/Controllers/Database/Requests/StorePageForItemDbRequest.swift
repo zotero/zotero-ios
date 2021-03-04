@@ -22,6 +22,7 @@ struct StorePageForItemDbRequest: DbRequest {
         let pageIndex: RPageIndex
 
         if let existing = database.objects(RPageIndex.self).filter(.key(self.key, in: self.libraryId)).first {
+            guard existing.index != self.page else { return }
             pageIndex = existing
         } else {
             pageIndex = RPageIndex()

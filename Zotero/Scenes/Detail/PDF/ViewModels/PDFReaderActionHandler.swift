@@ -380,6 +380,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     }
 
     private func set(page: Int, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        guard viewModel.state.visiblePage != page else { return }
+        
         self.update(viewModel: viewModel) { state in
             state.visiblePage = page
         }
