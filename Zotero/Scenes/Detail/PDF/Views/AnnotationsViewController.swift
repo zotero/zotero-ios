@@ -143,13 +143,17 @@ final class AnnotationsViewController: UIViewController {
     /// - parameter state: Current state.
     /// - parameter completion: Called after reload was performed or even if there was no reload.
     private func reloadIfNeeded(for state: PDFReaderState, completion: @escaping () -> Void) {
+        let reloadVisibleCells: ([IndexPath]) -> Void = { indexPaths in
+            for indexPath in indexPaths {
+                guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
+                self.setup(cell: cell, at: indexPath, state: state)
+            }
+        }
+
         if !state.changes.contains(.annotations) && (state.changes.contains(.selection) || state.changes.contains(.activeComment)) {
             // Reload updated cells which are visible
             if let indexPaths = state.updatedAnnotationIndexPaths {
-                for indexPath in indexPaths {
-                    guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
-                    self.setup(cell: cell, at: indexPath, state: state)
-                }
+                reloadVisibleCells(indexPaths)
             }
 
             self.updateCellHeight()
@@ -171,7 +175,13 @@ final class AnnotationsViewController: UIViewController {
         for (page, annotations) in state.annotations {
             snapshot.appendItems(annotations, toSection: page)
         }
-        self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: completion)
+        self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: {
+            // Update selection if needed
+            if let indexPaths = state.updatedAnnotationIndexPaths {
+                reloadVisibleCells(indexPaths)
+            }
+            completion()
+        })
     }
 
     /// Updates tableView layout in case any cell changed height.

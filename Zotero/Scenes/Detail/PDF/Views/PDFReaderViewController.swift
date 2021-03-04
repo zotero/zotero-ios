@@ -142,7 +142,7 @@ final class PDFReaderViewController: UIViewController {
             // Update highlight selection if needed
             if let annotation = self.viewModel.state.selectedAnnotation,
                let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
-                self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: Int(self.pdfController.pageIndex))
+                self.updateSelection(on: pageView, annotation: annotation)
             }
         }, completion: nil)
     }
@@ -158,18 +158,18 @@ final class PDFReaderViewController: UIViewController {
             self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : .init(rawValue: 0)
         }
 
-        if state.changes.contains(.selection), let pageView = self.pdfController.pageViewForPage(at: self.pdfController.pageIndex) {
+        if state.changes.contains(.selection) {
             if let annotation = state.selectedAnnotation {
                 if let location = state.focusDocumentLocation {
                     // If annotation was selected, focus if needed
                     self.focus(annotation: annotation, at: location, document: state.document)
                 } else {
-                    // Update custom selection if needed
-                    self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: Int(self.pdfController.pageIndex))
+                    // Update selection if needed
+                    self.select(annotation: annotation, pageIndex: self.pdfController.pageIndex, document: state.document)
                 }
             } else {
                 // Otherwise remove selection if needed
-                self.updateSelection(on: pageView, selectedAnnotation: nil, pageIndex: Int(self.pdfController.pageIndex))
+                self.select(annotation: nil, pageIndex: self.pdfController.pageIndex, document: state.document)
             }
 
             self.showPopupAnnotationIfNeeded(state: state)
@@ -254,21 +254,6 @@ final class PDFReaderViewController: UIViewController {
         self.coordinatorDelegate?.showAnnotationPopover(viewModel: self.viewModel, sourceRect: frame, popoverDelegate: self)
     }
 
-    private func updateSelection(on pageView: PDFPageView, selectedAnnotation: Annotation?, pageIndex: Int) {
-        // Delete existing custom highlight selection view
-        if let view = pageView.annotationContainerView.subviews.first(where: { $0 is SelectionView }) {
-            view.removeFromSuperview()
-        }
-
-        if let selection = selectedAnnotation, selection.type == .highlight && selection.page == pageIndex {
-            // Add custom highlight selection view if needed
-            let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
-            let selectionView = SelectionView()
-            selectionView.frame = frame
-            pageView.annotationContainerView.addSubview(selectionView)
-        }
-    }
-
     private func toggle(annotationTool: PSPDFKit.Annotation.Tool) {
         let stateManager = self.pdfController.annotationStateManager
 
@@ -287,20 +272,6 @@ final class PDFReaderViewController: UIViewController {
         self.coordinatorDelegate?.showColorPicker(selected: self.viewModel.state.activeColor.hexString, sender: sender, save: { [weak self] color in
             self?.viewModel.process(action: .setActiveColor(color))
         })
-    }
-
-    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: Document) {
-        let pageIndex = PageIndex(location.page)
-        self.scrollIfNeeded(to: pageIndex, animated: true) {
-            guard let pageView = self.pdfController.pageViewForPage(at: pageIndex),
-                  let pdfAnnotation = document.annotation(on: location.page, with: annotation.key) else { return }
-
-            if !pageView.selectedAnnotations.contains(pdfAnnotation) {
-                pageView.selectedAnnotations = [pdfAnnotation]
-            }
-
-            self.updateSelection(on: pageView, selectedAnnotation: annotation, pageIndex: location.page)
-        }
     }
 
     private func toggleSidebar() {
@@ -465,7 +436,7 @@ final class PDFReaderViewController: UIViewController {
 
     private func annotations(for notification: Notification) -> [PSPDFKit.Annotation]? {
         guard let annotations = notification.object as? [PSPDFKit.Annotation] else { return nil }
-        guard let keys = self.viewModel.state.ignoreNotifications[notification.name] else { return annotations }
+        guard let keys = self.viewModel.state.ignoreNotifications[notification.name], !keys.isEmpty else { return annotations }
         if Set(annotations.compactMap({ $0.key })) == keys {
             return nil
         }
@@ -506,6 +477,53 @@ final class PDFReaderViewController: UIViewController {
             return self.insertedKeys.remove(key) == nil ? index : nil
         }
         return (filteredDeletions, filteredInsertions, filteredModifications)
+    }
+
+    // MARK: - Selection
+
+    /// (De)Selects given annotation in document.
+    /// - parameter annotation: Annotation to select. Existing selection will be deselected if set to `nil`.
+    /// - parameter pageIndex: Page index of page where (de)selection should happen.
+    /// - parameter document: Active `Document` instance.
+    private func select(annotation: Annotation?, pageIndex: PageIndex, document: Document) {
+        guard let pageView = self.pdfController.pageViewForPage(at: pageIndex) else { return }
+
+        self.updateSelection(on: pageView, annotation: annotation)
+
+        if let annotation = annotation, let pdfAnnotation = document.annotation(on: Int(pageIndex), with: annotation.key) {
+            if !pageView.selectedAnnotations.contains(pdfAnnotation) {
+                pageView.selectedAnnotations = [pdfAnnotation]
+            }
+        } else {
+            if !pageView.selectedAnnotations.isEmpty {
+                pageView.selectedAnnotations = []
+            }
+        }
+    }
+
+    /// Focuses given annotation and selects it if it's not selected yet.
+    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: Document) {
+        let pageIndex = PageIndex(location.page)
+        self.scrollIfNeeded(to: pageIndex, animated: true) {
+            self.select(annotation: annotation, pageIndex: pageIndex, document: document)
+        }
+    }
+
+    /// Updates `SelectionView` for `PDFPageView` based on selected annotation.
+    /// - parameter pageView: `PDFPageView` instance for given page.
+    /// - parameter selectedAnnotation: Selected annotation or `nil` if there is no selection.
+    private func updateSelection(on pageView: PDFPageView, annotation: Annotation?) {
+        // Delete existing custom highlight selection view
+        if let view = pageView.annotationContainerView.subviews.first(where: { $0 is SelectionView }) {
+            view.removeFromSuperview()
+        }
+
+        guard let selection = annotation, selection.type == .highlight && selection.page == Int(pageView.pageIndex) else { return }
+        // Add custom highlight selection view if needed
+        let frame = pageView.convert(selection.boundingBox, from: pageView.pdfCoordinateSpace).insetBy(dx: -SelectionView.inset, dy: -SelectionView.inset)
+        let selectionView = SelectionView()
+        selectionView.frame = frame
+        pageView.annotationContainerView.addSubview(selectionView)
     }
 
     // MARK: - Setups

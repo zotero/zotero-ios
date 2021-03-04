@@ -177,6 +177,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .annotationChangeNotificationReceived(let key):
             self.update(viewModel: viewModel) { state in
                 state.ignoreNotifications[.PSPDFAnnotationChanged]?.remove(key)
+                if state.ignoreNotifications[.PSPDFAnnotationChanged]?.isEmpty == true {
+                    state.ignoreNotifications[.PSPDFAnnotationChanged] = nil
+                }
             }
         }
     }
@@ -849,6 +852,12 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         var focus: IndexPath?
         var selectedAnnotation: Annotation?
 
+        let selectAnnotation: (Annotation, Int) -> Void = { annotation, index in
+            guard selectFirst && focus == nil else { return }
+            focus = IndexPath(row: index, section: annotation.page)
+            selectedAnnotation = annotation
+        }
+
         for annotation in annotations {
             if var snapshot = state.annotationsSnapshot {
                 // Search is active, add new annotation to snapshot so that it's visible when search is cancelled
@@ -858,28 +867,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
                 // If new annotation passes filter, add it to current filtered list as well
                 if let filter = state.currentFilter, self.filter(annotation: annotation, with: filter) {
                     let index = self.add(annotation: annotation, to: &state.annotations)
-
-                    if selectFirst && focus == nil {
-                        focus = IndexPath(row: index, section: annotation.page)
-                        selectedAnnotation = annotation
-                    }
+                    selectAnnotation(annotation, index)
                 }
             } else {
                 // Search not active, just insert it to the list and focus
                 let index = self.add(annotation: annotation, to: &state.annotations)
-
-                if selectFirst && focus == nil {
-                    focus = IndexPath(row: index, section: annotation.page)
-                    selectedAnnotation = annotation
-                }
+                selectAnnotation(annotation, index)
             }
         }
 
         state.focusSidebarIndexPath = focus
-        state.selectedAnnotation = selectedAnnotation
         state.changes.insert(.annotations)
 
-        if selectedAnnotation != nil {
+        if let annotation = selectedAnnotation {
+            if let existing = state.selectedAnnotation,
+               let index = state.annotations[existing.page]?.firstIndex(where: { $0.key == existing.key }) {
+                state.updatedAnnotationIndexPaths = [IndexPath(row: index, section: existing.page)]
+            }
+            state.selectedAnnotation = annotation
             state.changes.insert(.selection)
         }
     }
