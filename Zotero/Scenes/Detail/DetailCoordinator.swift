@@ -63,6 +63,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
+    func pdfDidDeinitialize()
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
@@ -87,6 +88,7 @@ final class DetailCoordinator: Coordinator {
 
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    private var pdfSearchController: PDFSearchViewController?
 
     let collection: Collection
     let library: Library
@@ -619,10 +621,19 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func showSearch(pdfController: PDFViewController, sender: UIBarButtonItem, result: @escaping (SearchResult) -> Void) {
+        if let existing = self.pdfSearchController {
+            existing.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+            existing.popoverPresentationController?.barButtonItem = sender
+            self.topViewController.present(existing, animated: true, completion: nil)
+            return
+        }
+
         let viewController = PDFSearchViewController(controller: pdfController, searchSelected: result)
         viewController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
         viewController.popoverPresentationController?.barButtonItem = sender
         self.topViewController.present(viewController, animated: true, completion: nil)
+
+        self.pdfSearchController = viewController
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
@@ -656,6 +667,10 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
             self.topViewController.dismiss(animated: true, completion: nil)
         }))
         self.topViewController.present(controller, animated: true, completion: nil)
+    }
+
+    func pdfDidDeinitialize() {
+        self.pdfSearchController = nil
     }
 }
 
