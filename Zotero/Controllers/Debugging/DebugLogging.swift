@@ -121,8 +121,8 @@ final class DebugLogging {
         let debugRequest = DebugLogUploadRequest()
         let upload = self.apiClient.upload(request: debugRequest, data: data)
         upload.flatMap { request -> Single<(HTTPURLResponse, Data)> in
-                  ApiLogger.log(request: debugRequest, url: request.request?.url)
-                  return request.rx.responseData().asSingle()
+                  let logId = ApiLogger.log(request: debugRequest, url: request.request?.url)
+                  return request.rx.responseData().log(identifier: logId, request: debugRequest).asSingle()
               }
               .flatMap { response, data -> Single<String> in
                   let delegate = DebugResponseParserDelegate()

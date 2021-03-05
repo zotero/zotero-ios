@@ -242,7 +242,7 @@ final class SyncController: SynchronizationController {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             guard let `self` = self, !self.isSyncing else { return }
 
-            DDLogInfo("--- Sync: starting ---")
+            DDLogInfo("Sync: starting")
 
             self.type = type
             self.libraryType = libraries
@@ -258,7 +258,7 @@ final class SyncController: SynchronizationController {
         self.accessQueue.async(flags: .barrier) { [weak self] in
             guard let `self` = self, self.isSyncing else { return }
 
-            DDLogInfo("--- Sync: cancelled ---")
+            DDLogInfo("Sync: cancelled")
 
             self.cleanup()
             self.report(fatalError: .cancelled)
@@ -269,7 +269,7 @@ final class SyncController: SynchronizationController {
 
     /// Finishes ongoing sync.
     private func finish() {
-        DDLogInfo("--- Sync: finished ---")
+        DDLogInfo("Sync: finished")
         if !self.nonFatalErrors.isEmpty {
             DDLogInfo("Errors: \(self.nonFatalErrors)")
         }
@@ -285,7 +285,7 @@ final class SyncController: SynchronizationController {
     /// Aborts ongoing sync with given error.
     /// - parameter error: Error which will be reported as a reason for this abort.
     private func abort(error: SyncError.Fatal) {
-        DDLogInfo("--- Sync: aborted ---")
+        DDLogInfo("Sync: aborted")
         DDLogInfo("Error: \(error)")
 
         self.reportFinish?(.failure(error))
@@ -298,7 +298,7 @@ final class SyncController: SynchronizationController {
 
     /// Cleans up helper variables for current sync.
     private func cleanup() {
-        DDLogInfo("Cleanup")
+        DDLogInfo("Sync: cleanup")
         self.processingAction = nil
         self.queue = []
         self.nonFatalErrors = []
@@ -425,7 +425,7 @@ final class SyncController: SynchronizationController {
 
         // Library is changing, reset "lastReturnedVersion"
         if self.lastReturnedVersion != nil && action.libraryId != self.processingAction?.libraryId {
-            DDLogInfo("Library changed, clear version")
+            DDLogInfo("Sync: library changed, clear version")
             self.lastReturnedVersion = nil
         }
 
@@ -449,8 +449,7 @@ final class SyncController: SynchronizationController {
     /// Processes given action.
     /// - parameter action: Action to process
     private func process(action: Action) {
-        DDLogInfo("--- Sync: action ---")
-        DDLogInfo("\(action)")
+        DDLogInfo("Sync: action - \(action)")
 
         switch action {
         case .loadKeyPermissions:
@@ -949,6 +948,7 @@ final class SyncController: SynchronizationController {
 
             if !conflicts.isEmpty {
                 self.queue.insert(contentsOf: conflicts, at: 0)
+                DDLogInfo("Sync: batch conflicts - \(conflicts)")
             }
             if failedKeys.isEmpty {
                 self.processNextAction()
@@ -959,7 +959,7 @@ final class SyncController: SynchronizationController {
             }
 
         case .failure(let error):
-            DDLogError("--- BATCH: \(error)")
+            DDLogError("Sync: batch failed - \(error)")
 
             switch self.syncError(from: error) {
             case .fatal(let error):
@@ -996,7 +996,7 @@ final class SyncController: SynchronizationController {
             return
         }
 
-        DDLogError("--- GROUP SYNC: \(error)")
+        DDLogError("Sync: group failed - \(error)")
 
         switch self.syncError(from: error) {
         case .fatal(let error):
@@ -1147,7 +1147,7 @@ final class SyncController: SynchronizationController {
     private func finishSettingsSync(result: Result<(Bool, Int), Error>, libraryId: LibraryIdentifier, version: Int) {
         switch result {
         case .success(let (hasNewSettings, version)):
-            DDLogInfo("Store version: \(version)")
+            DDLogInfo("Sync: store version - \(version)")
             self.lastReturnedVersion = version
             if hasNewSettings {
                 self.enqueue(actions: [.storeVersion(version, libraryId, .settings)], at: 0)
@@ -1497,7 +1497,7 @@ final class SyncController: SynchronizationController {
     private func handleUnchangedFailureIfNeeded(for error: Error, lastVersion: Int, libraryId: LibraryIdentifier) -> Bool {
         guard case ZoteroApiError.unchanged = error else { return false }
 
-        DDLogInfo("Received unchanged error, store version: \(lastVersion)")
+        DDLogInfo("Sync: received unchanged error, store version: \(lastVersion)")
         self.lastReturnedVersion = lastVersion
 
         // If current sync type is `.all` we don't want to skip anything.

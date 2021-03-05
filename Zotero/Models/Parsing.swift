@@ -8,6 +8,8 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
+
 struct Parsing {
     enum Error: Swift.Error {
         case incompatibleValue(String)
@@ -43,6 +45,7 @@ struct Parsing {
                 responses.append(response)
                 objects.append(data)
             } catch let error {
+                DDLogError("Parsing: failed to parse \(type(of: Response.self)) - \(error)")
                 errors.append(error)
             }
         }

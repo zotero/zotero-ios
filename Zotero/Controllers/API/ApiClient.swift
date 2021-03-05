@@ -57,7 +57,7 @@ extension ApiRequest {
     var debugUrl: String {
         switch self.endpoint {
         case .zotero(let path):
-            return path
+            return ApiConstants.baseUrlString + path
         case .other(let url):
             return url.absoluteString
         }

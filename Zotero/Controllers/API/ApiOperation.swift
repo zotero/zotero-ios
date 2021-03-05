@@ -18,7 +18,7 @@ class ApiOperation: AsynchronousOperation {
 
         super.init()
 
-        self.request = self.request.responseData(queue: queue) { [weak self] response in
+        self.request = self.request.log(request: apiRequest).responseData(queue: queue) { [weak self] response in
             guard let `self` = self else { return }
             switch response.log(request: apiRequest).result {
             case .success(let data):

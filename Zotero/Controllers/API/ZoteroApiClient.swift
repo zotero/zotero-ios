@@ -49,21 +49,24 @@ final class ZoteroApiClient: ApiClient {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
-                              .responseDataWithResponseError(queue: queue)
-                              .log(request: request, url: convertible.url)
-                              .retryIfNeeded()
-                              .flatMap { (response, data) -> Observable<(Request.Response, ResponseHeaders)> in
-                                  do {
-                                      if response.statusCode == 304 {
-                                          return Observable.error(ZoteroApiError.unchanged)
-                                      }
+                              .log(request: request)
+                              .flatMap({ dataRequest, logId -> Observable<(Request.Response, ResponseHeaders)> in
+                                  return dataRequest.rx.responseDataWithResponseError(queue: queue)
+                                                       .log(identifier: logId, request: request)
+                                                       .retryIfNeeded()
+                                                       .flatMap { response, data -> Observable<(Request.Response, ResponseHeaders)> in
+                                                           do {
+                                                               if response.statusCode == 304 {
+                                                                   return Observable.error(ZoteroApiError.unchanged)
+                                                               }
 
-                                      let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
-                                      return Observable.just((decodedResponse, response.allHeaderFields))
-                                  } catch let error {
-                                      return Observable.error(error)
-                                  }
-                              }
+                                                               let decodedResponse = try JSONDecoder().decode(Request.Response.self, from: data)
+                                                               return Observable.just((decodedResponse, response.allHeaderFields))
+                                                           } catch let error {
+                                                               return Observable.error(error)
+                                                           }
+                                                       }
+                              })
                               .asSingle()
     }
 
@@ -75,16 +78,18 @@ final class ZoteroApiClient: ApiClient {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
-                              .responseDataWithResponseError(queue: queue)
-                              .log(request: request, url: convertible.url)
-                              .retryIfNeeded()
-                              .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
-                                  if response.statusCode == 304 {
-                                      return Observable.error(ZoteroApiError.unchanged)
-                                  }
-
-                                  return Observable.just((data, response.allHeaderFields))
-                              }
+                              .log(request: request)
+                              .flatMap({ dataRequest, logId -> Observable<(Data, ResponseHeaders)> in
+                                  return dataRequest.rx.responseDataWithResponseError(queue: queue)
+                                                       .log(identifier: logId, request: request)
+                                                       .retryIfNeeded()
+                                                       .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
+                                                           if response.statusCode == 304 {
+                                                               return Observable.error(ZoteroApiError.unchanged)
+                                                           }
+                                                           return Observable.just((data, response.allHeaderFields))
+                                                       }
+                              })
                               .asSingle()
     }
 

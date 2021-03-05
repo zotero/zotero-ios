@@ -63,33 +63,35 @@ struct UploadAttachmentSyncAction: SyncAction {
                                                                  queue: self.queue, scheduler: self.scheduler).result
                             }
                             .observeOn(self.scheduler)
-                            .flatMap { response -> Single<Swift.Result<(UploadRequest, String), SyncActionError>> in
+                            .flatMap { response -> Single<Swift.Result<(UploadRequest, AttachmentUploadRequest, String), SyncActionError>> in
                                 switch response {
                                 case .exists:
                                     return Single.just(.failure(SyncActionError.attachmentAlreadyUploaded))
                                 case .new(let response):
                                     let request = AttachmentUploadRequest(url: response.url)
-                                    ApiLogger.log(request: request, url: nil)
-                                    return self.apiClient.upload(request: request) { data in
+                                    return self.apiClient.upload(request: request, multipartFormData: { data in
                                         response.params.forEach({ (key, value) in
                                             if let stringData = value.data(using: .utf8) {
                                                 data.append(stringData, withName: key)
                                             }
                                         })
                                         data.append(self.file.createUrl(), withName: "file", fileName: self.filename, mimeType: self.file.mimeType)
-                                    }.flatMap({ Single.just(.success(($0, response.uploadKey))) })
+                                    })
+                                    .flatMap({ Single.just(.success(($0, request, response.uploadKey))) })
                                 }
                             }
 
         let response = upload.observeOn(self.scheduler)
                              .flatMap({ result -> Single<Swift.Result<String, SyncActionError>> in
                                  switch result {
-                                 case .success((let uploadRequest, let uploadKey)):
-                                     return uploadRequest.rx.responseData()
-                                                            .asSingle()
-                                                            .flatMap({ response in
-                                                                Single.just(.success(uploadKey))
-                                                            })
+                                 case .success((let uploadRequest, let apiRequest, let uploadKey)):
+                                    let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
+                                    return uploadRequest.rx.responseData()
+                                                           .log(identifier: logId, request: apiRequest)
+                                                           .asSingle()
+                                                           .flatMap({ response in
+                                                               return Single.just(.success(uploadKey))
+                                                           })
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }
@@ -137,7 +139,7 @@ struct UploadAttachmentSyncAction: SyncAction {
         let progress = upload.asObservable()
                              .flatMap({ result -> Observable<RxProgress> in
                                  switch result {
-                                 case .success((let uploadRequest, _)):
+                                 case .success((let uploadRequest, _, _)):
                                      return uploadRequest.rx.progress()
                                  case .failure(let error):
                                      return Observable.error(error)

@@ -24,25 +24,6 @@ fileprivate enum RetryDelay {
     case progressive(initial: Double, multiplier: Double, maxDelay: Double)
 }
 
-struct ApiLogger {
-    static func log(request: ApiRequest, url: URL?) {
-        DDLogInfo("--- API request '\(type(of: request))' ---")
-        DDLogInfo("(\(request.httpMethod.rawValue)) \(url?.absoluteString ?? request.debugUrl)")
-        if let params = request.parameters {
-            DDLogInfo("(\(request.encoding)) \(request.redact(parameters: params))")
-        }
-    }
-
-    static func log(response: (HTTPURLResponse, Data)?, error: Error?, for request: ApiRequest) {
-        if let data = response?.1,
-           let string = String(data: data, encoding: .utf8) {
-            DDLogInfo("(\(response?.0.statusCode ?? -1)) \(request.redact(response: string))")
-        } else if let error = error {
-            DDLogInfo("\(error)")
-        }
-    }
-}
-
 extension RetryDelay {
     func seconds(for attempt: Int) -> Double {
         switch self {
@@ -96,13 +77,11 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
         }
     }
 
-    func log(request: ApiRequest, url: URL?) -> Observable<Element> {
+    func log(identifier: String, request: ApiRequest) -> Observable<Element> {
         return self.do(onNext: { response in
-                   ApiLogger.log(request: request, url: (url ?? response.0.url))
-                   ApiLogger.log(response: response, error: nil, for: request)
+                   ApiLogger.log(result: .success(response), identifier: identifier, request: request)
                }, onError: { error in
-                   ApiLogger.log(request: request, url: url)
-                   ApiLogger.log(response: nil, error: error, for: request)
+                   ApiLogger.log(result: .failure(error), identifier: identifier, request: request)
                })
     }
 }
@@ -114,6 +93,13 @@ extension ObservableType where Element == DataRequest {
 
     func validate() -> Observable<Element> {
         return self.map { $0.validate() }
+    }
+
+    func log(request: ApiRequest) -> Observable<(Element, String)> {
+        return self.map { element in
+            let id = ApiLogger.log(request: request, url: element.request?.url)
+            return (element, id)
+        }
     }
 }
 
@@ -127,37 +113,23 @@ extension DataRequest {
                       return .failure(AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: response.statusCode)))
                   }
     }
-}
 
-extension DataRequest {
     var acceptableContentTypes: [String] {
         return self.request?.value(forHTTPHeaderField: "Accept")?.components(separatedBy: ",") ?? ["*/*"]
     }
-}
 
-extension DataResponse where Success == Data {
     func log(request: ApiRequest) -> Self {
-        guard let response = self.response else { return self }
-
-        ApiLogger.log(request: request, url: self.request?.url)
-        switch self.result {
-        case .success(let data):
-            ApiLogger.log(response: (response, data), error: nil, for: request)
-        case .failure(let error):
-            ApiLogger.log(response: nil, error: error, for: request)
-        }
-
+        _ = ApiLogger.log(request: request, url: self.request?.url)
         return self
     }
 }
 
 extension Reactive where Base: DataRequest {
-    fileprivate func responseDataWithResponseError(queue: DispatchQueue) -> Observable<(HTTPURLResponse, Data)> {
+    func responseDataWithResponseError(queue: DispatchQueue) -> Observable<(HTTPURLResponse, Data)> {
         return self.responseResultWithResponseError(queue: queue, responseSerializer: DataResponseSerializer(emptyResponseCodes: [200, 204, 304]))
     }
 
-    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue,
-                                                                                    responseSerializer: T)
+    private func responseResultWithResponseError<T: DataResponseSerializerProtocol>(queue: DispatchQueue, responseSerializer: T)
                                                                   -> Observable<(HTTPURLResponse, T.SerializedObject)> {
         return Observable.create { observer in
             let dataRequest = self.base.response(queue: queue, responseSerializer: responseSerializer) { response in
@@ -186,5 +158,19 @@ extension Reactive where Base: DataRequest {
                 dataRequest.cancel()
             }
         }
+    }
+}
+
+extension DataResponse where Success == Data {
+    func log(request: ApiRequest) -> Self {
+        guard let httpRequest = self.request, let response = self.response else { return self }
+        let identifier = ApiLogger.identifier(method: request.httpMethod.rawValue, url: (httpRequest.url?.absoluteString ?? request.debugUrl))
+        switch self.result {
+        case .success(let data):
+            ApiLogger.log(result: .success((response, data)), identifier: identifier, request: request)
+        case .failure(let error):
+            ApiLogger.log(result: .failure(error), identifier: identifier, request: request)
+        }
+        return self
     }
 }
