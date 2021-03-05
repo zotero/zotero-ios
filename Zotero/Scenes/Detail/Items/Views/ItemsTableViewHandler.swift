@@ -88,13 +88,13 @@ final class ItemsTableViewHandler: NSObject {
 
     private static func createCellActions(for state: ItemsState) -> (leading: [ItemAction], trailing: [ItemAction]) {
         if state.type.isTrash {
-            return ([ItemAction(type: .restore)], [ItemAction(type: .delete)])
+            return ([], [ItemAction(type: .delete), ItemAction(type: .restore)])
         }
-        var leadingActions: [ItemAction] = [ItemAction(type: .addToCollection)]
+        var trailingActions: [ItemAction] = [ItemAction(type: .trash), ItemAction(type: .addToCollection)]
         if state.type.collectionKey != nil {
-            leadingActions.append(ItemAction(type: .removeFromCollection))
+            trailingActions.insert(ItemAction(type: .removeFromCollection), at: 1)
         }
-        return (leadingActions, [ItemAction(type: .trash), ItemAction(type: .duplicate)])
+        return ([], trailingActions)
     }
 
     // MARK: - Data source

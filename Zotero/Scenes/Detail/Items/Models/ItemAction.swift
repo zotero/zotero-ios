@@ -24,9 +24,9 @@ struct ItemAction {
     var image: UIImage? {
         switch self._image {
         case .asset(let name):
-            return UIImage(named: name)
+            return UIImage(named: name)?.withRenderingMode(.alwaysTemplate)
         case .system(let name):
-            return UIImage(systemName: name)
+            return UIImage(systemName: name)?.withRenderingMode(.alwaysTemplate)
         }
     }
     var isDestructive: Bool {
