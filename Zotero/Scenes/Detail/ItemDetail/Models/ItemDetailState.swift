@@ -20,7 +20,7 @@ struct ItemDetailState: ViewModelState {
         static let type = Changes(rawValue: 1 << 1)
         static let attachmentFilesRemoved = Changes(rawValue: 1 << 2)
         static let abstractCollapsed = Changes(rawValue: 1 << 3)
-        static let reloadedData = Changes(rawValue: 1 >> 4)
+        static let reloadedData = Changes(rawValue: 1 << 4)
     }
 
     enum DetailType {

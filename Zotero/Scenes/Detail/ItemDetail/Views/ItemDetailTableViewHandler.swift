@@ -353,17 +353,13 @@ final class ItemDetailTableViewHandler: NSObject {
 
     /// Count of rows for each section. This count includes all rows, including additional rows for some sections (add buttons while editing).
     private func count(in section: Section, isEditing: Bool) -> Int {
-        let base = self.baseCount(in: section)
-        var additional = 0
-
         switch section {
-        case .abstract, .title, .type, .dates, .fields: break
         case .creators, .notes, .attachments, .tags:
             // +1 for add button
-            additional = isEditing ? 1 : 0
+            return self.baseCount(in: section) + (isEditing ? 1 : 0)
+        case .abstract, .title, .type, .dates, .fields:
+            return self.baseCount(in: section)
         }
-
-        return base + additional
     }
 
     private func cellData(for indexPath: IndexPath, isEditing: Bool) -> (Section, String) {
