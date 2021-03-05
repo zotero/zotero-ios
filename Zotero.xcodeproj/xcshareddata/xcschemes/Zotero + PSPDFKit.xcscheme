@@ -110,5 +110,14 @@
    <ArchiveAction
       buildConfiguration = "Release PDF"
       revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Script"
+               scriptText = "# Plugins file destination&#10;PLUGIN_DIR=&quot;${ARCHIVE_PRODUCTS_PATH}${INSTALL_PATH}/Applications/Zotero.app/PlugIns&quot;&#10;&#10;if [ ! -d &quot;${PLUGIN_DIR}&quot; ]; then&#10;exit&#10;fi&#10;&#10;# Remove frameworks added by Swift Package Manager into incorrect folder&#10;rm -r &quot;${PLUGIN_DIR}/PSPDFKit.framework&quot;&#10;rm -r &quot;${PLUGIN_DIR}/PSPDFKitUI.framework&quot;&#10;">
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </ArchiveAction>
 </Scheme>
