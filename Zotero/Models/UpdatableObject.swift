@@ -223,8 +223,7 @@ extension RCreator {
         var parameters: [String: Any] = ["creatorType": self.rawType]
         if !self.name.isEmpty {
             parameters["name"] = self.name
-        }
-        if !self.firstName.isEmpty || !self.lastName.isEmpty {
+        } else if !self.firstName.isEmpty || !self.lastName.isEmpty {
             parameters["firstName"] = self.firstName
             parameters["lastName"] = self.lastName
         }

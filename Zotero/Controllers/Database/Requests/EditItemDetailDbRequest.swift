@@ -54,12 +54,21 @@ struct EditItemDetailDbRequest: DbRequest {
 
             let rCreator = RCreator()
             rCreator.rawType = creator.type
-            rCreator.firstName = creator.firstName
-            rCreator.lastName = creator.lastName
-            rCreator.name = creator.fullName
             rCreator.orderId = offset
             rCreator.primary = creator.primary
             rCreator.item = item
+
+            switch creator.namePresentation {
+            case .full:
+                rCreator.name = creator.fullName
+                rCreator.firstName = ""
+                rCreator.lastName = ""
+            case .separate:
+                rCreator.name = ""
+                rCreator.firstName = creator.firstName
+                rCreator.lastName = creator.lastName
+            }
+
             database.add(rCreator)
         }
 
