@@ -68,6 +68,8 @@ final class ShareViewController: UIViewController {
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
                                                "Zotero-Schema-Version": schemaController.version]
         configuration.sharedContainerIdentifier = AppGroup.identifier
+        configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
+        configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
 
         self.debugLogging = DebugLogging(apiClient: apiClient, fileStorage: FileStorageController())

@@ -44,6 +44,8 @@ final class Controllers {
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
                                                "Zotero-Schema-Version": schemaController.version]
         configuration.sharedContainerIdentifier = AppGroup.identifier
+        configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
+        configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
 
         let fileStorage = FileStorageController()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)

@@ -48,6 +48,8 @@ final class BackgroundUploader: NSObject {
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
                                                "Zotero-Schema-Version": schemaVersion]
         configuration.sharedContainerIdentifier = AppGroup.identifier
+        configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
+        configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
         self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }
 
