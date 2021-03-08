@@ -17,7 +17,7 @@ struct ApiConstants {
     static let baseUrlString: String = "https://api.zotero.org/"
     static let version: Int = 3
     static let requestTimeout: Double = 30
-    static let resourceTimeout: Double = 120
+    static let resourceTimeout: Double = 14400 // 4 hours
 }
 
 enum ZoteroApiError: Error {
