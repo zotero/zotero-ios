@@ -81,13 +81,14 @@ struct UploadAttachmentSyncAction: SyncAction {
                                 }
                             }
 
+        let startTime = CFAbsoluteTimeGetCurrent()
         let response = upload.observeOn(self.scheduler)
                              .flatMap({ result -> Single<Swift.Result<String, SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let apiRequest, let uploadKey)):
                                     let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
                                     return uploadRequest.rx.responseData()
-                                                           .log(identifier: logId, request: apiRequest)
+                                                           .log(identifier: logId, startTime: startTime, request: apiRequest)
                                                            .asSingle()
                                                            .flatMap({ response in
                                                                return Single.just(.success(uploadKey))

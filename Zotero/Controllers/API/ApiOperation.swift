@@ -11,32 +11,48 @@ import Foundation
 import Alamofire
 
 class ApiOperation: AsynchronousOperation {
-    private var request: DataRequest
+    private let apiRequest: ApiRequest
+    private let queue: DispatchQueue
+    private let completion: (Swift.Result<(Data, ResponseHeaders), Error>) -> Void
+    private unowned let requestCreator: ApiRequestCreator
 
-    init(request: DataRequest, apiRequest: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) {
-        self.request = request
+    private var request: DataRequest?
+
+    init(apiRequest: ApiRequest, requestCreator: ApiRequestCreator, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) {
+        self.apiRequest = apiRequest
+        self.queue = queue
+        self.completion = completion
+        self.requestCreator = requestCreator
 
         super.init()
-
-        self.request = self.request.log(request: apiRequest).responseData(queue: queue) { [weak self] response in
-            guard let `self` = self else { return }
-            switch response.log(request: apiRequest).result {
-            case .success(let data):
-                completion(.success((data, response.response?.allHeaderFields ?? [:])))
-            case .failure(let error):
-                completion(.failure(error))
-            }
-            self.finish()
-        }
     }
 
     override func main() {
         super.main()
-        self.request.resume()
+
+        if let request = self.request {
+            request.resume()
+            return
+        }
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let request = self.requestCreator.dataRequest(for: self.apiRequest).log(request: apiRequest).responseData(queue: self.queue) { [weak self] response in
+            guard let `self` = self else { return }
+            switch response.log(startTime: startTime, request: self.apiRequest).result {
+            case .success(let data):
+                self.completion(.success((data, response.response?.allHeaderFields ?? [:])))
+            case .failure(let error):
+                self.completion(.failure(error))
+            }
+            self.finish()
+        }
+        request.resume()
+        self.request = request
+
     }
 
     override func cancel() {
         super.cancel()
-        self.request.cancel()
+        self.request?.cancel()
     }
 }

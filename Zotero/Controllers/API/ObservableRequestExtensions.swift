@@ -77,11 +77,11 @@ extension ObservableType where Element == (HTTPURLResponse, Data) {
         }
     }
 
-    func log(identifier: String, request: ApiRequest) -> Observable<Element> {
+    func log(identifier: String, startTime: CFAbsoluteTime, request: ApiRequest) -> Observable<Element> {
         return self.do(onNext: { response in
-                   ApiLogger.log(result: .success(response), identifier: identifier, request: request)
+                   ApiLogger.log(result: .success(response), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
                }, onError: { error in
-                   ApiLogger.log(result: .failure(error), identifier: identifier, request: request)
+                   ApiLogger.log(result: .failure(error), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
                })
     }
 }
@@ -162,14 +162,14 @@ extension Reactive where Base: DataRequest {
 }
 
 extension DataResponse where Success == Data {
-    func log(request: ApiRequest) -> Self {
+    func log(startTime: CFAbsoluteTime, request: ApiRequest) -> Self {
         guard let httpRequest = self.request, let response = self.response else { return self }
         let identifier = ApiLogger.identifier(method: request.httpMethod.rawValue, url: (httpRequest.url?.absoluteString ?? request.debugUrl))
         switch self.result {
         case .success(let data):
-            ApiLogger.log(result: .success((response, data)), identifier: identifier, request: request)
+            ApiLogger.log(result: .success((response, data)), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
         case .failure(let error):
-            ApiLogger.log(result: .failure(error), identifier: identifier, request: request)
+            ApiLogger.log(result: .failure(error), time: CFAbsoluteTimeGetCurrent() - startTime, identifier: identifier, request: request)
         }
         return self
     }

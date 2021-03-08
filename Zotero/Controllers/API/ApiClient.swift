@@ -86,3 +86,7 @@ protocol ApiClient: class {
     func upload(request: ApiRequest, data: Data) -> Single<UploadRequest>
     func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation
 }
+
+protocol ApiRequestCreator: class {
+    func dataRequest(for request: ApiRequest) -> DataRequest
+}

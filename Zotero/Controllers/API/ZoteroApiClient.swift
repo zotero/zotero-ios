@@ -49,12 +49,13 @@ final class ZoteroApiClient: ApiClient {
 
     func send<Request: ApiResponseRequest>(request: Request, queue: DispatchQueue) -> Single<(Request.Response, ResponseHeaders)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .log(request: request)
                               .flatMap({ dataRequest, logId -> Observable<(Request.Response, ResponseHeaders)> in
                                   return dataRequest.rx.responseDataWithResponseError(queue: queue)
-                                                       .log(identifier: logId, request: request)
+                                                       .log(identifier: logId, startTime: startTime, request: request)
                                                        .retryIfNeeded()
                                                        .flatMap { response, data -> Observable<(Request.Response, ResponseHeaders)> in
                                                            do {
@@ -78,12 +79,13 @@ final class ZoteroApiClient: ApiClient {
 
     func send(request: ApiRequest, queue: DispatchQueue) -> Single<(Data, ResponseHeaders)> {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        let startTime = CFAbsoluteTimeGetCurrent()
         return self.manager.rx.request(urlRequest: convertible)
                               .validate()
                               .log(request: request)
                               .flatMap({ dataRequest, logId -> Observable<(Data, ResponseHeaders)> in
                                   return dataRequest.rx.responseDataWithResponseError(queue: queue)
-                                                       .log(identifier: logId, request: request)
+                                                       .log(identifier: logId, startTime: startTime, request: request)
                                                        .retryIfNeeded()
                                                        .flatMap { (response, data) -> Observable<(Data, [AnyHashable : Any])> in
                                                            if response.statusCode == 304 {
@@ -96,8 +98,7 @@ final class ZoteroApiClient: ApiClient {
     }
 
     func operation(from request: ApiRequest, queue: DispatchQueue, completion: @escaping (Swift.Result<(Data, ResponseHeaders), Error>) -> Void) -> ApiOperation {
-        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
-        return ApiOperation(request: self.manager.request(convertible).validate(), apiRequest: request, queue: queue, completion: completion)
+        return ApiOperation(apiRequest: request, requestCreator: self, queue: queue, completion: completion)
     }
 
     func download(request: ApiDownloadRequest) -> Observable<DownloadRequest> {
@@ -117,6 +118,13 @@ final class ZoteroApiClient: ApiClient {
         let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
         let method = HTTPMethod(rawValue: request.httpMethod.rawValue)
         return self.manager.rx.upload(multipartFormData: multipartFormData, to: convertible, method: method, headers: request.headers.flatMap(HTTPHeaders.init)).asSingle()
+    }
+}
+
+extension ZoteroApiClient: ApiRequestCreator {
+    func dataRequest(for request: ApiRequest) -> DataRequest {
+        let convertible = Convertible(request: request, baseUrl: self.url, token: self.token)
+        return self.manager.request(convertible).validate()
     }
 }
 

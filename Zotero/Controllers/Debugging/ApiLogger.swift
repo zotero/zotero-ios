@@ -24,13 +24,13 @@ struct ApiLogger {
         return identifier
     }
 
-    static func log(result: Result<(HTTPURLResponse, Data), Error>, identifier: String, request: ApiRequest) {
+    static func log(result: Result<(HTTPURLResponse, Data), Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
         switch result {
         case .failure(let error):
-            DDLogInfo("\(identifier) failed - \(error)")
+            DDLogInfo("(\(String(format: "+%07.0f", time))) \(identifier) failed - \(error)")
 
         case .success((let response, let data)):
-            DDLogInfo("\(identifier) succeeded with \(response.statusCode)")
+            DDLogInfo("(\(String(format: "+%07.0f", time))) \(identifier) succeeded with \(response.statusCode)")
             #if DEBUG
             if let string = String(data: data, encoding: .utf8) {
                 DDLogDebug("\(request.redact(response: string))")

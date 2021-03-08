@@ -119,10 +119,11 @@ final class DebugLogging {
         }
 
         let debugRequest = DebugLogUploadRequest()
+        let startTime = CFAbsoluteTimeGetCurrent()
         let upload = self.apiClient.upload(request: debugRequest, data: data)
         upload.flatMap { request -> Single<(HTTPURLResponse, Data)> in
                   let logId = ApiLogger.log(request: debugRequest, url: request.request?.url)
-                  return request.rx.responseData().log(identifier: logId, request: debugRequest).asSingle()
+                  return request.rx.responseData().log(identifier: logId, startTime: startTime, request: debugRequest).asSingle()
               }
               .flatMap { response, data -> Single<String> in
                   let delegate = DebugResponseParserDelegate()
