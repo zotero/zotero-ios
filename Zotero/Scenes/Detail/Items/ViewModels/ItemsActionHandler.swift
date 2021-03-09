@@ -23,8 +23,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private unowned let backgroundQueue: DispatchQueue
     private unowned let fileDownloader: FileDownloader
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController,
-         urlDetector: UrlDetector, fileDownloader: FileDownloader) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController, urlDetector: UrlDetector, fileDownloader: FileDownloader) {
         self.backgroundQueue = DispatchQueue.global(qos: .userInitiated)
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage

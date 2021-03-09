@@ -73,6 +73,7 @@ final class ItemsViewController: UIViewController {
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
         self.setupSearchBar(for: (self.navigationController?.view.frame.size ?? self.view.frame.size))
+        self.setupPullToRefresh()
         self.setupFileObservers()
         self.setupAppStateObserver()
 
@@ -169,6 +170,14 @@ final class ItemsViewController: UIViewController {
         if let item = state.itemDuplication {
             self.coordinatorDelegate?.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey),
                                                      library: self.viewModel.state.library)
+        }
+    }
+
+    private func update(progress: SyncProgress) {
+        switch progress {
+        case .aborted, .finished:
+            self.tableView.refreshControl?.endRefreshing()
+        default: break
         }
     }
 
@@ -321,6 +330,11 @@ final class ItemsViewController: UIViewController {
                 }
             })
             .disposed(by: self.disposeBag)
+    }
+
+    @objc private func startSync() {
+        guard let scheduler = self.controllers.userControllers?.syncScheduler, !scheduler.syncController.inProgress else { return }
+        scheduler.request(syncType: .ignoreIndividualDelays)
     }
 
     // MARK: - Setups
@@ -484,82 +498,6 @@ final class ItemsViewController: UIViewController {
         return [spacer] + (0..<(2 * items.count)).map({ idx -> UIBarButtonItem in idx % 2 == 0 ? items[idx/2] : spacer })
     }
 
-//    private func createNormalToolbarItems() -> [UIBarButtonItem] {
-//        let pickerItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.plus"), style: .plain, target: nil, action: nil)
-//        pickerItem.rx.tap.subscribe(onNext: { [weak self] _ in
-//            guard let `self` = self else { return }
-//            let binding = self.viewModel.binding(keyPath: \.selectedItems, action: { .assignSelectedItemsToCollections($0) })
-//            self.coordinatorDelegate?.showCollectionPicker(in: self.viewModel.state.library, selectedKeys: binding)
-//        })
-//        .disposed(by: self.disposeBag)
-//        pickerItem.tag = ItemsViewController.barButtonItemEmptyTag
-//
-//        let trashItem = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain, target: nil, action: nil)
-//        trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
-//            let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.trashQuestion : L10n.Items.trashMultipleQuestion
-//            self?.ask(question: question, title: L10n.Items.trashTitle, isDestructive: false, confirm: {
-//                self?.viewModel.process(action: .trashSelectedItems)
-//            })
-//        })
-//        .disposed(by: self.disposeBag)
-//        trashItem.tag = ItemsViewController.barButtonItemEmptyTag
-//
-//        let duplicateItem = UIBarButtonItem(image: UIImage(systemName: "square.on.square"), style: .plain, target: nil, action: nil)
-//        duplicateItem.rx.tap.subscribe(onNext: { [weak self] _ in
-//            if let key = self?.viewModel.state.selectedItems.first {
-//                self?.viewModel.process(action: .loadItemToDuplicate(key))
-//            }
-//        })
-//        .disposed(by: self.disposeBag)
-//        duplicateItem.tag = ItemsViewController.barButtonItemSingleTag
-//
-//        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-//
-//        var items = [spacer, pickerItem, spacer, trashItem, spacer, duplicateItem, spacer]
-//
-//        if self.viewModel.state.type.collectionKey != nil {
-//            let removeItem = UIBarButtonItem(image: UIImage(systemName: "folder.badge.minus"), style: .plain, target: nil, action: nil)
-//            removeItem.rx.tap.subscribe(onNext: { [weak self] _ in
-//                let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.removeFromCollectionQuestion :
-//                                                                                L10n.Items.removeFromCollectionMultipleQuestion
-//                self?.ask(question: question, title: L10n.Items.removeFromCollectionTitle, isDestructive: false, confirm: {
-//                    self?.viewModel.process(action: .deleteSelectedItemsFromCollection)
-//                })
-//            })
-//            .disposed(by: self.disposeBag)
-//            removeItem.tag = ItemsViewController.barButtonItemEmptyTag
-//
-//            items.insert(contentsOf: [spacer, removeItem], at: 2)
-//        }
-//
-//        return items
-//    }
-//
-//    private func createTrashToolbarItems() -> [UIBarButtonItem] {
-//        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-//        let trashItem = UIBarButtonItem(image: Asset.Images.restoreTrash.image, style: .plain, target: nil, action: nil)
-//        trashItem.rx.tap.subscribe(onNext: { [weak self] _ in
-//            let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.restoreQuestion : L10n.Items.restoreMultipleQuestion
-//            self?.ask(question: question, title: L10n.Items.restoreQuestion, isDestructive: false, confirm: {
-//                self?.viewModel.process(action: .restoreSelectedItems)
-//            })
-//        })
-//        .disposed(by: self.disposeBag)
-//        trashItem.tag = ItemsViewController.barButtonItemEmptyTag
-//
-//        let emptyItem = UIBarButtonItem(image: Asset.Images.emptyTrash.image, style: .plain, target: nil, action: nil)
-//        emptyItem.rx.tap.subscribe(onNext: { [weak self] _ in
-//            let question = self?.viewModel.state.selectedItems.count == 1 ? L10n.Items.deleteQuestion : L10n.Items.deleteMultipleQuestion
-//            self?.ask(question: question, title: L10n.delete, isDestructive: true, confirm: {
-//                self?.viewModel.process(action: .deleteSelectedItems)
-//            })
-//        })
-//        .disposed(by: self.disposeBag)
-//        emptyItem.tag = ItemsViewController.barButtonItemEmptyTag
-//
-//        return [spacer, trashItem, spacer, emptyItem, spacer]
-//    }
-
     /// Setup `searchBar` for current window size. If there is enough space for the `searchBar` in `titleView`, it's added there, otherwise it's added
     /// to `navigationItem`, where it appears under `navigationBar`.
     /// - parameter windowSize: Current window size.
@@ -626,6 +564,25 @@ final class ItemsViewController: UIViewController {
             self.navigationItem.titleView = nil
         }
         self.searchBarContainer = nil
+    }
+
+    private func setupPullToRefresh() {
+        let control = UIRefreshControl()
+        control.addTarget(self, action: #selector(ItemsViewController.startSync), for: .valueChanged)
+        self.tableView.refreshControl = control
+
+        self.setupSyncObserving()
+    }
+
+    private func setupSyncObserving() {
+        guard let scheduler = self.controllers.userControllers?.syncScheduler else { return }
+        scheduler.syncController
+                 .progressObservable
+                 .observeOn(MainScheduler.instance)
+                 .subscribe(onNext: { [weak self] progress in
+                     self?.update(progress: progress)
+                 })
+                 .disposed(by: self.disposeBag)
     }
 }
 
