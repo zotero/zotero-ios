@@ -28,6 +28,7 @@ protocol FileStorage: class {
     func sortedContentsOfDirectory(at file: File) throws -> [URL]
     func link(file fromFile: File, to toFile: File) throws
     func directoryData(for files: [File]) -> DirectoryData
+    func isZip(file: File) -> Bool
 }
 
 final class FileStorageController: FileStorage {
@@ -111,6 +112,13 @@ final class FileStorageController: FileStorage {
         }
 
         return all
+    }
+
+    func isZip(file: File) -> Bool {
+        guard let handle = FileHandle(forReadingAtPath: file.createUrl().path) else { return false }
+        defer { handle.closeFile() }
+        let data = handle.readData(ofLength: 4)
+        return data.starts(with: [0x50, 0x4b, 0x03, 0x04])
     }
 
     private func directoryData(for file: File) -> DirectoryData? {

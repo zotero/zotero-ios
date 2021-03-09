@@ -421,7 +421,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         if case .snapshot(let htmlFile, _, let zipFile, _) = attachment.contentType {
             // If snapshot was downloaded, unzip it
-            self.unzipSnapshot(from: zipFile, to: htmlFile.directory)
+            self.processSnapshot(from: zipFile, to: htmlFile)
                 .subscribeOn(self.backgroundScheduler)
                 .observeOn(MainScheduler.instance)
                 .subscribe(onCompleted: { [weak viewModel] in
@@ -440,16 +440,27 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.finishDownload(at: index, in: viewModel)
     }
 
-    private func unzipSnapshot(from zipFile: File, to directory: File) -> Completable {
+    private func processSnapshot(from zipFile: File, to htmlFile: File) -> Completable {
         return Completable.create { observer -> Disposable in
             let zipUrl = zipFile.createUrl()
+            let directory = htmlFile.directory
             let directoryUrl = directory.createUrl()
 
-            DDLogInfo("ItemDetailActionHandler: unzip item at '\(zipUrl.absoluteString)' to '\(directoryUrl.absoluteString)'")
+            DDLogInfo("ItemDetailActionHandler: will process downloaded snapshot")
 
             do {
                 try self.fileStorage.createDirectories(for: directory)
-                try FileManager.default.unzipItem(at: zipUrl, to: directoryUrl)
+
+                if self.fileStorage.isZip(file: zipFile) {
+                    DDLogInfo("ItemDetailActionHandler: snapshot is zip")
+                    try FileManager.default.unzipItem(at: zipUrl, to: directoryUrl)
+                } else {
+                    DDLogInfo("ItemDetailActionHandler: snapshot is html")
+                    try self.fileStorage.move(from: zipFile, to: htmlFile)
+                }
+
+                DDLogInfo("ItemDetailActionHandler: did process downloaded snapshot")
+
                 observer(.completed)
             } catch let error {
                 DDLogError("ItemDetailActionHandler: error extracting file - \(error)")
