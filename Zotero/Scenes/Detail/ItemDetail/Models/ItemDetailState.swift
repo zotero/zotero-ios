@@ -94,21 +94,27 @@ struct ItemDetailState: ViewModelState {
         }
 
         var name: String {
-            if !self.fullName.isEmpty {
+            switch self.namePresentation {
+            case .full:
                 return self.fullName
+            case .separate:
+                if self.lastName.isEmpty {
+                    return self.firstName
+                }
+                if self.firstName.isEmpty {
+                    return self.lastName
+                }
+                return self.lastName + ", " + self.firstName
             }
-
-            guard !self.firstName.isEmpty || !self.lastName.isEmpty else { return "" }
-
-            var name = self.lastName
-            if !self.lastName.isEmpty {
-                name += ", "
-            }
-            return name + self.firstName
         }
 
         var isEmpty: Bool {
-            return self.fullName.isEmpty && self.firstName.isEmpty && self.lastName.isEmpty
+            switch self.namePresentation {
+            case .full:
+                return self.fullName.isEmpty
+            case .separate:
+                return self.firstName.isEmpty && self.lastName.isEmpty
+            }
         }
 
         let id: UUID
