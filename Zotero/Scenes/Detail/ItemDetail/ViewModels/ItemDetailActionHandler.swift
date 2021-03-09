@@ -442,9 +442,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func unzipSnapshot(from zipFile: File, to directory: File) -> Completable {
         return Completable.create { observer -> Disposable in
+            let zipUrl = zipFile.createUrl()
+            let directoryUrl = directory.createUrl()
+
+            DDLogInfo("ItemDetailActionHandler: unzip item at '\(zipUrl.absoluteString)' to '\(directoryUrl.absoluteString)'")
+
             do {
                 try self.fileStorage.createDirectories(for: directory)
-                try FileManager.default.unzipItem(at: zipFile.createUrl(), to: directory.createUrl())
+                try FileManager.default.unzipItem(at: zipUrl, to: directoryUrl)
                 observer(.completed)
             } catch let error {
                 DDLogError("ItemDetailActionHandler: error extracting file - \(error)")

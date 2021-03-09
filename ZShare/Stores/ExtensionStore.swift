@@ -462,7 +462,10 @@ final class ExtensionStore {
             throw State.AttachmentState.Error.itemsNotFound
         }
 
-        let item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController)
+        var item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController)
+        if !item.tags.isEmpty {
+            item = item.copyWithAutomaticTags
+        }
         var attachment: [String: String]?
         if Defaults.shared.shareExtensionIncludeAttachment {
             attachment = (itemData["attachments"] as? [[String: String]])?.first(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })

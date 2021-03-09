@@ -41,6 +41,7 @@ extension RItem: Deletable {
         database.delete(self.relations)
         database.delete(self.creators)
         database.delete(self.rects)
+        database.delete(self.tags)
 
         if let createdByUser = self.createdBy, let lastModifiedByUser = self.lastModifiedBy,
            createdByUser.identifier == lastModifiedByUser.identifier &&

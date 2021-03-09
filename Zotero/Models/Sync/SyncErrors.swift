@@ -18,14 +18,15 @@ enum SyncError {
         case noInternetConnection
         case apiError(String)
         case dbError
-        case groupSyncFailed(Error)
-        case allLibrariesFetchFailed(Error)
+        case groupSyncFailed
+        case allLibrariesFetchFailed
         case uploadObjectConflict
         case permissionLoadingFailed
         case missingGroupPermissions
         case cancelled
         case preconditionErrorCantBeResolved
         case cantResolveConflict
+        case attachmentMissing
     }
 
     enum NonFatal: Error {

@@ -78,9 +78,18 @@ final class SyncToolbarController {
                     message += L10n.Errors.api(response)
                 case .dbError:
                     message += L10n.Errors.db
-                // TODO: - add error messages for known fatal errors
-                default:
-                    message += L10n.Errors.unknown
+                case .attachmentMissing:
+                    message += L10n.Errors.SyncToolbar.attachmentMissing
+                case .allLibrariesFetchFailed:
+                    message += L10n.Errors.SyncToolbar.librariesMissing
+                case .cantResolveConflict, .preconditionErrorCantBeResolved:
+                    message += L10n.Errors.SyncToolbar.conflictRetryLimit
+                case .groupSyncFailed:
+                    message += L10n.Errors.SyncToolbar.groupsFailed
+                case .missingGroupPermissions, .permissionLoadingFailed:
+                    message += L10n.Errors.SyncToolbar.groupPermissions
+                case .noInternetConnection:
+                    message += L10n.Errors.SyncToolbar.internetConnection
                 }
             } else if let error = error as? SyncError.NonFatal {
                 switch error {

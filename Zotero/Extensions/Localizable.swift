@@ -217,10 +217,22 @@ internal enum L10n {
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }
     internal enum SyncToolbar {
+      /// Attachment that you tried to upload is missing. Try removing and re-adding the attachment.
+      internal static let attachmentMissing = L10n.tr("Localizable", "errors.sync_toolbar.attachment_missing")
+      /// Could not sync a conflict. Will try again later.
+      internal static let conflictRetryLimit = L10n.tr("Localizable", "errors.sync_toolbar.conflict_retry_limit")
       /// Finished sync (%@)
       internal static func finishedWithErrors(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.finished_with_errors", String(describing: p1))
       }
+      /// You don't have permission to edit groups.
+      internal static let groupPermissions = L10n.tr("Localizable", "errors.sync_toolbar.group_permissions")
+      /// Could not sync groups. Please try again.
+      internal static let groupsFailed = L10n.tr("Localizable", "errors.sync_toolbar.groups_failed")
+      /// Your internet connection went down. Please try again.
+      internal static let internetConnection = L10n.tr("Localizable", "errors.sync_toolbar.internet_connection")
+      /// Could not find any libraries stored in DB. Try logging out and back in again.
+      internal static let librariesMissing = L10n.tr("Localizable", "errors.sync_toolbar.libraries_missing")
       /// %d issues
       internal static func multipleErrors(_ p1: Int) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.multiple_errors", p1)

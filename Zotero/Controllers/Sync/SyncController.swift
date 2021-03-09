@@ -621,7 +621,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                    self?.abort(error: ((error as? SyncError.Fatal) ?? .permissionLoadingFailed))
+                      self?.abort(error: (self?.fatalError(from: error) ?? .permissionLoadingFailed))
                   }
               })
               .disposed(by: self.disposeBag)
@@ -642,7 +642,7 @@ final class SyncController: SynchronizationController {
         switch result {
         case .failure(let error):
             self.accessQueue.async(flags: .barrier) { [weak self] in
-                self?.abort(error: .allLibrariesFetchFailed(error))
+                self?.abort(error: self?.fatalError(from: error) ?? .allLibrariesFetchFailed)
             }
 
         case .success((let data, let options)):
@@ -775,7 +775,7 @@ final class SyncController: SynchronizationController {
                   }
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishFailedSyncGroupVersions(error: error)
+                      self?.abort(error: self?.fatalError(from: error) ?? .groupSyncFailed)
                   }
               })
               .disposed(by: self.disposeBag)
@@ -809,15 +809,6 @@ final class SyncController: SynchronizationController {
         actions.append(contentsOf: idsToSync.map({ .syncGroupToDb($0) }))
         actions.append(.createLibraryActions(self.libraryType, .automatic))
         return actions
-    }
-
-    private func finishFailedSyncGroupVersions(error: Error) {
-        switch self.syncError(from: error) {
-        case .fatal(let error):
-            self.abort(error: error)
-        case .nonFatal:
-            self.abort(error: .groupSyncFailed(error))
-        }
     }
 
     private func processSyncVersions(libraryId: LibraryIdentifier, object: SyncObject, since version: Int, checkRemote: Bool) {
@@ -1367,6 +1358,16 @@ final class SyncController: SynchronizationController {
         }
     }
 
+    private func fatalError(from error: Error) -> SyncError.Fatal? {
+        let syncError = self.syncError(from: error)
+        switch syncError {
+        case .fatal(let error): return error
+        case .nonFatal(let error):
+            DDLogError("SyncController: received NonFatal error for fatal case - \(error)")
+            return nil
+        }
+    }
+
     private func nonFatalError(from error: Error) -> SyncError.NonFatal {
         if let error = error as? SyncError.NonFatal {
             return error
@@ -1377,6 +1378,7 @@ final class SyncController: SynchronizationController {
         if let error = error as? Parsing.Error {
             return .parsing(error)
         }
+        DDLogError("SyncController: received unknown error - \(error)")
         return .unknown
     }
 
@@ -1388,6 +1390,15 @@ final class SyncController: SynchronizationController {
             return .fatal(error)
         } else if let error = error as? SyncError.NonFatal {
             return .nonFatal(error)
+        }
+
+        if let error = error as? SyncActionError {
+            switch error {
+            case .attachmentAlreadyUploaded, .attachmentItemNotSubmitted: // These shouldn't really get here
+                return .nonFatal(.unknown)
+            case .attachmentMissing:
+                return .fatal(.attachmentMissing)
+            }
         }
 
         let nsError = error as NSError
@@ -1407,6 +1418,7 @@ final class SyncController: SynchronizationController {
 
         // Check realm errors, every "core" error is bad. Can't create new Realm instance, can't continue with sync
         if error is Realm.Error {
+            DDLogError("SyncController: received realm error - \(error)")
             return .fatal(.dbError)
         }
 

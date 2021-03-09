@@ -234,6 +234,12 @@
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
 "errors.sync_toolbar.one_error" = "1 issue";
 "errors.sync_toolbar.multiple_errors" = "%d issues";
+"errors.sync_toolbar.attachment_missing" = "Attachment that you tried to upload is missing. Try removing and re-adding the attachment.";
+"errors.sync_toolbar.libraries_missing" = "Could not find any libraries stored in DB. Try logging out and back in again.";
+"errors.sync_toolbar.groups_failed" = "Could not sync groups. Please try again.";
+"errors.sync_toolbar.conflict_retry_limit" = "Could not sync a conflict. Will try again later.";
+"errors.sync_toolbar.group_permissions" = "You don't have permission to edit groups.";
+"errors.sync_toolbar.internet_connection" = "Your internet connection went down. Please try again.";
 "errors.item_detail.dropped_fields_title" = "Change Item Type";
 "errors.item_detail.dropped_fields_message" = "Are you sure you want to change the item type?\nThe following fields will be lost:\n%@";
 "errors.item_detail.cant_load_data" = "Could not load data. Please try again.";

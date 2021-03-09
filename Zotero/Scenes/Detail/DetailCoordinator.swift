@@ -89,7 +89,10 @@ final class DetailCoordinator: Coordinator {
 
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+
+    #if PDFENABLED
     private var pdfSearchController: PDFSearchViewController?
+    #endif
 
     let collection: Collection
     let library: Library

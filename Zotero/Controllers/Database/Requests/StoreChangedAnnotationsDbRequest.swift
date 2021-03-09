@@ -6,6 +6,8 @@
 //  Copyright © 2020 Corporation for Digital Scholarship. All rights reserved.
 //
 
+#if PDFENABLED
+
 import Foundation
 import UIKit
 
@@ -131,31 +133,28 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     private func sync(tags: [Tag], in item: RItem, database: Realm) {
         var tagsDidChange = false
 
-        let tagNames = tags.map({ $0.name })
-        let tagsToRemove = item.tags.filter(.name(notIn: tagNames))
-        tagsToRemove.forEach { tag in
-            if let index = tag.items.index(of: item) {
-                tag.items.remove(at: index)
-            }
+        let tagsToRemove = item.tags.filter(.name(notIn: tags.map({ $0.name })))
+        if !tagsToRemove.isEmpty {
             tagsDidChange = true
         }
+        database.delete(tagsToRemove)
 
-        tags.forEach { tag in
-            let tagsWithName = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId))
-
-            if tagsWithName.count != 0 {
-                if let rTag = tagsWithName.filter("not (any items.key = %@)", item.key).first {
-                    rTag.items.append(item)
+        for tag in tags {
+            if let rTag = item.tags.filter(.name(tag.name)).first {
+                if tag.color != rTag.color {
+                    rTag.color = tag.color
+                    rTag.type = .manual
                     tagsDidChange = true
                 }
             } else {
                 let rTag = RTag()
                 rTag.name = tag.name
+                rTag.type = .manual
                 rTag.color = tag.color
                 rTag.libraryId = self.libraryId
                 database.add(rTag)
 
-                rTag.items.append(item)
+                rTag.item = item
                 tagsDidChange = true
             }
         }
@@ -198,3 +197,5 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
         }
     }
 }
+
+#endif

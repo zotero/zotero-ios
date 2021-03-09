@@ -219,29 +219,27 @@ struct EditItemDetailDbRequest: DbRequest {
         var tagsDidChange = false
 
         let tagsToRemove = item.tags.filter(.name(in: data.deletedTags))
-        tagsToRemove.forEach { tag in
-            if let index = tag.items.index(of: item) {
-                tag.items.remove(at: index)
-            }
+        if !tagsToRemove.isEmpty {
             tagsDidChange = true
         }
+        database.delete(tagsToRemove)
 
-        data.tags.forEach { tag in
-            let tagsWithName = database.objects(RTag.self).filter(.name(tag.name, in: self.libraryId))
-
-            if tagsWithName.count != 0 {
-                if let rTag = tagsWithName.filter("not (any items.key = %@)", item.key).first {
-                    rTag.items.append(item)
+        for tag in data.tags {
+            if let rTag = item.tags.filter(.name(tag.name)).first {
+                if tag.color != rTag.color {
+                    rTag.color = tag.color
+                    rTag.type = .manual
                     tagsDidChange = true
                 }
             } else {
                 let rTag = RTag()
                 rTag.name = tag.name
+                rTag.type = .manual
                 rTag.color = tag.color
                 rTag.libraryId = self.libraryId
                 database.add(rTag)
 
-                rTag.items.append(item)
+                rTag.item = item
                 tagsDidChange = true
             }
         }

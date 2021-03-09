@@ -106,7 +106,7 @@ struct ItemResponse {
         self.tags = try tags.map({ try TagResponse(response: $0) })
         self.creators = try creators.map({ try CreatorResponse(response: $0) })
         self.relations = (data["relations"] as? [String: Any]) ?? [:]
-        self.inPublications = (data["inPublications"] as? Bool) ?? false
+        self.inPublications = (data["inPublications"] as? Bool) ?? ((data["inPublications"] as? Int) == 1)
         self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, key: key, schemaController: schemaController).fields
         self.createdBy = createdBy
         self.lastModifiedBy = lastModifiedBy
@@ -215,6 +215,27 @@ struct ItemResponse {
                             dateAdded: self.dateAdded,
                             fields: self.fields,
                             tags: [],
+                            creators: self.creators,
+                            relations: self.relations,
+                            createdBy: self.createdBy,
+                            lastModifiedBy: self.lastModifiedBy,
+                            rects: self.rects)
+    }
+
+    var copyWithAutomaticTags: ItemResponse {
+        return ItemResponse(rawType: self.rawType,
+                            key: self.key,
+                            library: self.library,
+                            parentKey: self.parentKey,
+                            collectionKeys: self.collectionKeys,
+                            links: self.links,
+                            parsedDate: self.parsedDate,
+                            isTrash: self.isTrash,
+                            version: self.version,
+                            dateModified: self.dateModified,
+                            dateAdded: self.dateAdded,
+                            fields: self.fields,
+                            tags: self.tags.map({ $0.automaticCopy }),
                             creators: self.creators,
                             relations: self.relations,
                             createdBy: self.createdBy,
@@ -385,9 +406,20 @@ struct ItemResponse {
 
 struct TagResponse {
     let tag: String
+    let type: Int
+
+    init(tag: String, type: Int) {
+        self.tag = tag
+        self.type = type
+    }
 
     init(response: [String: Any]) throws {
         self.tag = try response.apiGet(key: "tag")
+        self.type = (try? response.apiGet(key: "type")) ?? 0
+    }
+
+    var automaticCopy: TagResponse {
+        return TagResponse(tag: self.tag, type: RTag.Kind.automatic.rawValue)
     }
 }
 

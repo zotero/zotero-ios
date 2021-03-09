@@ -19,6 +19,7 @@ struct ReadTagsDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> [Tag] {
         return database.objects(RTag.self).filter(.library(with: self.libraryId))
+                                          .distinct(by: ["name"])
                                           .sorted(byKeyPath: "name")
                                           .map(Tag.init)
     }

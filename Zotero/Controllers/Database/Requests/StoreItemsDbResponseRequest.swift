@@ -87,6 +87,7 @@ struct StoreItemDbRequest: DbRequest {
         item.key = self.response.key
         item.rawType = self.response.rawType
         item.localizedType = self.schemaController.localized(itemType: self.response.rawType) ?? ""
+        item.inPublications = self.response.inPublications
         item.version = self.response.version
         item.trash = self.response.isTrash
         item.dateModified = self.response.dateModified
@@ -261,35 +262,27 @@ struct StoreItemDbRequest: DbRequest {
     }
 
     private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) throws {
-        let tagNames = Set(tags.map({ $0.tag }))
-
         // Remove item from tags, which are not in the `tags` array anymore
-        for tag in item.tags.filter(.name(notIn: tagNames)) {
-            guard let index = tag.items.index(of: item) else { continue }
-            tag.items.remove(at: index)
-        }
+        database.delete(item.tags.filter(.name(notIn: tags.map({ $0.tag }))))
 
-        guard !tagNames.isEmpty else { return }
+        guard !tags.isEmpty else { return }
 
-        var toCreateTags = tagNames
-        let existingTags = database.objects(RTag.self).filter(.names(tagNames, in: libraryId))
-
-        // Add item to existing tags, which don't already contain the item
-        for tag in existingTags {
-            if tag.items.filter(.key(item.key)).first == nil {
-                tag.items.append(item)
+        for tag in tags {
+            if let existing = item.tags.filter(.name(tag.tag)).first {
+                // Update tag type
+                if existing.rawType != tag.type {
+                    existing.rawType = tag.type
+                }
+                continue
             }
-            toCreateTags.remove(tag.name)
-        }
 
-        // Create remaining unknown tags
-        for name in toCreateTags {
-            let tag = RTag()
-            tag.name = name
-            tag.libraryId = libraryId
-            database.add(tag)
+            let rTag = RTag()
+            rTag.name = tag.tag
+            rTag.rawType = tag.type
+            rTag.libraryId = libraryId
+            database.add(rTag)
 
-            tag.items.append(item)
+            rTag.item = item
         }
     }
 

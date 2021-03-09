@@ -11,16 +11,19 @@ import UIKit
 struct Tag: Identifiable, Equatable, Hashable {
     let name: String
     let color: String
+    let type: RTag.Kind
 
     var id: String { return self.name }
 
     init(name: String, color: String) {
         self.name = name
         self.color = color
+        self.type = .manual
     }
 
     init(tag: RTag) {
         self.name = tag.name
         self.color = tag.color
+        self.type = tag.type
     }
 }

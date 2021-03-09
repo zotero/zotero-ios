@@ -34,6 +34,6 @@ final class ItemDetailTagCell: UITableViewCell {
             self.tagView.layer.borderWidth = 0
         }
 
-        self.label.text = tag.name
+        self.label.text = tag.name + "(\(tag.type.rawValue))"
     }
 }

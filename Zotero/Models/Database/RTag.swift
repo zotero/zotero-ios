@@ -11,11 +11,27 @@ import Foundation
 import RealmSwift
 
 final class RTag: Object {
+    enum Kind: Int {
+        case automatic = 1
+        case manual = 0
+    }
+
     @objc dynamic var name: String = ""
     @objc dynamic var color: String = ""
+    @objc dynamic var rawType: Int = 0
+    @objc dynamic var item: RItem?
     let customLibraryKey = RealmOptional<Int>()
     let groupKey = RealmOptional<Int>()
-    let items: List<RItem> = List()
+
+    var type: Kind {
+        get {
+            return Kind(rawValue: self.rawType) ?? .manual
+        }
+
+        set {
+            self.rawType = newValue.rawValue
+        }
+    }
 
     // MARK: - Object properties
 

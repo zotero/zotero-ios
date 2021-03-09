@@ -37,6 +37,7 @@ final class RItem: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var rawType: String = ""
     @objc dynamic var baseTitle: String = ""
+    @objc dynamic var inPublications: Bool = false
     @objc dynamic var dateAdded: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parent: RItem?
@@ -50,7 +51,7 @@ final class RItem: Object {
     let collections = LinkingObjects(fromType: RCollection.self, property: "items")
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
-    let tags = LinkingObjects(fromType: RTag.self, property: "items")
+    let tags = LinkingObjects(fromType: RTag.self, property: "item")
     let creators = LinkingObjects(fromType: RCreator.self, property: "item")
     let links = LinkingObjects(fromType: RLink.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")
