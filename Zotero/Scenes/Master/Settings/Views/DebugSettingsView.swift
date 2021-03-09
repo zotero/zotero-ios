@@ -38,21 +38,21 @@ struct DebugSettingsView: View {
                 }
             }
 
-            Section(header: Text(L10n.Settings.websocketTitle)) {
-                HStack(alignment: .center, spacing: 8) {
-                    Circle()
-                        .frame(width: 12, height: 12, alignment: .leading)
-                        .foregroundColor(self.webSocketColor(for: self.viewModel.state.websocketConnectionState))
-                    Text(self.webSocketTitle(for: self.viewModel.state.websocketConnectionState))
-                    Spacer()
-                }
-
-                Button(action: {
-                    self.performWebSocketAction(for: self.viewModel.state.websocketConnectionState)
-                }, label: {
-                    Text(self.webSocketButtonTitle(for: self.viewModel.state.websocketConnectionState))
-                })
-            }
+//            Section(header: Text(L10n.Settings.websocketTitle)) {
+//                HStack(alignment: .center, spacing: 8) {
+//                    Circle()
+//                        .frame(width: 12, height: 12, alignment: .leading)
+//                        .foregroundColor(self.webSocketColor(for: self.viewModel.state.websocketConnectionState))
+//                    Text(self.webSocketTitle(for: self.viewModel.state.websocketConnectionState))
+//                    Spacer()
+//                }
+//
+//                Button(action: {
+//                    self.performWebSocketAction(for: self.viewModel.state.websocketConnectionState)
+//                }, label: {
+//                    Text(self.webSocketButtonTitle(for: self.viewModel.state.websocketConnectionState))
+//                })
+//            }
         }
         .navigationBarTitle(L10n.Settings.debug)
     }

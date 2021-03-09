@@ -35,7 +35,6 @@
 "page" = "Page";
 "report" = "Report";
 "total" = "Total";
-"cache" = "Cache";
 "restore" = "Restore";
 "copy" = "Copy";
 
@@ -203,6 +202,12 @@
 "settings.storage.delete_library_question" = "Do you really want to delete all attachments in \"%@\"?";
 "settings.storage.delete_cache" = "Delete Cache";
 "settings.storage.delete_cache_question" = "Do you really want to delete cache?";
+"settings.storage.cache" = "Temporary Files";
+"settings.saving.title" = "Saving";
+"settings.saving.files_title" = "Save Files";
+"settings.saving.files_message" = "Automatically attach associated PDFs and other files when saving items";
+"settings.saving.tags_title" = "Save Automatic Tags";
+"settings.saving.tags_message" = "Automatically tag items with keywords and subject headings";
 
 "shareext.save" = "Save to Zotero";
 "shareext.decoding_attachment" = "Searching for items";

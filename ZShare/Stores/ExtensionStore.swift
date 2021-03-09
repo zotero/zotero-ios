@@ -455,11 +455,7 @@ final class ExtensionStore {
             let leftHasPdf = leftAttachments.contains(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
             let rightAttachments = (right["attachments"] as? [[String: String]]) ?? []
             let rightHasPdf = rightAttachments.contains(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
-
-            if !leftHasPdf && rightHasPdf {
-                return false
-            }
-            return true
+            return leftHasPdf || !rightHasPdf
         }
 
         guard let itemData = sortedData.first else {
@@ -467,7 +463,10 @@ final class ExtensionStore {
         }
 
         let item = try ItemResponse(translatorResponse: itemData, schemaController: self.schemaController)
-        let attachment = (itemData["attachments"] as? [[String: String]])?.first(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
+        var attachment: [String: String]?
+        if Defaults.shared.shareExtensionIncludeAttachment {
+            attachment = (itemData["attachments"] as? [[String: String]])?.first(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
+        }
 
         return (item, attachment)
     }
@@ -551,9 +550,9 @@ final class ExtensionStore {
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage
     /// - parameter schemaController: Schema controller for validating item type and field types.
-    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int,
-                        apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
-        self.createItem(item, schemaController: schemaController)
+    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
+        let itemToSubmit = item.tags.isEmpty || Defaults.shared.shareExtensionIncludeTags ? item : item.copyWithoutTags
+        self.createItem(itemToSubmit, schemaController: schemaController)
             .subscribeOn(self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId,

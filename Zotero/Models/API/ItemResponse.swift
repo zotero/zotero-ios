@@ -201,6 +201,27 @@ struct ItemResponse {
                             rects: self.rects)
     }
 
+    var copyWithoutTags: ItemResponse {
+        return ItemResponse(rawType: self.rawType,
+                            key: self.key,
+                            library: self.library,
+                            parentKey: self.parentKey,
+                            collectionKeys: self.collectionKeys,
+                            links: self.links,
+                            parsedDate: self.parsedDate,
+                            isTrash: self.isTrash,
+                            version: self.version,
+                            dateModified: self.dateModified,
+                            dateAdded: self.dateAdded,
+                            fields: self.fields,
+                            tags: [],
+                            creators: self.creators,
+                            relations: self.relations,
+                            createdBy: self.createdBy,
+                            lastModifiedBy: self.lastModifiedBy,
+                            rects: self.rects)
+    }
+
     /// Parses field values from item data for given type.
     /// - parameter data: Data to parse.
     /// - parameter rawType: Raw item type of parsed item.

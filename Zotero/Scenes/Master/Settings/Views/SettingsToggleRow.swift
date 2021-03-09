@@ -14,7 +14,7 @@ struct SettingsToggleRow: View {
     @Binding var value: Bool
 
     var body: some View {
-        HStack {
+        Toggle(isOn: self.$value) {
             VStack(alignment: .leading) {
                 Text(self.title)
                     .font(.headline)
@@ -23,10 +23,6 @@ struct SettingsToggleRow: View {
                         .font(.callout)
                         .foregroundColor(.gray)
                 }
-            }
-
-            Toggle(isOn: self.$value) {
-                EmptyView()
             }
         }
     }

@@ -30,4 +30,6 @@ enum SettingsAction {
     case showDeleteCacheQuestion(Bool)
     case disconnectFromWebSocket
     case connectToWebSocket
+    case setIncludeTags(Bool)
+    case setIncludeAttachment(Bool)
 }

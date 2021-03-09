@@ -32,7 +32,7 @@ struct StorageSettingsListView: View {
             }
 
             Section {
-                StorageSettingsRow(title: L10n.cache, data: self.viewModel.state.cacheData, deleteAction: nil)
+                StorageSettingsRow(title: L10n.Settings.Storage.cache, data: self.viewModel.state.cacheData, deleteAction: nil)
 
                 if self.viewModel.state.cacheData.fileCount > 0 {
                     Button(action: {

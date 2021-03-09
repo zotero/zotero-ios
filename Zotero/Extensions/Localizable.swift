@@ -14,8 +14,6 @@ internal enum L10n {
   internal static let abstract = L10n.tr("Localizable", "abstract")
   /// Add
   internal static let add = L10n.tr("Localizable", "add")
-  /// Cache
-  internal static let cache = L10n.tr("Localizable", "cache")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel")
   /// Close
@@ -514,7 +512,21 @@ internal enum L10n {
       /// Logs Sent
       internal static let title = L10n.tr("Localizable", "settings.log_alert.title")
     }
+    internal enum Saving {
+      /// Automatically attach associated PDFs and other files when saving items
+      internal static let filesMessage = L10n.tr("Localizable", "settings.saving.files_message")
+      /// Save Files
+      internal static let filesTitle = L10n.tr("Localizable", "settings.saving.files_title")
+      /// Automatically tag items with keywords and subject headings
+      internal static let tagsMessage = L10n.tr("Localizable", "settings.saving.tags_message")
+      /// Save Automatic Tags
+      internal static let tagsTitle = L10n.tr("Localizable", "settings.saving.tags_title")
+      /// Saving
+      internal static let title = L10n.tr("Localizable", "settings.saving.title")
+    }
     internal enum Storage {
+      /// Temporary Files
+      internal static let cache = L10n.tr("Localizable", "settings.storage.cache")
       /// Delete All Attachments
       internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")
       /// Do you really want to delete all attachments?

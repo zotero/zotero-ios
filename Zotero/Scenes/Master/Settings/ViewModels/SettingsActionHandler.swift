@@ -40,13 +40,11 @@ struct SettingsActionHandler: ViewModelActionHandler {
     func process(action: SettingsAction, in viewModel: ViewModel<SettingsActionHandler>) {
         switch action {
         case .setAskForSyncPermission(let value):
-            Defaults.shared.askForSyncPermission = value
             self.update(viewModel: viewModel) { state in
                 state.askForSyncPermission = value
             }
 
         case .setShowCollectionItemCounts(let value):
-            Defaults.shared.showCollectionItemCount = value
             self.update(viewModel: viewModel) { state in
                 state.showCollectionItemCount = value
             }
@@ -131,6 +129,16 @@ struct SettingsActionHandler: ViewModelActionHandler {
         case .disconnectFromWebSocket:
             guard let apiKey = self.sessionController.sessionData?.apiToken else { return }
             self.webSocketController.disconnect(apiKey: apiKey)
+
+        case .setIncludeTags(let value):
+            self.update(viewModel: viewModel) { state in
+                state.includeTags = value
+            }
+
+        case .setIncludeAttachment(let value):
+            self.update(viewModel: viewModel) { state in
+                state.includeAttachment = value
+            }
         }
     }
 

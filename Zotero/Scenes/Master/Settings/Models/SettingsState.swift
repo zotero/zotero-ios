@@ -9,8 +9,24 @@
 import Foundation
 
 struct SettingsState: ViewModelState {
-    var askForSyncPermission: Bool
-    var showCollectionItemCount: Bool
+    var askForSyncPermission: Bool {
+        get {
+            return Defaults.shared.askForSyncPermission
+        }
+
+        set {
+            Defaults.shared.askForSyncPermission = newValue
+        }
+    }
+    var showCollectionItemCount: Bool {
+        get {
+            return Defaults.shared.showCollectionItemCount
+        }
+
+        set {
+            Defaults.shared.showCollectionItemCount = newValue
+        }
+    }
     var isSyncing: Bool
     var isLogging: Bool
     var lastTranslatorUpdate: Date
@@ -24,6 +40,24 @@ struct SettingsState: ViewModelState {
     var showDeleteLibraryQuestion: Library?
     var showDeleteCacheQuestion: Bool
     var websocketConnectionState: WebSocketController.ConnectionState
+    var includeTags: Bool {
+        get {
+            return Defaults.shared.shareExtensionIncludeTags
+        }
+
+        set {
+            Defaults.shared.shareExtensionIncludeTags = newValue
+        }
+    }
+    var includeAttachment: Bool {
+        get {
+            return Defaults.shared.shareExtensionIncludeAttachment
+        }
+
+        set {
+            Defaults.shared.shareExtensionIncludeAttachment = newValue
+        }
+    }
 
     init(isSyncing: Bool, isLogging: Bool, isUpdatingTranslators: Bool, lastTranslatorUpdate: Date, websocketConnectionState: WebSocketController.ConnectionState) {
         self.isSyncing = isSyncing
@@ -33,8 +67,6 @@ struct SettingsState: ViewModelState {
         self.totalStorageData = DirectoryData(fileCount: 0, mbSize: 0)
         self.cacheData = DirectoryData(fileCount: 0, mbSize: 0)
         self.websocketConnectionState = websocketConnectionState
-        self.askForSyncPermission = Defaults.shared.askForSyncPermission
-        self.showCollectionItemCount = Defaults.shared.showCollectionItemCount
         self.logoutAlertVisible = false
         self.libraries = []
         self.storageData = [:]

@@ -24,12 +24,20 @@ final class Defaults {
     var updateTranslators: Bool
 
     @UserDefault(key: "ShowCollectionItemCount", defaultValue: true)
-    var showCollectionItemCount
+    var showCollectionItemCount: Bool
+
+    @UserDefault(key: "ShareExtensionIncludeTags", defaultValue: true)
+    var shareExtensionIncludeTags: Bool
+
+    @UserDefault(key: "ShareExtensionIncludeAttachment", defaultValue: true)
+    var shareExtensionIncludeAttachment: Bool
 
     func reset() {
         self.askForSyncPermission = false
         self.username = ""
         self.userId = 0
         self.updateTranslators = false
+        self.shareExtensionIncludeTags = true
+        self.shareExtensionIncludeAttachment = true
     }
 }

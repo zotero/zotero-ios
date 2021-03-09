@@ -18,24 +18,28 @@ struct SettingsListView: View {
             }
 
             Section {
-                NavigationLink(destination: GeneralSettingsView()) {
-                    Text(L10n.Settings.general)
+//                NavigationLink(destination: GeneralSettingsView()) {
+//                    Text(L10n.Settings.general)
+//                }
+
+//                NavigationLink(destination: SyncSettingsView()) {
+//                    Text(L10n.Settings.sync)
+//                }
+
+//                NavigationLink(destination: TranslatorsSettingsView()) {
+//                    Text(L10n.Settings.translators)
+//                }
+
+                NavigationLink(destination: DebugSettingsView()) {
+                    Text(L10n.Settings.debug)
                 }
 
-                NavigationLink(destination: SyncSettingsView()) {
-                    Text(L10n.Settings.sync)
-                }
-
-                NavigationLink(destination: TranslatorsSettingsView()) {
-                    Text(L10n.Settings.translators)
+                NavigationLink(destination: SavingSettingsView()) {
+                    Text(L10n.Settings.Saving.title)
                 }
 
                 NavigationLink(destination: StorageSettingsView()) {
                     Text(L10n.Settings.storage)
-                }
-
-                NavigationLink(destination: DebugSettingsView()) {
-                    Text(L10n.Settings.debug)
                 }
             }
         }
