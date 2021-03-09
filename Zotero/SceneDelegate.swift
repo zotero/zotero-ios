@@ -38,6 +38,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.setupObservers(controllers: delegate.controllers)
     }
 
+    func windowScene(_ windowScene: UIWindowScene, didUpdate previousCoordinateSpace: UICoordinateSpace, interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation, traitCollection previousTraitCollection: UITraitCollection) {
+        guard let newSize = windowScene.windows.first?.frame.size else { return }
+        self.coordinator?.didRotate(to: newSize)
+    }
+
     func sceneWillEnterForeground(_ scene: UIScene) {
         self.activityCounter?.sceneWillEnterForeground()
     }

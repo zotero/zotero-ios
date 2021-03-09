@@ -15,6 +15,7 @@ import RxSwift
 protocol DebugLoggingCoordinator: class {
     func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Float) -> Void)
     func show(error: DebugLogging.Error, logs: [URL]?, completed: (() -> Void)?)
+    func setDebugWindow(visible: Bool)
 }
 
 final class DebugLogging {
@@ -38,7 +39,11 @@ final class DebugLogging {
     private let disposeBag: DisposeBag
 
     @UserDefault(key: "IsDebugLoggingEnabled", defaultValue: false)
-    private(set) var isEnabled: Bool
+    private(set) var isEnabled: Bool {
+        didSet {
+            self.coordinator?.setDebugWindow(visible: self.isEnabled)
+        }
+    }
     private var logger: DDFileLogger?
     weak var coordinator: DebugLoggingCoordinator?
 

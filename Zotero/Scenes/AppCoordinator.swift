@@ -13,6 +13,7 @@ import UIKit
 protocol AppDelegateCoordinatorDelegate: class {
     func showMainScreen(isLoggedIn: Bool)
     func show(error: Error)
+    func didRotate(to size: CGSize)
 }
 
 protocol AppOnboardingCoordinatorDelegate: class {
@@ -28,9 +29,12 @@ protocol AppLoginCoordinatorDelegate: class {
 final class AppCoordinator: NSObject {
     private typealias Action = (UIViewController) -> Void
 
+    private static let debugButtonSize = CGSize(width: 60, height: 60)
+    private static let debugButtonOffset: CGFloat = 50
     private let controllers: Controllers
 
     private weak var window: UIWindow?
+    private var debugWindow: UIWindow?
     private var conflictReceiverAlertController: ConflictReceiverAlertController?
     private var conflictAlertQueueController: ConflictAlertQueueController?
 
@@ -50,6 +54,10 @@ final class AppCoordinator: NSObject {
         self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
         if let error = self.controllers.userControllerError {
             self.show(error: error)
+        }
+
+        if self.controllers.debugLogging.isEnabled {
+            self.setDebugWindow(visible: true)
         }
 
         self.controllers.debugLogging.coordinator = self
@@ -109,6 +117,13 @@ final class AppCoordinator: NSObject {
         actions.forEach({ controller.addAction($0) })
         self.viewController?.present(controller, animated: true, completion: nil)
     }
+
+    // MARK: - Helpers
+
+    private func debugWindowFrame(for windowSize: CGSize, xPos: CGFloat) -> CGRect {
+        let yPos = windowSize.height - AppCoordinator.debugButtonSize.height - AppCoordinator.debugButtonOffset
+        return CGRect(origin: CGPoint(x: xPos, y: yPos), size: AppCoordinator.debugButtonSize)
+    }
 }
 
 extension AppCoordinator: AppDelegateCoordinatorDelegate {
@@ -135,6 +150,11 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
         controller.setToRecipients(["michalrentka@gmail.com"])
         controller.setMessageBody("Error:\n\(error)", isHTML: false)
         self.viewController?.present(controller, animated: true, completion: nil)
+    }
+
+    func didRotate(to size: CGSize) {
+        guard let window = self.debugWindow else { return }
+        window.frame = self.debugWindowFrame(for: size, xPos: window.frame.minX)
     }
 }
 
@@ -234,6 +254,45 @@ extension AppCoordinator: DebugLoggingCoordinator {
         }
 
         self.showAlert(title: L10n.Errors.Logging.title, message: message, actions: actions)
+    }
+
+    func setDebugWindow(visible: Bool) {
+        if visible {
+            self.showDebugWindow()
+        } else {
+            self.hideDebugWindow()
+        }
+    }
+
+    private func showDebugWindow() {
+        guard let window = self.window else { return }
+
+        // Create button
+        let view = UIButton(frame: CGRect(origin: CGPoint(), size: AppCoordinator.debugButtonSize))
+        view.setImage(UIImage(systemName: "square.fill"), for: .normal)
+        view.addTarget(self, action: #selector(AppCoordinator.stopLogging), for: .touchUpInside)
+        view.tintColor = .white
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.backgroundColor = Asset.Colors.zoteroBlueWithDarkMode.color
+        view.layer.cornerRadius = AppCoordinator.debugButtonSize.height / 2
+        view.layer.masksToBounds = true
+        // Create window with button
+        let debugWindow = UIWindow()
+        debugWindow.backgroundColor = .clear
+        debugWindow.windowScene = window.windowScene
+        debugWindow.frame = self.debugWindowFrame(for: window.frame.size, xPos: AppCoordinator.debugButtonOffset)
+        debugWindow.addSubview(view)
+        // Show the window
+        debugWindow.makeKeyAndVisible()
+        self.debugWindow = debugWindow
+    }
+
+    @objc private func stopLogging() {
+        self.controllers.debugLogging.stop()
+    }
+
+    private func hideDebugWindow() {
+        self.debugWindow = nil
     }
 }
 
