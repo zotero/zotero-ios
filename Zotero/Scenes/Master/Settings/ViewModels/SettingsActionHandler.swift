@@ -159,7 +159,8 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private func removeAllDownloads(in viewModel: ViewModel<SettingsActionHandler>) {
         do {
             try self.fileStorage.remove(Files.downloads)
-            try self.fileStorage.remove(Files.annotationPreviews)
+            // Annotations are not guaranteed to exist
+            try? self.fileStorage.remove(Files.annotationPreviews)
 
             self.update(viewModel: viewModel) { state in
                 for (key, _) in state.storageData {
@@ -179,7 +180,8 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private func removeDownloads(for libraryId: LibraryIdentifier, in viewModel: ViewModel<SettingsActionHandler>) {
         do {
             try self.fileStorage.remove(Files.downloads(for: libraryId))
-            try self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
+            // Annotations are not guaranteed to exist
+            try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
 
             let newTotal = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews])
 
