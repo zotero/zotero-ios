@@ -25,7 +25,7 @@ struct ItemResponse {
     let fields: [String: String]
     let tags: [TagResponse]
     let creators: [CreatorResponse]
-    let relations: [String: String]
+    let relations: [String: Any]
     let inPublications: Bool
     let createdBy: UserResponse?
     let lastModifiedBy: UserResponse?
@@ -33,7 +33,7 @@ struct ItemResponse {
 
     init(rawType: String, key: String, library: LibraryResponse, parentKey: String?, collectionKeys: Set<String>, links: LinksResponse?,
          parsedDate: String?, isTrash: Bool, version: Int, dateModified: Date, dateAdded: Date, fields: [String: String], tags: [TagResponse],
-         creators: [CreatorResponse], relations: [String: String], createdBy: UserResponse?, lastModifiedBy: UserResponse?, rects: [[Double]]?) {
+         creators: [CreatorResponse], relations: [String: Any], createdBy: UserResponse?, lastModifiedBy: UserResponse?, rects: [[Double]]?) {
         self.rawType = rawType
         self.key = key
         self.library = library
@@ -105,7 +105,7 @@ struct ItemResponse {
         self.links = links
         self.tags = try tags.map({ try TagResponse(response: $0) })
         self.creators = try creators.map({ try CreatorResponse(response: $0) })
-        self.relations = (data["relations"] as? [String: String]) ?? [:]
+        self.relations = (data["relations"] as? [String: Any]) ?? [:]
         self.inPublications = (data["inPublications"] as? Bool) ?? false
         self.fields = try ItemResponse.parseFields(from: data, rawType: rawType, key: key, schemaController: schemaController).fields
         self.createdBy = createdBy

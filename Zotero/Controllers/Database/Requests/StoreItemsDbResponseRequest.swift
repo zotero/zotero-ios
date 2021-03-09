@@ -320,7 +320,18 @@ struct StoreItemDbRequest: DbRequest {
         let toRemove = item.relations.filter("NOT type IN %@", allKeys)
         database.delete(toRemove)
 
-        allKeys.forEach { key in
+        for key in allKeys {
+            guard let anyValue = data.relations[key] else { continue }
+
+            let value: String
+            if let _value = anyValue as? String {
+                value = _value
+            } else if let _value = anyValue as? [String] {
+                value = _value.joined(separator: ";")
+            } else {
+                value = ""
+            }
+
             let relation: RRelation
             if let existing = item.relations.filter("type = %@", key).first {
                 relation = existing
@@ -330,7 +341,8 @@ struct StoreItemDbRequest: DbRequest {
                 relation.item = item
                 database.add(relation)
             }
-            relation.urlString = data.relations[key] ?? ""
+
+            relation.urlString = value
         }
     }
 
