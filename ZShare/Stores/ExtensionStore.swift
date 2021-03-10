@@ -610,7 +610,13 @@ final class ExtensionStore {
 
                    switch response {
                    case .exists:
-                       return Single.just(())
+                       do {
+                           let request = MarkAttachmentUploadedDbRequest(libraryId: data.libraryId, key: data.attachment.key)
+                           try dbStorage.createCoordinator().perform(request: request)
+                           return Single.just(())
+                       } catch let error {
+                           return Single.error(error)
+                       }
                    case .new(let response):
                        guard let backgroundUploader = self.backgroundUploader else {
                            return Single.error(State.AttachmentState.Error.missingBackgroundUploader)

@@ -143,26 +143,30 @@ extension BackgroundUploader: URLSessionDelegate {
     /// Background uploads started in share extension are started in background session and the share extension is closed immediately.
     /// The background url session always finishes in main app. We need to ask for additional time to register uploads and write results to DB.
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        if self.uploadsFinishedProcessing {
-            self.completeBackgroundSession()
+        inMainThread {
+            if self.uploadsFinishedProcessing {
+                self.completeBackgroundSession()
+            }
         }
     }
 }
 
 extension BackgroundUploader: URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Swift.Error?) {
-        self.uploadsFinishedProcessing = false
+        inMainThread {
+            self.uploadsFinishedProcessing = false
 
-        if let upload = self.context.loadUpload(for: task.taskIdentifier) {
-            if error == nil && task.error == nil {
-                self.finishedUploads.append(upload)
+            if let upload = self.context.loadUpload(for: task.taskIdentifier) {
+                if error == nil && task.error == nil {
+                    self.finishedUploads.append(upload)
+                }
+                self.context.deleteUpload(with: task.taskIdentifier)
             }
-            self.context.deleteUpload(with: task.taskIdentifier)
-        }
 
-        if self.context.activeUploads.isEmpty {
-            self.finishUploads(uploads: self.finishedUploads)
-            self.finishedUploads = []
+            if self.context.activeUploads.isEmpty {
+                self.finishUploads(uploads: self.finishedUploads)
+                self.finishedUploads = []
+            }
         }
     }
 }
