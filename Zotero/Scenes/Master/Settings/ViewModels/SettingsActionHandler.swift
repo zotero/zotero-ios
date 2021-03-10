@@ -70,24 +70,16 @@ struct SettingsActionHandler: ViewModelActionHandler {
             self.observeTranslatorUpdate(in: viewModel)
             self.observeSyncChanges(in: viewModel)
             self.observeWebSocketConnection(in: viewModel)
+            self.observeDebugLogging(in: viewModel)
 
         case .startImmediateLogging:
             self.debugLogging.start(type: .immediate)
-            self.update(viewModel: viewModel) { state in
-                state.isLogging = true
-            }
 
         case .startLoggingOnNextLaunch:
             self.debugLogging.start(type: .nextLaunch)
-            self.update(viewModel: viewModel) { state in
-                state.isLogging = true
-            }
 
         case .stopLogging:
             self.debugLogging.stop()
-            self.update(viewModel: viewModel) { state in
-                state.isLogging = false
-            }
 
         case .updateTranslators:
             self.translatorsController.updateFromRepo(type: .manual)
@@ -269,5 +261,16 @@ struct SettingsActionHandler: ViewModelActionHandler {
                                              }
                                          })
                                          .disposed(by: self.disposeBag)
+    }
+
+    private func observeDebugLogging(in viewModel: ViewModel<SettingsActionHandler>) {
+        self.debugLogging.isEnabledPublisher
+            .subscribe(onNext: { [weak viewModel] isEnabled in
+                guard let viewModel = viewModel else { return }
+                self.update(viewModel: viewModel) { state in
+                    state.isLogging = isEnabled
+                }
+            })
+            .disposed(by: self.disposeBag)
     }
 }
