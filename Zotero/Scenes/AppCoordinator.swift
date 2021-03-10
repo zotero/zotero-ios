@@ -52,10 +52,14 @@ final class AppCoordinator: NSObject {
 
     func start() {
         self.showMainScreen(isLogged: self.controllers.sessionController.isLoggedIn, animated: false)
+
         if let error = self.controllers.userControllerError {
             self.show(error: error)
         }
-
+        // If db needs to be wiped and this is the first start of the app, show beta alert
+        if self.controllers.userControllers?.dbStorage.willPerformBetaWipe == true && self.controllers.sessionController.isLoggedIn {
+            self.showBetaAlert()
+        }
         if self.controllers.debugLogging.isEnabled {
             self.setDebugWindow(visible: true)
         }
@@ -89,6 +93,12 @@ final class AppCoordinator: NSObject {
         }
 
         self.show(viewController: viewController, in: window, animated: animated)
+    }
+
+    private func showBetaAlert() {
+        let controller = UIAlertController(title: L10n.betaWipeTitle, message: L10n.betaWipeMessage, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: L10n.ok, style: .cancel, handler: nil))
+        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
     }
 
     private func show(viewController: UIViewController?, in window: UIWindow, animated: Bool = false) {

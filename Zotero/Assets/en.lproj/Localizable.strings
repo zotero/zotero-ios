@@ -38,6 +38,9 @@
 "restore" = "Restore";
 "copy" = "Copy";
 
+"beta_wipe_title" = "Resync Required";
+"beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
+
 "day_suffixes" = "st,nd,rd,th";
 
 "onboarding.access" = "<b>Zotero organizes research</b> however you want. Sort your items into collections and tag them with keywords.";

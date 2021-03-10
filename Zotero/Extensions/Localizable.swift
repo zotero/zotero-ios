@@ -14,6 +14,10 @@ internal enum L10n {
   internal static let abstract = L10n.tr("Localizable", "abstract")
   /// Add
   internal static let add = L10n.tr("Localizable", "add")
+  /// Due to a beta update, your data must be redownloaded from zotero.org.
+  internal static let betaWipeMessage = L10n.tr("Localizable", "beta_wipe_message")
+  /// Resync Required
+  internal static let betaWipeTitle = L10n.tr("Localizable", "beta_wipe_title")
   /// Cancel
   internal static let cancel = L10n.tr("Localizable", "cancel")
   /// Close

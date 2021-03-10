@@ -15,20 +15,30 @@ struct Database {
     private static let migrationBlock: MigrationBlock = createMigrationBlock()
 
     static func mainConfiguration(url: URL) -> Realm.Configuration {
+        let shouldDelete = shouldDeleteRealm(url: url)
         return Realm.Configuration(fileURL: url,
                                    schemaVersion: schemaVersion,
-                                   migrationBlock: migrationBlock)
+                                   migrationBlock: shouldDelete ? nil : migrationBlock,
+                                   deleteRealmIfMigrationNeeded: shouldDelete)
     }
 
     static var translatorConfiguration: Realm.Configuration {
-        return Realm.Configuration(fileURL: Files.translatorsDbFile.createUrl(),
+        let url = Files.translatorsDbFile.createUrl()
+        let shouldDelete = shouldDeleteRealm(url: url)
+        return Realm.Configuration(fileURL: url,
                                    schemaVersion: schemaVersion,
-                                   migrationBlock: migrationBlock)
+                                   migrationBlock: shouldDelete ? nil : migrationBlock,
+                                   deleteRealmIfMigrationNeeded: shouldDelete)
+    }
+
+    private static func shouldDeleteRealm(url: URL) -> Bool {
+        let existingSchemaVersion = (try? schemaVersionAtURL(url)) ?? 0
+        // 20 is the first beta preview build, we'll wipe DB for pre-beta users to get away without DB migration
+        return existingSchemaVersion < 20
     }
 
     private static func createMigrationBlock() -> MigrationBlock {
         return { _, _ in
-            // TODO: Implement when needed
         }
     }
 

@@ -51,4 +51,6 @@ extension DbCoordinator {
 protocol DbStorage: class {
     func createCoordinator() throws -> DbCoordinator
     func clear()
+
+    var willPerformBetaWipe: Bool { get }
 }

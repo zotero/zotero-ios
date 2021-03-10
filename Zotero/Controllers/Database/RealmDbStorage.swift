@@ -22,6 +22,10 @@ final class RealmDbStorage {
         self.config = config
     }
 
+    var willPerformBetaWipe: Bool {
+        return self.config.deleteRealmIfMigrationNeeded
+    }
+
     func clear() {
         guard let realmUrl = self.config.fileURL else { return }
 
