@@ -177,12 +177,12 @@ extension AppCoordinator: MFMailComposeViewControllerDelegate {
 }
 
 extension AppCoordinator: DebugLoggingCoordinator {
-    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Float) -> Void) {
+    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Double) -> Void) {
         var progressAlert: UIAlertController?
         var progressView: CircularProgressView?
 
-        let createProgressAlert: (Float) -> Void = { [weak self] progress in
-            guard let `self` = self, progress > 0 else { return }
+        let createProgressAlert: (Double) -> Void = { [weak self] progress in
+            guard let `self` = self, progress > 0 && progress < 1 else { return }
 
             if progressAlert == nil {
                 let (controller, progress) = self.createCircularProgressAlertController(title: L10n.Settings.LogAlert.progressTitle)

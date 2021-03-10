@@ -13,7 +13,7 @@ import RxAlamofire
 import RxSwift
 
 protocol DebugLoggingCoordinator: class {
-    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Float) -> Void)
+    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Double) -> Void)
     func show(error: DebugLogging.Error, logs: [URL]?, completed: (() -> Void)?)
     func setDebugWindow(visible: Bool)
 }
@@ -34,6 +34,7 @@ final class DebugLogging {
 
     private unowned let apiClient: ApiClient
     private unowned let fileStorage: FileStorage
+    let isEnabledPublisher: PublishSubject<Bool>
     private let queue: DispatchQueue
     private let scheduler: ConcurrentDispatchQueueScheduler
     private let disposeBag: DisposeBag
@@ -42,6 +43,7 @@ final class DebugLogging {
     private(set) var isEnabled: Bool {
         didSet {
             self.coordinator?.setDebugWindow(visible: self.isEnabled)
+            self.isEnabledPublisher.on(.next(self.isEnabled))
         }
     }
     private var logger: DDFileLogger?
@@ -52,6 +54,7 @@ final class DebugLogging {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.queue = queue
+        self.isEnabledPublisher = PublishSubject()
         self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.disposeBag = DisposeBag()
     }
@@ -128,9 +131,13 @@ final class DebugLogging {
         let upload = self.apiClient.upload(request: debugRequest, data: data)
         upload.flatMap { request -> Single<(HTTPURLResponse, Data)> in
                   let logId = ApiLogger.log(request: debugRequest, url: request.request?.url)
+                  request.uploadProgress { progress in
+                      DDLogInfo("DebugLogging: progress \(progress.fractionCompleted)")
+                      progressAlert(progress.fractionCompleted)
+                  }
                   return request.rx.responseData().log(identifier: logId, startTime: startTime, request: debugRequest).asSingle()
               }
-              .flatMap { response, data -> Single<String> in
+              .flatMap { _, data -> Single<String> in
                   let delegate = DebugResponseParserDelegate()
                   let parser = XMLParser(data: data)
                   parser.delegate = delegate
@@ -151,17 +158,6 @@ final class DebugLogging {
                   completionAlert(.failure((error as? Error) ?? .upload), logs, {
                       self?.clearDebugDirectory()
                   })
-              })
-              .disposed(by: self.disposeBag)
-
-        upload.asObservable()
-              .flatMap { request -> Observable<RxProgress> in
-                  return request.rx.progress()
-              }
-              .observeOn(MainScheduler.instance)
-              .subscribe(onNext: { progress in
-                  DDLogInfo("DebugLogging: progress \(progress.completed)")
-                  progressAlert(progress.completed)
               })
               .disposed(by: self.disposeBag)
     }
