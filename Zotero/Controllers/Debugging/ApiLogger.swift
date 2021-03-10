@@ -19,7 +19,7 @@ struct ApiLogger {
         let identifier = ApiLogger.identifier(method: request.httpMethod.rawValue, url: url?.absoluteString ?? request.debugUrl)
         DDLogInfo(identifier)
         if request.encoding != .url, let params = request.parameters {
-            DDLogDebug("\(request.redact(parameters: params))")
+            DDLogInfo("\(request.redact(parameters: params))")
         }
         return identifier
     }
@@ -31,11 +31,10 @@ struct ApiLogger {
 
         case .success((let response, let data)):
             DDLogInfo("(\(String(format: "+%07.0f", time))) \(identifier) succeeded with \(response.statusCode)")
-            #if DEBUG
-            if let string = String(data: data, encoding: .utf8) {
-                DDLogDebug("\(request.redact(response: string))")
+            // Log only object responses
+            if request is ObjectsRequest, let string = String(data: data, encoding: .utf8) {
+                DDLogInfo("\(request.redact(response: string))")
             }
-            #endif
         }
     }
 }
