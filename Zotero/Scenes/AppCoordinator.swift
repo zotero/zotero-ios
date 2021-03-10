@@ -35,6 +35,7 @@ final class AppCoordinator: NSObject {
 
     private weak var window: UIWindow?
     private var debugWindow: UIWindow?
+    private var originalDebugWindowFrame: CGRect?
     private var conflictReceiverAlertController: ConflictReceiverAlertController?
     private var conflictAlertQueueController: ConflictAlertQueueController?
 
@@ -164,7 +165,8 @@ extension AppCoordinator: AppDelegateCoordinatorDelegate {
 
     func didRotate(to size: CGSize) {
         guard let window = self.debugWindow else { return }
-        window.frame = self.debugWindowFrame(for: size, xPos: window.frame.minX)
+        let xPos = window.frame.minX == AppCoordinator.debugButtonOffset ? window.frame.minX : size.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
+        window.frame = self.debugWindowFrame(for: size, xPos: xPos)
     }
 }
 
@@ -295,6 +297,39 @@ extension AppCoordinator: DebugLoggingCoordinator {
         // Show the window
         debugWindow.makeKeyAndVisible()
         self.debugWindow = debugWindow
+
+        let panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(AppCoordinator.didPan))
+        self.debugWindow?.addGestureRecognizer(panRecognizer)
+    }
+
+    @objc private func didPan(recognizer: UIPanGestureRecognizer) {
+        guard let debugWindow = self.debugWindow, let window = self.window else { return }
+
+        switch recognizer.state {
+        case .began:
+            self.originalDebugWindowFrame = debugWindow.frame
+
+        case .changed:
+            guard let originalFrame = self.originalDebugWindowFrame else { return }
+            let translation = recognizer.translation(in: window)
+            debugWindow.frame = originalFrame.offsetBy(dx: translation.x, dy: translation.y)
+
+        case .cancelled, .ended, .failed:
+            self.originalDebugWindowFrame = nil
+
+            let velocity = recognizer.velocity(in: window)
+            let endPosLeft = velocity.x == 0 ? (debugWindow.center.x <= (window.frame.width / 2)) : (velocity.x < 0)
+            let xPos = endPosLeft ? AppCoordinator.debugButtonOffset : window.frame.width - AppCoordinator.debugButtonSize.width - AppCoordinator.debugButtonOffset
+            let frame = self.debugWindowFrame(for: window.frame.size, xPos: xPos)
+            let viewVelocity = abs(velocity.x / (xPos - debugWindow.frame.minX))
+
+            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: viewVelocity, options: [.curveEaseOut], animations: {
+                debugWindow.frame = frame
+            }, completion: nil)
+
+        case .possible: break
+        @unknown default: break
+        }
     }
 
     @objc private func stopLogging() {
