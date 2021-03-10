@@ -177,7 +177,7 @@ extension AppCoordinator: MFMailComposeViewControllerDelegate {
 }
 
 extension AppCoordinator: DebugLoggingCoordinator {
-    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void, (Double) -> Void) {
+    func createDebugAlertActions() -> ((Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void, (Double) -> Void) {
         var progressAlert: UIAlertController?
         var progressView: CircularProgressView?
 
@@ -194,13 +194,13 @@ extension AppCoordinator: DebugLoggingCoordinator {
             progressView?.progress = CGFloat(progress)
         }
 
-        let createCompletionAlert: (Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?) -> Void = { [weak self] result, logs, completion in
+        let createCompletionAlert: (Result<String, DebugLogging.Error>, [URL]?, (() -> Void)?, (() -> Void)?) -> Void = { [weak self] result, logs, retry, completion in
             if let controller = progressAlert {
                 controller.presentingViewController?.dismiss(animated: true, completion: {
-                    self?.showAlert(for: result, logs: logs, completion: completion)
+                    self?.showAlert(for: result, logs: logs, retry: retry, completion: completion)
                 })
             } else {
-                self?.showAlert(for: result, logs: logs, completion: completion)
+                self?.showAlert(for: result, logs: logs, retry: retry, completion: completion)
             }
         }
 
@@ -222,14 +222,14 @@ extension AppCoordinator: DebugLoggingCoordinator {
         return (controller, progressView)
     }
 
-    private func showAlert(for result: Result<String, DebugLogging.Error>, logs: [URL]?, completion: (() -> Void)?) {
+    private func showAlert(for result: Result<String, DebugLogging.Error>, logs: [URL]?, retry: (() -> Void)?, completion: (() -> Void)?) {
         switch result {
         case .success(let debugId):
             self.share(debugId: debugId)
             completion?()
 
         case .failure(let error):
-            self.show(error: error, logs: logs, completed: completion)
+            self.show(error: error, logs: logs, retry: retry, completed: completion)
         }
     }
 
@@ -241,7 +241,7 @@ extension AppCoordinator: DebugLoggingCoordinator {
         self.showAlert(title: L10n.Settings.LogAlert.title, message: L10n.Settings.LogAlert.message(debugId), actions: actions)
     }
 
-    func show(error: DebugLogging.Error, logs: [URL]?, completed: (() -> Void)?) {
+    func show(error: DebugLogging.Error, logs: [URL]?, retry: (() -> Void)?, completed: (() -> Void)?) {
         let message: String
         switch error {
         case .start:
@@ -259,6 +259,11 @@ extension AppCoordinator: DebugLoggingCoordinator {
         var actions = [UIAlertAction(title: L10n.ok, style: .cancel, handler: { _ in
             completed?()
         })]
+        if let retry = retry {
+            actions.append(UIAlertAction(title: L10n.retry, style: .default, handler: { _ in
+                retry()
+            }))
+        }
         if let logs = logs, let completed = completed {
             actions.append(UIAlertAction(title: L10n.Settings.sendManually, style: .default, handler: { [weak self] _ in
                 self?.presentActivityViewController(with: logs, completed: completed)

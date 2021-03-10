@@ -27,10 +27,10 @@ struct ApiLogger {
     static func log(result: Result<(HTTPURLResponse, Data), Error>, time: CFAbsoluteTime, identifier: String, request: ApiRequest) {
         switch result {
         case .failure(let error):
-            DDLogInfo("(\(String(format: "+%07.0f", time))) \(identifier) failed - \(error)")
+            DDLogInfo("(\(String(format: "+%07.0f", (time * 1000)))) \(identifier) failed - \(error)")
 
         case .success((let response, let data)):
-            DDLogInfo("(\(String(format: "+%07.0f", time))) \(identifier) succeeded with \(response.statusCode)")
+            DDLogInfo("(\(String(format: "+%07.0f", (time * 1000)))) \(identifier) succeeded with \(response.statusCode)")
             // Log only object responses
             if request is ObjectsRequest, let string = String(data: data, encoding: .utf8) {
                 DDLogInfo("\(request.redact(response: string))")
