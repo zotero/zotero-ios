@@ -51,7 +51,7 @@ final class RItem: Object {
     let collections = LinkingObjects(fromType: RCollection.self, property: "items")
     let fields = LinkingObjects(fromType: RItemField.self, property: "item")
     let children = LinkingObjects(fromType: RItem.self, property: "parent")
-    let tags = LinkingObjects(fromType: RTag.self, property: "item")
+    let tags = LinkingObjects(fromType: RTypedTag.self, property: "item")
     let creators = LinkingObjects(fromType: RCreator.self, property: "item")
     let links = LinkingObjects(fromType: RLink.self, property: "item")
     let relations = LinkingObjects(fromType: RRelation.self, property: "item")

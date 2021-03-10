@@ -110,15 +110,16 @@ struct CreateItemDbRequest: DbResponseRequest {
 
         // Create tags
 
-        self.data.tags.forEach { tag in
-            let rTag = RTag()
-            rTag.name = tag.name
-            rTag.color = tag.color
-            rTag.type = .manual
-            rTag.libraryId = self.libraryId
-            database.add(rTag)
+        let allTags = database.objects(RTag.self)
+        for tag in self.data.tags {
+            guard let rTag = allTags.filter(.name(tag.name, in: self.libraryId)).first else { continue }
 
-            rTag.item = item
+            let rTypedTag = RTypedTag()
+            rTypedTag.type = .manual
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
         }
         if !self.data.tags.isEmpty {
             changes.insert(.tags)

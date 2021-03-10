@@ -419,7 +419,7 @@ struct TagResponse {
     }
 
     var automaticCopy: TagResponse {
-        return TagResponse(tag: self.tag, type: RTag.Kind.automatic.rawValue)
+        return TagResponse(tag: self.tag, type: RTypedTag.Kind.automatic.rawValue)
     }
 }
 

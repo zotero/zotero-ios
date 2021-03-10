@@ -10,6 +10,11 @@ import SwiftUI
 
 extension Color {
     init(hex: String) {
+        guard let hex = UIColor.fullHex(from: hex) else {
+            self = .black
+            return
+        }
+
         let hexInt = Color.intFromHexString(hexStr: hex)
         self.init(red: Double((hexInt >> 16) & 0xff) / 0xff,
                   green: Double((hexInt >> 8) & 0xff) / 0xff,

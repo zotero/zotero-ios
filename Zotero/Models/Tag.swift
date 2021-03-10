@@ -11,7 +11,7 @@ import UIKit
 struct Tag: Identifiable, Equatable, Hashable {
     let name: String
     let color: String
-    let type: RTag.Kind
+    let type: RTypedTag.Kind
 
     var id: String { return self.name }
 
@@ -24,6 +24,12 @@ struct Tag: Identifiable, Equatable, Hashable {
     init(tag: RTag) {
         self.name = tag.name
         self.color = tag.color
+        self.type = .manual
+    }
+
+    init(tag: RTypedTag) {
+        self.name = tag.tag?.name ?? ""
+        self.color = tag.tag?.color ?? ""
         self.type = tag.type
     }
 }

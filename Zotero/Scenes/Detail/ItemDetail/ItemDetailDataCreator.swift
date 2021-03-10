@@ -147,7 +147,7 @@ struct ItemDetailDataCreator {
             }
         }
 
-        let tags = item.tags.sorted(byKeyPath: "name").map(Tag.init)
+        let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
         let data =  ItemDetailState.Data(title: item.baseTitle,
                                          type: item.rawType,
                                          localizedType: localizedType,

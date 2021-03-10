@@ -91,8 +91,10 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     }
 
     private func deleteTags(with names: [String], database: Realm) {
-        let tagPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [.name(in: names), .library(with: self.libraryId)])
-        let tags = database.objects(RTag.self).filter(tagPredicate)
+        let tags = database.objects(RTag.self).filter(.names(names, in: self.libraryId))
+        for tag in tags {
+            database.delete(tag.tags)
+        }
         database.delete(tags)
     }
 }

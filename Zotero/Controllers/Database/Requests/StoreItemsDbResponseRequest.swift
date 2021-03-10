@@ -263,26 +263,37 @@ struct StoreItemDbRequest: DbRequest {
 
     private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) throws {
         // Remove item from tags, which are not in the `tags` array anymore
-        database.delete(item.tags.filter(.name(notIn: tags.map({ $0.tag }))))
+        database.delete(item.tags.filter(.tagName(notIn: tags.map({ $0.tag }))))
 
         guard !tags.isEmpty else { return }
 
+        let allTags = database.objects(RTag.self)
+
         for tag in tags {
-            if let existing = item.tags.filter(.name(tag.tag)).first {
-                // Update tag type
+            if let existing = item.tags.filter(.tagName(tag.tag)).first {
                 if existing.rawType != tag.type {
                     existing.rawType = tag.type
                 }
                 continue
             }
 
-            let rTag = RTag()
-            rTag.name = tag.tag
-            rTag.rawType = tag.type
-            rTag.libraryId = libraryId
-            database.add(rTag)
+            let rTag: RTag
 
-            rTag.item = item
+            if let existing = allTags.filter(.name(tag.tag, in: libraryId)).first {
+                rTag = existing
+            } else {
+                rTag = RTag()
+                rTag.name = tag.tag
+                rTag.libraryId = libraryId
+                database.add(rTag)
+            }
+
+            let rTypedTag = RTypedTag()
+            rTypedTag.rawType = tag.type
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
         }
     }
 

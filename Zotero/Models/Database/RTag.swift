@@ -10,18 +10,15 @@ import Foundation
 
 import RealmSwift
 
-final class RTag: Object {
+final class RTypedTag: Object {
     enum Kind: Int {
         case automatic = 1
         case manual = 0
     }
 
-    @objc dynamic var name: String = ""
-    @objc dynamic var color: String = ""
     @objc dynamic var rawType: Int = 0
+    @objc dynamic var tag: RTag?
     @objc dynamic var item: RItem?
-    let customLibraryKey = RealmOptional<Int>()
-    let groupKey = RealmOptional<Int>()
 
     var type: Kind {
         get {
@@ -32,6 +29,15 @@ final class RTag: Object {
             self.rawType = newValue.rawValue
         }
     }
+}
+
+final class RTag: Object {
+    @objc dynamic var name: String = ""
+    @objc dynamic var color: String = ""
+    let customLibraryKey = RealmOptional<Int>()
+    let groupKey = RealmOptional<Int>()
+
+    let tags = LinkingObjects(fromType: RTypedTag.self, property: "tag")
 
     // MARK: - Object properties
 

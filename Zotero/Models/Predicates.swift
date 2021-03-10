@@ -43,6 +43,18 @@ extension NSPredicate {
                                                                    .library(with: libraryId)])
     }
 
+    static func tagName(_ name: String) -> NSPredicate {
+        return NSPredicate(format: "tag.name = %@", name)
+    }
+
+    static func tagName(in names: Set<String>) -> NSPredicate {
+        return NSPredicate(format: "tag.name in %@", names)
+    }
+
+    static func tagName(notIn names: [String]) -> NSPredicate {
+        return NSPredicate(format: "not tag.name in %@", names)
+    }
+
     static func name(_ name: String) -> NSPredicate {
         return NSPredicate(format: "name = %@", name)
     }

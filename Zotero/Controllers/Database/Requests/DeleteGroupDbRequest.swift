@@ -39,6 +39,9 @@ struct DeleteGroupDbRequest: DbRequest {
         database.delete(searches)
 
         let tags = database.objects(RTag.self).filter(.library(with: libraryId))
+        for tag in tags {
+            database.delete(tag.tags)
+        }
         database.delete(tags)
 
         if let object = database.object(ofType: RGroup.self, forPrimaryKey: self.groupId) {

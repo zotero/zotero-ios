@@ -133,30 +133,36 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
     private func sync(tags: [Tag], in item: RItem, database: Realm) {
         var tagsDidChange = false
 
-        let tagsToRemove = item.tags.filter(.name(notIn: tags.map({ $0.name })))
+        let tagsToRemove = item.tags.filter(.tagName(notIn: tags.map({ $0.name })))
         if !tagsToRemove.isEmpty {
             tagsDidChange = true
         }
         database.delete(tagsToRemove)
 
+        let allTags = database.objects(RTag.self)
+
         for tag in tags {
-            if let rTag = item.tags.filter(.name(tag.name)).first {
-                if tag.color != rTag.color {
-                    rTag.color = tag.color
-                    rTag.type = .manual
-                    tagsDidChange = true
-                }
+            guard item.tags.filter(.tagName(tag.name)).first == nil else { continue }
+
+            let rTag: RTag
+
+            if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
+                rTag = existing
             } else {
-                let rTag = RTag()
+                rTag = RTag()
                 rTag.name = tag.name
-                rTag.type = .manual
                 rTag.color = tag.color
                 rTag.libraryId = self.libraryId
                 database.add(rTag)
-
-                rTag.item = item
-                tagsDidChange = true
             }
+
+            let rTypedTag = RTypedTag()
+            rTypedTag.type = .manual
+            database.add(rTypedTag)
+
+            rTypedTag.item = item
+            rTypedTag.tag = rTag
+            tagsDidChange = true
         }
 
         if tagsDidChange {

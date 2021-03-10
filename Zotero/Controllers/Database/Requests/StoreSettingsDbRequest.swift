@@ -20,7 +20,7 @@ struct StoreSettingsDbRequest: DbRequest {
 
     func process(in database: Realm) throws {
         if let response = self.response.tagColors {
-            self.syncTags(tags: response.value, in: database)
+            self.syncTagColors(tags: response.value, in: database)
         }
         self.syncPages(pages: self.response.pageIndices.indices, in: database)
     }
@@ -50,20 +50,20 @@ struct StoreSettingsDbRequest: DbRequest {
         }
     }
 
-    private func syncTags(tags: [TagColorResponse], in database: Realm) {
+    private func syncTagColors(tags: [TagColorResponse], in database: Realm) {
         let allTags = database.objects(RTag.self)
-
         tags.forEach { tag in
-            let rTag: RTag
             if let existing = allTags.filter(.name(tag.name, in: self.libraryId)).first {
-                rTag = existing
+                if existing.color != tag.color {
+                    existing.color = tag.color
+                }
             } else {
-                rTag = RTag()
-                database.add(rTag)
-                rTag.name = tag.name
-                rTag.libraryId = self.libraryId
+                let new = RTag()
+                new.name = tag.name
+                new.color = tag.color
+                new.libraryId = self.libraryId
+                database.add(new)
             }
-            rTag.color = tag.color
         }
     }
 }

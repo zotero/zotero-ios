@@ -43,7 +43,7 @@ struct ItemCellModel {
 
     fileprivate static func tagColors(item: RItem) -> [UIColor] {
         return item.tags.compactMap({
-            let (color, style) = TagColorGenerator.uiColor(for: $0.color)
+            let (color, style) = TagColorGenerator.uiColor(for: ($0.tag?.color ?? ""))
             return style == .filled ? color : nil
         })
     }
