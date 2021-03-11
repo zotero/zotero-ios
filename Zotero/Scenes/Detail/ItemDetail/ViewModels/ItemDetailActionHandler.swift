@@ -194,13 +194,32 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func itemChanged(_ change: ObjectChange<Object>, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch change {
-        case .change:
+        case .change(_, let changes):
+            guard self.shouldReloadData(for: changes) else { return }
             self.update(viewModel: viewModel) { state in
                 state.changes = .item
             }
 
         // Deletion is handled by sync process, so we don't need to kick the user out here (the sync should always ask whether the user wants to delete the item or not).
         case .deleted, .error: break
+        }
+    }
+
+    private func shouldReloadData(for changes: [PropertyChange]) -> Bool {
+        guard let change = changes.first(where: { $0.name == "rawChangeType" }), let newValue = change.newValue as? Int, let type = UpdatableChangeType(rawValue: newValue) else { return true }
+
+        switch type {
+        case .user:
+            // This change was made by user, ignore
+            return false
+        case .sync:
+            // This change was made by sync. Check whether it was just marking the object as synced or an actual change. When marking as synced, these attributed are updated:
+            // `version`, `rawChangeType` and `rawChangedFields`.
+            if changes.count != 3 {
+                return true
+            }
+            let changes = Set(changes.map({ $0.name }))
+            return !changes.contains("version") || !changes.contains("rawChangedFields") || !changes.contains("rawChangeType")
         }
     }
 

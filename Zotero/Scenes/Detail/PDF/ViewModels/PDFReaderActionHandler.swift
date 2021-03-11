@@ -224,8 +224,8 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         var deletedAnnotations: [PSPDFKit.Annotation] = []
         var addedAnnotations: [Annotation] = []
         var modifiedAnnotations: [(PSPDFKit.Annotation, Annotation, PdfAnnotationChanges)] = []
-
         var modifiedKeys: Set<String> = []
+
         self.update(viewModel: viewModel) { state in
             // Modify existing annotations
             for idx in Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions) {
