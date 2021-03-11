@@ -29,6 +29,8 @@ struct ItemsState: ViewModelState {
     var sortType: ItemsSortType
     var searchTerm: String?
     var results: Results<RItem>?
+    // Keys for all results are stored so that when a deletion comes in it can be determined which keys were deleted and we can remove them from `selectedItems`
+    var keys: [String]
     // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item, or item if it's a standalone attachment.
     var attachments: [String: Attachment]
     var selectedItems: Set<String>
@@ -44,6 +46,7 @@ struct ItemsState: ViewModelState {
         self.type = type
         self.library = library
         self.results = results
+        self.keys = []
         self.attachments = [:]
         self.error = error
         self.isEditing = false

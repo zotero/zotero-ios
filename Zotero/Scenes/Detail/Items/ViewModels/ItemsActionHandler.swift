@@ -82,10 +82,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             self.changeSortType(to: sortType, in: viewModel)
 
         case .startEditing:
-            self.update(viewModel: viewModel) { state in
-                state.isEditing = true
-                state.changes.insert(.editing)
-            }
+            self.startEditing(in: viewModel)
 
         case .stopEditing:
             self.update(viewModel: viewModel) { state in
@@ -122,8 +119,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
         case .cacheAttachment(let item):
             self.cacheAttachment(for: item, in: viewModel)
 
-        case .cacheAttachmentUpdates(let items):
-            self.cacheAttachmentUpdates(from: items, in: viewModel)
+        case .updateKeys(let items, let deletions, let insertions, let modifications):
+            self.processUpdate(items: items, deletions: deletions, insertions: insertions, modifications: modifications, in: viewModel)
 
         case .updateDownload(let update):
             self.process(downloadUpdate: update, in: viewModel)
@@ -241,14 +238,6 @@ struct ItemsActionHandler: ViewModelActionHandler {
         if viewModel.state.attachments[item.key] != nil {
             self.update(viewModel: viewModel) { state in
                 state.attachments[item.key] = nil
-            }
-        }
-    }
-
-    private func cacheAttachmentUpdates(from items: [RItem], in viewModel: ViewModel<ItemsActionHandler>) {
-        self.update(viewModel: viewModel) { state in
-            items.forEach { item in
-                state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
             }
         }
     }
@@ -460,8 +449,49 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
     // MARK: - Helpers
 
+    /// Updates the `keys` array which mirrors `Results<RItem>` identifiers. Updates `selectedItems` if needed. Updates `attachments` if needed.
+    private func processUpdate(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
+        self.update(viewModel: viewModel) { state in
+            if state.isEditing {
+                deletions.forEach { idx in
+                    let key = state.keys.remove(at: idx)
+                    if state.selectedItems.remove(key) != nil {
+                        state.changes.insert(.selection)
+                    }
+                }
+            }
+
+            modifications.forEach { idx in
+                let item = items[idx]
+                state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
+            }
+
+            insertions.forEach { idx in
+                let item = items[idx]
+                if state.isEditing {
+                    state.keys.insert(item.key, at: idx)
+                }
+                state.attachments[item.key] = item.attachment.flatMap({ AttachmentCreator.attachment(for: $0, fileStorage: self.fileStorage, urlDetector: self.urlDetector) })
+            }
+        }
+    }
+
+    private func startEditing(in viewModel: ViewModel<ItemsActionHandler>) {
+        var keys: [String] = []
+        if let results = viewModel.state.results {
+            keys = results.map({ $0.key })
+        }
+
+        self.update(viewModel: viewModel) { state in
+            state.isEditing = true
+            state.keys = keys
+            state.changes.insert(.editing)
+        }
+    }
+
     private func stopEditing(in state: inout ItemsState) {
         state.isEditing = false
+        state.keys.removeAll()
         state.selectedItems.removeAll()
         state.changes.insert(.editing)
     }
