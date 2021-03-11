@@ -458,6 +458,8 @@ internal enum L10n {
   }
 
   internal enum Settings {
+    /// Account
+    internal static let account = L10n.tr("Localizable", "settings.account")
     /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")
     /// General
@@ -480,8 +482,6 @@ internal enum L10n {
     internal static let permission = L10n.tr("Localizable", "settings.permission")
     /// Ask for user permission for each write action
     internal static let permissionSubtitle = L10n.tr("Localizable", "settings.permission_subtitle")
-    /// Profile
-    internal static let profile = L10n.tr("Localizable", "settings.profile")
     /// Reset to bundled
     internal static let resetToBundled = L10n.tr("Localizable", "settings.reset_to_bundled")
     /// Send Manually

@@ -14,8 +14,17 @@ struct SettingsListView: View {
     var body: some View {
         Form {
             Section {
+                Button(action: {
+                    self.coordinatorDelegate?.showAboutBeta()
+                }, label: {
+                    Text(L10n.aboutBeta)
+                        .foregroundColor(.black)
+                })
+            }
+
+            Section {
                 NavigationLink(destination: ProfileView()) {
-                    Text(L10n.Settings.profile)
+                    Text(L10n.Settings.account)
                 }
             }
 
@@ -32,14 +41,6 @@ struct SettingsListView: View {
 //                    Text(L10n.Settings.translators)
 //                }
 
-                FakeNavigationLink(title: L10n.aboutBeta) {
-                    self.coordinatorDelegate?.showAboutBeta()
-                }
-
-                NavigationLink(destination: DebugSettingsView()) {
-                    Text(L10n.Settings.debug)
-                }
-
                 NavigationLink(destination: SavingSettingsView()) {
                     Text(L10n.Settings.Saving.title)
                 }
@@ -48,31 +49,20 @@ struct SettingsListView: View {
                     Text(L10n.Settings.storage)
                 }
 
-                FakeNavigationLink(title: L10n.privacyPolicy) {
-                    self.coordinatorDelegate?.showPrivacyPolicy()
+                NavigationLink(destination: DebugSettingsView()) {
+                    Text(L10n.Settings.debug)
                 }
             }
-        }
-    }
-}
 
-struct FakeNavigationLink: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: self.action, label: {
-            HStack {
-                Text(self.title)
-                    .foregroundColor(.black)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(Font.system(size: 14, weight: .bold, design: .default))
-                    .foregroundColor(Color(UIColor.systemGray4))
+            Section {
+                Button(action: {
+                    self.coordinatorDelegate?.showPrivacyPolicy()
+                }, label: {
+                    Text(L10n.privacyPolicy)
+                        .foregroundColor(.black)
+                })
             }
-        })
+        }
     }
 }
 

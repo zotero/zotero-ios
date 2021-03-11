@@ -15,6 +15,7 @@ final class OnboardingViewController: UIViewController {
     private weak var spacerAboveScrollViewBottom: NSLayoutConstraint?
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var signInButton: UIButton!
+    @IBOutlet private weak var learnMoreButton: UIButton!
     @IBOutlet private weak var createAccountButton: UIButton!
     @IBOutlet private weak var pageControl: UIPageControl!
     @IBOutlet private weak var buttonStackView: UIStackView!
@@ -173,6 +174,7 @@ final class OnboardingViewController: UIViewController {
         self.signInButton.layer.masksToBounds = true
         self.signInButton.setTitle(L10n.Onboarding.signIn, for: .normal)
         self.createAccountButton.setTitle(L10n.Onboarding.createAccount, for: .normal)
+        self.learnMoreButton.setTitle(L10n.aboutBeta, for: .normal)
     }
 
     private func setupPageControl(with pageData: [(String, UIImage)]) {

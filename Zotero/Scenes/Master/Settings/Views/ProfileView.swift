@@ -26,7 +26,7 @@ struct ProfileView: View {
                 }
             }
         }
-        .navigationBarTitle(L10n.Settings.profile)
+        .navigationBarTitle(L10n.Settings.account)
         .alert(isPresented: self.viewModel.binding(keyPath: \.logoutAlertVisible, action: { .setLogoutAlertVisible($0) })) {
             Alert(title: Text(L10n.warning),
                   message: Text(L10n.Settings.logoutWarning),
