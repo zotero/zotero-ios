@@ -290,6 +290,7 @@ extension WebViewHandler: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Swift.Error) {
+        DDLogError("WebViewHandler: did fail - \(error)")
         self.webDidLoad?(.error(error))
     }
 }
@@ -303,16 +304,23 @@ extension WebViewHandler: WKScriptMessageHandler {
         switch handler {
         case .request:
             guard let body = message.body as? [String: Any],
-                  let messageId = body["messageId"] as? Int else { return }
+                  let messageId = body["messageId"] as? Int else {
+                DDLogError("WebViewHandler: request missing body - \(message.body)")
+                return
+            }
 
             if let options = body["payload"] as? [String: Any] {
                 self.sendRequest(with: options, for: messageId)
             } else {
+                DDLogError("WebViewHandler: request missing payload - \(body)")
                 self.sendError("HTTP request missing payload", for: messageId)
             }
         case .itemSelection:
             guard let body = message.body as? [String: Any],
-                  let messageId = body["messageId"] as? Int else { return }
+                  let messageId = body["messageId"] as? Int else {
+                DDLogError("WebViewHandler: item selection missing body - \(message.body)")
+                return
+            }
 
             if let payload = body["payload"] as? [[String]] {
                 self.itemSelectionMessageId = messageId
@@ -325,12 +333,14 @@ extension WebViewHandler: WKScriptMessageHandler {
 
                 self.observable.on(.next(.selectItem(sortedDictionary)))
             } else {
+                DDLogError("WebViewHandler: item selection missing payload - \(body)")
                 self.sendError("Item selection missing payload", for: messageId)
             }
         case .item:
             if let info = message.body as? [[String: Any]] {
                 self.observable.on(.next(.loadedItems(info)))
             } else {
+                DDLogError("WebViewHandler: got incompatible body - \(message.body)")
                 self.observable.on(.error(Error.incompatibleItem))
             }
         case .progress:
