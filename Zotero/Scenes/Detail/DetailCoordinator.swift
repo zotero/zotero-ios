@@ -491,8 +491,10 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
     }
 
     private func presentPicker(viewModel: ViewModel<SinglePickerActionHandler>, requiresSaveButton: Bool, saveAction: @escaping (String) -> Void) {
-        let view = SinglePickerView(requiresSaveButton: requiresSaveButton, requiresCancelButton: true, saveAction: saveAction) { [weak self] in
-            self?.topViewController.dismiss(animated: true, completion: nil)
+        let view = SinglePickerView(requiresSaveButton: requiresSaveButton, requiresCancelButton: true, saveAction: saveAction) { [weak self] completion in
+            self?.topViewController.dismiss(animated: true, completion: {
+                completion?()
+            })
         }
         .environmentObject(viewModel)
 
@@ -580,8 +582,9 @@ extension DetailCoordinator: DetailCreatorEditCoordinatorDelegate {
 
         let viewModel = CreatorTypePickerViewModelCreator.create(itemType: itemType, selected: selected,
                                                                  schemaController: self.controllers.schemaController)
-        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { [weak navigationController] in
+        let view = SinglePickerView(requiresSaveButton: false, requiresCancelButton: false, saveAction: picked) { [weak navigationController] completion in
             navigationController?.popViewController(animated: true)
+            completion?()
         }
         .environmentObject(viewModel)
 
