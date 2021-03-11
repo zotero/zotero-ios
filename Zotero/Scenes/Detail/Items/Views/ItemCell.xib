@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17156" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17125"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -27,31 +27,31 @@
                     <view contentMode="scaleToFill" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="xh1-uW-L3X">
                         <rect key="frame" x="64" y="12" width="282" height="36"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1cO-yP-LQQ" customClass="CapHeightLabel" customModule="Zotero" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="43.5" height="20.5"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1cO-yP-LQQ" customClass="CapHeightLabel" customModule="Zotero" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="4.5" height="20.5"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" alignment="center" spacing="5" translatesAutoresizingMaskIntoConstraints="NO" id="vd0-bE-ySJ">
-                                <rect key="frame" x="0.0" y="24" width="113.5" height="16.5"/>
+                                <rect key="frame" x="0.0" y="24" width="4.5" height="16.5"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="41.5" height="16.5"/>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text=" " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="X2V-4e-fFg" customClass="InsetLabel" customModule="Zotero" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="4.5" height="16.5"/>
                                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                         <color key="textColor" systemColor="systemGrayColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <view contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagCirclesView" customModule="Zotero" customModuleProvider="target">
-                                        <rect key="frame" x="46.5" y="2.5" width="50" height="12"/>
+                                    <view hidden="YES" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Z8L-AU-qom" customClass="TagCirclesView" customModule="Zotero" customModuleProvider="target">
+                                        <rect key="frame" x="4.5" y="2.5" width="50" height="12"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="50" placeholder="YES" id="zGp-4K-An8"/>
                                             <constraint firstAttribute="height" constant="12" id="zRL-BJ-thT"/>
                                         </constraints>
                                     </view>
-                                    <imageView opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
-                                        <rect key="frame" x="101.5" y="2.5" width="12" height="12"/>
+                                    <imageView hidden="YES" opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/note" translatesAutoresizingMaskIntoConstraints="NO" id="z75-Uk-CFi">
+                                        <rect key="frame" x="4.5" y="2.5" width="12" height="12"/>
                                     </imageView>
                                 </subviews>
                             </stackView>
@@ -67,7 +67,7 @@
                             <constraint firstItem="vd0-bE-ySJ" firstAttribute="leading" secondItem="xh1-uW-L3X" secondAttribute="leading" id="mlG-1s-kX3"/>
                         </constraints>
                     </view>
-                    <view opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
+                    <view hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Mcw-7q-2OK" customClass="FileAttachmentView" customModule="Zotero" customModuleProvider="target">
                         <rect key="frame" x="346" y="0.0" width="60" height="60"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="60" placeholder="YES" id="KJz-PQ-xQe"/>
@@ -100,7 +100,7 @@
     </objects>
     <designables>
         <designable name="X2V-4e-fFg">
-            <size key="intrinsicContentSize" width="41.5" height="20.5"/>
+            <size key="intrinsicContentSize" width="4.5" height="20.5"/>
         </designable>
     </designables>
     <resources>

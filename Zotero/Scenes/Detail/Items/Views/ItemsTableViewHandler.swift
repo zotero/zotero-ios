@@ -388,6 +388,12 @@ extension ItemsTableViewHandler: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ItemsTableViewHandler.cellId, for: indexPath)
 
+        let count = self.viewModel.state.results?.count ?? 0
+        if indexPath.row >= count {
+            DDLogError("ItemsTableViewHandler: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
+            return cell
+        }
+
         if let item = self.viewModel.state.results?[indexPath.row],
            let cell = cell as? ItemCell {
             // Create and cache attachment if needed
