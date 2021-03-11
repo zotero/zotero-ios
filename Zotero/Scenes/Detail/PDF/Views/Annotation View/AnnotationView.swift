@@ -21,6 +21,7 @@ final class AnnotationView: UIView {
         case reloadHeight
         case setComment(NSAttributedString)
         case setCommentActive(Bool)
+        case done
     }
 
     private let layout: AnnotationViewLayout
@@ -37,7 +38,6 @@ final class AnnotationView: UIView {
     private var tags: AnnotationViewText!
     private var scrollView: UIScrollView?
     private var scrollViewContent: UIView?
-
     private(set) var disposeBag: DisposeBag!
 
     // MARK: - Lifecycle
@@ -79,14 +79,16 @@ final class AnnotationView: UIView {
 
     func setupHeader(with annotation: Annotation, selected: Bool, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
-        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: annotation.author, showsMenuButton: (hasWritePermission && selected))
+        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: annotation.author,
+                          showsMenuButton: (hasWritePermission && selected), showsDoneButton: self.layout.showDoneButton)
     }
 
     func setup(with annotation: Annotation, attributedComment: NSAttributedString?, preview: UIImage?, selected: Bool, commentActive: Bool, availableWidth: CGFloat, hasWritePermission: Bool) {
         let color = UIColor(hex: annotation.color)
         let canEdit = (annotation.editability != .notEditable) && selected && (hasWritePermission || annotation.isAuthor)
 
-        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: (annotation.isAuthor ? "" : annotation.author), showsMenuButton: canEdit)
+        self.header.setup(type: annotation.type, color: color, pageLabel: annotation.pageLabel, author: (annotation.isAuthor ? "" : annotation.author),
+                          showsMenuButton: canEdit, showsDoneButton: self.layout.showDoneButton)
         self.setupContent(for: annotation, preview: preview, color: color, canEdit: canEdit, selected: selected, availableWidth: availableWidth)
         self.setupComments(for: annotation, attributedComment: attributedComment, isActive: commentActive, canEdit: canEdit)
         self.setupTags(for: annotation, canEdit: canEdit)
@@ -184,6 +186,9 @@ final class AnnotationView: UIView {
         self.tags.tap.flatMap({ _ in Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
         self.tagsButton.rx.tap.flatMap({ Observable.just(Action.tags) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
         self.header.menuTap.flatMap({ Observable.just(Action.options($0)) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
+        if let doneTap = self.header.doneTap {
+            doneTap.flatMap({ Observable.just(Action.done) }).bind(to: self.actionPublisher).disposed(by: self.disposeBag)
+        }
     }
 
     private func setupView(commentPlaceholder: String) {

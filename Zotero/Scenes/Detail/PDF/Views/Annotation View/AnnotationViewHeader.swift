@@ -8,6 +8,7 @@
 
 import UIKit
 
+import RxCocoa
 import RxSwift
 
 final class AnnotationViewHeader: UIView {
@@ -15,12 +16,18 @@ final class AnnotationViewHeader: UIView {
     private weak var pageLabel: UILabel!
     private weak var authorLabel: UILabel!
     private weak var menuButton: UIButton!
+    private weak var doneButton: UIButton?
+    private weak var rightBarButtonsStackView: UIStackView!
 
     private var authorTrailingToContainer: NSLayoutConstraint!
     private var authorTrailingToButton: NSLayoutConstraint!
 
     var menuTap: Observable<UIButton> {
         return self.menuButton.rx.tap.flatMap({ Observable.just(self.menuButton) })
+    }
+
+    var doneTap: ControlEvent<Void>? {
+        return self.doneButton?.rx.tap
     }
 
     init(layout: AnnotationViewLayout) {
@@ -43,7 +50,7 @@ final class AnnotationViewHeader: UIView {
         }
     }
 
-    func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool) {
+    func setup(type: AnnotationType, color: UIColor, pageLabel: String, author: String, showsMenuButton: Bool, showsDoneButton: Bool) {
         self.typeImageView.image = self.image(for: type)?.withRenderingMode(.alwaysTemplate)
         self.typeImageView.tintColor = color
         self.pageLabel.text = L10n.page + " " + pageLabel
@@ -76,23 +83,43 @@ final class AnnotationViewHeader: UIView {
         let menuButton = UIButton()
         menuButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
         menuButton.tintColor = Asset.Colors.zoteroBlueWithDarkMode.color
-        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: layout.horizontalInset)
+        menuButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: layout.horizontalInset, bottom: 0, right: (layout.horizontalInset / 2))
         menuButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         menuButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        menuButton.translatesAutoresizingMaskIntoConstraints = false
+
+        var rightButtons = [menuButton]
+
+        if layout.showDoneButton {
+            let doneButton = UIButton()
+            doneButton.setTitle(L10n.done, for: .normal)
+            doneButton.setTitleColor(Asset.Colors.zoteroBlueWithDarkMode.color, for: .normal)
+            doneButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: (layout.horizontalInset / 2), bottom: 0, right: layout.horizontalInset)
+            doneButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            doneButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            rightButtons.append(doneButton)
+            self.doneButton = doneButton
+        }
+
+        let rightBarButtons = UIStackView(arrangedSubviews: rightButtons)
+        rightBarButtons.spacing = 0
+        rightBarButtons.axis = .horizontal
+        rightBarButtons.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        rightBarButtons.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        rightBarButtons.translatesAutoresizingMaskIntoConstraints = false
 
         self.typeImageView = typeImageView
         self.pageLabel = pageLabel
         self.authorLabel = authorLabel
         self.menuButton = menuButton
+        self.rightBarButtonsStackView = rightBarButtons
 
         self.addSubview(typeImageView)
         self.addSubview(pageLabel)
         self.addSubview(authorLabel)
-        self.addSubview(menuButton)
+        self.addSubview(rightBarButtons)
 
         self.authorTrailingToContainer = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: -layout.horizontalInset)
-        self.authorTrailingToButton = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: menuButton.leadingAnchor, constant: layout.horizontalInset)
+        self.authorTrailingToButton = authorLabel.trailingAnchor.constraint(greaterThanOrEqualTo: rightBarButtons.leadingAnchor, constant: layout.horizontalInset)
         let authorCenter = authorLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor)
         authorCenter.priority = UILayoutPriority(rawValue: 750)
 
@@ -101,8 +128,8 @@ final class AnnotationViewHeader: UIView {
             typeImageView.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             pageLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             authorLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            menuButton.topAnchor.constraint(equalTo: self.topAnchor),
-            menuButton.bottomAnchor.constraint(equalTo: self.bottomAnchor),
+            rightBarButtons.topAnchor.constraint(equalTo: self.topAnchor),
+            rightBarButtons.bottomAnchor.constraint(equalTo: self.bottomAnchor),
             // Height
             self.heightAnchor.constraint(equalToConstant: layout.headerHeight),
             // Horizontal
@@ -110,7 +137,7 @@ final class AnnotationViewHeader: UIView {
             pageLabel.leadingAnchor.constraint(equalTo: typeImageView.trailingAnchor, constant: layout.pageLabelLeadingOffset),
             authorCenter,
             authorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: pageLabel.trailingAnchor, constant: layout.horizontalInset),
-            menuButton.trailingAnchor.constraint(equalTo: self.trailingAnchor)
+            rightBarButtons.trailingAnchor.constraint(equalTo: self.trailingAnchor)
         ])
     }
 }

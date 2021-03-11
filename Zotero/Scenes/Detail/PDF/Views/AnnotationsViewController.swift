@@ -113,6 +113,8 @@ final class AnnotationsViewController: UIViewController {
 
         case .setCommentActive(let isActive):
             self.viewModel.process(action: .setCommentActive(isActive))
+
+        case .done: break // Done button doesn't appear here
         }
     }
 

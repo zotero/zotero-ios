@@ -28,6 +28,7 @@ struct AnnotationViewLayout {
 
     let showsContent: Bool
     let scrollableBody: Bool
+    let showDoneButton: Bool
 
     init(type: AnnotationView.Kind) {
         self.horizontalInset = 16
@@ -48,6 +49,7 @@ struct AnnotationViewLayout {
             self.commentMinHeight = nil
             self.scrollableBody = false
             self.backgroundColor = Asset.Colors.annotationCellBackground.color
+            self.showDoneButton = false
             
         case .popover:
             self.headerHeight = 50
@@ -60,6 +62,7 @@ struct AnnotationViewLayout {
             self.commentMinHeight = self.lineHeight * 3
             self.scrollableBody = true
             self.backgroundColor = Asset.Colors.annotationPopoverBackground.color
+            self.showDoneButton = UIDevice.current.userInterfaceIdiom == .phone
         }
     }
 }

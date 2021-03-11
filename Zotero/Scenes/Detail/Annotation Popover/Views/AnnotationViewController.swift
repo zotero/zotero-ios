@@ -134,6 +134,9 @@ final class AnnotationViewController: UIViewController {
             self.coordinatorDelegate?.showTagPicker(libraryId: state.library.identifier, selected: selected, picked: { [weak self] tags in
                 self?.viewModel.process(action: .setTags(tags, annotation.key))
             })
+
+        case .done:
+            self.coordinatorDelegate?.dismiss()
         }
     }
 
