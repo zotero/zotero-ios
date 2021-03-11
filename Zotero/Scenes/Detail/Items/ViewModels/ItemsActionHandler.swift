@@ -310,7 +310,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
         do {
             let item = try self.dbStorage.createCoordinator().perform(request: request)
             self.update(viewModel: viewModel) { state in
-                state.itemDuplication = item
+                state.itemKeyToDuplicate = item.key
                 self.stopEditing(in: &state)
             }
         } catch let error {

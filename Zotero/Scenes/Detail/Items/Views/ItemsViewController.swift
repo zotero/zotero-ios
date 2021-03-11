@@ -167,9 +167,8 @@ final class ItemsViewController: UIViewController {
             self.open(attachment: attachment, parentKey: parentKey)
         }
 
-        if let item = state.itemDuplication {
-            self.coordinatorDelegate?.showItemDetail(for: .duplication(item, collectionKey: self.viewModel.state.type.collectionKey),
-                                                     library: self.viewModel.state.library)
+        if let key = state.itemKeyToDuplicate {
+            self.coordinatorDelegate?.showItemDetail(for: .duplication(itemKey: key, collectionKey: self.viewModel.state.type.collectionKey), library: self.viewModel.state.library)
         }
     }
 
@@ -263,7 +262,7 @@ final class ItemsViewController: UIViewController {
             })
 
         default:
-            self.coordinatorDelegate?.showItemDetail(for: .preview(item), library: self.viewModel.state.library)
+            self.coordinatorDelegate?.showItemDetail(for: .preview(key: item.key), library: self.viewModel.state.library)
         }
     }
 

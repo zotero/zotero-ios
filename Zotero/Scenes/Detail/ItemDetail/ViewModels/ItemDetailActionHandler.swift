@@ -145,7 +145,25 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func reloadData(in viewModel: ViewModel<ItemDetailActionHandler>) {
         do {
-            var (data, attachmentErrors) = try ItemDetailDataCreator.createData(from: viewModel.state.type,
+            let type: ItemDetailDataCreator.Kind
+            var token: NotificationToken?
+
+            switch viewModel.state.type {
+            case .creation(_, let itemType):
+                type = .new(itemType: itemType)
+            case .preview(let key):
+                let item = try self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: key))
+                token = item.observe({ [weak viewModel] change in
+                    guard let viewModel = viewModel else { return }
+                    self.itemChanged(change, in: viewModel)
+                })
+                type = .existing(item)
+            case .duplication(let itemKey, _):
+                let item = try dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: viewModel.state.library.identifier, key: itemKey))
+                type = .existing(item)
+            }
+
+            var (data, attachmentErrors) = try ItemDetailDataCreator.createData(from: type,
                                                                                 schemaController: self.schemaController,
                                                                                 dateParser: self.dateParser,
                                                                                 fileStorage: self.fileStorage,
@@ -163,6 +181,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 }
                 state.attachmentErrors = attachmentErrors
                 state.isLoadingData = false
+                state.observationToken = token
                 state.changes.insert(.reloadedData)
             }
         } catch let error {
@@ -170,6 +189,18 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             self.update(viewModel: viewModel) { state in
                 state.error = .cantCreateData
             }
+        }
+    }
+
+    private func itemChanged(_ change: ObjectChange<Object>, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        switch change {
+        case .change:
+            self.update(viewModel: viewModel) { state in
+                state.changes = .item
+            }
+
+        // Deletion is handled by sync process, so we don't need to kick the user out here (the sync should always ask whether the user wants to delete the item or not).
+        case .deleted, .error: break
         }
     }
 
@@ -351,6 +382,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     // MARK: - Attachments
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        let key: String
+
+        switch viewModel.state.type {
+        case .preview(let _key):
+            key = _key
+        case .duplication, .creation: return
+        }
+
         do {
             switch attachment.contentType {
             case .file(let file, _, _, let linkType):
@@ -367,7 +406,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             }
             
             let deletionType = AttachmentFileDeletedNotification.individual(key: attachment.key,
-                                                                            parentKey: viewModel.state.type.previewKey,
+                                                                            parentKey: key,
                                                                             libraryId: attachment.libraryId)
             NotificationCenter.default.post(name: .attachmentFileDeleted, object: deletionType)
         } catch let error {
@@ -546,11 +585,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             guard let location = location else { return }
             switch location {
             case .remote:
+                // Item creation or duplication shouldn't have a .remote location, limit this to preview only
+                guard let previewKey = viewModel.state.type.previewKey else { return }
+
                 let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
                 if progress != nil {
                     self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
                 } else {
-                    self.fileDownloader.download(file: file, key: attachment.key, parentKey: viewModel.state.type.previewKey, libraryId: attachment.libraryId)
+                    self.fileDownloader.download(file: file, key: attachment.key, parentKey: previewKey, libraryId: attachment.libraryId)
                 }
             case .local:
                 self.update(viewModel: viewModel) { state in
@@ -571,7 +613,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func cancelChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
         guard let snapshot = viewModel.state.snapshot else { return }
         self.update(viewModel: viewModel) { state in
             state.data = snapshot
@@ -581,7 +623,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    func saveChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func saveChanges(in viewModel: ViewModel<ItemDetailActionHandler>) {
         if viewModel.state.snapshot != viewModel.state.data {
             self._saveChanges(in: viewModel)
         }
@@ -634,7 +676,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
                 case .creation(let collectionKey, _), .duplication(_, let collectionKey):
                     let item = try self.createItem(with: state.library.identifier, collectionKey: collectionKey, data: newState.data)
-                    newType = .preview(item)
+                    newType = .preview(key: item.key)
                 }
 
                 newState.snapshot = nil

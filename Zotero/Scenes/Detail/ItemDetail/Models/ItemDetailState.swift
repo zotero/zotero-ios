@@ -9,6 +9,7 @@
 import UIKit
 
 import CocoaLumberjackSwift
+import RealmSwift
 
 struct ItemDetailState: ViewModelState {
     struct Changes: OptionSet {
@@ -21,19 +22,18 @@ struct ItemDetailState: ViewModelState {
         static let attachmentFilesRemoved = Changes(rawValue: 1 << 2)
         static let abstractCollapsed = Changes(rawValue: 1 << 3)
         static let reloadedData = Changes(rawValue: 1 << 4)
+        static let item = Changes(rawValue: 1 << 5)
     }
 
     enum DetailType {
         case creation(collectionKey: String?, type: String)
-        case duplication(RItem, collectionKey: String?)
-        case preview(RItem)
+        case duplication(itemKey: String, collectionKey: String?)
+        case preview(key: String)
 
         var previewKey: String? {
             switch self {
-            case .preview(let item):
-                return item.key
-            default:
-                return nil
+            case .preview(let key): return key
+            case .duplication, .creation: return nil
             }
         }
 
@@ -297,6 +297,7 @@ struct ItemDetailState: ViewModelState {
     var updateAttachmentIndex: Int?
     var attachmentErrors: [String: Error]
     var isLoadingData: Bool
+    var observationToken: NotificationToken?
 
     @UserDefault(key: "ItemDetailAbstractCollapsedKey", defaultValue: false)
     var abstractCollapsed: Bool

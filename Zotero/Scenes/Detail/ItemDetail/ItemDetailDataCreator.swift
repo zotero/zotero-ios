@@ -11,24 +11,27 @@ import Foundation
 import CocoaLumberjackSwift
 
 struct ItemDetailDataCreator {
+    enum Kind {
+        case new(itemType: String)
+        case existing(RItem)
+    }
+
     /// Creates `ItemDetailState.Data` for given type.
-    /// - parameter type: Type of item detail screen.
+    /// - parameter type: Type of data. Either create new data or from existing item.
     /// - parameter schemaController: Schema controller.
     /// - parameter dateParser: Date parser.
     /// - parameter fileStorage: File storage.
     /// - parameter urlDetector: URL detector.
     /// - parameter doiDetector: DOI detector.
     /// - returns: Populated data for given type.
-    static func createData(from type: ItemDetailState.DetailType, schemaController: SchemaController, dateParser: DateParser,
+    static func createData(from type: Kind, schemaController: SchemaController, dateParser: DateParser,
                            fileStorage: FileStorage, urlDetector: UrlDetector, doiDetector: (String) -> Bool) throws -> (data: ItemDetailState.Data, attachmentErrors: [String: Error]) {
         switch type {
-        case .creation(_, let type):
-            let data = try creationData(itemType: type, schemaController: schemaController, dateParser: dateParser,
-                                        urlDetector: urlDetector, doiDetector: doiDetector)
+        case .new(let itemType):
+            let data = try creationData(itemType: itemType, schemaController: schemaController, dateParser: dateParser, urlDetector: urlDetector, doiDetector: doiDetector)
             return (data, [:])
-        case .preview(let item), .duplication(let item, _):
-            return try itemData(item: item, schemaController: schemaController, dateParser: dateParser,
-                                fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
+        case .existing(let item):
+            return try itemData(item: item, schemaController: schemaController, dateParser: dateParser, fileStorage: fileStorage, urlDetector: urlDetector, doiDetector: doiDetector)
         }
     }
 

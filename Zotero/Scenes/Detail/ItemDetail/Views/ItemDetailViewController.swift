@@ -30,7 +30,6 @@ final class ItemDetailViewController: UIViewController {
     private var tableViewHandler: ItemDetailTableViewHandler!
     private var downloadingViaNavigationBar: Bool
     private var didAppear: Bool
-    private var itemToken: NotificationToken?
 
     weak var coordinatorDelegate: DetailItemDetailCoordinatorDelegate?
 
@@ -52,7 +51,6 @@ final class ItemDetailViewController: UIViewController {
 
         self.setupTableViewHandler()
         self.setupFileObservers()
-        self.setupItemObservingIfNeeded()
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -159,6 +157,10 @@ final class ItemDetailViewController: UIViewController {
     /// Update UI based on new state.
     /// - parameter state: New state.
     private func update(to state: ItemDetailState) {
+        if state.changes.contains(.item) {
+            self.itemChanged(state: state)
+        }
+
         if state.changes.contains(.reloadedData) {
             let wasHidden = self.tableView.isHidden
             self.tableView.isHidden = state.isLoadingData
@@ -341,8 +343,8 @@ final class ItemDetailViewController: UIViewController {
 
     // MARK: - Actions
 
-    private func itemChanged() {
-        if !self.viewModel.state.isEditing {
+    private func itemChanged(state: ItemDetailState) {
+        if !state.isEditing {
             self.viewModel.process(action: .reloadData)
             return
         }
@@ -390,20 +392,6 @@ final class ItemDetailViewController: UIViewController {
                 self?.viewModel.process(action: .updateDownload(update))
             })
             .disposed(by: self.disposeBag)
-    }
-
-    private func setupItemObservingIfNeeded() {
-        guard case .preview(let item) = self.viewModel.state.type else { return }
-
-        self.itemToken = item.observe({ [weak self] change in
-            switch change {
-            case .change:
-                self?.itemChanged()
-
-            // Deletion is handled by sync process, so we don't need to kick the user out here (the sync should always ask whether the user wants to delete the item or not).
-            case .deleted, .error: break
-            }
-        })
     }
 }
 
