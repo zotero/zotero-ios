@@ -94,7 +94,7 @@ internal enum L10n {
     internal static let myPublications = L10n.tr("Localizable", "collections.my_publications")
     /// New Subcollection
     internal static let newSubcollection = L10n.tr("Localizable", "collections.new_subcollection")
-    /// Pick Parent
+    /// Choose Parent
     internal static let pickerTitle = L10n.tr("Localizable", "collections.picker_title")
     /// Find Collection
     internal static let searchTitle = L10n.tr("Localizable", "collections.search_title")
@@ -103,7 +103,7 @@ internal enum L10n {
   }
 
   internal enum CreatorEditor {
-    /// Creator
+    /// Creator Type
     internal static let creator = L10n.tr("Localizable", "creator_editor.creator")
     /// Do you really want to delete this creator?
     internal static let deleteConfirmation = L10n.tr("Localizable", "creator_editor.delete_confirmation")
@@ -111,9 +111,9 @@ internal enum L10n {
     internal static let firstName = L10n.tr("Localizable", "creator_editor.first_name")
     /// Last Name
     internal static let lastName = L10n.tr("Localizable", "creator_editor.last_name")
-    /// Switch to Dual Field
+    /// Switch to two fields
     internal static let switchToDual = L10n.tr("Localizable", "creator_editor.switch_to_dual")
-    /// Switch to Single Field
+    /// Switch to single field
     internal static let switchToSingle = L10n.tr("Localizable", "creator_editor.switch_to_single")
   }
 
@@ -122,9 +122,9 @@ internal enum L10n {
     internal static func api(_ p1: Any) -> String {
       return L10n.tr("Localizable", "errors.api", String(describing: p1))
     }
-    /// Could not connect to database. Device storage might be full.
+    /// Could not connect to database. The device storage might be full.
     internal static let db = L10n.tr("Localizable", "errors.db")
-    /// User couldn't be initialized. Please try logging in again.
+    /// Error creating database. Please try logging in again.
     internal static let dbFailure = L10n.tr("Localizable", "errors.db_failure")
     /// Could not parse some data. Other data will continue to sync.
     internal static let parsing = L10n.tr("Localizable", "errors.parsing")
@@ -132,26 +132,24 @@ internal enum L10n {
     internal static let schema = L10n.tr("Localizable", "errors.schema")
     /// Unknown error
     internal static let unknown = L10n.tr("Localizable", "errors.unknown")
-    /// Another sync has happened during sync
+    /// A remote change was made during the sync
     internal static let versionMismatch = L10n.tr("Localizable", "errors.versionMismatch")
     internal enum Attachments {
       /// The attached file could not be found.
       internal static let cantOpenAttachment = L10n.tr("Localizable", "errors.attachments.cant_open_attachment")
-      /// Could not unzip snapshot.
+      /// Unable to unzip snapshot
       internal static let cantUnzipSnapshot = L10n.tr("Localizable", "errors.attachments.cant_unzip_snapshot")
     }
     internal enum Collections {
-      /// You have to fill the name
+      /// Please enter a collection name
       internal static let emptyName = L10n.tr("Localizable", "errors.collections.empty_name")
-      /// Could not save collection %@. Try again.
-      internal static func saveFailed(_ p1: Any) -> String {
-        return L10n.tr("Localizable", "errors.collections.save_failed", String(describing: p1))
-      }
+      /// Unable to save collection
+      internal static let saveFailed = L10n.tr("Localizable", "errors.collections.save_failed")
     }
     internal enum ItemDetail {
       /// Could not load data. Please try again.
       internal static let cantLoadData = L10n.tr("Localizable", "errors.item_detail.cant_load_data")
-      /// Are you sure you want to change the item type?\nThe following fields will be lost:\n%@
+      /// Are you sure you want to change the item type?\n\nThe following fields will be lost:\n\n%@
       internal static func droppedFieldsMessage(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.item_detail.dropped_fields_message", String(describing: p1))
       }
@@ -159,21 +157,21 @@ internal enum L10n {
       internal static let droppedFieldsTitle = L10n.tr("Localizable", "errors.item_detail.dropped_fields_title")
     }
     internal enum Libraries {
-      /// Can't load libraries
+      /// Unable to load libraries
       internal static let cantLoad = L10n.tr("Localizable", "errors.libraries.cantLoad")
     }
     internal enum Logging {
-      /// Can't find log files.
+      /// Log files could not be found
       internal static let contentReading = L10n.tr("Localizable", "errors.logging.content_reading")
-      /// No logs occured during debug logging.
+      /// No debug output occurred during logging
       internal static let noLogsRecorded = L10n.tr("Localizable", "errors.logging.no_logs_recorded")
-      /// Unexpected response from server.
+      /// Unexpected response from server
       internal static let responseParsing = L10n.tr("Localizable", "errors.logging.response_parsing")
-      /// Can't start debug logging.
+      /// Unable to start debug logging
       internal static let start = L10n.tr("Localizable", "errors.logging.start")
-      /// Debugging error
+      /// Debugging Error
       internal static let title = L10n.tr("Localizable", "errors.logging.title")
-      /// Could not upload logs. Try again.
+      /// Could not upload logs. Please try again.
       internal static let upload = L10n.tr("Localizable", "errors.logging.upload")
     }
     internal enum Login {
@@ -189,53 +187,53 @@ internal enum L10n {
       internal static let storage = L10n.tr("Localizable", "errors.settings.storage")
     }
     internal enum Shareext {
-      /// Background uploader not initialized.
+      /// Background uploader not initialized
       internal static let backgroundUploaderFailure = L10n.tr("Localizable", "errors.shareext.background_uploader_failure")
-      /// Could not load web data. Close and try again.
+      /// An error occurred. Please try again.
       internal static let cantLoadData = L10n.tr("Localizable", "errors.shareext.cant_load_data")
-      /// Could not load schema. Please go to Zotero app, sync and try again.
+      /// An error occurred. Please open the Zotero app, sync, and try again.
       internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema")
-      /// Could not download file.
+      /// Could not download file
       internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
-      /// Translated item contains incompatible data
+      /// No data returned
       internal static let incompatibleItem = L10n.tr("Localizable", "errors.shareext.incompatible_item")
-      /// Translator couldn't find any items.
+      /// No items found on page
       internal static let itemsNotFound = L10n.tr("Localizable", "errors.shareext.items_not_found")
-      /// Javascript call failed
+      /// JS call failed
       internal static let javascriptFailed = L10n.tr("Localizable", "errors.shareext.javascript_failed")
       /// Please log into the app before using this extension.
       internal static let loggedOut = L10n.tr("Localizable", "errors.shareext.logged_out")
       /// Translator missing
       internal static let missingBaseFiles = L10n.tr("Localizable", "errors.shareext.missing_base_files")
-      /// Could not find file to upload.
+      /// Could not find file to upload
       internal static let missingFile = L10n.tr("Localizable", "errors.shareext.missing_file")
-      /// Translator response couldn't be parsed
+      /// Error parsing translator response
       internal static let parsingError = L10n.tr("Localizable", "errors.shareext.parsing_error")
-      /// Could not load web data. Close and try again.
+      /// An error occurred. Please try again.
       internal static let responseMissingData = L10n.tr("Localizable", "errors.shareext.response_missing_data")
       /// Some data could not be downloaded. It may have been saved with a newer version of Zotero.
       internal static let schemaError = L10n.tr("Localizable", "errors.shareext.schema_error")
-      /// Translation failed
+      /// Saving failed
       internal static let translationFailed = L10n.tr("Localizable", "errors.shareext.translation_failed")
-      /// Unknown error occured
+      /// An unknown error occured
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }
     internal enum SyncToolbar {
-      /// Attachment that you tried to upload is missing. Try removing and re-adding the attachment.
+      /// Unable to upload attachment. Please try removing and re-adding the attachment.
       internal static let attachmentMissing = L10n.tr("Localizable", "errors.sync_toolbar.attachment_missing")
-      /// Could not sync a conflict. Will try again later.
+      /// Remote sync in progress. Please try again in a few minutes.
       internal static let conflictRetryLimit = L10n.tr("Localizable", "errors.sync_toolbar.conflict_retry_limit")
       /// Finished sync (%@)
       internal static func finishedWithErrors(_ p1: Any) -> String {
         return L10n.tr("Localizable", "errors.sync_toolbar.finished_with_errors", String(describing: p1))
       }
-      /// You don't have permission to edit groups.
+      /// You don’t have permission to edit groups.
       internal static let groupPermissions = L10n.tr("Localizable", "errors.sync_toolbar.group_permissions")
       /// Could not sync groups. Please try again.
       internal static let groupsFailed = L10n.tr("Localizable", "errors.sync_toolbar.groups_failed")
-      /// Your internet connection went down. Please try again.
+      /// Unable to connect to the network. Please try again.
       internal static let internetConnection = L10n.tr("Localizable", "errors.sync_toolbar.internet_connection")
-      /// Could not find any libraries stored in DB. Try logging out and back in again.
+      /// No libraries found. Please log out and back in again.
       internal static let librariesMissing = L10n.tr("Localizable", "errors.sync_toolbar.libraries_missing")
       /// %d issues
       internal static func multipleErrors(_ p1: Int) -> String {
@@ -249,7 +247,7 @@ internal enum L10n {
   internal enum ItemDetail {
     /// Add attachment
     internal static let addAttachment = L10n.tr("Localizable", "item_detail.add_attachment")
-    /// Add creator
+    /// Add Creator
     internal static let addCreator = L10n.tr("Localizable", "item_detail.add_creator")
     /// Add note
     internal static let addNote = L10n.tr("Localizable", "item_detail.add_note")
@@ -322,9 +320,9 @@ internal enum L10n {
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")
     /// Sort Order
     internal static let sortOrder = L10n.tr("Localizable", "items.sort_order")
-    /// Are you sure you want to move selected items to the Trash?
+    /// Are you sure you want to move selected items to the trash?
     internal static let trashMultipleQuestion = L10n.tr("Localizable", "items.trash_multiple_question")
-    /// Are you sure you want to move the selected item to the Trash?
+    /// Are you sure you want to move the selected item to the trash?
     internal static let trashQuestion = L10n.tr("Localizable", "items.trash_question")
     /// Move to Trash
     internal static let trashTitle = L10n.tr("Localizable", "items.trash_title")
@@ -373,7 +371,7 @@ internal enum L10n {
     internal static let annotate = L10n.tr("Localizable", "onboarding.annotate")
     /// Create Account
     internal static let createAccount = L10n.tr("Localizable", "onboarding.create_account")
-    /// <b>Tap to collect</b> articles and books directly from the web, including their PDFs and full citations.
+    /// <b>Tap to collect</b> articles and books directly from the web, including their PDFs and full metadata.
     internal static let share = L10n.tr("Localizable", "onboarding.share")
     /// Sign In
     internal static let signIn = L10n.tr("Localizable", "onboarding.sign_in")
@@ -456,7 +454,7 @@ internal enum L10n {
   }
 
   internal enum Settings {
-    /// Debug
+    /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")
     /// General
     internal static let general = L10n.tr("Localizable", "settings.general")
@@ -464,15 +462,15 @@ internal enum L10n {
     internal static let itemCount = L10n.tr("Localizable", "settings.item_count")
     /// Show item count for all collections.
     internal static let itemCountSubtitle = L10n.tr("Localizable", "settings.item_count_subtitle")
-    /// If you want to debug an issue on launch, kill the app and start it again.
+    /// To debug a startup issue, force-quit the app and start it again.
     internal static let loggingDesc1 = L10n.tr("Localizable", "settings.logging_desc1")
-    /// If you want to debug share extension issue, open the share extension.
+    /// To debug a share extension issue, open the share extension.
     internal static let loggingDesc2 = L10n.tr("Localizable", "settings.logging_desc2")
     /// Logging
     internal static let loggingTitle = L10n.tr("Localizable", "settings.logging_title")
-    /// Log out
+    /// Log Out
     internal static let logout = L10n.tr("Localizable", "settings.logout")
-    /// Your local data that were not synced will be deleted. Do you really want to log out?
+    /// Any local data that was not synced will be deleted. Do you really want to sign out?
     internal static let logoutWarning = L10n.tr("Localizable", "settings.logout_warning")
     /// User Permission
     internal static let permission = L10n.tr("Localizable", "settings.permission")
@@ -484,17 +482,17 @@ internal enum L10n {
     internal static let resetToBundled = L10n.tr("Localizable", "settings.reset_to_bundled")
     /// Send Manually
     internal static let sendManually = L10n.tr("Localizable", "settings.send_manually")
-    /// Start logging
+    /// Start Logging
     internal static let startLogging = L10n.tr("Localizable", "settings.start_logging")
-    /// Start logging on next app launch
+    /// Start Logging on Next App Launch
     internal static let startLoggingOnLaunch = L10n.tr("Localizable", "settings.start_logging_on_launch")
-    /// Stop logging
+    /// Stop Logging
     internal static let stopLogging = L10n.tr("Localizable", "settings.stop_logging")
-    /// Storage
+    /// Local Storage
     internal static let storage = L10n.tr("Localizable", "settings.storage")
     /// Sync
     internal static let sync = L10n.tr("Localizable", "settings.sync")
-    /// Cancel ongoing sync
+    /// Cancel sync
     internal static let syncCancel = L10n.tr("Localizable", "settings.sync_cancel")
     /// Sync with zotero.org
     internal static let syncZotero = L10n.tr("Localizable", "settings.sync_zotero")
@@ -504,7 +502,7 @@ internal enum L10n {
     internal static let translators = L10n.tr("Localizable", "settings.translators")
     /// Update translators
     internal static let translatorsUpdate = L10n.tr("Localizable", "settings.translators_update")
-    /// Updating...
+    /// Updating…
     internal static let translatorsUpdating = L10n.tr("Localizable", "settings.translators_updating")
     /// Connect to Server
     internal static let websocketConnect = L10n.tr("Localizable", "settings.websocket_connect")
@@ -519,7 +517,7 @@ internal enum L10n {
     /// Server Connection
     internal static let websocketTitle = L10n.tr("Localizable", "settings.websocket_title")
     internal enum LogAlert {
-      /// Your debug id is: %@
+      /// Your Debug ID is %@
       internal static func message(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.log_alert.message", String(describing: p1))
       }
@@ -547,11 +545,11 @@ internal enum L10n {
       internal static let deleteAll = L10n.tr("Localizable", "settings.storage.delete_all")
       /// Do you really want to delete all attachments?
       internal static let deleteAllQuestion = L10n.tr("Localizable", "settings.storage.delete_all_question")
-      /// Delete Cache
+      /// Delete Temporary Files
       internal static let deleteCache = L10n.tr("Localizable", "settings.storage.delete_cache")
-      /// Do you really want to delete cache?
+      /// Do you really want to delete temporary files?
       internal static let deleteCacheQuestion = L10n.tr("Localizable", "settings.storage.delete_cache_question")
-      /// Do you really want to delete all attachments in "%@"?
+      /// Do you really want to delete all attachments in %@?
       internal static func deleteLibraryQuestion(_ p1: Any) -> String {
         return L10n.tr("Localizable", "settings.storage.delete_library_question", String(describing: p1))
       }
@@ -572,9 +570,9 @@ internal enum L10n {
     internal enum Translation {
       /// Downloading
       internal static let downloading = L10n.tr("Localizable", "shareext.translation.downloading")
-      /// Pick an item
+      /// Choose an item
       internal static let itemSelection = L10n.tr("Localizable", "shareext.translation.item_selection")
-      /// Translating with: "%@"
+      /// Saving with %@
       internal static func translatingWith(_ p1: Any) -> String {
         return L10n.tr("Localizable", "shareext.translation.translating_with", String(describing: p1))
       }
@@ -583,7 +581,7 @@ internal enum L10n {
 
   internal enum Sync {
     internal enum ConflictResolution {
-      /// Item "%@" has been removed. Do you want to keep your changes?
+      /// The item “%@” has been removed. Do you want to keep your changes?
       internal static func changedItemDeleted(_ p1: Any) -> String {
         return L10n.tr("Localizable", "sync.conflict_resolution.changed_item_deleted", String(describing: p1))
       }
@@ -595,7 +593,7 @@ internal enum L10n {
     internal static func aborted(_ p1: Any) -> String {
       return L10n.tr("Localizable", "sync_toolbar.aborted", String(describing: p1))
     }
-    /// Removing unused objects in %@
+    /// Applying remote deletions in %@
     internal static func deletion(_ p1: Any) -> String {
       return L10n.tr("Localizable", "sync_toolbar.deletion", String(describing: p1))
     }
@@ -625,7 +623,7 @@ internal enum L10n {
     internal static func uploads(_ p1: Int, _ p2: Int) -> String {
       return L10n.tr("Localizable", "sync_toolbar.uploads", p1, p2)
     }
-    /// Submitting changes (%d / %d)
+    /// Uploading changes (%d / %d)
     internal static func writes(_ p1: Int, _ p2: Int) -> String {
       return L10n.tr("Localizable", "sync_toolbar.writes", p1, p2)
     }

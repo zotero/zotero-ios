@@ -9,7 +9,7 @@
 import Foundation
 
 enum CollectionEditError: Error, Identifiable, Hashable {
-    case saveFailed(String)
+    case saveFailed
     case emptyName
 
     var id: CollectionEditError {
@@ -29,8 +29,8 @@ enum CollectionEditError: Error, Identifiable, Hashable {
         switch self {
         case .emptyName:
             return L10n.Errors.Collections.emptyName
-        case .saveFailed(let name):
-            return L10n.Errors.Collections.saveFailed(name)
+        case .saveFailed:
+            return L10n.Errors.Collections.saveFailed
         }
     }
 }
