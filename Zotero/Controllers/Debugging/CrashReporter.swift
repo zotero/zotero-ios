@@ -24,7 +24,13 @@ final class CrashReporter {
     weak var coordinator: CrashReporterCoordinator?
 
     init(apiClient: ApiClient) {
-        let config = PLCrashReporterConfig(signalHandlerType: .BSD, symbolicationStrategy: .all)
+        let handler: PLCrashReporterSignalHandlerType
+        #if DEBUG
+        handler = .BSD
+        #else
+        handler = .mach
+        #endif
+        let config = PLCrashReporterConfig(signalHandlerType: handler, symbolicationStrategy: [])
         self.reporter = PLCrashReporter(configuration: config)
         self.apiClient = apiClient
         self.disposeBag = DisposeBag()
