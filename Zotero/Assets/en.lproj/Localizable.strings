@@ -37,6 +37,8 @@
 "total" = "Total";
 "restore" = "Restore";
 "copy" = "Copy";
+"privacy_policy" = "Privacy Policy";
+"about_beta" = "About the Zotero for iOS Beta";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";

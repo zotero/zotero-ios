@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SafariServices
 import SwiftUI
 
 import RxSwift
@@ -23,6 +24,8 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
 }
 
 protocol MasterSettingsCoordinatorDelegate: class {
+    func showPrivacyPolicy()
+    func showAboutBeta()
     func dismiss()
 }
 
@@ -226,6 +229,19 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 }
 
 extension MasterCoordinator: MasterSettingsCoordinatorDelegate {
+    func showAboutBeta() {
+        self.showSafar(with: URL(string: "https://www.zotero.org/support/ios_beta")!)
+    }
+
+    func showPrivacyPolicy() {
+        self.showSafar(with: URL(string: "https://www.zotero.org/support/privacy")!)
+    }
+
+    private func showSafar(with url: URL) {
+        let controller = SFSafariViewController(url: url)
+        self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
+    }
+
     func dismiss() {
         self.navigationController.dismiss(animated: true, completion: nil)
     }

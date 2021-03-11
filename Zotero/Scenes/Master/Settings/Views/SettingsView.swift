@@ -15,7 +15,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationView {
-            SettingsListView()
+            self.settingsList
                 .navigationBarTitle(Text(L10n.Settings.title), displayMode: .inline)
                 .navigationBarItems(leading: Button(action: { self.coordinatorDelegate?.dismiss() },
                                                     label: { Text("Close").padding(.vertical, 10).padding(.trailing, 10) }))
@@ -25,6 +25,12 @@ struct SettingsView: View {
         .onAppear {
             self.viewModel.process(action: .startObserving)
         }
+    }
+
+    private var settingsList: some View {
+        var view = SettingsListView()
+        view.coordinatorDelegate = self.coordinatorDelegate
+        return view
     }
 }
 

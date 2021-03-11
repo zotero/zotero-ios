@@ -10,6 +10,8 @@ import Foundation
 // swiftlint:disable explicit_type_interface function_parameter_count identifier_name line_length
 // swiftlint:disable nesting type_body_length type_name vertical_whitespace_opening_braces
 internal enum L10n {
+  /// About the Zotero for iOS Beta
+  internal static let aboutBeta = L10n.tr("Localizable", "about_beta")
   /// Abstract
   internal static let abstract = L10n.tr("Localizable", "abstract")
   /// Add
@@ -54,6 +56,8 @@ internal enum L10n {
   internal static let ok = L10n.tr("Localizable", "ok")
   /// Page
   internal static let page = L10n.tr("Localizable", "page")
+  /// Privacy Policy
+  internal static let privacyPolicy = L10n.tr("Localizable", "privacy_policy")
   /// Publication Title
   internal static let publicationTitle = L10n.tr("Localizable", "publication_title")
   /// Publisher

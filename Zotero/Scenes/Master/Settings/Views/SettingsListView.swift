@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct SettingsListView: View {
+    weak var coordinatorDelegate: MasterSettingsCoordinatorDelegate?
+
     var body: some View {
         Form {
             Section {
@@ -30,6 +32,10 @@ struct SettingsListView: View {
 //                    Text(L10n.Settings.translators)
 //                }
 
+                FakeNavigationLink(title: L10n.aboutBeta) {
+                    self.coordinatorDelegate?.showAboutBeta()
+                }
+
                 NavigationLink(destination: DebugSettingsView()) {
                     Text(L10n.Settings.debug)
                 }
@@ -41,8 +47,32 @@ struct SettingsListView: View {
                 NavigationLink(destination: StorageSettingsView()) {
                     Text(L10n.Settings.storage)
                 }
+
+                FakeNavigationLink(title: L10n.privacyPolicy) {
+                    self.coordinatorDelegate?.showPrivacyPolicy()
+                }
             }
         }
+    }
+}
+
+struct FakeNavigationLink: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: self.action, label: {
+            HStack {
+                Text(self.title)
+                    .foregroundColor(.black)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(Font.system(size: 14, weight: .bold, design: .default))
+                    .foregroundColor(Color(UIColor.systemGray4))
+            }
+        })
     }
 }
 
