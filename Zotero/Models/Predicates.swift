@@ -233,7 +233,7 @@ extension NSPredicate {
                                                                                   creatorFirstNamePredicate,
                                                                                   creatorLastNamePredicate])
 
-        let tagPredicate = NSPredicate(format: "ANY tags.name contains[c] %@", text)
+        let tagPredicate = NSPredicate(format: "ANY tags.tag.name contains[c] %@", text)
 
         return NSCompoundPredicate(orPredicateWithSubpredicates: [titlePredicate,
                                                                   creatorPredicate,
