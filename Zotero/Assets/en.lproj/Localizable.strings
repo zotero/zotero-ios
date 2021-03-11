@@ -232,7 +232,7 @@
 "errors.attachments.cant_open_attachment" = "The attached file could not be found.";
 "errors.login.invalid_password" = "Invalid password";
 "errors.login.invalid_username" = "Invalid username";
-"errors.login.unknown" = "Could not log in";
+"errors.login.unknown" = "Invalid username or password";
 "errors.libraries.cantLoad" = "Unable to load libraries";
 "errors.collections.empty_name" = "Please enter a collection name";
 "errors.collections.save_failed" = "Unable to save collection";

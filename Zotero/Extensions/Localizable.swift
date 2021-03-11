@@ -183,7 +183,7 @@ internal enum L10n {
       internal static let invalidPassword = L10n.tr("Localizable", "errors.login.invalid_password")
       /// Invalid username
       internal static let invalidUsername = L10n.tr("Localizable", "errors.login.invalid_username")
-      /// Could not log in
+      /// Invalid username or password
       internal static let unknown = L10n.tr("Localizable", "errors.login.unknown")
     }
     internal enum Settings {
