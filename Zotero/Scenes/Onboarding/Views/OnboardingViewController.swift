@@ -100,6 +100,10 @@ final class OnboardingViewController: UIViewController {
         self.coordinatorDelegate?.presentRegister()
     }
 
+    @IBAction private func showBeta() {
+        self.coordinatorDelegate?.showAboutBeta()
+    }
+
     // MARK: - Setups
 
     /// Setup pages so that the spacer in pages is the same height as spacers in this controller. Also set title with appropriate size and style.

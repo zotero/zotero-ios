@@ -230,11 +230,11 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
 extension MasterCoordinator: MasterSettingsCoordinatorDelegate {
     func showAboutBeta() {
-        self.showSafar(with: URL(string: "https://www.zotero.org/support/ios_beta")!)
+        self.showSafar(with: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
     }
 
     func showPrivacyPolicy() {
-        self.showSafar(with: URL(string: "https://www.zotero.org/support/privacy")!)
+        self.showSafar(with: URL(string: "https://www.zotero.org/support/privacy?app=1")!)
     }
 
     private func showSafar(with url: URL) {

@@ -7,6 +7,7 @@
 //
 
 import MessageUI
+import SafariServices
 import SwiftUI
 import UIKit
 
@@ -17,6 +18,7 @@ protocol AppDelegateCoordinatorDelegate: class {
 }
 
 protocol AppOnboardingCoordinatorDelegate: class {
+    func showAboutBeta()
     func presentLogin()
     func presentRegister()
 }
@@ -369,8 +371,13 @@ extension AppCoordinator: AppOnboardingCoordinatorDelegate {
 }
 
 extension AppCoordinator: AppLoginCoordinatorDelegate {
+    func showAboutBeta() {
+        let controller = SFSafariViewController(url: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
+        self.window?.rootViewController?.present(controller, animated: true, completion: nil)
+    }
+
     func showForgotPassword() {
-        guard let url = URL(string: "https://www.zotero.org/user/lostpassword") else { return }
+        guard let url = URL(string: "https://www.zotero.org/user/lostpassword?app=1") else { return }
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 

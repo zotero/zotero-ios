@@ -18,7 +18,7 @@ struct SettingsListView: View {
                     self.coordinatorDelegate?.showAboutBeta()
                 }, label: {
                     Text(L10n.aboutBeta)
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(self.textColor))
                 })
             }
 
@@ -59,10 +59,16 @@ struct SettingsListView: View {
                     self.coordinatorDelegate?.showPrivacyPolicy()
                 }, label: {
                     Text(L10n.privacyPolicy)
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(self.textColor))
                 })
             }
         }
+    }
+
+    private var textColor: UIColor {
+        return UIColor(dynamicProvider: { traitCollection -> UIColor in
+            return traitCollection.userInterfaceStyle == .dark ? .white : .black
+        })
     }
 }
 

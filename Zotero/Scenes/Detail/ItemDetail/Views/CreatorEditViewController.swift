@@ -54,6 +54,9 @@ final class CreatorEditViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.typeValue.textColor = UIColor(dynamicProvider: { traitCollection -> UIColor in
+            return traitCollection.userInterfaceStyle == .dark ? .white : .black
+        })
         self.setupSeparatorHeight()
         self.setupNavigationItems()
         self.setup(creator: self.viewModel.state.creator)

@@ -17,7 +17,7 @@ final class AnnotationPageLabelViewController: UIViewController {
         case labelInput
         case switches
 
-        static let sortedAllCases: [Section] = [.labelInput, .switches]
+        static let sortedAllCases: [Section] = [.labelInput]
 
         var cellId: String {
             switch self {
