@@ -265,6 +265,7 @@ final class DetailCoordinator: Coordinator {
                                                                                         width: (sourceView.frame.width / 3),
                                                                                         height: (sourceView.frame.height / 3))
         }
+
         self.topViewController.present(controller, animated: true, completion: nil)
     }
 

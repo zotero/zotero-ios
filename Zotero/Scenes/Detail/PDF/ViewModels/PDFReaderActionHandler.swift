@@ -403,6 +403,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         self.update(viewModel: viewModel) { state in
             state.exportState = .preparing
+            state.changes.insert(.export)
         }
 
         let annotations = AnnotationConverter.annotations(from: viewModel.state.annotations, type: .export, interfaceStyle: .light)
@@ -418,8 +419,10 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             switch result {
             case .success(let file):
                 state.exportState = .exported(file)
+                state.changes.insert(.export)
             case .failure(let error):
                 state.exportState = .failed(error)
+                state.changes.insert(.export)
             }
         }
     }

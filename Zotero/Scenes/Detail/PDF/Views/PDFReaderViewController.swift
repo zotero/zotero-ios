@@ -47,6 +47,60 @@ final class PDFReaderViewController: UIViewController {
     private var deletedKeys: Set<String>
     private var modifiedKeys: Set<String>
 
+    private lazy var shareButton: UIBarButtonItem = {
+        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
+        share.tag = NavigationBarButton.share.rawValue
+        share.rx.tap
+             .subscribe(onNext: { [weak self] _ in
+                 self?.viewModel.process(action: .export)
+             })
+             .disposed(by: self.disposeBag)
+        return share
+    }()
+    private lazy var settingsButton: UIBarButtonItem = {
+        let settings = self.pdfController.settingsButtonItem
+        settings.rx
+                .tap
+                .subscribe(onNext: { [weak self] _ in
+                    self?.showSettings(sender: settings)
+                })
+                .disposed(by: self.disposeBag)
+        return settings
+    }()
+    private lazy var searchButton: UIBarButtonItem = {
+        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
+        search.rx.tap
+              .subscribe(onNext: { [weak self] _ in
+                  self?.showSearch(sender: search)
+              })
+              .disposed(by: self.disposeBag)
+        return search
+    }()
+    private lazy var undoButton: UIBarButtonItem = {
+        let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
+        undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
+        undo.tag = NavigationBarButton.undo.rawValue
+        undo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.pdfController.undoManager?.undo()
+            })
+            .disposed(by: self.disposeBag)
+        return undo
+    }()
+    private lazy var redoButton: UIBarButtonItem = {
+        let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
+        redo.isEnabled = self.pdfController.undoManager?.canRedo ?? false
+        redo.tag = NavigationBarButton.redo.rawValue
+        redo.rx
+            .tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.pdfController.undoManager?.redo()
+            })
+            .disposed(by: self.disposeBag)
+        return redo
+    }()
+
     weak var coordinatorDelegate: (DetailPdfCoordinatorDelegate & DetailAnnotationsCoordinatorDelegate)?
 
     var isSidebarVisible: Bool {
@@ -195,7 +249,9 @@ final class PDFReaderViewController: UIViewController {
             self.enqueueAnnotationSave()
         }
 
-        self.update(state: state.exportState)
+        if state.changes.contains(.export) {
+            self.update(state: state.exportState)
+        }
     }
 
     private func update(state: ExportState?) {
@@ -205,7 +261,7 @@ final class PDFReaderViewController: UIViewController {
 
         guard let state = state else {
             if items[shareId].customView != nil { // if activity indicator is visible, replace it with share button
-                items[shareId] = self.createShareButton()
+                items[shareId] = self.shareButton
                 self.navigationItem.rightBarButtonItems = items
             }
             return
@@ -221,13 +277,13 @@ final class PDFReaderViewController: UIViewController {
 
         case .exported(let file):
             DDLogInfo("PDFReaderViewController: share pdf file - \(file.createUrl().absoluteString)")
-            self.coordinatorDelegate?.share(url: file.createUrl(), barButton: items[shareId])
-            items[shareId] = self.createShareButton()
+            items[shareId] = self.shareButton
+            self.coordinatorDelegate?.share(url: file.createUrl(), barButton: self.shareButton)
 
         case .failed(let error):
             DDLogError("PDFReaderViewController: could not export pdf - \(error)")
             self.coordinatorDelegate?.show(error: error)
-            items[shareId] = self.createShareButton()
+            items[shareId] = self.shareButton
         }
 
         self.navigationItem.rightBarButtonItems = items
@@ -411,6 +467,8 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func processAnnotationObserving(notification: Notification) {
+        guard self.isNotificationFromDocument(notification) else { return }
+
         switch notification.name {
         case .PSPDFAnnotationChanged:
             guard let pdfAnnotation = notification.object as? PSPDFKit.Annotation, let key = pdfAnnotation.key else { return }
@@ -436,6 +494,16 @@ final class PDFReaderViewController: UIViewController {
 
         default: break
         }
+    }
+
+    private func isNotificationFromDocument(_ notification: Notification) -> Bool {
+        if let annotation = notification.object as? PSPDFKit.Annotation {
+            return annotation.document == self.viewModel.state.document
+        }
+        if let annotations = notification.object as? [PSPDFKit.Annotation], let annotation = annotations.first {
+            return annotation.document == self.viewModel.state.document
+        }
+        return false
     }
 
     private func annotations(for notification: Notification) -> [PSPDFKit.Annotation]? {
@@ -657,8 +725,7 @@ final class PDFReaderViewController: UIViewController {
         // Create toolbar items from `UIButton`s
         var toolbarItems = buttons.map({ UIBarButtonItem(customView: $0) })
         // Add undo/redo buttons
-        let (undo, redo) = self.createUndoRedoButtons()
-        toolbarItems += [undo, redo]
+        toolbarItems += [self.undoButton, self.redoButton]
         // Insert flexible spacers between each item
         toolbarItems = (0..<((2 * toolbarItems.count) - 1)).map({ $0 % 2 == 0 ? toolbarItems[$0/2] : flexibleSpacer })
         // Insert fixed spacer on sides
@@ -765,66 +832,11 @@ final class PDFReaderViewController: UIViewController {
         self.navigationItem.rightBarButtonItems = self.createRightBarButtonItems(forCompactSize: self.isCompactSize)
     }
 
-    private func createShareButton() -> UIBarButtonItem {
-        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: nil, action: nil)
-        share.tag = NavigationBarButton.share.rawValue
-        share.rx.tap
-             .subscribe(onNext: { [weak self] _ in
-                 self?.viewModel.process(action: .export)
-             })
-             .disposed(by: self.disposeBag)
-        return share
-    }
-
     private func createRightBarButtonItems(forCompactSize isCompact: Bool) -> [UIBarButtonItem] {
-        let settings = self.pdfController.settingsButtonItem
-        settings.rx
-                .tap
-                .subscribe(onNext: { [weak self] _ in
-                    self?.showSettings(sender: settings)
-                })
-                .disposed(by: self.disposeBag)
-
-        let search = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
-        search.rx.tap
-              .subscribe(onNext: { [weak self] _ in
-                  self?.showSearch(sender: search)
-              })
-              .disposed(by: self.disposeBag)
-
-        let share = self.createShareButton()
-
         if isCompact {
-            return [settings, share, search]
+            return [self.settingsButton, self.shareButton, self.searchButton]
         }
-
-        let (undo, redo) = self.createUndoRedoButtons()
-
-        return [settings, share, redo, undo, search]
-    }
-
-    private func createUndoRedoButtons() -> (undo: UIBarButtonItem, redo: UIBarButtonItem) {
-        let undo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.left"), style: .plain, target: nil, action: nil)
-        undo.isEnabled = self.pdfController.undoManager?.canUndo ?? false
-        undo.tag = NavigationBarButton.undo.rawValue
-        undo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.pdfController.undoManager?.undo()
-            })
-            .disposed(by: self.disposeBag)
-
-        let redo = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.right"), style: .plain, target: nil, action: nil)
-        redo.isEnabled = self.pdfController.undoManager?.canRedo ?? false
-        redo.tag = NavigationBarButton.redo.rawValue
-        redo.rx
-            .tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.pdfController.undoManager?.redo()
-            })
-            .disposed(by: self.disposeBag)
-
-        return (undo, redo)
+        return [self.settingsButton, self.shareButton, self.redoButton, self.undoButton, self.searchButton]
     }
 
     private func setupObserving() {
@@ -986,19 +998,8 @@ extension PDFReaderViewController: AnnotationStateManagerDelegate {
     }
 
     func annotationStateManager(_ manager: AnnotationStateManager, didChangeUndoState undoEnabled: Bool, redoState redoEnabled: Bool) {
-        let redoItem: UIBarButtonItem?
-        let undoItem: UIBarButtonItem?
-
-        if let items = self.toolbarItems {
-            redoItem = items.first(where: { $0.tag == NavigationBarButton.redo.rawValue })
-            undoItem = items.first(where: { $0.tag == NavigationBarButton.undo.rawValue })
-        } else {
-            redoItem = self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.redo.rawValue })
-            undoItem = self.navigationItem.rightBarButtonItems?.first(where: { $0.tag == NavigationBarButton.undo.rawValue })
-        }
-
-        redoItem?.isEnabled = redoEnabled
-        undoItem?.isEnabled = undoEnabled
+        self.redoButton.isEnabled = redoEnabled
+        self.undoButton.isEnabled = undoEnabled
     }
 }
 
