@@ -520,6 +520,14 @@ internal enum L10n {
     internal static let websocketDisconnected = L10n.tr("Localizable", "settings.websocket_disconnected")
     /// Server Connection
     internal static let websocketTitle = L10n.tr("Localizable", "settings.websocket_title")
+    internal enum CrashAlert {
+      /// Your Report ID is %@
+      internal static func message(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "settings.crash_alert.message", String(describing: p1))
+      }
+      /// Crash Log Sent
+      internal static let title = L10n.tr("Localizable", "settings.crash_alert.title")
+    }
     internal enum LogAlert {
       /// Your Debug ID is %@
       internal static func message(_ p1: Any) -> String {

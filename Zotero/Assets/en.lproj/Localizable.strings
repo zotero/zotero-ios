@@ -193,6 +193,8 @@
 "settings.log_alert.progress_title" = "Sending Logs";
 "settings.log_alert.title" = "Logs Sent";
 "settings.log_alert.message" = "Your Debug ID is %@";
+"settings.crash_alert.title" = "Crash Log Sent";
+"settings.crash_alert.message" = "Your Report ID is %@";
 "settings.websocket_title" = "Server Connection";
 "settings.websocket_connected" = "Connected";
 "settings.websocket_connecting" = "Connecting";

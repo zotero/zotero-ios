@@ -9,23 +9,28 @@
 import Foundation
 
 struct CrashUploadRequest: ApiRequest {
+    let crashLog: String
+    let deviceInfo: String
+
     var endpoint: ApiEndpoint {
-        return .other(URL(string: "")!)
+        return .other(URL(string: "https://repo.zotero.org/repo/report")!)
     }
 
     var httpMethod: ApiHttpMethod {
         return .post
     }
 
-    var headers: [String : String]? {
-        return nil
-    }
-
     var parameters: [String : Any]? {
-        return nil
+        return ["error": 1,
+                "errorData": self.crashLog,
+                "diagnostic": self.deviceInfo]
     }
 
     var encoding: ApiParameterEncoding {
         return .url
+    }
+
+    var headers: [String : String]? {
+        return nil
     }
 }

@@ -176,7 +176,7 @@ final class DebugLogging {
     }
 
     private func data(from logs: [URL]) throws -> Data {
-        var allLogs = ""
+        var allLogs = DeviceInfoProvider.debugString + "\n\n"
 
         for url in logs {
             let string = try String(contentsOf: url)

@@ -13,13 +13,19 @@ import RxSwift
 import RxSwiftExt
 
 protocol CrashReporterCoordinator: class {
-    func report(crash: String, completed: @escaping () -> Void)
+    func report(id: String)
 }
 
 final class CrashReporter {
+    enum Error: Swift.Error {
+        case responseParsing
+    }
+
     private let reporter: PLCrashReporter
     private let apiClient: ApiClient
     private let disposeBag: DisposeBag
+    private let queue: DispatchQueue
+    private let scheduler: ConcurrentDispatchQueueScheduler
 
     weak var coordinator: CrashReporterCoordinator?
 
@@ -31,67 +37,87 @@ final class CrashReporter {
         handler = .mach
         #endif
         let config = PLCrashReporterConfig(signalHandlerType: handler, symbolicationStrategy: [])
+        let queue = DispatchQueue(label: "org.zotero.CrashReporter", qos: .utility)
+
         self.reporter = PLCrashReporter(configuration: config)
         self.apiClient = apiClient
+        self.queue = queue
+        self.scheduler = ConcurrentDispatchQueueScheduler(queue: queue)
         self.disposeBag = DisposeBag()
     }
 
     func start() {
-        do {
-            try self.reporter.enableAndReturnError()
-        } catch let error {
-            DDLogError("CrashReporter: can't start reporter - \(error)")
+        self.queue.async {
+            do {
+                try self.reporter.enableAndReturnError()
+            } catch let error {
+                DDLogError("CrashReporter: can't start reporter - \(error)")
+            }
         }
     }
 
     func processPendingReports() {
-        guard self.reporter.hasPendingCrashReport() else { return }
-        self.handleCrashReport()
+        self.queue.async {
+            guard self.reporter.hasPendingCrashReport() else { return }
+            self.handleCrashReport()
+        }
     }
 
     private func handleCrashReport() {
         do {
             let data = try self.reporter.loadPendingCrashReportDataAndReturnError()
             let report = try PLCrashReport(data: data)
-            if let text = PLCrashReportTextFormatter.stringValue(for: report, with: PLCrashReportTextFormatiOS),
-               let coordinator = self.coordinator {
-                self.report(crash: text, in: coordinator)
+
+            guard let text = PLCrashReportTextFormatter.stringValue(for: report, with: PLCrashReportTextFormatiOS) else {
+                DDLogError("CrashReporter: can't convert report to text")
+                self.cleanup()
+                return
             }
-//            let repeatBehavior: RepeatBehavior = .exponentialDelayed(maxCount: 10, initial: 5, multiplier: 1.5)
-//            self.upload(data: data).retry(repeatBehavior, scheduler: self.scheduler)
-//                                   .subscribe(onError: { error in
-//                                       DDLogError("CrashReporter: can't upload crash log - \(error)")
-//                                   }, onCompleted: { [weak self] in
-//                                       self?.cleanup()
-//                                   })
-//                                   .disposed(by: self.disposeBag)
+
+            let date = report.systemInfo.timestamp
+
+            self.submit(crashLog: text).observeOn(MainScheduler.instance)
+                                       .subscribe(onNext: { [weak self] reportId in
+                                           self?.reportCrashIfNeeded(id: reportId, date: date)
+                                           self?.cleanup()
+                                        }, onError: { error in
+                                           DDLogError("CrashReporter: can't upload crash log - \(error)")
+                                        })
+                                        .disposed(by: self.disposeBag)
         } catch let error {
             DDLogError("CrashReporter: can't load data - \(error)")
+            self.cleanup()
         }
     }
 
-    private func report(crash: String, in coordinator: CrashReporterCoordinator) {
-        coordinator.report(crash: crash) { [weak self] in
-            self?.cleanup()
-        }
-    }
-
-//    private func upload(data: Data) -> Observable<()> {
-//        return Observable.just(())
-        // TODO: - Add actual API request when availble
-        /*
-        let request = CrashUploadRequest()
-        return self.apiClient.upload(request: request) { $0.append(data, withName: "crashlog") }
+    private func submit(crashLog: String) -> Observable<String> {
+        let request = CrashUploadRequest(crashLog: crashLog, deviceInfo: DeviceInfoProvider.crashString)
+        return self.apiClient.send(request: request, queue: self.queue)
                              .asObservable()
+                             .retry(.exponentialDelayed(maxCount: 10, initial: 5, multiplier: 1.5))
                              .observeOn(self.scheduler)
-                             .flatMap { request in
-                                 return request.rx.data()
+                             .flatMap { data, _ -> Observable<String> in
+                                 let delegate = DebugResponseParserDelegate()
+                                 let parser = XMLParser(data: data)
+                                 parser.delegate = delegate
+
+                                 if parser.parse() {
+                                     return Observable.just(delegate.reportId)
+                                 } else {
+                                     return Observable.error(Error.responseParsing)
+                                 }
                              }
-                             .flatMap { _ in
-                                return Observable.just(())
-                             }
-         */
-//    }
+    }
+
+    private func reportCrashIfNeeded(id: String, date: Date?) {
+        guard let date = date else {
+            self.coordinator?.report(id: id)
+            return
+        }
+        // Don't report to user if crash happened more than 10 minutes ago
+        guard Date().timeIntervalSince(date) <= 600 else { return }
+        self.coordinator?.report(id: id)
+    }
 
     private func cleanup() {
         do {
