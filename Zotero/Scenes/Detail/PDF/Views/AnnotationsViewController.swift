@@ -148,7 +148,9 @@ final class AnnotationsViewController: UIViewController {
         let reloadVisibleCells: ([IndexPath]) -> Void = { indexPaths in
             for indexPath in indexPaths {
                 guard let cell = self.tableView.cellForRow(at: indexPath) as? AnnotationCell else { continue }
-                self.setup(cell: cell, at: indexPath, state: state)
+                if let annotations = state.annotations[indexPath.section], indexPath.row < annotations.count {
+                    self.setup(cell: cell, with: annotations[indexPath.row], state: state)
+                }
             }
         }
 
@@ -204,9 +206,7 @@ final class AnnotationsViewController: UIViewController {
         self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
 
-    private func setup(cell: AnnotationCell, at indexPath: IndexPath, state: PDFReaderState) {
-        guard let annotation = state.annotations[indexPath.section]?[indexPath.row] else { return }
-
+    private func setup(cell: AnnotationCell, with annotation: Annotation, state: PDFReaderState) {
         let hasWritePermission = state.library.metadataEditable
         let comment = state.comments[annotation.key]
         let selected = annotation.key == state.selectedAnnotation?.key
@@ -259,7 +259,7 @@ final class AnnotationsViewController: UIViewController {
             let cell = tableView.dequeueReusableCell(withIdentifier: AnnotationsViewController.cellId, for: indexPath)
             cell.contentView.backgroundColor = self.view.backgroundColor
             if let cell = cell as? AnnotationCell {
-                self.setup(cell: cell, at: indexPath, state: self.viewModel.state)
+                self.setup(cell: cell, with: model, state: self.viewModel.state)
             }
             return cell
         }
@@ -323,8 +323,8 @@ extension AnnotationsViewController: UITableViewDelegate, UITableViewDataSourceP
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if let annotation = self.viewModel.state.annotations[indexPath.section]?[indexPath.row] {
-            self.viewModel.process(action: .selectAnnotation(annotation))
+        if let annotations = self.viewModel.state.annotations[indexPath.section], indexPath.row < annotations.count {
+            self.viewModel.process(action: .selectAnnotation(annotations[indexPath.row]))
         }
     }
 }
