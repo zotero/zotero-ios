@@ -592,6 +592,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     private func openAttachment(at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard index < viewModel.state.data.attachments.count else { return }
+
         let attachment = viewModel.state.data.attachments[index]
         switch attachment.contentType {
         case .url:
