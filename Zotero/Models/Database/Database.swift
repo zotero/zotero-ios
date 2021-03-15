@@ -38,8 +38,19 @@ struct Database {
     }
 
     private static func createMigrationBlock() -> MigrationBlock {
-        return { _, _ in
+        return { migration, schemaVersion in
+            if schemaVersion < 21 {
+                migration.enumerateObjects(ofType: "RCollection") { old, new in
+                    if let new = new {
+                        new["collapsed"] = true
+                    }
+                }
+            }
         }
+    }
+
+    private static func migrateCollapsibleCollections() {
+
     }
 
     /// Realm results observer returns modifications from old array, so if there is a need to retrieve updated objects from updated `Results`

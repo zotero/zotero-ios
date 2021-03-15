@@ -237,7 +237,7 @@ internal enum L10n {
       internal static let groupsFailed = L10n.tr("Localizable", "errors.sync_toolbar.groups_failed")
       /// Unable to connect to the network. Please try again.
       internal static let internetConnection = L10n.tr("Localizable", "errors.sync_toolbar.internet_connection")
-      /// No libraries found. Please log out and back in again.
+      /// No libraries found. Please sign out and back in again.
       internal static let librariesMissing = L10n.tr("Localizable", "errors.sync_toolbar.libraries_missing")
       /// %d issues
       internal static func multipleErrors(_ p1: Int) -> String {
@@ -259,11 +259,11 @@ internal enum L10n {
     internal static let addTag = L10n.tr("Localizable", "item_detail.add_tag")
     /// Attachments
     internal static let attachments = L10n.tr("Localizable", "item_detail.attachments")
-    /// This item has been changed. Data will now reload.
+    /// This item has been changed remotely. It will now reload.
     internal static let dataReloaded = L10n.tr("Localizable", "item_detail.data_reloaded")
-    /// Delete File from Device
+    /// Remove Download
     internal static let deleteAttachmentFile = L10n.tr("Localizable", "item_detail.delete_attachment_file")
-    /// This item has been deleted. Do you want to revert it?
+    /// This item has been deleted. Do you want to restore it?
     internal static let deletedMessage = L10n.tr("Localizable", "item_detail.deleted_message")
     /// Deleted
     internal static let deletedTitle = L10n.tr("Localizable", "item_detail.deleted_title")
@@ -394,7 +394,7 @@ internal enum L10n {
   }
 
   internal enum Pdf {
-    /// This document has been deleted. Do you want to revert it?
+    /// This document has been deleted. Do you want to restore it?
     internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message")
     /// Deleted
     internal static let deletedTitle = L10n.tr("Localizable", "pdf.deleted_title")
@@ -488,7 +488,7 @@ internal enum L10n {
     internal static let loggingDesc2 = L10n.tr("Localizable", "settings.logging_desc2")
     /// Logging
     internal static let loggingTitle = L10n.tr("Localizable", "settings.logging_title")
-    /// Log Out
+    /// Sign Out
     internal static let logout = L10n.tr("Localizable", "settings.logout")
     /// Any local data that was not synced will be deleted. Do you really want to sign out?
     internal static let logoutWarning = L10n.tr("Localizable", "settings.logout_warning")
