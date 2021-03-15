@@ -17,6 +17,7 @@ struct ReadDocumentDataDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Int {
         guard let pageIndex = database.objects(RPageIndex.self).filter(.key(self.attachmentKey, in: self.libraryId)).first else { return 0 }

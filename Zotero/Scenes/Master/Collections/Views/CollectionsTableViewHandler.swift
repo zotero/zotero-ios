@@ -37,17 +37,26 @@ final class CollectionsTableViewHandler: NSObject {
 
     // MARK: - Actions
 
+    func selectIfNeeded(collection: Collection) {
+        if let index = self.snapshot.firstIndex(where: { $0.id == collection.id }) {
+            guard self.tableView.indexPathForSelectedRow?.row != index else { return }
+            self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
+        } else if let indexPath = self.tableView.indexPathForSelectedRow {
+            self.tableView.deselectRow(at: indexPath, animated: false)
+        }
+    }
+
     func updateAllItemCell(with collection: Collection) {
         self.snapshot[0] = collection
         guard let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: 0)) as? CollectionCell else { return }
-        cell.updateBadge(for: collection)
+        cell.updateRightViews(for: collection)
     }
 
     func updateTrashItemCell(with collection: Collection) {
         let row = self.snapshot.count - 1
         self.snapshot[row] = collection
         guard let cell = self.tableView.cellForRow(at: IndexPath(row: row, section: 0)) as? CollectionCell else { return }
-        cell.updateBadge(for: collection)
+        cell.updateRightViews(for: collection)
     }
 
     func update(collections: [Collection], animated: Bool, completed: (() -> Void)? = nil) {
@@ -94,7 +103,9 @@ final class CollectionsTableViewHandler: NSObject {
         for indexPath in visibleIndexPaths.filter({ indexPaths.contains($0) }) {
             guard let cell = self.tableView.cellForRow(at: indexPath) as? CollectionCell else { continue }
             let collection = collections[indexPath.row]
-            cell.set(collection: collection)
+            cell.set(collection: collection, toggleCollapsed: { [weak self] in
+                self?.viewModel.process(action: .toggleCollapsed(collection))
+            })
         }
     }
 
@@ -191,7 +202,9 @@ extension CollectionsTableViewHandler: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: CollectionsTableViewHandler.cellId, for: indexPath)
         if let cell = cell as? CollectionCell {
             let collection = self.snapshot[indexPath.row]
-            cell.set(collection: collection)
+            cell.set(collection: collection, toggleCollapsed: { [weak self] in
+                self?.viewModel.process(action: .toggleCollapsed(collection))
+            })
         }
         return cell
     }

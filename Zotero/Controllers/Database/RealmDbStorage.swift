@@ -65,7 +65,7 @@ extension RealmDbCoordinator: DbCoordinator {
             return
         }
 
-        try self.realm.write {
+        try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
             try request.process(in: self.realm)
         }
     }
@@ -75,7 +75,7 @@ extension RealmDbCoordinator: DbCoordinator {
             return try request.process(in: self.realm)
         }
 
-        return try self.realm.write {
+        return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
             return try request.process(in: self.realm)
         }
     }

@@ -54,6 +54,9 @@ struct Collection: Identifiable, Equatable, Hashable {
     let name: String
     let level: Int
     let parentKey: String?
+    let hasChildren: Bool
+    var collapsed: Bool
+    var visible: Bool
     var itemCount: Int
 
     var iconName: String {
@@ -72,11 +75,14 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    init(object: RCollection, level: Int, parentKey: String?, itemCount: Int) {
+    init(object: RCollection, level: Int, visible: Bool, hasChildren: Bool, parentKey: String?, itemCount: Int) {
         self.type = .collection
         self.key = object.key
         self.name = object.name
         self.level = level
+        self.hasChildren = hasChildren
+        self.collapsed = object.collapsed
+        self.visible = visible
         self.itemCount = itemCount
         self.parentKey = parentKey
     }
@@ -87,6 +93,9 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.name = object.name
         self.level = 0
         self.itemCount = 0
+        self.hasChildren = false
+        self.collapsed = false
+        self.visible = true
         self.parentKey = nil
     }
 
@@ -96,6 +105,9 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.key = ""
         self.level = 0
         self.parentKey = nil
+        self.hasChildren = false
+        self.collapsed = false
+        self.visible = true
         switch type {
         case .all:
             self.name = L10n.Collections.allItems

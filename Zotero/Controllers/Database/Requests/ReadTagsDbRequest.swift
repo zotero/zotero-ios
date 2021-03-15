@@ -16,6 +16,7 @@ struct ReadTagsDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [Tag] {
         return database.objects(RTag.self).filter(.library(with: self.libraryId))

@@ -17,6 +17,7 @@ struct ReadCollectionsDbRequest: DbResponseRequest {
     let excludedKeys: Set<String>
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     init(libraryId: LibraryIdentifier, excludedKeys: Set<String> = []) {
         self.libraryId = libraryId

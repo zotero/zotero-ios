@@ -16,9 +16,8 @@ struct CreateCollectionDbRequest: DbRequest {
     let name: String
     let parentKey: String?
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let collection = RCollection()

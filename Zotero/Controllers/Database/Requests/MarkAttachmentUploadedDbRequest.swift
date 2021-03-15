@@ -15,6 +15,7 @@ struct MarkAttachmentUploadedDbRequest: DbRequest {
     let key: String
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let attachment = database.objects(RItem.self)

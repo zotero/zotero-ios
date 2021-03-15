@@ -14,9 +14,8 @@ struct StoreSettingsDbRequest: DbRequest {
     let response: SettingsResponse
     let libraryId: LibraryIdentifier
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         if let response = self.response.tagColors {

@@ -13,9 +13,8 @@ import RealmSwift
 struct UpdateItemLocaleDbRequest: DbRequest {
     let locale: SchemaLocale
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let items = database.objects(RItem.self).filter(.notSyncState(.dirty))

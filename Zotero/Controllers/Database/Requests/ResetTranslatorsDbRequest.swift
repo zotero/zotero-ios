@@ -11,9 +11,10 @@ import Foundation
 import RealmSwift
 
 struct ResetTranslatorsDbRequest: DbRequest {
-    var needsWrite: Bool { return true }
-
     let metadata: [TranslatorMetadata]
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         database.deleteAll()

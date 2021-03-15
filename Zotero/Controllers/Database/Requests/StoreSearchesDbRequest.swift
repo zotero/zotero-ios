@@ -14,6 +14,7 @@ struct StoreSearchesDbRequest: DbRequest {
     let response: [SearchResponse]
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         for data in self.response {

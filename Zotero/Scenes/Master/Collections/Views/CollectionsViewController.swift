@@ -49,7 +49,7 @@ final class CollectionsViewController: UIViewController {
                                                             splitDelegate: self.coordinatorDelegate)
 
         self.viewModel.process(action: .loadData)
-        self.tableViewHandler.update(collections: self.viewModel.state.collections, animated: false)
+        self.tableViewHandler.update(collections: self.viewModel.state.collections.filter({ $0.visible }), animated: false)
 
         self.viewModel.stateObservable
                       .observeOn(MainScheduler.instance)
@@ -72,7 +72,7 @@ final class CollectionsViewController: UIViewController {
 
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
-            self.tableViewHandler.update(collections: state.collections, animated: true, completed: { [weak self] in
+            self.tableViewHandler.update(collections: state.collections.filter({ $0.visible }), animated: true, completed: { [weak self] in
                 self?.selectIfNeeded(collection: state.selectedCollection)
             })
         }
@@ -108,13 +108,7 @@ final class CollectionsViewController: UIViewController {
     private func selectIfNeeded(collection: Collection) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard self.coordinatorDelegate?.isSplit == true else { return }
-
-        if let index = self.viewModel.state.collections.firstIndex(where: { $0.id == collection.id }) {
-            guard self.tableView.indexPathForSelectedRow?.row != index else { return }
-            self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
-        } else if let indexPath = self.tableView.indexPathForSelectedRow {
-            self.tableView.deselectRow(at: indexPath, animated: false)
-        }
+        self.tableViewHandler.selectIfNeeded(collection: collection)
     }
 
     private func select(searchResult: Collection) {

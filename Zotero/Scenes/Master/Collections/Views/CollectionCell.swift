@@ -16,17 +16,22 @@ final class CollectionCell: UITableViewCell {
     @IBOutlet private weak var iconImage: UIImageView!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var badgeContainer: UIView!
+    @IBOutlet private weak var badgeStackViewContainer: UIView!
     @IBOutlet private weak var badgeLabel: UILabel!
+    @IBOutlet private weak var chevronButton: UIButton!
+    @IBOutlet private weak var rightViewsToRightConstraint: NSLayoutConstraint!
     // These 2 need to be strong because they are being activated/deactivated
-    @IBOutlet private var rightConstraint: NSLayoutConstraint!
+    @IBOutlet private var contentToRightConstraint: NSLayoutConstraint!
     @IBOutlet private var contentToBadgeConstraint: NSLayoutConstraint!
+
+    private var toggleCollapsedAction: (() -> Void)?
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
         self.badgeContainer.layer.masksToBounds = true
         self.badgeContainer.backgroundColor = self.badgeBackgroundColor
-        self.rightConstraint.isActive = false
+        self.contentToRightConstraint.isActive = false
     }
 
     override func prepareForReuse() {
@@ -39,16 +44,25 @@ final class CollectionCell: UITableViewCell {
         self.badgeContainer.layer.cornerRadius = self.badgeContainer.frame.height / 2.0
     }
 
-    func updateBadge(for collection: Collection) {
-        self.badgeContainer.isHidden = !self.shouldShowCount(for: collection)
-        if !self.badgeContainer.isHidden {
-            self.badgeLabel.text = "\(collection.itemCount)"
-        }
-        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden
-        self.rightConstraint.isActive = self.badgeContainer.isHidden
+    @IBAction private func toggleCollapsed() {
+        self.toggleCollapsedAction?()
     }
 
-    func set(collection: Collection) {
+    func updateRightViews(for collection: Collection) {
+        self.badgeStackViewContainer.isHidden = !self.shouldShowCount(for: collection)
+        if !self.badgeStackViewContainer.isHidden {
+            self.badgeLabel.text = "\(collection.itemCount)"
+        }
+        self.chevronButton.isHidden = !collection.hasChildren
+
+        self.rightViewsToRightConstraint.constant = !self.chevronButton.isHidden ? 0 : 10
+
+        self.contentToBadgeConstraint.isActive = !self.badgeContainer.isHidden || !self.chevronButton.isHidden
+        self.contentToRightConstraint.isActive = !self.contentToBadgeConstraint.isActive
+    }
+
+    func set(collection: Collection, toggleCollapsed: @escaping () -> Void) {
+        self.toggleCollapsedAction = toggleCollapsed
         self.setup(with: collection)
         self.separatorInset = UIEdgeInsets(top: 0, left: self.separatorInset(for: collection.level), bottom: 0, right: 0)
     }
@@ -62,8 +76,9 @@ final class CollectionCell: UITableViewCell {
     private func setup(with collection: Collection) {
         self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
+        self.chevronButton.setImage(UIImage(systemName: collection.collapsed ? "chevron.right" : "chevron.down"), for: .normal)
         self.leftConstraint.constant = self.inset(for: collection.level)
-        self.updateBadge(for: collection)
+        self.updateRightViews(for: collection)
     }
 
     private func shouldShowCount(for collection: Collection) -> Bool {

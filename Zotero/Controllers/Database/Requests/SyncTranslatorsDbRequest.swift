@@ -13,10 +13,11 @@ import RealmSwift
 struct SyncTranslatorsDbRequest: DbResponseRequest {
     typealias Response = [(String, String)]
 
-    var needsWrite: Bool { return true }
-
     let updateMetadata: [TranslatorMetadata]
     let deleteIndices: [String]
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [(String, String)] {
         if !self.deleteIndices.isEmpty {

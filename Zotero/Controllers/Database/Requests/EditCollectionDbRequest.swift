@@ -16,9 +16,8 @@ struct EditCollectionDbRequest: DbRequest {
     let name: String
     let parentKey: String?
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let collection = database.objects(RCollection.self).filter(.key(self.key, in: self.libraryId)).first else { return }

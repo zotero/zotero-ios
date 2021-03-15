@@ -462,6 +462,7 @@
 		B357DEE624165E0B00E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
 		B357DEE7241661E300E06153 /* DebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE124165DEE00E06153 /* DebugLogging.swift */; };
 		B357DEE8241661E500E06153 /* DebugLogFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */; };
+		B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */; };
 		B3593AD424B6007900CA0B57 /* PDFSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */; };
 		B3593AD724B601AB00CA0B57 /* PDFSearchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */; };
 		B3593AD824B601AB00CA0B57 /* PDFSearchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */; };
@@ -1115,6 +1116,7 @@
 		B357DEE124165DEE00E06153 /* DebugLogging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DebugLogging.swift; sourceTree = "<group>"; };
 		B357DEE224165DEE00E06153 /* CrashReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		B357DEE524165E0B00E06153 /* DebugLogFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogFormatter.swift; sourceTree = "<group>"; };
+		B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetCollectionCollapsedDbRequest.swift; sourceTree = "<group>"; };
 		B3593AD324B6007900CA0B57 /* PDFSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchViewController.swift; sourceTree = "<group>"; };
 		B3593AD524B601AB00CA0B57 /* PDFSearchCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSearchCell.swift; sourceTree = "<group>"; };
 		B3593AD624B601AB00CA0B57 /* PDFSearchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PDFSearchCell.xib; sourceTree = "<group>"; };
@@ -1567,6 +1569,7 @@
 				B305643D23FC051E003304F2 /* ReadUserChangedObjectsDbRequest.swift */,
 				B349182A25E00771006C3313 /* ReadVersionDbRequest.swift */,
 				B353F1FA242E21880062EE24 /* ResetTranslatorsDbRequest.swift */,
+				B3588C6825FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift */,
 				B31EEE5B24EBF24300E3B3AD /* StoreChangedAnnotationsDbRequest.swift */,
 				B305646723FC051E003304F2 /* StoreCollectionsDbRequest.swift */,
 				B305645323FC051E003304F2 /* StoreGroupDbRequest.swift */,
@@ -3078,6 +3081,7 @@
 				B30565FE23FC051E003304F2 /* BackgroundUploader.swift in Sources */,
 				B3593F19241A61C700760E20 /* ItemDetailActionHandler.swift in Sources */,
 				B36CBD6225DD4257003C4613 /* ChangedItemsDeletedAlertQueueHandler.swift in Sources */,
+				B3588C6925FF7A800049D484 /* SetCollectionCollapsedDbRequest.swift in Sources */,
 				B300B3352429222B00C1FE1E /* TranslatorMetadata.swift in Sources */,
 				B3593F36241A61C700760E20 /* ItemDetailSectionView.swift in Sources */,
 				B305661423FC051E003304F2 /* Licenses.swift in Sources */,

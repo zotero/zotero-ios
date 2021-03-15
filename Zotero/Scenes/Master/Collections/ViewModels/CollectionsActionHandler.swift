@@ -54,6 +54,64 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         case .loadData:
             self.loadData(in: viewModel)
+
+        case .toggleCollapsed(let collection):
+            self.toggleCollapsed(for: collection, in: viewModel)
+        }
+    }
+
+    private func toggleCollapsed(for collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
+        do {
+            let collapsed = !collection.collapsed
+
+            let request = SetCollectionCollapsedDbRequest(collapsed: collapsed, key: collection.key, libraryId: viewModel.state.library.identifier,
+                                                          ignoreNotificationTokens: viewModel.state.collectionsToken.flatMap({ [$0] }))
+            try self.dbStorage.createCoordinator().perform(request: request)
+
+            if let index = viewModel.state.collections.firstIndex(of: collection) {
+                self.update(viewModel: viewModel) { state in
+                    state.collections[index].collapsed = collapsed
+                    state.collections[index].visible = true
+                    state.changes.insert(.results)
+
+                    var ignoreLevel: Int?
+
+                    for idx in ((index + 1)..<state.collections.count) {
+                        let _collection = state.collections[idx]
+
+                        if collection.level >= _collection.level {
+                            break
+                        }
+
+                        if collapsed {
+                            // Select collapsed cell if selection is among collapsed children
+                            if _collection.key == state.selectedCollection.key {
+                                state.selectedCollection = collection
+                                state.changes.insert(.selection)
+                            }
+                            // Hide all children
+                            state.collections[idx].visible = false
+                        } else {
+                            if let level = ignoreLevel {
+                                // If parent was collapsed, don't show children
+                                if _collection.level >= level {
+                                    continue
+                                } else {
+                                    ignoreLevel = nil
+                                }
+                            }
+                            // Show all children which are not collapsed
+                            state.collections[idx].visible = true
+                            if _collection.collapsed {
+                                // Don't show children of collapsed collection
+                                ignoreLevel = _collection.level + 1
+                            }
+                        }
+                    }
+                }
+            }
+        } catch let error {
+            DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
         }
     }
 
@@ -185,7 +243,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
             key = collection.key
             name = collection.name
-            parent = rCollection?.parent.flatMap { Collection(object: $0, level: 0, parentKey: $0.parent?.key, itemCount: 0) }
+            parent = rCollection?.parent.flatMap { Collection(object: $0, level: 0, visible: true, hasChildren: ($0.children.count > 0), parentKey: $0.parent?.key, itemCount: 0) }
         }
 
         self.update(viewModel: viewModel) { state in
@@ -215,7 +273,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         self.update(original: &original, with: collections)
         if !original.contains(where: { $0.key == selected.key }) {
-            selected = Collection(custom: .all)
+            selected = original.first ?? Collection(custom: .all)
         }
 
         self.update(viewModel: viewModel) { state in

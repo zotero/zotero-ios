@@ -18,9 +18,8 @@ struct CreateItemWithAttachmentDbRequest: DbResponseRequest {
     unowned let schemaController: SchemaController
     unowned let dateParser: DateParser
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> (RItem, RItem) {
         _ = try StoreItemsDbResponseRequest(responses: [self.item],

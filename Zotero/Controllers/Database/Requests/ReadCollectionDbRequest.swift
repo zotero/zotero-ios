@@ -17,6 +17,7 @@ struct ReadCollectionDbRequest: DbResponseRequest {
     let key: String
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RCollection {
         guard let collection = database.objects(RCollection.self).filter(.key(self.key, in: self.libraryId)).first else {

@@ -22,6 +22,7 @@ struct StoreItemsDbRequest: DbRequest {
     unowned let dateParser: DateParser
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         for response in self.responses {
@@ -39,6 +40,7 @@ struct StoreItemsDbResponseRequest: DbResponseRequest {
     let preferResponseData: Bool
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [StoreItemsError] {
         var errors: [StoreItemsError] = []
@@ -62,6 +64,7 @@ struct StoreItemDbRequest: DbRequest {
     let preferRemoteData: Bool
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         guard let libraryId = self.response.library.libraryId else { throw DbError.primaryKeyUnavailable }

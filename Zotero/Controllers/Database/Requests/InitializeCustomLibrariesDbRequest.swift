@@ -13,6 +13,7 @@ import RealmSwift
 struct InitializeCustomLibrariesDbRequest: DbRequest {
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let (isNew, object) = try database.autocreatedObject(ofType: RCustomLibrary.self, forPrimaryKey: RCustomLibraryType.myLibrary.rawValue)

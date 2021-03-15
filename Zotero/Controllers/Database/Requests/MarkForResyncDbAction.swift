@@ -15,6 +15,7 @@ struct MarkForResyncDbAction<Obj: SyncableObject&Updatable>: DbRequest {
     let keys: [String]
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     init(libraryId: LibraryIdentifier, keys: [Any]) throws {
         guard let typedKeys = keys as? [String] else { throw DbError.primaryKeyWrongType }
@@ -54,6 +55,7 @@ struct MarkGroupForResyncDbAction: DbRequest {
     let identifier: Int
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         if let library = database.object(ofType: RGroup.self, forPrimaryKey: self.identifier) {

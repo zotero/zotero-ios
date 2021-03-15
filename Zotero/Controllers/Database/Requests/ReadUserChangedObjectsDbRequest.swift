@@ -13,9 +13,8 @@ import RealmSwift
 struct ReadUserChangedObjectsDbRequest<Obj: UpdatableObject>: DbResponseRequest {
     typealias Response = Results<Obj>
 
-    var needsWrite: Bool {
-        return false
-    }
+    var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<Obj> {
         return database.objects(Obj.self).filter(.userChanges)

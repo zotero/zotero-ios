@@ -17,6 +17,7 @@ struct CheckItemIsChangedDbRequest: DbResponseRequest {
     let key: String
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Bool {
         guard let item = database.objects(RItem.self)

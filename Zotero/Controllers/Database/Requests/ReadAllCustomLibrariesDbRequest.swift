@@ -14,6 +14,7 @@ struct ReadAllCustomLibrariesDbRequest: DbResponseRequest {
     typealias Response = Results<RCustomLibrary>
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RCustomLibrary> {
         return database.objects(RCustomLibrary.self).sorted(byKeyPath: "orderId")

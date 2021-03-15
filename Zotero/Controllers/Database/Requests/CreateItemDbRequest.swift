@@ -19,9 +19,8 @@ struct CreateItemDbRequest: DbResponseRequest {
     let schemaController: SchemaController
     let dateParser: DateParser
 
-    var needsWrite: Bool {
-        return true
-    }
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> RItem {
         // Create main item

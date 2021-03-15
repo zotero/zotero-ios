@@ -17,6 +17,7 @@ struct ReadFilenameDbRequest: DbResponseRequest {
     let key: String
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> String {
         guard let item = database.objects(RItem.self).filter(.key(self.key, in: self.libraryId)).first, item.rawType == ItemTypes.attachment else {

@@ -14,8 +14,6 @@ import UIKit
 import RealmSwift
 
 struct StoreChangedAnnotationsDbRequest: DbRequest {
-    var needsWrite: Bool { return true }
-
     let attachmentKey: String
     let libraryId: LibraryIdentifier
     let annotations: [Annotation]
@@ -23,6 +21,9 @@ struct StoreChangedAnnotationsDbRequest: DbRequest {
 
     unowned let schemaController: SchemaController
     unowned let boundingBoxConverter: AnnotationBoundingBoxConverter
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let toRemove = try ReadAnnotationsDbRequest(attachmentKey: self.attachmentKey, libraryId: self.libraryId).process(in: database).filter(.key(in: self.deletedKeys))

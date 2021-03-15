@@ -15,6 +15,7 @@ struct StoreGroupDbRequest: DbRequest {
     let userId: Int
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let group = try database.autocreatedObject(ofType: RGroup.self, forPrimaryKey: self.response.identifier).1

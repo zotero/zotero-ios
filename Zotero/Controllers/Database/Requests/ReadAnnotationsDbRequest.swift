@@ -17,6 +17,7 @@ struct ReadAnnotationsDbRequest: DbResponseRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return false }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
         return database.objects(RItem.self).filter(.parentKey(self.attachmentKey, in: self.libraryId))

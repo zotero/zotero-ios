@@ -16,10 +16,10 @@ struct CollectionTreeBuilder {
     }
 
     static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [Collection] {
-        return createCollections(from: collections, parentKey: nil, level: 0, libraryId: libraryId)
+        return createCollections(from: collections, parentKey: nil, level: 0, visible: true, libraryId: libraryId)
     }
 
-    private static func createCollections(from results: Results<RCollection>, parentKey: String?, level: Int, libraryId: LibraryIdentifier) -> [Collection] {
+    private static func createCollections(from results: Results<RCollection>, parentKey: String?, level: Int, visible: Bool, libraryId: LibraryIdentifier) -> [Collection] {
         var filteredResults: Results<RCollection>
         if let key = parentKey {
             filteredResults = results.filter("parent.key = %@", key)
@@ -33,16 +33,15 @@ struct CollectionTreeBuilder {
                                                       SortDescriptor(keyPath: "key")])
 
         var cells: [Collection] = []
+
         for rCollection in filteredResults {
+            let hasChildren = rCollection.children.count > 0
             let itemCount = rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
-            let collection = Collection(object: rCollection, level: level, parentKey: parentKey, itemCount: itemCount)
+            let collection = Collection(object: rCollection, level: level, visible: visible, hasChildren: hasChildren, parentKey: parentKey, itemCount: itemCount)
             cells.append(collection)
 
-            if rCollection.children.count > 0 {
-                cells.append(contentsOf: createCollections(from: results,
-                                                           parentKey: collection.key,
-                                                           level: (level + 1),
-                                                           libraryId: libraryId))
+            if hasChildren {
+                cells.append(contentsOf: createCollections(from: results, parentKey: collection.key, level: (level + 1), visible: (visible && !rCollection.collapsed), libraryId: libraryId))
             }
         }
         return cells

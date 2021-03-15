@@ -17,6 +17,7 @@ struct StorePageForItemDbRequest: DbRequest {
     let page: Int
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let pageIndex: RPageIndex

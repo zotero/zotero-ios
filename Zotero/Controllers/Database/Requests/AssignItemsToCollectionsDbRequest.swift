@@ -16,6 +16,7 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
     let libraryId: LibraryIdentifier
 
     var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
         let collections = database.objects(RCollection.self).filter(.keys(self.collectionKeys, in: self.libraryId))
