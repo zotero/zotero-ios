@@ -87,8 +87,8 @@ final class CollectionsTableViewHandler: NSObject {
         self.tableView.performBatchUpdates {
             self.snapshot = collections
 
-            self.tableView.deleteRows(at: deletions, with: .fade)
-            self.tableView.insertRows(at: insertions, with: .fade)
+            self.tableView.deleteRows(at: deletions, with: .bottom)
+            self.tableView.insertRows(at: insertions, with: .bottom)
             self.tableView.reloadRows(at: reloads, with: .automatic)
             moves.forEach { self.tableView.moveRow(at: $0.0, to: $0.1) }
         } completion: { _ in
