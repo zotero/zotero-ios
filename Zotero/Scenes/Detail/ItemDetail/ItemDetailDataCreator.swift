@@ -55,6 +55,7 @@ struct ItemDetailDataCreator {
 
         return ItemDetailState.Data(title: "",
                                     type: itemType,
+                                    isAttachment: (itemType == ItemTypes.attachment),
                                     localizedType: localizedType,
                                     creators: [:],
                                     creatorIds: [],
@@ -153,6 +154,7 @@ struct ItemDetailDataCreator {
         let tags = item.tags.sorted(byKeyPath: "tag.name").map(Tag.init)
         let data =  ItemDetailState.Data(title: item.baseTitle,
                                          type: item.rawType,
+                                         isAttachment: (item.rawType == ItemTypes.attachment),
                                          localizedType: localizedType,
                                          creators: creators,
                                          creatorIds: creatorIds,

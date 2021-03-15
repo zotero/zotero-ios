@@ -180,6 +180,7 @@ struct ItemDetailState: ViewModelState {
     struct Data: Equatable {
         var title: String
         var type: String
+        var isAttachment: Bool
         var localizedType: String
         var creators: [UUID: Creator]
         var creatorIds: [UUID]
@@ -238,7 +239,7 @@ struct ItemDetailState: ViewModelState {
 
         static var empty: Data {
             let date = Date()
-            return Data(title: "", type: "", localizedType: "", creators: [:], creatorIds: [], fields: [:], fieldIds: [], abstract: nil, notes: [], attachments: [], tags: [],
+            return Data(title: "", type: "", isAttachment: false, localizedType: "", creators: [:], creatorIds: [], fields: [:], fieldIds: [], abstract: nil, notes: [], attachments: [], tags: [],
                         deletedAttachments: [], deletedNotes: [], deletedTags: [], dateModified: date, dateAdded: date, maxFieldTitleWidth: 0, maxNonemptyFieldTitleWidth: 0)
         }
     }

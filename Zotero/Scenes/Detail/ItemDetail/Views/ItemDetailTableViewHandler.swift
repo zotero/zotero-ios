@@ -229,8 +229,12 @@ final class ItemDetailTableViewHandler: NSObject {
     /// - returns: Array of visible sections.
     private func sections(for data: ItemDetailState.Data, isEditing: Bool) -> [Section] {
         if isEditing {
-            // Each section is visible during editing, except dates section. Dates are filled automatically and the user can't change them manually.
-            return [.title, .type, .creators, .fields, .dates, .abstract, .notes, .tags, .attachments]
+            if data.isAttachment {
+                return [.title, .type, .fields, .dates, .tags, .attachments]
+            } else {
+                // Each section is visible during editing, except dates section. Dates are filled automatically and the user can't change them manually.
+                return [.title, .type, .creators, .fields, .dates, .abstract, .notes, .tags, .attachments]
+            }
         }
 
         var sections: [Section] = [.title]
@@ -353,11 +357,14 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     /// Count of rows for each section. This count includes all rows, including additional rows for some sections (add buttons while editing).
-    private func count(in section: Section, isEditing: Bool) -> Int {
+    private func count(in section: Section, isEditing: Bool, isAttachment: Bool) -> Int {
         switch section {
-        case .creators, .notes, .attachments, .tags:
+        case .tags:
             // +1 for add button
             return self.baseCount(in: section) + (isEditing ? 1 : 0)
+        case .creators, .notes, .attachments:
+            // +1 for add button
+            return self.baseCount(in: section) + ((!isAttachment && isEditing) ? 1 : 0)
         case .abstract, .title, .type, .dates, .fields:
             return self.baseCount(in: section)
         }
@@ -368,8 +375,11 @@ final class ItemDetailTableViewHandler: NSObject {
         let cellId: String
 
         switch section {
-        case .fields, .abstract, .title, .type, .dates:
+        case .title:
             cellId = section.cellId(isEditing: isEditing)
+        case .fields, .abstract, .type, .dates:
+            let isAttachment = self.viewModel.state.data.isAttachment
+            cellId = section.cellId(isEditing: (!isAttachment && isEditing))
         case .creators, .attachments, .notes, .tags:
             if indexPath.row < self.baseCount(in: section) {
                 cellId = section.cellId(isEditing: isEditing)
@@ -381,7 +391,8 @@ final class ItemDetailTableViewHandler: NSObject {
         return (section, cellId)
     }
 
-    private func cellLayoutData(for section: Section, isEditing: Bool, isAddCell: Bool, indexPath: IndexPath) -> (separatorInsets: UIEdgeInsets, layoutMargins: UIEdgeInsets, accessoryType: UITableViewCell.AccessoryType) {
+    private func cellLayoutData(for section: Section, isEditing: Bool, isAttachment: Bool, isAddCell: Bool, indexPath: IndexPath)
+                                                                                        -> (separatorInsets: UIEdgeInsets, layoutMargins: UIEdgeInsets, accessoryType: UITableViewCell.AccessoryType) {
         var hasSeparator = true
         var accessoryType: UITableViewCell.AccessoryType = .none
 
@@ -404,10 +415,10 @@ final class ItemDetailTableViewHandler: NSObject {
                 hasSeparator = isEditing
             }
         case .dates:
-            hasSeparator = isEditing && indexPath.row != (self.count(in: .dates, isEditing: isEditing) - 1)
+            hasSeparator = isEditing && indexPath.row != (self.count(in: .dates, isEditing: isEditing, isAttachment: isAttachment) - 1)
         }
 
-        let isLastRow = indexPath.row == (self.count(in: section, isEditing: isEditing) - 1)
+        let isLastRow = indexPath.row == (self.count(in: section, isEditing: isEditing, isAttachment: isAttachment) - 1)
         let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
         let leftSeparatorInset: CGFloat = hasSeparator ? self.separatorLeftInset(for: section, isEditing: isEditing, leftMargin: layoutMargins.left) :
                                                          max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -524,7 +535,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.count(in: self.sections[section], isEditing: self.viewModel.state.isEditing)
+        return self.count(in: self.sections[section], isEditing: self.viewModel.state.isEditing, isAttachment: self.viewModel.state.data.isAttachment)
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
@@ -557,8 +568,9 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let isEditing = self.viewModel.state.isEditing
+        let isAttachment = self.viewModel.state.data.isAttachment
         let section = self.sections[indexPath.section]
-        let isLastRow = indexPath.row == (self.count(in: section, isEditing: isEditing) - 1)
+        let isLastRow = indexPath.row == (self.count(in: section, isEditing: isEditing, isAttachment: isAttachment) - 1)
         let layoutMargins = ItemDetailLayout.insets(for: section, isEditing: isEditing, isFirstRow: (indexPath.row == 0), isLastRow: isLastRow)
         cell.layoutMargins = layoutMargins
         cell.contentView.layoutMargins = layoutMargins
@@ -566,10 +578,11 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let isEditing = self.viewModel.state.isEditing
+        let isAttachment = self.viewModel.state.data.isAttachment
         let (section, cellId) = self.cellData(for: indexPath, isEditing: isEditing)
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
 
-        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isEditing: isEditing,
+        let (separatorInsets, layoutMargins, accessoryType) = self.cellLayoutData(for: section, isEditing: isEditing, isAttachment: isAttachment,
                                                                                   isAddCell: (cell is ItemDetailAddCell), indexPath: indexPath)
         cell.separatorInset = separatorInsets
         cell.layoutMargins = layoutMargins
@@ -700,7 +713,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
 
         switch section {
         case .attachments:
-            return indexPath.row < rows
+            return !self.viewModel.state.data.isAttachment && indexPath.row < rows
         case .creators, .notes, .tags:
             return self.viewModel.state.isEditing && indexPath.row < rows
         case .title, .abstract, .fields, .type, .dates:
@@ -784,10 +797,8 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
                 }
             }
         case .type:
-            if self.viewModel.state.isEditing {
-                if self.viewModel.state.data.type != ItemTypes.attachment {
-                    self.observer.on(.next(.openTypePicker))
-                }
+            if self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment{
+                self.observer.on(.next(.openTypePicker))
             }
         case .fields:
             let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]

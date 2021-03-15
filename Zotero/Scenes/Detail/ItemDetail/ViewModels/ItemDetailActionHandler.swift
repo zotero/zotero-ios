@@ -284,6 +284,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
         var data = originalData
         data.type = type
+        data.isAttachment = type == ItemTypes.attachment
         data.localizedType = localizedType
         data.fields = fields
         data.fieldIds = fieldIds
