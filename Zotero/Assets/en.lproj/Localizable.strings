@@ -133,12 +133,12 @@
 "item_detail.show_more" = "Show more";
 "item_detail.show_less" = "Show less";
 "item_detail.view_pdf" = "View PDF";
-"item_detail.data_reloaded" = "This item has been changed. Data will now reload.";
+"item_detail.data_reloaded" = "This item has been changed remotely. It will now reload.";
 "item_detail.trash_attachment" = "Move to Trash";
-"item_detail.delete_attachment_file" = "Delete File from Device";
+"item_detail.delete_attachment_file" = "Remove Download";
 "item_detail.trash_attachment_question" = "Are you sure you want to move this attachment to the trash?";
 "item_detail.deleted_title" = "Deleted";
-"item_detail.deleted_message" = "This item has been deleted. Do you want to revert it?";
+"item_detail.deleted_message" = "This item has been deleted. Do you want to restore it?";
 
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";
@@ -171,11 +171,11 @@
 "pdf.annotation_popover.page_label_title" = "Edit Page Number";
 "pdf.annotation_popover.no_comment" = "No comment";
 "pdf.deleted_title" = "Deleted";
-"pdf.deleted_message" = "This document has been deleted. Do you want to revert it?";
+"pdf.deleted_message" = "This document has been deleted. Do you want to restore it?";
 
 "settings.title" = "Settings";
 "settings.account" = "Account";
-"settings.logout" = "Log Out";
+"settings.logout" = "Sign Out";
 "settings.logout_warning" = "Any local data that was not synced will be deleted. Do you really want to sign out?";
 "settings.general" = "General";
 "settings.item_count" = "Item count";
@@ -249,7 +249,7 @@
 "errors.sync_toolbar.one_error" = "1 issue";
 "errors.sync_toolbar.multiple_errors" = "%d issues";
 "errors.sync_toolbar.attachment_missing" = "Unable to upload attachment. Please try removing and re-adding the attachment.";
-"errors.sync_toolbar.libraries_missing" = "No libraries found. Please log out and back in again.";
+"errors.sync_toolbar.libraries_missing" = "No libraries found. Please sign out and back in again.";
 "errors.sync_toolbar.groups_failed" = "Could not sync groups. Please try again.";
 "errors.sync_toolbar.conflict_retry_limit" = "Remote sync in progress. Please try again in a few minutes.";
 "errors.sync_toolbar.group_permissions" = "You don’t have permission to edit groups.";
