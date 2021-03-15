@@ -441,7 +441,7 @@ final class ItemDetailTableViewHandler: NSObject {
         var actions: [UIAction] = []
 
         if attachment.contentType.fileLocation == .local {
-            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: []) { [weak self] action in
                 self?.viewModel.process(action: .deleteAttachmentFile(attachment))
             })
         }
@@ -722,29 +722,36 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        guard editingStyle == .delete else { return }
+        guard self.viewModel.state.isEditing && editingStyle == .delete else { return }
 
         switch self.sections[indexPath.section] {
         case .creators:
-            if self.viewModel.state.isEditing {
-                self.viewModel.process(action: .deleteCreators([indexPath.row]))
-            }
+            self.viewModel.process(action: .deleteCreators([indexPath.row]))
         case .tags:
-            if self.viewModel.state.isEditing {
-                self.viewModel.process(action: .deleteTags([indexPath.row]))
-            }
+            self.viewModel.process(action: .deleteTags([indexPath.row]))
         case .attachments:
-            if self.viewModel.state.isEditing {
-                self.viewModel.process(action: .deleteAttachments([indexPath.row]))
-            } else {
-                let attachment = self.viewModel.state.data.attachments[indexPath.row]
-                self.observer.on(.next(.trashAttachment(attachment)))
-            }
+            self.viewModel.process(action: .deleteAttachments([indexPath.row]))
         case .notes:
-            if self.viewModel.state.isEditing {
-                self.viewModel.process(action: .deleteNotes([indexPath.row]))
-            }
+            self.viewModel.process(action: .deleteNotes([indexPath.row]))
         case .title, .abstract, .fields, .type, .dates: break
+        }
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard !self.viewModel.state.isEditing else { return nil }
+
+        let section = self.sections[indexPath.section]
+        switch section {
+        case .attachments:
+            let attachment = self.viewModel.state.data.attachments[indexPath.row]
+            let trashAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completed in
+                self?.observer.on(.next(.trashAttachment(attachment)))
+                completed(true)
+            }
+            trashAction.image = UIImage(systemName: "trash")
+            return UISwipeActionsConfiguration(actions: [trashAction])
+        case .title, .abstract, .fields, .type, .dates, .creators, .notes, .tags:
+            return nil
         }
     }
 
