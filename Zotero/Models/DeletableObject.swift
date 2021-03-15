@@ -20,11 +20,13 @@ protocol Deletable: class {
 
 extension RCollection: Deletable {
     func willRemove(in database: Realm) {
-        self.items.forEach { item in
+        for item in self.items {
+            guard !item.isInvalidated else { continue }
             item.changedFields = .collections
             item.changeType = .user
         }
-        self.children.forEach { child in
+        for child in self.children {
+            guard !child.isInvalidated else { continue }
             child.willRemove(in: database)
         }
         database.delete(self.children)
@@ -33,7 +35,8 @@ extension RCollection: Deletable {
 
 extension RItem: Deletable {
     func willRemove(in database: Realm) {
-        self.children.forEach { child in
+        for child in self.children {
+            guard !child.isInvalidated else { continue }
             child.willRemove(in: database)
         }
         database.delete(self.children)
