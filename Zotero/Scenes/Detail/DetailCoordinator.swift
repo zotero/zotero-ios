@@ -517,7 +517,7 @@ extension DetailCoordinator: DetailItemDetailCoordinatorDelegate {
             }
         }
 
-        let controller = UIAlertController(title: "Deleted", message: "This item has been deleted. Do you want to revert it?", preferredStyle: .alert)
+        let controller = UIAlertController(title: L10n.ItemDetail.deletedTitle, message: L10n.ItemDetail.deletedMessage, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { _ in
             completion(false)
         }))
@@ -676,7 +676,7 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void) {
-        let controller = UIAlertController(title: "Deleted", message: "This document has been deleted. Do you want to revert it?", preferredStyle: .alert)
+        let controller = UIAlertController(title: L10n.Pdf.deletedTitle, message: L10n.Pdf.deletedMessage, preferredStyle: .alert)
         controller.addAction(UIAlertAction(title: L10n.yes, style: .default, handler: { _ in
             completion(false)
         }))

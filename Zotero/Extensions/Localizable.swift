@@ -263,6 +263,10 @@ internal enum L10n {
     internal static let dataReloaded = L10n.tr("Localizable", "item_detail.data_reloaded")
     /// Delete File from Device
     internal static let deleteAttachmentFile = L10n.tr("Localizable", "item_detail.delete_attachment_file")
+    /// This item has been deleted. Do you want to revert it?
+    internal static let deletedMessage = L10n.tr("Localizable", "item_detail.deleted_message")
+    /// Deleted
+    internal static let deletedTitle = L10n.tr("Localizable", "item_detail.deleted_title")
     /// Merge name
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name")
     /// Notes
@@ -390,6 +394,10 @@ internal enum L10n {
   }
 
   internal enum Pdf {
+    /// This document has been deleted. Do you want to revert it?
+    internal static let deletedMessage = L10n.tr("Localizable", "pdf.deleted_message")
+    /// Deleted
+    internal static let deletedTitle = L10n.tr("Localizable", "pdf.deleted_title")
     internal enum AnnotationPopover {
       /// Delete Annotation
       internal static let delete = L10n.tr("Localizable", "pdf.annotation_popover.delete")
