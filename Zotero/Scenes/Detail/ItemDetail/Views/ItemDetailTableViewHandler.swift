@@ -436,7 +436,7 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        guard !self.viewModel.state.isEditing else { return nil }
+        guard !self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment else { return nil }
 
         var actions: [UIAction] = []
 
@@ -749,7 +749,7 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !self.viewModel.state.isEditing && self.sections[indexPath.section] == .attachments else { return nil }
+        guard !self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment && self.sections[indexPath.section] == .attachments else { return nil }
 
         let attachment = self.viewModel.state.data.attachments[indexPath.row]
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
