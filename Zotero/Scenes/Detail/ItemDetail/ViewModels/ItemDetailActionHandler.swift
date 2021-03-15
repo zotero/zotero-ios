@@ -140,6 +140,9 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.abstractCollapsed = !state.abstractCollapsed
                 state.changes = [.abstractCollapsed]
             }
+
+        case .trashAttachment(let attachment):
+            self.trash(attachment: attachment, in: viewModel)
         }
     }
 
@@ -399,6 +402,24 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     }
 
     // MARK: - Attachments
+
+    private func trash(attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        guard let index = viewModel.state.data.attachments.firstIndex(of: attachment) else { return }
+
+        do {
+            try self.dbStorage.createCoordinator().perform(request: MarkItemsAsTrashedDbRequest(keys: [attachment.key], libraryId: viewModel.state.library.identifier, trashed: true))
+
+            self.update(viewModel: viewModel) { state in
+                state.data.attachments.remove(at: index)
+                state.diff = .attachments(insertions: [], deletions: [index], reloads: [])
+            }
+        } catch let error {
+            DDLogError("ItemDetailActionHandler: can't trash attachment - \(error)")
+            self.update(viewModel: viewModel) { state in
+                state.error = .cantTrashAttachment
+            }
+        }
+    }
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let key: String

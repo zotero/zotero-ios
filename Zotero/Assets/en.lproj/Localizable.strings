@@ -134,6 +134,9 @@
 "item_detail.show_less" = "Show less";
 "item_detail.view_pdf" = "View PDF";
 "item_detail.data_reloaded" = "This item has been changed. Data will now reload.";
+"item_detail.trash_attachment" = "Move to Trash";
+"item_detail.delete_attachment_file" = "Delete File from Device";
+"item_detail.trash_attachment_question" = "Are you sure you want to move this attachment to the trash?";
 
 "creator_editor.creator" = "Creator Type";
 "creator_editor.first_name" = "First Name";

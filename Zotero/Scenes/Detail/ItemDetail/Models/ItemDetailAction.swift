@@ -31,6 +31,7 @@ enum ItemDetailAction {
     case save
     case saveCreator(ItemDetailState.Creator)
     case startEditing
+    case trashAttachment(Attachment)
     case toggleAbstractDetailCollapsed
     case updateDownload(FileDownloader.Update)
     case updateAttachments(AttachmentFileDeletedNotification)

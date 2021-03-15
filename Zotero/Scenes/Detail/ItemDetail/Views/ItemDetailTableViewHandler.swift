@@ -28,6 +28,7 @@ final class ItemDetailTableViewHandler: NSObject {
         case openUrl(String)
         case openDoi(String)
         case showAttachmentError(Error, Int)
+        case trashAttachment(Attachment)
     }
 
     /// Sections that are shown in `tableView`
@@ -424,11 +425,21 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        guard attachment.contentType.fileLocation == .local else { return nil }
-        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
-            self?.viewModel.process(action: .deleteAttachmentFile(attachment))
+        guard !self.viewModel.state.isEditing else { return nil }
+
+        var actions: [UIAction] = []
+
+        if attachment.contentType.fileLocation == .local {
+            actions.append(UIAction(title: L10n.ItemDetail.deleteAttachmentFile, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+                self?.viewModel.process(action: .deleteAttachmentFile(attachment))
+            })
         }
-        return UIMenu(title: "", children: [delete])
+
+        actions.append(UIAction(title: L10n.ItemDetail.trashAttachment, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            self?.viewModel.process(action: .trashAttachment(attachment))
+        })
+
+        return UIMenu(title: "", children: actions)
     }
 
     // MARK: - Cells
@@ -656,18 +667,9 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         return cell
     }
+}
 
-    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        let section = self.sections[indexPath.section]
-        let rows = self.baseCount(in: section)
-        switch section {
-        case .creators, .attachments, .notes, .tags:
-            return indexPath.row < rows
-        case .title, .abstract, .fields, .type, .dates:
-            return false
-        }
-    }
-
+extension ItemDetailTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
         let section = self.sections[indexPath.section]
         switch section {
@@ -678,20 +680,7 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         }
     }
 
-    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard self.sections[indexPath.section] == .attachments else { return nil }
-
-        let attachment = self.viewModel.state.data.attachments[indexPath.row]
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            return self?.createContextMenu(for: attachment)
-        }
-    }
-}
-
-extension ItemDetailTableViewHandler: UITableViewDelegate {
-    func tableView(_ tableView: UITableView,
-                   targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath,
-                   toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
+    func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {
         let section = self.sections[proposedDestinationIndexPath.section]
         if section != .creators { return sourceIndexPath }
         if proposedDestinationIndexPath.row == self.baseCount(in: section) { return sourceIndexPath }
@@ -705,19 +694,53 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
         self.viewModel.process(action: .moveCreators(from: IndexSet([sourceIndexPath.row]), to: destinationIndexPath.row))
     }
 
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        let section = self.sections[indexPath.section]
+        let rows = self.baseCount(in: section)
+
+        switch section {
+        case .attachments:
+            return indexPath.row < rows
+        case .creators, .notes, .tags:
+            return self.viewModel.state.isEditing && indexPath.row < rows
+        case .title, .abstract, .fields, .type, .dates:
+            return false
+        }
+    }
+
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         guard editingStyle == .delete else { return }
 
         switch self.sections[indexPath.section] {
         case .creators:
-            self.viewModel.process(action: .deleteCreators([indexPath.row]))
+            if self.viewModel.state.isEditing {
+                self.viewModel.process(action: .deleteCreators([indexPath.row]))
+            }
         case .tags:
-            self.viewModel.process(action: .deleteTags([indexPath.row]))
+            if self.viewModel.state.isEditing {
+                self.viewModel.process(action: .deleteTags([indexPath.row]))
+            }
         case .attachments:
-            self.viewModel.process(action: .deleteAttachments([indexPath.row]))
+            if self.viewModel.state.isEditing {
+                self.viewModel.process(action: .deleteAttachments([indexPath.row]))
+            } else {
+                let attachment = self.viewModel.state.data.attachments[indexPath.row]
+                self.observer.on(.next(.trashAttachment(attachment)))
+            }
         case .notes:
-            self.viewModel.process(action: .deleteNotes([indexPath.row]))
+            if self.viewModel.state.isEditing {
+                self.viewModel.process(action: .deleteNotes([indexPath.row]))
+            }
         case .title, .abstract, .fields, .type, .dates: break
+        }
+    }
+
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard !self.viewModel.state.isEditing && self.sections[indexPath.section] == .attachments else { return nil }
+
+        let attachment = self.viewModel.state.data.attachments[indexPath.row]
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
+            return self?.createContextMenu(for: attachment)
         }
     }
 

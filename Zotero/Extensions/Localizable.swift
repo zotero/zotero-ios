@@ -261,6 +261,8 @@ internal enum L10n {
     internal static let attachments = L10n.tr("Localizable", "item_detail.attachments")
     /// This item has been changed. Data will now reload.
     internal static let dataReloaded = L10n.tr("Localizable", "item_detail.data_reloaded")
+    /// Delete File from Device
+    internal static let deleteAttachmentFile = L10n.tr("Localizable", "item_detail.delete_attachment_file")
     /// Merge name
     internal static let mergeName = L10n.tr("Localizable", "item_detail.merge_name")
     /// Notes
@@ -275,6 +277,10 @@ internal enum L10n {
     internal static let splitName = L10n.tr("Localizable", "item_detail.split_name")
     /// Tags
     internal static let tags = L10n.tr("Localizable", "item_detail.tags")
+    /// Move to Trash
+    internal static let trashAttachment = L10n.tr("Localizable", "item_detail.trash_attachment")
+    /// Are you sure you want to move this attachment to the trash?
+    internal static let trashAttachmentQuestion = L10n.tr("Localizable", "item_detail.trash_attachment_question")
     /// Untitled
     internal static let untitled = L10n.tr("Localizable", "item_detail.untitled")
     /// View PDF

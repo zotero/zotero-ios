@@ -16,4 +16,5 @@ enum ItemDetailError: Error, Equatable, Hashable {
     case droppedFields([String])
     case cantUnzipSnapshot
     case cantCreateData
+    case cantTrashAttachment
 }

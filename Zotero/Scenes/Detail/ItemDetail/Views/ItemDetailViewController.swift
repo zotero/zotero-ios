@@ -104,36 +104,48 @@ final class ItemDetailViewController: UIViewController {
             self.coordinatorDelegate?.showCreatorCreation(for: self.viewModel.state.data.type, saved: { [weak self] creator in
                 self?.viewModel.process(action: .saveCreator(creator))
             })
+
         case .openFilePicker:
             self.coordinatorDelegate?.showAttachmentPicker(save: { [weak self] urls in
                 self?.viewModel.process(action: .addAttachments(urls))
             })
+
         case .openNoteEditor(let note):
             self.coordinatorDelegate?.showNote(with: (note?.text ?? ""), readOnly: !self.viewModel.state.library.metadataEditable, save: { [weak self] text in
                 self?.viewModel.process(action: .saveNote(key: note?.key, text: text))
             })
+
         case .openTagPicker:
             self.coordinatorDelegate?.showTagPicker(libraryId: self.viewModel.state.library.identifier,
                                                     selected: Set(self.viewModel.state.data.tags.map({ $0.id })),
                                                     picked: { [weak self] tags in
                                                         self?.viewModel.process(action: .setTags(tags))
                                                     })
+
         case .openTypePicker:
             self.coordinatorDelegate?.showTypePicker(selected: self.viewModel.state.data.type,
                                                      picked: { [weak self] type in
                                                          self?.viewModel.process(action: .changeType(type))
                                                      })
+
         case .openUrl(let string):
             if let url = URL(string: string) {
                 self.coordinatorDelegate?.showWeb(url: url)
             }
+
         case .openDoi(let doi):
             guard let encoded = FieldKeys.Item.clean(doi: doi).addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else { return }
             self.coordinatorDelegate?.show(doi: encoded)
+
         case .showAttachmentError(let error, let index):
             self.coordinatorDelegate?.showAttachmentError(error, retryAction: { [weak self] in
                 self?.viewModel.process(action: .openAttachment(index))
             })
+
+        case .trashAttachment(let attachment):
+            self.coordinatorDelegate?.showTrashAttachmentQuestion { [weak self] in
+                self?.viewModel.process(action: .trashAttachment(attachment))
+            }
         }
     }
 
