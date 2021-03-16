@@ -16,7 +16,7 @@ final class BackgroundTimer {
         case resumed
     }
 
-    private let timeInterval: TimeInterval
+    private let timeInterval: DispatchTimeInterval
     private let queue: DispatchQueue
 
     var eventHandler: (() -> Void)?
@@ -31,7 +31,7 @@ final class BackgroundTimer {
         return t
     }()
 
-    init(timeInterval: TimeInterval, queue: DispatchQueue) {
+    init(timeInterval: DispatchTimeInterval, queue: DispatchQueue) {
         self.timeInterval = timeInterval
         self.queue = queue
     }
