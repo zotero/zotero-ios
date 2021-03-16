@@ -52,9 +52,9 @@ struct Collection: Identifiable, Equatable, Hashable {
     let type: CollectionType
     let key: String
     let name: String
-    let level: Int
+    var level: Int
     let parentKey: String?
-    let hasChildren: Bool
+    var hasChildren: Bool
     var collapsed: Bool
     var visible: Bool
     var itemCount: Int

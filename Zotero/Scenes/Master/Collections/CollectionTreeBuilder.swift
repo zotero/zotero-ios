@@ -16,33 +16,45 @@ struct CollectionTreeBuilder {
     }
 
     static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [Collection] {
-        return createCollections(from: collections, parentKey: nil, level: 0, visible: true, libraryId: libraryId)
+        var parentMap = self.createParentMap(from: collections)
+        return self.createCollections(for: "", level: 0, visible: true, from: &parentMap)
     }
 
-    private static func createCollections(from results: Results<RCollection>, parentKey: String?, level: Int, visible: Bool, libraryId: LibraryIdentifier) -> [Collection] {
-        var filteredResults: Results<RCollection>
-        if let key = parentKey {
-            filteredResults = results.filter(.parentKey(key))
-        } else {
-            filteredResults = results.filter(.parentKeyNil)
-        }
-
-        guard !filteredResults.isEmpty else { return [] }
-
-        filteredResults = filteredResults.sorted(by: [SortDescriptor(keyPath: "name"),
-                                                      SortDescriptor(keyPath: "key")])
-
-        var collections: [Collection] = []
-        for rCollection in filteredResults {
-            let hasChildren = results.filter(.parentKey(rCollection.key)).count > 0
-            let itemCount = rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
-            let collection = Collection(object: rCollection, level: level, visible: visible, hasChildren: hasChildren, parentKey: parentKey, itemCount: itemCount)
-            collections.append(collection)
-
-            if hasChildren {
-                collections.append(contentsOf: createCollections(from: results, parentKey: collection.key, level: (level + 1), visible: (visible && !rCollection.collapsed), libraryId: libraryId))
+    private static func createParentMap(from collections: Results<RCollection>) -> [String: [Collection]] {
+        var parentMap: [String: [Collection]] = [:]
+        for rCollection in collections {
+            let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: rCollection.parentKey, itemCount: 0)
+            let parentKey = rCollection.parentKey ?? ""
+            if var collections = parentMap[parentKey] {
+                let insertionIndex = collections.index(of: collection, sortedBy: { $0.name < $1.name })
+                collections.insert(collection, at: insertionIndex)
+                parentMap[parentKey] = collections
+            } else {
+                parentMap[parentKey] = [collection]
             }
         }
+        return parentMap
+    }
+
+    private static func createCollections(for key: String, level: Int, visible: Bool, from map: inout [String: [Collection]]) -> [Collection] {
+        guard let original = map[key] else { return [] }
+
+        var collections = original
+        for (idx, var collection) in original.reversed().enumerated() {
+            let childCollections = self.createCollections(for: collection.key, level: (level + 1), visible: (visible && !collection.collapsed), from: &map)
+
+            collection.visible = visible
+            collection.level = level
+            collection.hasChildren = !childCollections.isEmpty
+            collections[original.count - idx - 1] = collection
+
+            if !childCollections.isEmpty {
+                collections.insert(contentsOf: childCollections, at: (original.count - idx))
+            }
+        }
+
+        map[key] = nil
+
         return collections
     }
 }
