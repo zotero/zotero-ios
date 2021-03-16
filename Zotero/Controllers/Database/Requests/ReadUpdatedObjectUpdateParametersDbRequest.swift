@@ -128,7 +128,7 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
 
         for object in objects {
             guard let parameters = object.updateParameters else { continue }
-            let level = object.level
+            let level = object.level(in: database)
             if var array = levels[level] {
                 array.append(parameters)
                 levels[level] = array
@@ -148,11 +148,13 @@ struct ReadUpdatedCollectionUpdateParametersDbRequest: DbResponseRequest {
 }
 
 extension RCollection {
-    fileprivate var level: Int {
+    fileprivate func level(in database: Realm) -> Int {
+        guard let libraryId = self.libraryId else { return 0 }
+
         var level = 0
         var object: RCollection? = self
-        while object?.parent != nil {
-            object = object?.parent
+        while let parentKey = object?.parentKey {
+            object = database.objects(RCollection.self).filter(.parentKey(parentKey, in: libraryId)).first
             level += 1
         }
         return level

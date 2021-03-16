@@ -40,8 +40,7 @@ final class SyncBatchProcessor {
         queue.maxConcurrentOperationCount = 4
         queue.qualityOfService = .userInteractive
 
-        self.storageQueue = DispatchQueue(label: "org.zotero.SyncBatchDownloader.StorageQueue",
-                                          qos: .userInteractive)//, attributes: .concurrent)
+        self.storageQueue = DispatchQueue(label: "org.zotero.SyncBatchDownloader.StorageQueue", qos: .userInteractive)//, attributes: .concurrent)
         self.batches = batches
         self.userId = userId
         self.apiClient = apiClient
@@ -144,9 +143,7 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .collection, libraryId: libraryId)
 
-            try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreCollectionsDbRequest(response: collections))
-            }
+            try coordinator.perform(request: StoreCollectionsDbRequest(response: collections))
 
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: collections.map({ $0.key }), errors: errors)
             return (failedKeys, errors, [])
@@ -157,9 +154,8 @@ final class SyncBatchProcessor {
             // Cache JSONs locally for later use (in CR)
             self.storeIndividualObjects(from: objects, type: .search, libraryId: libraryId)
 
-            try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreSearchesDbRequest(response: searches))
-            }
+            try coordinator.perform(request: StoreSearchesDbRequest(response: searches))
+
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: searches.map({ $0.key }), errors: errors)
             return (failedKeys, errors, [])
 
@@ -170,9 +166,7 @@ final class SyncBatchProcessor {
             self.storeIndividualObjects(from: objects, type: .item, libraryId: libraryId)
 
             // BETA: - forcing preferRemoteData to true for beta, it should be false here so that we report conflicts
-            let conflicts = try coordinator.performInAutoreleasepoolIfNeeded {
-                try coordinator.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
-            }
+            let conflicts = try coordinator.perform(request: StoreItemsDbResponseRequest(responses: items, schemaController: self.schemaController, dateParser: self.dateParser, preferResponseData: true))
             let failedKeys = self.failedKeys(from: expectedKeys, parsedKeys: items.map({ $0.key }), errors: errors)
 
             return (failedKeys, errors, conflicts)

@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Database {
-    private static let schemaVersion: UInt64 = 21
+    private static let schemaVersion: UInt64 = 22
     private static let migrationBlock: MigrationBlock = createMigrationBlock()
 
     static func mainConfiguration(url: URL) -> Realm.Configuration {
@@ -40,17 +40,27 @@ struct Database {
     private static func createMigrationBlock() -> MigrationBlock {
         return { migration, schemaVersion in
             if schemaVersion < 21 {
-                migration.enumerateObjects(ofType: "RCollection") { old, new in
-                    if let new = new {
-                        new["collapsed"] = true
-                    }
-                }
+                Database.migrateCollapsibleCollections(migration: migration)
+            }
+            if schemaVersion < 22 {
+                Database.migrateCollectionParentKeys(migration: migration)
             }
         }
     }
 
-    private static func migrateCollapsibleCollections() {
+    private static func migrateCollapsibleCollections(migration: Migration) {
+        migration.enumerateObjects(ofType: "RCollection") { old, new in
+            if let new = new {
+                new["collapsed"] = true
+            }
+        }
+    }
 
+    private static func migrateCollectionParentKeys(migration: Migration) {
+        migration.enumerateObjects(ofType: "RCollection") { old, new in
+            let parentKey = old?.value(forKeyPath: "parent.key") as? String
+            new?["parentKey"] = parentKey
+        }
     }
 
     /// Realm results observer returns modifications from old array, so if there is a need to retrieve updated objects from updated `Results`

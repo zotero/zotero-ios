@@ -61,7 +61,7 @@ extension RCollection: Updatable {
             parameters["name"] = self.name
         }
         if changes.contains(.parent) {
-            if let key = self.parent?.key {
+            if let key = self.parentKey {
                 parameters["parentCollection"] = key
             } else {
                 parameters["parentCollection"] = false
@@ -72,15 +72,8 @@ extension RCollection: Updatable {
     }
 
     var selfOrChildTitleIfChanged: String? {
-        if self.isChanged { return self.name }
-
-        for child in self.children {
-            if let title = child.selfOrChildTitleIfChanged {
-                return title
-            }
-        }
-
-        return nil
+        guard self.isChanged else { return nil }
+        return self.name
     }
 }
 

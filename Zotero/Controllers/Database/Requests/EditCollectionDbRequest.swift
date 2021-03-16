@@ -29,12 +29,8 @@ struct EditCollectionDbRequest: DbRequest {
             changes.insert(.name)
         }
 
-        if collection.parent?.key != self.parentKey {
-            if let key = self.parentKey {
-                collection.parent = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first
-            } else {
-                collection.parent = nil
-            }
+        if collection.parentKey != self.parentKey {
+            collection.parentKey = self.parentKey
             changes.insert(.parent)
         }
 

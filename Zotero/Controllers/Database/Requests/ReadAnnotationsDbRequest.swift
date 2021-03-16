@@ -20,7 +20,7 @@ struct ReadAnnotationsDbRequest: DbResponseRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> Results<RItem> {
-        return database.objects(RItem.self).filter(.parentKey(self.attachmentKey, in: self.libraryId))
+        return database.objects(RItem.self).filter(.parent(self.attachmentKey, in: self.libraryId))
                                            .filter(.items(type: ItemTypes.annotation, notSyncState: .dirty))
                                            .filter(.deleted(false))
                                            .sorted(byKeyPath: "annotationSortIndex", ascending: true)

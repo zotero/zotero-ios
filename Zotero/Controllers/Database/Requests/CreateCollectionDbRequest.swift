@@ -29,7 +29,7 @@ struct CreateCollectionDbRequest: DbRequest {
         var changes: RCollectionChanges = .name
 
         if let key = self.parentKey {
-            collection.parent = database.objects(RCollection.self).filter(.key(key, in: self.libraryId)).first
+            collection.parentKey = key
             changes.insert(.parent)
         }
 

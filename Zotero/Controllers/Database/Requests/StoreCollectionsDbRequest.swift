@@ -30,6 +30,7 @@ struct StoreCollectionsDbRequest: DbRequest {
             collection = existing
         } else {
             collection = RCollection()
+            collection.collapsed = true
             database.add(collection)
         }
 
@@ -51,7 +52,7 @@ struct StoreCollectionsDbRequest: DbRequest {
 
     private func syncParent(libraryId: LibraryIdentifier, data: CollectionResponse.Data,
                             collection: RCollection, database: Realm) {
-        collection.parent = nil
+        collection.parentKey = nil
 
         guard let key = data.parentCollection else { return }
 
@@ -65,6 +66,6 @@ struct StoreCollectionsDbRequest: DbRequest {
             parent.libraryId = libraryId
             database.add(parent)
         }
-        collection.parent = parent
+        collection.parentKey = parent.key
     }
 }

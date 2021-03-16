@@ -60,33 +60,48 @@ struct RealmDbCoordinator {
 
 extension RealmDbCoordinator: DbCoordinator {
     func perform(request: DbRequest) throws  {
-        if !request.needsWrite {
-            try request.process(in: self.realm)
-            return
-        }
+        try self.performInAutoreleasepoolIfNeeded {
+            if !request.needsWrite {
+                try request.process(in: self.realm)
+                return
+            }
 
-        try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
-            try request.process(in: self.realm)
+            try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
+                try request.process(in: self.realm)
+            }
         }
     }
 
     func perform<Request>(request: Request) throws -> Request.Response where Request : DbResponseRequest {
-        if !request.needsWrite {
-            return try request.process(in: self.realm)
-        }
+        return try self.performInAutoreleasepoolIfNeeded {
+            if !request.needsWrite {
+                return try request.process(in: self.realm)
+            }
 
-        return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
-            return try request.process(in: self.realm)
+            return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
+                return try request.process(in: self.realm)
+            }
         }
     }
 
     /// Writes multiple requests in single write transaction.
     func perform(requests: [DbRequest]) throws {
-        try self.realm.write {
-            for request in requests {
-                guard request.needsWrite else { continue }
-                try request.process(in: self.realm)
+        try self.performInAutoreleasepoolIfNeeded {
+            try self.realm.write {
+                for request in requests {
+                    guard request.needsWrite else { continue }
+                    try request.process(in: self.realm)
+                }
             }
+        }
+    }
+
+    private func performInAutoreleasepoolIfNeeded<Result>(invoking body: () throws -> Result) rethrows -> Result {
+        if Thread.isMainThread {
+            return try body()
+        }
+        return try autoreleasepool {
+            return try body()
         }
     }
 }

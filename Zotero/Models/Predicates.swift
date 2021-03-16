@@ -248,9 +248,23 @@ extension NSPredicate {
         return NSPredicate(format: "ANY fields.key = %@", key)
     }
 
-    static func parentKey(_ parentKey: String, in libraryId: LibraryIdentifier) -> NSPredicate {
+    static func parent(_ parentKey: String, in libraryId: LibraryIdentifier) -> NSPredicate {
         let libraryPredicate: NSPredicate = .parentLibrary(with: libraryId)
-        let itemPredicate: NSPredicate = NSPredicate(format: "parent.key = %@", parentKey)
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, itemPredicate])
+        let parentPredicate: NSPredicate = NSPredicate(format: "parent.key = %@", parentKey)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, parentPredicate])
+    }
+
+    static func parentKey(_ parentKey: String, in library: LibraryIdentifier) -> NSPredicate {
+        let libraryPredicate: NSPredicate = .library(with: library)
+        let parentPredicate: NSPredicate = .parentKey(parentKey)
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [libraryPredicate, parentPredicate])
+    }
+
+    static func parentKey(_ parentKey: String) -> NSPredicate {
+        return NSPredicate(format: "parentKey = %@", parentKey)
+    }
+
+    static var parentKeyNil: NSPredicate {
+        return NSPredicate(format: "parentKey == nil")
     }
 }

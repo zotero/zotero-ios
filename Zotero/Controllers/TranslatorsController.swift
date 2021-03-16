@@ -223,7 +223,7 @@ final class TranslatorsController {
         let metadata = try self.loadIndex()
         let coordinator = try self.dbStorage.createCoordinator()
         let request = SyncTranslatorsDbRequest(updateMetadata: metadata, deleteIndices: deleteIndices)
-        let updated = try coordinator.performInAutoreleasepoolIfNeeded { try coordinator.perform(request: request) }
+        let updated = try coordinator.perform(request: request)
 
         deleteIndices.forEach { id in
             try? self.fileStorage.remove(Files.translator(filename: id))
@@ -262,7 +262,7 @@ final class TranslatorsController {
 
             let coordinator = try self.dbStorage.createCoordinator()
             let request = SyncTranslatorsDbRequest(updateMetadata: updateMetadata, deleteIndices: deleteMetadata.map({ $0.id }))
-            _ = try coordinator.performInAutoreleasepoolIfNeeded { try coordinator.perform(request: request) }
+            _ = try coordinator.perform(request: request)
 
             for metadata in deleteMetadata {
                 try? self.fileStorage.remove(Files.translator(filename: metadata.id))
@@ -315,7 +315,7 @@ final class TranslatorsController {
         }
 
         let coordinator = try self.dbStorage.createCoordinator()
-        try coordinator.performInAutoreleasepoolIfNeeded { try coordinator.perform(request: ResetTranslatorsDbRequest(metadata: metadata)) }
+        try coordinator.perform(request: ResetTranslatorsDbRequest(metadata: metadata))
         self.lastTimestamp = timestamp
     }
 

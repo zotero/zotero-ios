@@ -17,7 +17,7 @@ extension RCollection {
         self.deleted = false
         self.version = 0
 
-        if self.parent != nil {
+        if self.parentKey != nil {
             self.changedFields.insert(.parent)
         }
 
@@ -26,8 +26,11 @@ extension RCollection {
             item.changeType = .user
         }
 
-        self.children.forEach { child in
-            child.markAsChanged(in: database)
+        if let libraryId = self.libraryId {
+            let children = database.objects(RCollection.self).filter(.parentKey(self.key, in: libraryId))
+            children.forEach { child in
+                child.markAsChanged(in: database)
+            }
         }
     }
 }

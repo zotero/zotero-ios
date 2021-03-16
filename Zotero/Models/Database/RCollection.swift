@@ -30,13 +30,12 @@ final class RCollection: Object {
     @objc dynamic var key: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
-    @objc dynamic var parent: RCollection?
-    @objc dynamic var collapsed: Bool = false
+    @objc dynamic var parentKey: String?
+    @objc dynamic var collapsed: Bool = true
 
     let items: List<RItem> = List()
     let customLibraryKey = RealmOptional<Int>()
     let groupKey = RealmOptional<Int>()
-    let children = LinkingObjects(fromType: RCollection.self, property: "parent")
 
     // MARK: - Sync data
     /// Indicates local version of object

@@ -39,17 +39,6 @@ protocol DbCoordinator {
     func perform(requests: [DbRequest]) throws
 }
 
-extension DbCoordinator {
-    func performInAutoreleasepoolIfNeeded<Result>(invoking body: () throws -> Result) rethrows -> Result {
-        if Thread.isMainThread {
-            return try body()
-        }
-        return try autoreleasepool {
-            return try body()
-        }
-    }
-}
-
 protocol DbStorage: class {
     func createCoordinator() throws -> DbCoordinator
     func clear()

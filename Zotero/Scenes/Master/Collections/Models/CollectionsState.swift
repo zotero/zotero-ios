@@ -41,12 +41,15 @@ struct CollectionsState: ViewModelState {
     var itemsToken: NotificationToken?
     var trashToken: NotificationToken?
     var error: CollectionsError?
+    // Used to filter out unnecessary Realm observed notification when collapsing collections.
+    var collapsedKeys: [String]
 
     init(library: Library) {
         self.library = library
         self.selectedCollection = Collection(custom: .all, itemCount: 0)
         self.collections = []
         self.changes = []
+        self.collapsedKeys = []
         self.error = nil
     }
 
