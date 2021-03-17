@@ -20,46 +20,62 @@ protocol Deletable: class {
 
 extension RCollection: Deletable {
     func willRemove(in database: Realm) {
-        for item in self.items {
-            guard !item.isInvalidated else { continue }
-            item.changedFields = .collections
-            item.changeType = .user
+        if !self.items.isInvalidated {
+            for item in self.items {
+                guard !item.isInvalidated else { continue }
+                item.changedFields = .collections
+                item.changeType = .user
+            }
         }
 
         if let libraryId = self.libraryId {
             let children = database.objects(RCollection.self).filter(.parentKey(self.key, in: libraryId))
-            for child in children {
-                guard !child.isInvalidated else { continue }
-                child.willRemove(in: database)
+            if !children.isInvalidated {
+                for child in children {
+                    guard !child.isInvalidated else { continue }
+                    child.willRemove(in: database)
+                }
+                database.delete(children)
             }
-            database.delete(children)
         }
     }
 }
 
 extension RItem: Deletable {
     func willRemove(in database: Realm) {
-        for child in self.children {
-            guard !child.isInvalidated else { continue }
-            child.willRemove(in: database)
+        if !self.children.isInvalidated {
+            for child in self.children {
+                guard !child.isInvalidated else { continue }
+                child.willRemove(in: database)
+            }
+            database.delete(self.children)
         }
-        database.delete(self.children)
-        database.delete(self.links)
-        database.delete(self.relations)
-        database.delete(self.creators)
-        database.delete(self.rects)
-        database.delete(self.tags)
+        if !self.links.isInvalidated {
+            database.delete(self.links)
+        }
+        if !self.relations.isInvalidated {
+            database.delete(self.relations)
+        }
+        if !self.creators.isInvalidated {
+            database.delete(self.creators)
+        }
+        if !self.rects.isInvalidated {
+            database.delete(self.rects)
+        }
+        if !self.tags.isInvalidated {
+            database.delete(self.tags)
+        }
 
-        if let createdByUser = self.createdBy, let lastModifiedByUser = self.lastModifiedBy,
+        if let createdByUser = self.createdBy, !createdByUser.isInvalidated, let lastModifiedByUser = self.lastModifiedBy, !lastModifiedByUser.isInvalidated,
            createdByUser.identifier == lastModifiedByUser.identifier &&
            createdByUser.createdBy.count == 1 &&
            createdByUser.modifiedBy.count == 1 {
             database.delete(createdByUser)
         } else {
-            if let user = self.createdBy, user.createdBy.count == 1 && user.modifiedBy.isEmpty {
+            if let user = self.createdBy, !user.isInvalidated, user.createdBy.count == 1 && user.modifiedBy.isEmpty {
                 database.delete(user)
             }
-            if let user = self.lastModifiedBy, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
+            if let user = self.lastModifiedBy, !user.isInvalidated, user.createdBy.isEmpty && user.modifiedBy.count == 1 {
                 database.delete(user)
             }
         }
@@ -122,6 +138,8 @@ extension RItem: Deletable {
 
 extension RSearch: Deletable {
     func willRemove(in database: Realm) {
-        database.delete(self.conditions)
+        if !self.conditions.isInvalidated {
+            database.delete(self.conditions)
+        }
     }
 }

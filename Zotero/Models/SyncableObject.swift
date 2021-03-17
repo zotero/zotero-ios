@@ -20,7 +20,7 @@ enum ObjectSyncState: Int {
     case synced, dirty, outdated
 }
 
-protocol Syncable: class {
+protocol Syncable: Object {
     var key: String { get set }
     var customLibraryKey: RealmOptional<Int> { get }
     var groupKey: RealmOptional<Int> { get }
@@ -33,6 +33,8 @@ protocol Syncable: class {
 extension Syncable {
     var libraryId: LibraryIdentifier? {
         get {
+            guard !self.isInvalidated else { return nil }
+            
             if let key = self.customLibraryKey.value, let type = RCustomLibraryType(rawValue: key) {
                 return .custom(type)
             }
