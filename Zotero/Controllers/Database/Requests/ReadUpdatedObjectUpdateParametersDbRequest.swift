@@ -154,7 +154,7 @@ extension RCollection {
         var level = 0
         var object: RCollection? = self
         while let parentKey = object?.parentKey {
-            object = database.objects(RCollection.self).filter(.parentKey(parentKey, in: libraryId)).first
+            object = database.objects(RCollection.self).filter(.key(parentKey, in: libraryId)).first
             level += 1
         }
         return level
