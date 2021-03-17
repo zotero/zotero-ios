@@ -10,6 +10,7 @@ if not os.path.isdir(bundle_dir):
     raise Exception(bundle_dir + " is not a directory")
 
 # Update translators submodule
+subprocess.check_call(["git", "pull", "--recurse-submodules"])
 subprocess.check_call(["git", "submodule", "update", "--recursive", "--remote"])
 
 # Get translators directory
