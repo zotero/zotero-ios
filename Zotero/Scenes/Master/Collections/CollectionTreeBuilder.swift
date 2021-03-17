@@ -16,14 +16,15 @@ struct CollectionTreeBuilder {
     }
 
     static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [Collection] {
-        var parentMap = self.createParentMap(from: collections)
+        var parentMap = self.createParentMap(from: collections, libraryId: libraryId)
         return self.createCollections(for: "", level: 0, visible: true, from: &parentMap)
     }
 
-    private static func createParentMap(from collections: Results<RCollection>) -> [String: [Collection]] {
+    private static func createParentMap(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [String: [Collection]] {
         var parentMap: [String: [Collection]] = [:]
         for rCollection in collections {
-            let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: rCollection.parentKey, itemCount: 0)
+            let itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
+            let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: rCollection.parentKey, itemCount: itemCount)
             let parentKey = rCollection.parentKey ?? ""
             if var collections = parentMap[parentKey] {
                 let insertionIndex = collections.index(of: collection, sortedBy: { $0.name < $1.name })
