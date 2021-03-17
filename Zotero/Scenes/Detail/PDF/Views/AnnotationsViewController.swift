@@ -172,13 +172,24 @@ final class AnnotationsViewController: UIViewController {
             return
         }
 
+        if state.document.pageCount == 0 {
+            DDLogWarn("AnnotationsViewController: trying to reload empty document")
+            completion()
+            return
+        }
+
         let isVisible = self.sidebarParent?.isSidebarVisible ?? false
 
         var snapshot = NSDiffableDataSourceSnapshot<Int, Annotation>()
         snapshot.appendSections(Array(0..<Int(state.document.pageCount)))
         for (page, annotations) in state.annotations {
+            guard page < state.document.pageCount else {
+                DDLogWarn("AnnotationsViewController: annotations page (\(page)) outside of document bounds (\(state.document.pageCount))")
+                continue
+            }
             snapshot.appendItems(annotations, toSection: page)
         }
+
         self.dataSource.apply(snapshot, animatingDifferences: isVisible, completion: {
             // Update selection if needed
             if let indexPaths = state.updatedAnnotationIndexPaths {
