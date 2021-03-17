@@ -453,7 +453,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
     private func processUpdate(items: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int], in viewModel: ViewModel<ItemsActionHandler>) {
         self.update(viewModel: viewModel) { state in
             if state.isEditing {
-                deletions.forEach { idx in
+                deletions.sorted().reversed().forEach { idx in
                     let key = state.keys.remove(at: idx)
                     if state.selectedItems.remove(key) != nil {
                         state.changes.insert(.selection)
