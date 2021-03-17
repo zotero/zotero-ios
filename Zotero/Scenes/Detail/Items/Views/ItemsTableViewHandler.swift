@@ -12,7 +12,9 @@ import CocoaLumberjackSwift
 import RxCocoa
 import RxSwift
 
-protocol ItemActionProcessor: class {
+protocol ItemsTableViewHandlerDelegate: class {
+    var isInViewHierarchy: Bool { get }
+
     func process(action: ItemAction.Kind, for item: RItem)
 }
 
@@ -35,7 +37,7 @@ final class ItemsTableViewHandler: NSObject {
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
-    private unowned let actionProcessor: ItemActionProcessor
+    private unowned let delegate: ItemsTableViewHandlerDelegate
     private unowned let dragDropController: DragDropController
     let tapObserver: PublishSubject<TapAction>
     private let disposeBag: DisposeBag
@@ -51,11 +53,11 @@ final class ItemsTableViewHandler: NSObject {
     private var batchTimerDisposeBag: DisposeBag?
     private weak var fileDownloader: FileDownloader?
 
-    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, actionProcessor: ItemActionProcessor, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
+    init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
         let (leadingActions, trailingActions) = ItemsTableViewHandler.createCellActions(for: viewModel.state)
         self.tableView = tableView
         self.viewModel = viewModel
-        self.actionProcessor = actionProcessor
+        self.delegate = delegate
         self.dragDropController = dragDropController
         self.fileDownloader = fileDownloader
         self.leadingCellActions = leadingActions
@@ -143,6 +145,14 @@ final class ItemsTableViewHandler: NSObject {
     }
 
     private func reload(modifications: [Int], insertions: [Int], deletions: [Int], completion: @escaping () -> Void) {
+        if !self.delegate.isInViewHierarchy {
+            // If view controller is outside of view hierarchy, performing batch updates with animations will cause a crash (UITableViewAlertForLayoutOutsideViewHierarchy).
+            // Simple reload will suffice, animations will not be seen anyway.
+            self.tableView.reloadData()
+            completion()
+            return
+        }
+
         self.tableView.performBatchUpdates({
             self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
             self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
@@ -168,7 +178,7 @@ final class ItemsTableViewHandler: NSObject {
     private func createContextMenu(for item: RItem) -> UIMenu {
         let actions: [UIAction] = self.contextMenuActions.map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
-                self?.actionProcessor.process(action: action.type, for: item)
+                self?.delegate.process(action: action.type, for: item)
             }
         })
         return UIMenu(title: "", children: actions)
@@ -179,7 +189,7 @@ final class ItemsTableViewHandler: NSObject {
         let actions = itemActions.map({ action -> UIContextualAction in
             let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: action.title, handler: { [weak self] _, _, completion in
                 guard let item = self?.viewModel.state.results?[indexPath.row] else { return }
-                self?.actionProcessor.process(action: action.type, for: item)
+                self?.delegate.process(action: action.type, for: item)
                 completion(true)
             })
             contextualAction.image = action.image

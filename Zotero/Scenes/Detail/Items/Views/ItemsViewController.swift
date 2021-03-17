@@ -64,7 +64,7 @@ final class ItemsViewController: UIViewController {
 
         self.tableViewHandler = ItemsTableViewHandler(tableView: self.tableView,
                                                       viewModel: self.viewModel,
-                                                      actionProcessor: self,
+                                                      delegate: self,
                                                       dragDropController: self.controllers.dragDropController,
                                                       fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.setupRightBarButtonItems(for: self.viewModel.state)
@@ -101,6 +101,10 @@ final class ItemsViewController: UIViewController {
                       self?.update(state: state)
                   })
                   .disposed(by: self.disposeBag)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -584,9 +588,13 @@ final class ItemsViewController: UIViewController {
     }
 }
 
-extension ItemsViewController: ItemActionProcessor {
+extension ItemsViewController: ItemsTableViewHandlerDelegate {
     func process(action: ItemAction.Kind, for item: RItem) {
         self.process(action: action, for: [item.key])
+    }
+
+    var isInViewHierarchy: Bool {
+        return self.view.window != nil
     }
 }
 
