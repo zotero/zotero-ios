@@ -13,7 +13,7 @@ import PSPDFKit
 final class NoteAnnotation: PSPDFKit.NoteAnnotation {
 
     override var fixedSize: CGSize {
-        return CGSize(width: 20, height: 20)
+        return AnnotationsConfig.noteAnnotationSize
     }
 
     override func drawImage(in context: CGContext, boundingBox: CGRect, options: RenderOptions?) {

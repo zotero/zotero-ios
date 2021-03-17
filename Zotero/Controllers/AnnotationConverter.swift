@@ -134,7 +134,7 @@ struct AnnotationConverter {
 
         if let annotation = annotation as? PSPDFKit.NoteAnnotation {
             type = .note
-            rects = [annotation.boundingBox]
+            rects = [CGRect(origin: annotation.boundingBox.origin, size: AnnotationsConfig.noteAnnotationSize)]
             text = nil
         } else if let annotation = annotation as? PSPDFKit.HighlightAnnotation {
             type = .highlight
