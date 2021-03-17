@@ -112,7 +112,7 @@ final class ExtensionStore {
         /// - remoteFile: `URL` pointing to a remote file.
         fileprivate enum ProcessedAttachment {
             case item(ItemResponse)
-            case itemWithAttachment(item: ItemResponse, attachment: [String: String], attachmentFile: File)
+            case itemWithAttachment(item: ItemResponse, attachment: [String: Any], attachmentFile: File)
             case localFile(File)
         }
 
@@ -129,11 +129,11 @@ final class ExtensionStore {
             let libraryId: LibraryIdentifier
             let userId: Int
 
-            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: String], attachmentFile: File, defaultTitle: String,
+            init(item: ItemResponse, attachmentKey: String, attachmentData: [String: Any], attachmentFile: File, defaultTitle: String,
                  collections: Set<String>, libraryId: LibraryIdentifier, userId: Int, dateParser: DateParser) {
                 let newItem = item.copy(libraryId: libraryId, collectionKeys: collections)
                 let file = Files.attachmentFile(in: libraryId, key: attachmentKey, ext: ExtensionStore.defaultExtension)
-                let title = (attachmentData["title"] ?? defaultTitle) + "." + file.ext
+                let title = ((attachmentData["title"] as? String) ?? defaultTitle) + "." + file.ext
                 let filename = FilenameFormatter.filename(from: item, defaultTitle: defaultTitle, ext: file.ext, dateParser: dateParser)
                 let attachment = Attachment(key: attachmentKey, title: title, type: .file(file: file, filename: filename, location: .local, linkType: .imported), libraryId: libraryId)
 
@@ -302,7 +302,6 @@ final class ExtensionStore {
                     self.state = state
                 })
                 .disposed(by: self.disposeBag)
-            break
         }
     }
 
@@ -401,7 +400,7 @@ final class ExtensionStore {
         do {
             let (item, attachment) = try self.parse(data, schemaController: self.schemaController)
             if let attachment = attachment,
-               let urlString = attachment["url"],
+               let urlString = attachment["url"] as? String,
                let url = URL(string: urlString) {
                 let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
 
@@ -448,7 +447,7 @@ final class ExtensionStore {
     /// - parameter data: Data to parse
     /// - parameter schemaController: SchemaController which is used for validating item type and field types
     /// - returns: `ItemResponse` of parsed item and optional attachment dictionary with title and url.
-    private func parse(_ data: [[String: Any]], schemaController: SchemaController) throws -> (ItemResponse, [String: String]?) {
+    private func parse(_ data: [[String: Any]], schemaController: SchemaController) throws -> (ItemResponse, [String: Any]?) {
         // Sort items so that the first item will have a PDF attachment (if available)
         let sortedData = data.sorted { left, right -> Bool in
             let leftAttachments = (left["attachments"] as? [[String: String]]) ?? []
@@ -466,9 +465,9 @@ final class ExtensionStore {
         if !item.tags.isEmpty {
             item = item.copyWithAutomaticTags
         }
-        var attachment: [String: String]?
+        var attachment: [String: Any]?
         if Defaults.shared.shareExtensionIncludeAttachment {
-            attachment = (itemData["attachments"] as? [[String: String]])?.first(where: { $0["mimeType"] == ExtensionStore.defaultMimetype })
+            attachment = (itemData["attachments"] as? [[String: Any]])?.first(where: { ($0["mimeType"] as? String) == ExtensionStore.defaultMimetype })
         }
 
         return (item, attachment)
