@@ -43,7 +43,7 @@ final class WebSocketController {
     }
 
     private static let completionTimeout: Int = 1500 // miliseconds
-    private static let messageTimeout: Int = 5
+    private static let messageTimeout: Int = 30
     private static let disconnectionTimeout: Int = 5
     private static let retryIntervals: [Int] = [
                                                 2, 5, 10, 15, 30,      // first minute
@@ -98,10 +98,12 @@ final class WebSocketController {
     }
 
     private func _connect(apiKey: String, completed: (() -> Void)?) {
-        guard self.connectionState.value == .disconnected else {
+        switch self.connectionState.value {
+        case .subscribing, .connected:
             DDLogWarn("WebSocketController: tried to connect while \(self.connectionState.value)")
             completed?()
             return
+        case .connecting, .disconnected: break
         }
 
         DDLogInfo("WebSocketController: connect")
