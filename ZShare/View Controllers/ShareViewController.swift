@@ -280,8 +280,7 @@ final class ShareViewController: UIViewController {
             self.failureLabel.textColor = .red
         } else {
             switch error {
-            case .downloadedFileNotPdf:
-                message += "\n" + L10n.Errors.Shareext.fileNotPdfAdditional
+            case .downloadedFileNotPdf: break
             default:
                 message += "\n" + L10n.Errors.Shareext.failedAdditional
             }
