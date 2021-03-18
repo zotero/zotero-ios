@@ -173,8 +173,7 @@ struct ItemResponse {
         self.relations = [:]
         self.inPublications = false
         // Translator returns some extra fields, which may not be recognized by schema, so we just ignore those
-        self.fields = try ItemResponse.parseFields(from: response, rawType: rawType, key: key, schemaController: schemaController,
-                                                   ignoreUnknownFields: true).fields
+        self.fields = try ItemResponse.parseFields(from: response, rawType: rawType, key: key, schemaController: schemaController, ignoreUnknownFields: true).fields
         self.createdBy = nil
         self.lastModifiedBy = nil
         self.rects = nil
@@ -268,7 +267,7 @@ struct ItemResponse {
                 throw SchemaError.unknownField(key: key, field: object.key)
             }
 
-            let value: String
+            var value: String
             if let val = object.value as? String {
                 value = val
             } else {
@@ -281,6 +280,11 @@ struct ItemResponse {
                 let (index, newRects) = try self.parsePosition(from: value, key: key)
                 fields[FieldKeys.Item.Annotation.pageIndex] = "\(index)"
                 rects = newRects
+            case FieldKeys.Item.accessDate:
+                if value == "CURRENT_TIMESTAMP" {
+                    value = Formatter.iso8601.string(from: Date())
+                }
+                fields[object.key] = value
             default:
                 fields[object.key] = value
             }
