@@ -275,7 +275,7 @@
 "errors.shareext.missing_file" = "Could not find file to upload";
 "errors.shareext.background_uploader_failure" = "Background uploader not initialized";
 "errors.shareext.failed_additional" = "You can still save this page as a Web Page item.";
-"errors.shareext.file_not_pdf" = "Unable to save PDF file";
+"errors.shareext.file_not_pdf" = "Unable to save PDF";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
 "errors.logging.start" = "Unable to start debug logging";
