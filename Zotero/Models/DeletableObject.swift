@@ -20,13 +20,13 @@ protocol Deletable: class {
 
 extension RCollection: Deletable {
     func willRemove(in database: Realm) {
-        if !self.items.isInvalidated {
-            for item in self.items {
-                guard !item.isInvalidated else { continue }
-                item.changedFields = .collections
-                item.changeType = .user
-            }
-        }
+//        if !self.items.isInvalidated {
+//            for item in self.items {
+//                guard !item.isInvalidated else { continue }
+//                item.changedFields = .collections
+//                item.changeType = .user
+//            }
+//        }
 
         if let libraryId = self.libraryId {
             let children = database.objects(RCollection.self).filter(.parentKey(self.key, in: libraryId))
