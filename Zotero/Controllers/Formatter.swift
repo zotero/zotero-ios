@@ -30,9 +30,11 @@ extension Formatter {
         return formatter
     }()
 
-    static let timeDateWithDashes: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime, .withDashSeparatorInDate]
+    static let sqlFormat: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.calendar = Calendar.autoupdatingCurrent
+        formatter.dateFormat = "yy-MM-dd HH:mm:ss"
         return formatter
     }()
 }

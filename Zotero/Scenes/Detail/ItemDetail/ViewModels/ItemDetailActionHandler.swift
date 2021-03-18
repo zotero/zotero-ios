@@ -757,14 +757,14 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         var date: Date?
         if let _date = self.parseDateSpecialValue(from: field.value) {
             date = _date
-        } else if let _date = Formatter.timeDateWithDashes.date(from: field.value.replacingOccurrences(of: " ", with: "T")) {
+        } else if let _date = Formatter.sqlFormat.date(from: field.value) {
             date = _date
         }
 
         if let date = date {
             field.value = Formatter.iso8601.string(from: date)
             field.additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date),
-                                    .formattedEditDate: Formatter.timeDateWithDashes.string(from: date).replacingOccurrences(of: "T", with: " ")]
+                                    .formattedEditDate: Formatter.sqlFormat.string(from: date)]
         } else {
             if let snapshotField = state.snapshot?.fields[FieldKeys.Item.accessDate] {
                 field = snapshotField

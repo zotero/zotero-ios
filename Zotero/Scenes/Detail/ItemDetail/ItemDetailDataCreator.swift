@@ -215,7 +215,7 @@ struct ItemDetailDataCreator {
             }
             if key == FieldKeys.Item.accessDate, let date = Formatter.iso8601.date(from: value) {
                 additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date),
-                                  .formattedEditDate: Formatter.timeDateWithDashes.string(from: date).replacingOccurrences(of: "T", with: " ")]
+                                  .formattedEditDate: Formatter.sqlFormat.string(from: date)]
             }
 
             fields[key] = ItemDetailState.Field(key: key,
