@@ -48,6 +48,7 @@ final class ShareViewController: UIViewController {
     // Variables
     private var translatorsController: TranslatorsController!
     private var dbStorage: DbStorage!
+    private var fileStorage: FileStorageController!
     private var debugLogging: DebugLogging!
     private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
@@ -63,6 +64,8 @@ final class ShareViewController: UIViewController {
 
         DDLog.add(DDOSLogger.sharedInstance)
 
+        self.fileStorage = FileStorageController()
+
         let schemaController = SchemaController()
         let configuration = URLSessionConfiguration.default
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
@@ -72,7 +75,7 @@ final class ShareViewController: UIViewController {
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
 
-        self.debugLogging = DebugLogging(apiClient: apiClient, fileStorage: FileStorageController())
+        self.debugLogging = DebugLogging(apiClient: apiClient, fileStorage: self.fileStorage)
         self.debugLogging.startLoggingOnLaunchIfNeeded()
 
         let session = SessionController(secureStorage: KeychainSecureStorage(), defaults: Defaults.shared).sessionData
