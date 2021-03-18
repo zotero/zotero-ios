@@ -623,24 +623,35 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 state.openAttachment = (attachment, index)
             }
 
-        case .file(let file, _, let location, _),
-             .snapshot(_, _, let file, let location):
+        case .file(let file, _, let location, let linkType):
             guard let location = location else { return }
-            switch location {
-            case .remote:
-                // Item creation or duplication shouldn't have a .remote location, limit this to preview only
-                guard let previewKey = viewModel.state.type.previewKey else { return }
+            switch linkType {
+            case .imported:
+                self.open(file: file, location: location, attachment: attachment, index: index, in: viewModel)
+            case .linked, .embeddedImage: break // Dont open linked attachments
+            }
+        case .snapshot(_, _, let file, let location):
+            guard let location = location else { return }
+            self.open(file: file, location: location, attachment: attachment, index: index, in: viewModel)
+        }
+    }
 
-                let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
-                if progress != nil {
-                    self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
-                } else {
-                    self.fileDownloader.download(file: file, key: attachment.key, parentKey: previewKey, libraryId: attachment.libraryId)
-                }
-            case .local:
-                self.update(viewModel: viewModel) { state in
-                    state.openAttachment = (attachment, index)
-                }
+    private func open(file: File, location: Attachment.FileLocation, attachment: Attachment, index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {
+        switch location {
+        case .remote:
+            // Item creation or duplication shouldn't have a .remote location, limit this to preview only
+            guard let previewKey = viewModel.state.type.previewKey else { return }
+
+            let (progress, _) = self.fileDownloader.data(for: attachment.key, libraryId: attachment.libraryId)
+            if progress != nil {
+                self.fileDownloader.cancel(key: attachment.key, libraryId: attachment.libraryId)
+            } else {
+                self.fileDownloader.download(file: file, key: attachment.key, parentKey: previewKey, libraryId: attachment.libraryId)
+            }
+
+        case .local:
+            self.update(viewModel: viewModel) { state in
+                state.openAttachment = (attachment, index)
             }
         }
     }
