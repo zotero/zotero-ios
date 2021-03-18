@@ -31,7 +31,8 @@ final class ItemDetailFieldCell: RxTableViewCell {
         self.titleWidth.constant = titleWidth
         self.setAdditionalInfo(value: field.additionalInfo?[.dateOrder])
 
-        self.valueLabel.text = field.value.isEmpty ? " " : field.value
+        let value = field.additionalInfo?[.formattedDate] ?? field.value
+        self.valueLabel.text = value.isEmpty ? " " : value
         if field.isTappable {
             self.valueLabel.textColor = Asset.Colors.zoteroBlue.color
         } else {

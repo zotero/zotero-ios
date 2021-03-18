@@ -31,11 +31,12 @@ final class ItemDetailFieldEditCell: RxTableViewCell {
     }
 
     func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {
+        let value = field.additionalInfo?[.formattedEditDate] ?? field.value
         self.titleLabel.text = field.name
-        self.hiddenLabel.text = field.value
+        self.hiddenLabel.text = value
         self.titleWidth.constant = titleWidth
 
-        self.valueTextField.text = field.value
+        self.valueTextField.text = value
 
         self.valueTop.constant = self.valueTextField.font!.capHeight - self.valueTextField.font!.ascender
     }

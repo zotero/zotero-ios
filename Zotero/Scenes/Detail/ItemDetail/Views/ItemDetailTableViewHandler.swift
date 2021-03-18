@@ -69,7 +69,6 @@ final class ItemDetailTableViewHandler: NSObject {
     private static let sectionId = "ItemDetailSectionView"
     // Identifier for "Add *" cell
     private static let addCellId = "ItemDetailAddCell"
-    private static let dateFormatter = createDateFormatter()
 
     private unowned let viewModel: ViewModel<ItemDetailActionHandler>
     private unowned let tableView: UITableView
@@ -112,12 +111,6 @@ final class ItemDetailTableViewHandler: NSObject {
         }
         self.setupTableView()
         self.setupKeyboardObserving()
-    }
-
-    private static func createDateFormatter() -> DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d/yyyy, h:mm:ss a"
-        return formatter
     }
 
     // MARK: - Actions
@@ -668,10 +661,10 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
             if let cell = cell as? ItemDetailFieldCell {
                 switch indexPath.row {
                 case 0:
-                    let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateAdded)
+                    let date = Formatter.dateAndTime.string(from: self.viewModel.state.data.dateAdded)
                     cell.setup(with: date, title: L10n.dateAdded, titleWidth: self.titleWidth)
                 case 1:
-                    let date = ItemDetailTableViewHandler.dateFormatter.string(from: self.viewModel.state.data.dateModified)
+                    let date = Formatter.dateAndTime.string(from: self.viewModel.state.data.dateModified)
                     cell.setup(with: date, title: L10n.dateModified, titleWidth: self.titleWidth)
                 default: break
                 }

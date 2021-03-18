@@ -720,6 +720,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
                 var newType = state.type
 
                 self.updateDateFieldIfNeeded(in: &newState)
+                self.updateAccessedFieldIfNeeded(in: &newState)
                 newState.data.dateModified = Date()
 
                 switch state.type {
@@ -750,32 +751,53 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func updateDateFieldIfNeeded(in state: inout State) {
-        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.Item.date || $0.key == FieldKeys.Item.date }) else { return }
+    private func updateAccessedFieldIfNeeded(in state: inout State) {
+        guard var field = state.data.fields[FieldKeys.Item.accessDate] else { return }
 
-        let date: Date?
-
-        // TODO: - check for current localization
-        switch field.value.lowercased() {
-        case "tomorrow":
-            date = Calendar.current.date(byAdding: .day, value: 1, to: Date())
-        case "today":
-            date = Date()
-        case "yesterday":
-            date = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-        default:
-            date = nil
+        var date: Date?
+        if let _date = self.parseDateSpecialValue(from: field.value) {
+            date = _date
+        } else if let _date = Formatter.timeDateWithDashes.date(from: field.value.replacingOccurrences(of: " ", with: "T")) {
+            date = _date
         }
 
         if let date = date {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-
-            field.value = formatter.string(from: date)
-            if let order = self.dateParser.parse(string: field.value)?.orderWithSpaces {
-                field.additionalInfo?[.dateOrder] = order
+            field.value = Formatter.iso8601.string(from: date)
+            field.additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date),
+                                    .formattedEditDate: Formatter.timeDateWithDashes.string(from: date).replacingOccurrences(of: "T", with: " ")]
+        } else {
+            if let snapshotField = state.snapshot?.fields[FieldKeys.Item.accessDate] {
+                field = snapshotField
+            } else {
+                field.value = ""
+                field.additionalInfo = [:]
             }
-            state.data.fields[field.key] = field
+        }
+
+        state.data.fields[field.key] = field
+    }
+
+    private func updateDateFieldIfNeeded(in state: inout State) {
+        guard var field = state.data.fields.values.first(where: { $0.baseField == FieldKeys.Item.date || $0.key == FieldKeys.Item.date }),
+              let date = self.parseDateSpecialValue(from: field.value) else { return }
+        field.value = Formatter.dateWithDashes.string(from: date)
+        if let order = self.dateParser.parse(string: field.value)?.orderWithSpaces {
+            field.additionalInfo?[.dateOrder] = order
+        }
+        state.data.fields[field.key] = field
+    }
+
+    private func parseDateSpecialValue(from value: String) -> Date? {
+        // TODO: - check for current localization
+        switch value.lowercased() {
+        case "tomorrow":
+            return Calendar.current.date(byAdding: .day, value: 1, to: Date())
+        case "today":
+            return Date()
+        case "yesterday":
+            return Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        default:
+            return nil
         }
     }
 

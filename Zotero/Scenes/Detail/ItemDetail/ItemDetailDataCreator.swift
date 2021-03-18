@@ -210,9 +210,12 @@ struct ItemDetailDataCreator {
             let isTappable = ItemDetailDataCreator.isTappable(key: key, value: value, urlDetector: urlDetector, doiDetector: doiDetector)
             var additionalInfo: [ItemDetailState.Field.AdditionalInfoKey: String]?
 
-            if key == FieldKeys.Item.date || baseField == FieldKeys.Item.date,
-               let order = dateParser.parse(string: value)?.orderWithSpaces {
+            if key == FieldKeys.Item.date || baseField == FieldKeys.Item.date, let order = dateParser.parse(string: value)?.orderWithSpaces {
                 additionalInfo = [.dateOrder: order]
+            }
+            if key == FieldKeys.Item.accessDate, let date = Formatter.iso8601.date(from: value) {
+                additionalInfo = [.formattedDate: Formatter.dateAndTime.string(from: date),
+                                  .formattedEditDate: Formatter.timeDateWithDashes.string(from: date).replacingOccurrences(of: "T", with: " ")]
             }
 
             fields[key] = ItemDetailState.Field(key: key,
