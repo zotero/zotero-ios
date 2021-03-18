@@ -26,7 +26,27 @@ struct FilenameFormatter {
             return title + "." + ext
         }
 
-        return filename + " - " + title + "." + ext
+        return self.validate(filename: filename + " - " + title + "." + ext)
+    }
+
+    static func validate(filename: String) -> String {
+        // URL encode
+        var valid = filename.replacingOccurrences(of: #"[/\\?*:|"<>]"#, with: "", options: .regularExpression, range: nil)
+        // Replace newlines and tabs with spaces
+        valid = valid.replacingOccurrences(of: #"[\r\n\t]"#, with: " ", options: .regularExpression, range: nil)
+        // Replace various thin spaces
+        valid = valid.replacingOccurrences(of: #"[\u2000-\u200A]"#, with: " ", options: .regularExpression, range: nil)
+        // Replace zero-width spaces
+        valid = valid.replacingOccurrences(of: #"[\u200B-\u200E]"#, with: "", options: .regularExpression, range: nil)
+        // Don't allow blank or illegal filenames
+        if valid.isEmpty || valid == "." || valid == ".." {
+            return "_"
+        }
+        // Don't allow hidden files
+        if valid[valid.startIndex] == "."  {
+            return String(valid[valid.index(valid.startIndex, offsetBy: 1)..<valid.endIndex])
+        }
+        return valid
     }
 
     private static func creators(for item: ItemResponse) -> String? {
