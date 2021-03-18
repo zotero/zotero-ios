@@ -63,7 +63,7 @@ final class ExtensionStore {
         enum AttachmentState {
             enum Error: Swift.Error {
                 case cantLoadSchema, cantLoadWebData, downloadFailed, itemsNotFound, expired, unknown,
-                     fileMissing, missingBackgroundUploader
+                     fileMissing, missingBackgroundUploader, downloadedFileNotPdf
                 case webViewError(WebViewHandler.Error)
                 case parseError(Parsing.Error)
                 case schemaError(SchemaError)
@@ -297,8 +297,15 @@ final class ExtensionStore {
                     guard let `self` = self else { return }
 
                     var state = self.state
-                    state.processedAttachment = .localFile(file)
-                    state.attachmentState = .processed
+                    if self.fileStorage.isPdf(file: file) {
+                        state.processedAttachment = .localFile(file)
+                        state.attachmentState = .processed
+                    } else {
+                        state.processedAttachment = nil
+                        state.attachmentState = .failed(.downloadedFileNotPdf)
+                        // Remove downloaded file, it won't be used anymore
+                        try? self.fileStorage.remove(file)
+                    }
                     self.state = state
                 })
                 .disposed(by: self.disposeBag)
@@ -417,8 +424,15 @@ final class ExtensionStore {
                         guard let `self` = self else { return }
 
                         var state = self.state
-                        state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
-                        state.attachmentState = .processed
+                        if self.fileStorage.isPdf(file: file) {
+                            state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
+                            state.attachmentState = .processed
+                        } else {
+                            state.processedAttachment = .item(item)
+                            state.attachmentState = .failed(.downloadedFileNotPdf)
+                            // Remove downloaded file, it won't be used anymore
+                            try? self.fileStorage.remove(file)
+                        }
                         self.state = state
                     })
                     .disposed(by: self.disposeBag)

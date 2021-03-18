@@ -199,6 +199,12 @@ internal enum L10n {
       internal static let cantLoadSchema = L10n.tr("Localizable", "errors.shareext.cant_load_schema")
       /// Could not download file
       internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
+      /// You can still save this web as Web Page item.
+      internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional")
+      /// Downloaded attachment was not a PDF file.
+      internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf")
+      /// You can still save this item without attachment.
+      internal static let fileNotPdfAdditional = L10n.tr("Localizable", "errors.shareext.file_not_pdf_additional")
       /// No data returned
       internal static let incompatibleItem = L10n.tr("Localizable", "errors.shareext.incompatible_item")
       /// No items found on page

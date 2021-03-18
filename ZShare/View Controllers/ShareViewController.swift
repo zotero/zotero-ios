@@ -279,7 +279,12 @@ final class ShareViewController: UIViewController {
         if error.isFatal {
             self.failureLabel.textColor = .red
         } else {
-            message += "\nYou can still save this web as Web Page item."
+            switch error {
+            case .downloadedFileNotPdf:
+                message += "\n" + L10n.Errors.Shareext.fileNotPdfAdditional
+            default:
+                message += "\n" + L10n.Errors.Shareext.failedAdditional
+            }
             self.failureLabel.textColor = .darkGray
         }
 
@@ -320,6 +325,8 @@ final class ShareViewController: UIViewController {
             return L10n.Errors.Shareext.missingFile
         case .missingBackgroundUploader:
             return L10n.Errors.Shareext.backgroundUploaderFailure
+        case .downloadedFileNotPdf:
+            return L10n.Errors.Shareext.fileNotPdf
         }
     }
 

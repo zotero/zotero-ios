@@ -274,6 +274,9 @@
 "errors.shareext.response_missing_data" = "An error occurred. Please try again.";
 "errors.shareext.missing_file" = "Could not find file to upload";
 "errors.shareext.background_uploader_failure" = "Background uploader not initialized";
+"errors.shareext.failed_additional" = "You can still save this web as Web Page item.";
+"errors.shareext.file_not_pdf" = "Downloaded attachment was not a PDF file.";
+"errors.shareext.file_not_pdf_additional" = "You can still save this item without attachment.";
 "errors.db_failure" = "Error creating database. Please try logging in again.";
 "errors.logging.title" = "Debugging Error";
 "errors.logging.start" = "Unable to start debug logging";
