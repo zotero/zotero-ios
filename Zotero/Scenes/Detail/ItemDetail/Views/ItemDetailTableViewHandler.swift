@@ -464,7 +464,19 @@ final class ItemDetailTableViewHandler: NSObject {
             error = _error
         }
 
+        attachmentCell.selectionStyle = self.canTap(attachment: attachment, isEditing: self.viewModel.state.isEditing) ? .gray : .none
         attachmentCell.setup(with: attachment, progress: progress, error: error, enabled: enabled)
+
+    }
+
+    private func canTap(attachment: Attachment, isEditing: Bool) -> Bool {
+        guard !isEditing else { return false }
+        switch attachment.contentType {
+        case . file(_, _, _, let linkType) where linkType == .linked:
+            return false
+        case .file, .url, .snapshot:
+            return true
+        }
     }
 
     // MARK: - Setups

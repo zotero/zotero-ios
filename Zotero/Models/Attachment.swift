@@ -26,8 +26,9 @@ struct Attachment: Identifiable, Equatable {
 
         var fileLocation: FileLocation? {
             switch self {
-            case .file(_, _, let location, _),
-                 .snapshot(_, _, _, let location):
+            case .file(_, _, let location, let linkType):
+                return linkType == .imported ? location : nil
+            case .snapshot(_, _, _, let location):
                 return location
             default:
                 return nil
