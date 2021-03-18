@@ -34,7 +34,7 @@ extension Formatter {
         let formatter = DateFormatter()
         formatter.locale = Locale.autoupdatingCurrent
         formatter.calendar = Calendar.autoupdatingCurrent
-        formatter.dateFormat = "yy-MM-dd HH:mm:ss"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return formatter
     }()
 }
