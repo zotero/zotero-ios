@@ -454,7 +454,12 @@ final class PDFReaderViewController: UIViewController {
 
         case .PSPDFAnnotationsAdded:
             if let annotations = self.annotations(for: notification) {
+                // Open annotation popup for note annotation
                 let shouldSelect = self.isSidebarVisible || annotations.first is PSPDFKit.NoteAnnotation
+                // If Image annotation is active after adding the annotation, deactivate it
+                if annotations.first is PSPDFKit.SquareAnnotation && self.pdfController.annotationStateManager.state == .square {
+                    self.toggle(annotationTool: .square)
+                }
                 self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
             } else {
                 self.viewModel.process(action: .notificationReceived(notification.name))
@@ -832,8 +837,8 @@ final class PDFReaderViewController: UIViewController {
                                   .notification(.PSPDFAnnotationsAdded)
                                   .observeOn(MainScheduler.instance)
                                   .subscribe(onNext: { [weak self] notification in
-                                      self?.processAnnotationObserving(notification: notification)
 
+                                      self?.processAnnotationObserving(notification: notification)
                                   })
                                   .disposed(by: self.disposeBag)
 
