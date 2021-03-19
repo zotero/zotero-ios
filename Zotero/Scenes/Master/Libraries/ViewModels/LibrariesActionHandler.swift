@@ -52,24 +52,15 @@ struct LibrariesActionHandler: ViewModelActionHandler {
             let libraries = try self.dbStorage.createCoordinator().perform(request: ReadAllCustomLibrariesDbRequest())
             let groups = try self.dbStorage.createCoordinator().perform(request: ReadAllGroupsDbRequest())
 
-            let librariesToken = libraries.observe({ [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, _, _, _):
-                    self.update(viewModel: viewModel) { state in
-                        state.customLibraries = objects
-                    }
-                case .initial: break
-                case .error: break
-                }
-            })
-
             let groupsToken = groups.observe { [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
                 switch changes {
-                case .update(let objects, _, _, _):
+                case .update(_, let deletions, _, _):
                     self.update(viewModel: viewModel) { state in
-                        state.groupLibraries = objects
+                        state.changes = .groups
+                        if !deletions.isEmpty {
+                            state.changes.insert(.groupDeletion)
+                        }
                     }
                 case .initial: break
                 case .error: break
@@ -80,7 +71,6 @@ struct LibrariesActionHandler: ViewModelActionHandler {
                 state.groupLibraries = groups
                 state.customLibraries = libraries
                 state.groupsToken = groupsToken
-                state.librariesToken = librariesToken
             }
         } catch let error {
             DDLogError("LibrariesStore: can't load libraries - \(error)")

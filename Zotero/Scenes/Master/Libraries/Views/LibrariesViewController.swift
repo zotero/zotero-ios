@@ -53,7 +53,13 @@ final class LibrariesViewController: UIViewController {
     // MARK: - UI State
 
     private func update(to state: LibrariesState) {
-        self.tableView.reloadData()
+        if state.changes.contains(.groups) {
+            self.tableView.reloadData()
+        }
+
+        if state.changes.contains(.groupDeletion) {
+            self.showDefaultLibraryIfNeeded(for: state)
+        }
 
         if let error = state.error {
             self.coordinatorDelegate?.show(error: error)
@@ -61,6 +67,20 @@ final class LibrariesViewController: UIViewController {
 
         if let question = state.deleteGroupQuestion {
             self.coordinatorDelegate?.showDeleteGroupQuestion(id: question.id, name: question.name, viewModel: self.viewModel)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func showDefaultLibraryIfNeeded(for state: LibrariesState) {
+        guard let visibleLibrary = self.coordinatorDelegate?.visibleLibrary else { return }
+        switch visibleLibrary.identifier {
+        case .custom: break
+        case .group(let groupId):
+            if state.groupLibraries?.filter(.groupId(groupId)).first == nil {
+                // Currently visible group was recently deleted, show default library
+                self.coordinatorDelegate?.showDefaultLibrary()
+            }
         }
     }
 

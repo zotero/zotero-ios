@@ -17,6 +17,9 @@ protocol MasterLibrariesCoordinatorDelegate: class {
     func showSettings()
     func show(error: LibrariesError)
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
+    func showDefaultLibrary()
+
+    var visibleLibrary: Library { get }
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
@@ -32,6 +35,7 @@ protocol MasterSettingsCoordinatorDelegate: class {
 final class MasterCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
+    private(set) var visibleLibrary: Library
 
     let defaultLibrary: Library
     unowned let navigationController: UINavigationController
@@ -40,14 +44,16 @@ final class MasterCoordinator: NSObject, Coordinator {
     private let disposeBag: DisposeBag
 
     init(navigationController: UINavigationController, mainCoordinatorDelegate: MainCoordinatorDelegate, controllers: Controllers) {
+        let defaultLibrary = Library(identifier: .custom(.myLibrary),
+                                     name: RCustomLibraryType.myLibrary.libraryName,
+                                     metadataEditable: true,
+                                     filesEditable: true)
         self.navigationController = navigationController
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         self.childCoordinators = []
-        self.defaultLibrary = Library(identifier: .custom(.myLibrary),
-                                      name: RCustomLibraryType.myLibrary.libraryName,
-                                      metadataEditable: true,
-                                      filesEditable: true)
+        self.defaultLibrary = defaultLibrary
+        self.visibleLibrary = defaultLibrary
         self.disposeBag = DisposeBag()
 
         super.init()
@@ -78,6 +84,27 @@ final class MasterCoordinator: NSObject, Coordinator {
 }
 
 extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
+    func showDefaultLibrary() {
+        guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+
+        let controller = self.createCollectionsViewController(library: self.defaultLibrary, dbStorage: dbStorage)
+
+        let animated: Bool
+        var viewControllers = self.navigationController.viewControllers
+
+        if let index = viewControllers.firstIndex(where: { $0 is CollectionsViewController }) {
+            // If `CollectionsViewController` is visible, replace it with new controller without animation
+            viewControllers[index] = controller
+            animated = false
+        } else {
+            // If `CollectionsViewController` is not visible, just push it with animation
+            viewControllers.append(controller)
+            animated = true
+        }
+
+        self.navigationController.setViewControllers(viewControllers, animated: animated)
+    }
+
     func show(error: LibrariesError) {
         let title: String
         let message: String
@@ -220,6 +247,7 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
     }
 
     func show(collection: Collection, in library: Library) {
+        self.visibleLibrary = library
         self.mainCoordinatorDelegate.show(collection: collection, in: library)
     }
 

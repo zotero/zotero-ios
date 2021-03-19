@@ -267,4 +267,8 @@ extension NSPredicate {
     static var parentKeyNil: NSPredicate {
         return NSPredicate(format: "parentKey == nil")
     }
+
+    static func groupId(_ identifier: Int) -> NSPredicate {
+        return NSPredicate(format: "identifier == %d", identifier)
+    }
 }
