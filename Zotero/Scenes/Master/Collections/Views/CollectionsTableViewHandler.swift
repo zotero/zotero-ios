@@ -258,9 +258,14 @@ extension CollectionsTableViewHandler: UITableViewDropDelegate {
         guard session.localDragSession != nil else { return UITableViewDropProposal(operation: .forbidden) }
 
         // Allow only dropping to user collections, not custom collections, such as "All Items" or "My Publications"
-        if let collection = destinationIndexPath.flatMap({ self.snapshot[$0.row] }),
-           !collection.type.isCollection {
-            return UITableViewDropProposal(operation: .forbidden)
+        if let destination = destinationIndexPath {
+            if destination.row >= self.snapshot.count {
+                return UITableViewDropProposal(operation: .forbidden)
+            }
+
+            if !self.snapshot[destination.row].type.isCollection {
+                return UITableViewDropProposal(operation: .forbidden)
+            }
         }
 
         return UITableViewDropProposal(operation: .copy, intent: .insertIntoDestinationIndexPath)
