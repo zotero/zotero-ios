@@ -110,7 +110,7 @@ final class ExtensionStore {
         /// - itemWithAttachment: Translated item with attachment data.
         /// - localFile: `URL` pointing to a local file.
         /// - remoteFile: `URL` pointing to a remote file.
-        fileprivate enum ProcessedAttachment {
+        enum ProcessedAttachment {
             case item(ItemResponse)
             case itemWithAttachment(item: ItemResponse, attachment: [String: Any], attachmentFile: File)
             case localFile(File)
@@ -165,7 +165,7 @@ final class ExtensionStore {
         var attachmentState: AttachmentState
         var collectionPicker: CollectionPicker
         var itemPicker: ItemPicker?
-        fileprivate var processedAttachment: ProcessedAttachment?
+        var processedAttachment: ProcessedAttachment?
 
         init() {
             self.attachmentKey = KeyGenerator.newKey

@@ -56,18 +56,56 @@
                                     <view contentMode="scaleToFill" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="dij-Kg-qmX">
                                         <rect key="frame" x="0.0" y="0.0" width="788" height="238.5"/>
                                         <subviews>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="6" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Gt2-N8-ghb">
+                                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="eqn-QI-KSO">
                                                 <rect key="frame" x="16" y="8" width="756" height="222.5"/>
-                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                <nil key="highlightedColor"/>
-                                            </label>
+                                                <subviews>
+                                                    <stackView opaque="NO" contentMode="scaleToFill" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="Cx1-y6-JyV">
+                                                        <rect key="frame" x="0.0" y="0.0" width="756" height="50"/>
+                                                        <subviews>
+                                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="wdc-xW-1EE">
+                                                                <rect key="frame" x="0.0" y="0.0" width="370" height="50"/>
+                                                            </imageView>
+                                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="6" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Gt2-N8-ghb">
+                                                                <rect key="frame" x="386" y="0.0" width="370" height="50"/>
+                                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                                <nil key="highlightedColor"/>
+                                                            </label>
+                                                        </subviews>
+                                                    </stackView>
+                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PmC-54-qKT">
+                                                        <rect key="frame" x="0.0" y="62" width="756" height="160.5"/>
+                                                        <subviews>
+                                                            <stackView opaque="NO" contentMode="scaleToFill" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="zxh-Ec-cSP">
+                                                                <rect key="frame" x="16" y="0.0" width="740" height="160.5"/>
+                                                                <subviews>
+                                                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="emV-Js-C61">
+                                                                        <rect key="frame" x="0.0" y="0.0" width="362" height="160.5"/>
+                                                                    </imageView>
+                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="999" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="6" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LFG-pI-5ay">
+                                                                        <rect key="frame" x="378" y="0.0" width="362" height="160.5"/>
+                                                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                                        <nil key="highlightedColor"/>
+                                                                    </label>
+                                                                </subviews>
+                                                            </stackView>
+                                                        </subviews>
+                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                        <constraints>
+                                                            <constraint firstAttribute="trailing" secondItem="zxh-Ec-cSP" secondAttribute="trailing" id="1WL-Ux-qm6"/>
+                                                            <constraint firstAttribute="bottom" secondItem="zxh-Ec-cSP" secondAttribute="bottom" id="RvI-jL-uL1"/>
+                                                            <constraint firstItem="zxh-Ec-cSP" firstAttribute="top" secondItem="PmC-54-qKT" secondAttribute="top" id="SLd-Jf-VwE"/>
+                                                            <constraint firstItem="zxh-Ec-cSP" firstAttribute="leading" secondItem="PmC-54-qKT" secondAttribute="leading" constant="16" id="UjX-CV-kiC"/>
+                                                        </constraints>
+                                                    </view>
+                                                </subviews>
+                                            </stackView>
                                         </subviews>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <constraints>
-                                            <constraint firstItem="Gt2-N8-ghb" firstAttribute="leading" secondItem="dij-Kg-qmX" secondAttribute="leading" constant="16" id="BgS-CW-bYf"/>
-                                            <constraint firstItem="Gt2-N8-ghb" firstAttribute="top" secondItem="dij-Kg-qmX" secondAttribute="top" constant="8" id="Fo4-Dv-GZc"/>
-                                            <constraint firstAttribute="trailing" secondItem="Gt2-N8-ghb" secondAttribute="trailing" constant="16" id="N53-8z-w3u"/>
-                                            <constraint firstAttribute="bottom" secondItem="Gt2-N8-ghb" secondAttribute="bottom" constant="8" id="mfx-kk-9cP"/>
+                                            <constraint firstItem="eqn-QI-KSO" firstAttribute="top" secondItem="dij-Kg-qmX" secondAttribute="top" constant="8" id="8fh-dI-OOH"/>
+                                            <constraint firstItem="eqn-QI-KSO" firstAttribute="leading" secondItem="dij-Kg-qmX" secondAttribute="leading" constant="16" id="9Om-bT-zsn"/>
+                                            <constraint firstAttribute="trailing" secondItem="eqn-QI-KSO" secondAttribute="trailing" constant="16" id="SMc-Lo-sgu"/>
+                                            <constraint firstAttribute="bottom" secondItem="eqn-QI-KSO" secondAttribute="bottom" constant="8" id="rok-cu-Vgy"/>
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="AgV-uS-Get">
@@ -305,6 +343,10 @@
                     </view>
                     <navigationItem key="navigationItem" id="u21-L1-csQ"/>
                     <connections>
+                        <outlet property="attachmentContainer" destination="PmC-54-qKT" id="K1d-LZ-8VY"/>
+                        <outlet property="attachmentContainerLeft" destination="UjX-CV-kiC" id="H6G-j4-1Iu"/>
+                        <outlet property="attachmentIcon" destination="emV-Js-C61" id="M2o-GF-Si4"/>
+                        <outlet property="attachmentTitleLabel" destination="LFG-pI-5ay" id="4F5-V9-zsQ"/>
                         <outlet property="collectionPickerButton" destination="auM-cU-USd" id="wJb-ju-ZdA"/>
                         <outlet property="collectionPickerChevron" destination="ayK-uV-pGu" id="O9s-kc-Y90"/>
                         <outlet property="collectionPickerContainer" destination="0V1-Zt-mR3" id="nmo-7s-Gdq"/>
@@ -312,12 +354,15 @@
                         <outlet property="collectionPickerLabel" destination="fng-oc-T2J" id="o73-M5-ABa"/>
                         <outlet property="collectionPickerStackContainer" destination="AgV-uS-Get" id="zmT-bi-tHy"/>
                         <outlet property="failureLabel" destination="pO2-Im-Mgh" id="nM0-YR-RGs"/>
+                        <outlet property="itemContainer" destination="Cx1-y6-JyV" id="Vqh-x5-OhN"/>
+                        <outlet property="itemIcon" destination="wdc-xW-1EE" id="KQk-kz-hNB"/>
                         <outlet property="itemPickerButton" destination="AsU-Ie-6RA" id="T83-Jm-KPV"/>
                         <outlet property="itemPickerChevron" destination="oUJ-i0-0od" id="OXW-WJ-k1E"/>
                         <outlet property="itemPickerContainer" destination="9mk-fm-lGU" id="DMr-WK-Qam"/>
                         <outlet property="itemPickerLabel" destination="Mnf-Y7-enG" id="gro-AX-XQA"/>
                         <outlet property="itemPickerStackContainer" destination="QfY-E5-upR" id="1Ob-vh-SoC"/>
                         <outlet property="itemPickerTitleLabel" destination="Z8I-NI-5Rt" id="Vzc-DZ-JxK"/>
+                        <outlet property="itemTitleLabel" destination="Gt2-N8-ghb" id="FPT-YZ-epf"/>
                         <outlet property="progressActivityIndicator" destination="UIS-aQ-foZ" id="jm8-nH-HPJ"/>
                         <outlet property="progressContainer" destination="Fbw-7n-5VI" id="xdj-dW-pcl"/>
                         <outlet property="progressLabel" destination="I4s-7z-4wy" id="0eN-Vv-mfW"/>
@@ -325,8 +370,7 @@
                         <outlet property="savingContainer" destination="Wjm-HE-CN5" id="jaV-Zv-zTm"/>
                         <outlet property="savingInnerContainer" destination="TcG-bZ-skf" id="HGt-lT-fbr"/>
                         <outlet property="stackView" destination="bdo-by-G9G" id="k71-vh-yXc"/>
-                        <outlet property="titleContainer" destination="dij-Kg-qmX" id="ino-do-hzH"/>
-                        <outlet property="titleLabel" destination="Gt2-N8-ghb" id="FPT-YZ-epf"/>
+                        <outlet property="translationContainer" destination="dij-Kg-qmX" id="ino-do-hzH"/>
                         <outlet property="webView" destination="ymF-El-U9O" id="qOL-r7-2RO"/>
                     </connections>
                 </viewController>

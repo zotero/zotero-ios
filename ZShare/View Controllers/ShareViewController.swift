@@ -19,8 +19,14 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var webView: WKWebView!
     @IBOutlet private weak var stackView: UIStackView!
     // Title
-    @IBOutlet private weak var titleContainer: UIView!
-    @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var translationContainer: UIView!
+    @IBOutlet private weak var itemContainer: UIStackView!
+    @IBOutlet private weak var itemIcon: UIImageView!
+    @IBOutlet private weak var itemTitleLabel: UILabel!
+    @IBOutlet private weak var attachmentContainer: UIView!
+    @IBOutlet private weak var attachmentContainerLeft: NSLayoutConstraint!
+    @IBOutlet private weak var attachmentIcon: UIImageView!
+    @IBOutlet private weak var attachmentTitleLabel: UILabel!
     // Collection picker
     @IBOutlet private weak var collectionPickerStackContainer: UIView!
     @IBOutlet private weak var collectionPickerContainer: UIView!
@@ -50,12 +56,14 @@ final class ShareViewController: UIViewController {
     private var dbStorage: DbStorage!
     private var fileStorage: FileStorageController!
     private var debugLogging: DebugLogging!
+    private var schemaController: SchemaController!
     private var store: ExtensionStore!
     private var storeCancellable: AnyCancellable?
     private var viewIsVisible: Bool = true
 
     // Constants
     private static let toolbarTitleIdx = 1
+    private static let childAttachmentLeftOffset: CGFloat = 16
 
     // MARK: - Lifecycle
 
@@ -66,10 +74,10 @@ final class ShareViewController: UIViewController {
 
         self.fileStorage = FileStorageController()
 
-        let schemaController = SchemaController()
+        self.schemaController = SchemaController()
         let configuration = URLSessionConfiguration.default
         configuration.httpAdditionalHeaders = ["Zotero-API-Version": ApiConstants.version.description,
-                                               "Zotero-Schema-Version": schemaController.version]
+                                               "Zotero-Schema-Version": self.schemaController.version]
         configuration.sharedContainerIdentifier = AppGroup.identifier
         configuration.timeoutIntervalForRequest = ApiConstants.requestTimeout
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
@@ -83,7 +91,7 @@ final class ShareViewController: UIViewController {
         self.setupNavbar(loggedIn: (session != nil))
 
         if let session = session {
-            self.setupControllers(with: session, apiClient: apiClient, schemaController: schemaController)
+            self.setupControllers(with: session, apiClient: apiClient, schemaController: self.schemaController)
         } else {
             self.showInitialError(message: L10n.Errors.Shareext.loggedOut)
             return
@@ -184,8 +192,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        self.titleContainer.isHidden = state.title == nil
-        self.titleLabel.text = state.title
+        self.updateItemsUi(for: state.title, attachment: state.processedAttachment)
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.update(collectionPicker: state.collectionPicker)
         self.update(itemPicker: state.itemPicker)
@@ -198,6 +205,49 @@ final class ShareViewController: UIViewController {
     private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
         self.updateNavigationItems(for: state)
         self.updateProgress(for: state, itemState: itemState)
+    }
+
+    private func updateItemsUi(for title: String?, attachment: ExtensionStore.State.ProcessedAttachment?) {
+        guard let attachment = attachment else {
+            self.translationContainer.isHidden = true
+            return
+        }
+
+        self.translationContainer.isHidden = false
+
+        switch attachment {
+        case .item(let item):
+            self.itemContainer.isHidden = false
+            self.attachmentContainer.isHidden = true
+
+            let titleKey = self.schemaController.titleKey(for: item.rawType)
+            let itemTitle = titleKey.flatMap({ item.fields[$0] }) ?? title
+
+            self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
+            self.itemTitleLabel.text = itemTitle
+
+        case .itemWithAttachment(let item, let attachment, _):
+            self.itemContainer.isHidden = false
+            self.attachmentContainer.isHidden = false
+
+            let titleKey = self.schemaController.titleKey(for: item.rawType)
+            let itemTitle = titleKey.flatMap({ item.fields[$0] }) ?? title
+
+            self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
+            self.itemTitleLabel.text = itemTitle
+            self.attachmentContainerLeft.constant = ShareViewController.childAttachmentLeftOffset
+            self.attachmentIcon.image = Asset.Images.attachmentDetailPdf.image
+            self.attachmentTitleLabel.text = (attachment["title"] as? String) ?? title
+
+        case .localFile(let file):
+            self.itemContainer.isHidden = true
+            self.attachmentContainer.isHidden = false
+
+            self.attachmentContainerLeft.constant = 0
+            self.attachmentIcon.image = Asset.Images.attachmentDetailPdf.image
+            self.attachmentTitleLabel.text = file.name
+
+        }
     }
 
     private func updateNavigationItems(for state: ExtensionStore.State.AttachmentState) {
@@ -406,7 +456,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func setupPickers() {
-        [self.titleContainer,
+        [self.translationContainer,
          self.collectionPickerContainer,
          self.itemPickerContainer].forEach { container in
             container!.layer.cornerRadius = 8
