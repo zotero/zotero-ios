@@ -157,6 +157,10 @@ final class FileAttachmentView: UIView {
         self.stopLayer.opacity = opacity
     }
 
+    func showFailure() {
+
+    }
+
     func set(state: State, style: Style) {
         guard let data = self.layerData(state: state, style: style) else { return }
 

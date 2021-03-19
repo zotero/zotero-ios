@@ -84,6 +84,15 @@ final class ExtensionStore {
             case done
             case failed(Error)
 
+            var error: Error? {
+                switch self {
+                case .failed(let error):
+                    return error
+                default:
+                    return nil
+                }
+            }
+
             var isSubmittable: Bool {
                 switch self {
                 case .processed: return true
@@ -165,6 +174,7 @@ final class ExtensionStore {
         var attachmentState: AttachmentState
         var collectionPicker: CollectionPicker
         var itemPicker: ItemPicker?
+        var items: ProcessedAttachment?
         var processedAttachment: ProcessedAttachment?
 
         init() {
@@ -275,6 +285,7 @@ final class ExtensionStore {
 
             var state = self.state
             state.processedAttachment = .localFile(file)
+            state.items = state.processedAttachment
             state.attachmentState = .processed
             self.state = state
 
@@ -299,6 +310,7 @@ final class ExtensionStore {
                     var state = self.state
                     if self.fileStorage.isPdf(file: file) {
                         state.processedAttachment = .localFile(file)
+                        state.items = state.processedAttachment
                         state.attachmentState = .processed
                     } else {
                         state.processedAttachment = nil
@@ -411,7 +423,11 @@ final class ExtensionStore {
                let url = URL(string: urlString) {
                 let file = Files.shareExtensionTmpItem(key: self.state.attachmentKey, ext: ExtensionStore.defaultExtension)
 
-                self.state.attachmentState = .downloading(0)
+                var state = self.state
+                state.attachmentState = .downloading(0)
+                state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
+                state.items = state.processedAttachment
+                self.state = state
 
                 self.download(url: url, to: file)
                     .observeOn(MainScheduler.instance)
@@ -425,7 +441,6 @@ final class ExtensionStore {
 
                         var state = self.state
                         if self.fileStorage.isPdf(file: file) {
-                            state.processedAttachment = .itemWithAttachment(item: item, attachment: attachment, attachmentFile: file)
                             state.attachmentState = .processed
                         } else {
                             state.processedAttachment = .item(item)

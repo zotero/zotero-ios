@@ -60,32 +60,49 @@
                                                 <rect key="frame" x="16" y="8" width="756" height="222.5"/>
                                                 <subviews>
                                                     <stackView opaque="NO" contentMode="scaleToFill" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="Cx1-y6-JyV">
-                                                        <rect key="frame" x="0.0" y="0.0" width="756" height="50"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="756" height="182.5"/>
                                                         <subviews>
                                                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="wdc-xW-1EE">
-                                                                <rect key="frame" x="0.0" y="0.0" width="370" height="50"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="370" height="182.5"/>
                                                             </imageView>
                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="6" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Gt2-N8-ghb">
-                                                                <rect key="frame" x="386" y="0.0" width="370" height="50"/>
+                                                                <rect key="frame" x="386" y="0.0" width="370" height="182.5"/>
                                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                                 <nil key="highlightedColor"/>
                                                             </label>
                                                         </subviews>
                                                     </stackView>
                                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PmC-54-qKT">
-                                                        <rect key="frame" x="0.0" y="62" width="756" height="160.5"/>
+                                                        <rect key="frame" x="0.0" y="194.5" width="756" height="28"/>
                                                         <subviews>
-                                                            <stackView opaque="NO" contentMode="scaleToFill" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="zxh-Ec-cSP">
-                                                                <rect key="frame" x="16" y="0.0" width="740" height="160.5"/>
+                                                            <stackView opaque="NO" contentMode="scaleToFill" verticalCompressionResistancePriority="1000" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="zxh-Ec-cSP">
+                                                                <rect key="frame" x="16" y="0.0" width="740" height="28"/>
                                                                 <subviews>
-                                                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="1000" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="emV-Js-C61">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="362" height="160.5"/>
-                                                                    </imageView>
-                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="999" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="6" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LFG-pI-5ay">
-                                                                        <rect key="frame" x="378" y="0.0" width="362" height="160.5"/>
+                                                                    <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="9Gh-yn-tvy" customClass="FileAttachmentView" customModule="ZShare" customModuleProvider="target">
+                                                                        <rect key="frame" x="0.0" y="0.0" width="28" height="28"/>
+                                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                                        <constraints>
+                                                                            <constraint firstAttribute="width" constant="28" placeholder="YES" id="HMe-sn-fqf"/>
+                                                                            <constraint firstAttribute="height" constant="28" placeholder="YES" id="dS4-ig-aAV"/>
+                                                                        </constraints>
+                                                                    </view>
+                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1000" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="999" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="6" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LFG-pI-5ay">
+                                                                        <rect key="frame" x="44" y="0.0" width="41.5" height="28"/>
                                                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                                         <nil key="highlightedColor"/>
                                                                     </label>
+                                                                    <view contentMode="scaleToFill" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="EjL-NF-tp3">
+                                                                        <rect key="frame" x="101.5" y="0.0" width="594.5" height="28"/>
+                                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                                    </view>
+                                                                    <view contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="8rq-dX-d2y" customClass="CircularProgressView" customModule="ZShare" customModuleProvider="target">
+                                                                        <rect key="frame" x="712" y="0.0" width="28" height="28"/>
+                                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                                        <constraints>
+                                                                            <constraint firstAttribute="width" constant="28" placeholder="YES" id="3pD-aX-U0i"/>
+                                                                            <constraint firstAttribute="height" constant="28" placeholder="YES" id="zL5-7B-HKD"/>
+                                                                        </constraints>
+                                                                    </view>
                                                                 </subviews>
                                                             </stackView>
                                                         </subviews>
@@ -236,24 +253,16 @@
                                         </constraints>
                                     </view>
                                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Fbw-7n-5VI">
-                                        <rect key="frame" x="0.0" y="318" width="788" height="28"/>
+                                        <rect key="frame" x="0.0" y="318" width="788" height="14.5"/>
                                         <subviews>
                                             <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="DfL-H1-zN4">
-                                                <rect key="frame" x="290.5" y="0.0" width="207" height="28"/>
+                                                <rect key="frame" x="308.5" y="0.0" width="171" height="14.5"/>
                                                 <subviews>
                                                     <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="UIS-aQ-foZ">
-                                                        <rect key="frame" x="0.0" y="0.0" width="20" height="28"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="20" height="14.5"/>
                                                     </activityIndicatorView>
-                                                    <view contentMode="scaleToFill" horizontalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="8rq-dX-d2y" customClass="CircularProgressView" customModule="ZShare" customModuleProvider="target">
-                                                        <rect key="frame" x="28" y="0.0" width="28" height="28"/>
-                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                                        <constraints>
-                                                            <constraint firstAttribute="width" constant="28" placeholder="YES" id="3pD-aX-U0i"/>
-                                                            <constraint firstAttribute="height" constant="28" placeholder="YES" id="zL5-7B-HKD"/>
-                                                        </constraints>
-                                                    </view>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="1" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" text="LOADING TRANSLATORS" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="I4s-7z-4wy">
-                                                        <rect key="frame" x="64" y="0.0" width="143" height="28"/>
+                                                        <rect key="frame" x="28" y="0.0" width="143" height="14.5"/>
                                                         <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
                                                         <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         <nil key="highlightedColor"/>
@@ -345,8 +354,12 @@
                     <connections>
                         <outlet property="attachmentContainer" destination="PmC-54-qKT" id="K1d-LZ-8VY"/>
                         <outlet property="attachmentContainerLeft" destination="UjX-CV-kiC" id="H6G-j4-1Iu"/>
-                        <outlet property="attachmentIcon" destination="emV-Js-C61" id="M2o-GF-Si4"/>
+                        <outlet property="attachmentIcon" destination="9Gh-yn-tvy" id="vcP-3V-tVK"/>
+                        <outlet property="attachmentProgressView" destination="8rq-dX-d2y" id="Ent-NK-7UI"/>
                         <outlet property="attachmentTitleLabel" destination="LFG-pI-5ay" id="4F5-V9-zsQ"/>
+                        <outlet property="bottomProgressActivityIndicator" destination="UIS-aQ-foZ" id="jm8-nH-HPJ"/>
+                        <outlet property="bottomProgressContainer" destination="Fbw-7n-5VI" id="xdj-dW-pcl"/>
+                        <outlet property="bottomProgressLabel" destination="I4s-7z-4wy" id="0eN-Vv-mfW"/>
                         <outlet property="collectionPickerButton" destination="auM-cU-USd" id="wJb-ju-ZdA"/>
                         <outlet property="collectionPickerChevron" destination="ayK-uV-pGu" id="O9s-kc-Y90"/>
                         <outlet property="collectionPickerContainer" destination="0V1-Zt-mR3" id="nmo-7s-Gdq"/>
@@ -363,10 +376,6 @@
                         <outlet property="itemPickerStackContainer" destination="QfY-E5-upR" id="1Ob-vh-SoC"/>
                         <outlet property="itemPickerTitleLabel" destination="Z8I-NI-5Rt" id="Vzc-DZ-JxK"/>
                         <outlet property="itemTitleLabel" destination="Gt2-N8-ghb" id="FPT-YZ-epf"/>
-                        <outlet property="progressActivityIndicator" destination="UIS-aQ-foZ" id="jm8-nH-HPJ"/>
-                        <outlet property="progressContainer" destination="Fbw-7n-5VI" id="xdj-dW-pcl"/>
-                        <outlet property="progressLabel" destination="I4s-7z-4wy" id="0eN-Vv-mfW"/>
-                        <outlet property="progressView" destination="8rq-dX-d2y" id="Ent-NK-7UI"/>
                         <outlet property="savingContainer" destination="Wjm-HE-CN5" id="jaV-Zv-zTm"/>
                         <outlet property="savingInnerContainer" destination="TcG-bZ-skf" id="HGt-lT-fbr"/>
                         <outlet property="stackView" destination="bdo-by-G9G" id="k71-vh-yXc"/>

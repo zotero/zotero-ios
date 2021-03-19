@@ -25,8 +25,9 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var itemTitleLabel: UILabel!
     @IBOutlet private weak var attachmentContainer: UIView!
     @IBOutlet private weak var attachmentContainerLeft: NSLayoutConstraint!
-    @IBOutlet private weak var attachmentIcon: UIImageView!
+    @IBOutlet private weak var attachmentIcon: FileAttachmentView!
     @IBOutlet private weak var attachmentTitleLabel: UILabel!
+    @IBOutlet private weak var attachmentProgressView: CircularProgressView!
     // Collection picker
     @IBOutlet private weak var collectionPickerStackContainer: UIView!
     @IBOutlet private weak var collectionPickerContainer: UIView!
@@ -42,10 +43,9 @@ final class ShareViewController: UIViewController {
     @IBOutlet private weak var itemPickerChevron: UIImageView!
     @IBOutlet private weak var itemPickerButton: UIButton!
     // Progress
-    @IBOutlet private weak var progressContainer: UIView!
-    @IBOutlet private weak var progressView: CircularProgressView!
-    @IBOutlet private weak var progressActivityIndicator: UIActivityIndicatorView!
-    @IBOutlet private weak var progressLabel: UILabel!
+    @IBOutlet private weak var bottomProgressContainer: UIView!
+    @IBOutlet private weak var bottomProgressActivityIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var bottomProgressLabel: UILabel!
     @IBOutlet private weak var failureLabel: UILabel!
     // Saving
     @IBOutlet private weak var savingContainer: UIView!
@@ -100,6 +100,7 @@ final class ShareViewController: UIViewController {
         // Setup UI
         self.setupPickers()
         self.setupSavingOverlay()
+        self.attachmentIcon.set(backgroundColor: .white)
 
         // Setup observing
         self.storeCancellable = self.store?.$state.receive(on: DispatchQueue.main)
@@ -192,7 +193,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func update(to state: ExtensionStore.State) {
-        self.updateItemsUi(for: state.title, attachment: state.processedAttachment)
+        self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
         self.update(collectionPicker: state.collectionPicker)
         self.update(itemPicker: state.itemPicker)
@@ -204,18 +205,18 @@ final class ShareViewController: UIViewController {
 
     private func update(attachmentState state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
         self.updateNavigationItems(for: state)
-        self.updateProgress(for: state, itemState: itemState)
+        self.updateBottomProgress(for: state, itemState: itemState)
     }
 
-    private func updateItemsUi(for title: String?, attachment: ExtensionStore.State.ProcessedAttachment?) {
-        guard let attachment = attachment else {
+    private func updateItemsUi(for title: String?, items: ExtensionStore.State.ProcessedAttachment?, attachmentState: ExtensionStore.State.AttachmentState) {
+        guard let items = items else {
             self.translationContainer.isHidden = true
             return
         }
 
         self.translationContainer.isHidden = false
 
-        switch attachment {
+        switch items {
         case .item(let item):
             self.itemContainer.isHidden = false
             self.attachmentContainer.isHidden = true
@@ -226,7 +227,7 @@ final class ShareViewController: UIViewController {
             self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
             self.itemTitleLabel.text = itemTitle
 
-        case .itemWithAttachment(let item, let attachment, _):
+        case .itemWithAttachment(let item, let attachment, let file):
             self.itemContainer.isHidden = false
             self.attachmentContainer.isHidden = false
 
@@ -236,7 +237,7 @@ final class ShareViewController: UIViewController {
             self.itemIcon.image = UIImage(named: ItemTypes.iconName(for: item.rawType, contentType: nil))
             self.itemTitleLabel.text = itemTitle
             self.attachmentContainerLeft.constant = ShareViewController.childAttachmentLeftOffset
-            self.attachmentIcon.image = Asset.Images.attachmentDetailPdf.image
+            self.attachmentIcon.set(state: .stateFrom(contentType: .file(file: file, filename: "", location: .local, linkType: .imported), progress: nil, error: attachmentState.error), style: .detail)
             self.attachmentTitleLabel.text = (attachment["title"] as? String) ?? title
 
         case .localFile(let file):
@@ -244,9 +245,24 @@ final class ShareViewController: UIViewController {
             self.attachmentContainer.isHidden = false
 
             self.attachmentContainerLeft.constant = 0
-            self.attachmentIcon.image = Asset.Images.attachmentDetailPdf.image
+            self.attachmentIcon.set(state: .stateFrom(contentType: .file(file: file, filename: "", location: .local, linkType: .imported), progress: nil, error: nil), style: .detail)
+            
             self.attachmentTitleLabel.text = file.name
+        }
 
+        switch attachmentState {
+        case .downloading(let progress):
+            self.attachmentProgressView.isHidden = false
+            self.attachmentProgressView.progress = CGFloat(progress)
+
+            self.attachmentIcon.alpha = 0.5
+            self.attachmentTitleLabel.alpha = 0.5
+        default:
+            if !self.attachmentContainer.isHidden {
+                self.attachmentProgressView.isHidden = true
+                self.attachmentIcon.alpha = 1
+                self.attachmentTitleLabel.alpha = 1
+            }
         }
     }
 
@@ -271,35 +287,41 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func updateProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
+    private func updateBottomProgress(for state: ExtensionStore.State.AttachmentState, itemState: ExtensionStore.State.ItemPicker?) {
         if let state = itemState, state.picked == nil {
             // Don't show progress bar when waiting for item pick
-            self.progressContainer.isHidden = true
+            self.bottomProgressContainer.isHidden = true
             return
         }
 
-        let progressData: (String, Float?)?
+        let message: String?
+        let showActivityIndicator: Bool
 
         switch state {
         case .decoding:
-            progressData = (L10n.Shareext.decodingAttachment, 0.1)
+            message = L10n.Shareext.decodingAttachment
+            showActivityIndicator = true
 
         case .processed:
-            progressData = nil
+            message = nil
+            showActivityIndicator = false
 
-        case .translating(let message):
-            progressData = (message, 0.2)
+        case .translating(let _message):
+            message = _message
+            showActivityIndicator = true
 
-        case .downloading(let _progress):
-            let progress = 0.2 + (0.8 * _progress)
-            progressData = (L10n.Shareext.Translation.downloading, progress)
+        case .downloading:
+            message = nil
+            showActivityIndicator = true
 
         case .submitting:
-            progressData = nil
+            message = nil
+            showActivityIndicator = false
             self.showSavingOverlay()
 
         case .failed(let error):
-            progressData = nil
+            message = nil
+            showActivityIndicator = false
 
             self.hideSavingOverlay()
             self.collectionPickerStackContainer.isHidden = error.isFatal
@@ -313,18 +335,18 @@ final class ShareViewController: UIViewController {
             return
         }
 
-        self.progressContainer.isHidden = progressData == nil
-        if let (text, progress) = progressData {
-            self.progressLabel.text = text.uppercased()
-
-            self.progressView.isHidden = progress == nil
-            self.progressView.progress = CGFloat(progress ?? 0)
-            self.progressActivityIndicator.isHidden = progress != nil
+        self.bottomProgressContainer.isHidden = message == nil
+        if let text = message {
+            self.bottomProgressLabel.text = text.uppercased()
+            self.bottomProgressActivityIndicator.isHidden = !showActivityIndicator
         }
     }
 
     private func show(error: ExtensionStore.State.AttachmentState.Error) {
-        var message = self.errorMessage(for: error)
+        guard var message = self.errorMessage(for: error) else {
+            self.failureLabel.isHidden = true
+            return
+        }
 
         if error.isFatal {
             self.failureLabel.textColor = .red
@@ -341,7 +363,7 @@ final class ShareViewController: UIViewController {
         self.failureLabel.isHidden = false
     }
 
-    private func errorMessage(for error: ExtensionStore.State.AttachmentState.Error) -> String {
+    private func errorMessage(for error: ExtensionStore.State.AttachmentState.Error) -> String? {
         switch error {
         case .cantLoadSchema:
             return L10n.Errors.Shareext.cantLoadSchema
@@ -375,7 +397,7 @@ final class ShareViewController: UIViewController {
         case .missingBackgroundUploader:
             return L10n.Errors.Shareext.backgroundUploaderFailure
         case .downloadedFileNotPdf:
-            return L10n.Errors.Shareext.fileNotPdf
+            return nil
         }
     }
 
