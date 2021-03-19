@@ -25,7 +25,7 @@ struct PDFReaderState: ViewModelState {
         static let annotations = Changes(rawValue: 1 << 0)
         static let selection = Changes(rawValue: 1 << 1)
         static let interfaceStyle = Changes(rawValue: 1 << 2)
-        static let appearanceMode = Changes(rawValue: 1 << 3)
+        static let settings = Changes(rawValue: 1 << 3)
         static let activeColor = Changes(rawValue: 1 << 4)
         static let activeComment = Changes(rawValue: 1 << 5)
         static let save = Changes(rawValue: 1 << 6)
@@ -33,29 +33,10 @@ struct PDFReaderState: ViewModelState {
         static let export = Changes(rawValue: 1 << 9)
     }
 
-    enum AppearanceMode {
+    enum AppearanceMode: UInt {
         case automatic
-        case manual(PDFAppearanceMode)
-
-        static func from(string: String) -> AppearanceMode? {
-            switch string {
-            case "auto": return .automatic
-            case "dark": return .manual(.night)
-            case "light": return .manual([])
-            default: return nil
-            }
-        }
-
-        var stringValue: String {
-            switch self {
-            case .automatic: return "auto"
-            case .manual(let mode):
-                if mode.contains(.night) {
-                    return "dark"
-                }
-                return "light"
-            }
-        }
+        case light
+        case dark
     }
 
     static let activeColorKey = "PDFReaderState.activeColor"
@@ -69,7 +50,6 @@ struct PDFReaderState: ViewModelState {
     let username: String
 
     var interfaceStyle: UIUserInterfaceStyle
-    var appearanceMode: AppearanceMode
     var annotations: [Int: [Annotation]]
     var annotationsSnapshot: [Int: [Annotation]]?
     /// These 3 sets of keys are stored for 2 purposes:
@@ -104,13 +84,15 @@ struct PDFReaderState: ViewModelState {
     /// Used to ignore next insertion/deletion notification of annotations. Used when there is a remote change of annotations. PSPDFKit can't suppress notifications when adding/deleting annotations
     /// to/from document. So when a remote change comes in, the document is edited and emits notifications which would try to do the same work again.
     var ignoreNotifications: [Notification.Name: Set<String>]
+    var settings: PDFSettingsState
 
-    init(url: URL, key: String, library: Library, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
+    init(url: URL, key: String, library: Library, settings: PDFSettingsState, userId: Int, username: String, interfaceStyle: UIUserInterfaceStyle) {
         self.key = key
         self.library = library
         self.userId = userId
         self.username = username
         self.interfaceStyle = interfaceStyle
+        self.settings = settings
         self.deletedKeys = []
         self.insertedKeys = []
         self.modifiedKeys = []
@@ -128,7 +110,6 @@ struct PDFReaderState: ViewModelState {
                                                 .flatMap({ UIColor(hex: $0) }) ?? UIColor(hex: AnnotationsConfig.defaultActiveColor)
         self.changes = []
         self.previewCache.totalCostLimit = 1024 * 1024 * 10 // Cache object limit - 10 MB
-        self.appearanceMode = .automatic
     }
 
     mutating func cleanup() {

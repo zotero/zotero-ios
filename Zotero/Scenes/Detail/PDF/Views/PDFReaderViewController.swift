@@ -107,28 +107,6 @@ final class PDFReaderViewController: UIViewController {
         return self.annotationsControllerLeft.constant == 0
     }
 
-    private var defaultScrollDirection: ScrollDirection {
-        get {
-            let rawValue = UserDefaults.standard.integer(forKey: "PdfReader.ScrollDirection")
-            return ScrollDirection(rawValue: UInt(rawValue)) ?? .horizontal
-        }
-
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "PdfReader.ScrollDirection")
-        }
-    }
-
-    private var defaultPageTransition: PageTransition {
-        get {
-            let rawValue = UserDefaults.standard.integer(forKey: "PdfReader.PageTransition")
-            return PageTransition(rawValue: UInt(rawValue)) ?? .scrollPerSpread
-        }
-
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "PdfReader.PageTransition")
-        }
-    }
-
     // MARK: - Lifecycle
 
     init(viewModel: ViewModel<PDFReaderActionHandler>, compactSize: Bool) {
@@ -157,6 +135,7 @@ final class PDFReaderViewController: UIViewController {
         self.setupAnnotationControls(forCompactSize: self.isCompactSize)
         self.set(toolColor: self.viewModel.state.activeColor, in: self.pdfController.annotationStateManager)
         self.setupObserving()
+        self.updateInterface(to: self.viewModel.state.settings)
 
         self.viewModel.process(action: .loadDocumentData)
         self.pdfController.setPageIndex(PageIndex(self.viewModel.state.visiblePage), animated: false)
@@ -209,14 +188,19 @@ final class PDFReaderViewController: UIViewController {
             self.setupItemObserving(items: state.dbItems)
         }
 
-        if state.changes.contains(.interfaceStyle) || state.changes.contains(.appearanceMode) {
-            switch state.appearanceMode {
-            case .automatic:
-                self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
-                self.navigationController?.overrideUserInterfaceStyle = .unspecified
-            case .manual(let mode):
-                self.pdfController.appearanceModeManager.appearanceMode = mode
-                self.navigationController?.overrideUserInterfaceStyle = mode == .night ? .dark : .light
+        if state.changes.contains(.interfaceStyle) {
+            self.updateInterface(to: state.settings)
+        }
+
+        if state.changes.contains(.settings) {
+            self.updateInterface(to: state.settings)
+
+            if self.pdfController.configuration.scrollDirection != state.settings.direction ||
+               self.pdfController.configuration.pageTransition != state.settings.transition {
+                self.pdfController.updateConfiguration { configuration in
+                    configuration.scrollDirection = state.settings.direction
+                    configuration.pageTransition = state.settings.transition
+                }
             }
         }
 
@@ -287,6 +271,20 @@ final class PDFReaderViewController: UIViewController {
         }
 
         self.navigationItem.rightBarButtonItems = items
+    }
+
+    private func updateInterface(to settings: PDFSettingsState) {
+        switch settings.appearanceMode {
+        case .automatic:
+            self.pdfController.appearanceModeManager.appearanceMode = self.traitCollection.userInterfaceStyle == .dark ? .night : []
+            self.navigationController?.overrideUserInterfaceStyle = .unspecified
+        case .light:
+            self.pdfController.appearanceModeManager.appearanceMode = []
+            self.navigationController?.overrideUserInterfaceStyle = .light
+        case .dark:
+            self.pdfController.appearanceModeManager.appearanceMode = .night
+            self.navigationController?.overrideUserInterfaceStyle = .dark
+        }
     }
 
     private func enqueueAnnotationSave() {
@@ -409,33 +407,9 @@ final class PDFReaderViewController: UIViewController {
     }
 
     private func showSettings(sender: UIBarButtonItem) {
-        let state = PDFSettingsState(direction: self.pdfController.configuration.scrollDirection,
-                                     transition: self.pdfController.configuration.pageTransition,
-                                     appearanceMode: self.viewModel.state.appearanceMode)
-        self.coordinatorDelegate?.showSettings(state: state, sender: sender, completion: { [weak self] action in
-            switch action {
-            case .changeAppearanceMode(let mode):
-                self?.viewModel.process(action: .changeAppearanceMode(mode))
-            case .changeTransition(let transition):
-                self?.togglePageTransition(to: transition)
-            case .changeDirection(let direction):
-                self?.toggleScrollDirection(to: direction)
-            }
+        self.coordinatorDelegate?.showSettings(state: self.viewModel.state.settings, sender: sender, completion: { [weak self] action in
+            self?.viewModel.process(action: action)
         })
-    }
-
-    private func toggleScrollDirection(to direction: ScrollDirection) {
-        self.defaultScrollDirection = direction
-        self.pdfController.updateConfiguration { builder in
-            builder.scrollDirection = direction
-        }
-    }
-
-    private func togglePageTransition(to transition: PageTransition) {
-        self.defaultPageTransition = transition
-        self.pdfController.updateConfiguration { builder in
-            builder.pageTransition = transition
-        }
     }
 
     private func close() {
@@ -602,7 +576,7 @@ final class PDFReaderViewController: UIViewController {
     // MARK: - Setups
 
     private func setupViews() {
-        let pdfController = self.createPdfController(with: self.viewModel.state.document)
+        let pdfController = self.createPdfController(with: self.viewModel.state.document, settings: self.viewModel.state.settings)
         pdfController.view.translatesAutoresizingMaskIntoConstraints = false
 
         let sidebarController = AnnotationsViewController(viewModel: self.viewModel)
@@ -642,9 +616,10 @@ final class PDFReaderViewController: UIViewController {
         self.annotationsControllerLeft = sidebarLeftConstraint
     }
 
-    private func createPdfController(with document: Document) -> PDFViewController {
+    private func createPdfController(with document: Document, settings: PDFSettingsState) -> PDFViewController {
         let pdfConfiguration = PDFConfiguration { builder in
-            builder.scrollDirection = .horizontal
+            builder.scrollDirection = settings.direction
+            builder.pageTransition = settings.transition
             builder.documentLabelEnabled = .NO
             builder.allowedAppearanceModes = [.night]
             builder.isCreateAnnotationMenuEnabled = true
@@ -661,9 +636,6 @@ final class PDFReaderViewController: UIViewController {
         controller.view.backgroundColor = .systemGray6
         controller.delegate = self
         controller.formSubmissionDelegate = nil
-        if self.traitCollection.userInterfaceStyle == .dark {
-            controller.appearanceModeManager.appearanceMode = .night
-        }
         controller.annotationStateManager.add(self)
         self.setup(scrubberBar: controller.userInterfaceView.scrubberBar)
         self.setup(interactions: controller.interactions)
@@ -672,9 +644,9 @@ final class PDFReaderViewController: UIViewController {
 
     private func createAnnotationCreationMenuGroups() -> [AnnotationToolConfiguration.ToolGroup] {
         return [AnnotationToolConfiguration.ToolGroup(items: [
-            AnnotationToolConfiguration.ToolItem(type: .highlight),
-            AnnotationToolConfiguration.ToolItem(type: .note),
-            AnnotationToolConfiguration.ToolItem(type: .square)
+                AnnotationToolConfiguration.ToolItem(type: .highlight),
+                AnnotationToolConfiguration.ToolItem(type: .note),
+                AnnotationToolConfiguration.ToolItem(type: .square)
         ])]
     }
 

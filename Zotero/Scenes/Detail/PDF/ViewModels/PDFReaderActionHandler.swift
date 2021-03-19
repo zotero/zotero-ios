@@ -183,11 +183,24 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
             }
 
         case .changeAppearanceMode(let mode):
-            self.update(viewModel: viewModel) { state in
-                state.appearanceMode = mode
-                state.changes = .appearanceMode
-            }
+            self.updateSettings(action: { $0.appearanceMode = mode }, in: viewModel)
+
+        case .changeDirection(let direction):
+            self.updateSettings(action: { $0.direction = direction }, in: viewModel)
+
+        case .changeTransition(let transition):
+            self.updateSettings(action: { $0.transition = transition }, in: viewModel)
         }
+    }
+
+    private func updateSettings(action: (inout PDFSettingsState) -> Void, in viewModel: ViewModel<PDFReaderActionHandler>) {
+        // Update local state
+        self.update(viewModel: viewModel) { state in
+            action(&state.settings)
+            state.changes = .settings
+        }
+        // Store new settings to defaults
+        Defaults.shared.pdfSettings = viewModel.state.settings
     }
 
     private func updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int], in viewModel: ViewModel<PDFReaderActionHandler>) {

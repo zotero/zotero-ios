@@ -65,7 +65,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func share(url: URL, barButton: UIBarButtonItem)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
-    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFSettingsAction) -> Void)
+    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
 }
 
 protocol DetailAnnotationsCoordinatorDelegate: class {
@@ -219,12 +219,11 @@ final class DetailCoordinator: Coordinator {
               let userId = self.controllers.sessionController.sessionData?.userId,
               !username.isEmpty else { return }
 
-        let handler = PDFReaderActionHandler(dbStorage: dbStorage,
-                                             annotationPreviewController: self.controllers.annotationPreviewController,
-                                             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter,
-                                             schemaController: self.controllers.schemaController,
+        let handler = PDFReaderActionHandler(dbStorage: dbStorage, annotationPreviewController: self.controllers.annotationPreviewController,
+                                             htmlAttributedStringConverter: self.controllers.htmlAttributedStringConverter, schemaController: self.controllers.schemaController,
                                              fileStorage: self.controllers.fileStorage)
-        let state = PDFReaderState(url: url, key: key, library: library, userId: userId, username: username, interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
+        let state = PDFReaderState(url: url, key: key, library: library, settings: Defaults.shared.pdfSettings, userId: userId, username: username,
+                                   interfaceStyle: self.topViewController.view.traitCollection.userInterfaceStyle)
         let controller = PDFReaderViewController(viewModel: ViewModel(initialState: state, handler: handler),
                                                  compactSize: UIDevice.current.isCompactWidth(size: self.navigationController.view.frame.size))
         controller.coordinatorDelegate = self
@@ -692,30 +691,28 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     private func showAppearanceModePicker(for current: PDFReaderState.AppearanceMode, completed: @escaping (PDFReaderState.AppearanceMode) -> Void) {
-        let models = [SinglePickerModel(id: PDFReaderState.AppearanceMode.automatic.stringValue, name: L10n.Pdf.Appearance.auto),
-                      SinglePickerModel(id: PDFReaderState.AppearanceMode.manual([]).stringValue, name: L10n.Pdf.Appearance.lightMode),
-                      SinglePickerModel(id: PDFReaderState.AppearanceMode.manual(.night).stringValue, name: L10n.Pdf.Appearance.darkMode)]
-        let state = SinglePickerState(objects: models, selectedRow: current.stringValue)
+        let models = [SinglePickerModel(id: "\(PDFReaderState.AppearanceMode.automatic.rawValue)", name: L10n.Pdf.Appearance.auto),
+                      SinglePickerModel(id: "\(PDFReaderState.AppearanceMode.light.rawValue)", name: L10n.Pdf.Appearance.lightMode),
+                      SinglePickerModel(id: "\(PDFReaderState.AppearanceMode.dark.rawValue)", name: L10n.Pdf.Appearance.darkMode)]
+        let state = SinglePickerState(objects: models, selectedRow: "\(current.rawValue)")
         let viewModel = ViewModel(initialState: state, handler: SinglePickerActionHandler())
         self.presentPicker(viewModel: viewModel, requiresSaveButton: false, saveAction: { picked in
-            guard let mode = PDFReaderState.AppearanceMode.from(string: picked) else { return }
+            guard let mode = UInt(picked).flatMap({ PDFReaderState.AppearanceMode(rawValue: $0) }) else { return }
             completed(mode)
         })
     }
 
-    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFSettingsAction) -> Void) {
+    func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void) {
         let directionString = state.direction == .horizontal ? L10n.Pdf.ScrollDirection.horizontal : L10n.Pdf.ScrollDirection.vertical
         let transitionString = state.transition == .scrollContinuous ? L10n.Pdf.PageTransition.continuous : L10n.Pdf.PageTransition.jump
         let appearanceString: String
         switch state.appearanceMode {
         case .automatic:
             appearanceString = L10n.Pdf.Appearance.auto
-        case .manual(let mode):
-            if mode == .night {
-                appearanceString = L10n.Pdf.Appearance.darkMode
-            } else {
-                appearanceString = L10n.Pdf.Appearance.lightMode
-            }
+        case .dark:
+            appearanceString = L10n.Pdf.Appearance.darkMode
+        case .light:
+            appearanceString = L10n.Pdf.Appearance.lightMode
         }
 
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)

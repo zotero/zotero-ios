@@ -11,6 +11,9 @@ import Foundation
 final class Defaults {
     static let shared = Defaults()
 
+    private let jsonEncoder = JSONEncoder()
+    private let jsonDecoder = JSONDecoder()
+
     @UserDefault(key: "AskForSyncPermission", defaultValue: false)
     var askForSyncPermission: Bool
 
@@ -31,6 +34,20 @@ final class Defaults {
 
     @UserDefault(key: "ShareExtensionIncludeAttachment", defaultValue: true)
     var shareExtensionIncludeAttachment: Bool
+
+    #if PDFENABLED && MAINAPP
+    var pdfSettings: PDFSettingsState {
+        get {
+            let data = UserDefaults.standard.data(forKey: "PDFReaderSettings")
+            return data.flatMap({ try? self.jsonDecoder.decode(PDFSettingsState.self, from: $0) }) ?? PDFSettingsState.default
+        }
+
+        set {
+            guard let data = try? self.jsonEncoder.encode(newValue) else { return }
+            UserDefaults.standard.setValue(data, forKey: "PDFReaderSettings")
+        }
+    }
+    #endif
 
     func reset() {
         self.askForSyncPermission = false

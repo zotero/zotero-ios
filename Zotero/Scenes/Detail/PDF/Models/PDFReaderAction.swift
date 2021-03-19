@@ -11,6 +11,7 @@
 import UIKit
 
 import PSPDFKit
+import PSPDFKitUI
 import RealmSwift
 
 enum PDFReaderAction {
@@ -41,6 +42,8 @@ enum PDFReaderAction {
     case updateDbPositions(objects: Results<RItem>, deletions: [Int], insertions: [Int])
     case notificationReceived(Notification.Name)
     case annotationChangeNotificationReceived(String)
+    case changeDirection(ScrollDirection)
+    case changeTransition(PageTransition)
     case changeAppearanceMode(PDFReaderState.AppearanceMode)
 }
 

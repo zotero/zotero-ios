@@ -13,6 +13,7 @@ import SwiftUI
 
 #if PDFENABLED
 import PSPDFKit
+import PSPDFKitUI
 #endif
 
 protocol SceneActivityCounter: class {
@@ -23,6 +24,25 @@ protocol SceneActivityCounter: class {
 final class AppDelegate: UIResponder {
     var controllers: Controllers!
     private var foregroundSceneCount = 0
+
+    // MARK: - Migration
+
+    #if PDFENABLED
+    private func migratePdfSettings() {
+        let rawScrollDirection = UserDefaults.standard.value(forKey: "PdfReader.ScrollDirection") as? UInt
+        let rawPageTransition = UserDefaults.standard.value(forKey: "PdfReader.PageTransition") as? UInt
+
+        guard rawScrollDirection != nil || rawPageTransition != nil else { return }
+
+        var settings = Defaults.shared.pdfSettings
+        settings.direction = rawScrollDirection.flatMap({ ScrollDirection(rawValue: $0) }) ?? settings.direction
+        settings.transition = rawPageTransition.flatMap({ PageTransition(rawValue: $0) }) ?? settings.transition
+        Defaults.shared.pdfSettings = settings
+
+        UserDefaults.standard.removeObject(forKey: "PdfReader.ScrollDirection")
+        UserDefaults.standard.removeObject(forKey: "PdfReader.PageTransition")
+    }
+    #endif
 
     // MARK: - Setups
 
@@ -88,6 +108,10 @@ extension AppDelegate: UIApplicationDelegate {
         self.setupLogs()
         self.controllers = Controllers()
         self.setupAppearance()
+
+        #if PDFENABLED
+        self.migratePdfSettings()
+        #endif
 
         return true
     }
