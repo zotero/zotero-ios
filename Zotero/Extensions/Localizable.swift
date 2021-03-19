@@ -201,7 +201,7 @@ internal enum L10n {
       internal static let downloadFailed = L10n.tr("Localizable", "errors.shareext.download_failed")
       /// You can still save this page as a Web Page item.
       internal static let failedAdditional = L10n.tr("Localizable", "errors.shareext.failed_additional")
-      /// Unable to save PDF file
+      /// Unable to save PDF
       internal static let fileNotPdf = L10n.tr("Localizable", "errors.shareext.file_not_pdf")
       /// No data returned
       internal static let incompatibleItem = L10n.tr("Localizable", "errors.shareext.incompatible_item")
