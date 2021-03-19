@@ -80,6 +80,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         let objects = database.objects(RSearch.self).filter(.keys(keys, in: self.libraryId))
 
         for object in objects {
+            guard !object.isInvalidated else { continue }
             if object.isChanged {
                 // If remotely deleted search is changed locally, we want to keep the search, so we mark that
                 // this search is new and it will be reinserted by sync

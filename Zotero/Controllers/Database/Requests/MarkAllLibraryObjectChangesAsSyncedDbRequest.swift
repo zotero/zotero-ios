@@ -32,7 +32,10 @@ struct MarkAllLibraryObjectChangesAsSyncedDbRequest: DbRequest {
 
     private func deleteObjects<Obj: DeletableObject>(of type: Obj.Type, with predicate: NSPredicate, database: Realm) {
         let objects = database.objects(type).filter(predicate)
-        objects.forEach { $0.willRemove(in: database) }
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            object.willRemove(in: database)
+        }
         database.delete(objects)
     }
 }

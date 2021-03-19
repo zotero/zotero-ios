@@ -19,32 +19,29 @@ struct DeleteGroupDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let libraryId: LibraryIdentifier = .group(self.groupId)
 
-        let items = database.objects(RItem.self).filter(.library(with: libraryId))
-        items.forEach { item in
-            item.willRemove(in: database)
-        }
-        database.delete(items)
-
-        let collections = database.objects(RCollection.self).filter(.library(with: libraryId))
-        collections.forEach { collection in
-            collection.willRemove(in: database)
-        }
-        database.delete(collections)
-
-        let searches = database.objects(RSearch.self).filter(.library(with: libraryId))
-        searches.forEach { search in
-            search.willRemove(in: database)
-        }
-        database.delete(searches)
+        self.deleteObjects(of: RItem.self, with: .library(with: libraryId), database: database)
+        self.deleteObjects(of: RCollection.self, with: .library(with: libraryId), database: database)
+        self.deleteObjects(of: RSearch.self, with: .library(with: libraryId), database: database)
 
         let tags = database.objects(RTag.self).filter(.library(with: libraryId))
         for tag in tags {
+            guard !tag.isInvalidated else { continue }
             database.delete(tag.tags)
         }
         database.delete(tags)
 
         if let object = database.object(ofType: RGroup.self, forPrimaryKey: self.groupId) {
+            guard !object.isInvalidated else { return }
             database.delete(object)
         }
+    }
+
+    private func deleteObjects<Obj: DeletableObject>(of type: Obj.Type, with predicate: NSPredicate, database: Realm) {
+        let objects = database.objects(type).filter(predicate)
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            object.willRemove(in: database)
+        }
+        database.delete(objects)
     }
 }
