@@ -480,7 +480,8 @@ final class PDFReaderViewController: UIViewController {
 
         case .PSPDFAnnotationsAdded:
             if let annotations = self.annotations(for: notification) {
-                self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: self.isSidebarVisible))
+                let shouldSelect = self.isSidebarVisible || annotations.first is PSPDFKit.NoteAnnotation
+                self.viewModel.process(action: .annotationsAdded(annotations: annotations, selectFirst: shouldSelect))
             } else {
                 self.viewModel.process(action: .notificationReceived(notification.name))
             }
