@@ -503,25 +503,19 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView,
                    dropSessionDidUpdate session: UIDropSession,
                    withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
-        if !self.viewModel.state.library.metadataEditable {
+        guard self.viewModel.state.library.metadataEditable,    // allow only when library is editable
+              session.localDragSession != nil,                  // allow only local drag session
+              let destinationIndexPath = destinationIndexPath,
+              let results = self.viewModel.state.results,
+              destinationIndexPath.row < results.count  else {
             return UITableViewDropProposal(operation: .forbidden)
         }
 
-        // Allow only local drag session
-        guard session.localDragSession != nil else {
-            return UITableViewDropProposal(operation: .forbidden)
-        }
-
-        // Allow dropping only to non-standalone items
-        if let item = destinationIndexPath.flatMap({ self.viewModel.state.results?[$0.row] }),
-           (item.rawType == ItemTypes.note || item.rawType == ItemTypes.attachment) {
-           return UITableViewDropProposal(operation: .forbidden)
-        }
-
-        // Allow drops of only standalone items
-        if session.items.compactMap({ self.dragDropController.item(from: $0) })
+        let item = results[destinationIndexPath.row]
+        if item.rawType == ItemTypes.note || item.rawType == ItemTypes.attachment ||        // allow dropping only to non-standalone items
+           session.items.compactMap({ self.dragDropController.item(from: $0) })             // allow drops of only standalone items
                         .contains(where: { $0.rawType != ItemTypes.attachment && $0.rawType != ItemTypes.note }) {
-            return UITableViewDropProposal(operation: .forbidden)
+           return UITableViewDropProposal(operation: .forbidden)
         }
 
         return UITableViewDropProposal(operation: .move, intent: .insertIntoDestinationIndexPath)
