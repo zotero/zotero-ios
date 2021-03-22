@@ -39,8 +39,8 @@
                             $attachment,
                             ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" OR
                             ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.html"
-                        ).@count == 1
-                ).@count == 1
+                        ).@count > 0
+                ).@count > 0
             </string>
 			<key>NSExtensionJavaScriptPreprocessingFile</key>
 			<string>ExtensionScript</string>
