@@ -280,7 +280,7 @@ final class ItemsViewController: UIViewController {
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                self.tableViewHandler.reload(snapshot: results.freeze(), modifications: correctedModifications, insertions: insertions, deletions: deletions)
+                self.tableViewHandler.reload(snapshot: results.freeze(), modifications: modifications, insertions: insertions, deletions: deletions)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
