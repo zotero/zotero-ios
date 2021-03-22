@@ -141,23 +141,23 @@ final class ItemsViewController: UIViewController {
            let results = state.results {
             self.startObserving(results: results)
         } else if state.changes.contains(.attachmentsRemoved) {
-            self.tableViewHandler.enqueue(action: .reloadAll)
+            self.tableViewHandler.reloadAllAttachments()
         } else if let key = state.updateItemKey {
                   let attachment = state.attachments[key]
-            self.tableViewHandler.enqueue(action: .updateVisibleCell(attachment: attachment, parentKey: key))
+            self.tableViewHandler.updateCell(with: attachment, parentKey: key)
         }
 
         if state.changes.contains(.editing) {
-            self.tableViewHandler.enqueue(action: .editing(isEditing: state.isEditing, animated: true))
+            self.tableViewHandler.set(editing: state.isEditing, animated: true)
             self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
             self.setupRightBarButtonItems(for: state)
         }
 
         if state.changes.contains(.selectAll) {
             if state.selectedItems.isEmpty {
-                self.tableViewHandler.enqueue(action: .deselectAll)
+                self.tableViewHandler.deselectAll()
             } else {
-                self.tableViewHandler.enqueue(action: .selectAll)
+                self.tableViewHandler.selectAll()
             }
         }
 
@@ -275,12 +275,12 @@ final class ItemsViewController: UIViewController {
             guard let `self` = self else { return }
 
             switch changes {
-            case .initial:
-                self.tableViewHandler.enqueue(action: .reloadAll)
+            case .initial(let objects):
+                self.tableViewHandler.reloadAll(snapshot: objects.freeze())
             case .update(let results, let deletions, let insertions, let modifications):
                 let correctedModifications = Database.correctedModifications(from: modifications, insertions: insertions, deletions: deletions)
                 self.viewModel.process(action: .updateKeys(items: results, deletions: deletions, insertions: insertions, modifications: correctedModifications))
-                self.tableViewHandler.enqueue(action: .reload(modifications: modifications, insertions: insertions, deletions: deletions))
+                self.tableViewHandler.reload(snapshot: results.freeze(), modifications: correctedModifications, insertions: insertions, deletions: deletions)
             case .error(let error):
                 DDLogError("ItemsViewController: could not load results - \(error)")
                 self.viewModel.process(action: .observingFailed)
@@ -321,14 +321,17 @@ final class ItemsViewController: UIViewController {
                 case .object(let object, let progress, _, let libraryId):
                     if self.viewModel.state.library.identifier == libraryId && object == .item {
                         if let progress = progress, progress.total >= ItemsViewController.itemBatchingLimit {
-                            self.tableViewHandler.startBatchingUpdates()
+                            // Disable batched reloads when there are a lot of upcoming updates. Batched updates kill tableView performance when many are performed in short period of time.
+                            self.tableViewHandler.disableReloadAnimations()
                         }
                     } else {
-                        self.tableViewHandler.stopBatchingUpdates()
+                        // Re-enable batched reloads when items are synced.
+                        self.tableViewHandler.enableReloadAnimations()
                     }
                 default:
-                    // Just in case try stopping it everytime, in case some progress report is skipped
-                    self.tableViewHandler.stopBatchingUpdates()
+                    // Re-enable batched reloads when items are synced.
+                    self.tableViewHandler.enableReloadAnimations()
+                break
                 }
             })
             .disposed(by: self.disposeBag)

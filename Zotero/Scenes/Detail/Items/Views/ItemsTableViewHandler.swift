@@ -9,6 +9,7 @@
 import UIKit
 
 import CocoaLumberjackSwift
+import RealmSwift
 import RxCocoa
 import RxSwift
 
@@ -19,21 +20,11 @@ protocol ItemsTableViewHandlerDelegate: class {
 }
 
 final class ItemsTableViewHandler: NSObject {
-    enum Action {
-        case editing(isEditing: Bool, animated: Bool)
-        case reloadAll
-        case reload(modifications: [Int], insertions: [Int], deletions: [Int])
-        case updateVisibleCell(attachment: Attachment?, parentKey: String)
-        case selectAll
-        case deselectAll
-    }
-
     enum TapAction {
         case metadata(RItem)
         case doi(String)
     }
 
-    private static let maxUpdateCount = 150
     private static let cellId = "ItemCell"
     private unowned let tableView: UITableView
     private unowned let viewModel: ViewModel<ItemsActionHandler>
@@ -45,12 +36,8 @@ final class ItemsTableViewHandler: NSObject {
     private let leadingCellActions: [ItemAction]
     private let trailingCellActions: [ItemAction]
 
-    private var queue: [Action]
-    private var isPerformingAction: Bool
-    private var shouldBatchReloads: Bool
-    private var pendingUpdateCount: Int
-    private var batchTimerScheduler: ConcurrentDispatchQueueScheduler
-    private var batchTimerDisposeBag: DisposeBag?
+    private var snapshot: Results<RItem>?
+    private var reloadAnimationsDisabled: Bool
     private weak var fileDownloader: FileDownloader?
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
@@ -63,11 +50,7 @@ final class ItemsTableViewHandler: NSObject {
         self.leadingCellActions = leadingActions
         self.trailingCellActions = trailingActions
         self.contextMenuActions = ItemsTableViewHandler.createContextMenuActions(for: viewModel.state)
-        self.queue = []
-        self.isPerformingAction = false
-        self.shouldBatchReloads = false
-        self.pendingUpdateCount = 0
-        self.batchTimerScheduler = ConcurrentDispatchQueueScheduler(qos: .utility)
+        self.reloadAnimationsDisabled = false
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
 
@@ -99,82 +82,6 @@ final class ItemsTableViewHandler: NSObject {
         return ([], trailingActions)
     }
 
-    // MARK: - Data source
-
-    func sourceDataForCell(for key: String) -> (UIView, CGRect?) {
-        let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key })
-        return (self.tableView, cell?.frame)
-    }
-
-    // MARK: - Actions
-
-    /// Start batching table view updates.
-    func startBatchingUpdates() {
-        self.shouldBatchReloads = true
-    }
-
-    /// Stop batching table view updates.
-    func stopBatchingUpdates() {
-        guard self.shouldBatchReloads else { return }
-
-        // Stop batching
-        self.shouldBatchReloads = false
-        // Stop timer
-        self.batchTimerDisposeBag = nil
-        // Reset pending updates
-        self.pendingUpdateCount = 0
-        // Perform next (pending) action if needed
-        self.performNextAction()
-    }
-
-    func enqueue(action: Action) {
-        inMainThread { [weak self] in
-            self?._enqueue(action)
-        }
-    }
-
-    private func updateCell(with attachment: Attachment?, parentKey: String) {
-        guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == parentKey }) as? ItemCell else { return }
-
-        if let attachment = attachment {
-            let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
-            cell.set(state: .stateFrom(contentType: attachment.contentType, progress: progress, error: error))
-        } else {
-            cell.clearAttachment()
-        }
-    }
-
-    private func reload(modifications: [Int], insertions: [Int], deletions: [Int], completion: @escaping () -> Void) {
-        if !self.delegate.isInViewHierarchy {
-            // If view controller is outside of view hierarchy, performing batch updates with animations will cause a crash (UITableViewAlertForLayoutOutsideViewHierarchy).
-            // Simple reload will suffice, animations will not be seen anyway.
-            self.tableView.reloadData()
-            completion()
-            return
-        }
-
-        self.tableView.performBatchUpdates({
-            self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
-            self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
-            self.tableView.insertRows(at: insertions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
-        }, completion: { _ in
-            completion()
-        })
-    }
-
-    private func selectAll() {
-        let rows = self.tableView(self.tableView, numberOfRowsInSection: 0)
-        (0..<rows).forEach { row in
-            self.tableView.selectRow(at: IndexPath(row: row, section: 0), animated: false, scrollPosition: .none)
-        }
-    }
-
-    private func deselectAll() {
-        self.tableView.indexPathsForSelectedRows?.forEach({ indexPath in
-            self.tableView.deselectRow(at: indexPath, animated: false)
-        })
-    }
-
     private func createContextMenu(for item: RItem) -> UIMenu {
         let actions: [UIAction] = self.contextMenuActions.map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
@@ -188,7 +95,7 @@ final class ItemsTableViewHandler: NSObject {
         guard !self.tableView.isEditing && self.viewModel.state.library.metadataEditable else { return nil }
         let actions = itemActions.map({ action -> UIContextualAction in
             let contextualAction = UIContextualAction(style: (action.isDestructive ? .destructive : .normal), title: action.title, handler: { [weak self] _, _, completion in
-                guard let item = self?.viewModel.state.results?[indexPath.row] else { return }
+                guard let item = self?.snapshot?[indexPath.row] else { return }
                 self?.delegate.process(action: action.type, for: item)
                 completion(true)
             })
@@ -208,137 +115,78 @@ final class ItemsTableViewHandler: NSObject {
         return UISwipeActionsConfiguration(actions: actions)
     }
 
-    // MARK: - Queue
+    // MARK: - Data source
 
-    private func _enqueue(_ action: Action) {
-        // Reset batch timer
-        self.batchTimerDisposeBag = nil
+    func sourceDataForCell(for key: String) -> (UIView, CGRect?) {
+        let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == key })
+        return (self.tableView, cell?.frame)
+    }
 
-        // Enqueue new action(s)
-        var shouldDelay = false
-        switch action {
-        case .reloadAll:
-            // Don't delay even when `shouldBatchReloads` is `true`, `reloadAll` is called when new data is presented during user actions (i. e. sort change), so it needs to be instant.
-            self.enqueueReloadAll()
+    // MARK: - Actions
 
-        case .reload(let modifications, let insertions, let deletions):
-            shouldDelay = !self.enqueueReload(modifications: modifications, insertions: insertions, deletions: deletions)
+    /// Disables performing tableView batch reloads. Instead just uses `reloadData()`.
+    func disableReloadAnimations() {
+        self.reloadAnimationsDisabled = true
+    }
 
-        default:
-            self.queue.append(action)
+    /// Enables performing tableView batch reloads.
+    func enableReloadAnimations() {
+        self.reloadAnimationsDisabled = false
+    }
+
+    func set(editing: Bool, animated: Bool) {
+        self.tableView.setEditing(editing, animated: animated)
+    }
+
+    func updateCell(with attachment: Attachment?, parentKey: String) {
+        guard let cell = self.tableView.visibleCells.first(where: { ($0 as? ItemCell)?.key == parentKey }) as? ItemCell else { return }
+
+        if let attachment = attachment {
+            let (progress, error) = self.fileDownloader?.data(for: attachment.key, libraryId: attachment.libraryId) ?? (nil, nil)
+            cell.set(state: .stateFrom(contentType: attachment.contentType, progress: progress, error: error))
+        } else {
+            cell.clearAttachment()
         }
+    }
 
-        if !shouldDelay {
-            // Perform new action immediately if delay is not needed
-            self.performNextAction()
+    func reloadAll(snapshot: Results<RItem>) {
+        self.snapshot = snapshot
+        self.tableView.reloadData()
+    }
+
+    func reloadAllAttachments() {
+        self.tableView.reloadData()
+    }
+
+    func reload(snapshot: Results<RItem>, modifications: [Int], insertions: [Int], deletions: [Int]) {
+        if !self.delegate.isInViewHierarchy || self.reloadAnimationsDisabled {
+            // If view controller is outside of view hierarchy, performing batch updates with animations will cause a crash (UITableViewAlertForLayoutOutsideViewHierarchy).
+            // Simple reload will suffice, animations will not be seen anyway.
+            self.snapshot = snapshot
+            self.tableView.reloadData()
             return
         }
 
-        // Create a batch delay
-        let disposeBag = DisposeBag()
-        Single<Int>.timer(.milliseconds(750), scheduler: self.self.batchTimerScheduler)
-                   .observeOn(MainScheduler.instance)
-                   .subscribe(onSuccess: { [weak self] _ in
-                       self?.performNextAction()
-                   })
-                   .disposed(by: disposeBag)
-        self.batchTimerDisposeBag = disposeBag
-    }
-
-    /// Enqueues `Action.reloadAll`. Removes all other reload actions from queue, since tableView will be reloaded. Moves all other (user) actions after this `reloadAll` action.
-    private func enqueueReloadAll() {
-        if !self.queue.isEmpty, case .reloadAll = self.queue[0] { return }
-
-        self.queue.removeAll(where: {
-            switch $0 {
-            case .reload, .updateVisibleCell, .reloadAll:
-                return true
-            case .selectAll, .deselectAll, .editing:
-                return false
-            }
+        self.tableView.performBatchUpdates({
+            self.snapshot = snapshot
+            self.tableView.deleteRows(at: deletions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
+            self.tableView.reloadRows(at: modifications.map({ IndexPath(row: $0, section: 0) }), with: .none)
+            self.tableView.insertRows(at: insertions.map({ IndexPath(row: $0, section: 0) }), with: .automatic)
+        }, completion: { _ in
         })
-        self.queue.insert(.reloadAll, at: 0)
     }
 
-    /// Enqueues `Action.reload(...)`.
-    ///
-    /// During initial sync, for users with many items, when there are many updates, an update is reported each 0.5s. This puts big pressure on the tableView
-    /// and it becomes laggy. So these updates will be batched and tableView will be reloaded after each batch to increase times between reloads.
-    /// These delays are put only on this action so that the tableView remains responsive for other (user) actions.
-    /// - parameter modifications: Modifications to apply to tableView.
-    /// - parameter insertions: Insertions to apply to tableView.
-    /// - parameter deletions: Deletions to apply to tableView.
-    /// - returns: `true` if update limit has been passed and tableView should be reloaded, `false` otherwise.
-    private func enqueueReload(modifications: [Int], insertions: [Int], deletions: [Int]) -> Bool {
-        if !self.shouldBatchReloads {
-            self.queue.append(.reload(modifications: modifications, insertions: insertions, deletions: deletions))
-            return true
+    func selectAll() {
+        let rows = self.tableView(self.tableView, numberOfRowsInSection: 0)
+        (0..<rows).forEach { row in
+            self.tableView.selectRow(at: IndexPath(row: row, section: 0), animated: false, scrollPosition: .none)
         }
-
-        self.pendingUpdateCount += modifications.count + insertions.count + deletions.count
-        self.enqueueReloadAll()
-
-        if self.pendingUpdateCount >= ItemsTableViewHandler.maxUpdateCount {
-            self.pendingUpdateCount = 0
-            return true
-        }
-
-        return false
     }
 
-    private func performNextAction() {
-        guard !self.isPerformingAction && !self.queue.isEmpty else { return }
-
-        let action = self.queue.removeFirst()
-
-        if case .reloadAll = action {
-            // Remove all reload (for specific indices) and update cell actions. The tableView will be reloaded completely and these can cause crashes.
-            var queue = self.queue
-            for (idx, action) in self.queue.reversed().enumerated() {
-                switch action {
-                case .deselectAll, .editing, .selectAll, .reloadAll:
-                    continue
-                case .reload, .updateVisibleCell:
-                    queue.remove(at: idx)
-                }
-            }
-            self.queue = queue
-        }
-
-        self.perform(action: action)
-    }
-
-    private func perform(action: Action) {
-        self.isPerformingAction = true
-
-        let start = CFAbsoluteTimeGetCurrent()
-        DDLogInfo("ItemsTableViewHandler: perform \(action)")
-
-        let actionCompletion: () -> Void = { [weak self] in
-            DDLogInfo("ItemsTableViewHandler: did perform action in \(CFAbsoluteTimeGetCurrent() - start)")
-            self?.isPerformingAction = false
-            self?.performNextAction()
-        }
-
-        switch action {
-        case .deselectAll:
-            self.deselectAll()
-            actionCompletion()
-        case .selectAll:
-            self.selectAll()
-            actionCompletion()
-        case .editing(let isEditing, let animated):
-            self.tableView.setEditing(isEditing, animated: animated)
-            actionCompletion()
-        case .reload(let modifications, let insertions, let deletions):
-            self.reload(modifications: modifications, insertions: insertions, deletions: deletions, completion: actionCompletion)
-        case .reloadAll:
-            self.tableView.reloadData()
-            actionCompletion()
-        case .updateVisibleCell(let attachment, let parentKey):
-            self.updateCell(with: attachment, parentKey: parentKey)
-            actionCompletion()
-        }
+    func deselectAll() {
+        self.tableView.indexPathsForSelectedRows?.forEach({ indexPath in
+            self.tableView.deselectRow(at: indexPath, animated: false)
+        })
     }
 
     // MARK: - Setups
@@ -392,19 +240,19 @@ extension ItemsTableViewHandler: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.viewModel.state.results?.count ?? 0
+        return self.snapshot?.count ?? 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ItemsTableViewHandler.cellId, for: indexPath)
 
-        let count = self.viewModel.state.results?.count ?? 0
+        let count = self.snapshot?.count ?? 0
         if indexPath.row >= count {
             DDLogError("ItemsTableViewHandler: indexPath.row (\(indexPath.row)) out of bounds (\(count))")
             return cell
         }
 
-        if let item = self.viewModel.state.results?[indexPath.row],
+        if let item = self.snapshot?[indexPath.row],
            let cell = cell as? ItemCell {
             // Create and cache attachment if needed
             self.viewModel.process(action: .cacheAttachment(item: item))
@@ -428,7 +276,7 @@ extension ItemsTableViewHandler: UITableViewDataSource {
 
 extension ItemsTableViewHandler: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard let item = self.viewModel.state.results?[indexPath.row] else { return }
+        guard let item = self.snapshot?[indexPath.row] else { return }
 
         if self.viewModel.state.isEditing {
             self.viewModel.process(action: .selectItem(item.key))
@@ -446,13 +294,13 @@ extension ItemsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-        guard let item = self.viewModel.state.results?[indexPath.row] else { return }
+        guard let item = self.snapshot?[indexPath.row] else { return }
         self.tapObserver.on(.next(.metadata(item)))
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         if self.viewModel.state.isEditing,
-           let item = self.viewModel.state.results?[indexPath.row] {
+           let item = self.snapshot?[indexPath.row] {
             self.viewModel.process(action: .deselectItem(item.key))
         }
     }
@@ -465,7 +313,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
         guard !tableView.isEditing && self.viewModel.state.library.metadataEditable else { return nil }
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let item = self?.viewModel.state.results?[indexPath.row] else { return nil }
+            guard let item = self?.snapshot?[indexPath.row] else { return nil }
             return self?.createContextMenu(for: item)
         }
     }
@@ -481,7 +329,7 @@ extension ItemsTableViewHandler: UITableViewDelegate {
 
 extension ItemsTableViewHandler: UITableViewDragDelegate {
     func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard let item = self.viewModel.state.results?[indexPath.row] else { return [] }
+        guard let item = self.snapshot?[indexPath.row] else { return [] }
         return [self.dragDropController.dragItem(from: item)]
     }
 }
@@ -489,7 +337,7 @@ extension ItemsTableViewHandler: UITableViewDragDelegate {
 extension ItemsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
         guard let indexPath = coordinator.destinationIndexPath,
-              let key = self.viewModel.state.results?[indexPath.row].key else { return }
+              let key = self.snapshot?[indexPath.row].key else { return }
 
         switch coordinator.proposal.operation {
         case .move:
@@ -506,7 +354,7 @@ extension ItemsTableViewHandler: UITableViewDropDelegate {
         guard self.viewModel.state.library.metadataEditable,    // allow only when library is editable
               session.localDragSession != nil,                  // allow only local drag session
               let destinationIndexPath = destinationIndexPath,
-              let results = self.viewModel.state.results,
+              let results = self.snapshot,
               destinationIndexPath.row < results.count  else {
             return UITableViewDropProposal(operation: .forbidden)
         }

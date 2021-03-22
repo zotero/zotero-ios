@@ -285,7 +285,6 @@ final class UserControllers {
     private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
         let file = Files.dbFile(for: userId)
         try controllers.fileStorage.createDirectories(for: file)
-        DDLogInfo("DB file path: \(file.createUrl().absoluteString)")
         return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl()))
     }
 }
