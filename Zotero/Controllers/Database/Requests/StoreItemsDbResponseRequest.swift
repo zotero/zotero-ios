@@ -384,8 +384,8 @@ struct StoreItemDbRequest: DbRequest {
     }
 
     private func syncUsers(createdBy: UserResponse?, lastModifiedBy: UserResponse?, item: RItem, database: Realm) {
-        if item.createdBy?.identifier != createdBy?.id {
-            let user = item.createdBy
+        if item.createdBy?.isInvalidated == true || item.createdBy?.identifier != createdBy?.id {
+            let user = item.createdBy?.isInvalidated == true ? nil : item.createdBy
 
             item.createdBy = createdBy.flatMap({ self.createUser(from: $0, in: database) })
 
@@ -394,9 +394,9 @@ struct StoreItemDbRequest: DbRequest {
             }
         }
 
-        if item.lastModifiedBy?.identifier != lastModifiedBy?.id {
-            let user = item.lastModifiedBy
-            
+        if item.lastModifiedBy?.isInvalidated == true || item.lastModifiedBy?.identifier != lastModifiedBy?.id {
+            let user = item.lastModifiedBy?.isInvalidated == true ? nil : item.lastModifiedBy
+
             item.lastModifiedBy = lastModifiedBy.flatMap({ self.createUser(from: $0, in: database) })
 
             if let user = user, user.createdBy.isEmpty && user.modifiedBy.isEmpty {
