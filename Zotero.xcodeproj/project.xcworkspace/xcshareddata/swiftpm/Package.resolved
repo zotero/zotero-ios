@@ -60,8 +60,8 @@
         "repositoryURL": "https://github.com/PSPDFKit/PSPDFKit-SP",
         "state": {
           "branch": null,
-          "revision": "1e394bd7022f2f37b3440edc79d7722101d65584",
-          "version": "10.2.0"
+          "revision": "8a74fbbeb84a777ce5f9872b41a7ea6d92bae25d",
+          "version": "10.2.1"
         }
       },
       {
@@ -78,17 +78,17 @@
         "repositoryURL": "https://github.com/realm/realm-cocoa",
         "state": {
           "branch": null,
-          "revision": "efaf9c31dd042274a8b38f021ab19c33047a8a6a",
-          "version": "10.1.2"
+          "revision": "ae8e646590396dfc13c1abbf8aa2e48c43766dce",
+          "version": "10.7.2"
         }
       },
       {
-        "package": "RealmCore",
+        "package": "RealmDatabase",
         "repositoryURL": "https://github.com/realm/realm-core",
         "state": {
           "branch": null,
-          "revision": "63b42fc6835efdd27b706a6a6b629edc36018d43",
-          "version": "10.1.1"
+          "revision": "bab46acdca91c417a0d4849b8f4992a3c17e29a5",
+          "version": "10.5.5"
         }
       },
       {

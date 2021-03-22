@@ -195,7 +195,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func itemChanged(_ change: ObjectChange<Object>, in viewModel: ViewModel<ItemDetailActionHandler>) {
+    private func itemChanged(_ change: ObjectChange<ObjectBase>, in viewModel: ViewModel<ItemDetailActionHandler>) {
         switch change {
         case .change(_, let changes):
             guard self.shouldReloadData(for: changes) else { return }

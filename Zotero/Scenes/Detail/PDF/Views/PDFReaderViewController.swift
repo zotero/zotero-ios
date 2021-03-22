@@ -537,7 +537,7 @@ final class PDFReaderViewController: UIViewController {
     /// - parameter annotation: Annotation to select. Existing selection will be deselected if set to `nil`.
     /// - parameter pageIndex: Page index of page where (de)selection should happen.
     /// - parameter document: Active `Document` instance.
-    private func select(annotation: Annotation?, pageIndex: PageIndex, document: Document) {
+    private func select(annotation: Annotation?, pageIndex: PageIndex, document: PSPDFKit.Document) {
         guard let pageView = self.pdfController.pageViewForPage(at: pageIndex) else { return }
 
         self.updateSelection(on: pageView, annotation: annotation)
@@ -554,7 +554,7 @@ final class PDFReaderViewController: UIViewController {
     }
 
     /// Focuses given annotation and selects it if it's not selected yet.
-    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: Document) {
+    private func focus(annotation: Annotation, at location: AnnotationDocumentLocation, document: PSPDFKit.Document) {
         let pageIndex = PageIndex(location.page)
         self.scrollIfNeeded(to: pageIndex, animated: true) {
             self.select(annotation: annotation, pageIndex: pageIndex, document: document)
@@ -621,7 +621,7 @@ final class PDFReaderViewController: UIViewController {
         self.annotationsControllerLeft = sidebarLeftConstraint
     }
 
-    private func createPdfController(with document: Document, settings: PDFSettingsState) -> PDFViewController {
+    private func createPdfController(with document: PSPDFKit.Document, settings: PDFSettingsState) -> PDFViewController {
         let pdfConfiguration = PDFConfiguration { builder in
             builder.scrollDirection = settings.direction
             builder.pageTransition = settings.transition
@@ -937,9 +937,7 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         })
     }
 
-    func pdfViewController(_ pdfController: PDFViewController,
-                           shouldSave document: Document,
-                           withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
+    func pdfViewController(_ pdfController: PDFViewController, shouldSave document: PSPDFKit.Document, withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {
         return false
     }
 }

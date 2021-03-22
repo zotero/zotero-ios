@@ -43,7 +43,7 @@ struct PDFReaderState: ViewModelState {
 
     let key: String
     let library: Library
-    let document: Document
+    let document: PSPDFKit.Document
     let previewCache: NSCache<NSString, UIImage>
     let commentFont: UIFont
     let userId: Int

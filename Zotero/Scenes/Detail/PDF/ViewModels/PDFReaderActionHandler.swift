@@ -1045,7 +1045,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func loadAnnotations(from document: Document, username: String, font: UIFont, addTo allAnnotations: inout [Int: [Annotation]], comments: inout [String: NSAttributedString]) {
+    private func loadAnnotations(from document: PSPDFKit.Document, username: String, font: UIFont, addTo allAnnotations: inout [Int: [Annotation]], comments: inout [String: NSAttributedString]) {
         for (_, pdfAnnotations) in document.allAnnotations(of: AnnotationsConfig.supported) {
             for pdfAnnotation in pdfAnnotations {
                 // Check whether square annotation was previously created by Zotero. If it's just "normal" square (instead of our image) annotation, don't convert it to Zotero annotation.

@@ -4640,7 +4640,7 @@
 			repositoryURL = "https://github.com/PSPDFKit/PSPDFKit-SP";
 			requirement = {
 				kind = exactVersion;
-				version = 10.2.0;
+				version = 10.2.1;
 			};
 		};
 		B3BD2B9E25C95ED300275EF9 /* XCRemoteSwiftPackageReference "Starscream" */ = {
@@ -4664,7 +4664,7 @@
 			repositoryURL = "https://github.com/realm/realm-cocoa";
 			requirement = {
 				kind = exactVersion;
-				version = 10.1.2;
+				version = 10.7.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

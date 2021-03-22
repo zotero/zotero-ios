@@ -20,7 +20,7 @@ enum ObjectSyncState: Int {
     case synced, dirty, outdated
 }
 
-protocol Syncable: Object {
+protocol Syncable: class {
     var key: String { get set }
     var customLibraryKey: RealmOptional<Int> { get }
     var groupKey: RealmOptional<Int> { get }
@@ -28,6 +28,7 @@ protocol Syncable: Object {
     var rawSyncState: Int { get set }
     var lastSyncDate: Date { get set }
     var syncRetries: Int { get set }
+    var isInvalidated: Bool { get }
 }
 
 extension Syncable {
