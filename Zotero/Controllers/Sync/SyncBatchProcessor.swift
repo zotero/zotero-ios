@@ -40,7 +40,7 @@ final class SyncBatchProcessor {
         queue.maxConcurrentOperationCount = 4
         queue.qualityOfService = .userInteractive
 
-        self.storageQueue = DispatchQueue(label: "org.zotero.SyncBatchDownloader.StorageQueue", qos: .userInteractive)//, attributes: .concurrent)
+        self.storageQueue = DispatchQueue(label: "org.zotero.SyncBatchDownloader.StorageQueue", qos: .userInteractive)
         self.batches = batches
         self.userId = userId
         self.apiClient = apiClient
@@ -106,30 +106,22 @@ final class SyncBatchProcessor {
     private func finish(response: SyncBatchResponse) {
         guard !self.isFinished else { return }
 
-        self.storageQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
+        self.failedIds.append(contentsOf: response.failedIds)
+        self.parsingErrors.append(contentsOf: response.parsingErrors)
+        self.itemConflicts.append(contentsOf: response.conflicts)
 
-            self.failedIds.append(contentsOf: response.failedIds)
-            self.parsingErrors.append(contentsOf: response.parsingErrors)
-            self.itemConflicts.append(contentsOf: response.conflicts)
+        self.processedCount += 1
 
-            self.processedCount += 1
-
-            if self.processedCount == self.batches.count {
-                self.completion(.success((self.failedIds, self.parsingErrors, self.itemConflicts)))
-                self.isFinished = true
-            }
+        if self.processedCount == self.batches.count {
+            self.completion(.success((self.failedIds, self.parsingErrors, self.itemConflicts)))
+            self.isFinished = true
         }
     }
 
     private func cancel(with error: Error) {
-        self.storageQueue.async(flags: .barrier) { [weak self] in
-            guard let `self` = self else { return }
-
-            self.requestQueue.cancelAllOperations()
-            self.isFinished = true
-            self.completion(.failure(error))
-        }
+        self.requestQueue.cancelAllOperations()
+        self.isFinished = true
+        self.completion(.failure(error))
     }
 
     private func sync(data: Data, libraryId: LibraryIdentifier, object: SyncObject, userId: Int, expectedKeys: [String]) throws -> SyncBatchResponse {
