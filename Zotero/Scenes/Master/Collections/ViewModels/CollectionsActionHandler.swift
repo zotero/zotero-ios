@@ -146,7 +146,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             var allCollections: [Collection] = [Collection(custom: .all, itemCount: allItems.count),
                //                                 Collection(custom: .publications, itemCount: publicationItemsCount),
                                                 Collection(custom: .trash, itemCount: trashItems.count)]
-            allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections, libraryId: libraryId) +
+            allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, selectedId: viewModel.state.selectedCollection, collapseState: .basedOnDb) +
                                               CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
 
@@ -163,7 +163,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                         }
                         return
                     }
-                    let collections = CollectionTreeBuilder.collections(from: objects, libraryId: libraryId)
+                    let collections = CollectionTreeBuilder.collections(from: objects, libraryId: libraryId, selectedId: viewModel.state.selectedCollection, collapseState: .basedOnDb)
                     self.update(collections: collections, in: viewModel)
                 case .initial: break
                 case .error: break

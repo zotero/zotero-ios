@@ -849,6 +849,8 @@ final class ExtensionStore {
     // MARK: - Collection picker
 
     func set(collection: Collection, library: Library) {
+        Defaults.shared.selectedCollectionId = collection.identifier
+        Defaults.shared.selectedLibrary = library.identifier
         self.state.collectionPicker = .picked(library, (collection.identifier.isCustom ? nil : collection))
     }
 

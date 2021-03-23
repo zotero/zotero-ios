@@ -42,14 +42,14 @@ struct CollectionPickerActionHandler: ViewModelActionHandler {
             let libraryId = viewModel.state.library.identifier
             let collectionsRequest = ReadCollectionsDbRequest(libraryId: libraryId, excludedKeys: viewModel.state.excludedKeys)
             let results = try self.dbStorage.createCoordinator().perform(request: collectionsRequest)
-            let collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
+            let collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId, selectedId: nil, collapseState: .expandedAll)
 
             let token = results.observe({ [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
                 switch changes {
                 case .update(let results, _, _, _):
                     self.update(viewModel: viewModel) { state in
-                        state.collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId)
+                        state.collections = CollectionTreeBuilder.collections(from: results, libraryId: libraryId, selectedId: nil, collapseState: .expandedAll)
                     }
                 case .initial: break
                 case .error: break

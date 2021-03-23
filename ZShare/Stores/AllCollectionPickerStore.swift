@@ -46,7 +46,7 @@ final class AllCollectionPickerStore: ObservableObject {
             for library in libraries {
                 let libraryId = library.identifier
                 let libraryCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-                collections[libraryId] = CollectionTreeBuilder.collections(from: libraryCollections, libraryId: libraryId, collapseAll: true)
+                collections[libraryId] = CollectionTreeBuilder.collections(from: libraryCollections, libraryId: libraryId, selectedId: (libraryId == visibleLibraryId ? visibleCollectionId : nil), collapseState: .collapsedAll)
                 librariesCollapsed[libraryId] = visibleLibraryId != libraryId
             }
 
