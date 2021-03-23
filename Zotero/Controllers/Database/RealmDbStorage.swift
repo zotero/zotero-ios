@@ -66,6 +66,12 @@ extension RealmDbCoordinator: DbCoordinator {
                 return
             }
 
+            if self.realm.isInWriteTransaction {
+                DDLogError("RealmDbCoordinator: realm already writing \(type(of: request))")
+                try request.process(in: self.realm)
+                return
+            }
+
             try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
                 try request.process(in: self.realm)
             }
@@ -78,6 +84,11 @@ extension RealmDbCoordinator: DbCoordinator {
                 return try request.process(in: self.realm)
             }
 
+            if self.realm.isInWriteTransaction {
+                DDLogError("RealmDbCoordinator: realm already writing \(type(of: request))")
+                return try request.process(in: self.realm)
+            }
+
             return try self.realm.write(withoutNotifying: request.ignoreNotificationTokens ?? []) {
                 return try request.process(in: self.realm)
             }
@@ -87,6 +98,17 @@ extension RealmDbCoordinator: DbCoordinator {
     /// Writes multiple requests in single write transaction.
     func perform(requests: [DbRequest]) throws {
         try self.performInAutoreleasepoolIfNeeded {
+
+            if self.realm.isInWriteTransaction {
+                DDLogError("RealmDbCoordinator: realm already writing")
+                for request in requests {
+                    guard request.needsWrite else { continue }
+                    DDLogError("\(type(of: request))")
+                    try request.process(in: self.realm)
+                }
+                return
+            }
+
             try self.realm.write {
                 for request in requests {
                     guard request.needsWrite else { continue }
