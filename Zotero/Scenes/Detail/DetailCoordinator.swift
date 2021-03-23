@@ -131,13 +131,13 @@ final class DetailCoordinator: Coordinator {
     }
 
     private func fetchType(from collection: Collection) -> ItemFetchType {
-        switch collection.type {
-        case .collection:
-            return .collection(collection.key, collection.name)
-        case .search:
-            return .search(collection.key, collection.name)
-        case .custom(let customType):
-            switch customType {
+        switch collection.identifier {
+        case .collection(let key):
+            return .collection(key, collection.name)
+        case .search(let key):
+            return .search(key, collection.name)
+        case .custom(let type):
+            switch type {
             case .all:
                 return .all
             case .publications:

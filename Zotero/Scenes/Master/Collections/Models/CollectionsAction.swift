@@ -14,6 +14,6 @@ enum CollectionsAction {
     case deleteSearch(String)
     case loadData
     case startEditing(CollectionsState.EditingType)
-    case select(Collection)
+    case select(CollectionIdentifier)
     case toggleCollapsed(Collection)
 }

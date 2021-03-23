@@ -39,6 +39,8 @@ final class CollectionsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.viewModel.process(action: .loadData)
+
         self.navigationItem.title = self.viewModel.state.library.name
         if self.viewModel.state.library.metadataEditable {
             self.setupAddNavbarItem()
@@ -48,7 +50,6 @@ final class CollectionsViewController: UIViewController {
                                                             dragDropController: self.dragDropController,
                                                             splitDelegate: self.coordinatorDelegate)
 
-        self.viewModel.process(action: .loadData)
         self.tableViewHandler.update(collections: self.viewModel.state.collections.filter({ $0.visible }), animated: false)
 
         self.viewModel.stateObservable
@@ -62,9 +63,9 @@ final class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        self.selectIfNeeded(collection: self.viewModel.state.selectedCollection)
-        if self.coordinatorDelegate?.isSplit == true {
-            self.coordinatorDelegate?.show(collection: self.viewModel.state.selectedCollection, in: self.viewModel.state.library)
+        self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollection)
+        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collections.first(where: { $0.identifier == self.viewModel.state.selectedCollection }) {
+            self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
         }
     }
 
@@ -73,7 +74,7 @@ final class CollectionsViewController: UIViewController {
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
             self.tableViewHandler.update(collections: state.collections.filter({ $0.visible }), animated: true, completed: { [weak self] in
-                self?.selectIfNeeded(collection: state.selectedCollection)
+                self?.selectIfNeeded(collectionId: state.selectedCollection)
             })
         }
         if state.changes.contains(.allItemCount) {
@@ -82,8 +83,8 @@ final class CollectionsViewController: UIViewController {
         if state.changes.contains(.trashItemCount) {
             self.tableViewHandler.updateTrashItemCell(with: state.collections[state.collections.count - 1])
         }
-        if state.changes.contains(.selection) {
-            self.coordinatorDelegate?.show(collection: state.selectedCollection, in: state.library)
+        if state.changes.contains(.selection), let collection = state.collections.first(where: { $0.identifier == state.selectedCollection }) {
+            self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
         }
         if let data = state.editingData {
             self.coordinatorDelegate?.showEditView(for: data, library: state.library)
@@ -93,7 +94,7 @@ final class CollectionsViewController: UIViewController {
     // MARK: - Actions
 
     private func showSearch() {
-        let collections = self.viewModel.state.collections.filter({ !$0.type.isCustom })
+        let collections = self.viewModel.state.collections.filter({ !$0.identifier.isCustom })
                                                           .map({ SearchableCollection(isActive: true, collection: $0) })
         let viewModel = ViewModel(initialState: CollectionsSearchState(collections: collections), handler: CollectionsSearchActionHandler())
         let controller = CollectionsSearchViewController(viewModel: viewModel, selectAction: { [weak self] collection in
@@ -105,23 +106,23 @@ final class CollectionsViewController: UIViewController {
         self.present(controller, animated: true, completion: nil)
     }
 
-    private func selectIfNeeded(collection: Collection) {
+    private func selectIfNeeded(collectionId: CollectionIdentifier) {
         // Selection is disabled in compact mode (when UISplitViewController is a single column instead of master + detail).
         guard self.coordinatorDelegate?.isSplit == true else { return }
-        self.tableViewHandler.selectIfNeeded(collection: collection)
+        self.tableViewHandler.selectIfNeeded(collectionId: collectionId)
     }
 
     private func select(searchResult: Collection) {
         let isSplit = self.coordinatorDelegate?.isSplit ?? false
 
         if isSplit {
-            self.selectIfNeeded(collection: searchResult)
+            self.selectIfNeeded(collectionId: searchResult.identifier)
         }
 
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-        guard !isSplit ? true : searchResult.id != self.viewModel.state.selectedCollection.id else { return }
-        self.viewModel.process(action: .select(searchResult))
+        guard !isSplit ? true : searchResult.identifier != self.viewModel.state.selectedCollection else { return }
+        self.viewModel.process(action: .select(searchResult.identifier))
     }
 
     // MARK: - Setups

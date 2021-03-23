@@ -37,8 +37,8 @@ final class CollectionsTableViewHandler: NSObject {
 
     // MARK: - Actions
 
-    func selectIfNeeded(collection: Collection) {
-        if let index = self.snapshot.firstIndex(where: { $0.id == collection.id }) {
+    func selectIfNeeded(collectionId: CollectionIdentifier) {
+        if let index = self.snapshot.firstIndex(where: { $0.id == collectionId }) {
             guard self.tableView.indexPathForSelectedRow?.row != index else { return }
             self.tableView.selectRow(at: IndexPath(row: index, section: 0), animated: false, scrollPosition: .none)
         } else if let indexPath = self.tableView.indexPathForSelectedRow {
@@ -135,7 +135,9 @@ final class CollectionsTableViewHandler: NSObject {
                 moves.map({ (IndexPath(row: $0.0, section: 0), IndexPath(row: $0.1, section: 0)) }))
     }
 
-    private func createContextMenu(for collection: Collection) -> UIMenu {
+    private func createContextMenu(for collection: Collection) -> UIMenu? {
+        guard collection.identifier.isCollection, let key = collection.identifier.key else { return nil }
+
         let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] action in
             self?.viewModel.process(action: .startEditing(.edit(collection)))
         }
@@ -143,7 +145,7 @@ final class CollectionsTableViewHandler: NSObject {
             self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
         }
         let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
-            self?.viewModel.process(action: .deleteCollection(collection.key))
+            self?.viewModel.process(action: .deleteCollection(key))
         }
         return UIMenu(title: "", children: [edit, subcollection, delete])
     }
@@ -219,8 +221,8 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
         let collection = self.snapshot[indexPath.row]
-        guard self.splitDelegate?.isSplit == false ? true : collection.id != self.viewModel.state.selectedCollection.id else { return }
-        self.viewModel.process(action: .select(collection))
+        guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollection else { return }
+        self.viewModel.process(action: .select(collection.identifier))
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
@@ -228,7 +230,7 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
             return nil
         }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let collection = self?.snapshot[indexPath.row], collection.type.isCollection else { return nil }
+            guard let collection = self?.snapshot[indexPath.row] else { return nil }
             return self?.createContextMenu(for: collection)
         }
     }
@@ -236,8 +238,7 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
 
 extension CollectionsTableViewHandler: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-        guard let indexPath = coordinator.destinationIndexPath else { return }
-        let key = self.snapshot[indexPath.row].key
+        guard let indexPath = coordinator.destinationIndexPath, let key = self.snapshot[indexPath.row].identifier.key else { return }
 
         switch coordinator.proposal.operation {
         case .copy:
@@ -263,7 +264,7 @@ extension CollectionsTableViewHandler: UITableViewDropDelegate {
                 return UITableViewDropProposal(operation: .forbidden)
             }
 
-            if !self.snapshot[destination.row].type.isCollection {
+            if !self.snapshot[destination.row].identifier.isCollection {
                 return UITableViewDropProposal(operation: .forbidden)
             }
         }

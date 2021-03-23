@@ -15,27 +15,22 @@ struct CollectionRow: View {
     let data: Collection
 
     var body: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 10) {
-                HStack(spacing: 16) {
-                    Image(self.data.iconName)
-                        .renderingMode(.template)
-                        .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
-                    Text(self.data.name)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                }
+        HStack(spacing: 10) {
+            HStack(spacing: 16) {
+                Image(self.data.iconName)
+                    .renderingMode(.template)
+                    .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                Text(self.data.name)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
             }
-            .padding(.vertical, 10)
-            .padding(.leading, self.inset(for: self.data.level))
-            .padding(.trailing, 16)
-            .frame(width: proxy.size.width, alignment: .leading)
         }
+        .padding(.vertical, 10)
     }
 
-    private func inset(for level: Int) -> CGFloat {
+    static func inset(for level: Int, baseOffset: CGFloat) -> CGFloat {
         let offset = CollectionRow.levelOffset
-        return offset + (CGFloat(level) * offset)
+        return baseOffset + offset + (CGFloat(level) * offset)
     }
 
     private var badgeBackgroundColor: Color {

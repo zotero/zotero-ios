@@ -37,24 +37,17 @@ struct CollectionPickerView: View {
                 }) {
                     HStack {
                         CollectionRow(data: collection)
-                        if self.viewModel.state.selected.contains(collection.key) {
+                        if self.viewModel.state.selected.contains(collection.identifier.key ?? "") {
                             Spacer()
                             Image(systemName: "checkmark")
                         }
                     }
                     .padding(.trailing, 20)
                 }
-                .listRowInsets(EdgeInsets(top: 0,
-                                          leading: self.inset(for: collection.level),
-                                          bottom: 0,
-                                          trailing: 0))
+                .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: collection.level, baseOffset: 0), bottom: 0, trailing: 0))
             }
         }
         .navigationBarTitle(Text(L10n.Collections.pickerTitle))
-    }
-
-    private func inset(for level: Int) -> CGFloat {
-        return CollectionRow.levelOffset + (CGFloat(level) * CollectionRow.levelOffset)
     }
 }
 

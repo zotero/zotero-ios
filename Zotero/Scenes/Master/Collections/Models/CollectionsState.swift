@@ -30,9 +30,10 @@ struct CollectionsState: ViewModelState {
         case edit(Collection)
     }
 
-    let library: Library
+    let libraryId: LibraryIdentifier
 
-    var selectedCollection: Collection
+    var library: Library
+    var selectedCollection: CollectionIdentifier
     var collections: [Collection]
     var editingData: CollectionStateEditingData?
     var changes: Changes
@@ -44,9 +45,10 @@ struct CollectionsState: ViewModelState {
     // Used to filter out unnecessary Realm observed notification when collapsing collections.
     var collapsedKeys: [String]
 
-    init(library: Library) {
-        self.library = library
-        self.selectedCollection = Collection(custom: .all, itemCount: 0)
+    init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
+        self.libraryId = libraryId
+        self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
+        self.selectedCollection = selectedCollectionId
         self.collections = []
         self.changes = []
         self.collapsedKeys = []

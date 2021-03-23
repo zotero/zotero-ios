@@ -73,8 +73,8 @@ final class LibrariesViewController: UIViewController {
     // MARK: - Actions
 
     private func showDefaultLibraryIfNeeded(for state: LibrariesState) {
-        guard let visibleLibrary = self.coordinatorDelegate?.visibleLibrary else { return }
-        switch visibleLibrary.identifier {
+        guard let visibleLibraryId = self.coordinatorDelegate?.visibleLibraryId else { return }
+        switch visibleLibraryId {
         case .custom: break
         case .group(let groupId):
             if state.groupLibraries?.filter(.groupId(groupId)).first == nil {
@@ -141,7 +141,7 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         if let library = self.library(for: indexPath) {
-            self.coordinatorDelegate?.showCollections(for: library)
+            self.coordinatorDelegate?.showCollections(for: library.identifier)
         }
     }
 

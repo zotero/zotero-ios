@@ -13,13 +13,13 @@ import SwiftUI
 import RxSwift
 
 protocol MasterLibrariesCoordinatorDelegate: class {
-    func showCollections(for library: Library)
+    func showCollections(for libraryId: LibraryIdentifier)
     func showSettings()
     func show(error: LibrariesError)
     func showDeleteGroupQuestion(id: Int, name: String, viewModel: ViewModel<LibrariesActionHandler>)
     func showDefaultLibrary()
 
-    var visibleLibrary: Library { get }
+    var visibleLibraryId: LibraryIdentifier { get }
 }
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
@@ -35,25 +35,19 @@ protocol MasterSettingsCoordinatorDelegate: class {
 final class MasterCoordinator: NSObject, Coordinator {
     var parentCoordinator: Coordinator?
     var childCoordinators: [Coordinator]
-    private(set) var visibleLibrary: Library
+    private(set) var visibleLibraryId: LibraryIdentifier
 
-    let defaultLibrary: Library
     unowned let navigationController: UINavigationController
     private unowned let controllers: Controllers
     private unowned let mainCoordinatorDelegate: MainCoordinatorDelegate
     private let disposeBag: DisposeBag
 
     init(navigationController: UINavigationController, mainCoordinatorDelegate: MainCoordinatorDelegate, controllers: Controllers) {
-        let defaultLibrary = Library(identifier: .custom(.myLibrary),
-                                     name: RCustomLibraryType.myLibrary.libraryName,
-                                     metadataEditable: true,
-                                     filesEditable: true)
         self.navigationController = navigationController
         self.mainCoordinatorDelegate = mainCoordinatorDelegate
         self.controllers = controllers
         self.childCoordinators = []
-        self.defaultLibrary = defaultLibrary
-        self.visibleLibrary = defaultLibrary
+        self.visibleLibraryId = Defaults.shared.selectedLibrary
         self.disposeBag = DisposeBag()
 
         super.init()
@@ -62,7 +56,7 @@ final class MasterCoordinator: NSObject, Coordinator {
     func start(animated: Bool) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
         let librariesController = self.createLibrariesViewController(dbStorage: dbStorage)
-        let collectionsController = self.createCollectionsViewController(library: self.defaultLibrary, dbStorage: dbStorage)
+        let collectionsController = self.createCollectionsViewController(libraryId: self.visibleLibraryId, selectedCollectionId: Defaults.shared.selectedCollectionId, dbStorage: dbStorage)
         self.navigationController.setViewControllers([librariesController, collectionsController], animated: animated)
     }
 
@@ -73,13 +67,22 @@ final class MasterCoordinator: NSObject, Coordinator {
         return controller
     }
 
-    private func createCollectionsViewController(library: Library, dbStorage: DbStorage) -> CollectionsViewController {
+    private func createCollectionsViewController(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier, dbStorage: DbStorage) -> CollectionsViewController {
         let handler = CollectionsActionHandler(dbStorage: dbStorage)
-        let state = CollectionsState(library: library)
-        let controller = CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                                   dragDropController: self.controllers.dragDropController)
+        let state = CollectionsState(libraryId: libraryId, selectedCollectionId: selectedCollectionId)
+        let controller = CollectionsViewController(viewModel: ViewModel(initialState: state, handler: handler), dragDropController: self.controllers.dragDropController)
         controller.coordinatorDelegate = self
         return controller
+    }
+
+    private func storeIfNeeded(libraryId: LibraryIdentifier) -> CollectionIdentifier {
+        if Defaults.shared.selectedLibrary == libraryId {
+            return Defaults.shared.selectedCollectionId
+        } else {
+            Defaults.shared.selectedLibrary = libraryId
+            Defaults.shared.selectedCollectionId = .custom(.all)
+            return .custom(.all)
+        }
     }
 }
 
@@ -87,7 +90,10 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     func showDefaultLibrary() {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
-        let controller = self.createCollectionsViewController(library: self.defaultLibrary, dbStorage: dbStorage)
+        let libraryId = LibraryIdentifier.custom(.myLibrary)
+        let collectionId = self.storeIfNeeded(libraryId: libraryId)
+
+        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
 
         let animated: Bool
         var viewControllers = self.navigationController.viewControllers
@@ -129,9 +135,12 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
         self.navigationController.present(controller, animated: true, completion: nil)
     }
 
-    func showCollections(for library: Library) {
+    func showCollections(for libraryId: LibraryIdentifier) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
-        let controller = self.createCollectionsViewController(library: library, dbStorage: dbStorage)
+
+        let collectionId = self.storeIfNeeded(libraryId: libraryId)
+
+        let controller = self.createCollectionsViewController(libraryId: libraryId, selectedCollectionId: collectionId, dbStorage: dbStorage)
         self.navigationController.pushViewController(controller, animated: true)
     }
 
@@ -246,9 +255,12 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
         self.navigationController.present(navigationController, animated: true, completion: nil)
     }
 
-    func show(collection: Collection, in library: Library) {
-        self.visibleLibrary = library
-        self.mainCoordinatorDelegate.show(collection: collection, in: library)
+    func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
+        self.visibleLibraryId = library.identifier
+        if !isInitial {
+            Defaults.shared.selectedCollectionId = collection.identifier
+        }
+        self.mainCoordinatorDelegate.showItems(for: collection, in: library, isInitial: isInitial)
     }
 
     var isSplit: Bool {

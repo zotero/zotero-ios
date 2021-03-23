@@ -14,7 +14,7 @@ import SwiftUI
 import RxSwift
 
 protocol MainCoordinatorDelegate: SplitControllerDelegate {
-    func show(collection: Collection, in library: Library)
+    func showItems(for collection: Collection, in library: Library, isInitial: Bool)
 }
 
 protocol SplitControllerDelegate: class {
@@ -75,9 +75,7 @@ final class MainViewController: UISplitViewController {
 
     private func setupControllers() {
         let masterController = UINavigationController()
-        let masterCoordinator = MasterCoordinator(navigationController: masterController,
-                                                  mainCoordinatorDelegate: self,
-                                                  controllers: self.controllers)
+        let masterCoordinator = MasterCoordinator(navigationController: masterController, mainCoordinatorDelegate: self, controllers: self.controllers)
         masterCoordinator.start(animated: false)
         self.masterCoordinator = masterCoordinator
 
@@ -103,15 +101,12 @@ extension MainViewController: UISplitViewControllerDelegate {
 }
 
 extension MainViewController: MainCoordinatorDelegate {
-    func show(collection: Collection, in library: Library) {
+    func showItems(for collection: Collection, in library: Library, isInitial: Bool) {
         guard !self.isSplit || self.detailCoordinator?.library != library || self.detailCoordinator?.collection != collection else { return }
 
         let navigationController = UINavigationController()
 
-        let coordinator = DetailCoordinator(library: library,
-                                            collection: collection,
-                                            navigationController: navigationController,
-                                            controllers: self.controllers)
+        let coordinator = DetailCoordinator(library: library, collection: collection, navigationController: navigationController, controllers: self.controllers)
         coordinator.start(animated: false)
         self.detailCoordinator = coordinator
 

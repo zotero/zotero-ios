@@ -11,46 +11,7 @@ import Foundation
 import RealmSwift
 
 struct Collection: Identifiable, Equatable, Hashable {
-
-    enum CollectionType: Equatable, Hashable {
-        case collection
-        case search
-        case custom(CustomType)
-        
-        var isCustom: Bool {
-            switch self {
-            case .custom: return true
-            default: return false
-            }
-        }
-
-        var isCollection: Bool {
-            switch self {
-            case .collection: return true
-            default: return false
-            }
-        }
-    }
-
-    enum CustomType: Equatable, Hashable {
-        case all, trash, publications
-    }
-    
-    var id: String {
-        switch self.type {
-        case .custom(let type):
-            switch type {
-            case .all: return "all"
-            case .publications: return "publications"
-            case .trash: return "trash"
-            }
-        case .collection, .search:
-            return self.key
-        }
-    }
-
-    let type: CollectionType
-    let key: String
+    let identifier: CollectionIdentifier
     let name: String
     var level: Int
     let parentKey: String?
@@ -59,8 +20,12 @@ struct Collection: Identifiable, Equatable, Hashable {
     var visible: Bool
     var itemCount: Int
 
+    var id: CollectionIdentifier {
+        return self.identifier
+    }
+
     var iconName: String {
-        switch self.type {
+        switch self.identifier {
         case .collection:
             return Asset.Images.Cells.collection.name
         case .search:
@@ -76,8 +41,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     }
 
     init(object: RCollection, level: Int, visible: Bool, hasChildren: Bool, parentKey: String?, itemCount: Int) {
-        self.type = .collection
-        self.key = object.key
+        self.identifier = .collection(object.key)
         self.name = object.name
         self.level = level
         self.hasChildren = hasChildren
@@ -88,8 +52,7 @@ struct Collection: Identifiable, Equatable, Hashable {
     }
 
     init(object: RSearch) {
-        self.type = .search
-        self.key = object.key
+        self.identifier = .search(object.key)
         self.name = object.name
         self.level = 0
         self.itemCount = 0
@@ -99,10 +62,9 @@ struct Collection: Identifiable, Equatable, Hashable {
         self.parentKey = nil
     }
 
-    init(custom type: CustomType, itemCount: Int = 0) {
+    init(custom type: CollectionIdentifier.CustomType, itemCount: Int = 0) {
         self.itemCount = itemCount
-        self.type = .custom(type)
-        self.key = ""
+        self.identifier = .custom(type)
         self.level = 0
         self.parentKey = nil
         self.hasChildren = false
@@ -118,8 +80,8 @@ struct Collection: Identifiable, Equatable, Hashable {
         }
     }
 
-    func isCustom(type: CustomType) -> Bool {
-        switch self.type {
+    func isCustom(type: CollectionIdentifier.CustomType) -> Bool {
+        switch self.identifier {
         case .custom(let customType):
             return type == customType
         case .collection, .search:

@@ -15,9 +15,9 @@ struct CollectionTreeBuilder {
         return searches.map(Collection.init)
     }
 
-    static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [Collection] {
+    static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier, collapseAll: Bool = false) -> [Collection] {
         var parentMap = self.createParentMap(from: collections, libraryId: libraryId)
-        return self.createCollections(for: "", level: 0, visible: true, from: &parentMap)
+        return self.createCollections(for: "", level: 0, visible: true, collapseAll: collapseAll, from: &parentMap)
     }
 
     private static func createParentMap(from collections: Results<RCollection>, libraryId: LibraryIdentifier) -> [String: [Collection]] {
@@ -37,13 +37,17 @@ struct CollectionTreeBuilder {
         return parentMap
     }
 
-    private static func createCollections(for key: String, level: Int, visible: Bool, from map: inout [String: [Collection]]) -> [Collection] {
+    private static func createCollections(for key: String, level: Int, visible: Bool, collapseAll: Bool, from map: inout [String: [Collection]]) -> [Collection] {
         guard let original = map[key] else { return [] }
 
         var collections = original
         for (idx, var collection) in original.reversed().enumerated() {
-            let childCollections = self.createCollections(for: collection.key, level: (level + 1), visible: (visible && !collection.collapsed), from: &map)
+            let collapsed = collapseAll ? true : collection.collapsed
+            let childCollections = self.createCollections(for: (collection.identifier.key ?? ""), level: (level + 1), visible: (visible && !collapsed), collapseAll: collapseAll, from: &map)
 
+            if collapseAll {
+                collection.collapsed = true
+            }
             collection.visible = visible
             collection.level = level
             collection.hasChildren = !childCollections.isEmpty

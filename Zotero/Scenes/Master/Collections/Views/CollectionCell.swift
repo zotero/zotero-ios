@@ -90,7 +90,7 @@ final class CollectionCell: UITableViewCell {
             return true
         }
 
-        switch collection.type {
+        switch collection.identifier {
         case .custom(let type):
             return type == .all
         case .collection, .search:

@@ -36,15 +36,6 @@ final class ExtensionStore {
         enum CollectionPicker {
             case loading, failed
             case picked(Library, Collection?)
-
-            var library: Library? {
-                switch self {
-                case .picked(let library, _):
-                    return library
-                default:
-                    return nil
-                }
-            }
         }
 
         struct ItemPicker {
@@ -169,6 +160,9 @@ final class ExtensionStore {
         }
 
         let attachmentKey: String
+        let selectedCollectionId: CollectionIdentifier
+        let selectedLibraryId: LibraryIdentifier
+
         var title: String?
         var url: String?
         var attachmentState: AttachmentState
@@ -179,6 +173,8 @@ final class ExtensionStore {
 
         init() {
             self.attachmentKey = KeyGenerator.newKey
+            self.selectedCollectionId = Defaults.shared.selectedCollectionId
+            self.selectedLibraryId = Defaults.shared.selectedLibrary
             self.collectionPicker = .loading
             self.attachmentState = .decoding
         }
@@ -536,7 +532,7 @@ final class ExtensionStore {
         switch self.state.collectionPicker {
         case .picked(let library, let collection):
             libraryId = library.identifier
-            collectionKeys = collection.flatMap({ [$0.key] }) ?? []
+            collectionKeys = collection?.identifier.key.flatMap({ [$0] }) ?? []
         default:
             libraryId = ExtensionStore.defaultLibraryId
             collectionKeys = []
@@ -853,7 +849,7 @@ final class ExtensionStore {
     // MARK: - Collection picker
 
     func set(collection: Collection, library: Library) {
-        self.state.collectionPicker = .picked(library, (collection.type.isCustom ? nil : collection))
+        self.state.collectionPicker = .picked(library, (collection.identifier.isCustom ? nil : collection))
     }
 
     // MARK: - Sync
@@ -871,11 +867,17 @@ final class ExtensionStore {
 
     private func finishSync(successful: Bool) {
         if successful {
-            self.state.collectionPicker = .picked(Library(identifier: ExtensionStore.defaultLibraryId,
-                                                               name: RCustomLibraryType.myLibrary.libraryName,
-                                                               metadataEditable: true,
-                                                               filesEditable: true),
-                                                       nil)
+            do {
+                let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
+                let (collection, library) = try self.dbStorage.createCoordinator().perform(request: request)
+                self.state.collectionPicker = .picked(library, collection)
+            } catch let error {
+                self.state.collectionPicker = .picked(Library(identifier: ExtensionStore.defaultLibraryId,
+                                                                   name: RCustomLibraryType.myLibrary.libraryName,
+                                                                   metadataEditable: true,
+                                                                   filesEditable: true),
+                                                           nil)
+            }
         } else {
             self.state.collectionPicker = .failed
         }

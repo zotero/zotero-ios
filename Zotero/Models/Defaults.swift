@@ -35,6 +35,30 @@ final class Defaults {
     @UserDefault(key: "ShareExtensionIncludeAttachment", defaultValue: true)
     var shareExtensionIncludeAttachment: Bool
 
+    var selectedLibrary: LibraryIdentifier {
+        get {
+            let data = UserDefaults.zotero.data(forKey: "SelectedRawLibraryKey")
+            return data.flatMap({ try? self.jsonDecoder.decode(LibraryIdentifier.self, from: $0) }) ?? LibraryIdentifier.custom(.myLibrary)
+        }
+
+        set {
+            guard let data = try? self.jsonEncoder.encode(newValue) else { return }
+            UserDefaults.zotero.setValue(data, forKey: "SelectedRawLibraryKey")
+        }
+    }
+
+    var selectedCollectionId: CollectionIdentifier {
+        get {
+            let data = UserDefaults.zotero.data(forKey: "SelectedRawCollectionKey")
+            return data.flatMap({ try? self.jsonDecoder.decode(CollectionIdentifier.self, from: $0) }) ?? CollectionIdentifier.custom(.all)
+        }
+
+        set {
+            guard let data = try? self.jsonEncoder.encode(newValue) else { return }
+            UserDefaults.zotero.setValue(data, forKey: "SelectedRawCollectionKey")
+        }
+    }
+
     #if PDFENABLED && MAINAPP
     var pdfSettings: PDFSettingsState {
         get {

@@ -68,7 +68,7 @@ extension CollectionEditingCoordinator: CollectionEditingCoordinatorDelegate {
         guard let dbStorage = self.controllers.userControllers?.dbStorage else { return }
 
         let library = viewModel.state.library
-        let selected = viewModel.state.parent?.key ?? library.name
+        let selected = viewModel.state.parent?.identifier.key ?? library.name
         let excludedKeys: Set<String> = viewModel.state.key.flatMap({ [$0] }) ?? []
 
         let controller = self.createCollectionPickerViewController(library: library,

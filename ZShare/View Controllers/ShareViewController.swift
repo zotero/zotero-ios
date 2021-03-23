@@ -166,7 +166,7 @@ final class ShareViewController: UIViewController {
     @IBAction private func showCollectionPicker() {
         guard let dbStorage = self.dbStorage else { return }
 
-        let store = AllCollectionPickerStore(dbStorage: dbStorage)
+        let store = AllCollectionPickerStore(selectedCollectionId: self.store.state.selectedCollectionId, selectedLibraryId: self.store.state.selectedLibraryId, dbStorage: dbStorage)
         let view = AllCollectionPickerView { [weak self] collection, library in
             self?.store?.set(collection: collection, library: library)
             self?.navigationController?.popViewController(animated: true)

@@ -46,9 +46,9 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 self.delete(object: RSearch.self, keys: [key], in: viewModel)
             }
 
-        case .select(let collection):
+        case .select(let collectionId):
             self.update(viewModel: viewModel) { state in
-                state.selectedCollection = collection
+                state.selectedCollection = collectionId
                 state.changes.insert(.selection)
             }
 
@@ -61,19 +61,20 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func toggleCollapsed(for collection: Collection, in viewModel: ViewModel<CollectionsActionHandler>) {
-        guard let index = viewModel.state.collections.firstIndex(of: collection) else { return }
+        guard let index = viewModel.state.collections.firstIndex(of: collection),
+              let key = collection.identifier.key else { return }
 
         let collapsed = !collection.collapsed
         let libraryId = viewModel.state.library.identifier
         self.update(viewModel: viewModel) { state in
-            self.set(collapsed: collapsed, for: collection, startIndex: index, in: &state)
+            self.set(collapsed: collapsed, startIndex: index, in: &state)
         }
 
         self.queue.async {
             do {
                 // Since this request has to be performed in background (otherwise the main queue freezes due to writes from multiple threads during sync),
                 // we can't pass `NotificationToken` to ignore next notification. So we store key of collapsed collection which will be updated and this updated will be filtered out in observation.
-                let request = SetCollectionCollapsedDbRequest(collapsed: collapsed, key: collection.key, libraryId: libraryId, ignoreNotificationTokens: nil)
+                let request = SetCollectionCollapsedDbRequest(collapsed: collapsed, key: key, libraryId: libraryId, ignoreNotificationTokens: nil)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't change collapsed - \(error)")
@@ -81,11 +82,16 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         }
     }
 
-    private func set(collapsed: Bool, for collection: Collection, startIndex index: Int, in state: inout CollectionsState) {
+    private func set(collapsed: Bool, startIndex index: Int, in state: inout CollectionsState) {
         // Set `collapsed` flag for collection. Toggled collection is always visible.
         state.collections[index].collapsed = collapsed
         state.collections[index].visible = true
-        state.collapsedKeys.append(collection.key)
+
+        let collection = state.collections[index]
+
+        if let key = collection.identifier.key {
+            state.collapsedKeys.append(key)
+        }
         state.changes.insert(.results)
 
         var ignoreLevel: Int?
@@ -100,8 +106,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
             if collapsed {
                 // Select collapsed cell if selection is among collapsed children
-                if _collection.key == state.selectedCollection.key {
-                    state.selectedCollection = collection
+                if _collection.identifier == state.selectedCollection {
+                    state.selectedCollection = collection.identifier
                     state.changes.insert(.selection)
                 }
                 // Hide all children
@@ -126,10 +132,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func loadData(in viewModel: ViewModel<CollectionsActionHandler>) {
-        let libraryId = viewModel.state.library.identifier
+        let libraryId = viewModel.state.libraryId
 
         do {
             let coordinator = try self.dbStorage.createCoordinator()
+            let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
             let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
             let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
             let allItems = try coordinator.perform(request: ReadItemsDbRequest(type: .all, libraryId: libraryId))
@@ -196,9 +203,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
             self.update(viewModel: viewModel) { state in
                 state.collections = allCollections
-                if !allCollections.isEmpty {
-                    state.selectedCollection = allCollections[0]
-                }
+                state.library = library
                 state.collectionsToken = collectionsToken
                 state.searchesToken = searchesToken
                 state.itemsToken = itemsToken
@@ -257,7 +262,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             name = ""
             parent = collection
         case .edit(let collection):
-            key = collection.key
+            key = collection.identifier.key
             name = collection.name
 
             if let parentKey = collection.parentKey, let coordinator = try? self.dbStorage.createCoordinator() {
@@ -290,19 +295,19 @@ struct CollectionsActionHandler: ViewModelActionHandler {
         guard !collections.isEmpty else { return }
 
         var original = viewModel.state.collections
-        var selected = viewModel.state.selectedCollection
+        var selectedId = viewModel.state.selectedCollection
 
         self.update(original: &original, with: collections)
-        if !original.contains(where: { $0.key == selected.key }) {
-            selected = original.first ?? Collection(custom: .all)
+        if !original.contains(where: { $0.identifier == selectedId }) {
+            selectedId = original.first?.identifier ?? .custom(.all)
         }
 
         self.update(viewModel: viewModel) { state in
             state.collections = original
             state.changes.insert(.results)
-            if selected != state.selectedCollection {
+            if selectedId != state.selectedCollection {
                 state.changes.insert(.selection)
-                state.selectedCollection = selected
+                state.selectedCollection = selectedId
             }
         }
     }
@@ -312,11 +317,11 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     /// - parameter original: Original collections. 
     /// - parameter collections: collections to be inserted/updated.
     private func update(original: inout [Collection], with collections: [Collection]) {
-        guard let type = collections.first?.type else { return }
+        guard let identifier = collections.first?.identifier else { return }
 
-        if self.replaceCollections(of: type, with: collections, original: &original) { return }
+        if self.replaceCollections(with: identifier, with: collections, original: &original) { return }
 
-        switch type {
+        switch identifier {
         case .collection:
             // Insert new "collection" collections after "all" collection
             original.insert(contentsOf: collections, at: 1)
@@ -332,18 +337,18 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     /// - parameter collections: New collections to replace existing ones.
     /// - parameter original: Original collections.
     /// - returns: False if there are no collections to replace, true otherwise.
-    private func replaceCollections(of type: Collection.CollectionType, with collections: [Collection], original: inout [Collection]) -> Bool {
+    private func replaceCollections(with identifier: CollectionIdentifier, with collections: [Collection], original: inout [Collection]) -> Bool {
         var startIndex = -1
         var endIndex = -1
 
-        for data in original.enumerated() {
+        for (idx, collection) in original.enumerated() {
             if startIndex == -1 {
-                if data.element.type == type {
-                    startIndex = data.offset
+                if collection.identifier.isSameType(as: identifier) {
+                    startIndex = idx
                 }
             } else if endIndex == -1 {
-                if data.element.type != type {
-                    endIndex = data.offset
+                if !collection.identifier.isSameType(as: identifier) {
+                    endIndex = idx
                     break
                 }
             }

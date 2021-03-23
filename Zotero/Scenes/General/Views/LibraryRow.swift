@@ -22,7 +22,6 @@ struct LibraryRow: View {
                 .foregroundColor(.primary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 16)
     }
 }
 
