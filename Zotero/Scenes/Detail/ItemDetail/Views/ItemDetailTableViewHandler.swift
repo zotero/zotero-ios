@@ -446,6 +446,14 @@ final class ItemDetailTableViewHandler: NSObject {
         return UIMenu(title: "", children: actions)
     }
 
+    private func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
+        guard !self.viewModel.state.isEditing &&
+              ((field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url)) else { return nil }
+        return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
+            UIPasteboard.general.string = field.value
+        })])
+    }
+
     // MARK: - Cells
 
     private func setup(attachmentCell: ItemDetailAttachmentCell, at index: Int) {
@@ -761,11 +769,18 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment && self.sections[indexPath.section] == .attachments else { return nil }
+        switch self.sections[indexPath.section] {
+        case .attachments:
+            let attachment = self.viewModel.state.data.attachments[indexPath.row]
+            return self.createContextMenu(for: attachment).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
 
-        let attachment = self.viewModel.state.data.attachments[indexPath.row]
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            return self?.createContextMenu(for: attachment)
+        case .fields:
+            let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
+            let field = self.viewModel.state.data.fields[fieldId]
+            return field.flatMap({ self.createContextMenu(for: $0) }).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
+
+        case .abstract, .creators, .dates, .notes, .tags, .title, .type:
+            return nil
         }
     }
 

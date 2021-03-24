@@ -29,6 +29,7 @@ struct FieldKeys {
         static let publisher = "publisher"
         static let publicationTitle = "publicationTitle"
         static let doi = "DOI"
+        static let url = "url"
         static let accessDate = "accessDate"
 
         struct Attachment {
