@@ -49,14 +49,14 @@ final class CollectionsTableViewHandler: NSObject {
     func updateAllItemCell(with collection: Collection) {
         self.snapshot[0] = collection
         guard let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: 0)) as? CollectionCell else { return }
-        cell.updateRightViews(for: collection)
+        cell.updateBadgeView(for: collection)
     }
 
     func updateTrashItemCell(with collection: Collection) {
         let row = self.snapshot.count - 1
         self.snapshot[row] = collection
         guard let cell = self.tableView.cellForRow(at: IndexPath(row: row, section: 0)) as? CollectionCell else { return }
-        cell.updateRightViews(for: collection)
+        cell.updateBadgeView(for: collection)
     }
 
     func update(collections: [Collection], animated: Bool, completed: (() -> Void)? = nil) {
