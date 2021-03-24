@@ -10,6 +10,7 @@ import UIKit
 
 final class CollectionCell: UITableViewCell {
     private static let imageWidth: CGFloat = 44
+    private static let baseOffset: CGFloat = 28.0
     private static let levelOffset: CGFloat = 16.0
 
     @IBOutlet private weak var leftConstraint: NSLayoutConstraint!
@@ -72,13 +73,12 @@ final class CollectionCell: UITableViewCell {
         self.iconImage.image = UIImage(named: collection.iconName)?.withRenderingMode(.alwaysTemplate)
         self.titleLabel.text = collection.name
 
-        self.leftConstraint.constant = self.inset(for: collection.level) - (self.chevronButton.isHidden ? CollectionCell.levelOffset : 0)
+        self.leftConstraint.constant = self.inset(for: collection.level)
         self.chevronButton.isHidden = !collection.hasChildren
         if !self.chevronButton.isHidden {
             let configuration = UIImage.SymbolConfiguration(scale: .small)
             let name = collection.collapsed ? "chevron.right" : "chevron.down"
             self.chevronButton.setImage(UIImage(systemName: name, withConfiguration: configuration), for: .normal)
-            self.leftConstraint.constant -= collection.collapsed ? 43 : 48
         }
 
         self.updateBadgeView(for: collection)
@@ -106,8 +106,7 @@ final class CollectionCell: UITableViewCell {
     }
 
     private func inset(for level: Int) -> CGFloat {
-        let offset = CollectionCell.levelOffset
-        return 48 + (CGFloat(level) * offset)
+        return CollectionCell.baseOffset + (CGFloat(level) * CollectionCell.levelOffset)
     }
 
     private var badgeBackgroundColor: UIColor {

@@ -28,7 +28,7 @@ struct AllCollectionPickerView: View {
 fileprivate struct ListView: View {
     @EnvironmentObject private var store: AllCollectionPickerStore
 
-    fileprivate static let baseCellOffset: CGFloat = 16
+    fileprivate static let baseCellOffset: CGFloat = 40
 
     var picked: (Collection, Library) -> Void
 
@@ -98,14 +98,13 @@ fileprivate struct CollapsibleLibraryRow: View {
 
     var body: some View {
         GeometryReader(content: { geometry in
-            HStack {
+            ZStack(alignment: .leading) {
                 LibraryRow(title: self.library.name, isReadOnly: !self.library.metadataEditable)
                     .frame(height: geometry.size.height)
 
-                Spacer()
-
                 CollapseButton(collapsed: self.collapsed, action: self.action)
                     .frame(width: geometry.size.height, height: geometry.size.height)
+                    .offset(x: -(geometry.size.height * 0.85))
             }
         })
         .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
@@ -120,7 +119,7 @@ fileprivate struct CollapsibleCollectionRow: View {
 
     var body: some View {
         GeometryReader(content: { geometry in
-            HStack {
+            ZStack(alignment: .leading) {
                 Button(action: {
                     self.pickAction()
                 }) {
@@ -133,6 +132,7 @@ fileprivate struct CollapsibleCollectionRow: View {
                 if self.collection.hasChildren {
                     CollapseButton(collapsed: self.collection.collapsed, action: self.collapseAction)
                         .frame(width: geometry.size.height, height: geometry.size.height)
+                        .offset(x: -(geometry.size.height * 0.85))
                 }
             }
         })

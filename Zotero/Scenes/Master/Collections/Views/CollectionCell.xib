@@ -17,32 +17,29 @@
                 <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="IeU-Uw-X8S">
-                        <rect key="frame" x="16" y="4" width="130" height="36"/>
+                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nRM-lX-IgP">
+                        <rect key="frame" x="-22" y="0.0" width="48" height="44"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="48" id="leW-0i-1zv"/>
+                        </constraints>
+                        <state key="normal" image="chevron.right" catalog="system"/>
+                        <connections>
+                            <action selector="toggleCollapsed" destination="ydo-z9-Att" eventType="touchUpInside" id="dHj-sI-jhj"/>
+                        </connections>
+                    </button>
+                    <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="IeU-Uw-X8S">
+                        <rect key="frame" x="16" y="4" width="85.5" height="36"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nRM-lX-IgP">
-                                <rect key="frame" x="0.0" y="0.0" width="44.5" height="36"/>
-                                <inset key="contentEdgeInsets" minX="16" minY="0.0" maxX="16" maxY="0.0"/>
-                                <state key="normal" image="chevron.right" catalog="system"/>
-                                <connections>
-                                    <action selector="toggleCollapsed" destination="ydo-z9-Att" eventType="touchUpInside" id="dHj-sI-jhj"/>
-                                </connections>
-                            </button>
-                            <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="jil-M0-Z5g">
-                                <rect key="frame" x="44.5" y="0.0" width="85.5" height="36"/>
-                                <subviews>
-                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/collection" translatesAutoresizingMaskIntoConstraints="NO" id="hiG-ag-qE9">
-                                        <rect key="frame" x="0.0" y="4" width="28" height="28"/>
-                                        <color key="tintColor" name="zoteroBlue"/>
-                                    </imageView>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BLO-St-lag">
-                                        <rect key="frame" x="44" y="8" width="41.5" height="20.5"/>
-                                        <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                </subviews>
-                            </stackView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" image="Cells/collection" translatesAutoresizingMaskIntoConstraints="NO" id="hiG-ag-qE9">
+                                <rect key="frame" x="0.0" y="4" width="28" height="28"/>
+                                <color key="tintColor" name="zoteroBlue"/>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="250" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BLO-St-lag">
+                                <rect key="frame" x="44" y="8" width="41.5" height="20.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                     </stackView>
                     <view contentMode="scaleToFill" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="r1z-3b-OY9">
@@ -67,9 +64,12 @@
                 <constraints>
                     <constraint firstItem="r1z-3b-OY9" firstAttribute="centerY" secondItem="gUg-Pb-SNi" secondAttribute="centerY" id="3Id-Ad-Yn5"/>
                     <constraint firstItem="IeU-Uw-X8S" firstAttribute="top" secondItem="gUg-Pb-SNi" secondAttribute="top" constant="4" id="5Pt-ZY-K8z"/>
+                    <constraint firstItem="IeU-Uw-X8S" firstAttribute="leading" secondItem="nRM-lX-IgP" secondAttribute="trailing" constant="-10" id="MQl-Sx-rRn"/>
+                    <constraint firstItem="nRM-lX-IgP" firstAttribute="top" secondItem="gUg-Pb-SNi" secondAttribute="top" id="QIK-Ls-3iY"/>
                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="IeU-Uw-X8S" secondAttribute="trailing" constant="16" id="QWh-LM-c1F"/>
                     <constraint firstAttribute="bottom" secondItem="IeU-Uw-X8S" secondAttribute="bottom" constant="4" id="Y2O-F9-att"/>
                     <constraint firstAttribute="trailing" secondItem="r1z-3b-OY9" secondAttribute="trailing" constant="10" id="ql1-4F-J2S"/>
+                    <constraint firstAttribute="bottom" secondItem="nRM-lX-IgP" secondAttribute="bottom" id="sT2-ga-Zi4"/>
                     <constraint firstItem="IeU-Uw-X8S" firstAttribute="leading" secondItem="gUg-Pb-SNi" secondAttribute="leading" constant="16" id="v5v-MA-EGy"/>
                     <constraint firstItem="r1z-3b-OY9" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="IeU-Uw-X8S" secondAttribute="trailing" constant="16" id="z9w-MT-OFh"/>
                 </constraints>
