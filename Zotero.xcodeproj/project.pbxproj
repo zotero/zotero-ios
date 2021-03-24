@@ -682,6 +682,7 @@
 		B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */; };
 		B3B1EE062502675E00D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
 		B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
+		B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */; };
 		B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B8800425FB546300904235 /* DeviceInfoProvider.swift */; };
 		B3B8800A25FB590900904235 /* DeviceInfoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B8800425FB546300904235 /* DeviceInfoProvider.swift */; };
 		B3B953C32459780600FC96DB /* Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953C22459780600FC96DB /* Annotation.swift */; };
@@ -1308,6 +1309,7 @@
 		B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_knownfields.json; sourceTree = "<group>"; };
 		B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3B1EE052502675E00D8BC1E /* Parsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parsing.swift; sourceTree = "<group>"; };
+		B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashDbRequest.swift; sourceTree = "<group>"; };
 		B3B8166723880DC900529605 /* ZShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZShare.entitlements; sourceTree = "<group>"; };
 		B3B8800425FB546300904235 /* DeviceInfoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfoProvider.swift; sourceTree = "<group>"; };
 		B3B953C22459780600FC96DB /* Annotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Annotation.swift; sourceTree = "<group>"; };
@@ -1548,6 +1550,7 @@
 				B305643F23FC051E003304F2 /* EditCollectionDbRequest.swift */,
 				B305644923FC051E003304F2 /* EditItemDetailDbRequest.swift */,
 				B305644D23FC051E003304F2 /* EditNoteDbRequest.swift */,
+				B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */,
 				B305645223FC051E003304F2 /* InitializeCustomLibrariesDbRequest.swift */,
 				B305645423FC051E003304F2 /* MarkAllLibraryObjectChangesAsSyncedDbRequest.swift */,
 				B305645623FC051E003304F2 /* MarkAttachmentUploadedDbRequest.swift */,
@@ -3165,6 +3168,7 @@
 				B30566B723FC051F003304F2 /* GroupResponse.swift in Sources */,
 				B32B4F952475544700F78A05 /* SyncToolbarController.swift in Sources */,
 				B30565DC23FC051E003304F2 /* AssignItemsToCollectionsDbRequest.swift in Sources */,
+				B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */,
 				B3593F2F241A61C700760E20 /* ItemDetailTitleCell.swift in Sources */,
 				B30565D223FC051E003304F2 /* ReadCollectionsDbRequest.swift in Sources */,
 				B3764D9D2574F2DE0024274F /* ColorPickerCircleView.swift in Sources */,

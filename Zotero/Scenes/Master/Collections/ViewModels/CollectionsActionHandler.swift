@@ -57,6 +57,16 @@ struct CollectionsActionHandler: ViewModelActionHandler {
 
         case .toggleCollapsed(let collection):
             self.toggleCollapsed(for: collection, in: viewModel)
+
+        case .emptyTrash:
+            let libraryId = viewModel.state.libraryId
+            self.queue.async {
+                do {
+                    try self.dbStorage.createCoordinator().perform(request: EmptyTrashDbRequest(libraryId: libraryId))
+                } catch let error {
+                    DDLogError("CollectionsActionHandler: can't empty trash - \(error)")
+                }
+            }
         }
     }
 

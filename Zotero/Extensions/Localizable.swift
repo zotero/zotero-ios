@@ -94,6 +94,8 @@ internal enum L10n {
     internal static let deleteWithItems = L10n.tr("Localizable", "collections.delete_with_items")
     /// Edit Collection
     internal static let editTitle = L10n.tr("Localizable", "collections.edit_title")
+    /// Empty Trash
+    internal static let emptyTrash = L10n.tr("Localizable", "collections.empty_trash")
     /// My Publications
     internal static let myPublications = L10n.tr("Localizable", "collections.my_publications")
     /// New Subcollection

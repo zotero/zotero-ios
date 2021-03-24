@@ -136,18 +136,35 @@ final class CollectionsTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for collection: Collection) -> UIMenu? {
-        guard collection.identifier.isCollection, let key = collection.identifier.key else { return nil }
+        switch collection.identifier {
+        case .collection(let key):
+            let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] action in
+                self?.viewModel.process(action: .startEditing(.edit(collection)))
+            }
+            let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] action in
+                self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
+            }
+            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+                self?.viewModel.process(action: .deleteCollection(key))
+            }
+            return UIMenu(title: "", children: [edit, subcollection, delete])
 
-        let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] action in
-            self?.viewModel.process(action: .startEditing(.edit(collection)))
+        case .custom(let type):
+            switch type {
+            case .trash:
+                guard collection.itemCount > 0 else { return nil }
+                let trash = UIAction(title: L10n.Collections.emptyTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+                    self?.viewModel.process(action: .emptyTrash)
+                }
+                return UIMenu(title: "", children: [trash])
+
+            case .all, .publications:
+                return nil
+            }
+
+        case .search:
+            return nil
         }
-        let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] action in
-            self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
-        }
-        let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
-            self?.viewModel.process(action: .deleteCollection(key))
-        }
-        return UIMenu(title: "", children: [edit, subcollection, delete])
     }
 
     // MARK: - Setups
@@ -226,13 +243,9 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        if !self.viewModel.state.library.metadataEditable {
-            return nil
-        }
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let collection = self?.snapshot[indexPath.row] else { return nil }
-            return self?.createContextMenu(for: collection)
-        }
+        guard self.viewModel.state.library.metadataEditable else { return nil }
+        let collection = self.snapshot[indexPath.row]
+        return self.createContextMenu(for: collection).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
     }
 }
 

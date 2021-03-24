@@ -12,6 +12,7 @@ enum CollectionsAction {
     case assignKeysToCollection([String], String)
     case deleteCollection(String)
     case deleteSearch(String)
+    case emptyTrash
     case loadData
     case startEditing(CollectionsState.EditingType)
     case select(CollectionIdentifier)
