@@ -28,7 +28,7 @@ struct AllCollectionPickerView: View {
 fileprivate struct ListView: View {
     @EnvironmentObject private var store: AllCollectionPickerStore
 
-    fileprivate static let baseCellOffset: CGFloat = 40
+    fileprivate static let baseCellOffset: CGFloat = 28
 
     var picked: (Collection, Library) -> Void
 
@@ -104,7 +104,7 @@ fileprivate struct CollapsibleLibraryRow: View {
 
                 CollapseButton(collapsed: self.collapsed, action: self.action)
                     .frame(width: geometry.size.height, height: geometry.size.height)
-                    .offset(x: -(geometry.size.height * 0.85))
+                    .offset(x: -(geometry.size.height * 0.75))
             }
         })
         .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
@@ -150,6 +150,7 @@ fileprivate struct CollapseButton: View {
             self.action()
         }) {
             Image(systemName: self.collapsed ? "chevron.right" : "chevron.down")
+                .imageScale(.small)
         }
         .buttonStyle(PlainButtonStyle())
         .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
