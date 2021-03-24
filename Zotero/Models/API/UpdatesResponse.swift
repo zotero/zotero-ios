@@ -36,14 +36,8 @@ struct FailedUpdateResponse {
     let message: String
 
     init(data: [String: Any]) {
-        if let key = data["key"] as? String {
-            self.key = key
-            self.code = (data["code"] as? Int) ?? 0
-            self.message = (data["message"] as? String) ?? ""
-        } else {
-            self.key = nil
-            self.code = -1
-            self.message = "missing key"
-        }
+        self.key = data["key"] as? String
+        self.code = (data["code"] as? Int) ?? 0
+        self.message = (data["message"] as? String) ?? ""
     }
 }
