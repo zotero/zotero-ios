@@ -160,9 +160,9 @@ final class ExtensionStore {
         }
 
         let attachmentKey: String
-        let selectedCollectionId: CollectionIdentifier
-        let selectedLibraryId: LibraryIdentifier
 
+        var selectedCollectionId: CollectionIdentifier
+        var selectedLibraryId: LibraryIdentifier
         var title: String?
         var url: String?
         var attachmentState: AttachmentState
@@ -849,9 +849,14 @@ final class ExtensionStore {
     // MARK: - Collection picker
 
     func set(collection: Collection, library: Library) {
-        Defaults.shared.selectedCollectionId = collection.identifier
-        Defaults.shared.selectedLibrary = library.identifier
-        self.state.collectionPicker = .picked(library, (collection.identifier.isCustom ? nil : collection))
+        var state = self.state
+        state.selectedLibraryId = library.identifier
+        state.selectedCollectionId = collection.identifier
+        state.collectionPicker = .picked(library, (collection.identifier.isCustom ? nil : collection))
+        self.state = state
+
+        Defaults.shared.selectedCollectionId = state.selectedCollectionId
+        Defaults.shared.selectedLibrary = state.selectedLibraryId
     }
 
     // MARK: - Sync
