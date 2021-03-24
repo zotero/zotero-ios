@@ -80,9 +80,9 @@ struct SubmitUpdateSyncAction: SyncAction {
                              .flatMap({ response, newVersion -> Single<(Int, Error?)> in
                                 let syncedKeys = self.keys(from: (response.successful + response.unchanged), parameters: self.parameters)
 
-                                 if !syncedKeys.isEmpty {
-                                     do {
-                                         var requests: [DbRequest] = [UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))]
+                                 do {
+                                     var requests: [DbRequest] = [UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))]
+                                     if !syncedKeys.isEmpty {
                                          switch self.object {
                                          case .collection:
                                              requests.insert(MarkObjectsAsSyncedDbRequest<RCollection>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
@@ -94,10 +94,10 @@ struct SubmitUpdateSyncAction: SyncAction {
                                             requests.insert(MarkObjectsAsSyncedDbRequest<RSearch>(libraryId: self.libraryId, keys: syncedKeys, version: newVersion), at: 0)
                                          case .settings: break
                                          }
-                                         try self.dbStorage.createCoordinator().perform(requests: requests)
-                                     } catch let error {
-                                         return Single.just((newVersion, error))
                                      }
+                                     try self.dbStorage.createCoordinator().perform(requests: requests)
+                                 } catch let error {
+                                     return Single.just((newVersion, error))
                                  }
 
                                  if response.failed.first(where: { $0.code == 412 }) != nil {

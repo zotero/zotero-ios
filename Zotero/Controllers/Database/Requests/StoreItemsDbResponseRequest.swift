@@ -109,7 +109,7 @@ struct StoreItemDbRequest: DbRequest {
         self.syncFields(data: self.response, item: item, database: database, schemaController: schemaController)
         self.syncParent(key: self.response.parentKey, libraryId: libraryId, item: item, database: database)
         self.syncCollections(keys: self.response.collectionKeys, libraryId: libraryId, item: item, database: database)
-        try self.syncTags(self.response.tags, libraryId: libraryId, item: item, database: database)
+        self.syncTags(self.response.tags, libraryId: libraryId, item: item, database: database)
         self.syncCreators(data: self.response, item: item, database: database)
         self.syncRelations(data: self.response, item: item, database: database)
         self.syncLinks(data: self.response, item: item, database: database)
@@ -264,7 +264,7 @@ struct StoreItemDbRequest: DbRequest {
         }
     }
 
-    private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) throws {
+    private func syncTags(_ tags: [TagResponse], libraryId: LibraryIdentifier, item: RItem, database: Realm) {
         // Remove item from tags, which are not in the `tags` array anymore
         database.delete(item.tags.filter(.tagName(notIn: tags.map({ $0.tag }))))
 
