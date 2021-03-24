@@ -1398,6 +1398,8 @@ final class SyncController: SynchronizationController {
                 return .nonFatal(.unknown)
             case .attachmentMissing:
                 return .fatal(.attachmentMissing)
+            case .submitUpdateUnknownFailures:
+                return .nonFatal(.unknown)
             }
         }
 

@@ -45,7 +45,8 @@ enum SyncError {
 enum SyncActionError: Error {
     case attachmentItemNotSubmitted,
          attachmentAlreadyUploaded,
-         attachmentMissing
+         attachmentMissing,
+         submitUpdateUnknownFailures
 }
 
 enum PreconditionErrorType: Error {
