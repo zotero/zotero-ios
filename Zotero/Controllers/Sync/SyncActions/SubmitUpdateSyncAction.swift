@@ -20,6 +20,7 @@ struct SubmitUpdateSyncAction: SyncAction {
     let object: SyncObject
     let libraryId: LibraryIdentifier
     let userId: Int
+    let updateLibraryVersion: Bool
 
     unowned let apiClient: ApiClient
     unowned let dbStorage: DbStorage
@@ -53,9 +54,11 @@ struct SubmitUpdateSyncAction: SyncAction {
                              .flatMap({ settings, newVersion -> Single<(Int, Error?)> in
 
                                  do {
-                                     let request = MarkSettingsAsSyncedDbRequest(settings: settings, version: newVersion)
-                                     let updateVersion = UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))
-                                     try self.dbStorage.createCoordinator().perform(requests: [request, updateVersion])
+                                     var requests: [DbRequest] = [MarkSettingsAsSyncedDbRequest(settings: settings, version: newVersion)]
+                                     if self.updateLibraryVersion {
+                                         requests.append(UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object)))
+                                     }
+                                     try self.dbStorage.createCoordinator().perform(requests: requests)
 
                                      return Single.just((newVersion, nil))
                                  } catch let error {
@@ -81,7 +84,12 @@ struct SubmitUpdateSyncAction: SyncAction {
                                 let syncedKeys = self.keys(from: (response.successful + response.unchanged), parameters: self.parameters)
 
                                  do {
-                                     var requests: [DbRequest] = [UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))]
+                                     var requests: [DbRequest]
+                                     if self.updateLibraryVersion {
+                                         requests = [UpdateVersionsDbRequest(version: newVersion, libraryId: self.libraryId, type: .object(self.object))]
+                                     } else {
+                                         requests = []
+                                     }
                                      if !syncedKeys.isEmpty {
                                          switch self.object {
                                          case .collection:

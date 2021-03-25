@@ -583,7 +583,7 @@ final class ExtensionStore {
             .subscribeOn(self.backgroundScheduler)
             .flatMap { parameters in
                 return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId,
-                                              userId: userId, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
+                                              userId: userId, updateLibraryVersion: false, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
                                               queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
             }
             .observeOn(MainScheduler.instance)
@@ -689,7 +689,7 @@ final class ExtensionStore {
                                   .flatMap({ Single.just((filesize, $0, $1, $2)) })
                    }
                    .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
-                       return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+                       return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
                                                      apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
                                                      queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just((filesize, md5, mtime)) })
@@ -730,7 +730,7 @@ final class ExtensionStore {
                                   })
                    }
                    .flatMap { filesize, parameters, md5, mtime -> Single<(UInt64, String, Int)> in
-                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId,
+                       return SubmitUpdateSyncAction(parameters: parameters, sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false,
                                                      apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
                                                      queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
                                     .flatMap({ _ in Single.just((filesize, md5, mtime)) })

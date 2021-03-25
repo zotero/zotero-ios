@@ -1161,7 +1161,7 @@ final class SyncController: SynchronizationController {
 
     private func processSubmitUpdate(for batch: WriteBatch) {
         let result = SubmitUpdateSyncAction(parameters: batch.parameters, sinceVersion: batch.version, object: batch.object,
-                                            libraryId: batch.libraryId, userId: self.userId, apiClient: self.apiClient,
+                                            libraryId: batch.libraryId, userId: self.userId, updateLibraryVersion: true, apiClient: self.apiClient,
                                             dbStorage: self.dbStorage, fileStorage: self.fileStorage,
                                             queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)
