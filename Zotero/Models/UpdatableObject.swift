@@ -25,6 +25,7 @@ protocol Updatable: class {
     var selfOrChildTitleIfChanged: String? { get }
 
     func resetChanges()
+    func markAsChanged(in database: Realm)
 }
 
 extension Updatable {
@@ -75,6 +76,29 @@ extension RCollection: Updatable {
         guard self.isChanged else { return nil }
         return self.name
     }
+
+    func markAsChanged(in database: Realm) {
+        self.changedFields = .name
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
+
+        if self.parentKey != nil {
+            self.changedFields.insert(.parent)
+        }
+
+        self.items.forEach { item in
+            item.changedFields = .collections
+            item.changeType = .user
+        }
+
+        if let libraryId = self.libraryId {
+            let children = database.objects(RCollection.self).filter(.parentKey(self.key, in: libraryId))
+            children.forEach { child in
+                child.markAsChanged(in: database)
+            }
+        }
+    }
 }
 
 extension RSearch: Updatable {
@@ -103,6 +127,13 @@ extension RSearch: Updatable {
     var selfOrChildTitleIfChanged: String? {
         guard self.isChanged else { return nil }
         return self.name
+    }
+
+    func markAsChanged(in database: Realm) {
+        self.changedFields = .all
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
     }
 }
 
@@ -209,6 +240,52 @@ extension RItem: Updatable {
 
         return nil
     }
+
+    func markAsChanged(in database: Realm) {
+        self.changedFields = self.currentChanges
+        self.changeType = .user
+        self.deleted = false
+        self.version = 0
+
+        for field in self.fields {
+            guard !field.value.isEmpty else { continue }
+            field.changed = true
+        }
+
+        if self.rawType == ItemTypes.attachment && self.fields.filter(.key(FieldKeys.Item.Attachment.linkMode)).first?.value == LinkMode.importedFile.rawValue {
+            self.attachmentNeedsSync = true
+        }
+
+        self.children.forEach { child in
+            child.markAsChanged(in: database)
+        }
+    }
+
+    private var currentChanges: RItemChanges {
+        var changes: RItemChanges = [.type, .fields]
+        if !self.creators.isEmpty {
+            changes.insert(.creators)
+        }
+        if self.collections.isEmpty {
+            changes.insert(.collections)
+        }
+        if self.parent != nil {
+            changes.insert(.parent)
+        }
+        if !self.tags.isEmpty {
+            changes.insert(.tags)
+        }
+        if self.trash {
+            changes.insert(.trash)
+        }
+        if !self.relations.isEmpty {
+            changes.insert(.relations)
+        }
+        if !self.rects.isEmpty {
+            changes.insert(.rects)
+        }
+        return changes
+    }
 }
 
 extension RCreator {
@@ -243,4 +320,6 @@ extension RPageIndex: Updatable {
         guard self.isChanged else { return nil }
         return "\(self.index)"
     }
+
+    func markAsChanged(in database: Realm) {}
 }

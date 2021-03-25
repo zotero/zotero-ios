@@ -39,3 +39,23 @@ struct MarkObjectsAsChangedByUser: DbRequest {
         }
     }
 }
+
+struct MarkOtherObjectsAsChangedByUser<Obj: UpdatableObject>: DbRequest {
+    let libraryId: LibraryIdentifier
+    let keys: [String]
+
+    var needsWrite: Bool { return true }
+    var ignoreNotificationTokens: [NotificationToken]? { return nil }
+
+    func process(in database: Realm) throws {
+        let objects = database.objects(Obj.self).filter(.key(notIn: self.keys, in: self.libraryId))
+
+        let deletedObjects = objects.filter(.deleted(true))
+        database.delete(deletedObjects)
+
+        for object in objects {
+            guard !object.isInvalidated else { continue }
+            object.markAsChanged(in: database)
+        }
+    }
+}

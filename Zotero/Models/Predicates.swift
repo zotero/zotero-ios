@@ -43,6 +43,10 @@ extension NSPredicate {
                                                                    .library(with: libraryId)])
     }
 
+    static func key(notIn keys: [String], in libraryId: LibraryIdentifier) -> NSPredicate {
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [.library(with: libraryId), .key(notIn: keys)])
+    }
+
     static func tagName(_ name: String) -> NSPredicate {
         return NSPredicate(format: "tag.name = %@", name)
     }
@@ -238,10 +242,6 @@ extension NSPredicate {
 
     static func linkType(_ type: LinkType) -> NSPredicate {
         return NSPredicate(format: "type = %@", type.rawValue)
-    }
-
-    static func containsField(key: String) -> NSPredicate {
-        return NSPredicate(format: "ANY fields.key = %@", key)
     }
 
     static func parent(_ parentKey: String, in libraryId: LibraryIdentifier) -> NSPredicate {
