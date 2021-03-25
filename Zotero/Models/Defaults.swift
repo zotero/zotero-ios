@@ -80,5 +80,7 @@ final class Defaults {
         self.updateTranslators = false
         self.shareExtensionIncludeTags = true
         self.shareExtensionIncludeAttachment = true
+        self.selectedLibrary = .custom(.myLibrary)
+        self.selectedCollectionId = .custom(.all)
     }
 }
