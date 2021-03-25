@@ -18,7 +18,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nRM-lX-IgP">
-                        <rect key="frame" x="-22" y="0.0" width="48" height="44"/>
+                        <rect key="frame" x="-28" y="0.0" width="48" height="44"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="48" id="leW-0i-1zv"/>
                         </constraints>
@@ -64,7 +64,7 @@
                 <constraints>
                     <constraint firstItem="r1z-3b-OY9" firstAttribute="centerY" secondItem="gUg-Pb-SNi" secondAttribute="centerY" id="3Id-Ad-Yn5"/>
                     <constraint firstItem="IeU-Uw-X8S" firstAttribute="top" secondItem="gUg-Pb-SNi" secondAttribute="top" constant="4" id="5Pt-ZY-K8z"/>
-                    <constraint firstItem="IeU-Uw-X8S" firstAttribute="leading" secondItem="nRM-lX-IgP" secondAttribute="trailing" constant="-10" id="MQl-Sx-rRn"/>
+                    <constraint firstItem="IeU-Uw-X8S" firstAttribute="leading" secondItem="nRM-lX-IgP" secondAttribute="trailing" constant="-4" id="MQl-Sx-rRn"/>
                     <constraint firstItem="nRM-lX-IgP" firstAttribute="top" secondItem="gUg-Pb-SNi" secondAttribute="top" id="QIK-Ls-3iY"/>
                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="IeU-Uw-X8S" secondAttribute="trailing" constant="16" id="QWh-LM-c1F"/>
                     <constraint firstAttribute="bottom" secondItem="IeU-Uw-X8S" secondAttribute="bottom" constant="4" id="Y2O-F9-att"/>

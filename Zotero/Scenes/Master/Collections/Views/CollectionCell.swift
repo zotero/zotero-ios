@@ -10,7 +10,7 @@ import UIKit
 
 final class CollectionCell: UITableViewCell {
     private static let imageWidth: CGFloat = 44
-    private static let baseOffset: CGFloat = 28.0
+    private static let baseOffset: CGFloat = 36.0
     private static let levelOffset: CGFloat = 16.0
 
     @IBOutlet private weak var leftConstraint: NSLayoutConstraint!

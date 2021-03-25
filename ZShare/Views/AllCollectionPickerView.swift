@@ -28,7 +28,7 @@ struct AllCollectionPickerView: View {
 fileprivate struct ListView: View {
     @EnvironmentObject private var store: AllCollectionPickerStore
 
-    fileprivate static let baseCellOffset: CGFloat = 28
+    fileprivate static let baseCellOffset: CGFloat = 36
 
     var picked: (Collection, Library) -> Void
 
@@ -102,9 +102,8 @@ fileprivate struct CollapsibleLibraryRow: View {
                 LibraryRow(title: self.library.name, isReadOnly: !self.library.metadataEditable)
                     .frame(height: geometry.size.height)
 
-                CollapseButton(collapsed: self.collapsed, action: self.action)
-                    .frame(width: geometry.size.height, height: geometry.size.height)
-                    .offset(x: -(geometry.size.height * 0.75))
+                CollapseButton(collapsed: self.collapsed, size: geometry.size.height, action: self.action)
+                    .offset(x: -(geometry.size.height * 0.92))
             }
         })
         .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
@@ -130,9 +129,8 @@ fileprivate struct CollapsibleCollectionRow: View {
                 .frame(height: geometry.size.height)
 
                 if self.collection.hasChildren {
-                    CollapseButton(collapsed: self.collection.collapsed, action: self.collapseAction)
-                        .frame(width: geometry.size.height, height: geometry.size.height)
-                        .offset(x: -(geometry.size.height * 0.85))
+                    CollapseButton(collapsed: self.collection.collapsed, size: geometry.size.height, action: self.collapseAction)
+                        .offset(x: -(geometry.size.height * 0.92))
                 }
             }
         })
@@ -143,6 +141,7 @@ fileprivate struct CollapsibleCollectionRow: View {
 fileprivate struct CollapseButton: View {
 
     let collapsed: Bool
+    let size: CGFloat
     let action: () -> Void
 
     var body: some View {
@@ -151,6 +150,9 @@ fileprivate struct CollapseButton: View {
         }) {
             Image(systemName: self.collapsed ? "chevron.right" : "chevron.down")
                 .imageScale(.small)
+                .frame(width: self.size, height: self.size)
+                .background(Color(.sRGB, red: 1, green: 0, blue: 0, opacity: 0.3))
+                .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
