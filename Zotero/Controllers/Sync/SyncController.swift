@@ -81,7 +81,7 @@ final class SyncController: SynchronizationController {
         /// Load deletions of objects in library. If an object is currently being edited by user, we need to ask for permissions or alert the user.
         case syncDeletions(LibraryIdentifier, Int)
         /// Performs deletions on objects.
-        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], ignoreConflicts: Bool)
+        case performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode)
         /// Restores remote deletions
         case restoreDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String])
         /// Stores version for deletions in given library.
@@ -509,9 +509,9 @@ final class SyncController: SynchronizationController {
             self.processStoreVersion(libraryId: libraryId, type: .object(object), version: version)
         case .syncDeletions(let libraryId, let version):
             self.progressHandler.reportDeletions(for: libraryId)
-            self.processDeletionsSync(libraryId: libraryId, since: version)
-        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let ignoreConflicts):
-            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, ignoreConflicts: ignoreConflicts)
+            self.loadRemoteDeletions(libraryId: libraryId, since: version)
+        case .performDeletions(let libraryId, let collections, let items, let searches, let tags, let conflictMode):
+            self.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode)
         case .restoreDeletions(let libraryId, let collections, let items):
             self.restoreDeletions(libraryId: libraryId, collections: collections, items: items)
         case .storeDeletionVersion(let libraryId, let version):
@@ -578,7 +578,7 @@ final class SyncController: SynchronizationController {
         case .remoteDeletionOfActiveObject(let libraryId, let toDeleteCollections, let toRestoreCollections, let toDeleteItems, let toRestoreItems, let searches, let tags):
             var actions: [Action] = []
             if !toDeleteCollections.isEmpty || !toDeleteItems.isEmpty || !searches.isEmpty || !tags.isEmpty {
-                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags, ignoreConflicts: false))
+                actions.append(.performDeletions(libraryId: libraryId, collections: toDeleteCollections, items: toDeleteItems, searches: searches, tags: tags, conflictMode: .resolveConflicts))
             }
             if !toRestoreCollections.isEmpty || !toRestoreItems.isEmpty {
                 actions.append(.restoreDeletions(libraryId: libraryId, collections: toRestoreCollections, items: toRestoreItems))
@@ -588,7 +588,7 @@ final class SyncController: SynchronizationController {
         case .remoteDeletionOfChangedItem(let libraryId, let toDelete, let toRestore):
             var actions: [Action] = []
             if !toDelete.isEmpty {
-                actions.append(.performDeletions(libraryId: libraryId, collections: [], items: toDelete, searches: [], tags: [], ignoreConflicts: true))
+                actions.append(.performDeletions(libraryId: libraryId, collections: [], items: toDelete, searches: [], tags: [], conflictMode: .deleteConflicts))
             }
             if !toRestore.isEmpty {
                 actions.append(.restoreDeletions(libraryId: libraryId, collections: [], items: toRestore))
@@ -775,7 +775,17 @@ final class SyncController: SynchronizationController {
         switch self.type {
         case .collectionsOnly:
             return [.syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true)]
-        default:
+
+        case .all:
+            return [.syncSettings(libraryId, versions.settings),
+                    .syncDeletions(libraryId, versions.deletions),
+                    .storeDeletionVersion(libraryId: libraryId, version: versions.deletions),
+                    .syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true),
+                    .syncVersions(libraryId: libraryId, object: .search, version: versions.searches, checkRemote: true),
+                    .syncVersions(libraryId: libraryId, object: .item, version: versions.items, checkRemote: true),
+                    .syncVersions(libraryId: libraryId, object: .trash, version: versions.trash, checkRemote: true)]
+
+        case .ignoreIndividualDelays, .normal:
             return [.syncSettings(libraryId, versions.settings),
                     .syncVersions(libraryId: libraryId, object: .collection, version: versions.collections, checkRemote: true),
                     .syncVersions(libraryId: libraryId, object: .search, version: versions.searches, checkRemote: true),
@@ -1104,15 +1114,14 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func processDeletionsSync(libraryId: LibraryIdentifier, since sinceVersion: Int) {
+    private func loadRemoteDeletions(libraryId: LibraryIdentifier, since sinceVersion: Int) {
         let result = LoadDeletionsSyncAction(currentVersion: self.lastReturnedVersion, sinceVersion: sinceVersion, libraryId: libraryId, userId: self.userId, apiClient: self.apiClient,
                                              queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] collections, items, searches, tags, version in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.updateDeletionVersion(for: libraryId, to: version)
+                      self?.loadedRemoteDeletions(collections: collections, items: items, searches: searches, tags: tags, version: version, libraryId: libraryId)
                   }
-                  self?.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
               }, onError: { [weak self] error in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in
                       self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId, version: sinceVersion)
@@ -1121,8 +1130,25 @@ final class SyncController: SynchronizationController {
               .disposed(by: self.disposeBag)
     }
 
-    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String], ignoreConflicts: Bool) {
-        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, ignoreConflicts: ignoreConflicts, dbStorage: self.dbStorage).result
+    private func loadedRemoteDeletions(collections: [String], items: [String], searches: [String], tags: [String], version: Int, libraryId: LibraryIdentifier) {
+        self.updateDeletionVersion(for: libraryId, to: version)
+
+        switch self.type {
+        case .all:
+            // During full sync always restore conflicting objects (object was removed remotely, but edited locally).
+            self.workQueue.async { [weak self] in
+                self?.performDeletions(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: .restoreConflicts)
+            }
+        case .collectionsOnly, .ignoreIndividualDelays, .normal:
+            // Find conflicting objects and perform related actions.
+            self.resolve(conflict: .objectsRemovedRemotely(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags))
+        }
+    }
+
+    private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
+                                  conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
+        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches,
+                                                tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] conflicts in
                   self?.accessQueue.async(flags: .barrier) { [weak self] in

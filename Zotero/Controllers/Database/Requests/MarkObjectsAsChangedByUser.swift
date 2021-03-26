@@ -40,7 +40,7 @@ struct MarkObjectsAsChangedByUser: DbRequest {
     }
 }
 
-struct MarkOtherObjectsAsChangedByUser<Obj: UpdatableObject>: DbRequest {
+struct MarkOtherObjectsAsChangedByUser<Obj: Syncable&Deletable&UpdatableObject>: DbRequest {
     let libraryId: LibraryIdentifier
     let keys: [String]
 
@@ -48,14 +48,15 @@ struct MarkOtherObjectsAsChangedByUser<Obj: UpdatableObject>: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        let objects = database.objects(Obj.self).filter(.key(notIn: self.keys, in: self.libraryId))
-
-        let deletedObjects = objects.filter(.deleted(true))
-        database.delete(deletedObjects)
+        let objects = database.objects(Obj.self).filter(.library(with: self.libraryId))
 
         for object in objects {
-            guard !object.isInvalidated else { continue }
-            object.markAsChanged(in: database)
+            guard !object.isInvalidated && !self.keys.contains(object.key) else { continue }
+            if object.deleted {
+                database.delete(object)
+            } else {
+                object.markAsChanged(in: database)
+            }
         }
     }
 }

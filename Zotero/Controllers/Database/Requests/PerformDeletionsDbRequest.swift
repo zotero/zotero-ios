@@ -11,6 +11,15 @@ import Foundation
 import RealmSwift
 
 struct PerformDeletionsDbRequest: DbResponseRequest {
+    enum ConflictResolutionMode {
+        /// Collect conflicting object keys and return them. Used initially on normal sync to see whether there are conflicts.
+        case resolveConflicts
+        /// On conflict just delete the object anyway. Used when user confirmed deletion of object.
+        case deleteConflicts
+        /// On conflict restore original object. Used on full sync when we don't want to remove skipped objects.
+        case restoreConflicts
+    }
+
     typealias Response = [(String, String)]
 
     let libraryId: LibraryIdentifier
@@ -18,7 +27,7 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
     let items: [String]
     let searches: [String]
     let tags: [String]
-    let ignoreConflicts: Bool
+    let conflictMode: ConflictResolutionMode
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -39,10 +48,17 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
         for object in objects {
             guard !object.isInvalidated else { continue } // If object is invalidated it has already been removed by some parent before
 
-            if !self.ignoreConflicts, let title = object.selfOrChildTitleIfChanged {
-                // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
-                conflicts.append((object.key, title))
-                continue
+            switch self.conflictMode {
+            case .resolveConflicts:
+                if let title = object.selfOrChildTitleIfChanged {
+                    // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
+                    conflicts.append((object.key, title))
+                    continue
+                }
+            case .restoreConflicts:
+                object.markAsChanged(in: database)
+
+            case .deleteConflicts: break
             }
 
             let wasMainAttachment = object.parent?.mainAttachment?.key == object.key
