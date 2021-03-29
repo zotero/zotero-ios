@@ -32,14 +32,42 @@ extension UserDefaults {
 struct UserDefault<T> {
     let key: String
     let defaultValue: T
+    private let defaults: UserDefaults
+
+    init(key: String, defaultValue: T, defaults: UserDefaults = UserDefaults.zotero) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.defaults = defaults
+    }
 
     var wrappedValue: T {
         get {
-            return UserDefaults.zotero.object(forKey: self.key) as? T ?? self.defaultValue
+            return self.defaults.object(forKey: self.key) as? T ?? self.defaultValue
         }
 
         set {
-            UserDefaults.zotero.set(newValue, forKey: self.key)
+            self.defaults.set(newValue, forKey: self.key)
+        }
+    }
+}
+
+@propertyWrapper
+struct OptionalUserDefault<T> {
+    let key: String
+    private let defaults: UserDefaults
+
+    init(key: String, defaults: UserDefaults = UserDefaults.zotero) {
+        self.key = key
+        self.defaults = defaults
+    }
+
+    var wrappedValue: T? {
+        get {
+            return self.defaults.object(forKey: self.key) as? T
+        }
+
+        set {
+            self.defaults.set(newValue, forKey: self.key)
         }
     }
 }

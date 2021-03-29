@@ -23,10 +23,7 @@ final class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
-    @UserDefault(key: "TranslatorsNeedUpdate", defaultValue: true)
-    var updateTranslators: Bool
-
-    @UserDefault(key: "ShowCollectionItemCount", defaultValue: true)
+    @UserDefault(key: "ShowCollectionItemCount", defaultValue: true, defaults: .standard)
     var showCollectionItemCount: Bool
 
     @UserDefault(key: "ShareExtensionIncludeTags", defaultValue: true)
@@ -73,11 +70,13 @@ final class Defaults {
     }
     #endif
 
+    @OptionalUserDefault(key: "LastLaunchBuildNumber", defaults: .standard)
+    var lastBuildNumber: Int?
+
     func reset() {
         self.askForSyncPermission = false
         self.username = ""
         self.userId = 0
-        self.updateTranslators = false
         self.shareExtensionIncludeTags = true
         self.shareExtensionIncludeAttachment = true
         self.selectedLibrary = .custom(.myLibrary)

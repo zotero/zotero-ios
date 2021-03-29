@@ -8,6 +8,7 @@
 
 import Foundation
 
+import CocoaLumberjackSwift
 import RealmSwift
 
 struct MarkObjectsAsChangedByUser: DbRequest {
@@ -40,21 +41,41 @@ struct MarkObjectsAsChangedByUser: DbRequest {
     }
 }
 
-struct MarkOtherObjectsAsChangedByUser<Obj: Syncable&Deletable&UpdatableObject>: DbRequest {
+/// Marks local synced objects as changed if they are not found remotely (sync versions request doesn't return them in the version dictionary).
+struct MarkOtherObjectsAsChangedByUser: DbRequest {
+    let syncObject: SyncObject
+    let versions: [String: Int]
     let libraryId: LibraryIdentifier
-    let keys: [String]
 
     var needsWrite: Bool { return true }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        let objects = database.objects(Obj.self).filter(.library(with: self.libraryId))
+        switch self.syncObject {
+        case .collection:
+            let objects = database.objects(RCollection.self).filter(.library(with: self.libraryId))
+            self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+        case .search:
+            let objects = database.objects(RSearch.self).filter(.library(with: self.libraryId))
+            self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+        case .item:
+            let objects = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.isTrash(false))
+            self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+        case .trash:
+            let objects = database.objects(RItem.self).filter(.library(with: self.libraryId)).filter(.isTrash(true))
+            self.markAsChanged(notIn: self.versions, objects: objects, database: database)
+        case .settings: break
+        }
+    }
 
+    private func markAsChanged<Obj: UpdatableObject&Syncable&Deletable>(notIn: [String: Int], objects: Results<Obj>, database: Realm) {
         for object in objects {
-            guard !object.isInvalidated && !self.keys.contains(object.key) else { continue }
+            guard !object.isInvalidated && object.syncState == .synced && !self.versions.keys.contains(object.key) else { continue }
             if object.deleted {
+                DDLogWarn("MarkOtherObjectsAsChangedByUser: full sync locally deleted missing remotely \(object.key)")
                 database.delete(object)
             } else {
+                DDLogWarn("MarkOtherObjectsAsChangedByUser: full sync marked \(object.key) as changed")
                 object.markAsChanged(in: database)
             }
         }

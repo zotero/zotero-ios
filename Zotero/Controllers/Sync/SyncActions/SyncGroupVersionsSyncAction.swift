@@ -22,7 +22,7 @@ struct SyncGroupVersionsSyncAction: SyncAction {
     let scheduler: SchedulerType
 
     var result: Single<([Int], [(Int, String)])> {
-        let syncAll = syncType == .all
+        let syncAll = syncType == .full
         return self.apiClient.send(request: GroupVersionsRequest(userId: self.userId), queue: self.queue)
                              .observeOn(self.scheduler)
                              .flatMap { (response: [Int: Int], headers) in

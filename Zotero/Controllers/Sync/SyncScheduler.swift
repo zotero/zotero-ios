@@ -147,10 +147,10 @@ extension SyncController.SyncType: Comparable {
         switch (lhs, rhs) {
         case (.collectionsOnly, .normal),
              (.collectionsOnly, .ignoreIndividualDelays),
-             (.collectionsOnly, .all),
+             (.collectionsOnly, .full),
              (.normal, .ignoreIndividualDelays),
-             (.normal, .all),
-             (.ignoreIndividualDelays, .all):
+             (.normal, .full),
+             (.ignoreIndividualDelays, .full):
             return true
         default:
             return false

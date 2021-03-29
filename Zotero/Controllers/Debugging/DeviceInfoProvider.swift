@@ -28,6 +28,11 @@ struct DeviceInfoProvider {
         return "\(version) (\(build))"
     }
 
+    static var buildNumber: Int? {
+        let buildString = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        return buildString.flatMap(Int.init)
+    }
+
     static var osVersion: String {
         return UIDevice.current.systemName + " " + UIDevice.current.systemVersion
     }

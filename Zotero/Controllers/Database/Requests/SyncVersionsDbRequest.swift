@@ -10,12 +10,12 @@ import Foundation
 
 import RealmSwift
 
-struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
+struct SyncVersionsDbRequest: DbResponseRequest {
     typealias Response = [String]
 
     let versions: [String: Int]
     let libraryId: LibraryIdentifier
-    let isTrash: Bool?
+    let syncObject: SyncObject
     let syncType: SyncController.SyncType
     let delayIntervals: [Double]
 
@@ -23,34 +23,56 @@ struct SyncVersionsDbRequest<Obj: SyncableObject>: DbResponseRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws -> [String] {
-        let allKeys = Array(self.versions.keys)
+        switch self.syncObject {
+        case .collection:
+            return self.check(versions: self.versions, for: database.objects(RCollection.self))
 
-        if self.syncType == .all && !allKeys.isEmpty { return allKeys }
+        case .search:
+            return self.check(versions: self.versions, for: database.objects(RSearch.self))
 
-        let date = Date()
-        var toUpdate: [String] = allKeys
-        var objects = database.objects(Obj.self)
-        if let trash = self.isTrash {
-            objects = objects.filter("trash = %d", trash)
+        case .item:
+            let objects = database.objects(RItem.self).filter(.isTrash(false))
+            return self.check(versions: self.versions, for: objects)
+
+        case .trash:
+            let objects = database.objects(RItem.self).filter(.isTrash(true))
+            return self.check(versions: self.versions, for: objects)
+
+        case .settings:
+            return []
         }
+    }
+
+    private func check<Obj: SyncableObject>(versions: [String: Int], for objects: Results<Obj>) -> [String] {
+        let date = Date()
+        var toUpdate = Array(self.versions.keys)
 
         for object in objects {
-            if object.syncState != .synced {
-                guard !toUpdate.contains(object.key) else { continue }
-
-                if self.syncType == .ignoreIndividualDelays {
-                    toUpdate.append(object.key)
-                } else {
-                    let delayIdx = min(object.syncRetries, (self.delayIntervals.count - 1))
-                    let delay = self.delayIntervals[delayIdx]
-                    if date.timeIntervalSince(object.lastSyncDate) >= delay {
-                        toUpdate.append(object.key)
-                    }
-                }
-            } else {
+            if object.syncState == .synced {
                 if let version = self.versions[object.key], version == object.version,
                    let index = toUpdate.firstIndex(of: object.key) {
                     toUpdate.remove(at: index)
+                }
+                continue
+            }
+
+            switch self.syncType {
+            case .ignoreIndividualDelays, .full:
+                guard !toUpdate.contains(object.key) else { continue }
+                toUpdate.append(object.key)
+            case .collectionsOnly, .normal:
+                // Check backoff schedule to see whether object can be synced again
+                let delayIdx = min(object.syncRetries, (self.delayIntervals.count - 1))
+                let delay = self.delayIntervals[delayIdx]
+                if date.timeIntervalSince(object.lastSyncDate) >= delay {
+                    // Object can be synced, if it's not already in array, add it.
+                    guard !toUpdate.contains(object.key) else { continue }
+                    toUpdate.append(object.key)
+                } else {
+                    // Object can't be synced yet, remove from array if it's there.
+                    if let index = toUpdate.firstIndex(of: object.key) {
+                        toUpdate.remove(at: index)
+                    }
                 }
             }
         }

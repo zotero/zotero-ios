@@ -29,6 +29,7 @@ final class Controllers {
     let fileCleanupController: AttachmentFileCleanupController
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
+    fileprivate let lastBuildNumber: Int?
 
     var userControllers: UserControllers?
     // Stores initial error when initializing `UserControllers`. It's needed in case the error happens on app launch.
@@ -78,7 +79,9 @@ final class Controllers {
         self.fileCleanupController = fileCleanupController
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
         self.userInitialized = PassthroughSubject()
+        self.lastBuildNumber = Defaults.shared.lastBuildNumber
 
+        Defaults.shared.lastBuildNumber = DeviceInfoProvider.buildNumber
         self.startObservingSession()
         self.update(with: self.sessionController.sessionData, isLogin: false)
     }
@@ -178,6 +181,8 @@ final class UserControllers {
     let backgroundUploader: BackgroundUploader
     let fileDownloader: FileDownloader
     let webSocketController: WebSocketController
+    private let isFirstLaunch: Bool
+    private let lastBuildNumber: Int?
     unowned let translatorsController: TranslatorsController
 
     private static let schemaVersion: UInt64 = 9
@@ -214,10 +219,11 @@ final class UserControllers {
         self.fileDownloader = fileDownloader
         self.webSocketController = webSocketController
         self.translatorsController = controllers.translatorsController
+        self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()
 
         let coordinator = try dbStorage.createCoordinator()
-        try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
+        self.isFirstLaunch = try coordinator.perform(request: InitializeCustomLibrariesDbRequest())
     }
 
     /// Connects to websocket to monitor changes and performs initial sync.
@@ -260,8 +266,17 @@ final class UserControllers {
 
         // Connect to websockets and start sync
         self.webSocketController.connect(apiKey: apiKey, completed: { [weak self] in
-            self?.syncScheduler.request(syncType: .normal)
+            guard let `self` = self else { return }
+            self.syncScheduler.request(syncType: self.requiresFullSync ? .full : .normal)
         })
+    }
+
+    private var requiresFullSync: Bool {
+        // Check whether the app was not just launched for the first time.
+        guard !self.isFirstLaunch else { return false }
+        // Check last build number, if it's `nil`, it hasn't been stored previously, which means that it's older than the first build, which stores it and needs a full sync for previous bug fixes.
+        guard let buildNumber = self.lastBuildNumber else { return true }
+        return buildNumber < 102
     }
 
     /// Cancels ongoing sync and stops websocket connection.
