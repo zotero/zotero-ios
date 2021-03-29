@@ -33,20 +33,20 @@ struct UploadAttachmentSyncAction: SyncAction {
 
     var result: Single<(Completable, Observable<RxProgress>)> {
         let dbCheck: Single<()> = Single.create { subscriber -> Disposable in
-                                     do {
-                                        let request = CheckItemIsChangedDbRequest(libraryId: self.libraryId, key: self.key)
-                                          let isChanged = try self.dbStorage.createCoordinator().perform(request: request)
-                                          if !isChanged {
-                                              subscriber(.success(()))
-                                          } else {
-                                              subscriber(.error(SyncActionError.attachmentItemNotSubmitted))
-                                          }
-                                      } catch let error {
-                                          subscriber(.error(error))
-                                      }
+            do {
+                let request = CheckItemIsChangedDbRequest(libraryId: self.libraryId, key: self.key)
+                let isChanged = try self.dbStorage.createCoordinator().perform(request: request)
+                if !isChanged {
+                    subscriber(.success(()))
+                } else {
+                    subscriber(.error(SyncActionError.attachmentItemNotSubmitted))
+                }
+            } catch let error {
+                subscriber(.error(error))
+            }
 
-                                      return Disposables.create()
-                                  }
+            return Disposables.create()
+        }
 
         let upload = dbCheck.flatMap { _ -> Single<UInt64> in
                                 let size = self.fileStorage.size(of: self.file)
@@ -86,13 +86,13 @@ struct UploadAttachmentSyncAction: SyncAction {
                              .flatMap({ result -> Single<Swift.Result<String, SyncActionError>> in
                                  switch result {
                                  case .success((let uploadRequest, let apiRequest, let uploadKey)):
-                                    let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
-                                    return uploadRequest.rx.responseData()
-                                                           .log(identifier: logId, startTime: startTime, request: apiRequest)
-                                                           .asSingle()
-                                                           .flatMap({ response in
-                                                               return Single.just(.success(uploadKey))
-                                                           })
+                                     let logId = ApiLogger.log(request: apiRequest, url: uploadRequest.request?.url)
+                                     return uploadRequest.rx.responseData()
+                                                            .log(identifier: logId, startTime: startTime, request: apiRequest)
+                                                            .asSingle()
+                                                            .flatMap({ response in
+                                                                return Single.just(.success(uploadKey))
+                                                            })
                                  case .failure(let error):
                                      return Single.just(.failure(error))
                                  }

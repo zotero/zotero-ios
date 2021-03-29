@@ -67,7 +67,12 @@ final class TestFileStorage: FileStorage {
 
     func link(file fromFile: File, to toFile: File) throws {}
 
-    func directoryData(for file: File) -> DirectoryData? {
-        return nil
-    }
+    func directoryData(for file: File) -> DirectoryData? { return nil }
+
+
+    func directoryData(for files: [File]) -> DirectoryData { DirectoryData(fileCount: 0, mbSize: 0) }
+
+    func isZip(file: File) -> Bool { return false }
+
+    func isPdf(file: File) -> Bool { return false }
 }

@@ -31,15 +31,12 @@ final class SyncActionsSpec: QuickSpec {
     private static let dbStorage = RealmDbStorage(config: realmConfig)
     private static let disposeBag = DisposeBag()
 
-    private static var tmpDoneAction: (() -> Void)?
-
     override func spec() {
         beforeEach {
             let url = URL(fileURLWithPath: Files.documentsRootPath).appendingPathComponent("downloads")
             try? FileManager.default.removeItem(at: url)
 
             HTTPStubs.removeAllStubs()
-            SyncActionsSpec.tmpDoneAction = nil
 
             let realm = SyncActionsSpec.realm
             try! realm.write {
@@ -81,46 +78,53 @@ final class SyncActionsSpec: QuickSpec {
 
                 let coordinator = try! SyncActionsSpec.dbStorage.createCoordinator()
                 // Store original objects to db
-                _ = try! coordinator.perform(request: StoreItemsDbRequest(response: [itemResponse],
-                                                                          schemaController: SyncActionsSpec.schemaController,
-                                                                          dateParser: SyncActionsSpec.dateParser,
-                                                                          preferRemoteData: false))
+                _ = try! coordinator.perform(request: StoreItemsDbRequest(responses: [itemResponse], schemaController: SyncActionsSpec.schemaController, dateParser: SyncActionsSpec.dateParser))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
                 try! coordinator.perform(request: StoreSearchesDbRequest(response: [searchResponse]))
 
                 // Change some objects so that they are updated locally
-                try! coordinator.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
-                                                                          name: "New name", parentKey: nil))
-                let changeRequest = EditItemDetailDbRequest(libraryId: .custom(.myLibrary),
-                                                            itemKey: "AAAAAAAA",
-                                                            data: .init(title: "New title",
-                                                                        type: "magazineArticle",
-                                                                        localizedType: "Magazine Article",
-                                                                        creators: [:],
-                                                                        creatorIds: [],
-                                                                        fields: [:],
-                                                                        fieldIds: [],
-                                                                        abstract: "New abstract",
-                                                                        notes: [],
-                                                                        attachments: [],
-                                                                        tags: [],
-                                                                        dateModified: Date(),
-                                                                        dateAdded: Date()),
-                                                            snapshot: .init(title: "Bachelor thesis",
-                                                                            type: "thesis",
-                                                                            localizedType: "Thesis",
-                                                                            creators: [:],
-                                                                            creatorIds: [],
-                                                                            fields: [:],
-                                                                            fieldIds: [],
-                                                                            abstract: "Some note",
-                                                                            notes: [],
-                                                                            attachments: [],
-                                                                            tags: [],
-                                                                            dateModified: Date(),
-                                                                            dateAdded: Date()),
-                                                                    schemaController: SyncActionsSpec.schemaController,
-                                                                    dateParser: SyncActionsSpec.dateParser)
+                try! coordinator.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil))
+                let data = ItemDetailState.Data(title: "New title",
+                                                type: "magazineArticle",
+                                                isAttachment: false,
+                                                localizedType: "Magazine Article",
+                                                creators: [:],
+                                                creatorIds: [],
+                                                fields: [:],
+                                                fieldIds: [],
+                                                abstract: "New abstract",
+                                                notes: [],
+                                                attachments: [],
+                                                tags: [],
+                                                deletedAttachments: [],
+                                                deletedNotes: [],
+                                                deletedTags: [],
+                                                dateModified: Date(),
+                                                dateAdded: Date(),
+                                                maxFieldTitleWidth: 0,
+                                                maxNonemptyFieldTitleWidth: 0)
+                let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
+                                                type: "thesis",
+                                                isAttachment: false,
+                                                localizedType: "Thesis",
+                                                creators: [:],
+                                                creatorIds: [],
+                                                fields: [:],
+                                                fieldIds: [],
+                                                abstract: "Some note",
+                                                notes: [],
+                                                attachments: [],
+                                                tags: [],
+                                                deletedAttachments: [],
+                                                deletedNotes: [],
+                                                deletedTags: [],
+                                                dateModified: Date(),
+                                                dateAdded: Date(),
+                                                maxFieldTitleWidth: 0,
+                                                maxNonemptyFieldTitleWidth: 0)
+
+                let changeRequest = EditItemDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: SyncActionsSpec.schemaController,
+                                                            dateParser: SyncActionsSpec.dateParser)
                 try! coordinator.perform(request: changeRequest)
 
                 let realm = SyncActionsSpec.realm
@@ -134,14 +138,11 @@ final class SyncActionsSpec: QuickSpec {
 
                 let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                 expect(collection?.name).to(equal("New name"))
-                expect(collection?.parent).to(beNil())
+                expect(collection?.parentKey).to(beNil())
 
                 waitUntil(timeout: 10, action: { doneAction in
-                    RevertLibraryUpdatesSyncAction(libraryId: .custom(.myLibrary),
-                                                   dbStorage: SyncActionsSpec.dbStorage,
-                                                   fileStorage: SyncActionsSpec.fileStorage,
-                                                   schemaController: SyncActionsSpec.schemaController,
-                                                   dateParser: SyncActionsSpec.dateParser).result
+                    RevertLibraryUpdatesSyncAction(libraryId: .custom(.myLibrary), dbStorage: SyncActionsSpec.dbStorage, fileStorage: SyncActionsSpec.fileStorage,
+                                                   schemaController: SyncActionsSpec.schemaController, dateParser: SyncActionsSpec.dateParser).result
                                          .subscribe(onSuccess: { failures in
                                              expect(failures[.item]).to(beEmpty())
                                              expect(failures[.collection]).to(beEmpty())
@@ -180,7 +181,7 @@ final class SyncActionsSpec: QuickSpec {
 
                                              let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                                              expect(collection?.name).to(equal("Bachelor sources"))
-                                             expect(collection?.parent).to(beNil())
+                                             expect(collection?.parentKey).to(beNil())
 
                                              doneAction()
                                          }, onError: { error in
@@ -211,45 +212,51 @@ final class SyncActionsSpec: QuickSpec {
 
                 let coordinator = try! SyncActionsSpec.dbStorage.createCoordinator()
                 // Store original objects to db
-                _ = try! coordinator.perform(request: StoreItemsDbRequest(response: [itemResponse],
-                                                                          schemaController: SyncActionsSpec.schemaController,
-                                                                          dateParser: SyncActionsSpec.dateParser,
-                                                                          preferRemoteData: false))
+                _ = try! coordinator.perform(request: StoreItemsDbRequest(responses: [itemResponse], schemaController: SyncActionsSpec.schemaController, dateParser: SyncActionsSpec.dateParser))
                 try! coordinator.perform(request: StoreCollectionsDbRequest(response: [collectionResponse]))
 
                 // Change some objects so that they are updated locally
-                try! coordinator.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB",
-                                                                           name: "New name", parentKey: nil))
-                let changeRequest = EditItemDetailDbRequest(libraryId: .custom(.myLibrary),
-                                                            itemKey: "AAAAAAAA",
-                                                            data: .init(title: "New title",
-                                                                        type: "magazineArticle",
-                                                                        localizedType: "Magazine Article",
-                                                                        creators: [:],
-                                                                        creatorIds: [],
-                                                                        fields: [:],
-                                                                        fieldIds: [],
-                                                                        abstract: "New abstract",
-                                                                        notes: [],
-                                                                        attachments: [],
-                                                                        tags: [],
-                                                                        dateModified: Date(),
-                                                                        dateAdded: Date()),
-                                                            snapshot: .init(title: "Title",
-                                                                            type: "thesis",
-                                                                            localizedType: "Thesis",
-                                                                            creators: [:],
-                                                                            creatorIds: [],
-                                                                            fields: [:],
-                                                                            fieldIds: [],
-                                                                            abstract: "Some note",
-                                                                            notes: [],
-                                                                            attachments: [],
-                                                                            tags: [],
-                                                                            dateModified: Date(),
-                                                                            dateAdded: Date()),
-                                                                    schemaController: SyncActionsSpec.schemaController,
-                                                                    dateParser: SyncActionsSpec.dateParser)
+                try! coordinator.perform(request: EditCollectionDbRequest(libraryId: .group(1234123), key: "BBBBBBBB", name: "New name", parentKey: nil))
+                let data = ItemDetailState.Data(title: "New title",
+                                                type: "magazineArticle",
+                                                isAttachment: false,
+                                                localizedType: "Magazine Article",
+                                                creators: [:],
+                                                creatorIds: [],
+                                                fields: [:],
+                                                fieldIds: [],
+                                                abstract: "New abstract",
+                                                notes: [],
+                                                attachments: [],
+                                                tags: [],
+                                                deletedAttachments: [],
+                                                deletedNotes: [],
+                                                deletedTags: [],
+                                                dateModified: Date(),
+                                                dateAdded: Date(),
+                                                maxFieldTitleWidth: 0,
+                                                maxNonemptyFieldTitleWidth: 0)
+                let snapshot = ItemDetailState.Data(title: "Bachelor thesis",
+                                                type: "thesis",
+                                                isAttachment: false,
+                                                localizedType: "Thesis",
+                                                creators: [:],
+                                                creatorIds: [],
+                                                fields: [:],
+                                                fieldIds: [],
+                                                abstract: "Some note",
+                                                notes: [],
+                                                attachments: [],
+                                                tags: [],
+                                                deletedAttachments: [],
+                                                deletedNotes: [],
+                                                deletedTags: [],
+                                                dateModified: Date(),
+                                                dateAdded: Date(),
+                                                maxFieldTitleWidth: 0,
+                                                maxNonemptyFieldTitleWidth: 0)
+                let changeRequest = EditItemDetailDbRequest(libraryId: .custom(.myLibrary), itemKey: "AAAAAAAA", data: data, snapshot: snapshot, schemaController: SyncActionsSpec.schemaController,
+                                                            dateParser: SyncActionsSpec.dateParser)
                 try! coordinator.perform(request: changeRequest)
 
                 let realm = SyncActionsSpec.realm
@@ -264,7 +271,7 @@ final class SyncActionsSpec: QuickSpec {
 
                 let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                 expect(collection?.name).to(equal("New name"))
-                expect(collection?.parent).to(beNil())
+                expect(collection?.parentKey).to(beNil())
                 expect(collection?.rawChangedFields).toNot(equal(0))
 
                 waitUntil(timeout: 10, action: { doneAction in
@@ -295,7 +302,7 @@ final class SyncActionsSpec: QuickSpec {
 
                                              let collection = realm.objects(RCollection.self).filter(.key("BBBBBBBB")).first
                                              expect(collection?.name).to(equal("New name"))
-                                             expect(collection?.parent).to(beNil())
+                                             expect(collection?.parentKey).to(beNil())
                                              expect(collection?.rawChangedFields).to(equal(0))
 
                                              doneAction()
@@ -534,12 +541,9 @@ final class SyncActionsSpec: QuickSpec {
                     realm.add(filenameField)
                 }
 
-                createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key,
-                                                       filename: filename, filesize: UInt64(data.count), md5: fileMd5, mtime: 123,
-                                                       oldMd5: nil),
-                           baseUrl: baseUrl, jsonResponse: ["url": "https://www.zotero.org/",
-                                                        "uploadKey": "key",
-                                                        "params": ["key": "key"]])
+                createStub(for: AuthorizeUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, filename: filename, filesize: UInt64(data.count),
+                                                       md5: fileMd5, mtime: 123, oldMd5: nil),
+                           baseUrl: baseUrl, jsonResponse: ["url": "https://www.zotero.org/", "uploadKey": "key", "params": ["key": "key"]])
                 createStub(for: RegisterUploadRequest(libraryId: libraryId, userId: SyncActionsSpec.userId, key: key, uploadKey: "key", oldMd5: nil),
                            baseUrl: baseUrl, headers: nil, statusCode: 204, jsonResponse: [:])
                 stub(condition: { request -> Bool in
@@ -548,46 +552,45 @@ final class SyncActionsSpec: QuickSpec {
                     return HTTPStubsResponse(jsonObject: [:], statusCode: 201, headers: nil)
                 })
 
-                UploadAttachmentSyncAction(key: key,
-                                           file: file,
-                                           filename: filename,
-                                           md5: fileMd5,
-                                           mtime: 123,
-                                           libraryId: libraryId,
-                                           userId: SyncActionsSpec.userId,
-                                           oldMd5: nil,
-                                           apiClient: SyncActionsSpec.apiClient,
-                                           dbStorage: SyncActionsSpec.dbStorage,
-                                           fileStorage: SyncActionsSpec.fileStorage,
-                                           queue: DispatchQueue.main,
-                                           scheduler: MainScheduler.instance).result
-                                     .flatMap({ response, _ -> Single<()> in
-                                         return Single.create { subscriber -> Disposable in
-                                            response.subscribe(onCompleted: {
-                                                        subscriber(.success(()))
-                                                    }, onError: { error in
-                                                        subscriber(.error(error))
-                                                    })
-                                                    .disposed(by: SyncActionsSpec.disposeBag)
-                                            return Disposables.create()
-                                         }
-                                     })
-                                     .subscribe(onSuccess: { _ in
-                                         let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
-                                         realm.refresh()
 
-                                         let item = realm.objects(RItem.self).filter(.key(key)).first
-                                         expect(item?.attachmentNeedsSync).to(beFalse())
+                waitUntil(timeout: 100000, action: { doneAction in
+                    UploadAttachmentSyncAction(key: key,
+                                               file: file,
+                                               filename: filename,
+                                               md5: fileMd5,
+                                               mtime: 123,
+                                               libraryId: libraryId,
+                                               userId: SyncActionsSpec.userId,
+                                               oldMd5: nil,
+                                               apiClient: SyncActionsSpec.apiClient,
+                                               dbStorage: SyncActionsSpec.dbStorage,
+                                               fileStorage: SyncActionsSpec.fileStorage,
+                                               queue: DispatchQueue.main,
+                                               scheduler: MainScheduler.instance).result
+                                         .flatMap({ response, _ -> Single<()> in
+                                             return Single.create { subscriber -> Disposable in
+                                                response.subscribe(onCompleted: {
+                                                            subscriber(.success(()))
+                                                        }, onError: { error in
+                                                            subscriber(.error(error))
+                                                        })
+                                                        .disposed(by: SyncActionsSpec.disposeBag)
+                                                return Disposables.create()
+                                             }
+                                         })
+                                         .subscribe(onSuccess: { _ in
+                                             let realm = try! Realm(configuration: SyncActionsSpec.realmConfig)
+                                             realm.refresh()
 
-                                         SyncActionsSpec.tmpDoneAction?()
-                                     }, onError: { error in
-                                         fail("Unknown error: \(error.localizedDescription)")
-                                         SyncActionsSpec.tmpDoneAction?()
-                                     })
-                                     .disposed(by: SyncActionsSpec.disposeBag)
+                                             let item = realm.objects(RItem.self).filter(.key(key)).first
+                                             expect(item?.attachmentNeedsSync).to(beFalse())
 
-                waitUntil(timeout: 10, action: { doneAction in
-                    SyncActionsSpec.tmpDoneAction = doneAction
+                                             doneAction()
+                                         }, onError: { error in
+                                             fail("Unknown error: \(error.localizedDescription)")
+                                             doneAction()
+                                         })
+                                         .disposed(by: SyncActionsSpec.disposeBag)
                 })
             }
         }

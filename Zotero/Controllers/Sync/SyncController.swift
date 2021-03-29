@@ -192,7 +192,7 @@ final class SyncController: SynchronizationController {
     // Access permissions for current sync.
     private var accessPermissions: AccessPermissions?
     // Used for conflict resolution when user interaction is needed.
-    private var conflictCoordinator: (ConflictReceiver & DebugPermissionReceiver)?
+    private var conflictCoordinator: ConflictCoordinator?
     // Used for syncing batches of objects in `.syncBatchesToDb` action
     private var batchProcessor: SyncBatchProcessor?
 
@@ -459,6 +459,7 @@ final class SyncController: SynchronizationController {
         self.processingAction = action
 
         if action.requiresConflictReceiver && self.conflictCoordinator == nil {
+            DDLogInfo("Sync: waiting for conflict coordinator")
             return
         }
 
@@ -1584,7 +1585,8 @@ final class SyncController: SynchronizationController {
                 // Even if the current object was previously fully synced, we need to check for local unsynced objects anyway.
                 self.queue[index] = .syncVersions(libraryId: libraryId, object: object, version: version, checkRemote: (version < lastVersion))
             case .syncSettings(_, let version),
-                 .syncDeletions(_, let version):
+                 .syncDeletions(_, let version),
+                 .storeDeletionVersion(_, let version):
                 if lastVersion == version {
                     toDelete.append(index)
                 }

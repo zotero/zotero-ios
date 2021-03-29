@@ -675,7 +675,7 @@
 		B3B1EDF1250242F700D8BC1E /* SearchResponseSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EDF0250242F700D8BC1E /* SearchResponseSpec.swift */; };
 		B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDF22502455F00D8BC1E /* itemresponse_unknownfields.json */; };
 		B3B1EDF52502456000D8BC1E /* itemresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDF32502456000D8BC1E /* itemresponse_knownfields.json */; };
-		B3B1EDFA2502493700D8BC1E /* bundled in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C04243B4BC0004F8B1E /* bundled */; };
+		B3B1EDFA2502493700D8BC1E /* Bundled in Resources */ = {isa = PBXBuildFile; fileRef = B3F47C04243B4BC0004F8B1E /* Bundled */; };
 		B3B1EDFD2502498100D8BC1E /* collectionresponse_knownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDFB2502498100D8BC1E /* collectionresponse_knownfields.json */; };
 		B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */ = {isa = PBXBuildFile; fileRef = B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */; };
 		B3B1EE062502675E00D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
@@ -1385,7 +1385,7 @@
 		B3F3D643255ECF3500F310C2 /* AnnotationViewSeparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationViewSeparator.swift; sourceTree = "<group>"; };
 		B3F47C00243B339F004F8B1E /* TranslatorsControllerSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorsControllerSpec.swift; sourceTree = "<group>"; };
 		B3F47C02243B3960004F8B1E /* TestFileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFileStorage.swift; sourceTree = "<group>"; };
-		B3F47C04243B4BC0004F8B1E /* bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bundled; sourceTree = "<group>"; };
+		B3F47C04243B4BC0004F8B1E /* Bundled */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Bundled; sourceTree = "<group>"; };
 		B3F47DF425B5BCFD006FA96F /* ContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContainerViewController.swift; sourceTree = "<group>"; };
 		B3FBAC1824570BDE00AA00C0 /* AnnotationPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPreviewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1904,7 +1904,7 @@
 		B30D596E2206F60500884C4A /* ZoteroTests */ = {
 			isa = PBXGroup;
 			children = (
-				B3F47C04243B4BC0004F8B1E /* bundled */,
+				B3F47C04243B4BC0004F8B1E /* Bundled */,
 				B32A3C83248008A2009E2C5D /* JSONs */,
 				B32A3C88248008A2009E2C5D /* XMLs */,
 				B3B1EDEE250242E700D8BC1E /* CollectionResponseSpec.swift */,
@@ -2899,7 +2899,7 @@
 				B3B1EDF42502456000D8BC1E /* itemresponse_unknownfields.json in Resources */,
 				B32A3C8F248008A2009E2C5D /* translators_delete.xml in Resources */,
 				B32A3C8E248008A2009E2C5D /* test_item.json in Resources */,
-				B3B1EDFA2502493700D8BC1E /* bundled in Resources */,
+				B3B1EDFA2502493700D8BC1E /* Bundled in Resources */,
 				B3AAABD72502A40900031065 /* searchresponse_unknownfields.json in Resources */,
 				B32A3C8B248008A2009E2C5D /* test_keys.json in Resources */,
 				B3B1EDFE2502498100D8BC1E /* collectionresponse_unknownfields.json in Resources */,
