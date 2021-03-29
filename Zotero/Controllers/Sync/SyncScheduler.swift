@@ -15,7 +15,7 @@ protocol SynchronizationScheduler: class {
     var syncController: SynchronizationController { get }
 
     func request(syncType: SyncController.SyncType)
-    func request(syncType: SyncController.SyncType, for libraries: [LibraryIdentifier])
+    func requestNormalSync(for libraries: [LibraryIdentifier])
     func cancelSync()
 }
 
@@ -28,6 +28,7 @@ fileprivate typealias SchedulerAction = (syncType: SyncController.SyncType, libr
 final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     /// Timeout in which a new `LibrarySyncType.specific` is started. It's required so that local changes are not submitted immediately or in case of multiple quick changes we don't enqueue multiple syncs.
     private static let timeout: RxTimeInterval = .seconds(3)
+    private static let fullSyncTimeout: Double = 3600 // 1 hour
     let syncController: SynchronizationController
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
@@ -35,7 +36,13 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
 
     private var inProgress: SchedulerAction?
     private var nextAction: SchedulerAction?
+    private var lastFullSyncDate: Date?
     private var timerDisposeBag: DisposeBag
+
+    private var canPerformFullSync: Bool {
+        guard let date = self.lastFullSyncDate else { return true }
+        return Date().timeIntervalSince(date) <= SyncScheduler.fullSyncTimeout
+    }
 
     init(controller: SyncController) {
         self.syncController = controller
@@ -68,8 +75,8 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         self.enqueueAndStartTimer(action: (syncType, .all))
     }
 
-    func request(syncType: SyncController.SyncType, for libraries: [LibraryIdentifier]) {
-        self.enqueueAndStartTimer(action: (syncType, .specific(libraries)))
+    func requestNormalSync(for libraries: [LibraryIdentifier]) {
+        self.enqueueAndStartTimer(action: (.normal, .specific(libraries)))
     }
 
     func webSocketUpdate(libraryId: LibraryIdentifier) {
@@ -94,6 +101,8 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
     }
 
     private func _enqueueAndStartTimer(action: SchedulerAction) {
+        guard action.syncType != .full || self.canPerformFullSync else { return }
+
         self.enqueue(action: action)
 
         switch action.1 {
@@ -138,6 +147,11 @@ final class SyncScheduler: SynchronizationScheduler, WebSocketScheduler {
         guard self.inProgress == nil, let (syncType, librarySyncType) = self.nextAction else { return }
         self.inProgress = self.nextAction
         self.nextAction = nil
+
+        if syncType == .full {
+            self.lastFullSyncDate = Date()
+        }
+
         self.syncController.start(type: syncType, libraries: librarySyncType)
     }
 }

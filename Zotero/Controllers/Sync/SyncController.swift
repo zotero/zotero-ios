@@ -356,14 +356,8 @@ final class SyncController: SynchronizationController {
 
         switch fatalError {
         case .uploadObjectConflict:
-            if self.type != .full || self.libraryType != .all {
-                // In case of this fatal error we retry the sync with special type. This error was most likely caused
-                // by a bug (library version passed validation while object version didn't), so we try to fix it.
-                self.observable.on(.next((.full, .all)))
-            } else {
-                // If this sync already was full sync, we can't do anything else.
-                self.observable.on(.next(nil))
-            }
+            // If there was object-level conflict (412), that indicates local state inconsistency. To fix local state we try to run full sync.
+            self.observable.on(.next((.full, .all)))
         default:
             // Other aborted syncs are not retried, they are fatal, so retry won't help
             self.observable.on(.next(nil))
@@ -374,35 +368,34 @@ final class SyncController: SynchronizationController {
     private func reportFinish(nonFatalErrors errors: [SyncError.NonFatal]) {
         self.progressHandler.reportFinish(with: errors)
 
-        if errors.isEmpty || self.hasOnlySchemaErrors(in: errors) || self.type == .full {
-            // We either have no errors and can finish or
-            // there were only schema-related errors which won't be fixed by another sync or
-            // we already did full sync now and another one will not fix anything
+        // Find libraries which reported version mismatch.
+        var mismatchedLibraries: [LibraryIdentifier] = []
+        for error in errors {
+            switch error {
+            case .versionMismatch(let libraryId):
+                if !mismatchedLibraries.contains(libraryId) {
+                    mismatchedLibraries.append(libraryId)
+                }
+            case .unknown, .schema, .parsing, .apiError: continue
+            }
+        }
+
+        // Retry only on version-mismatched libraries (remote version increased during sync). If there were errors during parsing, schema or other, they won't be fixed by another immediate sync.
+        guard !mismatchedLibraries.isEmpty else {
             self.previousType = nil
             self.observable.on(.next(nil))
             return
         }
 
-        let previousType = self.previousType
-        self.previousType = self.type
-
-        if previousType == nil {
-            // There was no sync before this, so let's try the same sync again as a retry
-            self.observable.on(.next((self.type, self.libraryType)))
+        if self.previousType == nil {
+            // If there was no previous retry, retry mismatched libraries.
+            self.previousType = self.type
+            self.observable.on(.next((self.type, .specific(mismatchedLibraries))))
         } else {
-            // There was already a retry sync previously, so we try to run a full sync which might fix things
-            self.observable.on(.next((.full, self.libraryType)))
+            // If there was one retry already, stop trying. Changes will be synced later.
+            self.previousType = nil
+            self.observable.on(.next(nil))
         }
-    }
-
-    private func hasOnlySchemaErrors(in errors: [SyncError.NonFatal]) -> Bool {
-        for error in errors {
-            switch error {
-            case .schema: continue
-            default: return false
-            }
-        }
-        return true
     }
 
     // MARK: - Queue management
@@ -1514,7 +1507,7 @@ final class SyncController: SynchronizationController {
     private func handleVersionMismatch(for libraryId: LibraryIdentifier) {
         // If the backend received higher version in response than from previous responses, there was a change on backend and we'll probably
         // have conflicts. Abort this library and continue with sync.
-        self.nonFatalErrors.append(.versionMismatch)
+        self.nonFatalErrors.append(.versionMismatch(libraryId))
         self.removeAllActions(for: libraryId)
         self.processNextAction()
     }

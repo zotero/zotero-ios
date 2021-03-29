@@ -247,7 +247,7 @@ final class UserControllers {
         self.changeObserver.observable
             .observeOn(MainScheduler.instance)
             .subscribe(onNext: { [weak self] changedLibraries in
-                self?.syncScheduler.request(syncType: .normal, for: changedLibraries)
+                self?.syncScheduler.requestNormalSync(for: changedLibraries)
             })
             .disposed(by: self.disposeBag)
 

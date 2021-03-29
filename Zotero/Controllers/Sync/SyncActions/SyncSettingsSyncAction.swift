@@ -40,7 +40,7 @@ struct SyncSettingsSyncAction: SyncAction {
                                 let newVersion = headers.lastModifiedVersion
 
                                 if let current = self.currentVersion, newVersion != current {
-                                    return Single.error(SyncError.NonFatal.versionMismatch)
+                                    return Single.error(SyncError.NonFatal.versionMismatch(libraryId))
                                 }
 
                                 do {

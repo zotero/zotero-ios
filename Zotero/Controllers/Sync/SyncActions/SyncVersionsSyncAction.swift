@@ -60,7 +60,7 @@ struct SyncVersionsSyncAction: SyncAction {
                        let newVersion = headers.lastModifiedVersion
 
                        if let current = currentVersion, newVersion != current {
-                           return Single.error(SyncError.NonFatal.versionMismatch)
+                           return Single.error(SyncError.NonFatal.versionMismatch(libraryId))
                        }
 
                        return self.loadChangedObjects(for: object, from: response, in: libraryId, syncType: syncType, newVersion: newVersion, delayIntervals: self.syncDelayIntervals)

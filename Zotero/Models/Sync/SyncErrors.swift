@@ -30,11 +30,20 @@ enum SyncError {
     }
 
     enum NonFatal: Error {
-        case versionMismatch
+        case versionMismatch(LibraryIdentifier)
         case apiError(String)
         case unknown
         case schema(SchemaError)
         case parsing(Parsing.Error)
+
+        var isVersionMismatch: Bool {
+            switch self {
+            case .versionMismatch:
+                return true
+            default:
+                return false
+            }
+        }
     }
 }
 

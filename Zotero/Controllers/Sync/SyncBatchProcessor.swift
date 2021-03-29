@@ -90,7 +90,7 @@ final class SyncBatchProcessor {
         guard !self.isFinished else { return }
 
         if batch.version != headers.lastModifiedVersion {
-            self.cancel(with: SyncError.NonFatal.versionMismatch)
+            self.cancel(with: SyncError.NonFatal.versionMismatch(batch.libraryId))
             return
         }
 

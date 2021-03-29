@@ -29,10 +29,10 @@ struct LoadDeletionsSyncAction: SyncAction {
                                  let newVersion = headers.lastModifiedVersion
 
                                  if let version = self.currentVersion, version != newVersion {
-                                     return Single.error(SyncError.NonFatal.versionMismatch)
+                                     return Single.error(SyncError.NonFatal.versionMismatch(self.libraryId))
                                  }
 
-                                return Single.just((response.collections, response.items, response.searches, response.tags, newVersion))
+                                 return Single.just((response.collections, response.items, response.searches, response.tags, newVersion))
                              }
     }
 }
