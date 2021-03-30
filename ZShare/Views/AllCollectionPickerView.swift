@@ -151,7 +151,6 @@ fileprivate struct CollapseButton: View {
             Image(systemName: self.collapsed ? "chevron.right" : "chevron.down")
                 .imageScale(.small)
                 .frame(width: self.size, height: self.size)
-                .background(Color(.sRGB, red: 1, green: 0, blue: 0, opacity: 0.3))
                 .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
