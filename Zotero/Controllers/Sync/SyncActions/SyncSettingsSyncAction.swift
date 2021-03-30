@@ -24,8 +24,7 @@ struct SyncSettingsSyncAction: SyncAction {
     let scheduler: SchedulerType
 
     var result: Single<(Bool, Int)> {
-        return self.apiClient.send(request: SettingsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion),
-                                   queue: self.queue)
+        return self.apiClient.send(request: SettingsRequest(libraryId: self.libraryId, userId: self.userId, version: self.sinceVersion), queue: self.queue)
                             .observeOn(self.scheduler)
                             .flatMap({ data, headers -> Single<(SettingsResponse, ResponseHeaders)> in
                                 do {

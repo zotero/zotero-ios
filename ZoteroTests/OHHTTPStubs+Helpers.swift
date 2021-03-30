@@ -14,29 +14,20 @@ import Alamofire
 import OHHTTPStubs
 import OHHTTPStubsSwift
 
-func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
-                baseUrl: URL, headers: [String: Any]? = nil,
-                statusCode: Int32 = 200, jsonResponse: Any) {
-    stub(condition: request.stubCondition(with: baseUrl,
-                                          ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
+func createStub(for request: ApiRequest, ignorePostParams: Bool = false, baseUrl: URL, headers: [String: Any]? = nil, statusCode: Int32 = 200, jsonResponse: Any) {
+    stub(condition: request.stubCondition(with: baseUrl, ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(jsonObject: jsonResponse, statusCode: statusCode, headers: headers)
     })
 }
 
-func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
-                baseUrl: URL, headers: [String: Any]? = nil,
-                statusCode: Int32 = 200, url: URL) {
-    stub(condition: request.stubCondition(with: baseUrl,
-                                          ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
+func createStub(for request: ApiRequest, ignorePostParams: Bool = false, baseUrl: URL, headers: [String: Any]? = nil, statusCode: Int32 = 200, url: URL) {
+    stub(condition: request.stubCondition(with: baseUrl, ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(fileURL: url, statusCode: statusCode, headers: headers)
     })
 }
 
-func createStub(for request: ApiRequest, ignorePostParams: Bool = false,
-                baseUrl: URL, headers: [String: Any]? = nil,
-                statusCode: Int32 = 200, xmlResponse: String) {
-    stub(condition: request.stubCondition(with: baseUrl,
-                                          ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
+func createStub(for request: ApiRequest, ignorePostParams: Bool = false, baseUrl: URL, headers: [String: Any]? = nil, statusCode: Int32 = 200, xmlResponse: String) {
+    stub(condition: request.stubCondition(with: baseUrl, ignorePostParams: ignorePostParams), response: { _ -> HTTPStubsResponse in
         return HTTPStubsResponse(data: xmlResponse.data(using: .utf8)!, statusCode: statusCode, headers: headers)
     })
 }

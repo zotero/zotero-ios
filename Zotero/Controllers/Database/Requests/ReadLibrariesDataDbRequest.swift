@@ -15,6 +15,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
 
     let identifiers: [LibraryIdentifier]?
     let fetchUpdates: Bool
+    let loadVersions: Bool
 
     var needsWrite: Bool { return false }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -32,10 +33,8 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         let customData = try customLibraries.map({ library -> LibraryData in
             let libraryId = LibraryIdentifier.custom(library.type)
             let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
-            return LibraryData(object: library, userId: userId,
-                               chunkedUpdateParams: updates,
-                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database),
-                               hasUpload: hasUpload)
+            return LibraryData(object: library, loadVersions: self.loadVersions, userId: userId, chunkedUpdateParams: updates,
+                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database), hasUpload: hasUpload)
         })
         allLibraryData.append(contentsOf: customData)
 
@@ -47,9 +46,7 @@ struct ReadLibrariesDataDbRequest: DbResponseRequest {
         let groupData = try groups.map({ group -> LibraryData in
             let libraryId = LibraryIdentifier.group(group.identifier)
             let (updates, hasUpload) = try self.updates(for: libraryId, database: database)
-            return LibraryData(object: group,
-                               chunkedUpdateParams: updates,
-                               chunkedDeletionKeys: try self.deletions(for: libraryId, database: database),
+            return LibraryData(object: group, loadVersions: self.loadVersions, chunkedUpdateParams: updates, chunkedDeletionKeys: try self.deletions(for: libraryId, database: database),
                                hasUpload: hasUpload)
         })
         allLibraryData.append(contentsOf: groupData)

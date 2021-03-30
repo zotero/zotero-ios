@@ -41,4 +41,8 @@ struct Versions {
         self.deletions = versions?.deletions ?? 0
         self.settings = versions?.settings ?? 0
     }
+
+    static var empty: Versions {
+        return Versions(collections: 0, items: 0, trash: 0, searches: 0, deletions: 0, settings: 0)
+    }
 }

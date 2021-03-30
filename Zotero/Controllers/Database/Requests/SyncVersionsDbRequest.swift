@@ -86,7 +86,6 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
     typealias Response = ([Int], [(Int, String)])
 
     let versions: [Int: Int]
-    let syncAll: Bool
 
     var needsWrite: Bool { return false }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
@@ -96,8 +95,6 @@ struct SyncGroupVersionsDbRequest: DbResponseRequest {
 
         let toRemove = database.objects(RGroup.self).filter("NOT identifier IN %@", allKeys)
         let toRemoveIds = Array(toRemove.map({ ($0.identifier, $0.name) }))
-
-        if self.syncAll { return (allKeys, toRemoveIds) }
 
         var toUpdate: [Int] = allKeys
         for library in database.objects(RGroup.self) {

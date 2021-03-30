@@ -50,13 +50,16 @@ struct PerformDeletionsDbRequest: DbResponseRequest {
 
             switch self.conflictMode {
             case .resolveConflicts:
-                if let title = object.selfOrChildTitleIfChanged {
+                if object.selfOrChildChanged {
                     // If remotely deleted item is changed locally, we need to show CR, so we return keys of such items
-                    conflicts.append((object.key, title))
+                    conflicts.append((object.key, object.displayTitle))
                     continue
                 }
             case .restoreConflicts:
-                object.markAsChanged(in: database)
+                if object.selfOrChildChanged {
+                    object.markAsChanged(in: database)
+                    continue
+                }
 
             case .deleteConflicts: break
             }

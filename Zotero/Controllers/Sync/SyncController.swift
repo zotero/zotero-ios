@@ -657,7 +657,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processCreateLibraryActions(for libraries: LibrarySyncType, options: CreateLibraryActionsOptions) {
-        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), dbStorage: self.dbStorage).result
+        let result = LoadLibraryDataSyncAction(type: libraries, fetchUpdates: (options != .forceDownloads), loadVersions: (self.type != .full), dbStorage: self.dbStorage).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] data in
                   self?.finishCreateLibraryActions(with: .success((data, options)))
@@ -803,9 +803,7 @@ final class SyncController: SynchronizationController {
     }
 
     private func processSyncGroupVersions() {
-        let result = SyncGroupVersionsSyncAction(syncType: self.type, userId: self.userId,
-                                                 apiClient: self.apiClient, dbStorage: self.dbStorage,
-                                                 queue: self.workQueue, scheduler: self.workScheduler).result
+        let result = SyncGroupVersionsSyncAction(userId: self.userId, apiClient: self.apiClient, dbStorage: self.dbStorage, queue: self.workQueue, scheduler: self.workScheduler).result
         result.subscribeOn(self.workScheduler)
               .subscribe(onSuccess: { [weak self] toUpdate, toRemove in
                   guard let `self` = self else { return }
@@ -1121,19 +1119,18 @@ final class SyncController: SynchronizationController {
 
     private func performDeletions(libraryId: LibraryIdentifier, collections: [String], items: [String], searches: [String], tags: [String],
                                   conflictMode: PerformDeletionsDbRequest.ConflictResolutionMode) {
-        let result = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches,
-                                                tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage).result
-        result.subscribeOn(self.workScheduler)
-              .subscribe(onSuccess: { [weak self] conflicts in
-                  self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishDeletionsSync(result: .success(conflicts), libraryId: libraryId)
-                  }
-              }, onError: { [weak self] error in
-                  self?.accessQueue.async(flags: .barrier) { [weak self] in
-                      self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
-                  }
-              })
-              .disposed(by: self.disposeBag)
+        let action = PerformDeletionsSyncAction(libraryId: libraryId, collections: collections, items: items, searches: searches, tags: tags, conflictMode: conflictMode, dbStorage: self.dbStorage)
+        action.result.subscribeOn(self.workScheduler)
+                     .subscribe(onSuccess: { [weak self] conflicts in
+                         self?.accessQueue.async(flags: .barrier) { [weak self] in
+                             self?.finishDeletionsSync(result: .success(conflicts), libraryId: libraryId)
+                         }
+                     }, onError: { [weak self] error in
+                         self?.accessQueue.async(flags: .barrier) { [weak self] in
+                             self?.finishDeletionsSync(result: .failure(error), libraryId: libraryId)
+                         }
+                     })
+                     .disposed(by: self.disposeBag)
     }
 
     private func finishDeletionsSync(result: Result<[(String, String)], Error>, libraryId: LibraryIdentifier, version: Int? = nil) {

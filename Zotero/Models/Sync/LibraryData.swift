@@ -25,8 +25,7 @@ struct LibraryData {
 
         let appendBatch: (SyncObject) -> Void = { object in
             if let params = chunkedParams[object] {
-                batches.append(contentsOf: params.map({ WriteBatch(libraryId: libraryId, object: object,
-                                                                   version: version, parameters: $0) }))
+                batches.append(contentsOf: params.map({ WriteBatch(libraryId: libraryId, object: object, version: version, parameters: $0) }))
             }
         }
 
@@ -45,9 +44,7 @@ struct LibraryData {
 
         let appendBatch: (SyncObject) -> Void = { object in
             if let keys = chunkedKeys[object] {
-                batches.append(contentsOf: keys.map({ DeleteBatch(libraryId: libraryId, object: object,
-                                                                  version: version, keys: $0) }))
-
+                batches.append(contentsOf: keys.map({ DeleteBatch(libraryId: libraryId, object: object, version: version, keys: $0) }))
             }
         }
 
@@ -58,12 +55,9 @@ struct LibraryData {
         return batches
     }
 
-    init(object: RCustomLibrary, userId: Int,
-         chunkedUpdateParams: [SyncObject: [[[String: Any]]]],
-         chunkedDeletionKeys: [SyncObject: [[String]]],
-         hasUpload: Bool) {
+    init(object: RCustomLibrary, loadVersions: Bool, userId: Int, chunkedUpdateParams: [SyncObject: [[[String: Any]]]], chunkedDeletionKeys: [SyncObject: [[String]]], hasUpload: Bool) {
         let type = object.type
-        let versions = Versions(versions: object.versions)
+        let versions = loadVersions ? Versions(versions: object.versions) : Versions.empty
         let maxVersion = versions.max
 
         self.identifier = .custom(type)
@@ -72,17 +66,12 @@ struct LibraryData {
         self.canEditMetadata = true
         self.canEditFiles = true
         self.hasUpload = hasUpload
-        self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion,
-                                           libraryId: .custom(type))
-        self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion,
-                                               libraryId: .custom(type))
+        self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion, libraryId: .custom(type))
+        self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion, libraryId: .custom(type))
     }
 
-    init(object: RGroup,
-         chunkedUpdateParams: [SyncObject: [[[String: Any]]]],
-         chunkedDeletionKeys: [SyncObject: [[String]]],
-         hasUpload: Bool) {
-        let versions = Versions(versions: object.versions)
+    init(object: RGroup, loadVersions: Bool, chunkedUpdateParams: [SyncObject: [[[String: Any]]]], chunkedDeletionKeys: [SyncObject: [[String]]], hasUpload: Bool) {
+        let versions = loadVersions ? Versions(versions: object.versions) : Versions.empty
         let maxVersion = versions.max
 
         self.identifier = .group(object.identifier)
@@ -91,10 +80,8 @@ struct LibraryData {
         self.canEditMetadata = object.canEditMetadata
         self.canEditFiles = object.canEditFiles
         self.hasUpload = hasUpload
-        self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion,
-                                           libraryId: .group(object.identifier))
-        self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion,
-                                               libraryId: .group(object.identifier))
+        self.updates = LibraryData.updates(from: chunkedUpdateParams, version: maxVersion, libraryId: .group(object.identifier))
+        self.deletions = LibraryData.deletions(from: chunkedDeletionKeys, version: maxVersion, libraryId: .group(object.identifier))
     }
 
     // MARK: - Testing only

@@ -15,6 +15,7 @@ struct LoadLibraryDataSyncAction: SyncAction {
 
     let type: SyncController.LibrarySyncType
     let fetchUpdates: Bool
+    let loadVersions: Bool
 
     unowned let dbStorage: DbStorage
 
@@ -24,13 +25,13 @@ struct LoadLibraryDataSyncAction: SyncAction {
 
             switch self.type {
             case .all:
-                request = ReadLibrariesDataDbRequest(identifiers: nil, fetchUpdates: self.fetchUpdates)
+                request = ReadLibrariesDataDbRequest(identifiers: nil, fetchUpdates: self.fetchUpdates, loadVersions: self.loadVersions)
             case .specific(let ids):
                 if ids.isEmpty {
                     subscriber(.success([]))
                     return Disposables.create()
                 }
-                request = ReadLibrariesDataDbRequest(identifiers: ids, fetchUpdates: self.fetchUpdates)
+                request = ReadLibrariesDataDbRequest(identifiers: ids, fetchUpdates: self.fetchUpdates, loadVersions: self.loadVersions)
             }
 
             do {

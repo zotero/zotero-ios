@@ -13,7 +13,6 @@ import RxSwift
 struct SyncGroupVersionsSyncAction: SyncAction {
     typealias Result = ([Int], [(Int, String)])
 
-    let syncType: SyncController.SyncType
     let userId: Int
 
     unowned let apiClient: ApiClient
@@ -22,13 +21,11 @@ struct SyncGroupVersionsSyncAction: SyncAction {
     let scheduler: SchedulerType
 
     var result: Single<([Int], [(Int, String)])> {
-        let syncAll = syncType == .full
         return self.apiClient.send(request: GroupVersionsRequest(userId: self.userId), queue: self.queue)
                              .observeOn(self.scheduler)
-                             .flatMap { (response: [Int: Int], headers) in
-                                 let request =  SyncGroupVersionsDbRequest(versions: response, syncAll: syncAll)
+                             .flatMap { (response: [Int: Int], _) in
                                  do {
-                                     let (toUpdate, toRemove) = try self.dbStorage.createCoordinator().perform(request: request)
+                                     let (toUpdate, toRemove) = try self.dbStorage.createCoordinator().perform(request: SyncGroupVersionsDbRequest(versions: response))
                                      return Single.just((toUpdate, toRemove))
                                  } catch let error {
                                      return Single.error(error)

@@ -553,7 +553,7 @@ final class SyncActionsSpec: QuickSpec {
                 })
 
 
-                waitUntil(timeout: 100000, action: { doneAction in
+                waitUntil(timeout: 10, action: { doneAction in
                     UploadAttachmentSyncAction(key: key,
                                                file: file,
                                                filename: filename,

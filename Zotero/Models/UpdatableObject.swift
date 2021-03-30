@@ -22,7 +22,7 @@ protocol Updatable: class {
     var rawChangeType: Int { get set }
     var updateParameters: [String: Any]? { get }
     var isChanged: Bool { get }
-    var selfOrChildTitleIfChanged: String? { get }
+    var selfOrChildChanged: Bool { get }
 
     func resetChanges()
     func markAsChanged(in database: Realm)
@@ -72,9 +72,8 @@ extension RCollection: Updatable {
         return parameters
     }
 
-    var selfOrChildTitleIfChanged: String? {
-        guard self.isChanged else { return nil }
-        return self.name
+    var selfOrChildChanged: Bool {
+        return self.isChanged
     }
 
     func markAsChanged(in database: Realm) {
@@ -124,9 +123,8 @@ extension RSearch: Updatable {
         return self.conditions.sorted(byKeyPath: "sortId").map({ $0.updateParameters })
     }
 
-    var selfOrChildTitleIfChanged: String? {
-        guard self.isChanged else { return nil }
-        return self.name
+    var selfOrChildChanged: Bool {
+        return self.isChanged
     }
 
     func markAsChanged(in database: Realm) {
@@ -223,22 +221,18 @@ extension RItem: Updatable {
         }
     }
 
-    var selfOrChildTitleIfChanged: String? {
+    var selfOrChildChanged: Bool {
         if self.isChanged {
-            if !self.displayTitle.isEmpty {
-                return self.displayTitle
-            } else {
-                return self.baseTitle
-            }
+            return true
         }
 
         for child in self.children {
-            if let title = child.selfOrChildTitleIfChanged {
-                return title
+            if child.selfOrChildChanged {
+                return true
             }
         }
 
-        return nil
+        return false
     }
 
     func markAsChanged(in database: Realm) {
@@ -316,9 +310,8 @@ extension RPageIndex: Updatable {
         return ["lastPageIndex_\(libraryPart)_\(self.key)": ["value": self.index]]
     }
 
-    var selfOrChildTitleIfChanged: String? {
-        guard self.isChanged else { return nil }
-        return "\(self.index)"
+    var selfOrChildChanged: Bool {
+        return self.isChanged
     }
 
     func markAsChanged(in database: Realm) {}
