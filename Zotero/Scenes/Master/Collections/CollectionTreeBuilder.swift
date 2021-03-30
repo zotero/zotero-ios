@@ -51,7 +51,7 @@ struct CollectionTreeBuilder {
             parentMap[rCollection.key] = parentKey
             // Map parentKey => children collections
             if var collections = collectionMap[parentKey] {
-                let insertionIndex = collections.index(of: collection, sortedBy: { $0.name < $1.name })
+                let insertionIndex = collections.index(of: collection, sortedBy: { $0.name.compare($1.name, locale: Locale.autoupdatingCurrent) == .orderedAscending })
                 collections.insert(collection, at: insertionIndex)
                 collectionMap[parentKey] = collections
             } else {
