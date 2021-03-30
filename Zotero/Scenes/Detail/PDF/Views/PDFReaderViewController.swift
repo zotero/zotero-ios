@@ -931,8 +931,15 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         case .custom: identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
         case .group: identifiers = [TextMenu.copy.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
         }
-        return menuItems.filter({ item in
+        return menuItems.filter({ [weak self] item in
             guard let identifier = item.identifier else { return false }
+            if identifier == TextMenu.share.rawValue {
+                item.actionBlock = {
+                    guard let view = self?.pdfController.view else { return }
+                    // Overwrite share action, because the original one reports "[ShareSheet] connection invalidated".
+                    self?.coordinatorDelegate?.share(text: selectedText, rect: rect, view: view)
+                }
+            }
             return identifiers.contains(identifier)
         })
     }

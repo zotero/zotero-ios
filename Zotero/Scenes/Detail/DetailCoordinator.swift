@@ -63,6 +63,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate)
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
+    func share(text: String, rect: CGRect, view: UIView)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
     func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
@@ -244,15 +245,15 @@ final class DetailCoordinator: Coordinator {
         let linkFile = Files.link(filename: filename, key: attachment.key)
         do {
             try self.controllers.fileStorage.link(file: file, to: linkFile)
-            self.share(url: linkFile.createUrl(), source: .view(sourceView, sourceRect))
+            self.share(item: linkFile.createUrl(), source: .view(sourceView, sourceRect))
         } catch let error {
             DDLogError("DetailCoordinator: can't link file - \(error)")
-            self.share(url: file.createUrl(), source: .view(sourceView, sourceRect))
+            self.share(item: file.createUrl(), source: .view(sourceView, sourceRect))
         }
     }
 
-    private func share(url: URL, source: ActivityViewControllerSource) {
-        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    private func share(item: Any, source: ActivityViewControllerSource) {
+        let controller = UIActivityViewController(activityItems: [item], applicationActivities: nil)
         controller.modalPresentationStyle = .pageSheet
 
         switch source {
@@ -654,7 +655,11 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func share(url: URL, barButton: UIBarButtonItem) {
-        self.share(url: url, source: .barButton(barButton))
+        self.share(item: url, source: .barButton(barButton))
+    }
+
+    func share(text: String, rect: CGRect, view: UIView) {
+        self.share(item: text, source: .view(view, rect))
     }
 
     func show(error: PdfDocumentExporter.Error) {
