@@ -105,10 +105,9 @@ final class ItemDetailTableViewHandler: NSObject {
         let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: viewModel.state.data)
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
-        if let abstract = viewModel.state.data.abstract {
-            let maxWidth = containerWidth - (2 * ItemDetailLayout.horizontalInset)
-            self.abstractTextViewHeight = self.calculateAbstractHeight(for: abstract, width: maxWidth)
-        }
+        let abstract = viewModel.state.data.abstract ?? ""
+        let maxWidth = containerWidth - (2 * ItemDetailLayout.horizontalInset)
+        self.abstractTextViewHeight = self.calculateAbstractHeight(for: abstract, width: maxWidth)
         self.setupTableView()
         self.setupKeyboardObserving()
     }
