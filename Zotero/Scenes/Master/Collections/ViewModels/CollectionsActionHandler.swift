@@ -148,7 +148,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             let coordinator = try self.dbStorage.createCoordinator()
             let library = try coordinator.perform(request: ReadLibraryDbRequest(libraryId: libraryId))
             let collections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-            let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
+//            let searches = try coordinator.perform(request: ReadSearchesDbRequest(libraryId: libraryId))
             let allItems = try coordinator.perform(request: ReadItemsDbRequest(type: .all, libraryId: libraryId))
 //            let publicationItemsCount = try coordinator.perform(request: ReadItemsDbRequest(type: .publications, libraryId: libraryId)).count
             let trashItems = try coordinator.perform(request: ReadItemsDbRequest(type: .trash, libraryId: libraryId))
@@ -156,8 +156,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             var allCollections: [Collection] = [Collection(custom: .all, itemCount: allItems.count),
                //                                 Collection(custom: .publications, itemCount: publicationItemsCount),
                                                 Collection(custom: .trash, itemCount: trashItems.count)]
-            allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, selectedId: viewModel.state.selectedCollection, collapseState: .basedOnDb) +
-                                              CollectionTreeBuilder.collections(from: searches),
+            allCollections.insert(contentsOf: CollectionTreeBuilder.collections(from: collections, libraryId: libraryId, selectedId: viewModel.state.selectedCollection, collapseState: .basedOnDb),// +
+//                                              CollectionTreeBuilder.collections(from: searches),
                                   at: 1)
 
             let collectionsToken = collections.observe({ [weak viewModel] changes in
@@ -180,16 +180,16 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 }
             })
 
-            let searchesToken = searches.observe({ [weak viewModel] changes in
-                guard let viewModel = viewModel else { return }
-                switch changes {
-                case .update(let objects, _, _, _):
-                    let collections = CollectionTreeBuilder.collections(from: objects)
-                    self.update(collections: collections, in: viewModel)
-                case .initial: break
-                case .error: break
-                }
-            })
+//            let searchesToken = searches.observe({ [weak viewModel] changes in
+//                guard let viewModel = viewModel else { return }
+//                switch changes {
+//                case .update(let objects, _, _, _):
+//                    let collections = CollectionTreeBuilder.collections(from: objects)
+//                    self.update(collections: collections, in: viewModel)
+//                case .initial: break
+//                case .error: break
+//                }
+//            })
 
             let itemsToken = allItems.observe({ [weak viewModel] changes in
                 guard let viewModel = viewModel else { return }
@@ -215,7 +215,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                 state.collections = allCollections
                 state.library = library
                 state.collectionsToken = collectionsToken
-                state.searchesToken = searchesToken
+//                state.searchesToken = searchesToken
                 state.itemsToken = itemsToken
                 state.trashToken = trashToken
             }
