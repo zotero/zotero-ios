@@ -428,7 +428,7 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for attachment: Attachment) -> UIMenu? {
-        guard !self.viewModel.state.isEditing && !self.viewModel.state.data.isAttachment else { return nil }
+        guard !self.viewModel.state.data.isAttachment else { return nil }
 
         var actions: [UIAction] = []
 
@@ -446,8 +446,7 @@ final class ItemDetailTableViewHandler: NSObject {
     }
 
     private func createContextMenu(for field: ItemDetailState.Field) -> UIMenu? {
-        guard !self.viewModel.state.isEditing &&
-              ((field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url)) else { return nil }
+        guard ((field.key == FieldKeys.Item.doi || field.baseField == FieldKeys.Item.doi) || (field.key == FieldKeys.Item.url || field.baseField == FieldKeys.Item.url)) else { return nil }
         return UIMenu(title: "", children: [UIAction(title: L10n.copy, handler: { _ in
             UIPasteboard.general.string = field.value
         })])
@@ -768,12 +767,16 @@ extension ItemDetailTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard !self.viewModel.state.isEditing else { return nil }
+
         switch self.sections[indexPath.section] {
         case .attachments:
+            guard indexPath.row < self.viewModel.state.data.attachments.count else { return nil }
             let attachment = self.viewModel.state.data.attachments[indexPath.row]
             return self.createContextMenu(for: attachment).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
 
         case .fields:
+            guard indexPath.row < self.viewModel.state.data.fields.count else { return nil }
             let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
             let field = self.viewModel.state.data.fields[fieldId]
             return field.flatMap({ self.createContextMenu(for: $0) }).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
