@@ -33,47 +33,70 @@ fileprivate struct ListView: View {
     var picked: (Collection, Library) -> Void
 
     var body: some View {
-        ScrollableView(id: self.store.state.selectedCollectionId) {
+        ScrollableView(scrollToHash: self.hash(forCollection: self.store.state.selectedCollectionId, andLibrary: self.store.state.selectedLibraryId)) {
             List {
-                ForEach(self.store.state.libraries) { library in
-                    CollapsibleLibraryRow(library: library, collapsed: (self.store.state.librariesCollapsed[library.identifier] ?? true)) {
-                        self.store.toggleLibraryCollapsed(id: library.identifier)
+                if !self.store.state.recentCollections.isEmpty {
+                    Section(header: Text(L10n.recent.uppercased())) {
+                        ForEach(self.store.state.recentCollections) { collectionWithLibrary in
+                            CollapsibleCollectionRow(collection: collectionWithLibrary.collection,
+                                                     pickAction: {
+                                                        self.picked(collectionWithLibrary.collection, collectionWithLibrary.library)
+                                                     },
+                                                     collapseAction: {})
+                                .id(collectionWithLibrary.id)
+                        }
                     }
+                }
 
-                    if self.store.state.librariesCollapsed[library.identifier] == false {
-                        CollapsibleCollectionRow(collection: Collection(custom: .all),
-                                                 pickAction: {
-                                                    self.picked(Collection(custom: .all), library)
-                                                 },
-                                                 collapseAction: {})
-                            .id(CollectionIdentifier.custom(.all))
+                Section {
+                    ForEach(self.store.state.libraries) { library in
+                        CollapsibleLibraryRow(library: library, collapsed: (self.store.state.librariesCollapsed[library.identifier] ?? true)) {
+                            self.store.toggleLibraryCollapsed(id: library.identifier)
+                        }
 
-                        self.store.state.collections[library.identifier].flatMap {
-                            ForEach($0.filter({ $0.visible })) { collection in
-                                CollapsibleCollectionRow(collection: collection,
-                                                         pickAction: {
-                                                            self.picked(collection, library)
-                                                         },
-                                                         collapseAction: {
-                                                            self.store.toggleCollectionCollapsed(collection: collection, libraryId: library.identifier)
-                                                         })
-                                    .id(collection.identifier)
+                        if self.store.state.librariesCollapsed[library.identifier] == false {
+                            CollapsibleCollectionRow(collection: Collection(custom: .all),
+                                                     pickAction: {
+                                                        self.picked(Collection(custom: .all), library)
+                                                     },
+                                                     collapseAction: {})
+                                .id(self.hash(forCollection: .custom(.all), andLibrary: library.identifier))
+
+                            self.store.state.collections[library.identifier].flatMap {
+                                ForEach($0.filter({ $0.visible })) { collection in
+                                    CollapsibleCollectionRow(collection: collection,
+                                                             pickAction: {
+                                                                self.picked(collection, library)
+                                                             },
+                                                             collapseAction: {
+                                                                self.store.toggleCollectionCollapsed(collection: collection, libraryId: library.identifier)
+                                                             })
+                                        .id(self.hash(forCollection: collection.identifier, andLibrary: library.identifier))
+                                }
                             }
                         }
                     }
                 }
             }
+            .listStyle(GroupedListStyle())
         }
+    }
+
+    private func hash(forCollection collectionId: CollectionIdentifier, andLibrary libraryId: LibraryIdentifier) -> Int {
+        var hasher = Hasher()
+        hasher.combine(collectionId)
+        hasher.combine(libraryId)
+        return hasher.finalize()
     }
 }
 
 fileprivate struct ScrollableView<Content>: View where Content: View {
     private let content: Content
 
-    let id: CollectionIdentifier
+    let scrollToHash: Int
 
-    init(id: CollectionIdentifier, @ViewBuilder content: () -> Content) {
-        self.id = id
+    init(scrollToHash: Int, @ViewBuilder content: () -> Content) {
+        self.scrollToHash = scrollToHash
         self.content = content()
     }
 
@@ -81,7 +104,7 @@ fileprivate struct ScrollableView<Content>: View where Content: View {
         if #available(iOSApplicationExtension 14.0, *) {
             ScrollViewReader { proxy in
                 self.content.onAppear {
-                    proxy.scrollTo(self.id)
+                    proxy.scrollTo(self.scrollToHash)
                 }
             }
         } else {

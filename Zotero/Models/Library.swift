@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Library: Equatable, Identifiable {
+struct Library: Equatable, Identifiable, Hashable {
     let identifier: LibraryIdentifier
     let name: String
     let metadataEditable: Bool

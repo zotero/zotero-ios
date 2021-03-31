@@ -542,7 +542,7 @@ final class ExtensionStore {
             switch attachment {
             case .item(let item):
                 self.submit(item: item.copy(libraryId: libraryId, collectionKeys: collectionKeys), libraryId: libraryId, userId: userId,
-                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController)
+                            apiClient: self.apiClient, dbStorage: self.dbStorage, fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser)
 
             case .itemWithAttachment(let item, let attachmentData, let attachmentFile):
                 let data = State.UploadData(item: item, attachmentKey: self.state.attachmentKey, attachmentData: attachmentData,
@@ -566,7 +566,7 @@ final class ExtensionStore {
                                        lastModifiedBy: nil, rects: nil)
 
             self.submit(item: webItem, libraryId: libraryId, userId: userId, apiClient: self.apiClient, dbStorage: self.dbStorage,
-                        fileStorage: self.fileStorage, schemaController: self.schemaController)
+                        fileStorage: self.fileStorage, schemaController: self.schemaController, dateParser: self.dateParser)
         }
     }
 
@@ -577,14 +577,15 @@ final class ExtensionStore {
     /// - parameter dbStorage: Database storage
     /// - parameter fileStorage: File storage
     /// - parameter schemaController: Schema controller for validating item type and field types.
-    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage, fileStorage: FileStorage, schemaController: SchemaController) {
+    /// - parameter dateParser: Date parser for item creation
+    private func submit(item: ItemResponse, libraryId: LibraryIdentifier, userId: Int, apiClient: ApiClient, dbStorage: DbStorage,
+                        fileStorage: FileStorage, schemaController: SchemaController, dateParser: DateParser) {
         let itemToSubmit = item.tags.isEmpty || Defaults.shared.shareExtensionIncludeTags ? item : item.copyWithoutTags
-        self.createItem(itemToSubmit, schemaController: schemaController)
+        self.createItem(itemToSubmit, libraryId: libraryId, schemaController: schemaController, dateParser: dateParser)
             .subscribeOn(self.backgroundScheduler)
             .flatMap { parameters in
-                return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId,
-                                              userId: userId, updateLibraryVersion: false, apiClient: apiClient, dbStorage: dbStorage, fileStorage: fileStorage,
-                                              queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
+                return SubmitUpdateSyncAction(parameters: [parameters], sinceVersion: nil, object: .item, libraryId: libraryId, userId: userId, updateLibraryVersion: false, apiClient: apiClient,
+                                              dbStorage: dbStorage, fileStorage: fileStorage, queue: self.backgroundQueue, scheduler: self.backgroundScheduler).result
             }
             .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] _ in
@@ -600,13 +601,20 @@ final class ExtensionStore {
     /// - parameter item: Parsed item to be created.
     /// - parameter schemaController: Schema controller for validating item type and field types.
     /// - returns: `Single` with `updateParameters` of created `RItem`.
-    private func createItem(_ item: ItemResponse, schemaController: SchemaController) -> Single<[String: Any]> {
-        let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: self.dateParser)
-        do {
-            let item = try self.dbStorage.createCoordinator().perform(request: request)
-            return Single.just(item.updateParameters ?? [:])
-        } catch let error {
-            return Single.error(error)
+    private func createItem(_ item: ItemResponse, libraryId: LibraryIdentifier, schemaController: SchemaController, dateParser: DateParser) -> Single<[String: Any]> {
+        return Single.create { subscriber -> Disposable in
+            let request = CreateBackendItemDbRequest(item: item, schemaController: schemaController, dateParser: dateParser)
+            do {
+                let coordinator = try self.dbStorage.createCoordinator()
+                if let collectionKey = item.collectionKeys.first {
+                    try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: libraryId))
+                }
+                let item = try coordinator.perform(request: request)
+                subscriber(.success(item.updateParameters ?? [:]))
+            } catch let error {
+                subscriber(.error(error))
+            }
+            return Disposables.create()
         }
     }
 
@@ -797,11 +805,16 @@ final class ExtensionStore {
     /// - returns: `Single` with `updateParameters` of both new items, md5 and mtime of attachment.
     private func createItems(item: ItemResponse, attachment: Attachment) -> Single<([[String: Any]], String, Int)> {
         return Single.create { subscriber -> Disposable in
-            let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment,
-                                                            schemaController: self.schemaController, dateParser: self.dateParser)
+            let request = CreateItemWithAttachmentDbRequest(item: item, attachment: attachment, schemaController: self.schemaController, dateParser: self.dateParser)
 
             do {
-                let (item, attachment) = try self.dbStorage.createCoordinator().perform(request: request)
+                let coordinator = try self.dbStorage.createCoordinator()
+
+                if let collectionKey = item.collectionKeys.first {
+                    try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
+                }
+
+                let (item, attachment) = try coordinator.perform(request: request)
 
                 let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
                 let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
@@ -833,7 +846,13 @@ final class ExtensionStore {
             let request = CreateAttachmentDbRequest(attachment: attachment, localizedType: localizedType, collections: collections)
 
             do {
-                let attachment = try self.dbStorage.createCoordinator().perform(request: request)
+                let coordinator = try self.dbStorage.createCoordinator()
+
+                if let collectionKey = collections.first {
+                    try coordinator.perform(request: UpdateCollectionLastUsedDbRequest(key: collectionKey, libraryId: attachment.libraryId))
+                }
+
+                let attachment = try coordinator.perform(request: request)
                 let mtime = attachment.fields.filter(.key(FieldKeys.Item.Attachment.mtime)).first.flatMap({ Int($0.value) }) ?? 0
                 let md5 = attachment.fields.filter(.key(FieldKeys.Item.Attachment.md5)).first?.value ?? ""
 

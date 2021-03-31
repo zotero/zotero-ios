@@ -32,6 +32,7 @@ final class RCollection: Object {
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parentKey: String?
     @objc dynamic var collapsed: Bool = true
+    @objc dynamic var lastUsed: Date = Date(timeIntervalSince1970: 0)
 
     let items: List<RItem> = List()
     let customLibraryKey = RealmOptional<Int>()

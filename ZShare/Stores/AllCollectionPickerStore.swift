@@ -18,6 +18,7 @@ final class AllCollectionPickerStore: ObservableObject {
         var libraries: [Library]
         var librariesCollapsed: [LibraryIdentifier: Bool]
         var collections: [LibraryIdentifier: [Collection]]
+        var recentCollections: [CollectionWithLibrary]
     }
 
     @Published var state: State
@@ -26,7 +27,7 @@ final class AllCollectionPickerStore: ObservableObject {
 
     init(selectedCollectionId: CollectionIdentifier, selectedLibraryId: LibraryIdentifier, dbStorage: DbStorage) {
         self.dbStorage = dbStorage
-        self.state = State(selectedCollectionId: selectedCollectionId, selectedLibraryId: selectedLibraryId, libraries: [], librariesCollapsed: [:], collections: [:])
+        self.state = State(selectedCollectionId: selectedCollectionId, selectedLibraryId: selectedLibraryId, libraries: [], librariesCollapsed: [:], collections: [:], recentCollections: [])
     }
 
     func load() {
@@ -38,6 +39,7 @@ final class AllCollectionPickerStore: ObservableObject {
 
             let customLibraries = try coordinator.perform(request: ReadAllCustomLibrariesDbRequest())
             let groups = try coordinator.perform(request: ReadAllWritableGroupsDbRequest())
+            let recentCollections = try coordinator.perform(request: ReadRecentCollections())
 
             let libraries = Array(customLibraries.map(Library.init)) + Array(groups.map(Library.init))
             var librariesCollapsed: [LibraryIdentifier: Bool] = [:]
@@ -46,7 +48,8 @@ final class AllCollectionPickerStore: ObservableObject {
             for library in libraries {
                 let libraryId = library.identifier
                 let libraryCollections = try coordinator.perform(request: ReadCollectionsDbRequest(libraryId: libraryId))
-                collections[libraryId] = CollectionTreeBuilder.collections(from: libraryCollections, libraryId: libraryId, selectedId: (libraryId == visibleLibraryId ? visibleCollectionId : nil), collapseState: .collapsedAll)
+                let selectedId = libraryId == visibleLibraryId ? visibleCollectionId : nil
+                collections[libraryId] = CollectionTreeBuilder.collections(from: libraryCollections, libraryId: libraryId, selectedId: selectedId, collapseState: .collapsedAll)
                 librariesCollapsed[libraryId] = visibleLibraryId != libraryId
             }
 
@@ -60,6 +63,7 @@ final class AllCollectionPickerStore: ObservableObject {
             state.libraries = libraries
             state.librariesCollapsed = librariesCollapsed
             state.collections = collections
+            state.recentCollections = recentCollections
             self.state = state
         } catch let error {
             DDLogError("AllCollectionPickerStore: can't load collections - \(error)")

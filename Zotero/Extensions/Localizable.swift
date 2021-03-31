@@ -62,6 +62,8 @@ internal enum L10n {
   internal static let publicationTitle = L10n.tr("Localizable", "publication_title")
   /// Publisher
   internal static let publisher = L10n.tr("Localizable", "publisher")
+  /// Recent
+  internal static let recent = L10n.tr("Localizable", "recent")
   /// Report
   internal static let report = L10n.tr("Localizable", "report")
   /// Restore
