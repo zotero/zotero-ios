@@ -25,8 +25,10 @@ enum CollectionIdentifier: Identifiable, Equatable, Hashable {
             case .publications: return "publications"
             case .trash: return "trash"
             }
-        case .collection(let key), .search(let key):
-            return key
+        case .collection(let key):
+            return "c_" + key
+        case .search(let key):
+            return "s_" + key
         }
     }
 }
