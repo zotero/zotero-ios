@@ -79,8 +79,7 @@ final class CollectionsTableViewHandler: NSObject {
         }
 
         // If there are other actions as well, perform all actions
-        self.performBatchUpdates(collections: collections, insertions: insertions, deletions: deletions,
-                                 reloads: reloads, moves: moves, completed: completed)
+        self.performBatchUpdates(collections: collections, insertions: insertions, deletions: deletions, reloads: reloads, moves: moves, completed: completed)
     }
 
     private func performBatchUpdates(collections: [Collection], insertions: [IndexPath], deletions: [IndexPath], reloads: [IndexPath], moves: [(IndexPath, IndexPath)], completed: (() -> Void)?) {
@@ -238,7 +237,7 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
         let collection = self.snapshot[indexPath.row]
-        guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollection else { return }
+        guard self.splitDelegate?.isSplit == false ? true : collection.identifier != self.viewModel.state.selectedCollectionId else { return }
         self.viewModel.process(action: .select(collection.identifier))
     }
 

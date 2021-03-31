@@ -10,9 +10,11 @@ import Foundation
 
 enum CollectionsAction {
     case assignKeysToCollection([String], String)
+    case collapseAll
     case deleteCollection(String)
     case deleteSearch(String)
     case emptyTrash
+    case expandAll
     case loadData
     case startEditing(CollectionsState.EditingType)
     case select(CollectionIdentifier)

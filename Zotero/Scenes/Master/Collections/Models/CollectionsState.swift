@@ -33,7 +33,7 @@ struct CollectionsState: ViewModelState {
     let libraryId: LibraryIdentifier
 
     var library: Library
-    var selectedCollection: CollectionIdentifier
+    var selectedCollectionId: CollectionIdentifier
     var collections: [Collection]
     var editingData: CollectionStateEditingData?
     var changes: Changes
@@ -44,15 +44,24 @@ struct CollectionsState: ViewModelState {
     var error: CollectionsError?
     // Used to filter out unnecessary Realm observed notification when collapsing collections.
     var collapsedKeys: [String]
+    // Used to filter out unnecessary Realm observed notification when collapsing all collections.
+    var collectionsToggledCount: Int?
+
+    var hasExpandableCollection: Bool {
+        return self.collections.contains(where: { $0.level > 0 })
+    }
+
+    var areAllExpanded: Bool {
+        return !self.collections.contains(where: { !$0.visible })
+    }
 
     init(libraryId: LibraryIdentifier, selectedCollectionId: CollectionIdentifier) {
         self.libraryId = libraryId
         self.library = Library(identifier: .custom(.myLibrary), name: "", metadataEditable: false, filesEditable: false)
-        self.selectedCollection = selectedCollectionId
+        self.selectedCollectionId = selectedCollectionId
         self.collections = []
         self.changes = []
         self.collapsedKeys = []
-        self.error = nil
     }
 
     mutating func cleanup() {

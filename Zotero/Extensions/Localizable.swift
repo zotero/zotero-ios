@@ -86,6 +86,8 @@ internal enum L10n {
   internal enum Collections {
     /// All Items
     internal static let allItems = L10n.tr("Localizable", "collections.all_items")
+    /// Collapse All
+    internal static let collapseAll = L10n.tr("Localizable", "collections.collapse_all")
     /// Create Collection
     internal static let createTitle = L10n.tr("Localizable", "collections.create_title")
     /// Delete Collection
@@ -96,6 +98,8 @@ internal enum L10n {
     internal static let editTitle = L10n.tr("Localizable", "collections.edit_title")
     /// Empty Trash
     internal static let emptyTrash = L10n.tr("Localizable", "collections.empty_trash")
+    /// Expand All
+    internal static let expandAll = L10n.tr("Localizable", "collections.expand_all")
     /// My Publications
     internal static let myPublications = L10n.tr("Localizable", "collections.my_publications")
     /// New Subcollection

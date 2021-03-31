@@ -63,8 +63,8 @@ final class CollectionsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollection)
-        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collections.first(where: { $0.identifier == self.viewModel.state.selectedCollection }) {
+        self.selectIfNeeded(collectionId: self.viewModel.state.selectedCollectionId)
+        if self.coordinatorDelegate?.isSplit == true, let collection = self.viewModel.state.collections.first(where: { $0.identifier == self.viewModel.state.selectedCollectionId }) {
             self.coordinatorDelegate?.showItems(for: collection, in: self.viewModel.state.library, isInitial: true)
         }
     }
@@ -74,7 +74,7 @@ final class CollectionsViewController: UIViewController {
     private func update(to state: CollectionsState) {
         if state.changes.contains(.results) {
             self.tableViewHandler.update(collections: state.collections.filter({ $0.visible }), animated: true, completed: { [weak self] in
-                self?.selectIfNeeded(collectionId: state.selectedCollection)
+                self?.selectIfNeeded(collectionId: state.selectedCollectionId)
             })
         }
         if state.changes.contains(.allItemCount) {
@@ -83,7 +83,7 @@ final class CollectionsViewController: UIViewController {
         if state.changes.contains(.trashItemCount) {
             self.tableViewHandler.updateTrashItemCell(with: state.collections[state.collections.count - 1])
         }
-        if state.changes.contains(.selection), let collection = state.collections.first(where: { $0.identifier == state.selectedCollection }) {
+        if state.changes.contains(.selection), let collection = state.collections.first(where: { $0.identifier == state.selectedCollectionId }) {
             self.coordinatorDelegate?.showItems(for: collection, in: state.library, isInitial: false)
         }
         if let data = state.editingData {
@@ -121,29 +121,28 @@ final class CollectionsViewController: UIViewController {
 
         // We don't need to always show it on iPad, since the currently selected collection is visible. So we show only a new one. On iPhone
         // on the other hand we see only the collection list, so we always need to open the item list for selected collection.
-        guard !isSplit ? true : searchResult.identifier != self.viewModel.state.selectedCollection else { return }
+        guard !isSplit ? true : searchResult.identifier != self.viewModel.state.selectedCollectionId else { return }
         self.viewModel.process(action: .select(searchResult.identifier))
     }
 
     // MARK: - Setups
 
     private func setupAddNavbarItem() {
-        let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
-        addItem.rx
-               .tap
+        let menuItem = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), style: .plain, target: nil, action: nil)
+        menuItem.rx.tap
                .subscribe(onNext: { [weak self] _ in
-                   self?.viewModel.process(action: .startEditing(.add))
+                    guard let `self` = self else { return }
+                    self.coordinatorDelegate?.showCollectionsMenu(button: menuItem, viewModel: self.viewModel)
                })
                .disposed(by: self.disposeBag)
 
         let searchItem = UIBarButtonItem(image: UIImage(systemName: "magnifyingglass"), style: .plain, target: nil, action: nil)
-        searchItem.rx
-                  .tap
+        searchItem.rx.tap
                   .subscribe(onNext: { [weak self] _ in
                     self?.showSearch()
                   })
                   .disposed(by: self.disposeBag)
 
-        self.navigationItem.rightBarButtonItems = [addItem, searchItem]
+        self.navigationItem.rightBarButtonItems = [menuItem, searchItem]
     }
 }

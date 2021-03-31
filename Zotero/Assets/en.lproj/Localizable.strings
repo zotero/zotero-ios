@@ -72,6 +72,8 @@
 "collections.create_title" = "Create Collection";
 "collections.picker_title" = "Choose Parent";
 "collections.empty_trash" = "Empty Trash";
+"collections.collapse_all" = "Collapse All";
+"collections.expand_all" = "Expand All";
 
 "sync_toolbar.starting" = "Sync starting";
 "sync_toolbar.groups" = "Syncing groups";

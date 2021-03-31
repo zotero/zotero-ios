@@ -24,6 +24,7 @@ protocol MasterLibrariesCoordinatorDelegate: class {
 
 protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
     func showEditView(for data: CollectionStateEditingData, library: Library)
+    func showCollectionsMenu(button: UIBarButtonItem, viewModel: ViewModel<CollectionsActionHandler>)
 }
 
 protocol MasterSettingsCoordinatorDelegate: class {
@@ -265,6 +266,21 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
     var isSplit: Bool {
         return self.mainCoordinatorDelegate.isSplit
+    }
+
+    func showCollectionsMenu(button: UIBarButtonItem, viewModel: ViewModel<CollectionsActionHandler>) {
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.addAction(UIAlertAction(title: L10n.Collections.createTitle, style: .default, handler: { [weak viewModel] _ in
+            viewModel?.process(action: .startEditing(.add))
+        }))
+        if viewModel.state.hasExpandableCollection {
+            let allExpanded = viewModel.state.areAllExpanded
+            controller.addAction(UIAlertAction(title: (allExpanded ? L10n.Collections.collapseAll : L10n.Collections.expandAll), style: .default, handler: { [weak viewModel] _ in
+                viewModel?.process(action: (allExpanded ? .collapseAll : .expandAll))
+            }))
+        }
+        controller.popoverPresentationController?.barButtonItem = button
+        self.navigationController.present(controller, animated: true, completion: nil)
     }
 }
 
