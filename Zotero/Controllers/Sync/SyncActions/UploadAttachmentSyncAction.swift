@@ -39,6 +39,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                 if !isChanged {
                     subscriber(.success(()))
                 } else {
+                    DDLogError("UploadAttachmentSyncAction: attachment item not submitted")
                     subscriber(.error(SyncActionError.attachmentItemNotSubmitted))
                 }
             } catch let error {
@@ -51,7 +52,10 @@ struct UploadAttachmentSyncAction: SyncAction {
         let upload = dbCheck.flatMap { _ -> Single<UInt64> in
                                 let size = self.fileStorage.size(of: self.file)
                                 if size == 0 {
-                                    return Single.error(SyncActionError.attachmentMissing)
+                                    DDLogError("UploadAttachmentSyncAction: missing attachment - \(self.file.createUrl().absoluteString)")
+                                    let item = try? self.dbStorage.createCoordinator().perform(request: ReadItemDbRequest(libraryId: self.libraryId, key: self.key))
+                                    let title = item?.displayTitle ?? "L10n.notFound"
+                                    return Single.error(SyncActionError.attachmentMissing(key: self.key, title: title))
                                 } else {
                                     return Single.just(size)
                                 }
@@ -122,6 +126,7 @@ struct UploadAttachmentSyncAction: SyncAction {
                                          try self.dbStorage.createCoordinator().perform(requests: requests)
                                          return Single.just(())
                                      } catch let error {
+                                        DDLogError("UploadAttachmentSyncAction: can't mark attachment as uploaded - \(error)")
                                          return Single.error(error)
                                      }
                                  }
@@ -129,10 +134,13 @@ struct UploadAttachmentSyncAction: SyncAction {
                                  switch result {
                                  case .success((_, let headers)):
                                      return markDbAction(headers.lastModifiedVersion)
-                                 case .failure(let error) where error == .attachmentAlreadyUploaded:
-                                     return markDbAction(nil)
                                  case .failure(let error):
-                                     return Single.error(error)
+                                    switch error {
+                                    case .attachmentAlreadyUploaded:
+                                        return markDbAction(nil)
+                                    default:
+                                        return Single.error(error)
+                                    }
                                  }
                              })
                              .asCompletable()

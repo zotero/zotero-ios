@@ -54,6 +54,8 @@ internal enum L10n {
   internal static let name = L10n.tr("Localizable", "name")
   /// No
   internal static let no = L10n.tr("Localizable", "no")
+  /// Not Found
+  internal static let notFound = L10n.tr("Localizable", "not_found")
   /// Ok
   internal static let ok = L10n.tr("Localizable", "ok")
   /// Page
@@ -237,8 +239,10 @@ internal enum L10n {
       internal static let unknown = L10n.tr("Localizable", "errors.shareext.unknown")
     }
     internal enum SyncToolbar {
-      /// Unable to upload attachment. Please try removing and re-adding the attachment.
-      internal static let attachmentMissing = L10n.tr("Localizable", "errors.sync_toolbar.attachment_missing")
+      /// Unable to upload attachment: %@. Please try removing and re-adding the attachment.
+      internal static func attachmentMissing(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "errors.sync_toolbar.attachment_missing", String(describing: p1))
+      }
       /// Remote sync in progress. Please try again in a few minutes.
       internal static let conflictRetryLimit = L10n.tr("Localizable", "errors.sync_toolbar.conflict_retry_limit")
       /// Finished sync (%@)

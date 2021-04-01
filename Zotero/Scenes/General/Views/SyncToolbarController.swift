@@ -78,8 +78,8 @@ final class SyncToolbarController {
                     message += L10n.Errors.api(response)
                 case .dbError:
                     message += L10n.Errors.db
-                case .attachmentMissing:
-                    message += L10n.Errors.SyncToolbar.attachmentMissing
+                case .attachmentMissing(let key, let title):
+                    message += L10n.Errors.SyncToolbar.attachmentMissing("\(title) (\(key))")
                 case .allLibrariesFetchFailed:
                     message += L10n.Errors.SyncToolbar.librariesMissing
                 case .cantResolveConflict, .preconditionErrorCantBeResolved:
@@ -180,7 +180,7 @@ final class SyncToolbarController {
         case .deletions(let name):
             return  L10n.SyncToolbar.deletion(name)
         case .aborted(let error):
-            return L10n.SyncToolbar.aborted(error.localizedDescription)
+            return L10n.SyncToolbar.aborted(self.alertMessage(from: [error]))
         }
     }
 

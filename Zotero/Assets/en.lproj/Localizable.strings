@@ -41,6 +41,7 @@
 "about_beta" = "About the Zotero for iOS Beta";
 "recent" = "Recent";
 "lookup" = "Look Up";
+"not_found" = "Not Found";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";
@@ -253,7 +254,7 @@
 "errors.sync_toolbar.finished_with_errors" = "Finished sync (%@)";
 "errors.sync_toolbar.one_error" = "1 issue";
 "errors.sync_toolbar.multiple_errors" = "%d issues";
-"errors.sync_toolbar.attachment_missing" = "Unable to upload attachment. Please try removing and re-adding the attachment.";
+"errors.sync_toolbar.attachment_missing" = "Unable to upload attachment: %@. Please try removing and re-adding the attachment.";
 "errors.sync_toolbar.libraries_missing" = "No libraries found. Please sign out and back in again.";
 "errors.sync_toolbar.groups_failed" = "Could not sync groups. Please try again.";
 "errors.sync_toolbar.conflict_retry_limit" = "Remote sync in progress. Please try again in a few minutes.";

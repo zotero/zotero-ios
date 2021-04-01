@@ -1447,8 +1447,8 @@ final class SyncController: SynchronizationController {
             switch error {
             case .attachmentAlreadyUploaded, .attachmentItemNotSubmitted: // These shouldn't really get here
                 return .nonFatal(.unknown)
-            case .attachmentMissing:
-                return .fatal(.attachmentMissing)
+            case .attachmentMissing(let key, let title):
+                return .fatal(.attachmentMissing(key: key, title: title))
             case .submitUpdateUnknownFailures:
                 return .nonFatal(.unknown)
             }

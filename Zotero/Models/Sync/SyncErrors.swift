@@ -26,7 +26,7 @@ enum SyncError {
         case cancelled
         case preconditionErrorCantBeResolved
         case cantResolveConflict
-        case attachmentMissing
+        case attachmentMissing(key: String, title: String)
     }
 
     enum NonFatal: Error {
@@ -54,7 +54,7 @@ enum SyncError {
 enum SyncActionError: Error {
     case attachmentItemNotSubmitted,
          attachmentAlreadyUploaded,
-         attachmentMissing,
+         attachmentMissing(key: String, title: String),
          submitUpdateUnknownFailures
 }
 
