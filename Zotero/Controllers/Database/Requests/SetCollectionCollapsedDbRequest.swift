@@ -24,7 +24,8 @@ struct SetCollectionCollapsedDbRequest: DbRequest {
     }
 }
 
-struct SetAllCollectionsCollapsedDbRequest: DbRequest {
+struct SetCollectionsCollapsedDbRequest: DbRequest {
+    let keys: [String]
     let collapsed: Bool
     let libraryId: LibraryIdentifier
 
@@ -32,8 +33,7 @@ struct SetAllCollectionsCollapsedDbRequest: DbRequest {
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
     func process(in database: Realm) throws {
-        let collections = try ReadCollectionsDbRequest(libraryId: self.libraryId).process(in: database)
-        for collection in collections {
+        for collection in database.objects(RCollection.self).filter(.keys(self.keys, in: self.libraryId)) {
             collection.collapsed = self.collapsed
         }
     }

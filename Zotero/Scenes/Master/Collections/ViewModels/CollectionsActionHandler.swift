@@ -77,18 +77,22 @@ struct CollectionsActionHandler: ViewModelActionHandler {
     }
 
     private func set(allCollapsed: Bool, in viewModel: ViewModel<CollectionsActionHandler>) {
+        var changedCollections: [String] = []
+
         self.update(viewModel: viewModel) { state in
             var lastTopParent: CollectionIdentifier = .custom(.all)
-            var collectionCount = 0
-            for (idx, collection) in state.collections.enumerated() {
-                state.collections[idx].collapsed = allCollapsed
-                state.collections[idx].visible = allCollapsed ? (collection.level == 0) : true
 
-                switch collection.identifier {
-                case .collection:
-                    collectionCount += 1
-                case .custom, .search: break
+            for (idx, collection) in state.collections.enumerated() {
+                if collection.hasChildren {
+                    state.collections[idx].collapsed = allCollapsed
+                    switch collection.identifier {
+                    case .collection(let key):
+                        changedCollections.append(key)
+                    case .custom, .search: break
+                    }
                 }
+                
+                state.collections[idx].visible = allCollapsed ? (collection.level == 0) : true
 
                 // If collapsing, update selected collection if needed
                 if allCollapsed {
@@ -100,7 +104,8 @@ struct CollectionsActionHandler: ViewModelActionHandler {
                     }
                 }
             }
-            state.collectionsToggledCount = collectionCount
+
+            state.collectionsToggledCount = changedCollections.count
             state.changes.insert(.results)
         }
 
@@ -110,7 +115,7 @@ struct CollectionsActionHandler: ViewModelActionHandler {
             do {
                 // Since this request has to be performed in background (otherwise the main queue freezes due to writes from multiple threads during sync),
                 // we can't pass `NotificationToken` to ignore next notification. So we store a flag which will be toggled in observation.
-                let request = SetAllCollectionsCollapsedDbRequest(collapsed: allCollapsed, libraryId: libraryId)
+                let request = SetCollectionsCollapsedDbRequest(keys: changedCollections, collapsed: allCollapsed, libraryId: libraryId)
                 try self.dbStorage.createCoordinator().perform(request: request)
             } catch let error {
                 DDLogError("CollectionsActionHandler: can't change collapsed all - \(error)")
