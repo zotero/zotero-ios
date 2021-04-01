@@ -137,13 +137,14 @@ final class CollectionsTableViewHandler: NSObject {
     private func createContextMenu(for collection: Collection) -> UIMenu? {
         switch collection.identifier {
         case .collection(let key):
-            let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] action in
+            guard self.viewModel.state.library.metadataEditable else { return nil }
+            let edit = UIAction(title: L10n.edit, image: UIImage(systemName: "pencil")) { [weak self] _ in
                 self?.viewModel.process(action: .startEditing(.edit(collection)))
             }
-            let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] action in
+            let subcollection = UIAction(title: L10n.Collections.newSubcollection, image: UIImage(systemName: "folder.badge.plus")) { [weak self] _ in
                 self?.viewModel.process(action: .startEditing(.addSubcollection(collection)))
             }
-            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+            let delete = UIAction(title: L10n.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                 self?.viewModel.process(action: .deleteCollection(key))
             }
             return UIMenu(title: "", children: [edit, subcollection, delete])
@@ -151,13 +152,22 @@ final class CollectionsTableViewHandler: NSObject {
         case .custom(let type):
             switch type {
             case .trash:
-                guard collection.itemCount > 0 else { return nil }
-                let trash = UIAction(title: L10n.Collections.emptyTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] action in
+                guard self.viewModel.state.library.metadataEditable && collection.itemCount > 0 else { return nil }
+                let trash = UIAction(title: L10n.Collections.emptyTrash, image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
                     self?.viewModel.process(action: .emptyTrash)
                 }
                 return UIMenu(title: "", children: [trash])
 
-            case .all, .publications:
+            case .all:
+                guard self.viewModel.state.hasExpandableCollection else { return nil }
+                let allExpanded = self.viewModel.state.areAllExpanded
+                let title = allExpanded ? L10n.Collections.collapseAll : L10n.Collections.expandAll
+                let action = UIAction(title: title) { [weak self] _ in
+                    self?.viewModel.process(action: (allExpanded ? .collapseAll : .expandAll))
+                }
+                return UIMenu(title: "", children: [action])
+
+            case .publications:
                 return nil
             }
 
@@ -242,7 +252,7 @@ extension CollectionsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard self.viewModel.state.library.metadataEditable else { return nil }
+        guard indexPath.row < self.snapshot.count else { return nil }
         let collection = self.snapshot[indexPath.row]
         return self.createContextMenu(for: collection).flatMap({ menu in UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu }) })
     }
@@ -261,9 +271,7 @@ extension CollectionsTableViewHandler: UITableViewDropDelegate {
         }
     }
 
-    func tableView(_ tableView: UITableView,
-                   dropSessionDidUpdate session: UIDropSession,
-                   withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+    func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
         if !self.viewModel.state.library.metadataEditable {
             return UITableViewDropProposal(operation: .forbidden)
         }

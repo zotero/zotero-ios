@@ -128,11 +128,10 @@ final class CollectionsViewController: UIViewController {
     // MARK: - Setups
 
     private func setupAddNavbarItem() {
-        let menuItem = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), style: .plain, target: nil, action: nil)
-        menuItem.rx.tap
+        let addItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: nil, action: nil)
+        addItem.rx.tap
                .subscribe(onNext: { [weak self] _ in
-                    guard let `self` = self else { return }
-                    self.coordinatorDelegate?.showCollectionsMenu(button: menuItem, viewModel: self.viewModel)
+                self?.viewModel.process(action: .startEditing(.add))
                })
                .disposed(by: self.disposeBag)
 
@@ -143,6 +142,6 @@ final class CollectionsViewController: UIViewController {
                   })
                   .disposed(by: self.disposeBag)
 
-        self.navigationItem.rightBarButtonItems = [menuItem, searchItem]
+        self.navigationItem.rightBarButtonItems = [addItem, searchItem]
     }
 }
