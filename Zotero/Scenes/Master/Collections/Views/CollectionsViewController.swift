@@ -41,7 +41,7 @@ final class CollectionsViewController: UIViewController {
 
         self.viewModel.process(action: .loadData)
 
-        self.navigationItem.title = self.viewModel.state.library.name
+        self.setupTitleWithContextMenu(self.viewModel.state.library.name)
         if self.viewModel.state.library.metadataEditable {
             self.setupAddNavbarItem()
         }
@@ -125,6 +125,16 @@ final class CollectionsViewController: UIViewController {
         self.viewModel.process(action: .select(searchResult.identifier))
     }
 
+    private func createCollapseAllContextMenu() -> UIMenu? {
+        guard self.viewModel.state.hasExpandableCollection else { return nil }
+        let allExpanded = self.viewModel.state.areAllExpanded
+        let title = allExpanded ? L10n.Collections.collapseAll : L10n.Collections.expandAll
+        let action = UIAction(title: title) { [weak self] _ in
+            self?.viewModel.process(action: (allExpanded ? .collapseAll : .expandAll))
+        }
+        return UIMenu(title: "", children: [action])
+    }
+
     // MARK: - Setups
 
     private func setupAddNavbarItem() {
@@ -143,5 +153,24 @@ final class CollectionsViewController: UIViewController {
                   .disposed(by: self.disposeBag)
 
         self.navigationItem.rightBarButtonItems = [addItem, searchItem]
+    }
+
+    private func setupTitleWithContextMenu(_ title: String) {
+        let button = UIButton(type: .custom)
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(UIColor(dynamicProvider: { $0.userInterfaceStyle == .light ? .black : .white }), for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        let interaction = UIContextMenuInteraction(delegate: self)
+        button.addInteraction(interaction)
+        self.navigationItem.titleView = button
+    }
+}
+
+extension CollectionsViewController: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { [weak self] _ in
+            return self?.createCollapseAllContextMenu()
+        })
     }
 }

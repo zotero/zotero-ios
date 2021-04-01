@@ -158,16 +158,7 @@ final class CollectionsTableViewHandler: NSObject {
                 }
                 return UIMenu(title: "", children: [trash])
 
-            case .all:
-                guard self.viewModel.state.hasExpandableCollection else { return nil }
-                let allExpanded = self.viewModel.state.areAllExpanded
-                let title = allExpanded ? L10n.Collections.collapseAll : L10n.Collections.expandAll
-                let action = UIAction(title: title) { [weak self] _ in
-                    self?.viewModel.process(action: (allExpanded ? .collapseAll : .expandAll))
-                }
-                return UIMenu(title: "", children: [action])
-
-            case .publications:
+            case .publications, .all:
                 return nil
             }
 
