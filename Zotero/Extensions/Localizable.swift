@@ -48,6 +48,8 @@ internal enum L10n {
   internal static let itemType = L10n.tr("Localizable", "item_type")
   /// Last Updated
   internal static let lastUpdated = L10n.tr("Localizable", "last_updated")
+  /// Look Up
+  internal static let lookup = L10n.tr("Localizable", "lookup")
   /// Name
   internal static let name = L10n.tr("Localizable", "name")
   /// No

@@ -40,6 +40,7 @@
 "privacy_policy" = "Privacy Policy";
 "about_beta" = "About the Zotero for iOS Beta";
 "recent" = "Recent";
+"lookup" = "Look Up";
 
 "beta_wipe_title" = "Resync Required";
 "beta_wipe_message" = "Due to a beta update, your data must be redownloaded from zotero.org.";

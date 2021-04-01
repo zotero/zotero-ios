@@ -629,7 +629,7 @@ final class PDFReaderViewController: UIViewController {
             builder.allowedAppearanceModes = [.night]
             builder.isCreateAnnotationMenuEnabled = true
             builder.createAnnotationMenuGroups = self.createAnnotationCreationMenuGroups()
-            builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation]
+            builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation, .define]
             builder.scrubberBarType = .horizontal
             builder.thumbnailBarMode = .scrubberBar
             builder.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
@@ -928,20 +928,37 @@ extension PDFReaderViewController: PDFViewControllerDelegate {
         let identifiers: [String]
         // TODO: - group editing disabled temporarily
         switch self.viewModel.state.library.identifier {
-        case .custom: identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
-        case .group: identifiers = [TextMenu.copy.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
+        case .custom: identifiers = [TextMenu.copy.rawValue, TextMenu.annotationMenuHighlight.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
+        case .group: identifiers = [TextMenu.copy.rawValue, TextMenu.define.rawValue, TextMenu.search.rawValue, TextMenu.speak.rawValue, TextMenu.share.rawValue]
         }
-        return menuItems.filter({ [weak self] item in
+
+        // Filter unwanted items
+        let filtered = menuItems.filter({ item in
             guard let identifier = item.identifier else { return false }
-            if identifier == TextMenu.share.rawValue {
-                item.actionBlock = {
-                    guard let view = self?.pdfController.view else { return }
-                    // Overwrite share action, because the original one reports "[ShareSheet] connection invalidated".
-                    self?.coordinatorDelegate?.share(text: selectedText, rect: rect, view: view)
-                }
+            if identifier == TextMenu.define.rawValue {
+                return UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: selectedText)
             }
             return identifiers.contains(identifier)
         })
+
+        // Overwrite share action, because the original one reports "[ShareSheet] connection invalidated".
+        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.share.rawValue }) {
+            filtered[idx].actionBlock = { [weak self] in
+                guard let view = self?.pdfController.view else { return }
+                self?.coordinatorDelegate?.share(text: selectedText, rect: rect, view: view)
+            }
+        }
+
+        // Overwrite define action, because the original one doesn't show anything.
+        if let idx = filtered.firstIndex(where: { $0.identifier == TextMenu.define.rawValue }) {
+            filtered[idx].title = L10n.lookup
+            filtered[idx].actionBlock = { [weak self] in
+                guard let view = self?.pdfController.view else { return }
+                self?.coordinatorDelegate?.lookup(text: selectedText, rect: rect, view: view)
+            }
+        }
+
+        return filtered
     }
 
     func pdfViewController(_ pdfController: PDFViewController, shouldSave document: PSPDFKit.Document, withOptions options: AutoreleasingUnsafeMutablePointer<NSDictionary>) -> Bool {

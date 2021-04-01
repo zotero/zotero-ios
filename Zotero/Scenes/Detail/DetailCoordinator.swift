@@ -64,6 +64,7 @@ protocol DetailPdfCoordinatorDelegate: class {
     func show(error: PdfDocumentExporter.Error)
     func share(url: URL, barButton: UIBarButtonItem)
     func share(text: String, rect: CGRect, view: UIView)
+    func lookup(text: String, rect: CGRect, view: UIView)
     func showDeletedAlertForPdf(completion: @escaping (Bool) -> Void)
     func pdfDidDeinitialize()
     func showSettings(state: PDFSettingsState, sender: UIBarButtonItem, completion: @escaping (PDFReaderAction) -> Void)
@@ -660,6 +661,14 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
 
     func share(text: String, rect: CGRect, view: UIView) {
         self.share(item: text, source: .view(view, rect))
+    }
+
+    func lookup(text: String, rect: CGRect, view: UIView) {
+        let controller = UIReferenceLibraryViewController(term: text)
+        controller.modalPresentationStyle = .popover
+        controller.popoverPresentationController?.sourceView = view
+        controller.popoverPresentationController?.sourceRect = rect
+        self.topViewController.present(controller, animated: true, completion: nil)
     }
 
     func show(error: PdfDocumentExporter.Error) {
