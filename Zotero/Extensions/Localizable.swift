@@ -66,7 +66,7 @@ internal enum L10n {
   internal static let publicationTitle = L10n.tr("Localizable", "publication_title")
   /// Publisher
   internal static let publisher = L10n.tr("Localizable", "publisher")
-  /// Recent
+  /// Recents
   internal static let recent = L10n.tr("Localizable", "recent")
   /// Report
   internal static let report = L10n.tr("Localizable", "report")
@@ -348,12 +348,6 @@ internal enum L10n {
     internal static let sortBy = L10n.tr("Localizable", "items.sort_by")
     /// Sort Order
     internal static let sortOrder = L10n.tr("Localizable", "items.sort_order")
-    /// Are you sure you want to move selected items to the trash?
-    internal static let trashMultipleQuestion = L10n.tr("Localizable", "items.trash_multiple_question")
-    /// Are you sure you want to move the selected item to the trash?
-    internal static let trashQuestion = L10n.tr("Localizable", "items.trash_question")
-    /// Move to Trash
-    internal static let trashTitle = L10n.tr("Localizable", "items.trash_title")
     /// Select a Collection
     internal static let zeroCollectionsSelected = L10n.tr("Localizable", "items.zero_collections_selected")
     internal enum Action {

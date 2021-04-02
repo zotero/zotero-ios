@@ -110,9 +110,6 @@
 "items.zero_collections_selected" = "Select a Collection";
 "items.one_collections_selected" = "1 Collection Selected";
 "items.many_collections_selected" = "%d Collections Selected";
-"items.trash_title" = "Move to Trash";
-"items.trash_question" = "Are you sure you want to move the selected item to the trash?";
-"items.trash_multiple_question" = "Are you sure you want to move selected items to the trash?";
 "items.delete_question" = "Are you sure you want to delete the selected item?";
 "items.delete_multiple_question" = "Are you sure you want to delete selected items?";
 "items.remove_from_collection_title" = "Remove from Collection";

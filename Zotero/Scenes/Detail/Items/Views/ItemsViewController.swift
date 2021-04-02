@@ -223,10 +223,7 @@ final class ItemsViewController: UIViewController {
             self.viewModel.process(action: .restoreItems(selectedKeys))
 
         case .trash:
-            let question = self.viewModel.state.selectedItems.count == 1 ? L10n.Items.trashQuestion : L10n.Items.trashMultipleQuestion
-            self.ask(question: question, title: L10n.Items.trashTitle, isDestructive: false, confirm: { [weak self] in
-                self?.viewModel.process(action: .trashItems(selectedKeys))
-            })
+            self.viewModel.process(action: .trashItems(selectedKeys))
         }
     }
 
