@@ -220,10 +220,7 @@ final class ItemsViewController: UIViewController {
             })
 
         case .restore:
-            let question = self.viewModel.state.selectedItems.count == 1 ? L10n.Items.restoreQuestion : L10n.Items.restoreMultipleQuestion
-            self.ask(question: question, title: L10n.Items.restoreQuestion, isDestructive: false, confirm: { [weak self] in
-                self?.viewModel.process(action: .restoreItems(selectedKeys))
-            })
+            self.viewModel.process(action: .restoreItems(selectedKeys))
 
         case .trash:
             let question = self.viewModel.state.selectedItems.count == 1 ? L10n.Items.trashQuestion : L10n.Items.trashMultipleQuestion

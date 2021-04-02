@@ -115,8 +115,6 @@
 "items.trash_multiple_question" = "Are you sure you want to move selected items to the trash?";
 "items.delete_question" = "Are you sure you want to delete the selected item?";
 "items.delete_multiple_question" = "Are you sure you want to delete selected items?";
-"items.restore_question" = "Are you sure you want to restore the selected item?";
-"items.restore_multiple_question" = "Are you sure you want to restore selected items?";
 "items.remove_from_collection_title" = "Remove from Collection";
 "items.remove_from_collection_question" = "Are you sure you want to remove the selected item from this collection?";
 "items.remove_from_collection_multiple_question" = "Are you sure you want to remove selected items from this collection?";

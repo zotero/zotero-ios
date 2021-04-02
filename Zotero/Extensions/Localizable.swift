@@ -338,10 +338,6 @@ internal enum L10n {
     internal static let removeFromCollectionQuestion = L10n.tr("Localizable", "items.remove_from_collection_question")
     /// Remove from Collection
     internal static let removeFromCollectionTitle = L10n.tr("Localizable", "items.remove_from_collection_title")
-    /// Are you sure you want to restore selected items?
-    internal static let restoreMultipleQuestion = L10n.tr("Localizable", "items.restore_multiple_question")
-    /// Are you sure you want to restore the selected item?
-    internal static let restoreQuestion = L10n.tr("Localizable", "items.restore_question")
     /// Search Items
     internal static let searchTitle = L10n.tr("Localizable", "items.search_title")
     /// Select
