@@ -38,11 +38,14 @@ fileprivate struct ListView: View {
                 if !self.store.state.recentCollections.isEmpty {
                     Section(header: Text(L10n.recent.uppercased())) {
                         ForEach(self.store.state.recentCollections) { collectionWithLibrary in
-                            CollapsibleCollectionRow(collection: collectionWithLibrary.collection,
-                                                     pickAction: {
-                                                        self.picked(collectionWithLibrary.collection, collectionWithLibrary.library)
-                                                     },
-                                                     collapseAction: {})
+                            CollapsibleRow(content: CollectionRow(data: collectionWithLibrary.collection),
+                                           showCollapseButton: true,
+                                           collapsed: true,
+                                           pickAction: {
+                                               self.picked(collectionWithLibrary.collection, collectionWithLibrary.library)
+                                           },
+                                           collapseAction: {})
+                                .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
                                 .id(collectionWithLibrary.id)
                         }
                     }
@@ -50,27 +53,30 @@ fileprivate struct ListView: View {
 
                 Section {
                     ForEach(self.store.state.libraries) { library in
-                        CollapsibleLibraryRow(library: library, collapsed: (self.store.state.librariesCollapsed[library.identifier] ?? true)) {
-                            self.store.toggleLibraryCollapsed(id: library.identifier)
-                        }
+                        CollapsibleRow(content: LibraryRow(title: library.name, isReadOnly: !library.metadataEditable),
+                                       showCollapseButton: true,
+                                       collapsed: self.libraryCollapsed(library),
+                                       pickAction: {
+                                           self.picked(Collection(custom: .all), library)
+                                       },
+                                       collapseAction: {
+                                           self.store.toggleLibraryCollapsed(id: library.identifier)
+                                       })
+                            .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
 
                         if self.store.state.librariesCollapsed[library.identifier] == false {
-                            CollapsibleCollectionRow(collection: Collection(custom: .all),
-                                                     pickAction: {
-                                                        self.picked(Collection(custom: .all), library)
-                                                     },
-                                                     collapseAction: {})
-                                .id(self.hash(forCollection: .custom(.all), andLibrary: library.identifier))
-
                             self.store.state.collections[library.identifier].flatMap {
                                 ForEach($0.filter({ $0.visible })) { collection in
-                                    CollapsibleCollectionRow(collection: collection,
-                                                             pickAction: {
-                                                                self.picked(collection, library)
-                                                             },
-                                                             collapseAction: {
-                                                                self.store.toggleCollectionCollapsed(collection: collection, libraryId: library.identifier)
-                                                             })
+                                    CollapsibleRow(content: CollectionRow(data: collection),
+                                                   showCollapseButton: collection.hasChildren,
+                                                   collapsed: collection.collapsed,
+                                                   pickAction: {
+                                                       self.picked(collection, library)
+                                                   },
+                                                   collapseAction: {
+                                                       self.store.toggleCollectionCollapsed(collection: collection, libraryId: library.identifier)
+                                                   })
+                                        .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: collection.level, baseOffset: ListView.baseCellOffset), bottom: 0, trailing: 0))
                                         .id(self.hash(forCollection: collection.identifier, andLibrary: library.identifier))
                                 }
                             }
@@ -80,6 +86,10 @@ fileprivate struct ListView: View {
             }
             .listStyle(GroupedListStyle())
         }
+    }
+
+    private func libraryCollapsed(_ library: Library) -> Bool {
+        return self.store.state.librariesCollapsed[library.identifier] ?? true
     }
 
     private func hash(forCollection collectionId: CollectionIdentifier, andLibrary libraryId: LibraryIdentifier) -> Int {
@@ -114,28 +124,11 @@ fileprivate struct ScrollableView<Content>: View where Content: View {
     }
 }
 
-fileprivate struct CollapsibleLibraryRow: View {
-    let library: Library
+fileprivate struct CollapsibleRow<Content>: View where Content: View {
+
+    let content: Content
+    let showCollapseButton: Bool
     let collapsed: Bool
-    let action: () -> Void
-
-    var body: some View {
-        GeometryReader(content: { geometry in
-            ZStack(alignment: .leading) {
-                LibraryRow(title: self.library.name, isReadOnly: !self.library.metadataEditable)
-                    .frame(height: geometry.size.height)
-
-                CollapseButton(collapsed: self.collapsed, size: geometry.size.height, action: self.action)
-                    .offset(x: -(geometry.size.height * 0.92))
-            }
-        })
-        .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
-    }
-}
-
-fileprivate struct CollapsibleCollectionRow: View {
-
-    let collection: Collection
     let pickAction: () -> Void
     let collapseAction: () -> Void
 
@@ -145,19 +138,18 @@ fileprivate struct CollapsibleCollectionRow: View {
                 Button(action: {
                     self.pickAction()
                 }) {
-                    CollectionRow(data: self.collection)
+                    self.content
                     Spacer()
                 }
                 .buttonStyle(BorderlessButtonStyle())
                 .frame(height: geometry.size.height)
 
-                if self.collection.hasChildren {
-                    CollapseButton(collapsed: self.collection.collapsed, size: geometry.size.height, action: self.collapseAction)
+                if self.showCollapseButton {
+                    CollapseButton(collapsed: self.collapsed, size: geometry.size.height, action: self.collapseAction)
                         .offset(x: -(geometry.size.height * 0.92))
                 }
             }
         })
-        .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: self.collection.level, baseOffset: ListView.baseCellOffset), bottom: 0, trailing: 0))
     }
 }
 
