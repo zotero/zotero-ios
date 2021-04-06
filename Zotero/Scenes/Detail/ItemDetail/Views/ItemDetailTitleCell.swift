@@ -12,35 +12,35 @@ import RxCocoa
 import RxSwift
 
 final class ItemDetailTitleCell: RxTableViewCell {
-    @IBOutlet private weak var labelTop: NSLayoutConstraint!
-    @IBOutlet private weak var label: UILabel!
-    @IBOutlet private weak var textField: UITextField!
+    @IBOutlet private weak var textView: UITextView!
+    @IBOutlet private weak var topConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
 
+    private lazy var delegate: PlaceholderTextViewDelegate = {
+        PlaceholderTextViewDelegate(placeholder: L10n.ItemDetail.untitled, menuItems: nil)
+    }()
     var textObservable: Observable<String> {
-        return self.textField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.textField.text ?? "") })
+        return self.delegate.textObservable
     }
 
     override func awakeFromNib() {
         super.awakeFromNib()
         self.separatorHeight.constant = ItemDetailLayout.separatorHeight
+
+        self.textView.font = .preferredFont(forTextStyle: .title1)
+        self.textView.delegate = self.delegate
+        self.textView.isScrollEnabled = false
+        self.textView.textContainerInset = UIEdgeInsets()
+        self.textView.textContainer.lineFragmentPadding = 0
+
+        let font = self.textView.font!
+        self.topConstraint.constant = font.capHeight - font.ascender
+        self.bottomConstraint.constant = -font.descender
     }
 
-    func setup(with title: String, isEditing: Bool, placeholder: String? = nil) {
-        self.textField.isHidden = !isEditing
-        self.label.isHidden = isEditing
-
-        self.labelTop.constant = self.label.font.capHeight - self.label.font.ascender
-
-        if isEditing {
-            self.textField.text = title
-            self.textField.placeholder = placeholder
-        } else {
-            if !title.isEmpty {
-                self.label.text = title
-            } else if let placeholder = placeholder {
-                self.label.text = placeholder
-            }
-        }
+    func setup(with title: String, isEditing: Bool) {
+        self.textView.isEditable = isEditing
+        self.delegate.set(text: title, to: self.textView)
     }
 }

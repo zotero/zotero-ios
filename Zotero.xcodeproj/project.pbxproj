@@ -710,6 +710,7 @@
 		B3C6AB2E248E42400009AC96 /* ApiOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */; };
 		B3C6AB2F248E42790009AC96 /* AsynchronousOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */; };
 		B3C6AB30248E6FFA0009AC96 /* SyncBatchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */; };
+		B3C6D552261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */; };
 		B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */; };
 		B3C9D60524DA921B003EA1EE /* CollectionsSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C9D60324DA921B003EA1EE /* CollectionsSearchViewController.swift */; };
 		B3C9D60624DA921B003EA1EE /* CollectionsSearchViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3C9D60424DA921B003EA1EE /* CollectionsSearchViewController.xib */; };
@@ -1333,6 +1334,7 @@
 		B3C6AB27248E1B720009AC96 /* SyncBatchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBatchProcessor.swift; sourceTree = "<group>"; };
 		B3C6AB2A248E3EB90009AC96 /* ApiOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiOperation.swift; sourceTree = "<group>"; };
 		B3C6AB2C248E3F840009AC96 /* AsynchronousOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsynchronousOperation.swift; sourceTree = "<group>"; };
+		B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTextViewDelegate.swift; sourceTree = "<group>"; };
 		B3C9096E2497666900286FCF /* ImagePreviewViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ImagePreviewViewController.xib; sourceTree = "<group>"; };
 		B3C9D60324DA921B003EA1EE /* CollectionsSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsSearchViewController.swift; sourceTree = "<group>"; };
 		B3C9D60424DA921B003EA1EE /* CollectionsSearchViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionsSearchViewController.xib; sourceTree = "<group>"; };
@@ -1514,6 +1516,7 @@
 				B305649E23FC051E003304F2 /* Licenses.swift */,
 				B305646C23FC051E003304F2 /* ObjectUserChangeObserver.swift */,
 				B34A9F6325BF1ABB007C9A4A /* PdfDocumentExporter.swift */,
+				B3C6D551261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift */,
 				B305646A23FC051E003304F2 /* RItemLocaleController.swift */,
 				B305646B23FC051E003304F2 /* SchemaController.swift */,
 				B305646F23FC051E003304F2 /* SecureStorage.swift */,
@@ -3121,6 +3124,7 @@
 				B367330D24ACB63300E0CDA8 /* HtmlAttributedStringConverter.swift in Sources */,
 				B30565C823FC051E003304F2 /* EditNoteDbRequest.swift in Sources */,
 				B30565D823FC051E003304F2 /* CreateNoteDbRequest.swift in Sources */,
+				B3C6D552261C9F2E0068B9FE /* PlaceholderTextViewDelegate.swift in Sources */,
 				B30566C323FC051F003304F2 /* SyncObject.swift in Sources */,
 				B325DBAF24375D8D00EFF0F5 /* Conflict.swift in Sources */,
 				B37491342488D7040042FF85 /* DebugSettingsView.swift in Sources */,

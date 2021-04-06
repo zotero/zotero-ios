@@ -84,7 +84,6 @@ final class ItemDetailTableViewHandler: NSObject {
     private var titleWidth: CGFloat {
         return self.viewModel.state.isEditing ? self.maxTitleWidth : self.maxNonemptyTitleWidth
     }
-    private var abstractTextViewHeight: CGFloat = 0
     private weak var fileDownloader: FileDownloader?
     weak var delegate: ItemDetailTableViewHandlerDelegate?
 
@@ -105,9 +104,6 @@ final class ItemDetailTableViewHandler: NSObject {
         let (titleWidth, nonEmptyTitleWidth) = self.calculateTitleWidths(for: viewModel.state.data)
         self.maxTitleWidth = titleWidth
         self.maxNonemptyTitleWidth = nonEmptyTitleWidth
-        let abstract = viewModel.state.data.abstract ?? ""
-        let maxWidth = containerWidth - (2 * ItemDetailLayout.horizontalInset)
-        self.abstractTextViewHeight = self.calculateAbstractHeight(for: abstract, width: maxWidth)
         self.setupTableView()
         self.setupKeyboardObserving()
     }
@@ -286,44 +282,23 @@ final class ItemDetailTableViewHandler: NSObject {
         return (maxTitleWidth, maxNonemptyTitleWidth)
     }
 
-    private func update(abstract: String, currentHeight: CGFloat, indexPath: IndexPath) {
-        // Update abstract value in state
-        self.viewModel.process(action: .setAbstract(abstract))
-        // Change height if needed
-        let maxWidth = self.tableView.frame.width - (2 * ItemDetailLayout.horizontalInset)
-        let height = self.calculateAbstractHeight(for: abstract, width: maxWidth)
-        guard height != currentHeight else { return }
-        self.updateAbstractCellHeight(at: indexPath, to: height)
-    }
-
-    private func updateAbstractCellHeight(at indexPath: IndexPath, to height: CGFloat) {
-        guard let cell = self.tableView.cellForRow(at: indexPath) as? ItemDetailAbstractEditCell else { return }
-
-        cell.update(toHeight: height)
-
+    private func updateCellHeightsAndScroll(to indexPath: IndexPath) {
         UIView.setAnimationsEnabled(false)
         self.tableView.beginUpdates()
         self.tableView.endUpdates()
 
-        let cellBottom = self.tableView.rectForRow(at: indexPath).maxY - self.tableView.contentOffset.y
+        let cellFrame =  self.tableView.rectForRow(at: indexPath)
+        let cellBottom = cellFrame.maxY - self.tableView.contentOffset.y
         let tableViewBottom = self.tableView.superview!.bounds.maxY - self.tableView.contentInset.bottom
+        let safeAreaTop = self.tableView.superview!.safeAreaInsets.top
 
-        if cellBottom > tableViewBottom {
-            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+        // Scroll either when cell bottom is below keyboard or cell top is not visible on screen
+        if cellBottom > tableViewBottom || cellFrame.minY < (safeAreaTop + self.tableView.contentOffset.y) {
+            // Scroll to top if cell is smaller than visible screen, so that it's fully visible, otherwise scroll to bottom.
+            let position: UITableView.ScrollPosition = cellFrame.height + safeAreaTop < tableViewBottom ? .top : .bottom
+            self.tableView.scrollToRow(at: indexPath, at: position, animated: false)
         }
         UIView.setAnimationsEnabled(true)
-    }
-
-    private func calculateAbstractHeight(for text: String, width: CGFloat) -> CGFloat {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .justified
-        paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
-        paragraphStyle.maximumLineHeight = ItemDetailLayout.lineHeight
-        let attributes: [NSAttributedString.Key: Any] = [.paragraphStyle: paragraphStyle,
-                                                         .font: UIFont.preferredFont(forTextStyle: .body)]
-        let maxSize = CGSize(width: width, height: .greatestFiniteMagnitude)
-        let height = (text.isEmpty ? " " : text).boundingRect(with: maxSize, options: .usesLineFragmentOrigin, attributes: attributes, context: nil).height
-        return ceil(height)
     }
 
     // MARK: - Tableview data source helpers
@@ -607,10 +582,11 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
         switch section {
         case .abstract:
             if let cell = cell as? ItemDetailAbstractEditCell {
-                cell.setup(with: (self.viewModel.state.data.abstract ?? ""), height: self.abstractTextViewHeight)
-                cell.textObservable.subscribe(onNext: { [weak self] (abstract, currentHeight) in
+                cell.setup(with: (self.viewModel.state.data.abstract ?? ""))
+                cell.textObservable.subscribe(onNext: { [weak self] abstract in
                     guard isEditing else { return }
-                    self?.update(abstract: abstract, currentHeight: currentHeight, indexPath: indexPath)
+                    self?.viewModel.process(action: .setAbstract(abstract))
+                    self?.updateCellHeightsAndScroll(to: indexPath)
                 }).disposed(by: cell.newDisposeBag)
             } else if let cell = cell as? ItemDetailAbstractCell {
                 cell.setup(with: (self.viewModel.state.data.abstract ?? ""), isCollapsed: self.viewModel.state.abstractCollapsed)
@@ -618,11 +594,11 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
 
         case .title:
             if let cell = cell as? ItemDetailTitleCell {
-                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing, placeholder: L10n.ItemDetail.untitled)
+                cell.setup(with: self.viewModel.state.data.title, isEditing: isEditing)
                 cell.textObservable.subscribe(onNext: { [weak self] title in
-                    if isEditing {
-                        self?.viewModel.process(action: .setTitle(title))
-                    }
+                    guard isEditing else { return }
+                    self?.viewModel.process(action: .setTitle(title))
+                    self?.updateCellHeightsAndScroll(to: indexPath)
                 }).disposed(by: cell.newDisposeBag)
             }
 

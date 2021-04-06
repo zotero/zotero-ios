@@ -15,10 +15,9 @@ final class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentTextView: UITextView!
-    @IBOutlet private weak var textViewHeight: NSLayoutConstraint!
 
-    private var observer: AnyObserver<(String, CGFloat)>?
-    var textObservable: Observable<(String, CGFloat)> {
+    private var observer: AnyObserver<String>?
+    var textObservable: Observable<String> {
         return Observable.create { observer -> Disposable in
             self.observer = observer
             return Disposables.create()
@@ -35,11 +34,12 @@ final class ItemDetailAbstractEditCell: RxTableViewCell {
         self.titleTop.constant = -(font.ascender - font.capHeight)
 
         self.contentTextView.delegate = self
-        self.contentTextView.textContainerInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 10)
+        self.contentTextView.isScrollEnabled = false
+        self.contentTextView.textContainerInset = UIEdgeInsets()
         self.contentTextView.textContainer.lineFragmentPadding = 0
     }
 
-    func setup(with abstract: String, height: CGFloat) {
+    func setup(with abstract: String) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .justified
         paragraphStyle.minimumLineHeight = ItemDetailLayout.lineHeight
@@ -50,16 +50,11 @@ final class ItemDetailAbstractEditCell: RxTableViewCell {
         let attributedText = NSAttributedString(string: abstract, attributes: attributes)
 
         self.contentTextView.attributedText = attributedText
-        self.textViewHeight.constant = height
-    }
-
-    func update(toHeight height: CGFloat) {
-        self.textViewHeight.constant = height
     }
 }
 
 extension ItemDetailAbstractEditCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        self.observer?.on(.next((textView.text, self.textViewHeight.constant)))
+        self.observer?.on(.next(textView.text))
     }
 }
