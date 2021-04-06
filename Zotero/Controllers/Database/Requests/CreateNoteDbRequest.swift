@@ -23,7 +23,7 @@ struct CreateNoteDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> RItem {
         let item = RItem()
-        item.key = KeyGenerator.newKey
+        item.key = self.note.key
         item.rawType = ItemTypes.note
         item.localizedType = self.localizedType
         item.syncState = .synced
