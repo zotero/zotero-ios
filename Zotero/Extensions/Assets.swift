@@ -75,6 +75,7 @@ internal enum Asset {
     internal static let attachmentListPdf = ImageAsset(name: "attachment-list-pdf")
     internal enum Cells {
       internal static let collection = ImageAsset(name: "Cells/collection")
+      internal static let collectionChildren = ImageAsset(name: "Cells/collection_children")
       internal static let document = ImageAsset(name: "Cells/document")
       internal static let library = ImageAsset(name: "Cells/library")
       internal static let libraryArchived = ImageAsset(name: "Cells/library_archived")
