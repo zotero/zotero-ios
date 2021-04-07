@@ -12,9 +12,13 @@ import RxSwift
 
 final class ItemDetailAbstractEditCell: RxTableViewCell {
     @IBOutlet private weak var separatorHeight: NSLayoutConstraint!
-    @IBOutlet private weak var titleTop: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var contentTextView: UITextView!
+    @IBOutlet private weak var titleTop: NSLayoutConstraint!
+    @IBOutlet private weak var titleToContent: NSLayoutConstraint!
+    @IBOutlet private weak var contentBottom: NSLayoutConstraint!
+
+    private static let textViewTapAreaOffset: CGFloat = 8
 
     private var observer: AnyObserver<String>?
     var textObservable: Observable<String> {
@@ -29,13 +33,16 @@ final class ItemDetailAbstractEditCell: RxTableViewCell {
 
         self.separatorHeight.constant = ItemDetailLayout.separatorHeight
 
-        let font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.titleLabel.font = font
-        self.titleTop.constant = -(font.ascender - font.capHeight)
+        let titleFont = UIFont.preferredFont(for: .headline, weight: .regular)
+        self.titleLabel.font = titleFont
+        self.titleTop.constant = -(titleFont.ascender - titleFont.capHeight)
+        let contentFont = UIFont.preferredFont(forTextStyle: .body)
+        self.titleToContent.constant = contentFont.ascender - (ItemDetailLayout.lineHeight - contentFont.capHeight) - ItemDetailAbstractEditCell.textViewTapAreaOffset
+        self.contentBottom.constant = contentFont.descender - ItemDetailLayout.separatorHeight - 1 - ItemDetailAbstractEditCell.textViewTapAreaOffset
 
         self.contentTextView.delegate = self
         self.contentTextView.isScrollEnabled = false
-        self.contentTextView.textContainerInset = UIEdgeInsets()
+        self.contentTextView.textContainerInset = UIEdgeInsets(top: ItemDetailAbstractEditCell.textViewTapAreaOffset, left: 0, bottom: ItemDetailAbstractEditCell.textViewTapAreaOffset, right: 0)
         self.contentTextView.textContainer.lineFragmentPadding = 0
     }
 

@@ -32,8 +32,7 @@
                         <nil key="highlightedColor"/>
                     </label>
                     <textView clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="999" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" bouncesZoom="NO" textAlignment="justified" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FpG-g1-z40">
-                        <rect key="frame" x="20" y="36" width="354" height="195"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <rect key="frame" x="20" y="36" width="354" height="189"/>
                         <color key="textColor" systemColor="labelColor"/>
                         <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                         <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
@@ -44,7 +43,7 @@
                     <constraint firstItem="iuX-MD-1Qd" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leadingMargin" id="8Ju-Ey-G3N"/>
                     <constraint firstItem="b3h-Qy-EqW" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leadingMargin" id="IIl-iP-abN"/>
                     <constraint firstAttribute="trailing" secondItem="b3h-Qy-EqW" secondAttribute="trailing" id="J6y-C9-ban"/>
-                    <constraint firstAttribute="bottomMargin" secondItem="FpG-g1-z40" secondAttribute="bottom" constant="-6" id="QCp-8g-JI9"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="FpG-g1-z40" secondAttribute="bottom" id="QCp-8g-JI9"/>
                     <constraint firstItem="FpG-g1-z40" firstAttribute="leading" secondItem="Zfr-Ar-kAh" secondAttribute="leadingMargin" id="ak2-c7-0SU"/>
                     <constraint firstAttribute="trailingMargin" secondItem="iuX-MD-1Qd" secondAttribute="trailing" id="bVW-iM-v5W"/>
                     <constraint firstItem="FpG-g1-z40" firstAttribute="top" secondItem="iuX-MD-1Qd" secondAttribute="baseline" constant="9" id="eg1-KE-xy2"/>
@@ -54,9 +53,11 @@
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="COz-Hc-qiN"/>
             <connections>
+                <outlet property="contentBottom" destination="QCp-8g-JI9" id="y7y-7z-PBU"/>
                 <outlet property="contentTextView" destination="FpG-g1-z40" id="39S-sB-GKs"/>
                 <outlet property="separatorHeight" destination="klE-yu-pcY" id="MnG-eb-Dzb"/>
                 <outlet property="titleLabel" destination="iuX-MD-1Qd" id="sHI-fi-26t"/>
+                <outlet property="titleToContent" destination="eg1-KE-xy2" id="uVP-fF-qd2"/>
                 <outlet property="titleTop" destination="p96-oJ-w5r" id="DUX-56-53w"/>
             </connections>
             <point key="canvasLocation" x="191.30434782608697" y="190.84821428571428"/>
@@ -68,9 +69,6 @@
         </systemColor>
         <systemColor name="separatorColor">
             <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.28999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGrayColor">
             <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

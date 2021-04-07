@@ -533,6 +533,8 @@
 		B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F76241A76E600760E20 /* CollectionEditView.swift */; };
 		B3593F7E241A76F400760E20 /* CollectionEditingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */; };
 		B35B473C25F11BCD0023B6F4 /* PDFSettingsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35B473B25F11BCD0023B6F4 /* PDFSettingsState.swift */; };
+		B35DC8E5261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */; };
+		B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = B35DC8E4261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib */; };
 		B35E4B6E252489F8000EA134 /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B6D252489F8000EA134 /* Realm */; };
 		B35E4B70252489F8000EA134 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B6F252489F8000EA134 /* RealmSwift */; };
 		B35E4B8D25248B3C000EA134 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B8C25248B3C000EA134 /* RxSwift */; };
@@ -1194,6 +1196,8 @@
 		B3593F76241A76E600760E20 /* CollectionEditView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectionEditView.swift; sourceTree = "<group>"; };
 		B3593F7D241A76F400760E20 /* CollectionEditingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEditingCoordinator.swift; sourceTree = "<group>"; };
 		B35B473B25F11BCD0023B6F4 /* PDFSettingsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSettingsState.swift; sourceTree = "<group>"; };
+		B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldMultilineEditCell.swift; sourceTree = "<group>"; };
+		B35DC8E4261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldMultilineEditCell.xib; sourceTree = "<group>"; };
 		B35F476924F8F55600FE328D /* webview_extraction.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = webview_extraction.js; sourceTree = "<group>"; };
 		B3604FF724769F0900669CB7 /* note.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = note.html; sourceTree = "<group>"; };
 		B36181EB24C96B0500B30D56 /* SearchableCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableCollection.swift; sourceTree = "<group>"; };
@@ -2201,6 +2205,8 @@
 				B3593ED5241A61C700760E20 /* ItemDetailFieldCell.xib */,
 				B3E1BEC7254B0B9500D9BB27 /* ItemDetailFieldEditCell.swift */,
 				B3E1BEC8254B0B9500D9BB27 /* ItemDetailFieldEditCell.xib */,
+				B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */,
+				B35DC8E4261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib */,
 				B3593ED8241A61C700760E20 /* ItemDetailNoteCell.swift */,
 				B3593EE1241A61C700760E20 /* ItemDetailNoteCell.xib */,
 				B3593EE4241A61C700760E20 /* ItemDetailSectionView.swift */,
@@ -2894,6 +2900,7 @@
 				B3593F27241A61C700760E20 /* ItemDetailFieldCell.xib in Resources */,
 				B34DF1BE2576956F0019CCD1 /* SwitchCell.xib in Resources */,
 				B30B550324B85A3A00F94B59 /* Colors.xcassets in Resources */,
+				B35DC8E6261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib in Resources */,
 				B30B405F2490CAFC00FAAF6D /* ItemCell.xib in Resources */,
 				B34C40F625710B430057D5F5 /* AnnotationEditViewController.xib in Resources */,
 				B3593F2C241A61C700760E20 /* ItemDetailTagCell.xib in Resources */,
@@ -3391,6 +3398,7 @@
 				B30565C423FC051E003304F2 /* EditItemDetailDbRequest.swift in Sources */,
 				B305662023FC051F003304F2 /* SyncSettingsSyncAction.swift in Sources */,
 				B30566A623FC051F003304F2 /* Files.swift in Sources */,
+				B35DC8E5261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift in Sources */,
 				B305661F23FC051E003304F2 /* SubmitUpdateSyncAction.swift in Sources */,
 				B3593F53241A61C700760E20 /* CollectionsAction.swift in Sources */,
 				B3593F1C241A61C700760E20 /* ItemDetailState.swift in Sources */,

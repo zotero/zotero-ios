@@ -31,6 +31,7 @@ struct FieldKeys {
         static let doi = "DOI"
         static let url = "url"
         static let accessDate = "accessDate"
+        static let extra = "extra"
 
         struct Attachment {
             static let linkMode = "linkMode"

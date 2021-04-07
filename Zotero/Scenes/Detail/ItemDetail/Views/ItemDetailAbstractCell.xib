@@ -52,7 +52,6 @@
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
-                <outlet property="contentBottom" destination="Oxd-bH-AAh" id="lL4-KV-lTC"/>
                 <outlet property="contentLabel" destination="Psa-N2-GrL" id="fNc-7B-wvQ"/>
                 <outlet property="separatorHeight" destination="LL8-qH-Mas" id="Jcm-sc-chN"/>
                 <outlet property="titleLabel" destination="C31-DT-U38" id="eIv-BQ-NBy"/>

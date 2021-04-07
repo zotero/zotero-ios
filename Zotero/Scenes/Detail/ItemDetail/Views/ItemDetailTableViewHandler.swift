@@ -35,7 +35,7 @@ final class ItemDetailTableViewHandler: NSObject {
     enum Section: CaseIterable, Equatable, Hashable {
         case abstract, attachments, creators, dates, fields, notes, tags, title, type
 
-        func cellId(isEditing: Bool) -> String {
+        func cellId(isEditing: Bool, needsMultiline: Bool) -> String {
             switch self {
             case .abstract:
                 if isEditing {
@@ -51,7 +51,11 @@ final class ItemDetailTableViewHandler: NSObject {
                 return "ItemDetailTagCell"
             case .fields:
                 if isEditing {
-                    return "ItemDetailFieldEditCell"
+                    if needsMultiline {
+                        return "ItemDetailFieldMultilineEditCell"
+                    } else {
+                        return "ItemDetailFieldEditCell"
+                    }
                 } else {
                     return "ItemDetailFieldCell"
                 }
@@ -343,13 +347,17 @@ final class ItemDetailTableViewHandler: NSObject {
 
         switch section {
         case .title:
-            cellId = section.cellId(isEditing: isEditing)
-        case .fields, .abstract, .type, .dates:
+            cellId = section.cellId(isEditing: isEditing, needsMultiline: false)
+        case .fields:
             let isAttachment = self.viewModel.state.data.isAttachment
-            cellId = section.cellId(isEditing: (!isAttachment && isEditing))
+            let fieldId = self.viewModel.state.data.fieldIds[indexPath.row]
+            cellId = section.cellId(isEditing: (!isAttachment && isEditing), needsMultiline: (fieldId == FieldKeys.Item.extra))
+        case .abstract, .type, .dates:
+            let isAttachment = self.viewModel.state.data.isAttachment
+            cellId = section.cellId(isEditing: (!isAttachment && isEditing), needsMultiline: false)
         case .creators, .attachments, .notes, .tags:
             if indexPath.row < self.baseCount(in: section) {
-                cellId = section.cellId(isEditing: isEditing)
+                cellId = section.cellId(isEditing: isEditing, needsMultiline: false)
             } else {
                 cellId = ItemDetailTableViewHandler.addCellId
             }
@@ -473,17 +481,17 @@ final class ItemDetailTableViewHandler: NSObject {
         self.tableView.separatorInset = .zero
 
         Section.allCases.forEach { section in
-            let cellId = section.cellId(isEditing: false)
+            let cellId = section.cellId(isEditing: false, needsMultiline: false)
             self.tableView.register(UINib(nibName: cellId, bundle: nil), forCellReuseIdentifier: cellId)
-            let cellIdEditing = section.cellId(isEditing: true)
+            let cellIdEditing = section.cellId(isEditing: true, needsMultiline: false)
             if cellId != cellIdEditing {
                 self.tableView.register(UINib(nibName: cellIdEditing, bundle: nil), forCellReuseIdentifier: cellIdEditing)
             }
         }
-        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.addCellId, bundle: nil),
-                                forCellReuseIdentifier: ItemDetailTableViewHandler.addCellId)
-        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.sectionId, bundle: nil),
-                                forHeaderFooterViewReuseIdentifier: ItemDetailTableViewHandler.sectionId)
+        let multilineId = Section.fields.cellId(isEditing: true, needsMultiline: true)
+        self.tableView.register(UINib(nibName: multilineId, bundle: nil), forCellReuseIdentifier: multilineId)
+        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.addCellId, bundle: nil), forCellReuseIdentifier: ItemDetailTableViewHandler.addCellId)
+        self.tableView.register(UINib(nibName: ItemDetailTableViewHandler.sectionId, bundle: nil), forHeaderFooterViewReuseIdentifier: ItemDetailTableViewHandler.sectionId)
     }
 
     private func setupTableView(with keyboardData: KeyboardData) {
@@ -637,6 +645,12 @@ extension ItemDetailTableViewHandler: UITableViewDataSource {
                     cell.setup(with: field, titleWidth: self.titleWidth)
                     cell.textObservable.subscribe(onNext: { [weak self] value in
                         self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
+                    }).disposed(by: cell.newDisposeBag)
+                } else if let cell = cell as? ItemDetailFieldMultilineEditCell {
+                    cell.setup(with: field, titleWidth: self.titleWidth)
+                    cell.textObservable.subscribe(onNext: { [weak self] value in
+                        self?.viewModel.process(action: .setFieldValue(id: fieldId, value: value))
+                        self?.updateCellHeightsAndScroll(to: indexPath)
                     }).disposed(by: cell.newDisposeBag)
                 }
             }

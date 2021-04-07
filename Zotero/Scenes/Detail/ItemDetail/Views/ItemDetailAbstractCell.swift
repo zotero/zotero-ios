@@ -17,7 +17,6 @@ final class ItemDetailAbstractCell: RxTableViewCell {
     @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var titleToContent: NSLayoutConstraint!
     @IBOutlet private weak var contentLabel: CollapsibleLabel!
-    @IBOutlet private weak var contentBottom: NSLayoutConstraint!
 
     private static let paragraphStyle: NSMutableParagraphStyle = {
         let paragraphStyle = NSMutableParagraphStyle()
@@ -48,7 +47,6 @@ final class ItemDetailAbstractCell: RxTableViewCell {
         let titleFont = self.titleFont
         self.titleLabel.font = titleFont
         self.titleTop.constant = ItemDetailLayout.separatorHeight - (titleFont.ascender - titleFont.capHeight)
-        self.contentBottom.constant = -ItemDetailLayout.separatorHeight
 
         let attributes: [NSAttributedString.Key: Any] = [.font: self.showMoreLessFont,
                                                          .foregroundColor: Asset.Colors.zoteroBlue.color,

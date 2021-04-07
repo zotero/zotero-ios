@@ -13,10 +13,10 @@ import RxSwift
 final class ItemDetailFieldEditCell: RxTableViewCell {
     @IBOutlet private weak var titleWidth: NSLayoutConstraint!
     @IBOutlet private weak var titleLabel: UILabel!
-    @IBOutlet private weak var valueTop: NSLayoutConstraint!
     @IBOutlet private weak var valueTextField: UITextField!
-    // UITextField has problem with aligning to baseline, so there's a hidden label used for autolayout
-    @IBOutlet private weak var hiddenLabel: UILabel!
+    @IBOutlet private weak var topConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var bottomConstraint: NSLayoutConstraint!
+    private var heightConstraint: NSLayoutConstraint?
 
     var textObservable: Observable<String> {
         return self.valueTextField.rx.controlEvent(.editingChanged).flatMap({ Observable.just(self.valueTextField.text ?? "") })
@@ -25,19 +25,27 @@ final class ItemDetailFieldEditCell: RxTableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        let valueFont = UIFont.preferredFont(forTextStyle: .body)
         self.titleLabel.font = UIFont.preferredFont(for: .headline, weight: .regular)
-        self.valueTextField.font = .preferredFont(forTextStyle: .body)
-        self.hiddenLabel.font = self.valueTextField.font
+        self.valueTextField.font = valueFont
+
+        self.topConstraint.constant = valueFont.capHeight - valueFont.ascender
+        self.bottomConstraint.constant = valueFont.descender
+
+        self.contentView.clipsToBounds = true
     }
 
     func setup(with field: ItemDetailState.Field, titleWidth: CGFloat) {
         let value = field.additionalInfo?[.formattedEditDate] ?? field.value
-        self.titleLabel.text = field.name
-        self.hiddenLabel.text = value
-        self.titleWidth.constant = titleWidth
 
+        self.titleLabel.text = field.name
+        self.titleWidth.constant = titleWidth
         self.valueTextField.text = value
 
-        self.valueTop.constant = self.valueTextField.font!.capHeight - self.valueTextField.font!.ascender
+        if self.heightConstraint == nil {
+            let height = self.valueTextField.font!.capHeight + self.layoutMargins.top + self.layoutMargins.bottom
+            self.heightConstraint = self.contentView.heightAnchor.constraint(equalToConstant: height)
+            self.heightConstraint?.isActive = true
+        }
     }
 }
