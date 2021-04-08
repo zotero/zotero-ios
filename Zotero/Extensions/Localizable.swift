@@ -550,8 +550,6 @@ internal enum L10n {
     }
     internal enum General {
       /// Show Items from Subcollections
-      internal static let showSubcollectionsSubtitle = L10n.tr("Localizable", "settings.general.show_subcollections_subtitle")
-      /// Subcollections
       internal static let showSubcollectionsTitle = L10n.tr("Localizable", "settings.general.show_subcollections_title")
       /// General
       internal static let title = L10n.tr("Localizable", "settings.general.title")

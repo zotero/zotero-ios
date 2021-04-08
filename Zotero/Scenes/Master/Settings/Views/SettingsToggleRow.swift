@@ -18,6 +18,7 @@ struct SettingsToggleRow: View {
             VStack(alignment: .leading) {
                 Text(self.title)
                     .font(.headline)
+                    .fontWeight(self.subtitle == nil ? .regular : .none)
                 self.subtitle.flatMap {
                     Text($0)
                         .font(.callout)

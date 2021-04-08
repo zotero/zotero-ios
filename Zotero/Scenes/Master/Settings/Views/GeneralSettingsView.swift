@@ -14,7 +14,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             SettingsToggleRow(title: L10n.Settings.General.showSubcollectionsTitle,
-                              subtitle: L10n.Settings.General.showSubcollectionsSubtitle,
+                              subtitle: nil,
                               value: self.viewModel.binding(keyPath: \.showSubcollectionItems, action: { .setShowSubcollectionItems($0) }))
         }
         .navigationBarTitle(L10n.Settings.General.title)
