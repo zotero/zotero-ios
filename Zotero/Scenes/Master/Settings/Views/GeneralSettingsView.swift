@@ -13,11 +13,11 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
-            SettingsToggleRow(title: L10n.Settings.itemCount,
-                              subtitle: L10n.Settings.itemCountSubtitle,
-                              value: self.viewModel.binding(keyPath: \.showCollectionItemCount, action: { .setShowCollectionItemCounts($0) }))
+            SettingsToggleRow(title: L10n.Settings.General.showSubcollectionsTitle,
+                              subtitle: L10n.Settings.General.showSubcollectionsSubtitle,
+                              value: self.viewModel.binding(keyPath: \.showSubcollectionItems, action: { .setShowSubcollectionItems($0) }))
         }
-        .navigationBarTitle(L10n.Settings.general)
+        .navigationBarTitle(L10n.Settings.General.title)
     }
 }
 

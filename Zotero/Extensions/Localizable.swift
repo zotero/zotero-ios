@@ -484,8 +484,6 @@ internal enum L10n {
     internal static let account = L10n.tr("Localizable", "settings.account")
     /// Debug Output Logging
     internal static let debug = L10n.tr("Localizable", "settings.debug")
-    /// General
-    internal static let general = L10n.tr("Localizable", "settings.general")
     /// Item count
     internal static let itemCount = L10n.tr("Localizable", "settings.item_count")
     /// Show item count for all collections.
@@ -549,6 +547,14 @@ internal enum L10n {
       }
       /// Crash Log Sent
       internal static let title = L10n.tr("Localizable", "settings.crash_alert.title")
+    }
+    internal enum General {
+      /// Show Items from Subcollections
+      internal static let showSubcollectionsSubtitle = L10n.tr("Localizable", "settings.general.show_subcollections_subtitle")
+      /// Subcollections
+      internal static let showSubcollectionsTitle = L10n.tr("Localizable", "settings.general.show_subcollections_title")
+      /// General
+      internal static let title = L10n.tr("Localizable", "settings.general.title")
     }
     internal enum LogAlert {
       /// Your Debug ID is %@

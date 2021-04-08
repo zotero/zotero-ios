@@ -11,11 +11,10 @@ import Foundation
 final class Defaults {
     static let shared = Defaults()
 
-    private let jsonEncoder = JSONEncoder()
-    private let jsonDecoder = JSONDecoder()
+    private static let jsonEncoder = JSONEncoder()
+    private static let jsonDecoder = JSONDecoder()
 
-    @UserDefault(key: "AskForSyncPermission", defaultValue: false)
-    var askForSyncPermission: Bool
+    // MARK: - Session
 
     @UserDefault(key: "username", defaultValue: "")
     var username: String
@@ -23,8 +22,7 @@ final class Defaults {
     @UserDefault(key: "userid", defaultValue: 0)
     var userId: Int
 
-    @UserDefault(key: "ShowCollectionItemCount", defaultValue: true, defaults: .standard)
-    var showCollectionItemCount: Bool
+    // MARK: - Settings
 
     @UserDefault(key: "ShareExtensionIncludeTags", defaultValue: true)
     var shareExtensionIncludeTags: Bool
@@ -32,46 +30,33 @@ final class Defaults {
     @UserDefault(key: "ShareExtensionIncludeAttachment", defaultValue: true)
     var shareExtensionIncludeAttachment: Bool
 
-    var selectedLibrary: LibraryIdentifier {
-        get {
-            let data = UserDefaults.zotero.data(forKey: "SelectedRawLibraryKey")
-            return data.flatMap({ try? self.jsonDecoder.decode(LibraryIdentifier.self, from: $0) }) ?? LibraryIdentifier.custom(.myLibrary)
-        }
+    @UserDefault(key: "ShowSubcollectionItems", defaultValue: false, defaults: .standard)
+    var showSubcollectionItems: Bool
 
-        set {
-            guard let data = try? self.jsonEncoder.encode(newValue) else { return }
-            UserDefaults.zotero.setValue(data, forKey: "SelectedRawLibraryKey")
-        }
-    }
+    // MARK: - Selection
 
-    var selectedCollectionId: CollectionIdentifier {
-        get {
-            let data = UserDefaults.zotero.data(forKey: "SelectedRawCollectionKey")
-            return data.flatMap({ try? self.jsonDecoder.decode(CollectionIdentifier.self, from: $0) }) ?? CollectionIdentifier.custom(.all)
-        }
+    @CodableUserDefault(key: "SelectedRawLibraryKey", defaultValue: LibraryIdentifier.custom(.myLibrary), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var selectedLibrary: LibraryIdentifier
 
-        set {
-            guard let data = try? self.jsonEncoder.encode(newValue) else { return }
-            UserDefaults.zotero.setValue(data, forKey: "SelectedRawCollectionKey")
-        }
-    }
+    @CodableUserDefault(key: "SelectedRawCollectionKey", defaultValue: CollectionIdentifier.custom(.all), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
+    var selectedCollectionId: CollectionIdentifier
+
+    // MARK: - PDF Settings
 
     #if PDFENABLED && MAINAPP
-    var pdfSettings: PDFSettingsState {
-        get {
-            let data = UserDefaults.standard.data(forKey: "PDFReaderSettings")
-            return data.flatMap({ try? self.jsonDecoder.decode(PDFSettingsState.self, from: $0) }) ?? PDFSettingsState.default
-        }
-
-        set {
-            guard let data = try? self.jsonEncoder.encode(newValue) else { return }
-            UserDefaults.standard.setValue(data, forKey: "PDFReaderSettings")
-        }
-    }
+    @CodableUserDefault(key: "PDFReaderSettings", defaultValue: PDFSettingsState.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
+    var pdfSettings: PDFSettingsState
     #endif
+
+    // MARK: - Helpers
 
     @OptionalUserDefault(key: "LastLaunchBuildNumber", defaults: .standard)
     var lastBuildNumber: Int?
+
+    @UserDefault(key: "AskForSyncPermission", defaultValue: false)
+    var askForSyncPermission: Bool
+
+    // MARK: - Actions
 
     func reset() {
         self.askForSyncPermission = false

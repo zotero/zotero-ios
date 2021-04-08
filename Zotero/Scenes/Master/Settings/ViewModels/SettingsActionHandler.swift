@@ -44,9 +44,9 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.askForSyncPermission = value
             }
 
-        case .setShowCollectionItemCounts(let value):
+        case .setShowSubcollectionItems(let value):
             self.update(viewModel: viewModel) { state in
-                state.showCollectionItemCount = value
+                state.showSubcollectionItems = value
             }
 
         case .startSync:

@@ -18,13 +18,13 @@ struct SettingsState: ViewModelState {
             Defaults.shared.askForSyncPermission = newValue
         }
     }
-    var showCollectionItemCount: Bool {
+    var showSubcollectionItems: Bool {
         get {
-            return Defaults.shared.showCollectionItemCount
+            return Defaults.shared.showSubcollectionItems
         }
 
         set {
-            Defaults.shared.showCollectionItemCount = newValue
+            Defaults.shared.showSubcollectionItems = newValue
         }
     }
     var isSyncing: Bool

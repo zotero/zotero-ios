@@ -153,8 +153,8 @@ extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
         let groupId = group.identifier
         let groupName = group.name
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            return self?.createContextMenu(for: groupId, groupName: groupName)
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ -> UIMenu? in
+            return self.createContextMenu(for: groupId, groupName: groupName)
         }
     }
 

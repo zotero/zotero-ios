@@ -175,28 +175,31 @@ extension NSPredicate {
         return NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: trash))
     }
 
-    static func items(for type: ItemFetchType, libraryId: LibraryIdentifier) -> NSPredicate {
-        var predicates: [NSPredicate] = [.library(with: libraryId),
-                                         .notSyncState(.dirty),
-                                         .deleted(false)]
-
-        var isTrash = false
-
-        switch type {
-        case .all, .search: break
-        case .trash:
-            isTrash = true
-        case .publications:
-            predicates.append(NSPredicate(format: "ANY collections.key = %@", "unknown"))
-        case .collection(let key, _):
-            predicates.append(NSPredicate(format: "ANY collections.key = %@", key))
-        }
-        
+    private static func baseItemPredicates(isTrash: Bool, libraryId: LibraryIdentifier) -> [NSPredicate] {
+        var predicates: [NSPredicate] = [.library(with: libraryId), .notSyncState(.dirty), .deleted(false), .isTrash(isTrash)]
         if !isTrash {
             predicates.append(NSPredicate(format: "parent = nil"))
         }
-        predicates.append(NSPredicate(format: "trash = %@", NSNumber(booleanLiteral: isTrash)))
+        return predicates
+    }
 
+    static func items(for type: ItemFetchType, libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates = self.baseItemPredicates(isTrash: type.isTrash, libraryId: libraryId)
+
+        switch type {
+        case .all, .search, .trash: break
+        case .publications:
+            predicates.append(NSPredicate(format: "any collections.key = %@", "unknown"))
+        case .collection(let key, _):
+            predicates.append(NSPredicate(format: "any collections.key = %@", key))
+        }
+
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
+    static func itemsForCollections(keys: [String], libraryId: LibraryIdentifier) -> NSPredicate {
+        var predicates = self.baseItemPredicates(isTrash: false, libraryId: libraryId)
+        predicates.append(NSPredicate(format: "any collections.key in %@", keys))
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
@@ -226,14 +229,14 @@ extension NSPredicate {
     static func itemSearch(for text: String) -> NSPredicate {
         let titlePredicate = NSPredicate(format: "displayTitle contains[c] %@", text)
 
-        let creatorFullNamePredicate = NSPredicate(format: "ANY creators.name contains[c] %@", text)
-        let creatorFirstNamePredicate = NSPredicate(format: "ANY creators.firstName contains[c] %@", text)
-        let creatorLastNamePredicate = NSPredicate(format: "ANY creators.lastName contains[c] %@", text)
+        let creatorFullNamePredicate = NSPredicate(format: "any creators.name contains[c] %@", text)
+        let creatorFirstNamePredicate = NSPredicate(format: "any creators.firstName contains[c] %@", text)
+        let creatorLastNamePredicate = NSPredicate(format: "any creators.lastName contains[c] %@", text)
         let creatorPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [creatorFullNamePredicate,
                                                                                   creatorFirstNamePredicate,
                                                                                   creatorLastNamePredicate])
 
-        let tagPredicate = NSPredicate(format: "ANY tags.tag.name contains[c] %@", text)
+        let tagPredicate = NSPredicate(format: "any tags.tag.name contains[c] %@", text)
 
         return NSCompoundPredicate(orPredicateWithSubpredicates: [titlePredicate,
                                                                   creatorPredicate,

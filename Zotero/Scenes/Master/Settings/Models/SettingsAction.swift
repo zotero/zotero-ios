@@ -9,27 +9,27 @@
 import Foundation
 
 enum SettingsAction {
-    case setAskForSyncPermission(Bool)
-    case setShowCollectionItemCounts(Bool)
-    case startSync
     case cancelSync
-    case setLogoutAlertVisible(Bool)
-    case logout
-    case startObserving
-    case startImmediateLogging
-    case startLoggingOnNextLaunch
-    case stopLogging
-    case resetTranslators
-    case updateTranslators
-    case loadStorageData
-    case deleteAllDownloads
-    case deleteDownloadsInLibrary(LibraryIdentifier)
-    case showDeleteAllQuestion(Bool)
-    case showDeleteLibraryQuestion(Library?)
-    case deleteCache
-    case showDeleteCacheQuestion(Bool)
-    case disconnectFromWebSocket
     case connectToWebSocket
+    case deleteAllDownloads
+    case deleteCache
+    case deleteDownloadsInLibrary(LibraryIdentifier)
+    case disconnectFromWebSocket
+    case loadStorageData
+    case logout
+    case resetTranslators
+    case setAskForSyncPermission(Bool)
     case setIncludeTags(Bool)
     case setIncludeAttachment(Bool)
+    case setLogoutAlertVisible(Bool)
+    case setShowSubcollectionItems(Bool)
+    case showDeleteAllQuestion(Bool)
+    case showDeleteCacheQuestion(Bool)
+    case showDeleteLibraryQuestion(Library?)
+    case startImmediateLogging
+    case startLoggingOnNextLaunch
+    case startObserving
+    case startSync
+    case stopLogging
+    case updateTranslators
 }

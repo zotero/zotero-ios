@@ -178,7 +178,9 @@
 "settings.account" = "Account";
 "settings.logout" = "Sign Out";
 "settings.logout_warning" = "Any local data that was not synced will be deleted. Do you really want to sign out?";
-"settings.general" = "General";
+"settings.general.title" = "General";
+"settings.general.show_subcollections_title" = "Subcollections";
+"settings.general.show_subcollections_subtitle" = "Show Items from Subcollections";
 "settings.item_count" = "Item count";
 "settings.item_count_subtitle" = "Show item count for all collections.";
 "settings.sync" = "Sync";

@@ -32,24 +32,17 @@ final class ItemsTableViewHandler: NSObject {
     private unowned let dragDropController: DragDropController
     let tapObserver: PublishSubject<TapAction>
     private let disposeBag: DisposeBag
-    private let contextMenuActions: [ItemAction]
-    private let leadingCellActions: [ItemAction]
-    private let trailingCellActions: [ItemAction]
 
     private var snapshot: Results<RItem>?
     private var reloadAnimationsDisabled: Bool
     private weak var fileDownloader: FileDownloader?
 
     init(tableView: UITableView, viewModel: ViewModel<ItemsActionHandler>, delegate: ItemsTableViewHandlerDelegate, dragDropController: DragDropController, fileDownloader: FileDownloader?) {
-        let (leadingActions, trailingActions) = ItemsTableViewHandler.createCellActions(for: viewModel.state)
         self.tableView = tableView
         self.viewModel = viewModel
         self.delegate = delegate
         self.dragDropController = dragDropController
         self.fileDownloader = fileDownloader
-        self.leadingCellActions = leadingActions
-        self.trailingCellActions = trailingActions
-        self.contextMenuActions = ItemsTableViewHandler.createContextMenuActions(for: viewModel.state)
         self.reloadAnimationsDisabled = false
         self.tapObserver = PublishSubject()
         self.disposeBag = DisposeBag()
@@ -60,30 +53,32 @@ final class ItemsTableViewHandler: NSObject {
         self.setupKeyboardObserving()
     }
 
-    private static func createContextMenuActions(for state: ItemsState) -> [ItemAction] {
+    private func createContextMenuActions(for item: RItem, state: ItemsState) -> [ItemAction] {
         if state.type.isTrash {
             return [ItemAction(type: .restore), ItemAction(type: .delete)]
         }
         var actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
-        if state.type.collectionKey != nil {
+        // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
+        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
             actions.insert(ItemAction(type: .removeFromCollection), at: 1)
         }
         return actions
     }
 
-    private static func createCellActions(for state: ItemsState) -> (leading: [ItemAction], trailing: [ItemAction]) {
+    private func createTrailingCellActions(for item: RItem, state: ItemsState) -> [ItemAction] {
         if state.type.isTrash {
-            return ([], [ItemAction(type: .delete), ItemAction(type: .restore)])
+            return [ItemAction(type: .delete), ItemAction(type: .restore)]
         }
         var trailingActions: [ItemAction] = [ItemAction(type: .trash), ItemAction(type: .addToCollection)]
-        if state.type.collectionKey != nil {
+        // Allow removing from collection only if item is in current collection. This can happen when "Show items from subcollection" is enabled.
+        if let key = state.type.collectionKey, item.collections.filter(.key(key)).first != nil {
             trailingActions.insert(ItemAction(type: .removeFromCollection), at: 1)
         }
-        return ([], trailingActions)
+        return trailingActions
     }
 
     private func createContextMenu(for item: RItem) -> UIMenu {
-        let actions: [UIAction] = self.contextMenuActions.map({ action in
+        let actions: [UIAction] = self.createContextMenuActions(for: item, state: self.viewModel.state).map({ action in
             return UIAction(title: action.title, image: action.image, attributes: (action.isDestructive ? .destructive : [])) { [weak self] _ in
                 self?.delegate.process(action: action.type, for: item)
             }
@@ -310,20 +305,16 @@ extension ItemsTableViewHandler: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard !tableView.isEditing && self.viewModel.state.library.metadataEditable else { return nil }
+        guard !tableView.isEditing && self.viewModel.state.library.metadataEditable, let item = self.snapshot?[indexPath.row] else { return nil }
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ -> UIMenu? in
-            guard let item = self?.snapshot?[indexPath.row] else { return nil }
-            return self?.createContextMenu(for: item)
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ -> UIMenu? in
+            return self.createContextMenu(for: item)
         }
     }
 
-    func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        return self.createSwipeConfiguration(from: self.leadingCellActions, at: indexPath)
-    }
-
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        return self.createSwipeConfiguration(from: self.trailingCellActions, at: indexPath)
+        guard let item = self.snapshot?[indexPath.row] else { return nil }
+        return self.createSwipeConfiguration(from: self.createTrailingCellActions(for: item, state: self.viewModel.state), at: indexPath)
     }
 }
 

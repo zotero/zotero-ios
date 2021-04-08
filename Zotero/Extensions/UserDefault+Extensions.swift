@@ -71,3 +71,32 @@ struct OptionalUserDefault<T> {
         }
     }
 }
+
+@propertyWrapper
+struct CodableUserDefault<T: Codable> {
+    let key: String
+    let defaultValue: T
+    let encoder: JSONEncoder
+    let decoder: JSONDecoder
+    private let defaults: UserDefaults
+
+    init(key: String, defaultValue: T, encoder: JSONEncoder, decoder: JSONDecoder, defaults: UserDefaults = UserDefaults.zotero) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.encoder = encoder
+        self.decoder = decoder
+        self.defaults = defaults
+    }
+
+    var wrappedValue: T {
+        get {
+            let data = self.defaults.data(forKey: self.key)
+            return data.flatMap({ try? self.decoder.decode(T.self, from: $0) }) ?? self.defaultValue
+        }
+
+        set {
+            guard let data = try? self.encoder.encode(newValue) else { return }
+            self.defaults.setValue(data, forKey: self.key)
+        }
+    }
+}

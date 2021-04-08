@@ -61,7 +61,7 @@ final class CollectionCell: UITableViewCell {
     }
 
     func updateBadgeView(for collection: Collection) {
-        self.badgeContainer.isHidden = !self.shouldShowCount(for: collection)
+        self.badgeContainer.isHidden = collection.itemCount == 0
         if !self.badgeContainer.isHidden {
             self.badgeLabel.text = "\(collection.itemCount)"
         }
@@ -82,23 +82,6 @@ final class CollectionCell: UITableViewCell {
         }
 
         self.updateBadgeView(for: collection)
-    }
-
-    private func shouldShowCount(for collection: Collection) -> Bool {
-        if collection.itemCount == 0 {
-            return false
-        }
-
-        if Defaults.shared.showCollectionItemCount {
-            return true
-        }
-
-        switch collection.identifier {
-        case .custom(let type):
-            return type == .all
-        case .collection, .search:
-            return false
-        }
     }
 
     private func separatorInset(for level: Int) -> CGFloat {

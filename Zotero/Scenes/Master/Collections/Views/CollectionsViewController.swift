@@ -169,8 +169,8 @@ final class CollectionsViewController: UIViewController {
 
 extension CollectionsViewController: UIContextMenuInteractionDelegate {
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { [weak self] _ in
-            return self?.createCollapseAllContextMenu()
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in
+            return self.createCollapseAllContextMenu()
         })
     }
 }

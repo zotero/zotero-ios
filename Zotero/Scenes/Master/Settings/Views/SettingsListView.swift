@@ -29,9 +29,9 @@ struct SettingsListView: View {
             }
 
             Section {
-//                NavigationLink(destination: GeneralSettingsView()) {
-//                    Text(L10n.Settings.general)
-//                }
+                NavigationLink(destination: GeneralSettingsView()) {
+                    Text(L10n.Settings.General.title)
+                }
 
 //                NavigationLink(destination: SyncSettingsView()) {
 //                    Text(L10n.Settings.sync)
