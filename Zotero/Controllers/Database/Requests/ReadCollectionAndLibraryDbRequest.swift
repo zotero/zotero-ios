@@ -21,15 +21,15 @@ struct ReadCollectionAndLibraryDbRequest: DbResponseRequest {
 
     func process(in database: Realm) throws -> (Collection?, Library) {
         let library = try ReadLibraryDbRequest(libraryId: self.libraryId).process(in: database)
-        var collection: Collection?
 
         switch self.collectionId {
         case .collection(let key):
             let rCollection = try ReadCollectionDbRequest(libraryId: self.libraryId, key: key).process(in: database)
-            collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: nil, itemCount: 0)
-        default: break
+            let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: nil, itemCount: 0)
+            return (collection, library)
+            
+        default:
+            return (nil, library)
         }
-
-        return (collection, library)
     }
 }

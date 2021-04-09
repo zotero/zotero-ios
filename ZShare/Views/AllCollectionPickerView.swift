@@ -11,7 +11,7 @@ import SwiftUI
 struct AllCollectionPickerView: View {
     @EnvironmentObject private var store: AllCollectionPickerStore
 
-    var picked: (Collection, Library) -> Void
+    var picked: (Collection?, Library) -> Void
 
     var body: some View {
         Group {
@@ -30,61 +30,42 @@ fileprivate struct ListView: View {
 
     fileprivate static let baseCellOffset: CGFloat = 36
 
-    var picked: (Collection, Library) -> Void
+    var picked: (Collection?, Library) -> Void
 
     var body: some View {
         ScrollableView(scrollToHash: self.hash(forCollection: self.store.state.selectedCollectionId, andLibrary: self.store.state.selectedLibraryId)) {
             List {
-                if !self.store.state.recentCollections.isEmpty {
-                    Section(header: Text(L10n.recent.uppercased())) {
-                        ForEach(self.store.state.recentCollections) { collectionWithLibrary in
-                            CollapsibleRow(content: CollectionRow(data: collectionWithLibrary.collection),
-                                           showCollapseButton: true,
-                                           collapsed: true,
-                                           pickAction: {
-                                               self.picked(collectionWithLibrary.collection, collectionWithLibrary.library)
-                                           },
-                                           collapseAction: {})
-                                .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
-                                .id(collectionWithLibrary.id)
-                        }
-                    }
-                }
+                ForEach(self.store.state.libraries) { library in
+                    CollapsibleRow(content: LibraryRow(title: library.name, isReadOnly: !library.metadataEditable),
+                                   showCollapseButton: true,
+                                   collapsed: self.libraryCollapsed(library),
+                                   pickAction: {
+                                       self.picked(nil, library)
+                                   },
+                                   collapseAction: {
+                                       self.store.toggleLibraryCollapsed(id: library.identifier)
+                                   })
+                        .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
 
-                Section {
-                    ForEach(self.store.state.libraries) { library in
-                        CollapsibleRow(content: LibraryRow(title: library.name, isReadOnly: !library.metadataEditable),
-                                       showCollapseButton: true,
-                                       collapsed: self.libraryCollapsed(library),
-                                       pickAction: {
-                                           self.picked(Collection(custom: .all), library)
-                                       },
-                                       collapseAction: {
-                                           self.store.toggleLibraryCollapsed(id: library.identifier)
-                                       })
-                            .listRowInsets(EdgeInsets(top: 0, leading: ListView.baseCellOffset, bottom: 0, trailing: 0))
-
-                        if self.store.state.librariesCollapsed[library.identifier] == false {
-                            self.store.state.collections[library.identifier].flatMap {
-                                ForEach($0.filter({ $0.visible })) { collection in
-                                    CollapsibleRow(content: CollectionRow(data: collection),
-                                                   showCollapseButton: collection.hasChildren,
-                                                   collapsed: collection.collapsed,
-                                                   pickAction: {
-                                                       self.picked(collection, library)
-                                                   },
-                                                   collapseAction: {
-                                                       self.store.toggleCollectionCollapsed(collection: collection, libraryId: library.identifier)
-                                                   })
-                                        .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: collection.level, baseOffset: ListView.baseCellOffset), bottom: 0, trailing: 0))
-                                        .id(self.hash(forCollection: collection.identifier, andLibrary: library.identifier))
-                                }
+                    if self.store.state.librariesCollapsed[library.identifier] == false {
+                        self.store.state.collections[library.identifier].flatMap {
+                            ForEach($0.filter({ $0.visible })) { collection in
+                                CollapsibleRow(content: CollectionRow(data: collection),
+                                               showCollapseButton: collection.hasChildren,
+                                               collapsed: collection.collapsed,
+                                               pickAction: {
+                                                   self.picked(collection, library)
+                                               },
+                                               collapseAction: {
+                                                   self.store.toggleCollectionCollapsed(collection: collection, libraryId: library.identifier)
+                                               })
+                                    .listRowInsets(EdgeInsets(top: 0, leading: CollectionRow.inset(for: collection.level, baseOffset: ListView.baseCellOffset), bottom: 0, trailing: 0))
+                                    .id(self.hash(forCollection: collection.identifier, andLibrary: library.identifier))
                             }
                         }
                     }
                 }
             }
-            .listStyle(GroupedListStyle())
         }
     }
 

@@ -31,10 +31,11 @@ final class ShareViewController: UIViewController {
     // Collection picker
     @IBOutlet private weak var collectionPickerStackContainer: UIView!
     @IBOutlet private weak var collectionPickerContainer: UIView!
-    @IBOutlet private weak var collectionPickerLabel: UILabel!
-    @IBOutlet private weak var collectionPickerChevron: UIImageView!
-    @IBOutlet private weak var collectionPickerIndicator: UIActivityIndicatorView!
-    @IBOutlet private weak var collectionPickerButton: UIButton!
+    @IBOutlet private weak var collectionPickerStackView: UIStackView!
+    @IBOutlet private weak var collectionPickerLoadingContainer: UIView?
+    @IBOutlet private weak var collectionPickerLoadingLabel: UILabel!
+    @IBOutlet private weak var collectionPickerPickOtherButton: RightButton!
+    @IBOutlet private weak var collectionPickerFailureLabel: UILabel?
     // Item picker
     @IBOutlet private weak var itemPickerStackContainer: UIView!
     @IBOutlet private weak var itemPickerTitleLabel: UILabel!
@@ -425,25 +426,53 @@ final class ShareViewController: UIViewController {
     private func update(collectionPicker state: ExtensionStore.State.CollectionPicker) {
         switch state {
         case .picked(let library, let collection):
-            let title = collection?.name ?? library.name
-            self.collectionPickerIndicator.stopAnimating()
-            self.collectionPickerChevron.isHidden = false
-            self.collectionPickerLabel.text = title
-            self.collectionPickerLabel.textColor = Asset.Colors.zoteroBlue.color
-            self.collectionPickerButton.isEnabled = true
+            self.createCollectionRowsIfNeeded()
+
+            for view in self.collectionPickerStackView.arrangedSubviews {
+                guard let row = view as? CollectionRowView else { continue }
+                row.change(selected: false)
+            }
+
+            if let idx = self.store.state.collectionLibraries.firstIndex(where: { $0.collection == collection && $0.library == library }),
+               idx < self.collectionPickerStackView.arrangedSubviews.count,
+               let row = self.collectionPickerStackView.arrangedSubviews[idx] as? CollectionRowView {
+                // If collection is visible, just select appropriate row
+                row.change(selected: true)
+                return
+            }
+
+            // If collection is not visible, change first row, which shows currently selected collection.
+            guard let row = self.collectionPickerStackView.arrangedSubviews.first as? CollectionRowView else { return }
+            row.setup(with: (collection?.name ?? library.name), isSelected: true)
+
         case .loading:
-            self.collectionPickerIndicator.isHidden = false
-            self.collectionPickerIndicator.startAnimating()
-            self.collectionPickerChevron.isHidden = true
-            self.collectionPickerLabel.text = "Loading collections"
-            self.collectionPickerLabel.textColor = .gray
-            self.collectionPickerButton.isEnabled = false
+            self.collectionPickerLoadingContainer?.isHidden = false
+            self.collectionPickerFailureLabel?.isHidden = true
+            self.collectionPickerPickOtherButton.isHidden = true
         case .failed:
-            self.collectionPickerIndicator.stopAnimating()
-            self.collectionPickerChevron.isHidden = true
-            self.collectionPickerLabel.text = "Can't sync collections"
-            self.collectionPickerLabel.textColor = .red
-            self.collectionPickerButton.isEnabled = false
+            self.collectionPickerLoadingContainer?.isHidden = true
+            self.collectionPickerFailureLabel?.isHidden = false
+            self.collectionPickerPickOtherButton.isHidden = true
+        }
+    }
+
+    private func createCollectionRowsIfNeeded() {
+        guard self.collectionPickerLoadingContainer != nil else { return }
+
+        // These are unnecessary anymore
+        self.collectionPickerLoadingContainer?.removeFromSuperview()
+        self.collectionPickerFailureLabel?.removeFromSuperview()
+        // Show pick other button
+        self.collectionPickerPickOtherButton.isHidden = false
+
+        // Create rows for selected collection/library and recent collections
+        for (idx, collectionLibrary) in self.store.state.collectionLibraries.enumerated() {
+            guard let row = Bundle.main.loadNibNamed("CollectionRowView", owner: nil, options: nil)?.first as? CollectionRowView else { continue }
+            row.setup(with: (collectionLibrary.collection?.name ?? collectionLibrary.library.name), isSelected: false)
+            row.tapAction = { [weak self] in
+                self?.store.set(collection: collectionLibrary.collection, library: collectionLibrary.library)
+            }
+            self.collectionPickerStackView.insertArrangedSubview(row, at: idx)
         }
     }
 
@@ -485,6 +514,10 @@ final class ShareViewController: UIViewController {
             container!.layer.masksToBounds = true
             container?.backgroundColor = Asset.Colors.defaultCellBackground.color
         }
+
+        self.collectionPickerFailureLabel?.text = L10n.Shareext.syncError
+        self.collectionPickerLoadingLabel.text = L10n.Shareext.loadingCollections
+        self.collectionPickerPickOtherButton.setTitle(L10n.Shareext.collectionOther, for: .normal)
     }
 
     private func setupNavbar(loggedIn: Bool) {

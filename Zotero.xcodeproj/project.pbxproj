@@ -686,6 +686,9 @@
 		B3B1EE062502675E00D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
 		B3B1EE072502680000D8BC1E /* Parsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1EE052502675E00D8BC1E /* Parsing.swift */; };
 		B3B613F7260B844B00B92017 /* EmptyTrashDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */; };
+		B3B6759526205A3C003231A5 /* CollectionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B6759426205A3C003231A5 /* CollectionRowView.swift */; };
+		B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */ = {isa = PBXBuildFile; fileRef = B3B6759A26205A48003231A5 /* CollectionRowView.xib */; };
+		B3B675A126208BAF003231A5 /* RightButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B675A026208BAF003231A5 /* RightButton.swift */; };
 		B3B8800525FB546300904235 /* DeviceInfoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B8800425FB546300904235 /* DeviceInfoProvider.swift */; };
 		B3B8800A25FB590900904235 /* DeviceInfoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B8800425FB546300904235 /* DeviceInfoProvider.swift */; };
 		B3B953C32459780600FC96DB /* Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B953C22459780600FC96DB /* Annotation.swift */; };
@@ -1318,6 +1321,9 @@
 		B3B1EDFC2502498100D8BC1E /* collectionresponse_unknownfields.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = collectionresponse_unknownfields.json; sourceTree = "<group>"; };
 		B3B1EE052502675E00D8BC1E /* Parsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parsing.swift; sourceTree = "<group>"; };
 		B3B613F6260B844B00B92017 /* EmptyTrashDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashDbRequest.swift; sourceTree = "<group>"; };
+		B3B6759426205A3C003231A5 /* CollectionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionRowView.swift; sourceTree = "<group>"; };
+		B3B6759A26205A48003231A5 /* CollectionRowView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CollectionRowView.xib; sourceTree = "<group>"; };
+		B3B675A026208BAF003231A5 /* RightButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RightButton.swift; sourceTree = "<group>"; };
 		B3B8166723880DC900529605 /* ZShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZShare.entitlements; sourceTree = "<group>"; };
 		B3B8800425FB546300904235 /* DeviceInfoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfoProvider.swift; sourceTree = "<group>"; };
 		B3B953C22459780600FC96DB /* Annotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Annotation.swift; sourceTree = "<group>"; };
@@ -2534,7 +2540,10 @@
 			isa = PBXGroup;
 			children = (
 				B3AB38A2238EC02D008A1ABB /* AllCollectionPickerView.swift */,
+				B3B6759426205A3C003231A5 /* CollectionRowView.swift */,
+				B3B6759A26205A48003231A5 /* CollectionRowView.xib */,
 				B3027C1D23BDB2B8007F5B26 /* ItemPickerView.swift */,
+				B3B675A026208BAF003231A5 /* RightButton.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2955,6 +2964,7 @@
 				B32AB57E25ADCEED003CF0C6 /* Bundled in Resources */,
 				B3AB38B9238ED023008A1ABB /* ExtensionScript.js in Resources */,
 				B3CE697624DD7D6A00D333AF /* Colors.xcassets in Resources */,
+				B3B6759B26205A48003231A5 /* CollectionRowView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3750,6 +3760,8 @@
 				B3C6AB30248E6FFA0009AC96 /* SyncBatchProcessor.swift in Sources */,
 				B305672E23FC091C003304F2 /* RevertLibraryUpdatesSyncAction.swift in Sources */,
 				B3C6AB2F248E42790009AC96 /* AsynchronousOperation.swift in Sources */,
+				B3B6759526205A3C003231A5 /* CollectionRowView.swift in Sources */,
+				B3B675A126208BAF003231A5 /* RightButton.swift in Sources */,
 				B30566E923FC0826003304F2 /* VersionsRequest.swift in Sources */,
 				B305670223FC08A2003304F2 /* MoveItemsToParentDbRequest.swift in Sources */,
 				B378F4D0242D0D5500B88A05 /* TranslatorsRequest.swift in Sources */,

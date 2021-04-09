@@ -230,6 +230,9 @@
 "shareext.translation.item_selection" = "Choose an item";
 "shareext.translation.translating_with" = "Saving with %@";
 "shareext.translation.downloading" = "Downloading";
+"shareext.loading_collections" = "Loading Collections";
+"shareext.sync_error" = "Can't sync collections";
+"shareext.collection_other" = "Choose Other";
 
 "searchbar.placeholder" = "Search";
 

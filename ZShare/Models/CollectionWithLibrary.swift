@@ -9,12 +9,14 @@
 import Foundation
 
 struct CollectionWithLibrary: Identifiable, Equatable, Hashable {
-    let collection: Collection
+    let collection: Collection?
     let library: Library
 
     var id: Int {
         var hasher = Hasher()
-        hasher.combine(self.collection.identifier)
+        if let id = self.collection?.identifier {
+            hasher.combine(id)
+        }
         hasher.combine(self.library.identifier)
         return hasher.finalize()
     }

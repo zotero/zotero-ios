@@ -167,6 +167,7 @@ final class ExtensionStore {
         var url: String?
         var attachmentState: AttachmentState
         var collectionPicker: CollectionPicker
+        var collectionLibraries: [CollectionWithLibrary]
         var itemPicker: ItemPicker?
         var items: ProcessedAttachment?
         var processedAttachment: ProcessedAttachment?
@@ -177,6 +178,7 @@ final class ExtensionStore {
             self.selectedLibraryId = Defaults.shared.selectedLibrary
             self.collectionPicker = .loading
             self.attachmentState = .decoding
+            self.collectionLibraries = []
         }
     }
 
@@ -867,11 +869,11 @@ final class ExtensionStore {
 
     // MARK: - Collection picker
 
-    func set(collection: Collection, library: Library) {
+    func set(collection: Collection?, library: Library) {
         var state = self.state
         state.selectedLibraryId = library.identifier
-        state.selectedCollectionId = collection.identifier
-        state.collectionPicker = .picked(library, (collection.identifier.isCustom ? nil : collection))
+        state.selectedCollectionId = collection?.identifier ?? Collection(custom: .all).identifier
+        state.collectionPicker = .picked(library, collection)
         self.state = state
 
         Defaults.shared.selectedCollectionId = state.selectedCollectionId
@@ -894,15 +896,19 @@ final class ExtensionStore {
     private func finishSync(successful: Bool) {
         if successful {
             do {
+                let coordinator = try self.dbStorage.createCoordinator()
                 let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
-                let (collection, library) = try self.dbStorage.createCoordinator().perform(request: request)
-                self.state.collectionPicker = .picked(library, collection)
+                let (collection, library) = try coordinator.perform(request: request)
+                let recent = try coordinator.perform(request: ReadRecentCollections(excluding: (collection?.identifier.key).flatMap({ ($0, library.identifier) })))
+
+                var state = self.state
+                state.collectionPicker = .picked(library, collection)
+                state.collectionLibraries = [CollectionWithLibrary(collection: collection, library: library)] + recent
+                self.state = state
             } catch let error {
-                self.state.collectionPicker = .picked(Library(identifier: ExtensionStore.defaultLibraryId,
-                                                                   name: RCustomLibraryType.myLibrary.libraryName,
-                                                                   metadataEditable: true,
-                                                                   filesEditable: true),
-                                                           nil)
+                DDLogError("ExtensionStore: can't load collections - \(error)")
+                let library = Library(identifier: ExtensionStore.defaultLibraryId, name: RCustomLibraryType.myLibrary.libraryName, metadataEditable: true, filesEditable: true)
+                self.state.collectionPicker = .picked(library, nil)
             }
         } else {
             self.state.collectionPicker = .failed

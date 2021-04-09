@@ -13,6 +13,9 @@ import RealmSwift
 struct ReadRecentCollections: DbResponseRequest {
     typealias Response = [CollectionWithLibrary]
 
+    private static let limit = 4
+    let excluding: (String, LibraryIdentifier)?
+
     var needsWrite: Bool { return false }
     var ignoreNotificationTokens: [NotificationToken]? { return nil }
 
@@ -22,15 +25,22 @@ struct ReadRecentCollections: DbResponseRequest {
         guard collections.count > 0 else { return [] }
 
         var recent: [CollectionWithLibrary] = []
-        for idx in 0..<(min(collections.count, 5)) {
-            let rCollection = collections[idx]
-
-            guard rCollection.lastUsed.timeIntervalSince1970 > 0, let libraryId = rCollection.libraryId else { continue }
+        for rCollection in collections {
+            guard rCollection.lastUsed.timeIntervalSince1970 > 0, let libraryId = rCollection.libraryId else { break }
 
             let library = try ReadLibraryDbRequest(libraryId: libraryId).process(in: database)
+
+            if let (key, libraryId) = self.excluding, rCollection.key == key && library.identifier == libraryId {
+                continue
+            }
+
             let collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: nil, itemCount: 0)
 
             recent.append(CollectionWithLibrary(collection: collection, library: library))
+
+            if recent.count == ReadRecentCollections.limit {
+                break
+            }
         }
         return recent
     }

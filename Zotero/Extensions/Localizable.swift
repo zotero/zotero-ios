@@ -601,10 +601,16 @@ internal enum L10n {
   }
 
   internal enum Shareext {
+    /// Choose Other
+    internal static let collectionOther = L10n.tr("Localizable", "shareext.collection_other")
     /// Searching for items
     internal static let decodingAttachment = L10n.tr("Localizable", "shareext.decoding_attachment")
+    /// Loading Collections
+    internal static let loadingCollections = L10n.tr("Localizable", "shareext.loading_collections")
     /// Save to Zotero
     internal static let save = L10n.tr("Localizable", "shareext.save")
+    /// Can't sync collections
+    internal static let syncError = L10n.tr("Localizable", "shareext.sync_error")
     internal enum Translation {
       /// Downloading
       internal static let downloading = L10n.tr("Localizable", "shareext.translation.downloading")
