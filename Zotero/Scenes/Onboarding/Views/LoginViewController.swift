@@ -94,6 +94,7 @@ final class LoginViewController: UIViewController {
                 self.usernameField.becomeFirstResponder()
             case .invalidPassword:
                 self.passwordField.becomeFirstResponder()
+            case .serverError, .unknown: break
             }
             self.show(error: error)
         }

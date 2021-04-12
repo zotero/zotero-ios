@@ -8,6 +8,7 @@
 
 import Foundation
 
+import Alamofire
 import CocoaLumberjackSwift
 import RxSwift
 
@@ -86,10 +87,30 @@ struct LoginActionHandler: ViewModelActionHandler {
                           DDLogError("LoginStore: could not log in - \(error)")
                           guard let viewModel = viewModel else { return }
                           self.update(viewModel: viewModel, action: { state in
-                              state.error = .loginFailed
+                              state.error = self.loginError(from: error)
                               state.isLoading = false
                           })
                       })
                       .disposed(by: self.disposeBag)
+    }
+
+    private func loginError(from error: Error) -> LoginError {
+        if let afError = error as? AFResponseError {
+            switch afError.error {
+            case .responseValidationFailed(let reason):
+                switch reason {
+                case .unacceptableStatusCode(let code):
+                    return code == 403 ? .loginFailed : .serverError(afError.response)
+                default:
+                    return afError.response.isEmpty ? .unknown(error) : .serverError(afError.response)
+                }
+            case .sessionTaskFailed(let error):
+                return .serverError(error.localizedDescription)
+            default:
+                return afError.response.isEmpty ? .unknown(error) : .serverError(afError.response)
+            }
+        } else {
+            return .unknown(error)
+        }
     }
 }

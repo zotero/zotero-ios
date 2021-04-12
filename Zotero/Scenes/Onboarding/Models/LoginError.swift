@@ -8,14 +8,12 @@
 
 import Foundation
 
-enum LoginError: Error, Identifiable {
+enum LoginError: Error {
     case invalidUsername
     case invalidPassword
     case loginFailed
-
-    var id: LoginError {
-        return self
-    }
+    case serverError(String)
+    case unknown(Error)
 
     var localizedDescription: String {
         switch self {
@@ -24,7 +22,11 @@ enum LoginError: Error, Identifiable {
         case .invalidUsername:
             return L10n.Errors.Login.invalidUsername
         case .loginFailed:
-            return L10n.Errors.Login.unknown
+            return L10n.Errors.Login.invalidCredentials
+        case .serverError(let response):
+            return response
+        case .unknown(let error):
+            return error.localizedDescription
         }
     }
 }
