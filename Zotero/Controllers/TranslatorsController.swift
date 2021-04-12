@@ -16,7 +16,6 @@ import ZIPFoundation
 typealias RawTranslator = [String: Any]
 
 protocol TranslatorsControllerCoordinatorDelegate: class {
-    func showRemoteLoadTranslatorsError(result: @escaping (Bool) -> Void)
     func showBundleLoadTranslatorsError(result: @escaping (Bool) -> Void)
     func showResetToBundleError()
 }
@@ -192,6 +191,8 @@ final class TranslatorsController {
     /// Checks whether the error was caused by bundled or remote loading and shows appropriate error.
     /// - parameter error: Error to check.
     private func process(error: Swift.Error, updateType: UpdateType) {
+        DDLogError("TranslatorsController: \(error)")
+
         guard let delegate = self.coordinator else {
             self.isLoading.accept(false)
             return
@@ -205,15 +206,6 @@ final class TranslatorsController {
                 } else {
                     self?.isLoading.accept(false)
                 }
-            }
-            return
-        }
-
-        delegate.showRemoteLoadTranslatorsError { retry in
-            if retry {
-                self.updateFromRepo(type: updateType)
-            } else {
-                self.isLoading.accept(false)
             }
         }
     }

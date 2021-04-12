@@ -288,3 +288,5 @@
 "errors.logging.no_logs_recorded" = "No debug output occurred during logging";
 "errors.logging.upload" = "Could not upload logs. Please try again.";
 "errors.logging.response_parsing" = "Unexpected response from server";
+"errors.translators.bundle_loading" = "Could not update translators from bundle. Would you like to try again?";
+"errors.translators.bundle_reset" = "Could not load bundled translators.";

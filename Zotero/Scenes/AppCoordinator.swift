@@ -407,24 +407,17 @@ extension AppCoordinator: CrashReporterCoordinator {
 }
 
 extension AppCoordinator: TranslatorsControllerCoordinatorDelegate {
-    func showRemoteLoadTranslatorsError(result: @escaping (Bool) -> Void) {
-        self.showAlert(title: "Translators error",
-                       message: "Could not load translator updates. Would you like to try again?",
-                       actions: [UIAlertAction(title: "No", style: .cancel, handler: { _ in result(false) }),
-                                 UIAlertAction(title: "Yes", style: .default, handler: { _ in result(true) })])
-    }
-
     func showBundleLoadTranslatorsError(result: @escaping (Bool) -> Void) {
-        self.showAlert(title: "Translators error",
-                       message: "Could not update translators from bundle. Would you like to try again?",
-                       actions: [UIAlertAction(title: "No", style: .cancel, handler: { _ in result(false) }),
-                                 UIAlertAction(title: "Yes", style: .default, handler: { _ in result(true) })])
+        self.showAlert(title: L10n.error,
+                       message: L10n.Errors.Translators.bundleLoading,
+                       actions: [UIAlertAction(title: L10n.no, style: .cancel, handler: { _ in result(false) }),
+                                 UIAlertAction(title: L10n.yes, style: .default, handler: { _ in result(true) })])
     }
 
     func showResetToBundleError() {
-        self.showAlert(title: "Translators error",
-                       message: "Could not load bundled translators.",
-                       actions: [UIAlertAction(title: "Ok", style: .cancel, handler: nil)])
+        self.showAlert(title: L10n.error,
+                       message: L10n.Errors.Translators.bundleReset,
+                       actions: [UIAlertAction(title: L10n.ok, style: .cancel, handler: nil)])
     }
 }
 

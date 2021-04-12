@@ -264,6 +264,12 @@ internal enum L10n {
       /// 1 issue
       internal static let oneError = L10n.tr("Localizable", "errors.sync_toolbar.one_error")
     }
+    internal enum Translators {
+      /// Could not update translators from bundle. Would you like to try again?
+      internal static let bundleLoading = L10n.tr("Localizable", "errors.translators.bundle_loading")
+      /// Could not load bundled translators.
+      internal static let bundleReset = L10n.tr("Localizable", "errors.translators.bundle_reset")
+    }
   }
 
   internal enum ItemDetail {
