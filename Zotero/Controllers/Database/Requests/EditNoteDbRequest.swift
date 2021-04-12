@@ -29,9 +29,11 @@ struct EditNoteDbRequest: DbRequest {
         }
 
         guard field.value != self.note.text else { return }
+
         item.set(title: self.note.title)
         item.changedFields.insert(.fields)
         item.changeType = .user
+        item.dateModified = Date()
         field.value = self.note.text
         field.changed = true
     }
