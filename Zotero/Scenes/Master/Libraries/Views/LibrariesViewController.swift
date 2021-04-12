@@ -108,7 +108,8 @@ final class LibrariesViewController: UIViewController {
 
 extension LibrariesViewController: UITableViewDataSource, UITableViewDelegate {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
+        let groupCount = self.viewModel.state.groupLibraries?.count ?? 0
+        return groupCount > 0 ? 2 : 1
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
