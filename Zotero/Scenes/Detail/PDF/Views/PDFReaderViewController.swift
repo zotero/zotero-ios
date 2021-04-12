@@ -449,7 +449,7 @@ final class PDFReaderViewController: UIViewController {
             if self.viewModel.state.ignoreNotifications[.PSPDFAnnotationChanged]?.contains(key) == true {
                 self.viewModel.process(action: .annotationChangeNotificationReceived(key))
             } else {
-                self.updateRects(for: pdfAnnotation, from: notification)
+                self.viewModel.process(action: .annotationChanged(pdfAnnotation))
             }
 
         case .PSPDFAnnotationsAdded:
@@ -493,12 +493,6 @@ final class PDFReaderViewController: UIViewController {
             return nil
         }
         return annotations
-    }
-
-    private func updateRects(for annotation: PSPDFKit.Annotation, from notification: Notification) {
-        guard let changes = notification.userInfo?[PSPDFAnnotationChangedNotificationKeyPathKey] as? [String],
-              changes.contains("boundingBox") || changes.contains("rects") else { return }
-        self.viewModel.process(action: .setBoundingBox(annotation))
     }
 
     private func performObservingUpdateIfNeeded(objects: Results<RItem>, deletions: [Int], insertions: [Int], modifications: [Int]) {

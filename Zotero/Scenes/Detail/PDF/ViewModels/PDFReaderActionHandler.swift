@@ -98,6 +98,9 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         case .annotationsRemoved(let annotations):
             self.remove(annotations: annotations, in: viewModel)
 
+        case .annotationChanged(let pdfAnnotation):
+            self.update(annotation: pdfAnnotation, in: viewModel)
+
         case .removeAnnotation(let annotation):
             self.remove(annotation: annotation, in: viewModel)
 
@@ -127,9 +130,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
 
         case .setTags(let tags, let key):
             self.updateAnnotation(with: key, transformAnnotation: { ($0.copy(tags: tags), []) }, in: viewModel)
-
-        case .setBoundingBox(let pdfAnnotation):
-            self.updateBoundingBoxAndRects(for: pdfAnnotation, in: viewModel)
 
         case .updateAnnotationProperties(let annotation):
             self.updateAnnotation(with: annotation.key,
@@ -559,6 +559,7 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         // Update selected annotation if needed
         if annotation.key == state.selectedAnnotation?.key {
             state.selectedAnnotation = annotation
+            state.changes.insert(.selection)
         }
 
         if !state.insertedKeys.contains(annotation.key) {
@@ -619,17 +620,27 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
     /// Updates corresponding Zotero annotation to updated PSPDFKit annotation in document.
     /// - parameter annotation: Updated PSPDFKit annotation.
     /// - parameter viewModel: ViewModel.
-    private func updateBoundingBoxAndRects(for pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
+    private func update(annotation pdfAnnotation: PSPDFKit.Annotation, in viewModel: ViewModel<PDFReaderActionHandler>) {
         guard pdfAnnotation.syncable, let key = pdfAnnotation.key else { return }
 
         let sortIndex = AnnotationConverter.sortIndex(from: pdfAnnotation, boundingBoxConverter: self.boundingBoxConverter)
         let rects = pdfAnnotation.rects ?? [pdfAnnotation.boundingBox]
+        let highlightText = (pdfAnnotation as? PSPDFKit.HighlightAnnotation)?.markedUpString.trimmingCharacters(in: .whitespacesAndNewlines)
 
         self.updateAnnotation(with: key,
-                              transformAnnotation: { ($0.copy(rects: rects, sortIndex: sortIndex), []) },
+                              transformAnnotation: { original in
+                                var new = original
+                                if rects != original.rects {
+                                    new = new.copy(rects: rects, sortIndex: sortIndex)
+                                }
+                                if original.text != highlightText {
+                                    new = new.copy(text: highlightText)
+                                }
+                                return (new, [])
+                              },
                               shouldReload: { original, new in
-                                  // Reload only if aspect ratio changed.
-                                  return original.boundingBox.heightToWidthRatio.rounded(to: 2) != new.boundingBox.heightToWidthRatio.rounded(to: 2)
+                                  // Reload only if aspect ratio or text changed.
+                                return original.boundingBox.heightToWidthRatio.rounded(to: 2) != new.boundingBox.heightToWidthRatio.rounded(to: 2) || original.text != new.text
                               },
                               in: viewModel)
 

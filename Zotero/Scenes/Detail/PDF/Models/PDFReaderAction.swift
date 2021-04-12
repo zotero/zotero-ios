@@ -23,11 +23,11 @@ enum PDFReaderAction {
     case removeAnnotation(Annotation)
     case annotationsAdded(annotations: [PSPDFKit.Annotation], selectFirst: Bool)
     case annotationsRemoved([PSPDFKit.Annotation])
+    case annotationChanged(PSPDFKit.Annotation)
     case requestPreviews(keys: [String], notify: Bool)
     case setComment(key: String, comment: NSAttributedString)
     case setTags([Tag], String)
     case setHighlight(text: String, key: String)
-    case setBoundingBox(PSPDFKit.Annotation)
     case updateAnnotationProperties(Annotation)
     case userInterfaceStyleChanged(UIUserInterfaceStyle)
     case updateAnnotationPreviews
