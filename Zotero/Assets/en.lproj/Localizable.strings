@@ -232,7 +232,7 @@
 "shareext.translation.downloading" = "Downloading";
 "shareext.loading_collections" = "Loading Collections";
 "shareext.sync_error" = "Can't sync collections";
-"shareext.collection_other" = "Choose Other";
+"shareext.collection_other" = "More";
 
 "searchbar.placeholder" = "Search";
 

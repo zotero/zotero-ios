@@ -601,7 +601,7 @@ internal enum L10n {
   }
 
   internal enum Shareext {
-    /// Choose Other
+    /// More
     internal static let collectionOther = L10n.tr("Localizable", "shareext.collection_other")
     /// Searching for items
     internal static let decodingAttachment = L10n.tr("Localizable", "shareext.decoding_attachment")
