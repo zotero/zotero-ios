@@ -24,19 +24,23 @@ struct CollectionTreeBuilder {
         return searches.map(Collection.init)
     }
 
-    static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier, selectedId: CollectionIdentifier?, collapseState: CollapseState) -> [Collection] {
-        var parentMap = self.createCollectionMap(from: collections, libraryId: libraryId, selectedId: selectedId, collapseState: collapseState)
+    static func collections(from collections: Results<RCollection>, libraryId: LibraryIdentifier, selectedId: CollectionIdentifier?, collapseState: CollapseState, includeItemCounts: Bool) -> [Collection] {
+        var parentMap = self.createCollectionMap(from: collections, libraryId: libraryId, selectedId: selectedId, collapseState: collapseState, includeItemCounts: includeItemCounts)
         return self.createCollections(for: "", level: 0, visible: true, from: &parentMap)
     }
 
-    private static func createCollectionMap(from collections: Results<RCollection>, libraryId: LibraryIdentifier, selectedId: CollectionIdentifier?, collapseState: CollapseState) -> [String: [Collection]] {
+    private static func createCollectionMap(from collections: Results<RCollection>, libraryId: LibraryIdentifier, selectedId: CollectionIdentifier?, collapseState: CollapseState,
+                                            includeItemCounts: Bool) -> [String: [Collection]] {
         // Parent map used for backtracking when expanding parents of selected collection
         var parentMap: [String: String] = [:]
         // Collection map used for final creating collection array with proper sort order based on level
         var collectionMap: [String: [Collection]] = [:]
 
         for rCollection in collections {
-            let itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
+            var itemCount: Int = 0
+            if includeItemCounts {
+               itemCount = rCollection.items.count == 0 ? 0 : rCollection.items.filter(.items(for: .collection(rCollection.key, ""), libraryId: libraryId)).count
+            }
             let parentKey = rCollection.parentKey ?? ""
             var collection = Collection(object: rCollection, level: 0, visible: true, hasChildren: false, parentKey: rCollection.parentKey, itemCount: itemCount)
             switch collapseState {

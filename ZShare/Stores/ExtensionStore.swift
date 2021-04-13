@@ -874,6 +874,9 @@ final class ExtensionStore {
         state.selectedLibraryId = library.identifier
         state.selectedCollectionId = collection?.identifier ?? Collection(custom: .all).identifier
         state.collectionPicker = .picked(library, collection)
+        if !state.collectionLibraries.contains(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
+            state.collectionLibraries[0] = CollectionWithLibrary(collection: collection, library: library)
+        }
         self.state = state
 
         Defaults.shared.selectedCollectionId = state.selectedCollectionId

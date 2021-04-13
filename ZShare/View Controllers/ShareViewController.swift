@@ -196,7 +196,7 @@ final class ShareViewController: UIViewController {
     private func update(to state: ExtensionStore.State) {
         self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
-        self.update(collectionPicker: state.collectionPicker)
+        self.update(collectionPicker: state.collectionPicker, collectionLibraries: state.collectionLibraries)
         self.update(itemPicker: state.itemPicker)
 
         if self.viewIsVisible {
@@ -423,27 +423,22 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(collectionPicker state: ExtensionStore.State.CollectionPicker) {
+    private func update(collectionPicker state: ExtensionStore.State.CollectionPicker, collectionLibraries: [CollectionWithLibrary]) {
         switch state {
         case .picked(let library, let collection):
             self.createCollectionRowsIfNeeded()
 
-            for view in self.collectionPickerStackView.arrangedSubviews {
+            for (idx, view) in self.collectionPickerStackView.arrangedSubviews.enumerated() {
                 guard let row = view as? CollectionRowView else { continue }
-                row.change(selected: false)
-            }
 
-            if let idx = self.store.state.collectionLibraries.firstIndex(where: { $0.collection == collection && $0.library == library }),
-               idx < self.collectionPickerStackView.arrangedSubviews.count,
-               let row = self.collectionPickerStackView.arrangedSubviews[idx] as? CollectionRowView {
-                // If collection is visible, just select appropriate row
-                row.change(selected: true)
-                return
+                let selected = collectionLibraries[idx].collection?.identifier == collection?.identifier && collectionLibraries[idx].library.identifier == library.identifier
+                if idx == 0 {
+                    let current = collectionLibraries[idx]
+                    row.setup(with: (current.collection?.name ?? current.library.name), isSelected: selected)
+                } else {
+                    row.change(selected: selected)
+                }
             }
-
-            // If collection is not visible, change first row, which shows currently selected collection.
-            guard let row = self.collectionPickerStackView.arrangedSubviews.first as? CollectionRowView else { return }
-            row.setup(with: (collection?.name ?? library.name), isSelected: true)
 
         case .loading:
             self.collectionPickerLoadingContainer?.isHidden = false
