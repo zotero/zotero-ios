@@ -15,15 +15,20 @@ struct CollectionsPickerView: View {
     let closeAction: () -> Void
 
     var body: some View {
-        List(selection: self.viewModel.binding(keyPath: \.selected, action: { .setSelected($0) })) {
+        List {
             ForEach(self.viewModel.state.collections) { collection in
-                CollectionRow(data: collection)
-                    .listRowInsets(EdgeInsets(top: 0,
-                                              leading: self.inset(for: collection.level),
-                                              bottom: 0,
-                                              trailing: 0))
+                Button(action: {
+                    if let key = collection.identifier.key {
+                        self.viewModel.process(action: .toggleSelection(key))
+                    }
+                }) {
+                    SelectableCollectionRow(collection: collection, selected: self.isSelected(collection: collection))
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                .listRowInsets(EdgeInsets(top: 0, leading: self.inset(for: collection.level), bottom: 0, trailing: 0))
             }
         }
+        .animation(.none)
         .navigationBarTitle(Text(self.navBarTitle), displayMode: .inline)
         .navigationBarItems(leading:
                                 Button(action: self.closeAction,
@@ -43,7 +48,6 @@ struct CollectionsPickerView: View {
                                         .padding(.leading, 10)
                                 })
         )
-        .environment(\.editMode, .constant(.active))
     }
 
     private var navBarTitle: String {
@@ -59,6 +63,30 @@ struct CollectionsPickerView: View {
 
     private func inset(for level: Int) -> CGFloat {
         return CollectionRow.levelOffset + (CGFloat(level) * CollectionRow.levelOffset)
+    }
+
+    private func isSelected(collection: Collection) -> Bool {
+        guard let key = collection.identifier.key else { return false }
+        return self.viewModel.state.selected.contains(key)
+    }
+}
+
+fileprivate struct SelectableCollectionRow: View {
+    let collection: Collection
+    let selected: Bool
+
+    var body: some View {
+        HStack {
+            CollectionRow(data: self.collection)
+
+            Spacer().frame(minWidth: 8)
+
+            if self.selected {
+                Image(systemName: "checkmark")
+                    .foregroundColor(Asset.Colors.zoteroBlue.swiftUiColor)
+                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 12))
+            }
+        }
     }
 }
 

@@ -21,13 +21,12 @@ struct AssignItemsToCollectionsDbRequest: DbRequest {
     func process(in database: Realm) throws {
         let collections = database.objects(RCollection.self).filter(.keys(self.collectionKeys, in: self.libraryId))
         let items = database.objects(RItem.self).filter(.keys(self.itemKeys, in: self.libraryId))
-        collections.forEach { collection in
-            items.forEach { item in
-                if !collection.items.contains(item) {
-                    collection.items.append(item)
-                    item.changedFields.insert(.collections)
-                    item.changeType = .user
-                }
+        for collection in collections {
+            for item in items {
+                guard collection.items.filter(.key(item.key)).first == nil else { continue }
+                collection.items.append(item)
+                item.changedFields.insert(.collections)
+                item.changeType = .user
             }
         }
     }

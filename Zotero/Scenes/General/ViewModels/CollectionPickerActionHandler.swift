@@ -25,9 +25,13 @@ struct CollectionPickerActionHandler: ViewModelActionHandler {
         case .loadData:
             self.loadData(in: viewModel)
 
-        case .setSelected(let selected):
+        case .toggleSelection(let key):
             self.update(viewModel: viewModel) { state in
-                state.selected = selected
+                if state.selected.contains(key) {
+                    state.selected.remove(key)
+                } else {
+                    state.selected.insert(key)
+                }
             }
 
         case .setError(let error):

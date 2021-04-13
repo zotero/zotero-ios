@@ -10,6 +10,6 @@ import Foundation
 
 enum CollectionPickerAction {
     case loadData
-    case setSelected(Set<String>)
+    case toggleSelection(String)
     case setError(CollectionPickerError?)
 }
