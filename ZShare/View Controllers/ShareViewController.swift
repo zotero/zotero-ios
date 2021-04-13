@@ -65,6 +65,7 @@ final class ShareViewController: UIViewController {
     // Constants
     private static let toolbarTitleIdx = 1
     private static let childAttachmentLeftOffset: CGFloat = 16
+    private static let maxCollectionCount = 5
 
     // MARK: - Lifecycle
 
@@ -196,7 +197,7 @@ final class ShareViewController: UIViewController {
     private func update(to state: ExtensionStore.State) {
         self.updateItemsUi(for: state.title, items: state.items, attachmentState: state.attachmentState)
         self.update(attachmentState: state.attachmentState, itemState: state.itemPicker)
-        self.update(collectionPicker: state.collectionPicker, collectionLibraries: state.collectionLibraries)
+        self.update(collectionPicker: state.collectionPicker, recents: state.recents)
         self.update(itemPicker: state.itemPicker)
 
         if self.viewIsVisible {
@@ -423,20 +424,18 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func update(collectionPicker state: ExtensionStore.State.CollectionPicker, collectionLibraries: [CollectionWithLibrary]) {
+    private func update(collectionPicker state: ExtensionStore.State.CollectionPicker, recents: [RecentData]) {
         switch state {
         case .picked(let library, let collection):
-            self.createCollectionRowsIfNeeded()
+            self.createCollectionRowsIfNeeded(count: min(ShareViewController.maxCollectionCount, recents.count))
 
             for (idx, view) in self.collectionPickerStackView.arrangedSubviews.enumerated() {
                 guard let row = view as? CollectionRowView else { continue }
-
-                let selected = collectionLibraries[idx].collection?.identifier == collection?.identifier && collectionLibraries[idx].library.identifier == library.identifier
-                if idx == 0 {
-                    let current = collectionLibraries[idx]
-                    row.setup(with: (current.collection?.name ?? current.library.name), isSelected: selected)
-                } else {
-                    row.change(selected: selected)
+                let recent = recents[idx]
+                let selected = recent.collection?.identifier == collection?.identifier && recent.library.identifier == library.identifier
+                row.setup(with: (recent.collection?.name ?? recent.library.name), isSelected: selected)
+                row.tapAction = { [weak self] in
+                    self?.store.setFromRecent(collection: recent.collection, library: recent.library)
                 }
             }
 
@@ -451,23 +450,30 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func createCollectionRowsIfNeeded() {
-        guard self.collectionPickerLoadingContainer != nil else { return }
+    private func createCollectionRowsIfNeeded(count: Int) {
+        if self.collectionPickerLoadingContainer != nil {
+            // These are unnecessary anymore
+            self.collectionPickerLoadingContainer?.removeFromSuperview()
+            self.collectionPickerFailureLabel?.removeFromSuperview()
+            // Show pick other button
+            self.collectionPickerPickOtherButton.isHidden = false
+        }
 
-        // These are unnecessary anymore
-        self.collectionPickerLoadingContainer?.removeFromSuperview()
-        self.collectionPickerFailureLabel?.removeFromSuperview()
-        // Show pick other button
-        self.collectionPickerPickOtherButton.isHidden = false
+        let visibleCount = self.collectionPickerStackView.arrangedSubviews.count - 1 // -1 for "More" button
 
-        // Create rows for selected collection/library and recent collections
-        for (idx, collectionLibrary) in self.store.state.collectionLibraries.enumerated() {
-            guard let row = Bundle.main.loadNibNamed("CollectionRowView", owner: nil, options: nil)?.first as? CollectionRowView else { continue }
-            row.setup(with: (collectionLibrary.collection?.name ?? collectionLibrary.library.name), isSelected: false)
-            row.tapAction = { [weak self] in
-                self?.store.set(collection: collectionLibrary.collection, library: collectionLibrary.library)
+        guard visibleCount != count else { return }
+
+        if visibleCount > count {
+            for _ in 0..<(visibleCount - count) {
+                guard let view = self.collectionPickerStackView.arrangedSubviews.first else { break }
+                view.removeFromSuperview()
             }
-            self.collectionPickerStackView.insertArrangedSubview(row, at: idx)
+            return
+        }
+
+        for _ in 0..<(count - visibleCount) {
+            guard let row = Bundle.main.loadNibNamed("CollectionRowView", owner: nil, options: nil)?.first as? CollectionRowView else { continue }
+            self.collectionPickerStackView.insertArrangedSubview(row, at: 0)
         }
     }
 

@@ -8,9 +8,10 @@
 
 import Foundation
 
-struct CollectionWithLibrary: Identifiable, Equatable, Hashable {
+struct RecentData: Identifiable, Equatable, Hashable {
     let collection: Collection?
     let library: Library
+    let isRecent: Bool
 
     var id: Int {
         var hasher = Hasher()

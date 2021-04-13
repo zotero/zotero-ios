@@ -167,7 +167,7 @@ final class ExtensionStore {
         var url: String?
         var attachmentState: AttachmentState
         var collectionPicker: CollectionPicker
-        var collectionLibraries: [CollectionWithLibrary]
+        var recents: [RecentData]
         var itemPicker: ItemPicker?
         var items: ProcessedAttachment?
         var processedAttachment: ProcessedAttachment?
@@ -178,7 +178,7 @@ final class ExtensionStore {
             self.selectedLibraryId = Defaults.shared.selectedLibrary
             self.collectionPicker = .loading
             self.attachmentState = .decoding
-            self.collectionLibraries = []
+            self.recents = []
         }
     }
 
@@ -870,12 +870,32 @@ final class ExtensionStore {
     // MARK: - Collection picker
 
     func set(collection: Collection?, library: Library) {
+        self.updateSelected(collection: collection, library: library) { state in
+            if let new = state.recents.first(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
+                if new.isRecent && !state.recents[0].isRecent {
+                    state.recents.removeFirst()
+                }
+            } else {
+                if !state.recents[0].isRecent {
+                    state.recents[0] = RecentData(collection: collection, library: library, isRecent: false)
+                } else {
+                    state.recents.insert(RecentData(collection: collection, library: library, isRecent: false), at: 0)
+                }
+            }
+        }
+    }
+
+    func setFromRecent(collection: Collection?, library: Library) {
+        self.updateSelected(collection: collection, library: library)
+    }
+
+    private func updateSelected(collection: Collection?, library: Library, additionalStateChange: ((inout State) -> Void)? = nil) {
         var state = self.state
         state.selectedLibraryId = library.identifier
         state.selectedCollectionId = collection?.identifier ?? Collection(custom: .all).identifier
         state.collectionPicker = .picked(library, collection)
-        if !state.collectionLibraries.contains(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
-            state.collectionLibraries[0] = CollectionWithLibrary(collection: collection, library: library)
+        if let change = additionalStateChange {
+            change(&state)
         }
         self.state = state
 
@@ -902,11 +922,15 @@ final class ExtensionStore {
                 let coordinator = try self.dbStorage.createCoordinator()
                 let request = ReadCollectionAndLibraryDbRequest(collectionId: self.state.selectedCollectionId, libraryId: self.state.selectedLibraryId)
                 let (collection, library) = try coordinator.perform(request: request)
-                let recent = try coordinator.perform(request: ReadRecentCollections(excluding: (collection?.identifier.key).flatMap({ ($0, library.identifier) })))
+                let recentCollections = try coordinator.perform(request: ReadRecentCollections(excluding: nil))
+                var recents = recentCollections
+                if !recents.contains(where: { $0.collection?.identifier == collection?.identifier && $0.library.identifier == library.identifier }) {
+                    recents.insert(RecentData(collection: collection, library: library, isRecent: false), at: 0)
+                }
 
                 var state = self.state
                 state.collectionPicker = .picked(library, collection)
-                state.collectionLibraries = [CollectionWithLibrary(collection: collection, library: library)] + recent
+                state.recents = recents
                 self.state = state
             } catch let error {
                 DDLogError("ExtensionStore: can't load collections - \(error)")

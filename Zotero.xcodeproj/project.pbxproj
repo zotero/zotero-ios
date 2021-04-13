@@ -652,7 +652,7 @@
 		B39EE32B223A5E3500302E29 /* TestAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */; };
 		B3A05E95261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A05E94261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift */; };
 		B3A05E99261495490077CCCC /* ReadRecentCollections.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A05E98261495490077CCCC /* ReadRecentCollections.swift */; };
-		B3A05EA0261498530077CCCC /* CollectionWithLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A05E9F261498530077CCCC /* CollectionWithLibrary.swift */; };
+		B3A05EA0261498530077CCCC /* RecentData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A05E9F261498530077CCCC /* RecentData.swift */; };
 		B3A081C025D2AD390088EC24 /* LoadDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A081BF25D2AD390088EC24 /* LoadDeletionsSyncAction.swift */; };
 		B3A081C425D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A081C325D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift */; };
 		B3A081CB25D2B7320088EC24 /* LoadDeletionsSyncAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A081BF25D2AD390088EC24 /* LoadDeletionsSyncAction.swift */; };
@@ -1293,7 +1293,7 @@
 		B39EE32A223A5E3500302E29 /* TestAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppDelegate.swift; sourceTree = "<group>"; };
 		B3A05E94261492150077CCCC /* UpdateCollectionLastUsedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCollectionLastUsedDbRequest.swift; sourceTree = "<group>"; };
 		B3A05E98261495490077CCCC /* ReadRecentCollections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadRecentCollections.swift; sourceTree = "<group>"; };
-		B3A05E9F261498530077CCCC /* CollectionWithLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionWithLibrary.swift; sourceTree = "<group>"; };
+		B3A05E9F261498530077CCCC /* RecentData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentData.swift; sourceTree = "<group>"; };
 		B3A081BF25D2AD390088EC24 /* LoadDeletionsSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadDeletionsSyncAction.swift; sourceTree = "<group>"; };
 		B3A081C325D2ADCD0088EC24 /* PerformDeletionsSyncAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformDeletionsSyncAction.swift; sourceTree = "<group>"; };
 		B3A081D325D2C1620088EC24 /* ConflictCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictCoordinator.swift; sourceTree = "<group>"; };
@@ -2513,7 +2513,7 @@
 		B3A05E9E2614983E0077CCCC /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				B3A05E9F261498530077CCCC /* CollectionWithLibrary.swift */,
+				B3A05E9F261498530077CCCC /* RecentData.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -3610,7 +3610,7 @@
 				B305675923FC09AF003304F2 /* SyncObject.swift in Sources */,
 				B305675A23FC09AF003304F2 /* DeleteBatch.swift in Sources */,
 				B305675B23FC09AF003304F2 /* AppGroup.swift in Sources */,
-				B3A05EA0261498530077CCCC /* CollectionWithLibrary.swift in Sources */,
+				B3A05EA0261498530077CCCC /* RecentData.swift in Sources */,
 				B305675C23FC09AF003304F2 /* File.swift in Sources */,
 				B3A05E99261495490077CCCC /* ReadRecentCollections.swift in Sources */,
 				B305675D23FC09AF003304F2 /* Files.swift in Sources */,
