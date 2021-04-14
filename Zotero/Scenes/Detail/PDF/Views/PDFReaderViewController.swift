@@ -626,6 +626,7 @@ final class PDFReaderViewController: UIViewController {
             builder.allowedMenuActions = [.copy, .search, .speak, .share, .annotationCreation, .define]
             builder.scrubberBarType = .horizontal
             builder.thumbnailBarMode = .scrubberBar
+            builder.markupAnnotationMergeBehavior = .never
             builder.overrideClass(PSPDFKit.HighlightAnnotation.self, with: HighlightAnnotation.self)
             builder.overrideClass(PSPDFKit.NoteAnnotation.self, with: NoteAnnotation.self)
             builder.overrideClass(PSPDFKit.SquareAnnotation.self, with: SquareAnnotation.self)
