@@ -160,7 +160,8 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                                             webSocketController: webSocketController,
                                             syncScheduler: syncScheduler,
                                             debugLogging: self.controllers.debugLogging,
-                                            translatorsController: self.controllers.translatorsController)
+                                            translatorsController: self.controllers.translatorsController,
+                                            fileCleanupController: self.controllers.fileCleanupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         // Showing alerts in SwiftUI in this case doesn't work. Observe state here and show appropriate alerts.

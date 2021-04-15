@@ -25,11 +25,12 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
     private unowned let dateParser: DateParser
     private unowned let urlDetector: UrlDetector
     private unowned let fileDownloader: FileDownloader
+    private unowned let fileCleanupController: AttachmentFileCleanupController
     private let backgroundScheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController,
-         dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: FileDownloader) {
+    init(apiClient: ApiClient, fileStorage: FileStorage, dbStorage: DbStorage, schemaController: SchemaController, dateParser: DateParser, urlDetector: UrlDetector, fileDownloader: FileDownloader,
+         fileCleanupController: AttachmentFileCleanupController) {
         self.apiClient = apiClient
         self.fileStorage = fileStorage
         self.dbStorage = dbStorage
@@ -37,6 +38,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
         self.dateParser = dateParser
         self.urlDetector = urlDetector
         self.fileDownloader = fileDownloader
+        self.fileCleanupController = fileCleanupController
         self.backgroundScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "org.zotero.ItemDetailActionHandler.background")
         self.disposeBag = DisposeBag()
     }
@@ -422,36 +424,13 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
 
     private func deleteFile(of attachment: Attachment, in viewModel: ViewModel<ItemDetailActionHandler>) {
         let key: String
-
         switch viewModel.state.type {
         case .preview(let _key):
             key = _key
         case .duplication, .creation: return
         }
 
-        do {
-            switch attachment.contentType {
-            case .file(let file, _, _, let linkType):
-                // Don't try to delete linked files
-                guard linkType != .linked else { return }
-                try self.fileStorage.remove(file)
-                // Don't remove annotation container here. Annotations might still be syncing and it would lead to sync errors.
-            case .snapshot(let htmlFile, _, let zipFile, _):
-                // Remove downloaded zip
-                try self.fileStorage.remove(zipFile)
-                // Remove unzipped html directory
-                try self.fileStorage.remove(htmlFile.directory)
-            case .url: return
-            }
-            
-            let deletionType = AttachmentFileDeletedNotification.individual(key: attachment.key,
-                                                                            parentKey: key,
-                                                                            libraryId: attachment.libraryId)
-            NotificationCenter.default.post(name: .attachmentFileDeleted, object: deletionType)
-        } catch let error {
-            DDLogError("ItemDetailActionHandler: can't remove attachment file - \(error)")
-            // TODO: - Show error to user
-        }
+        self.fileCleanupController.delete(.individual(attachment: attachment, parentKey: key), completed: nil)
     }
 
     private func updateDeletedAttachments(_ notification: AttachmentFileDeletedNotification, in viewModel: ViewModel<ItemDetailActionHandler>) {
@@ -558,6 +537,8 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             state.openAttachment = (attachment, index)
             state.updateAttachmentIndex = index
         }
+
+        try? self.dbStorage.createCoordinator().perform(request: MarkMainAttachmentAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
     }
 
     private func finishFailedDownload(error: Error, at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {

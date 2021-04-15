@@ -11,23 +11,22 @@ import Foundation
 import RealmSwift
 
 struct Database {
-    private static let schemaVersion: UInt64 = 23
-    private static let migrationBlock: MigrationBlock = createMigrationBlock()
+    private static let schemaVersion: UInt64 = 24
 
-    static func mainConfiguration(url: URL) -> Realm.Configuration {
+    static func mainConfiguration(url: URL, fileStorage: FileStorage, urlDetector: UrlDetector) -> Realm.Configuration {
         let shouldDelete = shouldDeleteRealm(url: url)
         return Realm.Configuration(fileURL: url,
                                    schemaVersion: schemaVersion,
-                                   migrationBlock: shouldDelete ? nil : migrationBlock,
+                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage, urlDetector: urlDetector),
                                    deleteRealmIfMigrationNeeded: shouldDelete)
     }
 
-    static var translatorConfiguration: Realm.Configuration {
+    static func translatorConfiguration(fileStorage: FileStorage, urlDetector: UrlDetector) -> Realm.Configuration {
         let url = Files.translatorsDbFile.createUrl()
         let shouldDelete = shouldDeleteRealm(url: url)
         return Realm.Configuration(fileURL: url,
                                    schemaVersion: schemaVersion,
-                                   migrationBlock: shouldDelete ? nil : migrationBlock,
+                                   migrationBlock: shouldDelete ? nil : createMigrationBlock(fileStorage: fileStorage, urlDetector: urlDetector),
                                    deleteRealmIfMigrationNeeded: shouldDelete)
     }
 
@@ -37,13 +36,16 @@ struct Database {
         return existingSchemaVersion < 20
     }
 
-    private static func createMigrationBlock() -> MigrationBlock {
+    private static func createMigrationBlock(fileStorage: FileStorage, urlDetector: UrlDetector) -> MigrationBlock {
         return { migration, schemaVersion in
             if schemaVersion < 21 {
                 Database.migrateCollapsibleCollections(migration: migration)
             }
             if schemaVersion < 22 {
                 Database.migrateCollectionParentKeys(migration: migration)
+            }
+            if schemaVersion < 24 {
+                Database.migrateMainAttachmentDownloaded(migration: migration, fileStorage: fileStorage, urlDetector: urlDetector)
             }
         }
     }
@@ -61,6 +63,24 @@ struct Database {
             let parentKey = old?.value(forKeyPath: "parent.key") as? String
             new?["parentKey"] = parentKey
         }
+    }
+
+    private static func migrateMainAttachmentDownloaded(migration: Migration, fileStorage: FileStorage, urlDetector: UrlDetector) {
+        migration.enumerateObjects(ofType: "RItem", { old, new in
+            let mainAttachment = old?.value(forKey: "mainAttachment")
+            if let attachment = mainAttachment as? DynamicObject,
+               let key = attachment.value(forKey: "key") as? String {
+                let libraryId: LibraryIdentifier
+                if let groupId = attachment.value(forKey: "groupKey") as? Int {
+                    libraryId = .group(groupId)
+                } else {
+                    libraryId = .custom(.myLibrary)
+                }
+                // Only PDFs are stored as `mainAttachment` currently, check for those instead of trying to check fields for this item.
+                let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
+                new?["mainAttachmentDownloaded"] = fileStorage.has(file)
+            }
+        })
     }
 
     /// Realm results observer returns modifications from old array, so if there is a need to retrieve updated objects from updated `Results`

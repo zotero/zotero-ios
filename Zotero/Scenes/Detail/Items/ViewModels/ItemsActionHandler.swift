@@ -210,6 +210,8 @@ struct ItemsActionHandler: ViewModelActionHandler {
               let attachment = viewModel.state.attachments[parentKey],
               attachment.key == update.key else { return }
 
+        var didDownloadAttachment = false
+
         self.update(viewModel: viewModel) { state in
             if update.kind.isDownloaded {
                 var newAttachment = attachment
@@ -217,10 +219,17 @@ struct ItemsActionHandler: ViewModelActionHandler {
                 if attachment.contentType.fileLocation == .remote {
                     newAttachment = attachment.changed(location: .local)
                     state.attachments[parentKey] = newAttachment
+                    didDownloadAttachment = true
                 }
                 state.openAttachment = (newAttachment, parentKey)
             }
             state.updateItemKey = parentKey
+        }
+
+        if didDownloadAttachment {
+            self.backgroundQueue.async {
+                try? self.dbStorage.createCoordinator().perform(request: MarkMainAttachmentAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
+            }
         }
     }
 

@@ -23,10 +23,11 @@ struct SettingsActionHandler: ViewModelActionHandler {
     private unowned let debugLogging: DebugLogging
     private unowned let translatorsController: TranslatorsController
     private unowned let webSocketController: WebSocketController
+    private unowned let fileCleanupController: AttachmentFileCleanupController
     private let disposeBag: DisposeBag
 
-    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webSocketController: WebSocketController,
-         syncScheduler: SynchronizationScheduler, debugLogging: DebugLogging, translatorsController: TranslatorsController) {
+    init(dbStorage: DbStorage, fileStorage: FileStorage, sessionController: SessionController, webSocketController: WebSocketController, syncScheduler: SynchronizationScheduler,
+         debugLogging: DebugLogging, translatorsController: TranslatorsController, fileCleanupController: AttachmentFileCleanupController) {
         self.dbStorage = dbStorage
         self.fileStorage = fileStorage
         self.sessionController = sessionController
@@ -34,6 +35,7 @@ struct SettingsActionHandler: ViewModelActionHandler {
         self.syncScheduler = syncScheduler
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
+        self.fileCleanupController = fileCleanupController
         self.disposeBag = DisposeBag()
     }
 
@@ -149,11 +151,8 @@ struct SettingsActionHandler: ViewModelActionHandler {
     }
 
     private func removeAllDownloads(in viewModel: ViewModel<SettingsActionHandler>) {
-        do {
-            try self.fileStorage.remove(Files.downloads)
-            // Annotations are not guaranteed to exist
-            try? self.fileStorage.remove(Files.annotationPreviews)
-
+        self.fileCleanupController.delete(.all) { [weak viewModel] deleted in
+            guard deleted, let viewModel = viewModel else { return }
             self.update(viewModel: viewModel) { state in
                 for (key, _) in state.storageData {
                     state.storageData[key] = DirectoryData(fileCount: 0, mbSize: 0)
@@ -161,19 +160,12 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.totalStorageData = DirectoryData(fileCount: 0, mbSize: 0)
                 state.showDeleteAllQuestion = false
             }
-
-            NotificationCenter.default.post(name: .attachmentFileDeleted, object: AttachmentFileDeletedNotification.all)
-        } catch let error {
-            DDLogError("SettingsActionHandler: can't remove download directory - \(error)")
-            // TODO: - Show error to user
         }
     }
 
     private func removeDownloads(for libraryId: LibraryIdentifier, in viewModel: ViewModel<SettingsActionHandler>) {
-        do {
-            try self.fileStorage.remove(Files.downloads(for: libraryId))
-            // Annotations are not guaranteed to exist
-            try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
+        self.fileCleanupController.delete(.library(libraryId)) { [weak viewModel] deleted in
+            guard deleted, let viewModel = viewModel else { return }
 
             let newTotal = self.fileStorage.directoryData(for: [Files.downloads, Files.annotationPreviews])
 
@@ -182,11 +174,6 @@ struct SettingsActionHandler: ViewModelActionHandler {
                 state.totalStorageData = newTotal
                 state.showDeleteLibraryQuestion = nil
             }
-
-            NotificationCenter.default.post(name: .attachmentFileDeleted, object: AttachmentFileDeletedNotification.library(libraryId))
-        } catch let error {
-            DDLogError("SettingsActionHandler: can't remove library downloads - \(error)")
-            // TODO: - Show error to user
         }
     }
 

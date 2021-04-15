@@ -49,6 +49,7 @@ final class Controllers {
         configuration.timeoutIntervalForResource = ApiConstants.resourceTimeout
 
         let fileStorage = FileStorageController()
+        let urlDetector = UrlDetector()
         let apiClient = ZoteroApiClient(baseUrl: ApiConstants.baseUrlString, configuration: configuration)
         let debugLogging = DebugLogging(apiClient: apiClient, fileStorage: fileStorage)
         // Start logging as soon as possible to catch all errors/warnings.
@@ -58,9 +59,8 @@ final class Controllers {
         crashReporter.start()
         let secureStorage = KeychainSecureStorage()
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
-        let translatorsController = TranslatorsController(apiClient: apiClient,
-                                                          indexStorage: RealmDbStorage(config: Database.translatorConfiguration),
-                                                          fileStorage: fileStorage)
+        let translatorConfiguration = Database.translatorConfiguration(fileStorage: fileStorage, urlDetector: urlDetector)
+        let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: RealmDbStorage(config: translatorConfiguration), fileStorage: fileStorage)
         let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
@@ -74,7 +74,7 @@ final class Controllers {
         self.debugLogging = debugLogging
         self.translatorsController = translatorsController
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
-        self.urlDetector = UrlDetector()
+        self.urlDetector = urlDetector
         self.dateParser = DateParser()
         self.fileCleanupController = fileCleanupController
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
@@ -300,6 +300,6 @@ final class UserControllers {
     private class func createDbStorage(for userId: Int, controllers: Controllers) throws -> DbStorage {
         let file = Files.dbFile(for: userId)
         try controllers.fileStorage.createDirectories(for: file)
-        return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl()))
+        return RealmDbStorage(config: Database.mainConfiguration(url: file.createUrl(), fileStorage: controllers.fileStorage, urlDetector: controllers.urlDetector))
     }
 }

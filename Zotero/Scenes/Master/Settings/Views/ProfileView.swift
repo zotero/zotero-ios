@@ -56,7 +56,8 @@ struct ProfileView_Previews: PreviewProvider {
                                             webSocketController: controllers.userControllers!.webSocketController,
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
-                                            translatorsController: controllers.translatorsController)
+                                            translatorsController: controllers.translatorsController,
+                                            fileCleanupController: controllers.fileCleanupController)
         return ProfileView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

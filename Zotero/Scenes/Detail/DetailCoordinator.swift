@@ -378,7 +378,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                                               schemaController: self.controllers.schemaController,
                                               dateParser: self.controllers.dateParser,
                                               urlDetector: self.controllers.urlDetector,
-                                              fileDownloader: fileDownloader)
+                                              fileDownloader: fileDownloader,
+                                              fileCleanupController: self.controllers.fileCleanupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
