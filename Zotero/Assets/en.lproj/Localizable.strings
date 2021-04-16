@@ -119,6 +119,8 @@
 "items.action.remove_from_collection" = "Remove from Collection";
 "items.action.trash" = "Move to Trash";
 "items.action.duplicate" = "Duplicate";
+"items.filters.title" = "Filters";
+"items.filters.downloads" = "Downloaded Files";
 
 "item_detail.add_creator" = "Add Creator";
 "item_detail.notes" = "Notes";

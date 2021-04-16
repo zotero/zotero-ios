@@ -42,7 +42,7 @@ final class RItem: Object {
     @objc dynamic var dateModified: Date = Date(timeIntervalSince1970: 0)
     @objc dynamic var parent: RItem?
     @objc dynamic var mainAttachment: RItem?
-    @objc dynamic var mainAttachmentDownloaded: Bool = false
+    @objc dynamic var fileDownloaded: Bool = false
     @objc dynamic var createdBy: RUser?
     @objc dynamic var lastModifiedBy: RUser?
     let rects: List<RRect> = List()

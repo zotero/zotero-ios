@@ -270,4 +270,8 @@ extension NSPredicate {
     static func groupId(_ identifier: Int) -> NSPredicate {
         return NSPredicate(format: "identifier == %d", identifier)
     }
+
+    static func file(downloaded: Bool) -> NSPredicate {
+        return NSPredicate(format: "fileDownloaded = %@", NSNumber(booleanLiteral: downloaded))
+    }
 }

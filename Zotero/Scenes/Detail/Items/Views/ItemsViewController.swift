@@ -31,11 +31,13 @@ final class ItemsViewController: UIViewController {
 
     private static let barButtonItemEmptyTag = 1
     private static let barButtonItemSingleTag = 2
+    private static let barButtonItemFilterTag = 3
     private static let itemBatchingLimit = 150
 
     private let viewModel: ViewModel<ItemsActionHandler>
     private let controllers: Controllers
     private let disposeBag: DisposeBag
+    private let editingToolbarActions: [ItemAction]
 
     private var tableViewHandler: ItemsTableViewHandler!
     private var resultsToken: NotificationToken?
@@ -45,10 +47,21 @@ final class ItemsViewController: UIViewController {
     private weak var coordinatorDelegate: DetailItemsCoordinatorDelegate?
 
     init(viewModel: ViewModel<ItemsActionHandler>, controllers: Controllers, coordinatorDelegate: DetailItemsCoordinatorDelegate) {
+        var actions: [ItemAction] = []
+        if viewModel.state.type.isTrash {
+            actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
+        } else {
+            actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
+            if viewModel.state.type.collectionKey != nil {
+                actions.insert(ItemAction(type: .removeFromCollection), at: 1)
+            }
+        }
+
         self.viewModel = viewModel
         self.controllers = controllers
         self.coordinatorDelegate = coordinatorDelegate
         self.disposeBag = DisposeBag()
+        self.editingToolbarActions = actions
 
         super.init(nibName: "ItemsViewController", bundle: nil)
 
@@ -68,7 +81,8 @@ final class ItemsViewController: UIViewController {
                                                       dragDropController: self.controllers.dragDropController,
                                                       fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.setupRightBarButtonItems(for: self.viewModel.state)
-        self.setupToolbar()
+        self.toolbarItems = self.createToolbarItems(state: self.viewModel.state)
+        self.navigationController?.setToolbarHidden(false, animated: false)
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
@@ -149,8 +163,8 @@ final class ItemsViewController: UIViewController {
 
         if state.changes.contains(.editing) {
             self.tableViewHandler.set(editing: state.isEditing, animated: true)
-            self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
             self.setupRightBarButtonItems(for: state)
+            self.toolbarItems = self.createToolbarItems(state: state)
         }
 
         if state.changes.contains(.selectAll) {
@@ -162,8 +176,12 @@ final class ItemsViewController: UIViewController {
         }
 
         if state.changes.contains(.selection) {
-            self.updateToolbarItems()
+            self.updateToolbarItems(state: state)
             self.setupRightBarButtonItems(for: state)
+        }
+
+        if state.changes.contains(.filters) {
+            self.updateToolbarItems(state: state)
         }
 
         if let (attachment, parentKey) = state.openAttachment,
@@ -282,7 +300,15 @@ final class ItemsViewController: UIViewController {
         })
     }
 
-    private func updateToolbarItems() {
+    private func updateToolbarItems(state: ItemsState) {
+        if state.isEditing {
+            self.updateEditingToolbarItems()
+        } else {
+            self.updateFilteringToolbarItems(filters: state.filters)
+        }
+    }
+
+    private func updateEditingToolbarItems() {
         self.toolbarItems?.forEach({ item in
             switch item.tag {
             case ItemsViewController.barButtonItemEmptyTag:
@@ -292,6 +318,12 @@ final class ItemsViewController: UIViewController {
             default: break
             }
         })
+    }
+
+    private func updateFilteringToolbarItems(filters: [ItemsState.Filter]) {
+        guard let item = self.toolbarItems?.first(where: { $0.tag == ItemsViewController.barButtonItemFilterTag }) else { return }
+        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
+        item.image = UIImage(systemName: filterImageName)
     }
 
     private func ask(question: String, title: String, isDestructive: Bool, confirm: @escaping () -> Void) {
@@ -465,17 +497,28 @@ final class ItemsViewController: UIViewController {
         return item
     }
 
-    private func setupToolbar() {
-        var actions: [ItemAction] = []
-        if self.viewModel.state.type.isTrash {
-            actions = [ItemAction(type: .restore), ItemAction(type: .delete)]
+    private func createToolbarItems(state: ItemsState) -> [UIBarButtonItem] {
+        if state.isEditing {
+            return self.createToolbarItems(from: self.editingToolbarActions)
         } else {
-            actions = [ItemAction(type: .addToCollection), ItemAction(type: .duplicate), ItemAction(type: .trash)]
-            if self.viewModel.state.type.collectionKey != nil {
-                actions.insert(ItemAction(type: .removeFromCollection), at: 1)
-            }
+            return self.createFilteringToolbarItems(for: state.filters)
         }
-        self.toolbarItems = self.createToolbarItems(from: actions)
+    }
+
+    private func createFilteringToolbarItems(for filters: [ItemsState.Filter]) -> [UIBarButtonItem] {
+        let fixedSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        fixedSpacer.width = 16
+
+        let filterImageName = filters.isEmpty ? "line.horizontal.3.decrease.circle" : "line.horizontal.3.decrease.circle.fill"
+        let filterButton = UIBarButtonItem(image: UIImage(systemName: filterImageName), style: .plain, target: nil, action: nil)
+        filterButton.tag = ItemsViewController.barButtonItemFilterTag
+        filterButton.rx.tap.subscribe(onNext: { [weak self] _ in
+            guard let `self` = self else { return }
+            self.coordinatorDelegate?.showFilters(button: filterButton, viewModel: self.viewModel)
+        })
+        .disposed(by: self.disposeBag)
+
+        return [fixedSpacer, filterButton]
     }
 
     private func createToolbarItems(from actions: [ItemAction]) -> [UIBarButtonItem] {

@@ -26,7 +26,6 @@ final class Controllers {
     let annotationPreviewController: AnnotationPreviewController
     let urlDetector: UrlDetector
     let dateParser: DateParser
-    let fileCleanupController: AttachmentFileCleanupController
     let htmlAttributedStringConverter: HtmlAttributedStringConverter
     let userInitialized: PassthroughSubject<Result<Bool, Error>, Never>
     fileprivate let lastBuildNumber: Int?
@@ -61,7 +60,6 @@ final class Controllers {
         let sessionController = SessionController(secureStorage: secureStorage, defaults: Defaults.shared)
         let translatorConfiguration = Database.translatorConfiguration(fileStorage: fileStorage, urlDetector: urlDetector)
         let translatorsController = TranslatorsController(apiClient: apiClient, indexStorage: RealmDbStorage(config: translatorConfiguration), fileStorage: fileStorage)
-        let fileCleanupController = AttachmentFileCleanupController(fileStorage: fileStorage)
         let previewSize = CGSize(width: PDFReaderLayout.sidebarWidth, height: PDFReaderLayout.sidebarWidth)
 
         self.sessionController = sessionController
@@ -76,7 +74,6 @@ final class Controllers {
         self.annotationPreviewController = AnnotationPreviewController(previewSize: previewSize, fileStorage: fileStorage)
         self.urlDetector = urlDetector
         self.dateParser = DateParser()
-        self.fileCleanupController = fileCleanupController
         self.htmlAttributedStringConverter = HtmlAttributedStringConverter()
         self.userInitialized = PassthroughSubject()
         self.lastBuildNumber = Defaults.shared.lastBuildNumber
@@ -181,6 +178,7 @@ final class UserControllers {
     let backgroundUploader: BackgroundUploader
     let fileDownloader: FileDownloader
     let webSocketController: WebSocketController
+    let fileCleanupController: AttachmentFileCleanupController
     private let isFirstLaunch: Bool
     private let lastBuildNumber: Int?
     unowned let translatorsController: TranslatorsController
@@ -210,6 +208,7 @@ final class UserControllers {
                                             conflictDelays: DelayIntervals.conflict)
         let fileDownloader = FileDownloader(userId: userId, apiClient: controllers.apiClient, fileStorage: controllers.fileStorage)
         let webSocketController = WebSocketController(dbStorage: dbStorage)
+        let fileCleanupController = AttachmentFileCleanupController(fileStorage: controllers.fileStorage, dbStorage: dbStorage)
 
         self.dbStorage = dbStorage
         self.syncScheduler = SyncScheduler(controller: syncController)
@@ -218,6 +217,7 @@ final class UserControllers {
         self.backgroundUploader = backgroundUploader
         self.fileDownloader = fileDownloader
         self.webSocketController = webSocketController
+        self.fileCleanupController = fileCleanupController
         self.translatorsController = controllers.translatorsController
         self.lastBuildNumber = controllers.lastBuildNumber
         self.disposeBag = DisposeBag()

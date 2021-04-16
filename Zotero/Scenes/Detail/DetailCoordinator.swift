@@ -32,6 +32,7 @@ protocol DetailItemsCoordinatorDelegate: class {
     func show(attachment: Attachment, library: Library, sourceView: UIView, sourceRect: CGRect?)
     func showWeb(url: URL)
     func show(doi: String)
+    func showFilters(button: UIBarButtonItem, viewModel: ViewModel<ItemsActionHandler>)
 }
 
 protocol DetailItemDetailCoordinatorDelegate: class {
@@ -122,14 +123,13 @@ final class DetailCoordinator: Coordinator {
     private func createItemsViewController(collection: Collection, library: Library, dbStorage: DbStorage,
                                            fileDownloader: FileDownloader) -> ItemsViewController {
         let type = self.fetchType(from: collection)
-        let state = ItemsState(type: type, library: library, results: nil, sortType: .default, error: nil)
+        let state = ItemsState(type: type, library: library, sortType: .default, error: nil)
         let handler = ItemsActionHandler(dbStorage: dbStorage,
                                          fileStorage: self.controllers.fileStorage,
                                          schemaController: self.controllers.schemaController,
                                          urlDetector: self.controllers.urlDetector,
                                          fileDownloader: fileDownloader)
-        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler),
-                                   controllers: self.controllers, coordinatorDelegate: self)
+        return ItemsViewController(viewModel: ViewModel(initialState: state, handler: handler), controllers: self.controllers, coordinatorDelegate: self)
     }
 
     private func fetchType(from collection: Collection) -> ItemFetchType {
@@ -361,7 +361,8 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
 
     func showItemDetail(for type: ItemDetailState.DetailType, library: Library) {
         guard let dbStorage = self.controllers.userControllers?.dbStorage,
-              let fileDownloader = self.controllers.userControllers?.fileDownloader else { return }
+              let fileDownloader = self.controllers.userControllers?.fileDownloader,
+              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
 
         let hidesBackButton: Bool
         switch type {
@@ -379,7 +380,7 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
                                               dateParser: self.controllers.dateParser,
                                               urlDetector: self.controllers.urlDetector,
                                               fileDownloader: fileDownloader,
-                                              fileCleanupController: self.controllers.fileCleanupController)
+                                              fileCleanupController: fileCleanupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         let controller = ItemDetailViewController(viewModel: viewModel, controllers: self.controllers)
@@ -408,6 +409,14 @@ extension DetailCoordinator: DetailItemsCoordinatorDelegate {
         let navigationController = UINavigationController(rootViewController: UIHostingController(rootView: view))
         navigationController.isModalInPresentation = true
         navigationController.modalPresentationStyle = .formSheet
+        self.topViewController.present(navigationController, animated: true, completion: nil)
+    }
+
+    func showFilters(button: UIBarButtonItem, viewModel: ViewModel<ItemsActionHandler>) {
+        let controller = ItemsFilterViewController(viewModel: viewModel)
+        let navigationController = UINavigationController(rootViewController: controller)
+        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .popover : .formSheet
+        navigationController.popoverPresentationController?.barButtonItem = button
         self.topViewController.present(navigationController, animated: true, completion: nil)
     }
 }

@@ -49,7 +49,7 @@ struct SettingsView_Previews: PreviewProvider {
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController,
-                                            fileCleanupController: controllers.fileCleanupController)
+                                            fileCleanupController: controllers.userControllers!.fileCleanupController)
         return SettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

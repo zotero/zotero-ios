@@ -41,6 +41,13 @@ final class Defaults {
     @CodableUserDefault(key: "SelectedRawCollectionKey", defaultValue: CollectionIdentifier.custom(.all), encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder)
     var selectedCollectionId: CollectionIdentifier
 
+    // MARK: - Items Settings
+
+    #if MAINAPP
+    @CodableUserDefault(key: "RawItemsSortType", defaultValue: ItemsSortType.default, encoder: Defaults.jsonEncoder, decoder: Defaults.jsonDecoder, defaults: .standard)
+    var itemsSortType: ItemsSortType
+    #endif
+
     // MARK: - PDF Settings
 
     #if PDFENABLED && MAINAPP

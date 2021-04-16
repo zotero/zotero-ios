@@ -16,6 +16,7 @@ enum ItemsAction {
     case deleteItemsFromCollection(Set<String>)
     case deleteItems(Set<String>)
     case deselectItem(String)
+    case filter([ItemsState.Filter])
     case loadInitialState
     case loadItemToDuplicate(String)
     case moveItems([String], String)

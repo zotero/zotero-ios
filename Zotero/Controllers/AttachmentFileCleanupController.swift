@@ -27,14 +27,16 @@ final class AttachmentFileCleanupController {
         }
     }
 
-    let fileStorage: FileStorage
+    private unowned let fileStorage: FileStorage
+    private unowned let dbStorage: DbStorage
     private let queue: DispatchQueue
     private let scheduler: SerialDispatchQueueScheduler
     private let disposeBag: DisposeBag
 
-    init(fileStorage: FileStorage) {
+    init(fileStorage: FileStorage, dbStorage: DbStorage) {
         let queue = DispatchQueue(label: "org.zotero.FileCleanupQueue", qos: .userInitiated)
         self.fileStorage = fileStorage
+        self.dbStorage = dbStorage
         self.scheduler = SerialDispatchQueueScheduler(queue: queue, internalSerialQueueName: "org.zotero.FileCleanupScheduler")
         self.queue = queue
         self.disposeBag = DisposeBag()
@@ -75,6 +77,8 @@ final class AttachmentFileCleanupController {
                 try self.fileStorage.remove(Files.downloads)
                 // Annotations are not guaranteed to exist
                 try? self.fileStorage.remove(Files.annotationPreviews)
+
+                try? self.dbStorage.createCoordinator().perform(request: MarkAllFilesAsNotDownloadedDbRequest())
             } catch let error {
                 DDLogError("AttachmentFileCleanupController: can't remove download directory - \(error)")
                 return false
@@ -85,6 +89,8 @@ final class AttachmentFileCleanupController {
                 try self.fileStorage.remove(Files.downloads(for: libraryId))
                 // Annotations are not guaranteed to exist
                 try? self.fileStorage.remove(Files.annotationPreviews(for: libraryId))
+
+                try? self.dbStorage.createCoordinator().perform(request: MarkLibraryFilesAsNotDownloadedDbRequest(libraryId: libraryId))
             } catch let error {
                 DDLogError("AttachmentFileCleanupController: can't remove library downloads - \(error)")
                 return false
@@ -99,13 +105,13 @@ final class AttachmentFileCleanupController {
                     try self.fileStorage.remove(file)
                     // Annotations are not guaranteed to exist
                     try? self.fileStorage.remove(Files.annotationPreviews(for: attachment.key, libraryId: attachment.libraryId))
-//                    try? self.dbStorage.createCoordinator().perform(request: MarkMainAttachmentAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: false))
+
+                    try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: false))
                 case .snapshot(let htmlFile, _, let zipFile, _):
                     // Remove downloaded zip
                     try self.fileStorage.remove(zipFile)
                     // Remove unzipped html directory
                     try self.fileStorage.remove(htmlFile.directory)
-//                    try? self.dbStorage.createCoordinator().perform(request: MarkMainAttachmentAsDownloadedDbRequest(key: attachment.key, ldibraryId: attachment.libraryId, downloaded: false))
                 case .url: return false
                 }
             } catch let error {

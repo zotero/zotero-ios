@@ -21,6 +21,11 @@ struct ItemsState: ViewModelState {
         static let selection = Changes(rawValue: 1 << 2)
         static let selectAll = Changes(rawValue: 1 << 3)
         static let attachmentsRemoved = Changes(rawValue: 1 << 4)
+        static let filters = Changes(rawValue: 1 << 5)
+    }
+
+    enum Filter {
+        case downloadedFiles
     }
 
     let type: ItemFetchType
@@ -29,6 +34,7 @@ struct ItemsState: ViewModelState {
     var sortType: ItemsSortType
     var searchTerm: String?
     var results: Results<RItem>?
+    var filters: [Filter]
     // Keys for all results are stored so that when a deletion comes in it can be determined which keys were deleted and we can remove them from `selectedItems`
     var keys: [String]
     // Cache of attachments so that they don't need to be re-created in tableView. The key is key of parent item, or item if it's a standalone attachment.
@@ -42,10 +48,10 @@ struct ItemsState: ViewModelState {
     // Used to indicate which row should update it's attachment view. The update is done directly to cell instead of tableView reload.
     var updateItemKey: String?
 
-    init(type: ItemFetchType, library: Library, results: Results<RItem>?, sortType: ItemsSortType, error: ItemsError?) {
+    init(type: ItemFetchType, library: Library, sortType: ItemsSortType, error: ItemsError?) {
         self.type = type
         self.library = library
-        self.results = results
+        self.filters = []
         self.keys = []
         self.attachments = [:]
         self.error = error

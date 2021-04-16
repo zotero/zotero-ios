@@ -67,18 +67,16 @@ struct Database {
 
     private static func migrateMainAttachmentDownloaded(migration: Migration, fileStorage: FileStorage, urlDetector: UrlDetector) {
         migration.enumerateObjects(ofType: "RItem", { old, new in
-            let mainAttachment = old?.value(forKey: "mainAttachment")
-            if let attachment = mainAttachment as? DynamicObject,
-               let key = attachment.value(forKey: "key") as? String {
+            if let key = old?.value(forKey: "key") as? String {
                 let libraryId: LibraryIdentifier
-                if let groupId = attachment.value(forKey: "groupKey") as? Int {
+                if let groupId = old?.value(forKey: "groupKey") as? Int {
                     libraryId = .group(groupId)
                 } else {
                     libraryId = .custom(.myLibrary)
                 }
                 // Only PDFs are stored as `mainAttachment` currently, check for those instead of trying to check fields for this item.
                 let file = Files.attachmentFile(in: libraryId, key: key, ext: "pdf")
-                new?["mainAttachmentDownloaded"] = fileStorage.has(file)
+                new?["fileDownloaded"] = fileStorage.has(file)
             }
         })
     }

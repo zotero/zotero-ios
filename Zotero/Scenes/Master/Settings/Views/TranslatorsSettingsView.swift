@@ -63,7 +63,7 @@ struct TranslatorsSettingsView_Previews: PreviewProvider {
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController,
-                                            fileCleanupController: controllers.fileCleanupController)
+                                            fileCleanupController: controllers.userControllers!.fileCleanupController)
         return TranslatorsSettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

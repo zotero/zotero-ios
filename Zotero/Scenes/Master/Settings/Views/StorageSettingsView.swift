@@ -40,7 +40,7 @@ struct StorageSettingsView_Previews: PreviewProvider {
                                             syncScheduler: controllers.userControllers!.syncScheduler,
                                             debugLogging: controllers.debugLogging,
                                             translatorsController: controllers.translatorsController,
-                                            fileCleanupController: controllers.fileCleanupController)
+                                            fileCleanupController: controllers.userControllers!.fileCleanupController)
         return StorageSettingsView().environmentObject(ViewModel(initialState: state, handler: handler))
     }
 }

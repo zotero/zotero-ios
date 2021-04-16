@@ -44,6 +44,14 @@ final class AppDelegate: UIResponder {
     }
     #endif
 
+    private func migrateItemsSortType() {
+        guard let sortTypeData = UserDefaults.standard.data(forKey: "ItemsSortType"),
+              let unarchived = try? PropertyListDecoder().decode(ItemsSortType.self, from: sortTypeData) else { return }
+
+        Defaults.shared.itemsSortType = unarchived
+        UserDefaults.standard.removeObject(forKey: "ItemsSortType")
+    }
+
     // MARK: - Setups
 
     private func setupLogs() {
@@ -112,6 +120,7 @@ extension AppDelegate: UIApplicationDelegate {
         #if PDFENABLED
         self.migratePdfSettings()
         #endif
+        self.migrateItemsSortType()
 
         return true
     }

@@ -15,7 +15,6 @@ struct ItemsActionHandler: ViewModelActionHandler {
     typealias State = ItemsState
     typealias Action = ItemsAction
 
-    private static let sortTypeKey = "ItemsSortType"
     private unowned let dbStorage: DbStorage
     private unowned let fileStorage: FileStorage
     private unowned let schemaController: SchemaController
@@ -74,7 +73,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
             }
 
         case .search(let text):
-            self.search(for: text, in: viewModel)
+            self.search(for: (text.isEmpty ? nil : text), in: viewModel)
 
         case .setSortField(let field):
             var sortType = viewModel.state.sortType
@@ -130,14 +129,14 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         case .updateAttachments(let notification):
             self.updateDeletedAttachments(notification, in: viewModel)
+
+        case .filter(let filters):
+            self.filter(with: filters, in: viewModel)
         }
     }
 
     private func loadInitialState(in viewModel: ViewModel<ItemsActionHandler>) {
-        let sortTypeData = UserDefaults.standard.data(forKey: ItemsActionHandler.sortTypeKey)
-        let unarchived = sortTypeData.flatMap({ try? PropertyListDecoder().decode(ItemsSortType.self, from: $0) })
-        let sortType = unarchived ?? .default
-
+        let sortType = Defaults.shared.itemsSortType
         let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
         let results = try? self.dbStorage.createCoordinator().perform(request: request).sorted(by: sortType.descriptors)
 
@@ -228,7 +227,7 @@ struct ItemsActionHandler: ViewModelActionHandler {
 
         if didDownloadAttachment {
             self.backgroundQueue.async {
-                try? self.dbStorage.createCoordinator().perform(request: MarkMainAttachmentAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
+                try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
             }
         }
     }
@@ -333,22 +332,15 @@ struct ItemsActionHandler: ViewModelActionHandler {
     // MARK: - Overlay actions
 
     private func changeSortType(to sortType: ItemsSortType, in viewModel: ViewModel<ItemsActionHandler>) {
-        if let data = try? PropertyListEncoder().encode(sortType) {
-            UserDefaults.standard.set(data, forKey: ItemsActionHandler.sortTypeKey)
-        }
-
-        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
-        var results = try? self.dbStorage.createCoordinator().perform(request: request)
-        if let term = viewModel.state.searchTerm {
-            results = results?.filter(.itemSearch(for: term))
-        }
-        results = results?.sorted(by: sortType.descriptors)
+        let results = self.results(for: viewModel.state.searchTerm, filters: viewModel.state.filters, fetchType: viewModel.state.type, sortType: sortType, libraryId: viewModel.state.library.identifier)
 
         self.update(viewModel: viewModel) { state in
             state.sortType = sortType
             state.results = results
             state.changes.insert(.results)
         }
+
+        Defaults.shared.itemsSortType = sortType
     }
 
     private func createNote(with text: String, in viewModel: ViewModel<ItemsActionHandler>) {
@@ -417,43 +409,47 @@ struct ItemsActionHandler: ViewModelActionHandler {
         }
     }
 
-    // MARK: - Searching
+    // MARK: - Searching & Filtering
 
-    private func search(for text: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        if text.isEmpty {
-            self.removeResultsFilters(in: viewModel)
-        } else {
-            self.filterResults(with: text, in: viewModel)
+    private func filter(with filters: [ItemsState.Filter], in viewModel: ViewModel<ItemsActionHandler>) {
+        guard filters != viewModel.state.filters else { return }
+
+        let results = self.results(for: viewModel.state.searchTerm, filters: filters, fetchType: viewModel.state.type, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
+
+        self.update(viewModel: viewModel) { state in
+            state.filters = filters
+            state.results = results
+            state.changes = [.results, .filters]
         }
     }
 
-    private func filterResults(with text: String, in viewModel: ViewModel<ItemsActionHandler>) {
-        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
-        let results = (try? self.dbStorage.createCoordinator()
-                                          .perform(request: request))?
-                                          .filter(.itemSearch(for: text))
-                                          .sorted(by: viewModel.state.sortType.descriptors)
+    private func search(for text: String?, in viewModel: ViewModel<ItemsActionHandler>) {
+        guard text != viewModel.state.searchTerm else { return }
+
+        let results = self.results(for: text, filters: viewModel.state.filters, fetchType: viewModel.state.type, sortType: viewModel.state.sortType, libraryId: viewModel.state.library.identifier)
 
         self.update(viewModel: viewModel) { state in
             state.searchTerm = text
             state.results = results
-            state.changes.insert(.results)
+            state.changes = .results
         }
     }
 
-    private func removeResultsFilters(in viewModel: ViewModel<ItemsActionHandler>) {
-        guard viewModel.state.searchTerm != nil else { return }
-
-        let request = ReadItemsDbRequest(type: viewModel.state.type, libraryId: viewModel.state.library.identifier)
-        let results = (try? self.dbStorage.createCoordinator()
-                                          .perform(request: request))?
-                                          .sorted(by: viewModel.state.sortType.descriptors)
-
-        self.update(viewModel: viewModel) { state in
-            state.searchTerm = nil
-            state.results = results
-            state.changes.insert(.results)
+    private func results(for searchText: String?, filters: [ItemsState.Filter], fetchType: ItemFetchType, sortType: ItemsSortType, libraryId: LibraryIdentifier) -> Results<RItem>? {
+        let request = ReadItemsDbRequest(type: fetchType, libraryId: libraryId)
+        guard var results = (try? self.dbStorage.createCoordinator().perform(request: request)) else { return nil }
+        if let text = searchText, !text.isEmpty {
+            results = results.filter(.itemSearch(for: text))
         }
+        if !filters.isEmpty {
+            for filter in filters {
+                switch filter {
+                case .downloadedFiles:
+                    results = results.filter("fileDownloaded = true or mainAttachment.fileDownloaded = true")
+                }
+            }
+        }
+        return results.sorted(by: sortType.descriptors)
     }
 
     // MARK: - Helpers

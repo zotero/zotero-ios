@@ -366,6 +366,12 @@ internal enum L10n {
       /// Move to Trash
       internal static let trash = L10n.tr("Localizable", "items.action.trash")
     }
+    internal enum Filters {
+      /// Downloaded Files
+      internal static let downloads = L10n.tr("Localizable", "items.filters.downloads")
+      /// Filters
+      internal static let title = L10n.tr("Localizable", "items.filters.title")
+    }
   }
 
   internal enum Libraries {

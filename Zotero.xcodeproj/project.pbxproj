@@ -349,6 +349,8 @@
 		B311B3222386A39800BCF592 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B311B3202386A39800BCF592 /* MainInterface.storyboard */; };
 		B311B3262386A39800BCF592 /* ZShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B311B31C2386A39800BCF592 /* ZShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B312BB4125519DD30023300A /* ItemDetailLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B312BB4025519DD30023300A /* ItemDetailLayout.swift */; };
+		B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */; };
+		B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */; };
 		B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */; };
 		B31EEE5724EBCAF100E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
 		B31EEE5824EBCB2C00E3B3AD /* RRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31EEE5624EBCAF100E3B3AD /* RRect.swift */; };
@@ -542,7 +544,7 @@
 		B35E4B9525248BAD000EA134 /* RxBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B9425248BAD000EA134 /* RxBlocking */; };
 		B35E4B9725248BAD000EA134 /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = B35E4B9625248BAD000EA134 /* RxRelay */; };
 		B35F476A24F8F55600FE328D /* webview_extraction.js in Resources */ = {isa = PBXBuildFile; fileRef = B35F476924F8F55600FE328D /* webview_extraction.js */; };
-		B35FC1F02628490C00858772 /* MarkMainAttachmentAsDownloadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35FC1EF2628490C00858772 /* MarkMainAttachmentAsDownloadedDbRequest.swift */; };
+		B35FC1F02628490C00858772 /* MarkFileAsDownloadedDbRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */; };
 		B3604FF824769F0900669CB7 /* note.html in Resources */ = {isa = PBXBuildFile; fileRef = B3604FF724769F0900669CB7 /* note.html */; };
 		B36181EC24C96B0500B30D56 /* SearchableCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181EB24C96B0500B30D56 /* SearchableCollection.swift */; };
 		B36181FC24C9A7C000B30D56 /* LoginActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36181EF24C9A7C000B30D56 /* LoginActionHandler.swift */; };
@@ -1054,6 +1056,8 @@
 		B311B3212386A39800BCF592 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		B311B3232386A39800BCF592 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B312BB4025519DD30023300A /* ItemDetailLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailLayout.swift; sourceTree = "<group>"; };
+		B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsFilterViewController.swift; sourceTree = "<group>"; };
+		B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemsFilterViewController.xib; sourceTree = "<group>"; };
 		B31941DB24531F6600BF6296 /* AnnotationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnnotationsViewController.swift; sourceTree = "<group>"; };
 		B31EEE5624EBCAF100E3B3AD /* RRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RRect.swift; sourceTree = "<group>"; };
 		B31EEE5924EBD18200E3B3AD /* ReadAnnotationsDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnnotationsDbRequest.swift; sourceTree = "<group>"; };
@@ -1203,7 +1207,7 @@
 		B35DC8E3261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailFieldMultilineEditCell.swift; sourceTree = "<group>"; };
 		B35DC8E4261D9E7C00ED30F4 /* ItemDetailFieldMultilineEditCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDetailFieldMultilineEditCell.xib; sourceTree = "<group>"; };
 		B35F476924F8F55600FE328D /* webview_extraction.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = webview_extraction.js; sourceTree = "<group>"; };
-		B35FC1EF2628490C00858772 /* MarkMainAttachmentAsDownloadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkMainAttachmentAsDownloadedDbRequest.swift; sourceTree = "<group>"; };
+		B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkFileAsDownloadedDbRequest.swift; sourceTree = "<group>"; };
 		B3604FF724769F0900669CB7 /* note.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = note.html; sourceTree = "<group>"; };
 		B36181EB24C96B0500B30D56 /* SearchableCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableCollection.swift; sourceTree = "<group>"; };
 		B36181EF24C9A7C000B30D56 /* LoginActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginActionHandler.swift; sourceTree = "<group>"; };
@@ -1576,7 +1580,7 @@
 				B305643923FC051E003304F2 /* MarkForResyncDbAction.swift */,
 				B305646623FC051E003304F2 /* MarkGroupAsLocalOnlyDbRequest.swift */,
 				B305644A23FC051E003304F2 /* MarkItemsAsTrashedDbRequest.swift */,
-				B35FC1EF2628490C00858772 /* MarkMainAttachmentAsDownloadedDbRequest.swift */,
+				B35FC1EF2628490C00858772 /* MarkFileAsDownloadedDbRequest.swift */,
 				B340868C25D579C9000F4446 /* MarkObjectsAsChangedByUser.swift */,
 				B305644623FC051E003304F2 /* MarkObjectsAsDeletedDbRequest.swift */,
 				B305643A23FC051E003304F2 /* MarkObjectsAsSyncedDbRequest.swift */,
@@ -2268,6 +2272,8 @@
 				B3593EF3241A61C700760E20 /* CollectionsPickerView.swift */,
 				B3593EF2241A61C700760E20 /* ItemCell.swift */,
 				B30B405E2490CAFC00FAAF6D /* ItemCell.xib */,
+				B31901922629C9CB00209E33 /* ItemsFilterViewController.swift */,
+				B31901932629C9CB00209E33 /* ItemsFilterViewController.xib */,
 				B3593EF7241A61C700760E20 /* ItemSortTypePickerView.swift */,
 				B3593EF0241A61C700760E20 /* ItemsTableViewHandler.swift */,
 				B3593EF6241A61C700760E20 /* ItemsViewController.swift */,
@@ -2921,6 +2927,7 @@
 				B337A5A8244F1DEB00AFD13D /* Localizable.strings in Resources */,
 				B30BA8C4255D415600361D25 /* Bundled in Resources */,
 				B34DF1B625768BB70019CCD1 /* TextFieldCell.xib in Resources */,
+				B31901952629C9CB00209E33 /* ItemsFilterViewController.xib in Resources */,
 				B3DD9CEA2256340400DE6BAA /* licenses.plist in Resources */,
 				B30565B123FC051E003304F2 /* Assets.xcassets in Resources */,
 				B3C9096F2497666900286FCF /* ImagePreviewViewController.xib in Resources */,
@@ -3129,6 +3136,7 @@
 				B3593F37241A61C700760E20 /* ItemDetailViewController.swift in Sources */,
 				B31941DD24531F6600BF6296 /* AnnotationsViewController.swift in Sources */,
 				B3BC6B20250FA437006A8B9C /* SchemaError.swift in Sources */,
+				B31901942629C9CB00209E33 /* ItemsFilterViewController.swift in Sources */,
 				B32AB57B25ADB891003CF0C6 /* CommentIconDrawingController.swift in Sources */,
 				B30565E523FC051E003304F2 /* RItemLocaleController.swift in Sources */,
 				B30565FE23FC051E003304F2 /* BackgroundUploader.swift in Sources */,
@@ -3489,7 +3497,7 @@
 				B3A14DF825A7666C00DF5334 /* StorePageForItemDbRequest.swift in Sources */,
 				B37491332488D7040042FF85 /* SyncSettingsView.swift in Sources */,
 				B30566C123FC051F003304F2 /* SyncErrors.swift in Sources */,
-				B35FC1F02628490C00858772 /* MarkMainAttachmentAsDownloadedDbRequest.swift in Sources */,
+				B35FC1F02628490C00858772 /* MarkFileAsDownloadedDbRequest.swift in Sources */,
 				B3593F7C241A76E600760E20 /* CollectionEditView.swift in Sources */,
 				B3981B76258399AA00F8D15A /* NoteAnnotation.swift in Sources */,
 				B30565E223FC051E003304F2 /* StoreCollectionsDbRequest.swift in Sources */,

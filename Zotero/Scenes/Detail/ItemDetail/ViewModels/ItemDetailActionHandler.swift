@@ -538,7 +538,7 @@ struct ItemDetailActionHandler: ViewModelActionHandler {
             state.updateAttachmentIndex = index
         }
 
-        try? self.dbStorage.createCoordinator().perform(request: MarkMainAttachmentAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
+        try? self.dbStorage.createCoordinator().perform(request: MarkFileAsDownloadedDbRequest(key: attachment.key, libraryId: attachment.libraryId, downloaded: true))
     }
 
     private func finishFailedDownload(error: Error, at index: Int, in viewModel: ViewModel<ItemDetailActionHandler>) {

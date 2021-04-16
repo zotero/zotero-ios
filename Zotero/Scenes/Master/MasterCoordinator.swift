@@ -147,7 +147,8 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
     func showSettings() {
         guard let syncScheduler = self.controllers.userControllers?.syncScheduler,
               let webSocketController = self.controllers.userControllers?.webSocketController,
-              let dbStorage = self.controllers.userControllers?.dbStorage else { return }
+              let dbStorage = self.controllers.userControllers?.dbStorage,
+              let fileCleanupController = self.controllers.userControllers?.fileCleanupController else { return }
 
         let state = SettingsState(isSyncing: syncScheduler.syncController.inProgress,
                                   isLogging: self.controllers.debugLogging.isEnabled,
@@ -161,7 +162,7 @@ extension MasterCoordinator: MasterLibrariesCoordinatorDelegate {
                                             syncScheduler: syncScheduler,
                                             debugLogging: self.controllers.debugLogging,
                                             translatorsController: self.controllers.translatorsController,
-                                            fileCleanupController: self.controllers.fileCleanupController)
+                                            fileCleanupController: fileCleanupController)
         let viewModel = ViewModel(initialState: state, handler: handler)
 
         // Showing alerts in SwiftUI in this case doesn't work. Observe state here and show appropriate alerts.
