@@ -82,7 +82,7 @@ final class ItemsViewController: UIViewController {
                                                       fileDownloader: self.controllers.userControllers?.fileDownloader)
         self.setupRightBarButtonItems(for: self.viewModel.state)
         self.toolbarItems = self.createToolbarItems(state: self.viewModel.state)
-        self.navigationController?.setToolbarHidden(false, animated: false)
+        self.navigationController?.setToolbarHidden(true, animated: false)
         self.setupTitle()
         // Use `navigationController.view.frame` if available, because the navigation controller is already initialized and layed out, so the view
         // size is already calculated properly.
@@ -164,7 +164,10 @@ final class ItemsViewController: UIViewController {
         if state.changes.contains(.editing) {
             self.tableViewHandler.set(editing: state.isEditing, animated: true)
             self.setupRightBarButtonItems(for: state)
-            self.toolbarItems = self.createToolbarItems(state: state)
+            if state.isEditing {
+                self.toolbarItems = self.createToolbarItems(state: state)
+            }
+            self.navigationController?.setToolbarHidden(!state.isEditing, animated: true)
         }
 
         if state.changes.contains(.selectAll) {
