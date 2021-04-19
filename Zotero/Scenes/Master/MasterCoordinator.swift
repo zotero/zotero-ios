@@ -278,7 +278,7 @@ extension MasterCoordinator: MasterSettingsCoordinatorDelegate {
     }
 
     func showSupport() {
-        self.showSafari(with: URL(string: "https://forums.zotero.org/")!)
+        UIApplication.shared.open(URL(string: "https://forums.zotero.org/")!)
     }
 
     func showPrivacyPolicy() {
