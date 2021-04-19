@@ -559,7 +559,6 @@ final class PDFReaderActionHandler: ViewModelActionHandler {
         // Update selected annotation if needed
         if annotation.key == state.selectedAnnotation?.key {
             state.selectedAnnotation = annotation
-            state.changes.insert(.selection)
         }
 
         if !state.insertedKeys.contains(annotation.key) {

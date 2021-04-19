@@ -631,6 +631,10 @@ extension DetailCoordinator: DetailPdfCoordinatorDelegate {
     }
 
     func showAnnotationPopover(viewModel: ViewModel<PDFReaderActionHandler>, sourceRect: CGRect, popoverDelegate: UIPopoverPresentationControllerDelegate) {
+        if let coordinator = self.childCoordinators.last, coordinator is AnnotationPopoverCoordinator {
+            return
+        }
+
         let navigationController = UINavigationController()
         navigationController.setNavigationBarHidden(true, animated: false)
         if UIDevice.current.userInterfaceIdiom == .pad {
