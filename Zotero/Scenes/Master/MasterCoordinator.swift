@@ -28,6 +28,7 @@ protocol MasterCollectionsCoordinatorDelegate: MainCoordinatorDelegate {
 
 protocol MasterSettingsCoordinatorDelegate: class {
     func showPrivacyPolicy()
+    func showSupport()
     func showAboutBeta()
     func dismiss()
 }
@@ -273,14 +274,18 @@ extension MasterCoordinator: MasterCollectionsCoordinatorDelegate {
 
 extension MasterCoordinator: MasterSettingsCoordinatorDelegate {
     func showAboutBeta() {
-        self.showSafar(with: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
+        self.showSafari(with: URL(string: "https://www.zotero.org/support/ios_beta?app=1")!)
+    }
+
+    func showSupport() {
+        self.showSafari(with: URL(string: "https://forums.zotero.org/")!)
     }
 
     func showPrivacyPolicy() {
-        self.showSafar(with: URL(string: "https://www.zotero.org/support/privacy?app=1")!)
+        self.showSafari(with: URL(string: "https://www.zotero.org/support/privacy?app=1")!)
     }
 
-    private func showSafar(with url: URL) {
+    private func showSafari(with url: URL) {
         let controller = SFSafariViewController(url: url)
         self.navigationController.presentedViewController?.present(controller, animated: true, completion: nil)
     }

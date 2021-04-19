@@ -56,6 +56,13 @@ struct SettingsListView: View {
 
             Section {
                 Button(action: {
+                    self.coordinatorDelegate?.showSupport()
+                }, label: {
+                    Text(L10n.supportFeedback)
+                        .foregroundColor(Color(self.textColor))
+                })
+
+                Button(action: {
                     self.coordinatorDelegate?.showPrivacyPolicy()
                 }, label: {
                     Text(L10n.privacyPolicy)

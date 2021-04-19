@@ -76,6 +76,8 @@ internal enum L10n {
   internal static let retry = L10n.tr("Localizable", "retry")
   /// Save
   internal static let save = L10n.tr("Localizable", "save")
+  /// Support and Feedback
+  internal static let supportFeedback = L10n.tr("Localizable", "support_feedback")
   /// Title
   internal static let title = L10n.tr("Localizable", "title")
   /// Total
